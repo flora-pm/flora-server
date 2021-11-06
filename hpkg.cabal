@@ -64,10 +64,10 @@ library
   hs-source-dirs:
     src
   exposed-modules:
-    HPkg.User
-    HPkg.Organisation
-    HPkg.Package
-    HPkg.Package.Orphans
+    HPkg.Model.User
+    HPkg.Model.Organisation
+    HPkg.Model.Package
+    HPkg.Model.Package.Orphans
   build-depends:
     aeson                 ^>= 2.0,
     async                 ^>= 2.2,
@@ -120,6 +120,7 @@ test-suite hpkg-test
       aeson
     , aeson-pretty
     , base
+    , Cabal
     , hpkg
     , hspec
     , hspec-expectations-lifted
@@ -133,4 +134,5 @@ test-suite hpkg-test
     , uuid
   other-modules:
     HPkg.UserSpec
+    HPkg.PackageSpec
     SpecHelpers

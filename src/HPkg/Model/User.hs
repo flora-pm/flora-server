@@ -1,7 +1,7 @@
 {-# LANGUAGE QuasiQuotes          #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans -Wno-redundant-constraints #-}
-module HPkg.User where
+module HPkg.Model.User where
 
 import Control.Monad.IO.Class
 import Data.Aeson

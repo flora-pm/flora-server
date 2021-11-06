@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes     #-}
 {-# LANGUAGE OverloadedLists #-}
-module HPkg.Package where
+module HPkg.Model.Package where
 
 import Data.Aeson
 import Data.Text (Text)
@@ -17,7 +17,8 @@ import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics
 import qualified Distribution.SPDX.License as SPDX
 
-import HPkg.Package.Orphans ()
+import HPkg.Model.Package.Orphans ()
+import HPkg.Model.User
 
 newtype PackageId = PackageId { getPackageId :: UUID }
   deriving stock (Generic)
@@ -29,6 +30,7 @@ data Package = Package
   , name :: Text
   , synopsis :: Text
   , license :: SPDX.License
+  , ownerId :: UserId
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   }

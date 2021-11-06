@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module HPkg.Package.Orphans where
+module HPkg.Model.Package.Orphans where
 
 import Data.ByteString (ByteString)
 import Database.PostgreSQL.Simple.FromField (Conversion, Field, FromField (..), returnError, ResultError (ConversionFailed, UnexpectedNull))

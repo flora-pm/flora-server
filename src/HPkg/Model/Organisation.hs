@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes     #-}
 {-# LANGUAGE OverloadedLists #-}
-module HPkg.Organisation where
+module HPkg.Model.Organisation where
 
 import Data.Aeson
 import Data.Text (Text)
@@ -19,7 +19,7 @@ import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Database.PostgreSQL.Transact (DBT)                   
 import GHC.Generics
 
-import HPkg.User
+import HPkg.Model.User
 
 newtype OrganisationId = OrganisationId { getOrganisationId :: UUID }
   deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
