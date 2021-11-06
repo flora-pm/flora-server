@@ -13,3 +13,5 @@ deployments/prod.sh
 dist-newstyle
 environment.local.sh
 ghcid.text
+tags
+tags.mtime
