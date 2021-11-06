@@ -1,0 +1,15 @@
+&
+.envrc
+.hie
+.hspec-failures
+/**/ghcid.text
+/.stack-work/
+/static/*
+<
+Session.vim
+_database/
+assets/node_modules
+deployments/prod.sh
+dist-newstyle
+environment.local.sh
+ghcid.text
