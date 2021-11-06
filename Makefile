@@ -22,6 +22,9 @@ repl: ## Start a REPL
 test: ## Run the test suite
 	@cabal test
 
+ghcid-test: ## Load the tests in ghcid and reload them on file change
+	@ghcid --command='cabal v2-repl hpkg-test' --test 'Main.main'
+
 lint: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
