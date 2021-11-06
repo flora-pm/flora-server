@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes     #-}
 {-# LANGUAGE OverloadedLists #-}
-module HPkg.Model.Package where
+module Flora.Model.Package where
 
 import Data.Aeson
 import Data.Text (Text)
@@ -17,8 +17,8 @@ import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics
 import qualified Distribution.SPDX.License as SPDX
 
-import HPkg.Model.Package.Orphans ()
-import HPkg.Model.User
+import Flora.Model.Package.Orphans ()
+import Flora.Model.User
 
 newtype PackageId = PackageId { getPackageId :: UUID }
   deriving stock (Generic)

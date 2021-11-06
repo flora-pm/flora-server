@@ -1,6 +1,6 @@
-module HPkg.Release where
+module Flora.Release where
 
-import HPkg.Package
+import Flora.Package
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Aeson

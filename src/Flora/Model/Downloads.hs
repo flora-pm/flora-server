@@ -1,11 +1,11 @@
-module HPkg.Downloads where
+module Flora.Downloads where
 
 import Data.UUID
 import GHC.Generics
 import Data.Aeson
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
-import HPkg.Release
+import Flora.Release
 import Data.Time (UTCTime)
 
 newtype DownloadId = DownloadId { getDownloadId :: UUID }

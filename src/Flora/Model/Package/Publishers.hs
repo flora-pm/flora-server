@@ -1,10 +1,10 @@
-module HPkg.Package.Publishers where
+module Flora.Package.Publishers where
 
 import Data.UUID (UUID)
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
-import HPkg.Package (PackageId)
-import HPkg.User (UserId)
+import Flora.Package (PackageId)
+import Flora.User (UserId)
 import GHC.Generics
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Entity

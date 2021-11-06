@@ -1,4 +1,4 @@
-module HPkg.PackageSpec where
+module Flora.PackageSpec where
 
 import Data.Password.Argon2
 import Test.Hspec (Spec)
@@ -8,8 +8,8 @@ import Distribution.SPDX.License
 import Distribution.SPDX.LicenseId
 
 import SpecHelpers (migrate)
-import HPkg.Model.User
-import HPkg.Model.Package
+import Flora.Model.User
+import Flora.Model.Package
 import Distribution.SPDX
 
 user1 :: User

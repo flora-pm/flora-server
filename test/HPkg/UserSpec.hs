@@ -1,11 +1,11 @@
-module HPkg.UserSpec where
+module Flora.UserSpec where
 
 import Data.Password.Argon2
 import Test.Hspec (Spec)
 import Test.Hspec.DB (describeDB , itDB)
 import Test.Hspec.Expectations.Lifted (shouldReturn)
 
-import HPkg.Model.User
+import Flora.Model.User
 import SpecHelpers (migrate)
 
 user1 :: User

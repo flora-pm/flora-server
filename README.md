@@ -1,1 +1,1 @@
-# HPkg Server ![CI-badge][CI-badge]][CI-url]
+# Flora Server ![CI-badge][CI-badge]][CI-url]

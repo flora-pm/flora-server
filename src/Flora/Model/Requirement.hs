@@ -1,6 +1,6 @@
-module HPkg.Release.Requirement where
+module Flora.Release.Requirement where
 
-import HPkg.Package
+import Flora.Package
 import Data.Time (UTCTime)
 import Data.Aeson
 import Database.PostgreSQL.Simple.FromField
@@ -9,7 +9,7 @@ import Data.UUID
 import GHC.Generics
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Entity.Types
-import HPkg.Release (ReleaseId)
+import Flora.Release (ReleaseId)
 
 newtype RequirementId = RequirementId { getRequirementId :: UUID }
   deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
