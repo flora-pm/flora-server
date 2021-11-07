@@ -7,9 +7,9 @@ import Optics.Core
 
 import Flora.Model.Package
 import Flora.Model.Release
+import Flora.Model.Requirement
 import Flora.Model.User
 import Flora.UserFixtures
-import Flora.Model.Requirement
 
 -- ghc-prim
 
@@ -63,7 +63,7 @@ ghcBignumDepOnGhcPrim =
       requirement = ">=0.5.1.0 && <0.9"
    in Requirement{..}
 
--- base 
+-- base
 
 base :: Package
 base =

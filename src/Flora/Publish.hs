@@ -4,11 +4,11 @@ module Flora.Publish where
 import Database.PostgreSQL.Transact
 import Optics.Core
 
-import Flora.Model.Package 
-import Flora.Model.Requirement (Requirement, insertRequirement)
-import Flora.Model.Release (Release(..), insertRelease)
-import Flora.Model.User (User)
 import Control.Monad
+import Flora.Model.Package
+import Flora.Model.Release (Release (..), insertRelease)
+import Flora.Model.Requirement (Requirement, insertRequirement)
+import Flora.Model.User (User)
 
 {- TODO: Audit publish package
    TODO: Refresh dependents view

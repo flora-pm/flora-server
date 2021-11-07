@@ -7,21 +7,21 @@ import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Password
 import Data.Password.Argon2
+import qualified Data.Password.Argon2 as Argon2
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.UUID
-import Database.PostgreSQL.Entity                           
-import Database.PostgreSQL.Entity.Types                     
-import Database.PostgreSQL.Simple (Only (Only))             
+import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Entity.Types
+import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.FromField (FromField (..))
-import Database.PostgreSQL.Simple.FromRow (FromRow (..))    
-import Database.PostgreSQL.Simple.ToField (ToField (..))    
-import Database.PostgreSQL.Simple.ToRow (ToRow (..))        
-import Database.PostgreSQL.Transact (DBT)                   
+import Database.PostgreSQL.Simple.FromRow (FromRow (..))
+import Database.PostgreSQL.Simple.ToField (ToField (..))
+import Database.PostgreSQL.Simple.ToRow (ToRow (..))
+import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics
 import GHC.Stack
 import GHC.TypeLits (ErrorMessage (..), TypeError)
-import qualified Data.Password.Argon2 as Argon2
 
 newtype UserId = UserId { getUserId :: UUID }
   deriving stock (Generic, Show)
@@ -60,24 +60,24 @@ type CannotDisplayPassword e =
 deriving via Text instance ToField (PasswordHash a)
 deriving via Text instance FromField (PasswordHash a)
 
-hashPassword :: (MonadIO m) => Password -> m (PasswordHash Argon2)               
-hashPassword = Argon2.hashPassword                                               
-                                                                                 
-validatePassword :: Password -> PasswordHash Argon2 -> Bool                      
-validatePassword inputPassword hashedPassword =                                  
-  Argon2.checkPassword inputPassword hashedPassword == PasswordCheckSuccess      
-                                                                                 
-insertUser :: HasCallStack => User -> DBT IO ()                                  
-insertUser user = insert @User user                                              
-                                                                                 
-getUserById :: HasCallStack => UserId -> DBT IO (Maybe User)                     
-getUserById userId = selectById (Only userId)                                    
-                                                                                 
-getUserByUsername :: HasCallStack => Text -> DBT IO (Maybe User)                 
+hashPassword :: (MonadIO m) => Password -> m (PasswordHash Argon2)
+hashPassword = Argon2.hashPassword
+
+validatePassword :: Password -> PasswordHash Argon2 -> Bool
+validatePassword inputPassword hashedPassword =
+  Argon2.checkPassword inputPassword hashedPassword == PasswordCheckSuccess
+
+insertUser :: HasCallStack => User -> DBT IO ()
+insertUser user = insert @User user
+
+getUserById :: HasCallStack => UserId -> DBT IO (Maybe User)
+getUserById userId = selectById (Only userId)
+
+getUserByUsername :: HasCallStack => Text -> DBT IO (Maybe User)
 getUserByUsername username = selectOneByField [field| username |] (Only username)
-                                                                                 
-getUserByEmail :: HasCallStack => Text -> DBT IO (Maybe User)                    
-getUserByEmail email = selectOneByField [field| email |] (Only email)            
-                                                                                 
-deleteUser :: HasCallStack => UserId -> DBT IO ()                                
-deleteUser userId = delete @User (Only userId)                                   
+
+getUserByEmail :: HasCallStack => Text -> DBT IO (Maybe User)
+getUserByEmail email = selectOneByField [field| email |] (Only email)
+
+deleteUser :: HasCallStack => UserId -> DBT IO ()
+deleteUser userId = delete @User (Only userId)

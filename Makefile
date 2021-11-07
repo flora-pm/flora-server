@@ -28,6 +28,9 @@ ghcid-test: ## Load the tests in ghcid and reload them on file change
 lint: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
+style: ## Run the code styler (stylish-haskell)
+	@stylish-haskell -i -r src app test
+
 tags:
 	@ghc-tags -c
 

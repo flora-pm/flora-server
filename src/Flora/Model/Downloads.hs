@@ -1,12 +1,12 @@
 module Flora.Downloads where
 
-import Data.UUID
-import GHC.Generics
 import Data.Aeson
+import Data.Time (UTCTime)
+import Data.UUID
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
 import Flora.Release
-import Data.Time (UTCTime)
+import GHC.Generics
 
 newtype DownloadId = DownloadId { getDownloadId :: UUID }
   deriving stock (Generic, Show)
@@ -15,7 +15,7 @@ newtype DownloadId = DownloadId { getDownloadId :: UUID }
 
 data Download = Download
   { downloadId :: DownloadId
-  , releaseId :: ReleaseId
-  , downloads :: Integer
-  , day :: UTCTime
+  , releaseId  :: ReleaseId
+  , downloads  :: Integer
+  , day        :: UTCTime
   }

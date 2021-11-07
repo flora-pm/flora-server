@@ -2,7 +2,7 @@ module Flora.UserSpec where
 
 import Data.Password.Argon2
 import Test.Hspec (Spec)
-import Test.Hspec.DB (describeDB , itDB)
+import Test.Hspec.DB (describeDB, itDB)
 import Test.Hspec.Expectations.Lifted (shouldReturn)
 
 import Flora.Model.User

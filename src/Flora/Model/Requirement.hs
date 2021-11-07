@@ -12,7 +12,7 @@ import Database.PostgreSQL.Transact
 import GHC.Generics
 
 import Flora.Model.Package
-import Flora.Model.Release (ReleaseId, Release)
+import Flora.Model.Release (Release, ReleaseId)
 
 newtype RequirementId = RequirementId { getRequirementId :: UUID }
   deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
@@ -20,9 +20,9 @@ newtype RequirementId = RequirementId { getRequirementId :: UUID }
 
 data Requirement = Requirement
   { requirementId :: RequirementId
-  , releaseId :: ReleaseId
-  , packageId :: PackageId
-  , requirement :: Text
+  , releaseId     :: ReleaseId
+  , packageId     :: PackageId
+  , requirement   :: Text
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
@@ -30,7 +30,7 @@ data Requirement = Requirement
     via (GenericEntity '[TableName "requirements"] Requirement)
 
 insertRequirement :: Requirement -> DBT IO ()
-insertRequirement = insert @Requirement 
+insertRequirement = insert @Requirement
 
 getRequirements :: Release -> DBT IO ()
 getRequirements = undefined

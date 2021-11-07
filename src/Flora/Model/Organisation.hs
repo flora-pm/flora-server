@@ -1,5 +1,5 @@
-{-# LANGUAGE QuasiQuotes     #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE QuasiQuotes     #-}
 module Flora.Model.Organisation where
 
 import Data.Aeson
@@ -7,16 +7,17 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.UUID
 import Data.Vector (Vector)
-import Database.PostgreSQL.Entity                           
-import Database.PostgreSQL.Entity.DBT (QueryNature (Select), query, queryOne, query_)
-import Database.PostgreSQL.Entity.Types                     
-import Database.PostgreSQL.Simple (Only (Only))             
+import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Entity.DBT (QueryNature (Select), query, queryOne,
+                                       query_)
+import Database.PostgreSQL.Entity.Types
+import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.FromField (FromField (..))
-import Database.PostgreSQL.Simple.FromRow (FromRow (..))    
+import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Database.PostgreSQL.Simple.ToField (ToField (..))    
-import Database.PostgreSQL.Simple.ToRow (ToRow (..))        
-import Database.PostgreSQL.Transact (DBT)                   
+import Database.PostgreSQL.Simple.ToField (ToField (..))
+import Database.PostgreSQL.Simple.ToRow (ToRow (..))
+import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics
 
 import Flora.Model.User
@@ -27,9 +28,9 @@ newtype OrganisationId = OrganisationId { getOrganisationId :: UUID }
 
 data Organisation = Organisation
   { organisationId :: OrganisationId
-  , name :: Text
-  , createdAt :: UTCTime
-  , updatedAt :: UTCTime
+  , name           :: Text
+  , createdAt      :: UTCTime
+  , updatedAt      :: UTCTime
   }
   deriving stock (Eq, Show,Generic)
   deriving anyclass (FromRow, ToRow)

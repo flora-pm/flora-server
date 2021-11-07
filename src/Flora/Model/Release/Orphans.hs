@@ -2,14 +2,16 @@
 module Flora.Model.Release.Orphans where
 
 import Data.ByteString (ByteString)
-import Database.PostgreSQL.Simple.FromField (Conversion, Field, FromField (..), returnError, ResultError (ConversionFailed, UnexpectedNull))
-import Database.PostgreSQL.Simple.ToField (ToField (..), Action(..))    
+import qualified Data.ByteString.Char8 as C8
+import Database.PostgreSQL.Simple.FromField (Conversion, Field, FromField (..),
+                                             ResultError (ConversionFailed, UnexpectedNull),
+                                             returnError)
+import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Distribution.Parsec
+import qualified Distribution.Pretty as Pretty
 import Distribution.Simple.Utils (fromUTF8BS)
 import Distribution.Types.Version
 import Distribution.Types.VersionRange
-import qualified Data.ByteString.Char8 as C8
-import qualified Distribution.Pretty as Pretty
 
 instance FromField Version where
   fromField :: Field -> Maybe ByteString -> Conversion Version
@@ -23,7 +25,7 @@ instance FromField Version where
                 "Conversion error: Expected valid version expression, got: " <> fromUTF8BS bs
 
 instance ToField Version where
-  toField = Escape . C8.pack . Pretty.prettyShow 
+  toField = Escape . C8.pack . Pretty.prettyShow
 
 instance FromField VersionRange where
   fromField :: Field -> Maybe ByteString -> Conversion VersionRange
@@ -37,4 +39,4 @@ instance FromField VersionRange where
                 "Conversion error: Expected valid version range, got: " <> fromUTF8BS bs
 
 instance ToField VersionRange where
-  toField = Escape . C8.pack . Pretty.prettyShow 
+  toField = Escape . C8.pack . Pretty.prettyShow

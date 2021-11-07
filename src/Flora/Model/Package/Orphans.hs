@@ -2,13 +2,15 @@
 module Flora.Model.Package.Orphans where
 
 import Data.ByteString (ByteString)
-import Database.PostgreSQL.Simple.FromField (Conversion, Field, FromField (..), returnError, ResultError (ConversionFailed, UnexpectedNull))
-import Database.PostgreSQL.Simple.ToField (ToField (..), Action(..))    
-import Distribution.Parsec
-import Distribution.Simple.Utils (fromUTF8BS)
 import qualified Data.ByteString.Char8 as C8
+import Database.PostgreSQL.Simple.FromField (Conversion, Field, FromField (..),
+                                             ResultError (ConversionFailed, UnexpectedNull),
+                                             returnError)
+import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
+import Distribution.Parsec
 import qualified Distribution.Pretty as Pretty
 import qualified Distribution.SPDX.License as SPDX
+import Distribution.Simple.Utils (fromUTF8BS)
 
 instance FromField SPDX.License where
   fromField :: Field -> Maybe ByteString -> Conversion SPDX.License
@@ -22,4 +24,4 @@ instance FromField SPDX.License where
                 "Conversion error: Expected valid SPDX identifier for 'license', got: " <> fromUTF8BS bs
 
 instance ToField SPDX.License where
-  toField = Escape . C8.pack . Pretty.prettyShow 
+  toField = Escape . C8.pack . Pretty.prettyShow

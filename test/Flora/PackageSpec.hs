@@ -1,16 +1,16 @@
 module Flora.PackageSpec where
 
+import Optics.Core
 import Test.Hspec (Spec)
 import Test.Hspec.DB (describeDB, itDB)
 import Test.Hspec.Expectations.Lifted (shouldReturn)
-import Optics.Core
 
-import SpecHelpers (migrate)
-import Flora.Model.User
 import Flora.Model.Package
-import Flora.Publish
+import Flora.Model.User
 import Flora.PackageFixtures
+import Flora.Publish
 import Flora.UserFixtures
+import SpecHelpers (migrate)
 
 spec :: Spec
 spec = describeDB migrate "packages" $ do
