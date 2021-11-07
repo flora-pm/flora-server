@@ -39,14 +39,14 @@ data Package = Package
   deriving (Entity)
     via (GenericEntity '[TableName "packages"] Package)
 
-insertPackage :: Package -> DBT IO ()
-insertPackage org = insert @Package org
+createPackage :: Package -> DBT IO ()
+createPackage package = insert @Package package
 
 getPackageById :: PackageId -> DBT IO (Maybe Package)
-getPackageById orgId = selectById @Package (Only orgId)
+getPackageById packageId = selectById @Package (Only packageId)
 
 getPackageByName :: Text -> DBT IO (Maybe Package)
 getPackageByName name = selectOneByField [field| package_name |] (Only name)
 
 deletePackage :: PackageId -> DBT IO ()
-deletePackage orgId = delete @Package (Only orgId)
+deletePackage packageId = delete @Package (Only packageId)

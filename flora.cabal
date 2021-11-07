@@ -32,6 +32,7 @@ common common-extensions
                       MultiParamTypeClasses
                       NamedFieldPuns
                       OverloadedStrings
+                      OverloadedLabels
                       RankNTypes
                       RecordWildCards
                       ScopedTypeVariables
@@ -68,6 +69,10 @@ library
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Orphans
+    Flora.Model.Release
+    Flora.Model.Release.Orphans
+    Flora.Model.Requirement
+    Flora.Publish
   build-depends:
     aeson                 ^>= 2.0,
     async                 ^>= 2.2,
@@ -79,6 +84,7 @@ library
     envparse              ^>= 0.4,
     hashable              ^>= 1.3,
     mtl                   ^>= 2.2,
+    optics-core           ^>= 0.4,
     optparse-applicative  ^>= 0.16,
     password              ^>= 2.1,
     pg-entity             ^>= 0.0,
@@ -118,13 +124,14 @@ test-suite flora-test
       test
   build-depends:
       aeson
+    , Cabal
     , aeson-pretty
     , base
-    , Cabal
     , flora
     , hspec
     , hspec-expectations-lifted
     , hspec-pg-transact
+    , optics-core
     , password         
     , pg-transact
     , postgresql-migration
@@ -135,4 +142,6 @@ test-suite flora-test
   other-modules:
     Flora.UserSpec
     Flora.PackageSpec
+    Flora.PackageFixtures
+    Flora.UserFixtures
     SpecHelpers

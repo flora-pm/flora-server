@@ -1,15 +1,18 @@
-module Flora.Release.Requirement where
+module Flora.Model.Requirement where
 
-import Flora.Package
-import Data.Time (UTCTime)
 import Data.Aeson
+import Data.Text (Text)
+import Data.UUID
+import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Entity.Types
+import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
-import Data.UUID
+import Database.PostgreSQL.Transact
 import GHC.Generics
-import Database.PostgreSQL.Simple
-import Database.PostgreSQL.Entity.Types
-import Flora.Release (ReleaseId)
+
+import Flora.Model.Package
+import Flora.Model.Release (ReleaseId, Release)
 
 newtype RequirementId = RequirementId { getRequirementId :: UUID }
   deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
@@ -19,10 +22,15 @@ data Requirement = Requirement
   { requirementId :: RequirementId
   , releaseId :: ReleaseId
   , packageId :: PackageId
-  , createdAt :: UTCTime
-  , updatedAt :: UTCTime
+  , requirement :: Text
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
   deriving (Entity)
-    via (GenericEntity '[TableName "organisations"] Requirement)
+    via (GenericEntity '[TableName "requirements"] Requirement)
+
+insertRequirement :: Requirement -> DBT IO ()
+insertRequirement = insert @Requirement 
+
+getRequirements :: Release -> DBT IO ()
+getRequirements = undefined

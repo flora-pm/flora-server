@@ -1,7 +1,7 @@
 create table releases (
   release_id uuid primary key,
   package_id uuid references packages,
-  version text,
+  version text not null,
   created_at timestamptz,
   updated_at timestamptz,
   unique (package_id, version)

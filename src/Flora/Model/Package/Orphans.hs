@@ -16,9 +16,9 @@ instance FromField SPDX.License where
     case mdata of
         Nothing -> returnError UnexpectedNull f ""
         Just bs ->
-          case eitherParsec (fromUTF8BS bs) of
-              Right (a :: SPDX.License) -> pure a
-              Left _ -> returnError ConversionFailed f $
+          case simpleParsec (fromUTF8BS bs) of
+              Just (a :: SPDX.License) -> pure a
+              Nothing -> returnError ConversionFailed f $
                 "Conversion error: Expected valid SPDX identifier for 'license', got: " <> fromUTF8BS bs
 
 instance ToField SPDX.License where
