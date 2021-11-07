@@ -9,4 +9,18 @@
 </a>
 </p>
 
-WIP
+## Development
+
+```bash
+$ make help
+db-init                        Initialize the dev database
+db-start                       Start the dev database
+db-create                      Create the database
+db-setup                       Setup the dev database
+db-reset                       Reset the dev database
+repl                           Start a REPL
+test                           Run the test suite
+ghcid-test                     Load the tests in ghcid and reload them on file change
+lint                           Run the code linter (HLint)
+style                          Run the code styler (stylish-haskell)
+```
