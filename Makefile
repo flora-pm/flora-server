@@ -1,4 +1,4 @@
-start: ## Start the flora-server
+start: ## Start flora-server
 	@cabal run exe:flora-server
 
 build: ## Build the server without optimisations
@@ -43,6 +43,9 @@ test: ## Run the test suite
 
 ghcid-test: ## Load the tests in ghcid and reload them on file change
 	@ghcid --command='cabal v2-repl flora-test' --test 'Main.main'
+
+ghcid-server: ## Start flora-server in ghcid
+	@ghcid --command='cabal v2-repl exe:flora-server' --test 'Main.main'
 
 lint: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}

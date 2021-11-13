@@ -164,6 +164,45 @@ executable flora-server
     , base
     , flora
 
+executable flora-cli
+  import:         common-extensions
+  import:         common-ghc-options
+  import:         common-rts-options
+  main-is:        Main.hs
+  hs-source-dirs: app/cli
+  build-depends:
+    , base
+    , colourista
+    , flora
+    , flora-test-fixtures
+    , optparse-applicative         ^>=0.16
+    , pg-entity
+    , pg-transact
+    , postgresql-simple
+    , postgresql-simple-migration
+    , text
+    , uuid
+
+library flora-test-fixtures
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  test/fixtures
+  build-depends:
+    , aeson
+    , base
+    , Cabal
+    , flora
+    , optics-core
+    , password
+    , pg-entity
+    , time
+    , uuid
+    , vector
+
+  exposed-modules:
+    Flora.PackageFixtures
+    Flora.UserFixtures
+
 test-suite flora-test
   import:         common-extensions
   import:         common-ghc-options
