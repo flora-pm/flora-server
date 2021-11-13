@@ -25,6 +25,8 @@ newtype PackageId = PackageId { getPackageId :: UUID }
   deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
     via UUID
 
+newtype PackageName = PackageName Text
+
 data Package = Package
   { packageId :: PackageId
   , name      :: Text
