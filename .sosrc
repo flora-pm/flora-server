@@ -1,0 +1,3 @@
+- pattern: src/(.*)\.hs
+  commands:
+  - ghcid --command='cabal v2-repl exe:flora-server' --test 'Main.main'

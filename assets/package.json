@@ -1,0 +1,23 @@
+{
+  "devDependencies": {
+    "@fullhuman/postcss-purgecss": "^4.0.3",
+    "alpinejs": "^3.5.1",
+    "autoprefixer": "^10.4.0",
+    "concurrently": "^6.4.0",
+    "cssnano": "^5.0.10",
+    "esbuild": "^0.13.13",
+    "postcss": "^8.3.11",
+    "postcss-cli": "^9.0.2",
+    "postcss-copy": "^7.1.0",
+    "postcss-import": "^14.0.2",
+    "tailwindcss": "^2.2.19"
+  },
+  "scripts": {
+    "watch": "concurrently \"yarn:watch-css\" \"yarn:watch-js\"",
+    "build": "concurrently \"yarn:deploy-css\" \"yarn:build-js\"",
+    "watch-js": "esbuild js/app.js --bundle --sourcemap=inline --target=es2016 --outfile=../static/js/app.js --watch",
+    "build-js": "esbuild js/app.js --asset-names=[name]-[hash].js --bundle --minify --target=es2016 --outfile=../static/js",
+    "watch-css": "postcss css/app.css -o ../static/css/app.css -w",
+    "build-css": "NODE_BUILD=prod postcss css/app.css -o ../static/css/app.css"
+  }
+}

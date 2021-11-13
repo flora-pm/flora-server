@@ -1,3 +1,18 @@
+start: ## Start the flora-server
+	@cabal run exe:flora-server
+
+assets-deps: ## Install the dependencies of the frontend
+	@cd assets/ && yarn
+
+assets-build: ## Build the web assets
+	@cd assets/ && yarn build
+
+assets-watch: ## Continuously rebuild the web assets
+	@cd assets/ && yarn watch
+
+assets-clean: ## Remove JS artifacts
+	@cd assets/ && rm -R node_modules
+
 db-init: ## Initialize the dev database
 	@initdb -D _database
 

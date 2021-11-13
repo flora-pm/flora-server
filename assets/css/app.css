@@ -1,0 +1,28 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+.navbar{
+  margin-bottom: 20rem;
+  background-color: #5b296e;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  margin-bottom: 4rem;
+}
+
+.navbar-element{
+  border-color: transparent;
+  --tw-text-opacity: 1;
+  color: rgba(17, 24, 39, var(--tw-text-opacity));
+}
+
+.navbar-element:hover{
+  --tw-border-opacity: 1;
+  border-color: rgba(209, 213, 219, var(--tw-border-opacity));
+  --tw-text-opacity: 1;
+  color: rgba(55, 65, 81, var(--tw-text-opacity));
+}
+
+.headline{
+  margin-bottom: 5px;
+}

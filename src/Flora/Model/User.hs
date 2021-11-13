@@ -5,7 +5,6 @@ module Flora.Model.User where
 
 import Control.Monad.IO.Class
 import Data.Aeson
-import Data.Password
 import Data.Password.Argon2
 import qualified Data.Password.Argon2 as Argon2
 import Data.Text (Text)

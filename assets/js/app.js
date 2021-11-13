@@ -1,0 +1,1 @@
+import Alpine from "alpinejs";
