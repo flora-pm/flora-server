@@ -1,5 +1,6 @@
 create table packages (
   package_id uuid primary key,
+  namespace text not null,
   name text not null,
   synopsis text not null,
   license text not null,
@@ -10,3 +11,4 @@ create table packages (
 );
 
 create unique index on packages(lower(name) text_pattern_ops);
+create unique index on packages(lower(name), lower(namespace));
