@@ -10,7 +10,7 @@ import Flora.Model.Release (Release (..), insertRelease)
 import Flora.Model.Requirement (Requirement, insertRequirement)
 import Flora.Model.User (User)
 
-{- TODO: Audit publish package
+{- TODO: Audit log of the published package
    TODO: Refresh dependents view
    TODO: Publish artifacts
 -}
@@ -22,8 +22,9 @@ publishPackage requirements release package _user =
             createPackage package
             insertRelease release
             forM_ requirements insertRequirement
+            refreshDependants
           Just existingPackage -> do
             createPackage existingPackage
             insertRelease release
             forM_ requirements insertRequirement
-
+            refreshDependants
