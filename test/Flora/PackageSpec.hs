@@ -1,7 +1,6 @@
 module Flora.PackageSpec where
 
 import Data.Vector as Vector
-import Debug.Trace
 import Optics.Core
 import SpecHelpers (migrate)
 import Test.Hspec (Spec)
@@ -23,7 +22,9 @@ spec = describeDB migrate "packages" $ do
     publishPackage [ghcBignumDepOnGhcPrim] ghcBignumRelease ghcBignum ben
     publishPackage [baseDepOnGhcPrim, baseDepOnGhcBignum] baseRelease base ben
     getPackageById (base ^. #packageId) `shouldReturn` Just base
-  itDB "Fetch the dependents of ghc-prim" $ do
-    result <- getPackageDependants (ghcPrim ^. #name) (ghcPrim ^. #namespace)
-    traceShowM result
-    result `shouldBe` Vector.fromList [base]
+  itDB "Fetch the dependents of array" $ do
+    insertUser user1
+    publishPackage [] arrayRelease array user1
+    publishPackage [stmDepOnArray] stmRelease stm user1
+    result <- getPackageDependants (array ^. #name) (array ^. #namespace)
+    result `shouldBe` Vector.fromList [stm]
