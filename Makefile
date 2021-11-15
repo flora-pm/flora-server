@@ -1,6 +1,9 @@
 start: ## Start the flora-server
 	@cabal run exe:flora-server
 
+build: ## Build the server without optimisations
+	@cabal build -O0
+
 assets-deps: ## Install the dependencies of the frontend
 	@cd assets/ && yarn
 
@@ -22,14 +25,15 @@ db-start: ## Start the dev database
 db-create: ## Create the database
 	@createdb flora_dev
 
+db-drop: ## Drop the database
+	@dropdb --if-exists flora_dev
+
 db-setup: ## Setup the dev database
 	@migrate init "$(PG_CONNSTRING)" 
 	@migrate migrate "$(PG_CONNSTRING)" migrations
 
-db-reset: ## Reset the dev database
-	@dropdb --if-exists flora_dev
-	@make db-create
-	@make db-setup
+db-reset: db-drop db-create db-setup ## Reset the dev database
+	@cabal run -- flora-cli provision-fixtures
 
 repl: ## Start a REPL
 	@cabal repl

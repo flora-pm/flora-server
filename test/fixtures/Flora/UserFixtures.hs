@@ -14,6 +14,17 @@ user1 =
       updatedAt   = read "2021-04-23 10:00:00 UTC"
   in  User { .. }
 
+user2 :: User
+user2 =
+  let userId      = UserId (read "44495a98-a475-11eb-94f3-5405db82c3cd")
+      username    = "blue_devil"
+      email       = "princess_jack@example.com"
+      displayName = "Princess Jack Moonshine"
+      password    = PasswordHash "DRINK!"
+      createdAt   = read "2021-04-23 14:00:00 UTC"
+      updatedAt   = read "2021-04-23 14:30:00 UTC"
+   in User { .. }
+
 ben :: User
 ben =
   let userId = UserId (read "dda3ea6e-3fc0-11ec-80a7-5405db82c3cd")
@@ -30,7 +41,7 @@ syl20 =
   let userId = UserId (read "ecfba51e-3fc1-11ec-bceb-5405db82c3cd")
       username = "SylvainHenry"
       email = "sylvain@haskus.fr"
-      password = PasswordHash "X234f*.¢‚„5rZFv"
+      password = PasswordHash "X234f*.¢„5rZFv"
       displayName = "Sylvain Henry"
       createdAt   = read "2021-04-23 10:00:00 UTC"
       updatedAt   = read "2021-04-23 10:00:00 UTC"

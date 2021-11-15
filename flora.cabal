@@ -62,6 +62,7 @@ library
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Orphans
+    Flora.Model.Package.Types
     Flora.Model.Release
     Flora.Model.Release.Orphans
     Flora.Model.Requirement
@@ -114,7 +115,45 @@ library
     , wai-middleware-static  ^>=0.9
     , warp                   ^>=3.3
 
--- text-display          ^>= 0.0,
+executable flora-cli
+  import:         common-extensions
+  import:         common-ghc-options
+  import:         common-rts-options
+  main-is:        Main.hs
+  hs-source-dirs: app/cli
+  build-depends:
+    , base
+    , colourista
+    , flora
+    , flora-test-fixtures
+    , optparse-applicative         ^>=0.16
+    , pg-entity
+    , pg-transact
+    , postgresql-simple
+    , postgresql-simple-migration
+    , text
+    , uuid
+
+library flora-test-fixtures
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  test/fixtures
+  build-depends:
+    , aeson
+    , base
+    , Cabal
+    , flora
+    , optics-core
+    , password
+    , pg-entity
+    , time
+    , uuid
+    , vector
+
+  exposed-modules:
+    Flora.PackageFixtures
+    Flora.UserFixtures
+
 executable flora-server
   import:         common-extensions
   import:         common-ghc-options
@@ -138,22 +177,23 @@ test-suite flora-test
     , base
     , Cabal
     , flora
+    , flora-test-fixtures
     , hspec
     , hspec-expectations-lifted
     , hspec-pg-transact
     , optics-core
     , password
+    , pg-entity
     , pg-transact
     , postgresql-migration
     , postgresql-simple
+    , resource-pool
     , string-qq
     , time
     , uuid
     , vector
 
   other-modules:
-    Flora.PackageFixtures
     Flora.PackageSpec
-    Flora.UserFixtures
     Flora.UserSpec
     SpecHelpers

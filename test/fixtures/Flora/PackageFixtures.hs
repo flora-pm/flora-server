@@ -19,10 +19,16 @@ ghcPrim =
       namespace = "haskell"
       name = "ghc-prim"
       synopsis = "This package contains the primitive types and operations supplied by GHC."
-      license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
       ownerId = ben ^. #userId
       createdAt = read "2014-03-23 23:03:32 UTC"
       updatedAt = read "2021-10-03 11:30:00 UTC"
+      metadata = PackageMetadata
+        { license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
+        , sourceRepo = "https://gitlab.haskell.org/ghc/ghc.git"
+        , homepage = Nothing
+        , documentation = "https://flora.pm/packages/@haskell/ghc-prim/docs"
+        , bugTracker = Just "https://gitlab.haskell.org/ghc/ghc/issues"
+        }
    in Package{..}
 
 ghcPrimRelease :: Release
@@ -43,10 +49,16 @@ ghcBignum =
       namespace = "haskell"
       name = "ghc-bignum"
       synopsis = "This package provides the low-level implementation of the standard BigNat, Natural and Integer types."
-      license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
       ownerId = syl20 ^. #userId
       createdAt = read "2014-03-23 23:03:32 UTC"
       updatedAt = read "2021-10-03 11:30:00 UTC"
+      metadata = PackageMetadata
+        { license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
+        , sourceRepo = "https://gitlab.haskell.org/ghc/ghc.git"
+        , homepage = Nothing
+        , documentation = "https://flora.pm/packages/@haskell/ghc-bignum/docs"
+        , bugTracker = Just "https://gitlab.haskell.org/ghc/ghc/issues"
+        }
    in Package{..}
 
 ghcBignumRelease :: Release
@@ -75,17 +87,23 @@ base =
       namespace = "haskell"
       name = "base"
       synopsis = "This package contains the Standard Haskell Prelude and its support libraries, and a large collection of useful libraries ranging from data structures to parsing combinators and debugging utilities."
-      license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
       ownerId = ben ^. #userId
       createdAt = read "2014-03-23 23:03:32 UTC"
       updatedAt = read "2021-11-03 11:30:00 UTC"
+      metadata = PackageMetadata
+        { license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
+        , sourceRepo = "https://gitlab.haskell.org/ghc/ghc.git"
+        , homepage = Nothing
+        , documentation = "https://flora.pm/packages/@haskell/base/docs"
+        , bugTracker = Just "https://gitlab.haskell.org/ghc/ghc/issues"
+        }
    in Package{..}
 
 baseRelease :: Release
 baseRelease =
   let releaseId = ReleaseId $ read "558568cc-3fc2-11ec-985a-5405db82c3cd"
       packageId = base ^. #packageId
-      version   = fromJust $ simpleParsec "1.2"
+      version   = fromJust $ simpleParsec "4.16.0.0"
       archiveChecksum = "0920f977d4de4b325a160c15bb7fa50d8792530d44b66ea040cdc369601888c2"
       createdAt = read "2021-10-03 11:30:00 UTC"
       updatedAt = read "2021-10-03 11:30:00 UTC"
@@ -115,10 +133,16 @@ array =
       namespace = "haskell"
       name = "array"
       synopsis = "In addition to providing the Data.Array module as specified in the Haskell 2010 Language Report, this package also defines the classes IArray of immutable arrays and MArray of arrays mutable within appropriate monads, as well as some instances of these classes."
-      license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
       ownerId = user1 ^. #userId
       createdAt = read "2014-03-23 23:03:32 UTC"
       updatedAt = read "2021-11-03 11:30:00 UTC"
+      metadata = PackageMetadata
+        { license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
+        , sourceRepo = "http://gitlab.haskell.org/ghc/packages/array.git"
+        , homepage = Nothing
+        , documentation = "https://flora.pm/packages/@haskell/array/docs"
+        , bugTracker = Just "https://gitlab.haskell.org/ghc/packages/array/issues"
+        }
    in Package{..}
 
 arrayRelease :: Release
@@ -147,10 +171,16 @@ stm =
       namespace = "haskell"
       name = "stm"
       synopsis = "Software Transactional Memory, or STM, is an abstraction for concurrent communication. The main benefits of STM are composability and modularity. That is, using STM you can write concurrent abstractions that can be easily composed with any other abstraction built using STM, without exposing the details of how your abstraction ensures safety. This is typically not the case with other forms of concurrent communication, such as locks or MVars."
-      license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
       ownerId = user1 ^. #userId
       createdAt = read "2014-03-23 23:03:32 UTC"
       updatedAt = read "2021-11-03 11:30:00 UTC"
+      metadata = PackageMetadata
+        { license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
+        , sourceRepo = "https://github.com/haskell/stm.git"
+        , homepage = Nothing
+        , documentation = "https://flora.pm/packages/@haskell/stm/docs"
+        , bugTracker = Just "https://github.com/haskell/stm/issues"
+        }
    in Package{..}
 
 stmRelease :: Release
@@ -188,10 +218,16 @@ package1 =
       namespace = "tchoutri"
       name = "acme-unexpected"
       synopsis = "Nobody expects the ACME corporation!"
-      license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
-      ownerId = UserId (read "4e511d7a-a464-11eb-b30b-5405db82c3cd")
+      ownerId = user1 ^. #userId
       createdAt = read "2021-04-23 11:00:00 UTC"
       updatedAt = read "2021-04-23 11:00:00 UTC"
+      metadata = PackageMetadata
+        { license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
+        , sourceRepo = "https://github.com/tchoutri/package1"
+        , homepage = Nothing
+        , documentation = "https://flora.pm/packages/@tchoutri/package1/docs"
+        , bugTracker = Just "https://github.com/tchoutri/package1/issues"
+        }
    in Package{..}
 
 release1 :: Release

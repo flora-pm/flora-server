@@ -5,3 +5,5 @@ with-compiler: ghc-8.10.7
 jobs: $ncpus
 
 optimization: False
+
+tests: True

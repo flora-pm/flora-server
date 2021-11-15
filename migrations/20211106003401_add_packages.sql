@@ -3,9 +3,8 @@ create table packages (
   namespace text not null,
   name text not null,
   synopsis text not null,
-  license text not null,
   owner_id uuid references users,
-  -- meta jsonb, -- { homepage, documentation link, repository url, issues url }
+  metadata jsonb not null, -- { homepage, documentation url, repository url, issues url }
   created_at timestamptz not null,
   updated_at timestamptz not null
 );
