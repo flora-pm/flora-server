@@ -1,12 +1,19 @@
-module FloraWeb.Templates where
+module FloraWeb.Templates (render) where
 
+import Control.Monad.Identity (runIdentity)
 import Control.Monad.Reader
 import Lucid
 
-import Control.Monad.Identity (runIdentity)
+import FloraWeb.Templates.Layout.App (header)
 import FloraWeb.Templates.Types
 import FloraWeb.Types
 
 render :: TemplateAssigns -> FloraHTML -> FloraM (Html ())
 render ta template = pure $ toHtmlRaw $ runIdentity $
-  runReaderT (renderBST template) ta
+  runReaderT (renderBST (rendered template)) ta
+
+rendered :: FloraHTML -> FloraHTML
+rendered target = do
+  header
+  target
+  -- footer

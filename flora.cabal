@@ -73,15 +73,19 @@ library
     FloraWeb.Server.Packages
     FloraWeb.Server.Pages
     FloraWeb.Templates
+    FloraWeb.Templates.Error
     FloraWeb.Templates.Layout.App
     FloraWeb.Templates.Pages.Home
+    FloraWeb.Templates.Pages.Packages
     FloraWeb.Templates.Types
     FloraWeb.Types
+    Lucid.Orphans
 
   build-depends:
     , aeson                  ^>=1.5
     , async                  ^>=2.2
     , base                   ^>=4.14
+    , blaze-builder
     , bytestring             ^>=0.10
     , Cabal                  ^>=3
     , colourista             ^>=0.1
@@ -91,6 +95,7 @@ library
     , directory              ^>=1.3
     , envparse               ^>=0.4
     , hashable               ^>=1.3
+    , http-types             ^>=0.12
     , lucid                  ^>=2.10
     , lucid-alpine           ^>=0.1
     , lucid-svg              ^>=0.7
@@ -99,14 +104,17 @@ library
     , optparse-applicative   ^>=0.16
     , password               ^>=3.0
     , password-types         ^>=1.0
+    , pcre2                  ^>=2.0
     , pg-entity              ^>=0.0
     , pg-transact            ^>=0.3
     , postgresql-simple      ^>=0.6
+    , pretty                 ^>=1.1
     , resource-pool          ^>=0.2
     , servant                ^>=0.18
     , servant-lucid          ^>=0.9
     , servant-server         ^>=0.18
     , text                   ^>=1.2
+    , text-display
     , time                   ^>=1.9
     , uuid                   ^>=1.3
     , vector                 ^>=0.12
@@ -114,45 +122,6 @@ library
     , wai-cors               ^>=0.2
     , wai-middleware-static  ^>=0.9
     , warp                   ^>=3.3
-
-executable flora-cli
-  import:         common-extensions
-  import:         common-ghc-options
-  import:         common-rts-options
-  main-is:        Main.hs
-  hs-source-dirs: app/cli
-  build-depends:
-    , base
-    , colourista
-    , flora
-    , flora-test-fixtures
-    , optparse-applicative         ^>=0.16
-    , pg-entity
-    , pg-transact
-    , postgresql-simple
-    , postgresql-simple-migration
-    , text
-    , uuid
-
-library flora-test-fixtures
-  import:          common-extensions
-  import:          common-ghc-options
-  hs-source-dirs:  test/fixtures
-  build-depends:
-    , aeson
-    , base
-    , Cabal
-    , flora
-    , optics-core
-    , password
-    , pg-entity
-    , time
-    , uuid
-    , vector
-
-  exposed-modules:
-    Flora.PackageFixtures
-    Flora.UserFixtures
 
 executable flora-server
   import:         common-extensions
@@ -215,6 +184,7 @@ test-suite flora-test
     , aeson-pretty
     , base
     , Cabal
+    , containers
     , flora
     , flora-test-fixtures
     , hspec
@@ -231,6 +201,7 @@ test-suite flora-test
     , time
     , uuid
     , vector
+    , vector-algorithms          ^>=0.8
 
   other-modules:
     Flora.PackageSpec

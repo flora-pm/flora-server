@@ -44,7 +44,12 @@ runOptions (Options Provision) = do
     publishPackage [ghcBignumDepOnGhcPrim] ghcBignumRelease ghcBignum ben
     publishPackage [baseDepOnGhcPrim, baseDepOnGhcBignum] baseRelease base ben
     publishPackage [arrayDepOnBase] arrayRelease array user1
-    publishPackage [stmDepOnArray] stmRelease stm user1
+    publishPackage [deepseqDepOnBase, deepseqDepOnArray, deepseqDepOnGhcPrim] deepseqRelease deepseq user1
+    publishPackage [stmDepOnBase, stmDepOnArray] stmRelease stm user1
+    publishPackage [containersDepOnBase, containersDepOnArray, containersDepOnDeepseq] containersRelease containers user1
+    publishPackage [integerGmpDepOnGhcPrim] integerGmpRelease integerGmp user1
+    publishPackage [bytestringDepOnBase, bytestringDepOnDeepseq, bytestringDepOnGhcBignum, bytestringDepOnGhcPrim, bytestringDepOnIntegerGmp] bytestringRelease bytestring syl20
+    publishPackage [binaryDepOnArray, binaryDepOnBase, binaryDepOnBytestring, binaryDepOnContainers, binaryDepOnGhcPrim] binaryRelease binary user2
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

@@ -7,3 +7,8 @@ jobs: $ncpus
 optimization: False
 
 tests: True
+
+source-repository-package
+    type: git
+    location: https://github.com/tchoutri/pg-entity.git
+    tag: e5fc4cf

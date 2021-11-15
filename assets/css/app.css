@@ -2,6 +2,12 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+@import "./fontawesome-all.min.css";
+
+a{
+  color: #4dabf7;
+}
+
 .navbar{
   margin-bottom: 20rem;
   background-color: #5b296e;
@@ -25,4 +31,48 @@
 
 .headline{
   margin-bottom: 5px;
+}
+
+.divider{
+  padding-bottom: 1em;
+  margin-bottom: .66em;
+  border-bottom: 1px solid #ccc;
+}
+
+@media (min-width: 1024px) {
+  .container{
+    width: auto;
+    max-width: 1100px;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
+
+.version{
+  font-size: 1.3rem;
+  line-height: 1.3rem;
+  padding-left: 4px;
+}
+
+.package-body-section{
+  font-weight: 700;
+  display: inline-block;
+}
+
+.dependency{
+  white-space: nowrap;
+}
+
+.package-left-column{
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+}
+
+.package-right-column{
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
 }

@@ -28,7 +28,6 @@ instance FromField SPDX.License where
 instance ToField SPDX.License where
   toField = Escape . C8.pack . Pretty.prettyShow
 
-
 instance FromJSON SPDX.License where
   parseJSON = withText "SPDX License" $ \s ->
     maybe (fail "Invalid SPDX License expression!") pure (simpleParsec $ T.unpack s)

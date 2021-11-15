@@ -11,7 +11,6 @@ import Flora.Model.Requirement (Requirement, insertRequirement)
 import Flora.Model.User (User)
 
 {- TODO: Audit log of the published package
-   TODO: Refresh dependents view
    TODO: Publish artifacts
 -}
 publishPackage :: [Requirement] -> Release -> Package -> User -> DBT IO ()
