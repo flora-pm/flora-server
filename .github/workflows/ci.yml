@@ -61,10 +61,6 @@ jobs:
     - name: Running stylish-haskell
       run: nix-shell --run './.github/workflows/stylish-haskell-runner.sh'
 
-    - name: Install dependencies
-      run: |
-        nix-shell --run 'make deps'
-
     - name: Build
       run: |
         nix-shell --run 'make build'

@@ -1,8 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Flora.Model.Package.Orphans where
 
+import Data.Aeson
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as C8
+import qualified Data.Text as T
 import Database.PostgreSQL.Simple.FromField (Conversion, Field, FromField (..),
                                              ResultError (ConversionFailed, UnexpectedNull),
                                              returnError)
@@ -25,3 +27,11 @@ instance FromField SPDX.License where
 
 instance ToField SPDX.License where
   toField = Escape . C8.pack . Pretty.prettyShow
+
+
+instance FromJSON SPDX.License where
+  parseJSON = withText "SPDX License" $ \s ->
+    maybe (fail "Invalid SPDX License expression!") pure (simpleParsec $ T.unpack s)
+
+instance ToJSON SPDX.License where
+  toJSON = String . T.pack . Pretty.prettyShow
