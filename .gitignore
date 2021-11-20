@@ -16,3 +16,4 @@ tags.mtime
 /static/*
 assets/node_modules
 assets/yarn-error.log
+assets/fonts

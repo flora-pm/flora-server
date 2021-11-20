@@ -44,7 +44,7 @@ configToEnv :: FloraConfig -> IO FloraEnv
 configToEnv FloraConfig {..} = do
   let PoolConfig {..} = dbConfig
   pool <- mkPool connectInfo subPools connectionTimeout connections
-  pure FloraEnv { .. }
+  pure FloraEnv {..}
 
 displayConnectInfo :: PG.ConnectInfo -> Text
 displayConnectInfo PG.ConnectInfo {..} = T.pack $

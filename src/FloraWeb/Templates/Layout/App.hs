@@ -1,4 +1,4 @@
-module FloraWeb.Templates.Layout.App where
+module FloraWeb.Templates.Layout.App (header) where
 
 import Control.Monad.Reader (ask)
 import Data.Text
@@ -54,11 +54,12 @@ theme = do
 
 navBar :: FloraHTML
 navBar = do
+  ta <- ask
   nav_ [class_ "navbar border-b border-gray-200"] $ do
     div_ [class_ "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "flex justify-between h-16"] $ do
         div_ [class_ "flex-shrink-0 flex items-center"] $
-          a_ [href_ "/"] "Flora :: [Package]"
+          a_ [href_ "/", class_ "dark:text-gray-900"] (getDisplayTitle ta)
 
         div_ [class_ "hidden margin-right flex sm:flex justify-end grid grid-rows-3 row-end-auto"] $ do
           a_ [href_ "#", class_ "navbar-element inline-flex items-center px-1 pt-1 border-b-2 mx-7"] "Packages"
@@ -70,17 +71,14 @@ navBar = do
 property_ :: Text -> Attribute
 property_ = makeAttribute "property"
 
-ariaHidden_ :: Text -> Attribute
-ariaHidden_ = makeAttribute "aria-hidden"
-
-ariaExpanded_ :: Text -> Attribute
-ariaExpanded_ = makeAttribute "aria-expanded"
-
 text :: Text -> FloraHTML
 text = toHtml
 
 getTitle :: TemplateAssigns -> Text
 getTitle ta = getTA ta "Flora" "title"
+
+getDisplayTitle :: TemplateAssigns -> FloraHTML
+getDisplayTitle ta = toHtml $ getTA ta "Flora :: [Package]" "display-title"
 
 getDescription :: TemplateAssigns -> Text
 getDescription ta = getTA ta "A package repository for the Haskell ecosystem" "description"

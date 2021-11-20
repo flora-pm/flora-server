@@ -51,6 +51,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@ryangjchandler/alpine-clipboard@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@ryangjchandler/alpine-clipboard/-/alpine-clipboard-2.1.0.tgz#61a0e93ed76ac6f8c2fe8837a1f83eb0c30b0090"
+  integrity sha512-k1L8qTf2zzubP3Lpd0tBRUF3HXQ9j9euZ+QF4pQtRkdjOWssykpPcSlhkx2/daji5NiJCgV3j+cu2FS+MrKIeQ==
+
 "@trysound/sax@0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@trysound/sax/-/sax-0.2.0.tgz#cccaab758af56761eb7bf37af6f03f326dd798ad"
