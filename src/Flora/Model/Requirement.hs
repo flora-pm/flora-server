@@ -16,8 +16,8 @@ import Database.PostgreSQL.Simple.Types (Only (Only))
 import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics (Generic)
 
-import Flora.Model.Release (ReleaseId)
 import Flora.Model.Package.Types
+import Flora.Model.Release (ReleaseId)
 
 newtype RequirementId = RequirementId { getRequirementId :: UUID }
   deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)

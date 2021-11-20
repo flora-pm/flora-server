@@ -13,11 +13,11 @@ import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
+import Distribution.Pretty (Pretty (..))
 import qualified Distribution.SPDX.License as SPDX
-import Distribution.Pretty (Pretty(..))
-import qualified Text.PrettyPrint as PP
 import GHC.Generics
 import Lucid
+import qualified Text.PrettyPrint as PP
 import Text.Regex.Pcre2
 
 import Data.Data
@@ -105,12 +105,12 @@ instance FromField PackageMetadata where
 instance ToField PackageMetadata where
   toField = toJSONField
 
-data Dependant = Dependant
+data Dependent = Dependent
   { name        :: Text
   , namespace   :: Text
-  , dependantId :: PackageId
+  , dependentId :: PackageId
   }
   deriving stock (Eq, Show,Generic)
   deriving anyclass (FromRow, ToRow)
   deriving (Entity)
-    via (GenericEntity '[TableName "dependants"] Dependant)
+    via (GenericEntity '[TableName "dependents"] Dependent)

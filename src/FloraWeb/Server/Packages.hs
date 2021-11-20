@@ -52,11 +52,11 @@ showHandler namespaceText nameText = do
       case result of
         Nothing -> renderError notFound404
         Just package -> do
-          dependants <- liftIO $ withPool pool $ getPackageDependants namespace name
+          dependents <- liftIO $ withPool pool $ getPackageDependents namespace name
           releases <- liftIO $ withPool pool $ getReleases (package ^. #packageId)
           let latestRelease =  maximumBy (compare `on` version) releases
           latestReleasedependencies <- liftIO $ withPool pool $ getRequirements (latestRelease ^. #releaseId)
-          render emptyAssigns $ Packages.showPackage package dependants releases latestReleasedependencies
+          render emptyAssigns $ Packages.showPackage package dependents releases latestReleasedependencies
     _ -> renderError notFound404
 
 validateNamespace :: Text -> Maybe Namespace

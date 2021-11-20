@@ -9,8 +9,8 @@ module Flora.Model.Package
   , createPackage
   , getPackageById
   , getPackageByNamespaceAndName
-  , getPackageDependants
-  , refreshDependants
+  , getPackageDependents
+  , refreshDependents
   , deletePackage
   ) where
 
@@ -41,14 +41,14 @@ getPackageByNamespaceAndName namespace name = queryOne Select
 deletePackage :: PackageId -> DBT IO ()
 deletePackage packageId = delete @Package (Only packageId)
 
-refreshDependants :: DBT IO ()
-refreshDependants = void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependants"|] ()
+refreshDependents :: DBT IO ()
+refreshDependents = void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
 
 -- | Remove the manual fields and use pg-entity
-getPackageDependants :: Namespace
+getPackageDependents :: Namespace
                      -> PackageName
                      -> DBT IO (Vector Package)
-getPackageDependants namespace name  = query Select [sql|
+getPackageDependents namespace name  = query Select [sql|
 SELECT DISTINCT p."package_id",
                 p."namespace",
                 p."name",
@@ -58,8 +58,8 @@ SELECT DISTINCT p."package_id",
                 p."created_at",
                 p."updated_at"
 FROM   "packages" AS p
-       INNER JOIN "dependants" AS dep
-               ON p."package_id" = dep."dependant_id"
+       INNER JOIN "dependents" AS dep
+               ON p."package_id" = dep."dependent_id"
 WHERE  dep."namespace" = ?
   AND  dep."name" = ?
   |] (namespace, name)

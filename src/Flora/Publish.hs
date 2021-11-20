@@ -21,9 +21,9 @@ publishPackage requirements release package _user =
             createPackage package
             insertRelease release
             forM_ requirements insertRequirement
-            refreshDependants
+            refreshDependents
           Just existingPackage -> do
             createPackage existingPackage
             insertRelease release
             forM_ requirements insertRequirement
-            refreshDependants
+            refreshDependents

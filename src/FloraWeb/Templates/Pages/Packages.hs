@@ -6,29 +6,26 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Display
 import Data.Vector (Vector)
+import qualified Data.Vector as V
 import Distribution.Pretty (pretty)
+import qualified Distribution.SPDX.License as SPDX
 import Lucid
 import Lucid.Orphans ()
 import Optics.Core ((^.))
 import Text.PrettyPrint (Doc, hcat, render)
-import qualified Data.Vector as V
-import qualified Distribution.SPDX.License as SPDX
 import qualified Text.PrettyPrint as PP
 
-import Flora.Model.Package.Types
-    ( Namespace,
-      Package(..),
-      PackageMetadata(..),
-      PackageName )
+import Flora.Model.Package.Types (Namespace, Package (..), PackageMetadata (..),
+                                  PackageName)
 import Flora.Model.Release (Release (..))
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid.Alpine
 
 showPackage :: Package -> Vector Package -> Vector Release -> Vector (Namespace, PackageName, Text) -> FloraHTML
-showPackage package@Package{namespace, name, synopsis} dependants releases dependencies = do
+showPackage package@Package{namespace, name, synopsis} dependents releases dependencies = do
   div_ [class_ "container"] $ do
     presentationHeader (latestRelease releases) namespace name synopsis
-    packageBody package releases dependencies dependants
+    packageBody package releases dependencies dependents
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = do
@@ -41,7 +38,7 @@ presentationHeader release namespace name synopsis = do
       p_ [class_ ""] (toHtml synopsis)
 
 packageBody :: Package -> Vector Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> FloraHTML
-packageBody Package{namespace, name, metadata} releases dependencies dependants  = do
+packageBody Package{namespace, name, metadata} releases dependencies dependents  = do
   div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
     div_ [class_ "package-left-column"] $ do
       div_ [class_ "grid-rows-3"] $ do
@@ -52,7 +49,7 @@ packageBody Package{namespace, name, metadata} releases dependencies dependants 
       div_ [class_ "grid-rows-3"] $ do
         displayDependencies dependencies
         displayInstructions (formatInstallString namespace name (latestRelease releases))
-        displayDependants dependants
+        displayDependents dependents
 
 latestRelease :: Vector Release -> Release
 latestRelease rels = V.maximumBy (compare `on` version) rels
@@ -98,15 +95,15 @@ displayInstructions formattedVersion = do
                ]
       -- button_ [type_ "button", xOn_ "click" $ "$clipboard(() => '" <> formattedVersion <> "')"] "C"
 
-displayDependants :: Vector Package -> FloraHTML
-displayDependants dependants = do
-  div_ [class_ "mb-5 dependants w-1/4"] $ do
+displayDependents :: Vector Package -> FloraHTML
+displayDependents dependents = do
+  div_ [class_ "mb-5 dependents w-1/4"] $ do
     div_ [class_ "mb-3"] $ do
-      h3_ [class_ "lg:text-2xl package-body-section"] "Dependants"
-    fold $ intercalateVec ", " $ fmap renderDependant dependants
+      h3_ [class_ "lg:text-2xl package-body-section"] "Dependents"
+    fold $ intercalateVec ", " $ fmap renderDependent dependents
 
-renderDependant :: Package -> FloraHTML
-renderDependant Package{name, namespace} = do
+renderDependent :: Package -> FloraHTML
+renderDependent Package{name, namespace} = do
   let qualifiedName = toHtml $ "@" <> display namespace <> "/" <> display name
   let resource = "/packages/@" <> display namespace <> "/" <> display name
 
