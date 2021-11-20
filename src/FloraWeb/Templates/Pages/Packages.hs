@@ -1,7 +1,6 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable
-import Data.Function (on)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Display
@@ -21,11 +20,11 @@ import Flora.Model.Release (Release (..))
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid.Alpine
 
-showPackage :: Package -> Vector Package -> Vector Release -> Vector (Namespace, PackageName, Text) -> FloraHTML
-showPackage package@Package{namespace, name, synopsis} dependents releases dependencies = do
+showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> FloraHTML
+showPackage latestRelease package@Package{namespace, name, synopsis} dependents dependencies = do
   div_ [class_ "container"] $ do
-    presentationHeader (latestRelease releases) namespace name synopsis
-    packageBody package releases dependencies dependents
+    presentationHeader latestRelease namespace name synopsis
+    packageBody package latestRelease dependencies dependents
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = do
@@ -37,22 +36,19 @@ presentationHeader release namespace name synopsis = do
     div_ [class_ "synopsis lg:text-xl"] $
       p_ [class_ ""] (toHtml synopsis)
 
-packageBody :: Package -> Vector Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> FloraHTML
-packageBody Package{namespace, name, metadata} releases dependencies dependents  = do
+packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> FloraHTML
+packageBody Package{namespace, name, metadata} latestRelease dependencies dependents  = do
   div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
     div_ [class_ "package-left-column"] $ do
       div_ [class_ "grid-rows-3"] $ do
         displayLicense (metadata ^. #license)
-        displayLinks (latestRelease releases) metadata
+        displayLinks latestRelease metadata
     div_ [class_ "col-span-2"] mempty
     div_ [class_ "package-right-column"] $ do
       div_ [class_ "grid-rows-3"] $ do
         displayDependencies dependencies
-        displayInstructions (formatInstallString namespace name (latestRelease releases))
+        displayInstructions (formatInstallString namespace name latestRelease)
         displayDependents dependents
-
-latestRelease :: Vector Release -> Release
-latestRelease rels = V.maximumBy (compare `on` version) rels
 
 displayReleaseVersion :: Release -> FloraHTML
 displayReleaseVersion Release{version} = toHtml version

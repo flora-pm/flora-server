@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module FloraWeb.Server.Packages
   ( Routes
   , server
@@ -17,6 +18,9 @@ import Servant.API.Generic
 import Servant.HTML.Lucid
 import Servant.Server.Generic
 
+import qualified Data.Text as T
+import Distribution.Parsec (simpleParsec)
+import Distribution.Types.Version (Version)
 import Flora.Environment
 import Flora.Model.Package
 import Flora.Model.Package.Types
@@ -34,6 +38,7 @@ type Routes = ToServantApi Routes'
 data Routes' mode = Routes'
   { --new  :: mode :- "new" :> AuthProtect "cookie-auth" :> Get '[HTML] (Html ())
     show :: mode :-  Capture "organisation" Text :> Capture "package" Text :> Get '[HTML] (Html ())
+  , showVersion :: mode :- Capture "organisation" Text :> Capture "package" Text :> Capture "version" Text :> Get '[HTML] (Html ())
   }
   deriving stock (Generic)
 
@@ -41,6 +46,7 @@ server :: ToServant Routes' (AsServerT FloraM)
 server = genericServerT Routes'
   { --new = undefined
     show = showHandler
+  , showVersion = showVersionHandler
   }
 
 showHandler :: Text -> Text -> FloraM (Html ())
@@ -56,8 +62,27 @@ showHandler namespaceText nameText = do
           releases <- liftIO $ withPool pool $ getReleases (package ^. #packageId)
           let latestRelease =  maximumBy (compare `on` version) releases
           latestReleasedependencies <- liftIO $ withPool pool $ getRequirements (latestRelease ^. #releaseId)
-          render emptyAssigns $ Packages.showPackage package dependents releases latestReleasedependencies
+          render emptyAssigns $ Packages.showPackage latestRelease package dependents latestReleasedependencies
     _ -> renderError notFound404
+
+showVersionHandler :: Text -> Text -> Text -> FloraM (Html ())
+showVersionHandler namespaceText nameText versionText = do
+  FloraEnv{pool} <- ask
+  case (validateNamespace namespaceText, validateName nameText, validateVersion versionText) of
+    (Just namespace, Just name, Just versionSpec) -> do
+      result <- liftIO $ withPool pool $ getPackageByNamespaceAndName namespace name
+      case result of
+        Nothing -> renderError notFound404
+        Just package -> do
+          dependents <- liftIO $ withPool pool $ getPackageDependents namespace name
+          liftIO (withPool pool $ getReleaseByVersion (package ^. #packageId) versionSpec)
+            >>= \case
+              Nothing -> renderError notFound404
+              Just release -> do
+                releaseDependencies <- liftIO $ withPool pool $ getRequirements (release ^. #releaseId)
+                render emptyAssigns $ Packages.showPackage release package dependents releaseDependencies
+    _ -> renderError notFound404
+
 
 validateNamespace :: Text -> Maybe Namespace
 validateNamespace txt =
@@ -65,3 +90,7 @@ validateNamespace txt =
 
 validateName :: Text -> Maybe PackageName
 validateName txt = parsePackageName txt
+
+validateVersion :: Text -> Maybe Version
+validateVersion txt = simpleParsec $ T.unpack txt
+
