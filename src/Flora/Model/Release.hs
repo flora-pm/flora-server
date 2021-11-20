@@ -1,10 +1,12 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE QuasiQuotes     #-}
 module Flora.Model.Release where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Time (UTCTime)
 import Data.UUID (UUID)
-import Database.PostgreSQL.Entity (Entity, insert, selectManyByField)
+import Database.PostgreSQL.Entity (Entity, _selectWhere, insert,
+                                   selectManyByField)
 import Database.PostgreSQL.Entity.Types (GenericEntity, TableName)
 import Database.PostgreSQL.Simple (FromRow, Only (Only), ToRow)
 import Database.PostgreSQL.Simple.FromField (FromField)
@@ -15,6 +17,7 @@ import GHC.Generics (Generic)
 
 import Data.ByteString
 import Data.Vector
+import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Entity.Internal.QQ
 import Flora.Model.Package (PackageId)
 import Flora.Model.Release.Orphans ()
@@ -47,3 +50,8 @@ insertRelease = insert @Release
 
 getReleases :: PackageId -> DBT IO (Vector Release)
 getReleases pid = selectManyByField @Release [field| package_id |] (Only pid)
+
+getReleaseByVersion :: PackageId -> Version -> DBT IO (Maybe Release)
+getReleaseByVersion packageId version = queryOne Select querySpec (packageId, version)
+  where
+    querySpec = _selectWhere @Release [ [field| package_id |], [field| version |]]
