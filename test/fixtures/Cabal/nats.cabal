@@ -1,0 +1,89 @@
+name:          nats
+category:      Numeric, Algebra
+version:       1.1.2
+license:       BSD3
+cabal-version: >= 1.10
+license-file:  LICENSE
+author:        Edward A. Kmett
+maintainer:    Edward A. Kmett <ekmett@gmail.com>
+stability:     provisional
+homepage:      http://github.com/ekmett/nats/
+bug-reports:   http://github.com/ekmett/nats/issues
+copyright:     Copyright (C) 2011-2014 Edward A. Kmett
+synopsis:      Natural numbers
+description:   Natural numbers.
+build-type:    Simple
+tested-with:   GHC == 7.0.4
+             , GHC == 7.2.2
+             , GHC == 7.4.2
+             , GHC == 7.6.3
+             , GHC == 7.8.4
+             , GHC == 7.10.3
+             , GHC == 8.0.2
+             , GHC == 8.2.2
+             , GHC == 8.4.1
+extra-source-files:
+  .ghci
+  .gitignore
+  .vim.custom
+  .travis.yml
+  README.markdown
+  CHANGELOG.markdown
+
+source-repository head
+  type: git
+  location: git://github.com/ekmett/nats.git
+
+flag hashable
+  description:
+    You can disable the use of the `hashable` package using `-f-hashable`.
+    .
+    Disabling this is an unsupported configuration, but it may be useful for accelerating builds in sandboxes for expert users.
+    .
+    If disabled we will not supply an instance of `Hashable`.
+  default: True
+  manual: True
+
+flag binary
+  description:
+    You can disable the use of the `binary` package using `-f-binary`.
+    .
+    Disabling this is an unsupported configuration, but it may be useful for accelerating builds in sandboxes for expert users.
+    .
+    If disabled we will not supply an instance of `Binary`.
+  default: True
+  manual: True
+
+flag template-haskell
+  description:
+    You can disable the use of the `template-haskell` package using `-f-template-haskell`.
+    .
+    Disabling this is an unsupported configuration, but it may be useful for accelerating builds in sandboxes for expert users.
+    .
+    If disabled we will not supply an instance of `Lift`.
+  default: True
+  manual: True
+
+library
+  default-language: Haskell98
+  if impl(ghc<7)
+    -- {-# LANGUAGE DeriveDataTypeable #-} is only understood starting w/ GHC-7.0
+    default-extensions: DeriveDataTypeable
+
+  if impl(ghc<7.9)
+    -- Starting with GHC 7.10/base-4.8, "Numeric.Natural" lives in `base`
+    hs-source-dirs: src
+    exposed-modules: Numeric.Natural
+    ghc-options: -Wall
+
+    -- the needlessly relaxed bound here is to due to stack shenanigans
+    build-depends: base >= 2 && < 5
+
+    if flag(binary)
+      build-depends: binary >= 0.2 && < 0.9
+
+    if flag(template-haskell)
+      build-depends: template-haskell >= 2.2 && < 2.12
+
+    if flag(hashable)
+      build-depends: hashable >= 1.1 && < 1.3

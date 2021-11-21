@@ -1,3 +1,4 @@
+{-# LANGUAGE RoleAnnotations #-}
 module FloraWeb.Server.Auth.Types where
 
 import Control.Monad.Reader (ReaderT)
@@ -26,14 +27,16 @@ type FloraAdminM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'A
 data ProtectionLevel = Visitor | Authenticated | Admin
   deriving stock (Eq, Show, Generic)
 
+type role Session nominal
+
 data Session (protectionLevel :: ProtectionLevel) = Session
   { sessionId   :: PersistentSessionId
   , mUser       :: Maybe User
   , webEnvStore :: WebEnvStore
   } deriving stock (Generic)
 
-maybeGetUser :: Session 'Visitor -> Maybe User
-maybeGetUser session = session ^. #mUser
+getUnauthenticatedUser :: Session 'Visitor -> Maybe User
+getUnauthenticatedUser session = session ^. #mUser
 
 getUser :: Session 'Authenticated -> User
 getUser session = fromJust $ session ^. #mUser

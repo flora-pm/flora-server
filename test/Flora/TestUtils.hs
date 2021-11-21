@@ -80,7 +80,6 @@ import Flora.Environment
 import Flora.Model.User
 import Flora.Model.User.Update
 import qualified Flora.Model.User.Update as Update
-import Flora.PackageFixtures
 import Flora.Publish
 import Flora.UserFixtures
 import FloraWeb.Client
@@ -186,17 +185,6 @@ migrate conn = do
   pool <- createPool (pure conn) close 1 10 1
   withPool pool $ do
     insertUser hackageUser
-
-    publishPackage [] ghcPrimRelease ghcPrim hackageUser
-    publishPackage [ghcBignumDepOnGhcPrim] ghcBignumRelease ghcBignum hackageUser
-    publishPackage [baseDepOnGhcPrim, baseDepOnGhcBignum] baseRelease base hackageUser
-    publishPackage [arrayDepOnBase] arrayRelease array hackageUser
-    publishPackage [deepseqDepOnBase, deepseqDepOnArray, deepseqDepOnGhcPrim] deepseqRelease deepseq hackageUser
-    publishPackage [stmDepOnBase, stmDepOnArray] stmRelease stm hackageUser
-    publishPackage [containersDepOnBase, containersDepOnArray, containersDepOnDeepseq] containersRelease containers hackageUser
-    publishPackage [integerGmpDepOnGhcPrim] integerGmpRelease integerGmp hackageUser
-    publishPackage [bytestringDepOnBase, bytestringDepOnDeepseq, bytestringDepOnGhcBignum, bytestringDepOnGhcPrim, bytestringDepOnIntegerGmp] bytestringRelease bytestring hackageUser
-    publishPackage [binaryDepOnArray, binaryDepOnBase, binaryDepOnBytestring, binaryDepOnContainers, binaryDepOnGhcPrim] binaryRelease binary hackageUser
 
 genWord32 :: MonadGen m => m Word32
 genWord32 = H.word32 (Range.constant minBound maxBound)

@@ -19,6 +19,7 @@ import Data.Password.Argon2 (Argon2, Password,
                              PasswordCheck (PasswordCheckSuccess), PasswordHash)
 import qualified Data.Password.Argon2 as Argon2
 import Data.Text (Text)
+import Data.Text.Display (Display, displayBuilder)
 import Data.Time (UTCTime)
 import qualified Data.Time as Time
 import Data.UUID
@@ -37,7 +38,6 @@ newtype UserId = UserId { getUserId :: UUID }
   deriving stock (Generic, Show)
   deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
     via UUID
-
 
 data User = User
   { userId      :: UserId
@@ -85,9 +85,9 @@ data AdminCreationForm = AdminCreationForm
 instance TypeError (CannotDisplayPassword "JSON") => ToJSON Password where
   toJSON = error "unreachable"
 
--- -- | Type error! Do not use 'display' on a 'Password'!
--- instance TypeError (CannotDisplayPassword "Text") => Display Password where
---   toJSON = error "unreachable"
+-- | Type error! Do not use 'display' on a 'Password'!
+instance TypeError (CannotDisplayPassword "Text") => Display Password where
+  displayBuilder = error "unreachable"
 
 type CannotDisplayPassword e =
   'Text "🚫 Tried to convert plain-text Password to " ':<>: 'Text e ':<>: 'Text "!"

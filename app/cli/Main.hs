@@ -1,16 +1,17 @@
 module Main where
 
+import Control.Monad
+import Database.PostgreSQL.Entity.DBT
 import Optics.Core
 import Options.Applicative
 
-import Database.PostgreSQL.Entity.DBT
-import Flora.Environment
-import Flora.Model.User.Update
-import Flora.PackageFixtures
-import Flora.Publish
-import Flora.UserFixtures
-
 import CoverageReport
+import Flora.Environment
+import Flora.Import.Package
+import Flora.Model.Package
+import Flora.Model.User
+import Flora.Model.User.Update
+import Flora.UserFixtures
 
 data Options = Options
   { cliCommand :: Command
@@ -48,16 +49,9 @@ runOptions (Options Provision) = do
     insertUser user2
     insertUser adminUser
 
-    publishPackage [] ghcPrimRelease ghcPrim hackageUser
-    publishPackage [ghcBignumDepOnGhcPrim] ghcBignumRelease ghcBignum hackageUser
-    publishPackage [baseDepOnGhcPrim, baseDepOnGhcBignum] baseRelease base hackageUser
-    publishPackage [arrayDepOnBase] arrayRelease array hackageUser
-    publishPackage [deepseqDepOnBase, deepseqDepOnArray, deepseqDepOnGhcPrim] deepseqRelease deepseq hackageUser
-    publishPackage [stmDepOnBase, stmDepOnArray] stmRelease stm hackageUser
-    publishPackage [containersDepOnBase, containersDepOnArray, containersDepOnDeepseq] containersRelease containers hackageUser
-    publishPackage [integerGmpDepOnGhcPrim] integerGmpRelease integerGmp hackageUser
-    publishPackage [bytestringDepOnBase, bytestringDepOnDeepseq, bytestringDepOnGhcBignum, bytestringDepOnGhcPrim, bytestringDepOnIntegerGmp] bytestringRelease bytestring hackageUser
-    publishPackage [binaryDepOnArray, binaryDepOnBase, binaryDepOnBytestring, binaryDepOnContainers, binaryDepOnGhcPrim] binaryRelease binary hackageUser
+    void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "bytestring") "./test/fixtures/Cabal/"
+    void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "parsec") "./test/fixtures/Cabal/"
+
 runOptions (Options (CoverageReport opts)) = runCoverageReport opts
 
 withInfo :: Parser a -> String -> ParserInfo a

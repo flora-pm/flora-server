@@ -19,7 +19,7 @@ import Optics.Core
 
 import Flora.Environment
 import Flora.Model.Package
-import Flora.Model.Package.Types
+import qualified Flora.Model.Package.Query as Query
 import Flora.Model.Release
 import Flora.Model.Requirement
 import FloraWeb.Routes.Pages.Packages
@@ -44,11 +44,11 @@ showHandler namespaceText nameText = do
   templateEnv <- fromSession session defaultTemplateEnv
   case (validateNamespace namespaceText, validateName nameText) of
     (Just namespace, Just name) -> do
-      result <- liftIO $ withPool pool $ getPackageByNamespaceAndName namespace name
+      result <- liftIO $ withPool pool $ Query.getPackageByNamespaceAndName namespace name
       case result of
         Nothing -> renderError templateEnv notFound404
         Just package -> do
-          dependents <- liftIO $ withPool pool $ getPackageDependents namespace name
+          dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
           releases <- liftIO $ withPool pool $ getReleases (package ^. #packageId)
           let latestRelease =  maximumBy (compare `on` version) releases
           latestReleasedependencies <- liftIO $ withPool pool $ getRequirements (latestRelease ^. #releaseId)
@@ -62,11 +62,11 @@ showVersionHandler namespaceText nameText versionText = do
   templateEnv <- fromSession session defaultTemplateEnv
   case (validateNamespace namespaceText, validateName nameText, validateVersion versionText) of
     (Just namespace, Just name, Just versionSpec) -> do
-      result <- liftIO $ withPool pool $ getPackageByNamespaceAndName namespace name
+      result <- liftIO $ withPool pool $ Query.getPackageByNamespaceAndName namespace name
       case result of
         Nothing -> renderError templateEnv notFound404
         Just package -> do
-          dependents <- liftIO $ withPool pool $ getPackageDependents namespace name
+          dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
           liftIO (withPool pool $ getReleaseByVersion (package ^. #packageId) versionSpec)
             >>= \case
               Nothing -> renderError templateEnv notFound404

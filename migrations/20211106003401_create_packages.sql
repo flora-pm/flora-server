@@ -1,3 +1,4 @@
+-- A package is comprised of metadata and has many releases.
 create table packages (
   package_id uuid primary key,
   namespace text not null,
@@ -10,3 +11,4 @@ create table packages (
 );
 
 create unique index on packages(lower(name), lower(namespace));
+create unique index on packages(package_id, lower(name), lower(namespace));

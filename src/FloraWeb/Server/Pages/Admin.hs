@@ -9,6 +9,8 @@ import Servant
 
 import Flora.Environment
 import Flora.Model.Admin.Report
+import Flora.Model.Package (PackageId)
+import qualified Flora.Model.Package.Query as Query
 import Flora.Model.User
 import qualified Flora.Model.User.Query as Query
 import FloraWeb.Routes.Pages.Admin
@@ -16,6 +18,8 @@ import FloraWeb.Server.Auth
 import FloraWeb.Session (getSession)
 import FloraWeb.Templates
 import qualified FloraWeb.Templates.Admin as Templates
+import qualified FloraWeb.Templates.Admin.Packages as Templates
+import qualified FloraWeb.Templates.Admin.Users as Templates
 import FloraWeb.Templates.Error
 import FloraWeb.Types (fetchFloraEnv)
 
@@ -23,6 +27,7 @@ server :: ServerT Routes FloraPageM
 server = ensureAdmin $ Routes'
   { index = indexHandler
   , users = adminUsersHandler
+  , packages = adminPackagesHandler
   }
 
 -- | This function converts a sub-tree of routes that require 'Admin' role
@@ -69,7 +74,7 @@ userIndexHandler = do
 
 withUserHandler :: UserId -> ServerT AdminWithUserRoutes FloraAdminM
 withUserHandler userId = AdminWithUserRoutes'
-  { show = showUserHandler userId
+  { showUser = showUserHandler userId
   }
 
 showUserHandler :: UserId -> FloraAdminM (Html ())
@@ -82,3 +87,35 @@ showUserHandler userId = do
     Nothing -> renderError templateEnv notFound404
     Just user -> do
       render templateEnv (Templates.showUser user)
+
+adminPackagesHandler :: ServerT PackagesAdminRoutes FloraAdminM
+adminPackagesHandler = PackagesAdminRoutes'
+  { packageIndex = packageIndexHandler
+  , withPackage = withPackageHandler
+  }
+
+packageIndexHandler :: FloraAdminM (Html ())
+packageIndexHandler = do
+  session <- getSession
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  packages <- liftIO $ withPool pool Query.getAllPackages
+  templateEnv <- fromSession session defaultTemplateEnv
+  render templateEnv (Templates.indexPackages packages)
+
+
+withPackageHandler :: PackageId -> ServerT WithPackageAdminRoutes FloraAdminM
+withPackageHandler packageId = WithPackageAdminRoutes'
+  { showPackage = showPackageHandler packageId
+  }
+
+showPackageHandler :: PackageId -> FloraAdminM (Html ())
+showPackageHandler packageId = do
+  session <- getSession
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  result <- liftIO $ withPool pool $ Query.getPackageById packageId
+  templateEnv <- fromSession session defaultTemplateEnv
+  case result of
+    Nothing -> renderError templateEnv notFound404
+    Just package -> do
+      render templateEnv (Templates.showPackage package)
+

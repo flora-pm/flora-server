@@ -1,38 +1,43 @@
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module Flora.PackageSpec where
 
-import Data.Set as Set
+import Control.Monad.IO.Class
+import Data.Maybe
+import qualified Data.Set as Set
 import qualified Data.Vector as Vector
+import Debug.Pretty.Simple
 import Optics.Core
 import Test.Tasty
 
--- import Flora.Model.Release
--- import Flora.Model.Requirement
+import Flora.Import.Package
+import Flora.Import.Types
 import Flora.Model.Package
-import Flora.PackageFixtures
+import qualified Flora.Model.Package.Query as Query
+import Flora.Model.User
 import Flora.TestUtils
+import Flora.UserFixtures
 
 spec :: TestM TestTree
 spec = testThese "packages"
   [ testThis "Insert base and its dependencies, and fetch it" testGetPackageById
-  , testThis "Fetch the dependents of ghc-prim" testFetchGHCPrimDependents
-  , testThis "Fetch the dependents of array" testFetchDependentsOfArray
+  , testThis "Insert containers and its dependencies" testInsertContainers
   ]
 
 testGetPackageById :: TestM ()
 testGetPackageById = do
-    result <- liftDB $ getPackageById (base ^. #packageId)
-    assertEqual (Just base) result
+    liftDB $ importCabal (hackageUser ^. #userId) (Namespace "haskell") (PackageName "base") "./test/fixtures/Cabal/"
+    result <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
+    assertEqual (Just (PackageName "base")) (preview (_Just % #name) result)
+
+testInsertContainers :: TestM ()
+testInsertContainers = do
+    result <- liftDB $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "containers")
+                  "./test/fixtures/Cabal/"
+    assertEqual 7 (Vector.length result)
 
 testFetchGHCPrimDependents :: TestM ()
 testFetchGHCPrimDependents = do
-    result <-  liftDB $ getPackageDependents (array ^. #namespace) (ghcPrim ^. #name)
-    assertEqual (Set.fromList [base, ghcBignum, deepseq, bytestring, integerGmp, binary]) (Set.fromList . Vector.toList $ result)
-
-testFetchDependentsOfArray :: TestM ()
-testFetchDependentsOfArray = do
-    result <- liftDB $ getPackageDependents (array ^. #namespace) (array ^. #name)
-    assertEqual (Set.fromList [stm, deepseq, containers, binary]) (Set.fromList . Vector.toList $ result)
-
-  -- itDB "Fetch the requirements of array" $ do
-  --   result <- Set.fromList . Vector.toList <$> getRequirements (arrayRelease ^. #releaseId)
-  --   result `shouldBe` Set.fromList [(Namespace "haskell",PackageName "base",">=4.9 && <4.14")]
+    result <-  liftDB $ Query.getPackageDependents (Namespace "haskell") (PackageName "ghc-prim")
+    assertEqual
+      (Set.fromList [PackageName "base", PackageName "ghc-bignum", PackageName "deepseq", PackageName "bytestring", PackageName "integer-gmp", PackageName "binary"])
+      (Set.fromList . fmap (view #name) $ Vector.toList result)

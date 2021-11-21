@@ -1,0 +1,30 @@
+cabal-version:      2.4
+name:               ghc-bignum-orphans
+version:            0.1.1
+synopsis:           Backwards-compatible orphan instances for ghc-bignum
+description:        @ghc-bignum-orphans@ defines orphan instances that mimic
+                    instances available in later versions of @ghc-bignum@ to a
+                    wider (older) range of compilers. @ghc-bignum-orphans@ does
+                    not export anything except the orphan instances themselves.
+homepage:           https://github.com/haskell-compat/ghc-bignum-orphans
+bug-reports:        https://github.com/haskell-compat/ghc-bignum-orphans/issues
+license:            BSD-3-Clause
+author:             Ryan Scott
+maintainer:         Ryan Scott <ryan.gl.scott@gmail.com>
+copyright:          (C) 2021 Ryan Scott
+category:           Compatibility
+extra-source-files: CHANGELOG.md, README.md
+tested-with:        GHC == 9.0.1
+                     || == 9.2.1
+
+source-repository head
+  type:               git
+  location:           https://github.com/haskell-compat/ghc-bignum-orphans
+
+library
+    exposed-modules:  GHC.Num.Orphans
+    build-depends:    base       >= 4.15 && < 5
+                    , ghc-bignum >= 1.0  && < 1.3
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    ghc-options:      -Wall -Wcompat

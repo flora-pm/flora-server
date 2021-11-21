@@ -1,0 +1,78 @@
+name:                mintty
+version:             0.1.3
+synopsis:            A reliable way to detect the presence of a MinTTY console on Windows
+description:         MinTTY is a Windows-specific terminal emulator for the
+                     widely used Cygwin and MSYS projects, which provide
+                     Unix-like environments for Windows. MinTTY consoles behave
+                     differently from native Windows consoles (such as
+                     @cmd.exe@ or PowerShell) in many ways, and in some cases,
+                     these differences make it necessary to treat MinTTY
+                     consoles differently in code.
+                     .
+                     The @mintty@ library provides a simple way to detect if
+                     your code in running in a MinTTY console on Windows. It
+                     exports @isMinTTY@, which does the right thing 90% of the
+                     time (by checking if standard error is attached to
+                     MinTTY), and it also exports @isMinTTYHandle@ for the
+                     other 10% of the time (when you want to check is some
+                     arbitrary handle is attached to MinTTY). As you might
+                     expect, both of these functions will simply return @False@
+                     on any non-Windows operating system.
+homepage:            https://github.com/RyanGlScott/mintty
+bug-reports:         https://github.com/RyanGlScott/mintty/issues
+license:             BSD3
+license-file:        LICENSE
+author:              Ryan Scott
+maintainer:          Ryan Scott <ryan.gl.scott@gmail.com>
+stability:           Provisional
+copyright:           (C) 2017 Ryan Scott
+category:            System
+build-type:          Simple
+extra-source-files:  CHANGELOG.md, README.md, include/*.h
+cabal-version:       >=1.10
+tested-with:         GHC == 7.0.4
+                   , GHC == 7.2.2
+                   , GHC == 7.4.2
+                   , GHC == 7.6.3
+                   , GHC == 7.8.4
+                   , GHC == 7.10.3
+                   , GHC == 8.0.2
+                   , GHC == 8.2.2
+                   , GHC == 8.4.4
+                   , GHC == 8.6.5
+                   , GHC == 8.8.4
+                   , GHC == 8.10.4
+                   , GHC == 9.0.1
+
+source-repository head
+  type:                git
+  location:            https://github.com/RyanGlScott/mintty
+
+flag Win32-2-13-1
+  description:         Use @Win32-2.13.1.0@ or later. Older versions of @Win32@
+                       either do not have functionality for detecting MinTTY or
+                       have bugs in their MinTTY detection. For these versions
+                       of @Win32@, we backport a working version of MinTTY
+                       detection.
+  default:             True
+
+library
+  exposed-modules:     System.Console.MinTTY
+  build-depends:       base >= 4.3 && < 5
+
+  if os(windows)
+    cpp-options:       "-DWINDOWS"
+
+    if flag(Win32-2-13-1)
+      build-depends:   Win32 >= 2.13.1
+    else
+      build-depends:   filepath
+                     , Win32 < 2.13.1
+      build-tools:     hsc2hs
+      include-dirs:    include
+      includes:        windows_cconv.h, winternl_compat.h
+      other-modules:   System.Console.MinTTY.Win32
+
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
