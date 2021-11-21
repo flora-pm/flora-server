@@ -3,6 +3,7 @@
 module Flora.Model.Package.Types where
 
 import Data.Aeson
+import Data.Aeson.Orphans ()
 import Data.Text (Text, unpack)
 import Data.Text.Display
 import Data.Time (UTCTime)

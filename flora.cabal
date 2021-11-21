@@ -58,6 +58,7 @@ library
   import:          common-ghc-options
   hs-source-dirs:  src
   exposed-modules:
+    Data.Aeson.Orphans
     Flora.Environment
     Flora.Model.Organisation
     Flora.Model.Package
