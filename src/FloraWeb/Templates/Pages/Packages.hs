@@ -31,7 +31,7 @@ presentationHeader release namespace name synopsis = do
   div_ [class_ "package-header divider"] $ do
     div_ [class_ "px-4 py-4 sm:px-6 sm:py-24 lg:py-4 lg:px-8"] $
       h2_ [class_ "text-center text-2xl tracking-tight sm:text-2xl lg:text-5xl"] $ do
-        span_ [class_ "dark:text-white headline"] $ "@" <> toHtml namespace <> "/" <> toHtml name
+        span_ [class_ "headline"] $ "@" <> toHtml namespace <> "/" <> toHtml name
         span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release
     div_ [class_ "synopsis lg:text-xl"] $
       p_ [class_ ""] (toHtml synopsis)

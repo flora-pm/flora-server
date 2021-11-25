@@ -1,10 +1,10 @@
 module FloraWeb.Templates.Layout.App (header) where
 
-import Control.Monad.Reader (ask)
+import Control.Monad.Reader (ask, asks)
 import Data.Text
 import FloraWeb.Templates.Types
 import Lucid
-import Lucid.Base
+import Lucid.Base (makeAttribute)
 
 header :: FloraHTML
 header = do
@@ -51,20 +51,30 @@ theme = do
   meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
   meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]
 
-
 navBar :: FloraHTML
 navBar = do
   ta <- ask
   nav_ [class_ "navbar border-b border-gray-200"] $ do
-    div_ [class_ "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
+    div_ [class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "flex justify-between h-16"] $ do
-        div_ [class_ "flex-shrink-0 flex items-center"] $
-          a_ [href_ "/", class_ "dark:text-gray-900"] (getDisplayTitle ta)
+        div_ [class_ "flex-shrink-0 flex items-center"] $ do
+          a_ [href_ "/", class_ "dark:text-white flex-shrink-0 font-bold"] (getDisplayTitle ta)
+          navbarSearch
 
         div_ [class_ "hidden margin-right flex sm:flex justify-end grid grid-rows-3 row-end-auto"] $ do
-          a_ [href_ "#", class_ "navbar-element inline-flex items-center px-1 pt-1 border-b-2 mx-7"] "Packages"
-          a_ [href_ "#", class_ "navbar-element inline-flex items-center px-1 pt-1 border-b-2 mx-7"] "Guides"
-          a_ [href_ "#", class_ "navbar-element inline-flex items-center px-1 pt-1 border-b-2 mx-7"] "Login / Signup"
+          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 dark:text-white"] "Packages"
+          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 dark:text-white"] "Guides"
+          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 dark:text-white"] "Login / Signup"
+
+navbarSearch :: FloraHTML
+navbarSearch = do
+  flag <- asks getNavbarSearchFlag
+  if flag
+  then do
+    form_ [class_ "w-full max-w-sm ml-5", action_ "#"] $ do
+      div_ [class_ "flex items-center py-2"] $ do
+        input_ [class_ "appearance-none bg-transparent w-full mr-3 py-1 px-2 leading-tight focus:outline-none dark:text-gray-300", id_ "packageName", type_ "text", placeholder_ "Search a package"]
+    else pure mempty
 
 -- Helpers
 
@@ -76,6 +86,12 @@ text = toHtml
 
 getTitle :: TemplateAssigns -> Text
 getTitle ta = getTA ta "Flora" "title"
+
+getNavbarSearchFlag :: TemplateAssigns -> Bool
+getNavbarSearchFlag ta =
+  case getTA ta "true" "navbar-search" of
+    "true" -> True
+    _      -> False
 
 getDisplayTitle :: TemplateAssigns -> FloraHTML
 getDisplayTitle ta = toHtml $ getTA ta "Flora :: [Package]" "display-title"

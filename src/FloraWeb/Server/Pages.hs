@@ -6,6 +6,7 @@ import Servant.API.Generic
 import Servant.HTML.Lucid
 import Servant.Server.Generic
 
+import qualified Data.Map.Strict as Map
 import qualified FloraWeb.Server.Packages as Packages
 import FloraWeb.Templates
 import qualified FloraWeb.Templates.Pages.Home as Home
@@ -28,5 +29,5 @@ server = genericServerT Routes'
 
 homeHandler :: FloraM (Html ())
 homeHandler = do
-  let assigns = emptyAssigns
+  let assigns = mkAssigns emptyAssigns (Just (UserAssigns $ Map.fromList [("navbar-search", "false")]))
   render assigns Home.show
