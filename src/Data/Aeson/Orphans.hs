@@ -3,9 +3,9 @@ module Data.Aeson.Orphans where
 
 import Data.Aeson
 import qualified Data.Text as T
-import qualified Distribution.SPDX.License as SPDX
-import qualified Distribution.Pretty as Pretty
 import Distribution.Parsec (simpleParsec)
+import qualified Distribution.Pretty as Pretty
+import qualified Distribution.SPDX.License as SPDX
 
 instance FromJSON SPDX.License where
   parseJSON = withText "SPDX License" $ \s ->
