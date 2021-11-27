@@ -23,10 +23,10 @@ db-start: ## Start the dev database
 	@postgres -D _database
 
 db-create: ## Create the database
-	@createdb flora_dev
+	@createdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) flora_dev
 
 db-drop: ## Drop the database
-	@dropdb --if-exists flora_dev
+	@dropdb --if-exists -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) flora_dev
 
 db-setup: ## Setup the dev database
 	@migrate init "$(PG_CONNSTRING)" 
