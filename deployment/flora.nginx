@@ -24,8 +24,17 @@ server {
   add_header X-Frame-Options DENY;
   add_header X-Content-Type-Options nosniff;
 
-  # favicon.ico
+  access_log /var/log/nginx/flora_access.log;
+  error_log /var/log/nginx/flora_error.log;
+
+
+  # favicon
   location = /favicon.ico {
+    log_not_found off;
+    access_log    off;
+  }
+
+  location = /favicon.svg {
     log_not_found off;
     access_log    off;
   }
