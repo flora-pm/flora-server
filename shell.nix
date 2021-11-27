@@ -29,5 +29,7 @@ in with pkgs;
 
       # Extra
       direnv
+      yarn
+      nodejs
     ];
   }
