@@ -22,7 +22,7 @@ import Lucid.Alpine
 
 showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> FloraHTML
 showPackage latestRelease package@Package{namespace, name, synopsis} dependents dependencies = do
-  div_ [class_ "container"] $ do
+  div_ [class_ "container dark:text-white text-black"] $ do
     presentationHeader latestRelease namespace name synopsis
     packageBody package latestRelease dependencies dependents
 
@@ -33,7 +33,7 @@ presentationHeader release namespace name synopsis = do
       h2_ [class_ "text-center text-2xl tracking-tight sm:text-2xl lg:text-5xl"] $ do
         span_ [class_ "headline"] $ "@" <> toHtml namespace <> "/" <> toHtml name
         span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release
-    div_ [class_ "synopsis lg:text-xl"] $
+    div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
 packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> FloraHTML
@@ -84,12 +84,11 @@ displayInstructions formattedVersion = do
   div_ [class_ "mb-5"] $ do
     div_ [class_ "links mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "Installation"
-    div_  [class_ "items-top dark:text-white"] $ do
+    div_  [class_ "items-top"] $ do
       p_ [] $ do
-        input_ [ class_ "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full border-gray-300 rounded-md"
+        input_ [ class_ "shadow-sm bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block w-full border-gray-300 rounded-md"
                , type_ "text", onfocus_ "this.select();", value_ formattedVersion, readonly_ "readonly", xModel_ [] "input"
                ]
-      -- button_ [type_ "button", xOn_ "click" $ "$clipboard(() => '" <> formattedVersion <> "')"] "C"
 
 displayDependents :: Vector Package -> FloraHTML
 displayDependents dependents = do
