@@ -45,7 +45,7 @@ ghcid-test: ## Load the tests in ghcid and reload them on file change
 	@ghcid --command='cabal v2-repl flora-test' --test 'Main.main'
 
 ghcid-server: ## Start flora-server in ghcid
-	@ghcid --target=exe:flora-server --restart="src" --test 'Main.main'
+	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
 
 lint: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}

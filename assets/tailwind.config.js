@@ -1,14 +1,27 @@
-const defaultTheme = require('tailwindcss/defaultTheme')
+const defaultTheme = require("tailwindcss/defaultTheme")
 
 module.exports = {
   mode: "jit",
   purge: ["./js/**/*.js", "../src/FloraWeb/**/*.*hs"],
-  darkMode: 'media',
+  darkMode: "class",
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter var', ...defaultTheme.fontFamily.sans],
+        sans: ["Inter var", ...defaultTheme.fontFamily.sans],
       },
+      colors: {
+        "background": {
+          "dark": "#25282a",
+          "DEFAULT": "#f3f4f6",
+        },
+        "brand-purple": {
+          "DEFAULT": "#663399",
+        },
+        "link": {
+          "dark": "#4dabf7",
+          "DEFAULT": "#1a0dab",
+        }
+      }
     },
   },
   variants: {

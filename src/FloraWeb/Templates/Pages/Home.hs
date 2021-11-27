@@ -15,12 +15,12 @@ banner = do
   div_ [class_ "relative"] $
     div_ [class_ "px-4 py-16 sm:px-6 sm:py-24 lg:py-16 lg:px-8"] $
       h1_ [class_ "text-center text-2xl font-extrabold tracking-tight sm:text-5xl lg:text-4xl"] $
-        span_ [class_ "text-white headline"] "Search Haskell packages on Flora"
+        span_ [class_ "dark:text-white text-black headline"] "Search Haskell packages on Flora"
 
 searchBar :: FloraHTML
 searchBar =
-  div_ [class_ "main-search max-w-md mx-auto text-gray-600 dark:text-gray-300 flex justify-center rounded-xl border-2 overflow-hidden"] $ do
-    input_ [ class_ "block rounded-md border-0 focus-outline-none focus:ring-0 focus:border-blue-500 flex-grow p-2"
+  div_ [class_ "main-search max-w-md mx-auto flex justify-center rounded-xl border-2 overflow-hidden"] $ do
+    input_ [ class_ "text-2xl text-gray-800 bg:bg-background dark:bg-background-dark dark:text-gray-300 block rounded-md border-0 focus-outline-none focus:ring-0 focus:brand-purple flex-grow p-2"
            , type_ "search", name_ "search", placeholder_ "Find a package", value_ "", tabindex_ "1"
            ]
     button_ [ type_ "submit", class_ "items-center right-0 top-0 mt-5 mr-4 mb-5"] $
