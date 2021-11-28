@@ -1,6 +1,6 @@
 module FloraWeb.Templates.Pages.Packages where
 
-import Data.Foldable
+import Data.Foldable (fold)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Display
@@ -47,7 +47,7 @@ packageBody Package{namespace, name, metadata} latestRelease dependencies depend
     div_ [class_ "package-right-column"] $ do
       div_ [class_ "grid-rows-3"] $ do
         displayDependencies dependencies
-        displayInstructions (formatInstallString namespace name latestRelease)
+        displayInstructions namespace name latestRelease
         displayDependents dependents
 
 displayReleaseVersion :: Release -> FloraHTML
@@ -79,15 +79,16 @@ displayDependencies dependencies = do
     ul_ [class_ "dependencies grid-cols-3"] $ do
       foldMap renderDependency dependencies
 
-displayInstructions :: Text -> FloraHTML
-displayInstructions formattedVersion = do
+displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
+displayInstructions namespace packageName latestRelease = do
   div_ [class_ "mb-5"] $ do
     div_ [class_ "links mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "Installation"
     div_  [class_ "items-top"] $ do
-      p_ [] $ do
-        input_ [ class_ "shadow-sm bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block w-full border-gray-300 rounded-md"
-               , type_ "text", onfocus_ "this.select();", value_ formattedVersion, readonly_ "readonly", xModel_ [] "input"
+      div_ [class_ "space-y-2"] $ do
+        label_ [for_ "install-string", class_ "font-light"] "In your .cabal file:"
+        input_ [ class_ "font-mono shadow-sm text-base w-full bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block border-gray-800 dark:border-gray-800 rounded-md"
+               , type_ "text", id_ "install-string", onfocus_ "this.select();", value_ (formatInstallString namespace packageName latestRelease), readonly_ "readonly", xModel_ [] "input"
                ]
 
 displayDependents :: Vector Package -> FloraHTML

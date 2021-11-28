@@ -18,7 +18,6 @@
   padding-left: 20px;
 }
 
-
 .dark{
   .error-code{
     color: rgba(102, 51, 153, var(--tw-bg-opacity));
