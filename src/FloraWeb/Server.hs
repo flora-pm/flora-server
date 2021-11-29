@@ -2,9 +2,9 @@ module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
 import Control.Monad.Reader (runReaderT)
-import qualified Data.Text as T
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import Network.Wai.Middleware.Prometheus (PrometheusSettings (..), prometheus)
 import Prometheus (register)
 import Prometheus.Metric.GHC (ghcMetrics)
@@ -12,6 +12,7 @@ import Servant
 import Servant.API.Generic
 import Servant.Server.Experimental.Auth
 import Servant.Server.Generic
+import qualified Data.Text as T
 
 import Flora.Environment
 import Flora.Model.User (User)
@@ -34,7 +35,9 @@ runFlora = do
 
 runServer :: FloraEnv -> IO ()
 runServer floraEnv  = runSettings warpSettings $
-  promMiddleware server
+  promMiddleware
+  . heartbeatMiddleware
+  $ server
   where
     server = genericServeTWithContext (naturalTransform floraEnv) floraServer (genAuthServerContext floraEnv)
     warpSettings = setPort (fromIntegral $ httpPort floraEnv ) defaultSettings
