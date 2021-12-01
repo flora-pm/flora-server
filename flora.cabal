@@ -18,6 +18,7 @@ source-repository head
 
 common common-extensions
   default-extensions:
+    NoMonomorphismRestriction
     ConstraintKinds
     DataKinds
     DeriveAnyClass
@@ -51,10 +52,7 @@ common common-ghc-options
     -fhide-source-paths -Wno-unused-do-bind
 
 common common-rts-options
-  ghc-options:
-    -rtsopts
-    -threaded
-    -with-rtsopts "-N -T"
+  ghc-options: -rtsopts -threaded -with-rtsopts "-N -T"
 
 library
   import:          common-extensions
@@ -126,15 +124,7 @@ library
     , vector                     ^>=0.12
     , wai                        ^>=3.2
     , wai-cors                   ^>=0.2
-    , wai-middleware-prometheus  ^>=1.0
     , wai-middleware-heartbeat   ^>=0.0
-    , wai-middleware-static      ^>=0.9
-    , warp                       ^>=3.3
-    , time                       ^>=1.9
-    , uuid                       ^>=1.3
-    , vector                     ^>=0.12
-    , wai                        ^>=3.2
-    , wai-cors                   ^>=0.2
     , wai-middleware-prometheus  ^>=1.0
     , wai-middleware-static      ^>=0.9
     , warp                       ^>=3.3

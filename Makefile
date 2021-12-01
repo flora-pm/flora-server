@@ -52,6 +52,10 @@ lint: ## Run the code linter (HLint)
 
 style: ## Run the code styler (stylish-haskell)
 	@stylish-haskell -i -r src app test
+	@cabal-fmt -i flora.cabal
+
+nix-shell: ### Enter the nix shell
+	@nix-shell
 
 tags:
 	@ghc-tags -c

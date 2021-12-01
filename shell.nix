@@ -19,6 +19,7 @@ in with pkgs;
       haskellPackages.apply-refact
       stylish-haskell
       git
+      haskellPackages.cabal-fmt
 
       # DB Deps
       postgresql_12

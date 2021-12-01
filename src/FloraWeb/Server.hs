@@ -2,6 +2,7 @@ module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
 import Control.Monad.Reader (runReaderT)
+import qualified Data.Text as T
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
@@ -12,7 +13,6 @@ import Servant
 import Servant.API.Generic
 import Servant.Server.Experimental.Auth
 import Servant.Server.Generic
-import qualified Data.Text as T
 
 import Flora.Environment
 import Flora.Model.User (User)
