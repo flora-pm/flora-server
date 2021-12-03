@@ -66,8 +66,12 @@ jobs:
       run: |
         nix-shell --run 'make build'
 
+    - name: Initialise PostgreSQL
+      run: nix-shell --run 'initdb -D database/_local'
+
+    - name: Start PostgreSQL
+      run: nix-shell --run 'postgres -D database/_local -k database' 
+
     - name: Test
       run: |
-        nix-shell --run 'initdb -D database/_local'
-        nix-shell --run 'postgres -D database/_local'
         nix-shell --run 'make test'
