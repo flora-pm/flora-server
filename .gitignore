@@ -17,3 +17,5 @@ tags.mtime
 assets/node_modules
 assets/yarn-error.log
 assets/fonts
+
+database/_data
