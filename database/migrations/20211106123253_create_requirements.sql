@@ -1,3 +1,4 @@
+-- migrate:up
 create table "requirements" (
   requirement_id uuid primary key,
   release_id uuid references releases,

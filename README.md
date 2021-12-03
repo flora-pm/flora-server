@@ -15,27 +15,21 @@
 
 ## Development
 
-Source the `environment.sh` directly or through a `environment.local.sh` file (that is not tracked) if you want
-to override some default values.
+Create a `environment.local.sh` file (not tracked by git) and insert this line at the top:
 
 ```bash
-$ make help
-start                          Start flora-server
-build                          Build the server without optimisations
-assets-deps                    Install the dependencies of the frontend
-assets-build                   Build the web assets
-assets-watch                   Continuously rebuild the web assets
-assets-clean                   Remove JS artifacts
-db-init                        Initialize the dev database
-db-start                       Start the dev database
-db-create                      Create the database
-db-drop                        Drop the database
-db-setup                       Setup the dev database
-db-reset                       Reset the dev database
-repl                           Start a REPL
-test                           Run the test suite
-ghcid-test                     Load the tests in ghcid and reload them on file change
-ghcid-server                   Start flora-server in ghcid
-lint                           Run the code linter (HLint)
-style                          Run the code styler (stylish-haskell)
+source environment.sh
 ```
+
+If you use [direnv](https://direnv.net/), you can link `environment.local.sh` to `.envrc` in order to reload the configuration
+variables automatically.
+
+### Requirements
+
+All of these tools are provided by the Nix shell.
+
+* PostgreSQL server*
+* NodeJS & Yarn
+* dbmate[¹][dbmate]
+
+[¹]: https://github.com/amacneil/dbmate

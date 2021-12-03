@@ -1,3 +1,4 @@
+-- migrate:up
 create materialized view dependents (
   name,
   namespace,

@@ -194,6 +194,7 @@ test-suite flora-test
     , base
     , Cabal
     , containers
+    , envparse
     , flora
     , flora-test-fixtures
     , hspec
@@ -208,6 +209,7 @@ test-suite flora-test
     , resource-pool
     , string-qq
     , time
+    , typed-process              ^>=0.2
     , uuid
     , vector
     , vector-algorithms          ^>=0.8

@@ -1,19 +1,20 @@
 module SpecHelpers where
 
 import Control.Monad
-import Data.Pool
 import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Simple (Connection, close)
-import Database.PostgreSQL.Simple.Migration
+import Database.PostgreSQL.Simple (ConnectInfo)
+import GHC.IO.Exception
+import System.Process.Typed
+
 import Flora.Model.User
 import Flora.PackageFixtures
 import Flora.Publish
 import Flora.UserFixtures
 
-migrate :: Connection -> IO ()
-migrate conn = do
-  void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
-  pool <- createPool (pure conn) close 1 10 1
+migrate :: ConnectInfo -> IO ()
+migrate connectInfo = do
+  void runDBMate
+  pool <- mkPool connectInfo 1 10 1
   withPool pool $ do
     insertUser user1
     insertUser user2
@@ -30,3 +31,6 @@ migrate conn = do
     publishPackage [integerGmpDepOnGhcPrim] integerGmpRelease integerGmp user1
     publishPackage [bytestringDepOnBase, bytestringDepOnDeepseq, bytestringDepOnGhcBignum, bytestringDepOnGhcPrim, bytestringDepOnIntegerGmp] bytestringRelease bytestring syl20
     publishPackage [binaryDepOnArray, binaryDepOnBase, binaryDepOnBytestring, binaryDepOnContainers, binaryDepOnGhcPrim] binaryRelease binary user2
+
+runDBMate :: IO ExitCode
+runDBMate = runProcess "make db-setup"

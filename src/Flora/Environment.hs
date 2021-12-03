@@ -2,11 +2,15 @@ module Flora.Environment
   ( FloraEnv(..)
   , TracingEnv(..)
   , getFloraEnv
+  -- * Exported for tests
+  , FloraTestConfig(..)
+  , parseTestConfig
   ) where
 
 import Colourista.IO (blueMessage)
 import Control.Monad ((>=>))
 import Data.Bifunctor
+import Optics.Core
 import Data.Pool (Pool)
 import Data.Text
 import qualified Data.Text as T
@@ -27,6 +31,11 @@ data FloraEnv = FloraEnv
   }
   deriving stock (Show, Generic)
 
+data FloraTestConfig = FloraTestConfig
+  { connectInfo :: PG.ConnectInfo 
+  }
+  deriving stock (Show, Generic)
+
 data TracingEnv = TracingEnv
   { sentryDSN   :: Maybe String
   , environment :: String
@@ -40,7 +49,7 @@ data FloraConfig = FloraConfig
   , httpPort    :: Word16
   , tracing     :: TracingEnv
   }
-  deriving stock Show
+  deriving stock (Show, Generic)
 
 data PoolConfig = PoolConfig
   { subPools          :: Int
@@ -56,7 +65,7 @@ configToEnv FloraConfig {..} = do
   pure FloraEnv {..}
 
 displayConnectInfo :: PG.ConnectInfo -> Text
-displayConnectInfo PG.ConnectInfo {..} = T.pack $
+displayConnectInfo PG.ConnectInfo{..} = T.pack $
   "postgresql://"
     <> connectUser
     <> ":"
@@ -103,10 +112,15 @@ parseConfig =
   <*> parsePort
   <*> parseTracingEnv
 
+parseTestConfig :: Parser Error FloraTestConfig
+parseTestConfig =
+  FloraTestConfig
+  <$> parseConnectInfo
+
 getFloraEnv :: IO FloraEnv
 getFloraEnv = do
   config <- Env.parse id parseConfig
-  blueMessage $ "🔌 Connected to database at " <> displayConnectInfo (connectInfo config)
+  blueMessage $ "🔌 Connected to database at " <> displayConnectInfo (config ^. #connectInfo)
   configToEnv config
 
 -- Env parser helpers

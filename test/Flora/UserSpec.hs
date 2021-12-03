@@ -7,9 +7,10 @@ import Test.Hspec.Expectations.Lifted (shouldReturn)
 import Flora.Model.User
 import Flora.UserFixtures
 import SpecHelpers (migrate)
+import Database.PostgreSQL.Simple
 
-spec :: Spec
-spec = describeDB migrate "users" $ do
+spec :: ConnectInfo -> Spec
+spec connectInfo = describeDB (const $ migrate connectInfo) "users" $ do
   itDB "Fetch user by Id" $ do
     getUserById (userId user1) `shouldReturn` Just user1
   itDB "Fetch user by email" $ do

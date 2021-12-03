@@ -10,11 +10,12 @@ import Test.Hspec.Expectations.Lifted
 
 import Flora.Model.Package
 import Flora.PackageFixtures
+import Database.PostgreSQL.Simple (ConnectInfo)
 -- import Flora.Model.Requirement
 -- import Flora.Model.Release
 
-spec :: Spec
-spec = describeDB migrate "packages" $ do
+spec :: ConnectInfo -> Spec
+spec connectInfo = describeDB (const $ migrate connectInfo) "packages" $ do
   itDB "Insert base and its dependencies, and fetch it" $ do
     getPackageById (base ^. #packageId) `shouldReturn` Just base
   itDB "Fetch the dependents of ghc-prim" $ do

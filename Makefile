@@ -1,8 +1,13 @@
+$(if $(FLORA_DB_URI),,$(error FLORA_DB_URI is not defined))
+
 start: ## Start flora-server
 	@cabal run exe:flora-server
 
 build: ## Build the server without optimisations
 	@cabal build -O0
+
+clean: assets-clean ## Clean the build artifact for backend and frontend
+	@cabal clean
 
 assets-deps: ## Install the dependencies of the frontend
 	@cd assets/ && yarn
@@ -16,12 +21,6 @@ assets-watch: ## Continuously rebuild the web assets
 assets-clean: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
 
-db-init: ## Initialize the dev database
-	@initdb -D _database
-
-db-start: ## Start the dev database
-	@postgres -D _database
-
 db-create: ## Create the database
 	@createdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) flora_dev
 
@@ -29,8 +28,7 @@ db-drop: ## Drop the database
 	@dropdb --if-exists -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) flora_dev
 
 db-setup: ## Setup the dev database
-	@migrate init "$(PG_CONNSTRING)" 
-	@migrate migrate "$(PG_CONNSTRING)" migrations
+	dbmate --url "$(FLORA_DB_URI)" up
 
 db-reset: db-drop db-create db-setup ## Reset the dev database
 	@cabal run -- flora-cli provision-fixtures
@@ -54,10 +52,10 @@ style: ## Run the code styler (stylish-haskell)
 	@stylish-haskell -i -r src app test
 	@cabal-fmt -i flora.cabal
 
-nix-shell: ### Enter the nix shell
-	@nix-shell
+nix-shell: ## Enter the nix shell
+	@nix-sell
 
-tags:
+tags: ## Generate Haskell tags with 'ghc-tags'
 	@ghc-tags -c
 
 help:

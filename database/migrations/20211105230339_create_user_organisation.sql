@@ -1,3 +1,4 @@
+-- migrate:up
 CREATE TABLE IF NOT EXISTS user_organisation (
     user_organisation_id uuid PRIMARY KEY,
     user_id uuid NOT NULL,

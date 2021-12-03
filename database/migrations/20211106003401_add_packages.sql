@@ -1,3 +1,4 @@
+-- migrate:up
 create table packages (
   package_id uuid primary key,
   namespace text not null,
