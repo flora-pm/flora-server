@@ -32,12 +32,12 @@ jobs:
         echo '/usr/lib/postgresql/12/bin/' >> $GITHUB_PATH
         echo "/nix/var/nix/profiles/per-user/$USER/profile/bin" >> "$GITHUB_PATH"
         echo "/nix/var/nix/profiles/default/bin" >> "$GITHUB_PATH"
-        echo 'NIX_PATH="nixpkgs=channel:nixos-unstable"' >> "$GITHUB_ENV"
         echo '$HOME/.ghcup/bin' >> $GITHUB_PATH
         echo 'HOME/.cabal/bin' >> $GITHUB_PATH
         echo 'HOME/.local/bin' >> $GITHUB_PATH
+        echo 'NIX_PATH="nixpkgs=channel:nixos-unstable"' >> "$GITHUB_ENV"
         echo DB_PATH=$(pwd)/database/_data >> "$GITHUB_ENV"
-        echo $FLORA_DB_URI="${FLORA_DB_URI}?socket=$DB_PATH" >> "$GITHUB_ENV"
+        echo FLORA_DB_URI="${FLORA_DB_URI}?socket=$DB_PATH" >> "$GITHUB_ENV"
 
     - name: Install Nix
       run: |
@@ -63,18 +63,18 @@ jobs:
     - name: Running stylish-haskell
       run: nix-shell --run './.github/workflows/stylish-haskell-runner.sh'
 
+    - name: Initialise PostgreSQL
+      run: |
+        echo ${{ env.DB_PATH }}
+        mkdir -p ${{ env.DB_PATH }}
+        nix-shell --run 'initdb -D ${{ env.DB_PATH }}'
+
+    - name: Start PostgreSQL
+      run: nix-shell --run 'postgres -D ${{ env.DB_PATH }} -h "" -k ./${{ env.DB_PATH }}' 
+
     - name: Build
       run: |
         nix-shell --run 'make build'
-
-    - name: Initialise PostgreSQL
-      run: |
-        echo ${DB_PATH}
-        mkdir -p ${DB_PATH}
-        nix-shell --run 'initdb -D ${DB_PATH}'
-
-    - name: Start PostgreSQL
-      run: nix-shell --run 'postgres -D ${DB_PATH} -h "" -k ./${DB_PATH}' 
 
     - name: Test
       run: |
