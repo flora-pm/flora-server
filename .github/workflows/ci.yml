@@ -37,6 +37,7 @@ jobs:
         echo 'HOME/.cabal/bin' >> $GITHUB_PATH
         echo 'HOME/.local/bin' >> $GITHUB_PATH
         echo '$FLORA_DB_URI="${FLORA_DB_URI}?socket=./database/_data""' >> "$GITHUB_ENV"
+        echo 'DB_PATH=$(pwd -P)/database/_data' >> "$GITHUB_ENV"
 
     - name: Install Nix
       run: |
@@ -67,10 +68,12 @@ jobs:
         nix-shell --run 'make build'
 
     - name: Initialise PostgreSQL
-      run: nix-shell --run 'initdb -D database/_data'
+      run: |
+        mkdir -p ${DB_PATH}
+        nix-shell --run 'initdb -D ${DB_PATH}'
 
     - name: Start PostgreSQL
-      run: nix-shell --run 'postgres -D database/_data -h "" -k database/_data' 
+      run: nix-shell --run 'postgres -D ${DB_PATH} -h "" -k ./${DB_PATH}' 
 
     - name: Test
       run: |
