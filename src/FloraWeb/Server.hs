@@ -35,6 +35,7 @@ runFlora :: IO ()
 runFlora = do
   env <- getFloraEnv
   blueMessage $ "🌺 Starting Flora server on http://localhost:" <> T.pack (show $ httpPort env)
+  blueMessage $ "🔥 Exporting Prometheus metrics on http://localhost:" <> T.pack (show $ httpPort env) <> "/metrics"
   when (isJust $ env ^. #tracing ^. #sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
   Prometheus.register ghcMetrics
   runServer env

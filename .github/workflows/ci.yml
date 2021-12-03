@@ -55,7 +55,7 @@ jobs:
 
     - name: Configure
       run: |
-        cabal configure --enable-tests --test-show-details=direct
+        nix-shell --run 'cabal configure --enable-tests --test-show-details=direct'
 
     - name: Freeze
       run: |
@@ -81,4 +81,5 @@ jobs:
       run: |
         nix-shell --run 'make test'
       env:
-        FLORA_DB_URI: postgres://postgres:postgres@localhost/flora_test
+        FLORA_DB_URI: "postgres://postgres:postgres@localhost/flora_test?sslmode=disable"
+        DB_DATABASE: "flora_test"
