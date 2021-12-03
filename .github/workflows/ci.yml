@@ -36,8 +36,6 @@ jobs:
         echo '$HOME/.ghcup/bin' >> $GITHUB_PATH
         echo 'HOME/.cabal/bin' >> $GITHUB_PATH
         echo 'HOME/.local/bin' >> $GITHUB_PATH
-        initdb -D database/_local
-        postgres -D database/_local
         echo '$FLORA_DB_URI="${FLORA_DB_URI}?socket=./database/_local""' >> "$GITHUB_ENV"
 
     - name: Install Nix
@@ -70,4 +68,6 @@ jobs:
 
     - name: Test
       run: |
+        nix-shell --run 'initdb -D database/_local'
+        nix-shell --run 'postgres -D database/_local'
         nix-shell --run 'make test'
