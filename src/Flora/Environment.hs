@@ -1,5 +1,6 @@
 module Flora.Environment
   ( FloraEnv(..)
+  , TracingEnv(..)
   , getFloraEnv
   ) where
 
@@ -13,8 +14,8 @@ import Data.Time (NominalDiffTime)
 import Data.Word (Word16)
 import Database.PostgreSQL.Entity.DBT
 import qualified Database.PostgreSQL.Simple as PG
-import Env (AsUnread (unread), Error (..), Parser, Reader, help, parse, str,
-            var)
+import Env (AsUnread (unread), Error (..), Parser, Reader, def, help, nonempty,
+            parse, str, var, (<=<))
 import GHC.Generics
 import Text.Read (readMaybe)
 
@@ -22,6 +23,13 @@ import Text.Read (readMaybe)
 data FloraEnv = FloraEnv
   { pool     :: Pool PG.Connection
   , httpPort :: Word16
+  , tracing  :: TracingEnv
+  }
+  deriving stock (Show, Generic)
+
+data TracingEnv = TracingEnv
+  { sentryDSN   :: Maybe String
+  , environment :: String
   }
   deriving stock (Show, Generic)
 
@@ -30,6 +38,7 @@ data FloraConfig = FloraConfig
   { dbConfig    :: PoolConfig
   , connectInfo :: PG.ConnectInfo
   , httpPort    :: Word16
+  , tracing     :: TracingEnv
   }
   deriving stock Show
 
@@ -77,12 +86,22 @@ parsePoolConfig =
             "DB_POOL_CONNECTIONS"
             (help "Number of connections per sub-pool")
 
+parseTracingEnv :: Parser Error TracingEnv
+parseTracingEnv =
+  TracingEnv
+  <$> var (pure . Just <=< nonempty) "SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
+  <*> var str "FLORA_ENVIRONMENT" (help "Name of the current environemnt (local, dev, prod)")
+
 parsePort :: Parser Error Word16
 parsePort = var port "FLORA_PORT" (help "HTTP Port for Flora")
 
 parseConfig :: Parser Error FloraConfig
 parseConfig =
-  FloraConfig <$> parsePoolConfig <*> parseConnectInfo <*> parsePort
+  FloraConfig
+  <$> parsePoolConfig
+  <*> parseConnectInfo
+  <*> parsePort
+  <*> parseTracingEnv
 
 getFloraEnv :: IO FloraEnv
 getFloraEnv = do
