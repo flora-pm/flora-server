@@ -36,7 +36,7 @@ jobs:
         echo '$HOME/.ghcup/bin' >> $GITHUB_PATH
         echo 'HOME/.cabal/bin' >> $GITHUB_PATH
         echo 'HOME/.local/bin' >> $GITHUB_PATH
-        echo '$FLORA_DB_URI="${FLORA_DB_URI}?socket=./database/_local""' >> "$GITHUB_ENV"
+        echo '$FLORA_DB_URI="${FLORA_DB_URI}?socket=./database/_data""' >> "$GITHUB_ENV"
 
     - name: Install Nix
       run: |
@@ -67,7 +67,7 @@ jobs:
         nix-shell --run 'make build'
 
     - name: Initialise PostgreSQL
-      run: nix-shell --run 'initdb -D database/_local'
+      run: nix-shell --run 'initdb -D database/_data'
 
     - name: Start PostgreSQL
       run: nix-shell --run 'postgres -D database/_data -h "" -k database/_data' 
