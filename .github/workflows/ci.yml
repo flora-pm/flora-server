@@ -70,7 +70,7 @@ jobs:
       run: nix-shell --run 'initdb -D database/_local'
 
     - name: Start PostgreSQL
-      run: nix-shell --run 'postgres -D database/_local -k database' 
+      run: nix-shell --run 'postgres -D database/_data -h "" -k database/_data' 
 
     - name: Test
       run: |

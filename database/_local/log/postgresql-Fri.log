@@ -1,0 +1,24 @@
+2021-12-03 16:42:08.703 CET [2080449] LOG:  starting PostgreSQL 13.4 on x86_64-redhat-linux-gnu, compiled by gcc (GCC) 11.2.1 20210728 (Red Hat 11.2.1-1), 64-bit
+2021-12-03 16:42:08.704 CET [2080449] LOG:  could not bind IPv6 address "::1": Address already in use
+2021-12-03 16:42:08.704 CET [2080449] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2021-12-03 16:42:08.705 CET [2080449] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2021-12-03 16:42:08.705 CET [2080449] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2021-12-03 16:42:08.705 CET [2080449] WARNING:  could not create listen socket for "localhost"
+2021-12-03 16:42:08.705 CET [2080449] FATAL:  could not create any TCP/IP sockets
+2021-12-03 16:42:08.708 CET [2080449] LOG:  database system is shut down
+2021-12-03 16:42:31.395 CET [2080482] LOG:  starting PostgreSQL 13.4 on x86_64-redhat-linux-gnu, compiled by gcc (GCC) 11.2.1 20210728 (Red Hat 11.2.1-1), 64-bit
+2021-12-03 16:42:31.396 CET [2080482] LOG:  could not bind IPv6 address "::1": Address already in use
+2021-12-03 16:42:31.396 CET [2080482] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2021-12-03 16:42:31.396 CET [2080482] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2021-12-03 16:42:31.396 CET [2080482] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2021-12-03 16:42:31.396 CET [2080482] WARNING:  could not create listen socket for "localhost"
+2021-12-03 16:42:31.396 CET [2080482] FATAL:  could not create any TCP/IP sockets
+2021-12-03 16:42:31.399 CET [2080482] LOG:  database system is shut down
+2021-12-03 16:45:08.836 CET [2080868] LOG:  starting PostgreSQL 13.4 on x86_64-redhat-linux-gnu, compiled by gcc (GCC) 11.2.1 20210728 (Red Hat 11.2.1-1), 64-bit
+2021-12-03 16:45:08.837 CET [2080868] LOG:  could not bind IPv6 address "::1": Address already in use
+2021-12-03 16:45:08.837 CET [2080868] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2021-12-03 16:45:08.837 CET [2080868] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2021-12-03 16:45:08.837 CET [2080868] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2021-12-03 16:45:08.837 CET [2080868] WARNING:  could not create listen socket for "localhost"
+2021-12-03 16:45:08.837 CET [2080868] FATAL:  could not create any TCP/IP sockets
+2021-12-03 16:45:08.838 CET [2080868] LOG:  database system is shut down
