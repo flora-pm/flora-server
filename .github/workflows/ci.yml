@@ -69,6 +69,7 @@ jobs:
 
     - name: Initialise PostgreSQL
       run: |
+        echo ${DB_PATH}
         mkdir -p ${DB_PATH}
         nix-shell --run 'initdb -D ${DB_PATH}'
 
