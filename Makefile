@@ -22,10 +22,10 @@ assets-clean: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
 
 db-create: ## Create the database
-	@createdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) flora_dev
+	dbmate --url "$(FLORA_DB_URI)" create
 
 db-drop: ## Drop the database
-	@dropdb --if-exists -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) flora_dev
+	dbmate --url "$(FLORA_DB_URI)" drop
 
 db-setup: ## Setup the dev database
 	dbmate --url "$(FLORA_DB_URI)" up
