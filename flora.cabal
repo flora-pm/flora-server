@@ -198,6 +198,7 @@ test-suite flora-test
     , flora
     , flora-test-fixtures
     , hspec
+    , hspec-core
     , hspec-expectations-lifted
     , hspec-pg-transact
     , optics-core

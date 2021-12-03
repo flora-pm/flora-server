@@ -37,9 +37,11 @@ repl: ## Start a REPL
 	@cabal repl
 
 test: ## Run the test suite
+	source ./environment.test.sh
 	@cabal test
 
 ghcid-test: ## Load the tests in ghcid and reload them on file change
+	source ./environment.test.sh
 	@ghcid --command='cabal v2-repl flora-test' --test 'Main.main'
 
 ghcid-server: ## Start flora-server in ghcid
@@ -72,3 +74,5 @@ endif
 .PHONY: all $(MAKECMDGOALS)
 
 .DEFAULT_GOAL := help
+
+SHELL := /bin/bash
