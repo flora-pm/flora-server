@@ -35,5 +35,6 @@ in with pkgs;
       direnv
       yarn
       nodejs
+      cacert
     ];
   }

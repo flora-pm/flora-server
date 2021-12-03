@@ -18,7 +18,7 @@ import Servant.API.Generic
 import Servant.Server.Experimental.Auth
 import Servant.Server.Generic
 
-import Flora.Environment (FloraEnv(..), TracingEnv(..), getFloraEnv)
+import Flora.Environment (FloraEnv (..), TracingEnv (..), getFloraEnv)
 import Flora.Model.User (User)
 import Flora.Tracing
 import FloraWeb.Server.Auth

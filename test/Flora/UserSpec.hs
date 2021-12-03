@@ -4,10 +4,10 @@ import Test.Hspec (Spec)
 import Test.Hspec.DB (describeDB, itDB)
 import Test.Hspec.Expectations.Lifted (shouldReturn)
 
+import Database.PostgreSQL.Simple
 import Flora.Model.User
 import Flora.UserFixtures
 import SpecHelpers (migrate)
-import Database.PostgreSQL.Simple
 
 spec :: ConnectInfo -> Spec
 spec connectInfo = describeDB (const $ migrate connectInfo) "users" $ do

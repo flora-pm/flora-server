@@ -10,7 +10,6 @@ module Flora.Environment
 import Colourista.IO (blueMessage)
 import Control.Monad ((>=>))
 import Data.Bifunctor
-import Optics.Core
 import Data.Pool (Pool)
 import Data.Text
 import qualified Data.Text as T
@@ -21,6 +20,7 @@ import qualified Database.PostgreSQL.Simple as PG
 import Env (AsUnread (unread), Error (..), Parser, Reader, def, help, nonempty,
             parse, str, var, (<=<))
 import GHC.Generics
+import Optics.Core
 import Text.Read (readMaybe)
 
 -- | The datatype that is used in the application
@@ -32,7 +32,7 @@ data FloraEnv = FloraEnv
   deriving stock (Show, Generic)
 
 data FloraTestConfig = FloraTestConfig
-  { connectInfo :: PG.ConnectInfo 
+  { connectInfo :: PG.ConnectInfo
   }
   deriving stock (Show, Generic)
 

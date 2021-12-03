@@ -19,7 +19,7 @@ assets-watch: ## Continuously rebuild the web assets
 	@cd assets/ && yarn watch
 
 assets-clean: ## Remove JS artifacts
-	@cd assets/ && rm -R node_modules
+	@cd assets/ ; [[ -f node_modules ]] && rm -R node_modules || exit 0
 
 db-create: ## Create the database
 	dbmate --url "$(FLORA_DB_URI)" create

@@ -1,12 +1,12 @@
 module Main where
 
-import Test.Hspec
 import Database.PostgreSQL.Simple
 import qualified Env
 import Optics.Core
+import Test.Hspec
 
-import qualified Flora.PackageSpec as PackageSpec
 import Flora.Environment
+import qualified Flora.PackageSpec as PackageSpec
 import qualified Flora.UserSpec as UserSpec
 
 main :: IO ()

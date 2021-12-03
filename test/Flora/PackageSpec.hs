@@ -8,9 +8,9 @@ import Test.Hspec (Spec)
 import Test.Hspec.DB (describeDB, itDB)
 import Test.Hspec.Expectations.Lifted
 
+import Database.PostgreSQL.Simple (ConnectInfo)
 import Flora.Model.Package
 import Flora.PackageFixtures
-import Database.PostgreSQL.Simple (ConnectInfo)
 -- import Flora.Model.Requirement
 -- import Flora.Model.Release
 
