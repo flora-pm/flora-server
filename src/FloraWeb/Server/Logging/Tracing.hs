@@ -1,4 +1,4 @@
-module Flora.Tracing where
+module FloraWeb.Server.Logging.Tracing where
 
 import Control.Exception (SomeException)
 import Data.ByteString.Char8 (unpack)
@@ -10,7 +10,7 @@ import System.Log.Raven (initRaven, register, silentFallback)
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))
 
-sentryOnException :: TracingEnv -> Maybe Request -> SomeException -> IO ()
+sentryOnException :: LoggingEnv -> Maybe Request -> SomeException -> IO ()
 sentryOnException tracingEnv mRequest exception =
   case tracingEnv ^. #sentryDSN of
     Nothing -> pure ()

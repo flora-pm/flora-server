@@ -70,9 +70,10 @@ library
     Flora.Model.Requirement
     Flora.Model.User
     Flora.Publish
-    Flora.Tracing
     FloraWeb.Server
     FloraWeb.Server.Auth
+    FloraWeb.Server.Logging.Metrics
+    FloraWeb.Server.Logging.Tracing
     FloraWeb.Server.Packages
     FloraWeb.Server.Pages
     FloraWeb.Templates
