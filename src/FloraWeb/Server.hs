@@ -16,6 +16,7 @@ import Servant.API.Generic
 import Servant.Server.Experimental.Auth
 import Servant.Server.Generic
 
+import Data.Text.Display
 import Flora.Environment
 import Flora.Model.User (User)
 import FloraWeb.Server.Auth
@@ -23,7 +24,6 @@ import FloraWeb.Server.Logging.Metrics
 import FloraWeb.Server.Logging.Tracing
 import qualified FloraWeb.Server.Pages as Pages
 import FloraWeb.Types
-import Data.Text.Display
 
 data Routes mode = Routes
   { assets :: mode :- "static" :> Raw

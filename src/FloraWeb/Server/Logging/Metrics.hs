@@ -2,12 +2,12 @@ module FloraWeb.Server.Logging.Metrics
   ( prometheusMiddleware
   ) where
 
-import Network.Wai (Application, Request)
-import Network.Wai.Middleware.Prometheus as P
-import qualified Network.Wai as Wai
 import Data.Text (Text)
 import qualified Data.Text as T
 import Flora.Environment
+import Network.Wai (Application, Request)
+import qualified Network.Wai as Wai
+import Network.Wai.Middleware.Prometheus as P
 
 prometheusMiddleware :: LoggingEnv -> Application -> Application
 prometheusMiddleware LoggingEnv{prometheusEnabled} =
