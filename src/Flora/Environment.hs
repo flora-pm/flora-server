@@ -23,7 +23,7 @@ import Text.Read (readMaybe)
 data FloraEnv = FloraEnv
   { pool     :: Pool PG.Connection
   , httpPort :: Word16
-  , tracing  :: LoggingEnv
+  , logging  :: LoggingEnv
   }
   deriving stock (Show, Generic)
 
@@ -39,7 +39,7 @@ data FloraConfig = FloraConfig
   { dbConfig    :: PoolConfig
   , connectInfo :: PG.ConnectInfo
   , httpPort    :: Word16
-  , tracing     :: LoggingEnv
+  , logging     :: LoggingEnv
   }
   deriving stock Show
 

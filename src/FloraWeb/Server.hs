@@ -4,7 +4,6 @@ import Colourista.IO (blueMessage)
 import Control.Monad
 import Control.Monad.Reader (runReaderT)
 import Data.Maybe
-import qualified Data.Text as T
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Logger (withStdoutLogger)
@@ -24,6 +23,7 @@ import FloraWeb.Server.Logging.Metrics
 import FloraWeb.Server.Logging.Tracing
 import qualified FloraWeb.Server.Pages as Pages
 import FloraWeb.Types
+import Data.Text.Display
 
 data Routes mode = Routes
   { assets :: mode :- "static" :> Raw
@@ -34,8 +34,10 @@ data Routes mode = Routes
 runFlora :: IO ()
 runFlora = do
   env <- getFloraEnv
-  blueMessage $ "🌺 Starting Flora server on http://localhost:" <> T.pack (show $ httpPort env)
-  when (isJust $ env ^. #tracing ^. #sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
+  let baseURL = "https://localhost:" <> display (httpPort env)
+  blueMessage $ "🌺 Starting Flora server on " <> baseURL
+  when (isJust $ env ^. #logging ^. #sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
+  when (env ^. #logging ^. #prometheusEnabled) $ blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
   Prometheus.register ghcMetrics
   runServer env
 
@@ -45,10 +47,10 @@ runServer floraEnv = withStdoutLogger $ \logger -> do
                  (naturalTransform floraEnv) floraServer (genAuthServerContext floraEnv)
   let warpSettings = setPort (fromIntegral $ httpPort floraEnv ) $
                      setLogger logger $
-                     setOnException (sentryOnException (floraEnv ^. #tracing))
+                     setOnException (sentryOnException (floraEnv ^. #logging))
                      defaultSettings
   runSettings warpSettings $
-    prometheusMiddleware
+    prometheusMiddleware (floraEnv ^. #logging)
     . heartbeatMiddleware
     $ server
 

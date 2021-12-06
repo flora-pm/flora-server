@@ -7,9 +7,13 @@ import Network.Wai.Middleware.Prometheus as P
 import qualified Network.Wai as Wai
 import Data.Text (Text)
 import qualified Data.Text as T
+import Flora.Environment
 
-prometheusMiddleware :: Application -> Application
-prometheusMiddleware = P.prometheus config . instrument normalizeWaiRequestRoute
+prometheusMiddleware :: LoggingEnv -> Application -> Application
+prometheusMiddleware LoggingEnv{prometheusEnabled} =
+  if prometheusEnabled
+  then P.prometheus config . instrument normalizeWaiRequestRoute
+  else id
   where
     config = PrometheusSettings ["metrics"] False True
     instrument = P.instrumentHandlerValueWithFilter P.ignoreRawResponses
