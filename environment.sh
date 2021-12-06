@@ -15,4 +15,4 @@ export FLORA_ENVIRONMENT="local"
 
 # Set these variables in `environment.local.sh`, which is not tracked by git.
 #export SENTRY_DSN="" # Set this variable to connecto to your Sentry instance
-#export FLORA_PROMETHEUS="true" # Set this variable to true or false to enable Prometheus metrics export
+#export FLORA_PROMETHEUS_ENABLED="true" # Set this variable to true or false to enable Prometheus metrics export
