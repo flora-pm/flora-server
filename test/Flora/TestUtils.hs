@@ -78,6 +78,8 @@ import qualified Test.Tasty.HUnit as Test
 
 import Flora.Environment
 import Flora.Model.User
+import Flora.Model.User.Update
+import qualified Flora.Model.User.Update as Update
 import Flora.PackageFixtures
 import Flora.Publish
 import Flora.UserFixtures
@@ -231,6 +233,9 @@ genPassword :: MonadGen m => m (PasswordHash Argon2)
 genPassword = do
   unsafePerformIO . hashPassword . mkPassword <$> H.text (Range.constant 20 30) H.unicode
 
+genUserFlags :: MonadGen m => m UserFlags
+genUserFlags = UserFlags <$> H.bool <*> H.bool
+
 genUser :: MonadGen m => m User
 genUser = do
   userId <- genUserId
@@ -238,6 +243,7 @@ genUser = do
   email <- genEmail
   displayName <- genDisplayName
   password <- genPassword
+  userFlags <- genUserFlags
   createdAt <- genUTCTime
   updatedAt <- genUTCTime
   pure User{..}
@@ -248,6 +254,7 @@ data RandomUserTemplate m = RandomUserTemplate
   , email       :: m Text
   , displayName :: m Text
   , password    :: m (PasswordHash Argon2)
+  , userFlags   :: m UserFlags
   , createdAt   :: m UTCTime
   , updatedAt   :: m UTCTime
   } deriving stock (Generic)
@@ -259,17 +266,22 @@ randomUserTemplate = RandomUserTemplate
   , email       = H.sample genEmail
   , displayName = H.sample genDisplayName
   , password    = H.sample genPassword
+  , userFlags   = H.sample genUserFlags
   , createdAt   = H.sample genUTCTime
   , updatedAt   = H.sample genUTCTime
   }
 
 randomUser :: MonadIO m => RandomUserTemplate m -> m User
-randomUser RandomUserTemplate{ userId = generateUserId, username = generateUsername, email = generateEmail, displayName = generateDisplayName, password = generatePassword, createdAt = generateCreatedAt, updatedAt = generateUpdatedAt } = do
+randomUser RandomUserTemplate{ userId = generateUserId, username = generateUsername, email = generateEmail
+                             , displayName = generateDisplayName, password = generatePassword
+                             , userFlags = generateUserFlags
+                             , createdAt = generateCreatedAt, updatedAt = generateUpdatedAt } = do
   userId      <- generateUserId
   username    <- generateUsername
   email       <- generateEmail
   displayName <- generateDisplayName
   password    <- generatePassword
+  userFlags   <- generateUserFlags
   createdAt   <- generateCreatedAt
   updatedAt   <- generateUpdatedAt
   pure User{..}

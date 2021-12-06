@@ -3,10 +3,14 @@
 module Flora.Model.Release where
 
 import Data.Aeson (FromJSON, ToJSON)
+import Data.ByteString
 import Data.Time (UTCTime)
 import Data.UUID (UUID)
+import Data.Vector
 import Database.PostgreSQL.Entity (Entity, _selectWhere, insert,
                                    selectManyByField)
+import Database.PostgreSQL.Entity.DBT
+import Database.PostgreSQL.Entity.Internal.QQ
 import Database.PostgreSQL.Entity.Types (GenericEntity, TableName)
 import Database.PostgreSQL.Simple (FromRow, Only (Only), ToRow)
 import Database.PostgreSQL.Simple.FromField (FromField)
@@ -15,10 +19,6 @@ import Database.PostgreSQL.Transact (DBT)
 import Distribution.Types.Version (Version)
 import GHC.Generics (Generic)
 
-import Data.ByteString
-import Data.Vector
-import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Entity.Internal.QQ
 import Flora.Model.Package (PackageId)
 import Flora.Model.Release.Orphans ()
 

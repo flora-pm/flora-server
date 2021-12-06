@@ -1,31 +1,43 @@
-{-# LANGUAGE QuasiQuotes          #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans -Wno-redundant-constraints #-}
-module Flora.Model.User where
+module Flora.Model.User
+  ( UserId(..)
+  , User(..)
+  , UserFlags(..)
+  , UserCreationForm
+  , AdminCreationForm
+  , mkUser
+  , mkAdmin
+  , hashPassword
+  , validatePassword
+  ) where
 
 import Control.Monad.IO.Class
 import Data.Aeson
-import Data.Password.Argon2
+import Data.Password.Argon2 (Argon2, Password,
+                             PasswordCheck (PasswordCheckSuccess), PasswordHash)
 import qualified Data.Password.Argon2 as Argon2
 import Data.Text (Text)
 import Data.Time (UTCTime)
+import qualified Data.Time as Time
 import Data.UUID
+import qualified Data.UUID.V4 as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple (Only (Only))
-import Database.PostgreSQL.Simple.FromField (FromField (..))
+import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.ToField (ToField (..))
+import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
-import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (..), TypeError)
+import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
 newtype UserId = UserId { getUserId :: UUID }
   deriving stock (Generic, Show)
-  deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField)
+  deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
     via UUID
+
 
 data User = User
   { userId      :: UserId
@@ -33,6 +45,7 @@ data User = User
   , email       :: Text
   , displayName :: Text
   , password    :: PasswordHash Argon2
+  , userFlags   :: UserFlags
   , createdAt   :: UTCTime
   , updatedAt   :: UTCTime
   }
@@ -40,6 +53,33 @@ data User = User
   deriving anyclass (FromRow, ToRow)
   deriving Entity
     via (GenericEntity '[TableName "users"] User)
+
+data UserFlags = UserFlags
+  { isAdmin  :: Bool
+  , canLogin :: Bool
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromJSON, ToJSON)
+
+instance FromField UserFlags where
+  fromField = fromJSONField
+
+instance ToField UserFlags where
+  toField = toJSONField
+
+data UserCreationForm = UserCreationForm
+  { username :: Text
+  , email    :: Text
+  , password :: PasswordHash Argon2
+  }
+  deriving stock (Eq, Show, Generic)
+
+data AdminCreationForm = AdminCreationForm
+  { username :: Text
+  , email    :: Text
+  , password :: PasswordHash Argon2
+  }
+  deriving stock (Eq, Show, Generic)
 
 -- | Type error! Do not use 'toJSON' on a 'Password'!
 instance TypeError (CannotDisplayPassword "JSON") => ToJSON Password where
@@ -59,24 +99,29 @@ type CannotDisplayPassword e =
 deriving via Text instance ToField (PasswordHash a)
 deriving via Text instance FromField (PasswordHash a)
 
+mkUser :: MonadIO m => UserCreationForm -> m User
+mkUser UserCreationForm{username, email, password} = do
+  userId <- UserId <$> liftIO UUID.nextRandom
+  timestamp <- liftIO Time.getCurrentTime
+  let createdAt = timestamp
+  let updatedAt = timestamp
+  let displayName = ""
+  let userFlags = UserFlags{ isAdmin = False, canLogin = True }
+  pure User{..}
+
+mkAdmin :: MonadIO m => AdminCreationForm -> m User
+mkAdmin AdminCreationForm{username, email, password} = do
+  userId <- UserId <$> liftIO UUID.nextRandom
+  timestamp <- liftIO Time.getCurrentTime
+  let createdAt = timestamp
+  let updatedAt = timestamp
+  let displayName = ""
+  let userFlags = UserFlags{ isAdmin = True, canLogin = False }
+  pure User{..}
+
 hashPassword :: (MonadIO m) => Password -> m (PasswordHash Argon2)
 hashPassword = Argon2.hashPassword
 
 validatePassword :: Password -> PasswordHash Argon2 -> Bool
 validatePassword inputPassword hashedPassword =
   Argon2.checkPassword inputPassword hashedPassword == PasswordCheckSuccess
-
-insertUser :: (MonadIO m) => User -> DBT m ()
-insertUser user = insert @User user
-
-getUserById :: (MonadIO m) => UserId -> DBT m (Maybe User)
-getUserById userId = selectById (Only userId)
-
-getUserByUsername :: (MonadIO m) => Text -> DBT m (Maybe User)
-getUserByUsername username = selectOneByField [field| username |] (Only username)
-
-getUserByEmail :: (MonadIO m) => Text -> DBT m (Maybe User)
-getUserByEmail email = selectOneByField [field| email |] (Only email)
-
-deleteUser :: (MonadIO m) => UserId -> DBT m ()
-deleteUser userId = delete @User (Only userId)

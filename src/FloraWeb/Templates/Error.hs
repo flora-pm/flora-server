@@ -7,16 +7,14 @@ import Lucid
 import Network.HTTP.Types.Status
 import Optics.Core
 
-import FloraWeb.Server.Auth
-import FloraWeb.Session
 import FloraWeb.Templates
 import Servant
+import Control.Monad.Except (MonadError)
 
-renderError :: Status -> FloraPageM a
-renderError status = do
-  session <- getSession
-  templateDefaults <- fromSession session defaultTemplateEnv
-  let templateEnv = templateDefaults & (#title .~ "Flora :: *** Exception")
+renderError :: (MonadError ServerError m)
+            => TemplateEnv -> Status -> m a
+renderError env status = do
+  let templateEnv = env & (#title .~ "Flora :: *** Exception")
   let body = mkErrorPage templateEnv $ showError status
   throwError $ ServerError{ errHTTPCode = statusCode status
                           , errBody = body

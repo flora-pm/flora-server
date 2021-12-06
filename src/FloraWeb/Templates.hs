@@ -10,11 +10,10 @@ import Control.Monad.Reader
 import Data.ByteString.Lazy
 import Lucid
 
-import FloraWeb.Server.Auth
 import FloraWeb.Templates.Layout.App (footer, header)
 import FloraWeb.Templates.Types as Types
 
-render :: TemplateEnv -> FloraHTML -> FloraPageM (Html ())
+render :: (Monad m) => TemplateEnv -> FloraHTML -> m (Html ())
 render env template = pure $ toHtmlRaw $ runIdentity $
   runReaderT (renderBST (rendered template)) env
 

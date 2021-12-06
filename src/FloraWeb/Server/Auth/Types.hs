@@ -15,6 +15,8 @@ import FloraWeb.Types
 
 type instance AuthServerData (AuthProtect "optional-cookie-auth") = (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
 
+type instance AuthServerData (AuthProtect "cookie-auth") = (Headers '[Header "Set-Cookie" SetCookie] (Session 'Authenticated))
+
 -- | Datatypes used for every route that doesn't *need* an authenticated user
 type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor)) Handler
 
