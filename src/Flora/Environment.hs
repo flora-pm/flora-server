@@ -1,6 +1,6 @@
 module Flora.Environment
   ( FloraEnv(..)
-  , TracingEnv(..)
+  , LoggingEnv(..)
   , getFloraEnv
   ) where
 
@@ -15,7 +15,7 @@ import Data.Word (Word16)
 import Database.PostgreSQL.Entity.DBT
 import qualified Database.PostgreSQL.Simple as PG
 import Env (AsUnread (unread), Error (..), Parser, Reader, def, help, nonempty,
-            parse, str, var, (<=<))
+            parse, str, switch, var, (<=<))
 import GHC.Generics
 import Text.Read (readMaybe)
 
@@ -23,13 +23,14 @@ import Text.Read (readMaybe)
 data FloraEnv = FloraEnv
   { pool     :: Pool PG.Connection
   , httpPort :: Word16
-  , tracing  :: TracingEnv
+  , tracing  :: LoggingEnv
   }
   deriving stock (Show, Generic)
 
-data TracingEnv = TracingEnv
-  { sentryDSN   :: Maybe String
-  , environment :: String
+data LoggingEnv = LoggingEnv
+  { sentryDSN         :: Maybe String
+  , prometheusEnabled :: Bool
+  , environment       :: String
   }
   deriving stock (Show, Generic)
 
@@ -38,7 +39,7 @@ data FloraConfig = FloraConfig
   { dbConfig    :: PoolConfig
   , connectInfo :: PG.ConnectInfo
   , httpPort    :: Word16
-  , tracing     :: TracingEnv
+  , tracing     :: LoggingEnv
   }
   deriving stock Show
 
@@ -86,10 +87,11 @@ parsePoolConfig =
             "DB_POOL_CONNECTIONS"
             (help "Number of connections per sub-pool")
 
-parseTracingEnv :: Parser Error TracingEnv
-parseTracingEnv =
-  TracingEnv
+parseLoggingEnv :: Parser Error LoggingEnv
+parseLoggingEnv =
+  LoggingEnv
   <$> var (pure . Just <=< nonempty) "SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
+  <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Whether or not Prometheus is enabled")
   <*> var str "FLORA_ENVIRONMENT" (help "Name of the current environemnt (local, dev, prod)")
 
 parsePort :: Parser Error Word16
@@ -101,7 +103,7 @@ parseConfig =
   <$> parsePoolConfig
   <*> parseConnectInfo
   <*> parsePort
-  <*> parseTracingEnv
+  <*> parseLoggingEnv
 
 getFloraEnv :: IO FloraEnv
 getFloraEnv = do

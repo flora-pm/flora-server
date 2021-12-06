@@ -9,7 +9,6 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Logger (withStdoutLogger)
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
-import Network.Wai.Middleware.Prometheus (PrometheusSettings (..), prometheus)
 import Optics.Operators
 import qualified Prometheus
 import Prometheus.Metric.GHC (ghcMetrics)
@@ -20,8 +19,9 @@ import Servant.Server.Generic
 
 import Flora.Environment
 import Flora.Model.User (User)
-import Flora.Tracing
 import FloraWeb.Server.Auth
+import FloraWeb.Server.Logging.Metrics
+import FloraWeb.Server.Logging.Tracing
 import qualified FloraWeb.Server.Pages as Pages
 import FloraWeb.Types
 
@@ -41,14 +41,14 @@ runFlora = do
 
 runServer :: FloraEnv -> IO ()
 runServer floraEnv = withStdoutLogger $ \logger -> do
-  let server = genericServeTWithContext (naturalTransform floraEnv) floraServer (genAuthServerContext floraEnv)
+  let server = genericServeTWithContext
+                 (naturalTransform floraEnv) floraServer (genAuthServerContext floraEnv)
   let warpSettings = setPort (fromIntegral $ httpPort floraEnv ) $
                      setLogger logger $
                      setOnException (sentryOnException (floraEnv ^. #tracing))
                      defaultSettings
-  let promMiddleware = prometheus $ PrometheusSettings ["metrics"] True True
   runSettings warpSettings $
-    promMiddleware
+    prometheusMiddleware
     . heartbeatMiddleware
     $ server
 
