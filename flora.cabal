@@ -92,6 +92,7 @@ library
     , blaze-builder
     , bytestring                 ^>=0.10
     , Cabal                      ^>=3
+    , clock                      ^>=0.8
     , colourista                 ^>=0.1
     , containers                 ^>=0.6
     , cookie                     ^>=0.4
