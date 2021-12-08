@@ -11,6 +11,7 @@ import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import Optics.Operators
 import qualified Prometheus
 import Prometheus.Metric.GHC (ghcMetrics)
+import Prometheus.Metric.Proc
 import Servant
 import Servant.API.Generic
 import Servant.Server.Experimental.Auth
@@ -34,11 +35,13 @@ data Routes mode = Routes
 runFlora :: IO ()
 runFlora = do
   env <- getFloraEnv
-  let baseURL = "https://localhost:" <> display (httpPort env)
+  let baseURL = "http://localhost:" <> display (httpPort env)
   blueMessage $ "🌺 Starting Flora server on " <> baseURL
   when (isJust $ env ^. #logging ^. #sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
-  when (env ^. #logging ^. #prometheusEnabled) $ blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
-  Prometheus.register ghcMetrics
+  when (env ^. #logging ^. #prometheusEnabled) $ do
+    blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
+    Prometheus.register ghcMetrics
+    void $ Prometheus.register procMetrics
   runServer env
 
 runServer :: FloraEnv -> IO ()

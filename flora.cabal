@@ -116,6 +116,7 @@ library
     , pretty                     ^>=1.1
     , prometheus-client          ^>=1.1
     , prometheus-metrics-ghc     ^>=1.0
+    , prometheus-proc            ^>=0.1
     , raven-haskell              ^>=0.1
     , resource-pool              ^>=0.2
     , servant                    ^>=0.18
