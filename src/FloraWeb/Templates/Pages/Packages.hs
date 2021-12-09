@@ -37,7 +37,7 @@ presentationHeader release namespace name synopsis = do
       p_ [class_ ""] (toHtml synopsis)
 
 packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> FloraHTML
-packageBody Package{namespace, name, metadata} latestRelease dependencies dependents  = do
+packageBody Package{name, metadata} latestRelease dependencies dependents  = do
   div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
     div_ [class_ "package-left-column"] $ do
       div_ [class_ "grid-rows-3"] $ do
@@ -47,7 +47,7 @@ packageBody Package{namespace, name, metadata} latestRelease dependencies depend
     div_ [class_ "package-right-column"] $ do
       div_ [class_ "grid-rows-3"] $ do
         displayDependencies dependencies
-        displayInstructions namespace name latestRelease
+        displayInstructions name latestRelease
         displayDependents dependents
 
 displayReleaseVersion :: Release -> FloraHTML
@@ -79,8 +79,8 @@ displayDependencies dependencies = do
     ul_ [class_ "dependencies grid-cols-3"] $ do
       foldMap renderDependency dependencies
 
-displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
-displayInstructions namespace packageName latestRelease = do
+displayInstructions :: PackageName -> Release -> FloraHTML
+displayInstructions packageName latestRelease = do
   div_ [class_ "mb-5"] $ do
     div_ [class_ "links mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "Installation"
@@ -88,7 +88,7 @@ displayInstructions namespace packageName latestRelease = do
       div_ [class_ "space-y-2"] $ do
         label_ [for_ "install-string", class_ "font-light"] "In your .cabal file:"
         input_ [ class_ "font-mono shadow-sm text-base w-full bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block border-gray-800 dark:border-gray-800 rounded-md"
-               , type_ "text", id_ "install-string", onfocus_ "this.select();", value_ (formatInstallString namespace packageName latestRelease), readonly_ "readonly", xModel_ [] "input"
+               , type_ "text", id_ "install-string", onfocus_ "this.select();", value_ (formatInstallString packageName latestRelease), readonly_ "readonly", xModel_ [] "input"
                ]
 
 displayDependents :: Vector Package -> FloraHTML
@@ -122,9 +122,9 @@ intercalateVec sep vector =
   then vector
   else V.tail $ V.concatMap (\word -> V.fromList [sep, word]) vector
 
-formatInstallString :: Namespace -> PackageName -> Release -> Text
-formatInstallString namespace packageName Release{version} = pack . render $
-  hcat [pretty namespace, "/", pretty packageName, PP.space, rangedVersion ]
+formatInstallString :: PackageName -> Release -> Text
+formatInstallString packageName Release{version} = pack . render $
+  hcat [pretty packageName, PP.space, rangedVersion, "," ]
     where
       rangedVersion :: Doc
       rangedVersion = "^>=" <> pretty version

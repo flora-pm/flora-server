@@ -385,7 +385,7 @@ bytestringDepOnIntegerGmp =
 binary :: Package
 binary =
   let packageId = PackageId (read "604e9038-4a23-11ec-a23f-5405db82c3cd")
-      namespace = fromJust $ parseNamespace "kolmodin"
+      namespace = fromJust $ parseNamespace "hackage"
       name = fromJust $ parsePackageName "binary"
       synopsis = "Binary serialisation for Haskell values using lazy ByteStrings"
       ownerId = ben ^. #userId
@@ -395,7 +395,7 @@ binary =
         { license = License (ELicense (ELicenseId BSD_3_Clause) Nothing)
         , sourceRepo = " https://github.com/kolmodin/binary"
         , homepage = Nothing
-        , documentation = "https://flora.pm/packages/@kolmodin/binary/docs"
+        , documentation = "https://flora.pm/packages/@hackage/binary/docs"
         , bugTracker = Just " https://github.com/kolmodin/binary/issues"
         }
    in Package{..}
