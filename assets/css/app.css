@@ -18,16 +18,17 @@
   padding-left: 20px;
 }
 
+.error-code{
+  color: rgba(102, 51, 153, var(--tw-bg-opacity));
+}
+
+.error-page-button{
+  --tw-bg-opacity: 1;
+  background-color: rgba(102, 51, 153, var(--tw-bg-opacity));
+}
+
+
 .dark{
-  .error-code{
-    color: rgba(102, 51, 153, var(--tw-bg-opacity));
-  }
-
-  .error-page-button{
-    --tw-bg-opacity: 1;
-    background-color: rgba(102, 51, 153, var(--tw-bg-opacity));
-  }
-
   .navbar-element:hover{
     --tw-text-opacity: 1;
     color: rgba(55, 65, 81, var(--tw-text-opacity));
