@@ -19,6 +19,7 @@ source-repository head
 common common-extensions
   default-extensions:
     NoMonomorphismRestriction
+    NoStarIsType
     ConstraintKinds
     DataKinds
     DeriveAnyClass
@@ -74,8 +75,8 @@ library
     FloraWeb.Server.Auth
     FloraWeb.Server.Logging.Metrics
     FloraWeb.Server.Logging.Tracing
-    FloraWeb.Server.Packages
     FloraWeb.Server.Pages
+    FloraWeb.Server.Pages.Packages
     FloraWeb.Templates
     FloraWeb.Templates.Error
     FloraWeb.Templates.Layout.App

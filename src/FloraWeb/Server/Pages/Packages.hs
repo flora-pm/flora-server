@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module FloraWeb.Server.Packages
+module FloraWeb.Server.Pages.Packages
   ( Routes
   , server
   ) where

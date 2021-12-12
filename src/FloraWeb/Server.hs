@@ -69,4 +69,3 @@ naturalTransform env app =
 
 genAuthServerContext :: FloraEnv -> Context (AuthHandler Request User ': '[])
 genAuthServerContext floraEnv = authHandler floraEnv :. EmptyContext
-

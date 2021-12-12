@@ -10,11 +10,17 @@ import Network.HTTP.Types.Status
 import FloraWeb.Templates
 import FloraWeb.Templates.Types
 import FloraWeb.Types
+import Servant
 
-renderError :: Status -> FloraM (Html ())
+renderError :: Status -> FloraM a
 renderError status = do
   let assigns = TemplateAssigns (Map.singleton "display-title" "Flora :: *** Exception" )
-  render assigns $ showError status
+  let body = mkErrorPage assigns $ showError status
+  throwError $ ServerError{ errHTTPCode = statusCode status
+                     , errBody = body
+                     , errReasonPhrase = ""
+                     , errHeaders = []
+                     }
 
 showError :: Status -> FloraHTML
 showError status = do
