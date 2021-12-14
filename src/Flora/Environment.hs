@@ -72,30 +72,30 @@ displayConnectInfo PG.ConnectInfo {..} = T.pack $
 parseConnectInfo :: Parser Error PG.ConnectInfo
 parseConnectInfo =
   PG.ConnectInfo
-    <$> var str  "DB_HOST"     (help "PostgreSQL host")
-    <*> var port "DB_PORT"     (help "PostgreSQL port")
-    <*> var str  "DB_USER"     (help "PostgreSQL user")
-    <*> var str  "DB_PASSWORD" (help "PostgreSQL password")
-    <*> var str  "DB_DATABASE" (help "Control-Plane database")
+    <$> var str  "FLORA_DB_HOST"     (help "PostgreSQL host")
+    <*> var port "FLORA_DB_PORT"     (help "PostgreSQL port")
+    <*> var str  "FLORA_DB_USER"     (help "PostgreSQL user")
+    <*> var str  "FLORA_DB_PASSWORD" (help "PostgreSQL password")
+    <*> var str  "FLORA_DB_DATABASE" (help "Control-Plane database")
 
 parsePoolConfig :: Parser Error PoolConfig
 parsePoolConfig =
   PoolConfig
-    <$> var (int >=> nonNegative) "DB_SUB_POOLS" (help "Number of sub-pools")
-    <*> var timeout "DB_TIMEOUT" (help "Timeout for each connection")
+    <$> var (int >=> nonNegative) "FLORA_DB_SUB_POOLS" (help "Number of sub-pools")
+    <*> var timeout "FLORA_DB_TIMEOUT" (help "Timeout for each connection")
     <*> var (int >=> nonNegative)
-            "DB_POOL_CONNECTIONS"
+            "FLORA_DB_POOL_CONNECTIONS"
             (help "Number of connections per sub-pool")
 
 parseLoggingEnv :: Parser Error LoggingEnv
 parseLoggingEnv =
   LoggingEnv
-  <$> var (pure . Just <=< nonempty) "SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
+  <$> var (pure . Just <=< nonempty) "FLORA_SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
   <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Whether or not Prometheus is enabled")
   <*> var str "FLORA_ENVIRONMENT" (help "Name of the current environemnt (local, dev, prod)")
 
 parsePort :: Parser Error Word16
-parsePort = var port "FLORA_PORT" (help "HTTP Port for Flora")
+parsePort = var port "FLORA_HTTP_PORT" (help "HTTP Port for Flora")
 
 parseConfig :: Parser Error FloraConfig
 parseConfig =

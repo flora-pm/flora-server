@@ -23,14 +23,14 @@ db-start: ## Start the dev database
 	@postgres -D _database
 
 db-create: ## Create the database
-	@createdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) flora_dev
+	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) flora_dev
 
 db-drop: ## Drop the database
-	@dropdb --if-exists -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) flora_dev
+	@dropdb --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) flora_dev
 
 db-setup: ## Setup the dev database
-	@migrate init "$(PG_CONNSTRING)" 
-	@migrate migrate "$(PG_CONNSTRING)" migrations
+	@migrate init "$(FLORA_PG_CONNSTRING)" 
+	@migrate migrate "$(FLORA_PG_CONNSTRING)" migrations
 
 db-reset: db-drop db-create db-setup ## Reset the dev database
 	@cabal run -- flora-cli provision-fixtures

@@ -1,16 +1,16 @@
-export DB_HOST="localhost"
-export DB_PORT="5432"
-export DB_USER="postgres"
-export DB_PASSWORD="postgres"
-export DB_DATABASE="flora_dev"
-export DB_POOL_CONNECTIONS="10"
-export DB_SUB_POOLS="10"
-export DB_TIMEOUT="10"
+export FLORA_DB_HOST="localhost"
+export FLORA_DB_PORT="5432"
+export FLORA_DB_USER="postgres"
+export FLORA_DB_PASSWORD="postgres"
+export FLORA_DB_DATABASE="flora_dev"
+export FLORA_DB_POOL_CONNECTIONS="10"
+export FLORA_DB_SUB_POOLS="10"
+export FLORA_DB_TIMEOUT="10"
 
-export PG_URI="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}"
-export PG_CONNSTRING="host=${DB_HOST} dbname=${DB_DATABASE} user=${DB_USER} password=${DB_PASSWORD}"
+export FLORA_PG_URI="postgresql://${FLORA_DB_USER}:${FLORA_DB_PASSWORD}@${FLORA_DB_HOST}:${FLORA_DB_PORT}/${FLORA_DB_DATABASE}"
+export FLORA_PG_CONNSTRING="host=${FLORA_DB_HOST} dbname=${FLORA_DB_DATABASE} user=${FLORA_DB_USER} password=${FLORA_DB_PASSWORD}"
 
-export FLORA_PORT=8083
+export FLORA_HTTP_PORT=8083
 export FLORA_ENVIRONMENT="local"
 
 # Set these variables in `environment.local.sh`, which is not tracked by git.
