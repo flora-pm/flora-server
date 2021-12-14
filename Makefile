@@ -23,20 +23,22 @@ db-start: ## Start the dev database
 	@postgres -D _database
 
 db-create: ## Create the database
-	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) flora_dev
+	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
 db-drop: ## Drop the database
-	@dropdb --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) flora_dev
+	@dropdb --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
-db-setup: ## Setup the dev database
+db-setup: db-create ## Setup the dev database
 	@migrate init "$(FLORA_PG_CONNSTRING)" 
 	@migrate migrate "$(FLORA_PG_CONNSTRING)" migrations
 
-db-reset: db-drop db-create db-setup ## Reset the dev database
+db-reset: db-drop db-setup ## Reset the dev database
 	@cabal run -- flora-cli provision-fixtures
 
 repl: ## Start a REPL
-	@cabal repl
+	@cabal repl lib:flora
+
+ghci: repl ## Start a REPL (alias for `make repl`)
 
 test: ## Run the test suite
 	@cabal test

@@ -9,33 +9,52 @@
 </a>
 </p>
 
-## Screenshot gallery
-
 <img src="https://github.com/flora-pm/flora-server/raw/development/images/flora-package-view.png" alt="package view">
 
-## Development
+## Installation and Configuration
 
-Source the `environment.sh` directly or through a `environment.local.sh` file (that is not tracked) if you want
-to override some default values.
+For ease of development, a `shell.nix` file is provided. It brings with it system dependency and tooling.
+
+To jump into the development environment, use `make nix-shell`. It is impure by default, so your editor and development
+tools will still be accessible.
+
+### Flora server
+
+Configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
+server will tell you which ones are missing.
+
+To start in the best of conditions, create a file called `environment.local.sh` with the following content:
 
 ```bash
-$ make help
-start                          Start flora-server
-build                          Build the server without optimisations
-assets-deps                    Install the dependencies of the frontend
-assets-build                   Build the web assets
-assets-watch                   Continuously rebuild the web assets
-assets-clean                   Remove JS artifacts
-db-init                        Initialize the dev database
-db-start                       Start the dev database
-db-create                      Create the database
-db-drop                        Drop the database
-db-setup                       Setup the dev database
-db-reset                       Reset the dev database
-repl                           Start a REPL
-test                           Run the test suite
-ghcid-test                     Load the tests in ghcid and reload them on file change
-ghcid-server                   Start flora-server in ghcid
-lint                           Run the code linter (HLint)
-style                          Run the code styler (stylish-haskell)
+source environment.sh
+
+# export FLORA_SENTRY_DSN="" # Don't forget to add your Sentry DSN if you use it!
+# export FLORA_PROMETHEUS_ENABLED="true"
 ```
+
+This will get all the variables from `environment.sh` and allow you to override them.
+
+You can then build the server with 
+
+```bash
+# To build the binaries
+$ make build
+# To load the main library in a REPL
+$ make repl
+```
+
+### Database
+
+the Flora server uses PostgreSQL 14.1
+
+To create the database and apply the migrations, type:
+
+```bash
+$ make db-setup # Implies db-create
+```
+
+you can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
+
+---
+
+You can explore the Makefile rules by typing `make` in your shell.
