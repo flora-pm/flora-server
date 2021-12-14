@@ -94,6 +94,7 @@ library
     , bytestring                 ^>=0.10
     , Cabal                      ^>=3
     , clock                      ^>=0.8
+    , cmark-gfm                  ^>=0.2
     , colourista                 ^>=0.1
     , containers                 ^>=0.6
     , cookie                     ^>=0.4
@@ -118,6 +119,7 @@ library
     , prometheus-client          ^>=1.1
     , prometheus-metrics-ghc     ^>=1.0
     , prometheus-proc            ^>=0.1
+    , PyF                        ^>=0.10
     , raven-haskell              ^>=0.1
     , resource-pool              ^>=0.2
     , servant                    ^>=0.18

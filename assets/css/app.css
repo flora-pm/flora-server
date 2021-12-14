@@ -33,6 +33,13 @@
     --tw-text-opacity: 1;
     color: rgba(55, 65, 81, var(--tw-text-opacity));
   }
+}
+
+li {
+  list-style-type: disc;
+  list-style-position: inside;
+  margin-top: 0.50em;
+  margin-bottom: 0.50em;
 
 }
 
@@ -40,6 +47,15 @@
   .container{
     width: auto;
     max-width: 1100px;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .about-page{
+    width: auto;
+    max-width: 1000px;
     padding-right: 15px;
     padding-left: 15px;
     margin-right: auto;

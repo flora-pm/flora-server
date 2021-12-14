@@ -40,7 +40,7 @@ header = do
       link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
       meta_ [name_ "twitter:dnt", content_ "on"]
 
-    body_ [class_ "bg-background dark:bg-background-dark dark:text-white"]$ do
+    body_ [class_ "bg-background dark:bg-background-dark dark:text-gray-100"]$ do
       script_ [src_ "/static/js/app.js", type_ "module"] ("" :: Text)
       navBar
 
@@ -69,13 +69,13 @@ navBar = do
     div_ [class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "flex justify-between h-16"] $ do
         div_ [class_ "flex-shrink-0 flex items-center"] $ do
-          a_ [href_ "/", class_ "flex-shrink-0 font-bold text-white dark:text-white"] (getDisplayTitle ta)
+          a_ [href_ "/", class_ "flex-shrink-0 font-bold text-gray-100 dark:text-gray-100"] (getDisplayTitle ta)
           navbarSearch
 
         div_ [class_ "hidden margin-right flex sm:flex justify-end grid grid-rows-3 row-end-auto"] $ do
-          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 text-white dark:text-white"] "Packages"
-          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 text-white dark:text-white"] "Guides"
-          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 text-white dark:text-white"] "Login / Signup"
+          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 text-gray-100 dark:text-gray-100"] "Packages"
+          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 text-gray-100 dark:text-gray-100"] "Guides"
+          a_ [href_ "#", class_ "inline-flex items-center px-1 pt-1 border-b-2 mx-7 text-gray-100 dark:text-gray-100"] "Login / Signup"
           darkModeToggle
 
 navbarSearch :: FloraHTML

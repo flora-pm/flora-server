@@ -23,6 +23,7 @@ import Text.Read (readMaybe)
 data FloraEnv = FloraEnv
   { pool     :: Pool PG.Connection
   , httpPort :: Word16
+  , domain   :: Text
   , logging  :: LoggingEnv
   }
   deriving stock (Show, Generic)
@@ -38,6 +39,7 @@ data LoggingEnv = LoggingEnv
 data FloraConfig = FloraConfig
   { dbConfig    :: PoolConfig
   , connectInfo :: PG.ConnectInfo
+  , domain      :: Text
   , httpPort    :: Word16
   , logging     :: LoggingEnv
   }
@@ -97,11 +99,15 @@ parseLoggingEnv =
 parsePort :: Parser Error Word16
 parsePort = var port "FLORA_HTTP_PORT" (help "HTTP Port for Flora")
 
+parseDomain :: Parser Error Text
+parseDomain = var str "FLORA_DOMAIN" (help "URL domain for Flora")
+
 parseConfig :: Parser Error FloraConfig
 parseConfig =
   FloraConfig
   <$> parsePoolConfig
   <*> parseConnectInfo
+  <*> parseDomain
   <*> parsePort
   <*> parseLoggingEnv
 

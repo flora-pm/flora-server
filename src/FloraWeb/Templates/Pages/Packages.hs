@@ -22,7 +22,7 @@ import Lucid.Alpine
 
 showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> FloraHTML
 showPackage latestRelease package@Package{namespace, name, synopsis} dependents dependencies = do
-  div_ [class_ "container dark:text-white text-black"] $ do
+  div_ [class_ "container dark:text-gray-100 text-black"] $ do
     presentationHeader latestRelease namespace name synopsis
     packageBody package latestRelease dependencies dependents
 
