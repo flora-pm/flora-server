@@ -2,13 +2,13 @@
 module FloraWeb.Templates.Pages.Home where
 
 import CMarkGFM
-import PyF
 import Lucid
 import Lucid.Svg (d_, fill_, path_, stroke_, stroke_linecap_, stroke_linejoin_,
                   stroke_width_, viewBox_)
+import PyF
 
-import FloraWeb.Templates.Types
 import Data.Text (Text)
+import FloraWeb.Templates.Types
 
 show :: FloraHTML
 show = main_ $ do
