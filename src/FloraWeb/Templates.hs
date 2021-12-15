@@ -5,7 +5,7 @@ import Control.Monad.Reader
 import Data.ByteString.Lazy
 import Lucid
 
-import FloraWeb.Templates.Layout.App (header, footer)
+import FloraWeb.Templates.Layout.App (footer, header)
 import FloraWeb.Templates.Types
 import FloraWeb.Types
 
