@@ -9,7 +9,7 @@
 </a>
 </p>
 
-<img src="https://github.com/flora-pm/flora-server/raw/development/images/flora-package-view.png" alt="package view">
+<img src="https://github.com/flora-pm/flora-server/raw/development/images/flora-about.png" alt="about page">
 
 ## Installation and Configuration
 
