@@ -27,11 +27,26 @@
   background-color: rgba(102, 51, 153, var(--tw-bg-opacity));
 }
 
-
 .dark{
+  .navbar{
+    background-color: #353746;
+  }
+
   .navbar-element:hover{
     --tw-text-opacity: 1;
-    color: rgba(55, 65, 81, var(--tw-text-opacity));
+    color: #a68bfc;
+  }
+
+  .social-button:hover{
+    --tw-text-opacity: 1;
+    color: #a68bfc;
+  }
+
+  .package-body{
+    a:hover{
+      --tw-text-opacity: 1;
+      color: #a68bfc;
+    }
   }
 }
 
@@ -40,7 +55,6 @@ li {
   list-style-position: inside;
   margin-top: 0.50em;
   margin-bottom: 0.50em;
-
 }
 
 @media (min-width: 1024px) {

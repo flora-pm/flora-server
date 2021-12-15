@@ -37,18 +37,19 @@ presentationHeader release namespace name synopsis = do
       p_ [class_ ""] (toHtml synopsis)
 
 packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> FloraHTML
-packageBody Package{name, metadata} latestRelease dependencies dependents  = do
-  div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
-    div_ [class_ "package-left-column"] $ do
-      div_ [class_ "grid-rows-3"] $ do
-        displayLicense (metadata ^. #license)
-        displayLinks latestRelease metadata
-    div_ [class_ "col-span-2"] mempty
-    div_ [class_ "package-right-column"] $ do
-      div_ [class_ "grid-rows-3"] $ do
-        displayDependencies dependencies
-        displayInstructions name latestRelease
-        displayDependents dependents
+packageBody Package{name, metadata} latestRelease dependencies dependents =
+  div_ [class_ "package-body"] $ do
+    div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
+      div_ [class_ "package-left-column"] $ do
+        div_ [class_ "grid-rows-3"] $ do
+          displayLicense (metadata ^. #license)
+          displayLinks latestRelease metadata
+      div_ [class_ "col-span-2"] mempty
+      div_ [class_ "package-right-column"] $ do
+        div_ [class_ "grid-rows-3"] $ do
+          displayDependencies dependencies
+          displayInstructions name latestRelease
+          displayDependents dependents
 
 displayReleaseVersion :: Release -> FloraHTML
 displayReleaseVersion Release{version} = toHtml version

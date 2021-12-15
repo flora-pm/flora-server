@@ -21,7 +21,7 @@ about = do
     div_ [class_ "divider text-center sm:mb-16"] $ do
       div_ [class_ "text-center"] $ do
         p_ [class_ "mt-1 text-4xl font-extrabold dark:text-gray-100 sm:text-5xl sm:tracking-tight lg:text-6xl"] "Flora.pm"
-        p_ [class_ "max-w-xl mt-5 mx-auto text-xl text-gray-100"] "An index for the Haskell ecosystem"
+        p_ [class_ "max-w-xl mt-5 mx-auto text-xl dark:text-gray-100"] "An index for the Haskell ecosystem"
     div_ [class_ ""] $ do
       aboutText
 
