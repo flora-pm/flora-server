@@ -47,7 +47,7 @@ Flora is the work of volunteers, and the source can be read on <a href="https://
 <h3 class="font-bold text-xl dark:text-gray-100 my-10"> Moderation and Code of Conduct </h3>
 
 The Flora project is governed by a [Code of Conduct](https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md).
-If you feel like a resource on the service or a participant in the project has an innapropriate behaviour in relation to the code of conduct at [moderation@flora.pm](mailto:moderation@flora.pm).
+If you feel like a resource on the service or a participant in the project has an inappropriate behaviour in relation to the code of conduct at [moderation@flora.pm](mailto:moderation@flora.pm).
 
 |]
 

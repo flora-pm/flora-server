@@ -94,7 +94,7 @@ parseLoggingEnv =
   LoggingEnv
   <$> var (pure . Just <=< nonempty) "FLORA_SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
   <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Whether or not Prometheus is enabled")
-  <*> var str "FLORA_ENVIRONMENT" (help "Name of the current environemnt (local, dev, prod)")
+  <*> var str "FLORA_ENVIRONMENT" (help "Name of the current environment (local, dev, prod)")
 
 parsePort :: Parser Error Word16
 parsePort = var port "FLORA_HTTP_PORT" (help "HTTP Port for Flora")
