@@ -1,21 +1,62 @@
+{-# LANGUAGE QuasiQuotes #-}
 module FloraWeb.Templates.Pages.Home where
 
-import FloraWeb.Templates.Types
+import CMarkGFM
 import Lucid
 import Lucid.Svg (d_, fill_, path_, stroke_, stroke_linecap_, stroke_linejoin_,
                   stroke_width_, viewBox_)
+import PyF
+
+import Data.Text (Text)
+import FloraWeb.Templates.Types
 
 show :: FloraHTML
 show = main_ $ do
     banner
     searchBar
 
+about :: FloraHTML
+about = do
+  div_ [ class_ "max-w-7xl py-16 px-4 sm:pb-4 sm:pt-24 sm:px-6 lg:px-8 about-page" ] $ do
+    div_ [class_ "divider text-center sm:mb-16"] $ do
+      div_ [class_ "text-center"] $ do
+        p_ [class_ "mt-1 text-4xl font-extrabold dark:text-gray-100 sm:text-5xl sm:tracking-tight lg:text-6xl"] "Flora.pm"
+        p_ [class_ "max-w-xl mt-5 mx-auto text-xl text-gray-100"] "An index for the Haskell ecosystem"
+    div_ [class_ ""] $ do
+      aboutText
+
+aboutText :: FloraHTML
+aboutText = do
+  toHtmlRaw $ commonmarkToHtml [optUnsafe] [] text
+  where
+    text :: Text
+    text = [fmt|
+
+<h3 class="font-bold text-xl dark:text-gray-100 mb-10"> What is Flora? </h3>
+Flora.pm is a package index for the <a href="https://haskell.org">Haskell</a> ecosystem. It indexes packages from <a href="https://hackage.haskell.org">Hackage</a>,
+and provides a number of new features and improvements:
+
+* Better category model, with elimination of duplicates and curation
+* Package namespaces, so that packages with the same name can live without conflict
+* Beautiful package pages
+* Responsive interface for mobile devices
+* Dark mode
+
+Flora is the work of volunteers, and the source can be read on <a href="https://gtihub.com/flora-pm/flora-server">Github</a>.
+
+<h3 class="font-bold text-xl dark:text-gray-100 my-10"> Moderation and Code of Conduct </h3>
+
+The Flora project is governed by a [Code of Conduct](https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md).
+If you feel like a resource on the service or a participant in the project has an innapropriate behaviour in relation to the code of conduct at [moderation@flora.pm](mailto:moderation@flora.pm).
+
+|]
+
 banner :: FloraHTML
 banner = do
   div_ [class_ "relative"] $
     div_ [class_ "px-4 py-16 sm:px-6 sm:py-24 lg:py-16 lg:px-8"] $
       h1_ [class_ "text-center text-2xl font-extrabold tracking-tight sm:text-5xl lg:text-4xl"] $
-        span_ [class_ "dark:text-white text-black headline"] "Search Haskell packages on Flora"
+        span_ [class_ "dark:text-gray-100 text-black headline"] "Search Haskell packages on Flora"
 
 searchBar :: FloraHTML
 searchBar =

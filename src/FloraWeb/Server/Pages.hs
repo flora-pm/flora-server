@@ -17,6 +17,7 @@ type Routes = ToServantApi Routes'
 
 data Routes' mode = Routes'
   { home     :: mode :- Get '[HTML] (Html ())
+  , about    :: mode :- "about" :> Get '[HTML] (Html ())
   , packages :: mode :- "packages" :> Packages.Routes
   }
   deriving stock (Generic)
@@ -24,6 +25,7 @@ data Routes' mode = Routes'
 server :: ToServant Routes' (AsServerT FloraM)
 server = genericServerT Routes'
   { home = homeHandler
+  , about = aboutHandler
   , packages = Packages.server
   }
 
@@ -31,3 +33,9 @@ homeHandler :: FloraM (Html ())
 homeHandler = do
   let assigns = mkAssigns emptyAssigns (Just (UserAssigns $ Map.fromList [("navbar-search", "false")]))
   render assigns Home.show
+
+aboutHandler :: FloraM (Html ())
+aboutHandler = do
+  let assigns = emptyAssigns
+  render assigns Home.about
+

@@ -13,6 +13,8 @@ export FLORA_PG_CONNSTRING="host=${FLORA_DB_HOST} dbname=${FLORA_DB_DATABASE} us
 export FLORA_HTTP_PORT=8083
 export FLORA_ENVIRONMENT="local"
 
+export FLORA_DOMAIN="localhost"
+
 # Set these variables in `environment.local.sh`, which is not tracked by git.
 #export SENTRY_DSN="" # Set this variable to connecto to your Sentry instance
 #export FLORA_PROMETHEUS_ENABLED="true" # Set this variable to true or false to enable Prometheus metrics export
