@@ -9,5 +9,4 @@ create table packages (
   updated_at timestamptz not null
 );
 
-/* create unique index on packages(lower(name) text_pattern_ops); */
 create unique index on packages(lower(name), lower(namespace));

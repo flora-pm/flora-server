@@ -13,6 +13,7 @@ environment.local.sh
 ghcid.text
 tags
 tags.mtime
+client_session_key.aes
 
 /static/*
 assets/node_modules

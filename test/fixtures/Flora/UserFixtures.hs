@@ -1,7 +1,8 @@
 module Flora.UserFixtures where
 
-import Data.Password.Argon2
+import Data.Password.Argon2 (mkPassword)
 import Flora.Model.User
+import System.IO.Unsafe (unsafePerformIO)
 
 user1 :: User
 user1 =
@@ -9,7 +10,7 @@ user1 =
       username    = "pmpc"
       email       = "pmpc@example.com"
       displayName = "Plonk McPlonkface"
-      password    = PasswordHash "foobar2000"
+      password    = unsafePerformIO $ hashPassword $ mkPassword "foobar2000"
       createdAt   = read "2021-04-23 10:00:00 UTC"
       updatedAt   = read "2021-04-23 10:00:00 UTC"
   in  User { .. }
@@ -20,7 +21,7 @@ user2 =
       username    = "blue_devil"
       email       = "princess_jack@example.com"
       displayName = "Princess Jack Moonshine"
-      password    = PasswordHash "DRINK!"
+      password    = unsafePerformIO $ hashPassword $ mkPassword "DRINK!"
       createdAt   = read "2021-04-23 14:00:00 UTC"
       updatedAt   = read "2021-04-23 14:30:00 UTC"
    in User { .. }
