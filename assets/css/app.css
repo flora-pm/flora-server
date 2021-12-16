@@ -2,8 +2,6 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-@import "./fontawesome-all.min.css";
-
 @layer base {
   a {
     @apply text-link dark:text-link-dark
