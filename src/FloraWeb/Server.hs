@@ -2,9 +2,9 @@ module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
 import Control.Monad
-import Control.Monad.Reader (runReaderT, withReaderT)
+import Control.Monad.Reader
 import Data.Maybe
-import Network.Wai
+import Data.Text.Display
 import Network.Wai.Handler.Warp
 import Network.Wai.Logger (withStdoutLogger)
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
@@ -12,25 +12,17 @@ import Optics.Operators
 import qualified Prometheus
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc
-import Servant
-import Servant.API.Generic
-import Servant.Server.Experimental.Auth
+import Servant hiding (Header, respond)
 import Servant.Server.Generic
 
-import Data.Text.Display
-import Flora.Environment
-import Flora.Model.User (User)
+import Flora.Environment (FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import FloraWeb.Routes
+import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Logging.Metrics
 import FloraWeb.Server.Logging.Tracing
 import qualified FloraWeb.Server.Pages as Pages
 import FloraWeb.Types
-
-data Routes mode = Routes
-  { assets :: mode :- "static" :> Raw
-  , pages  :: mode :- AuthProtect "cookie-auth" :> Pages.Routes
-  }
-  deriving stock (Generic)
 
 runFlora :: IO ()
 runFlora = do
@@ -46,26 +38,34 @@ runFlora = do
 
 runServer :: FloraEnv -> IO ()
 runServer floraEnv = withStdoutLogger $ \logger -> do
+  let webEnv = WebEnv floraEnv
+  webEnvStore  <- liftIO $ newWebEnvStore webEnv
   let server = genericServeTWithContext
-                 (naturalTransform floraEnv) floraServer (genAuthServerContext floraEnv)
+                 (naturalTransform webEnvStore) floraServer (genAuthServerContext floraEnv)
   let warpSettings = setPort (fromIntegral $ httpPort floraEnv ) $
                      setLogger logger $
-                     setOnException (sentryOnException (floraEnv ^. #logging))
+                     setOnException (sentryOnException (floraEnv ^. #environment)
+                                                       (floraEnv ^. #logging))
                      defaultSettings
   runSettings warpSettings $
-    prometheusMiddleware (floraEnv ^. #logging)
+    prometheusMiddleware (floraEnv ^. #environment) (floraEnv ^. #logging)
     . heartbeatMiddleware
     $ server
 
 floraServer :: Routes (AsServerT FloraM)
 floraServer = Routes
   { assets = serveDirectoryWebApp "./static"
-  , pages = \userInfo -> hoistServer (Proxy @Pages.Routes) (withReaderT $ \floraEnv -> CallInfo{..}) Pages.server
+  , pages = \sessionWithCookies ->
+      hoistServerWithContext
+        (Proxy @Pages.Routes)
+        (Proxy @'[FloraAuthContext])
+        (withReaderT (const sessionWithCookies)) -- Headers have been removed at this point, change it back if needed.
+        Pages.server
   }
 
-naturalTransform :: FloraEnv -> FloraM a -> Handler a
-naturalTransform env app =
-  runReaderT app env
+naturalTransform :: WebEnvStore -> FloraM a -> Handler a
+naturalTransform webEnvStore app = do
+  runReaderT app webEnvStore
 
-genAuthServerContext :: FloraEnv -> Context '[AuthHandler Request (Maybe User)]
+genAuthServerContext :: FloraEnv -> Context '[FloraAuthContext]
 genAuthServerContext floraEnv = authHandler floraEnv :. EmptyContext

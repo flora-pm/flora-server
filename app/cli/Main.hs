@@ -1,5 +1,6 @@
 module Main where
 
+import Optics.Core
 import Options.Applicative
 
 import Database.PostgreSQL.Entity.DBT
@@ -42,8 +43,9 @@ parseCoverageReport = CoverageReport . CoverageReportOptions
 runOptions :: Options -> IO ()
 runOptions (Options Provision) = do
   env <- getFloraEnv
-  withPool (pool env) $ do
+  withPool (env ^. #pool) $ do
     insertUser hackageUser
+    insertUser user2
 
     publishPackage [] ghcPrimRelease ghcPrim hackageUser
     publishPackage [ghcBignumDepOnGhcPrim] ghcBignumRelease ghcBignum hackageUser

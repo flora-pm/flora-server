@@ -1,16 +1,43 @@
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module Flora.UserSpec where
 
-import Test.Hspec (Spec)
-import Test.Hspec.DB (describeDB, itDB)
-import Test.Hspec.Expectations.Lifted (shouldReturn)
+import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Reader
+import Data.Password.Argon2 (mkPassword)
+import Database.PostgreSQL.Entity.DBT
+import Optics.Core
+import Servant.Server
+import Test.Tasty
 
+import Flora.Environment
 import Flora.Model.User
+import Flora.TestUtils
 import Flora.UserFixtures
-import SpecHelpers (migrate)
+import FloraWeb.Client as Client
+import FloraWeb.Routes.Pages.Sessions
 
-spec :: Spec
-spec = describeDB migrate "users" $ do
-  itDB "Fetch user by Id" $ do
-    getUserById (userId hackageUser) `shouldReturn` Just hackageUser
-  itDB "Fetch user by email" $ do
-    getUserByEmail (email hackageUser) `shouldReturn` Just hackageUser
+spec :: TestM TestTree
+spec = testThese "users"
+  [ testThis "Fetch user by Id"    fetchUserById
+  , testThis "Fetch user by email" fetchUserByEmail
+  -- , testThis "Authenticate an arbitrary user" authenticateUser
+  ]
+
+fetchUserById :: TestM ()
+fetchUserById = do
+   result <- liftDB $ getUserById (hackageUser ^. #userId)
+   assertEqual (Just hackageUser) result
+
+fetchUserByEmail :: TestM ()
+fetchUserByEmail = do
+    result <- liftDB $ getUserByEmail (hackageUser ^. #email)
+    assertEqual (Just hackageUser) result
+
+-- authenticateUser :: TestM ()
+-- authenticateUser = do
+--     hashedPassword <- hashPassword $ mkPassword "foobar2000"
+--     user <- randomUser $ randomUserTemplate{ password = pure hashedPassword }
+--     liftDB $ insertUser user
+--     let form = LoginForm (user ^. #email) "foobar2000" Nothing
+--     assertClientRight' "Session can be created" (testRequest $ Client.createSession form)
