@@ -10,14 +10,14 @@ import System.Log.Raven (initRaven, register, silentFallback)
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))
 
-sentryOnException :: LoggingEnv -> Maybe Request -> SomeException -> IO ()
-sentryOnException tracingEnv mRequest exception =
+sentryOnException :: DeploymentEnv -> LoggingEnv -> Maybe Request -> SomeException -> IO ()
+sentryOnException environment tracingEnv mRequest exception =
   case tracingEnv ^. #sentryDSN of
     Nothing -> pure ()
     Just sentryDSN -> do
       sentryService <- initRaven
         sentryDSN
-        (\defaultRecord -> defaultRecord{srEnvironment = Just $ tracingEnv ^. #environment})
+        (\defaultRecord -> defaultRecord{srEnvironment = Just $ show environment})
         sendRecord
         silentFallback
       register

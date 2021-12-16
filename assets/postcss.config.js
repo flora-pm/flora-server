@@ -1,7 +1,7 @@
 module.exports = {
   plugins: [
     require("postcss-import")(),
-    require('tailwindcss/nesting'),
+    require("@tailwindcss/nesting"),
     require("tailwindcss")(),
     require("autoprefixer")(),
     require("postcss-copy")({
@@ -11,4 +11,3 @@ module.exports = {
     ...(process.env.ENV_BUILD === "prod" ? [require("cssnano")()] : []),
   ],
 };
-

@@ -4,8 +4,8 @@ create table releases (
   version text not null,
   archive_checksum text not null,
   created_at timestamptz,
-  updated_at timestamptz,
-  unique (package_id, version)
+  updated_at timestamptz
 );
 
 create index on releases(package_id);
+create unique index on releases(package_id, version);
