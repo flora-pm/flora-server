@@ -2125,6 +2125,11 @@ svgo@^2.7.0:
     picocolors "^1.0.0"
     stable "^0.1.8"
 
+tailwindcss-dropdown@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/tailwindcss-dropdown/-/tailwindcss-dropdown-1.0.0.tgz#1c9958fb93a0f347040afbaf6b163f0572c0031c"
+  integrity sha512-BAtrv25Fx+AlGg2jFe2Vp6s/g+hZFzpGNXnId9iogumtFFkR7FUx+d1PnZZKxtwO04C3rGA+hDoxj1Gzd9Af6Q==
+
 tailwindcss@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/tailwindcss/-/tailwindcss-3.0.0.tgz#f7dfd30996b3b1a84d656aaf3c8b6810b70d3d42"

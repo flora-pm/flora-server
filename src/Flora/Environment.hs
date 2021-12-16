@@ -1,8 +1,6 @@
 module Flora.Environment
   ( FloraEnv(..)
   , LoggingEnv(..)
-  , CallInfo(..)
-  , AuthedUser(..)
   , getFloraEnv
   ) where
 
@@ -18,7 +16,6 @@ import Database.PostgreSQL.Entity.DBT
 import qualified Database.PostgreSQL.Simple as PG
 import Env (AsUnread (unread), Error (..), Parser, Reader, def, help, nonempty,
             parse, str, switch, var, (<=<))
-import Flora.Model.User
 import GHC.Generics
 import Text.Read (readMaybe)
 
@@ -30,18 +27,6 @@ data FloraEnv = FloraEnv
   , logging  :: LoggingEnv
   }
   deriving stock (Show, Generic)
-
--- | Datatype used for every route that doesn't *need* an authenticated user
-data CallInfo = CallInfo
-  { userInfo :: Maybe User
-  , floraEnv :: FloraEnv
-  } deriving stock (Show, Generic)
-
--- | Datatype used for routes that *need* an authenticated user
-data AuthedUser = AuthedUser
-  { userInfo :: User
-  , floraEnv :: FloraEnv
-  } deriving stock (Show, Generic)
 
 data LoggingEnv = LoggingEnv
   { sentryDSN         :: Maybe String

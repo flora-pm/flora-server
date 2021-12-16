@@ -2,7 +2,7 @@ module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
 import Control.Monad
-import Control.Monad.Reader (runReaderT, withReaderT)
+import Control.Monad.Reader
 import Data.Maybe
 import Network.Wai
 import Network.Wai.Handler.Warp
@@ -19,7 +19,6 @@ import Servant.Server.Generic
 
 import Data.Text.Display
 import Flora.Environment
-import Flora.Model.User (User)
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Logging.Metrics
 import FloraWeb.Server.Logging.Tracing
@@ -60,12 +59,16 @@ runServer floraEnv = withStdoutLogger $ \logger -> do
 floraServer :: Routes (AsServerT FloraM)
 floraServer = Routes
   { assets = serveDirectoryWebApp "./static"
-  , pages = \userInfo -> hoistServer (Proxy @Pages.Routes) (withReaderT $ \floraEnv -> CallInfo{..}) Pages.server
+  , pages = \session ->
+      hoistServer
+        (Proxy @Pages.Routes)
+        (withReaderT (const session))
+        Pages.server
   }
 
 naturalTransform :: FloraEnv -> FloraM a -> Handler a
-naturalTransform env app =
+naturalTransform env@FloraEnv{pool} app = 
   runReaderT app env
 
-genAuthServerContext :: FloraEnv -> Context '[AuthHandler Request (Maybe User)]
+genAuthServerContext :: FloraEnv -> Context '[AuthHandler Request Session]
 genAuthServerContext floraEnv = authHandler floraEnv :. EmptyContext

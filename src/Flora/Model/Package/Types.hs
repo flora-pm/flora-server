@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes     #-}
+
 module Flora.Model.Package.Types where
 
 import Data.Aeson
@@ -10,9 +11,9 @@ import Data.Time (UTCTime)
 import Data.UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)
+import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
+import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
 import qualified Distribution.SPDX.License as SPDX
@@ -22,6 +23,7 @@ import qualified Text.PrettyPrint as PP
 import Text.Regex.Pcre2
 
 import Data.Data
+import Database.PostgreSQL.Simple.Newtypes
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 
@@ -99,12 +101,8 @@ data PackageMetadata = PackageMetadata
   }
   deriving stock (Eq, Ord, Show, Generic, Typeable)
   deriving anyclass (ToJSON, FromJSON)
+   deriving (ToField, FromField) via Aeson PackageMetadata
 
-instance FromField PackageMetadata where
-  fromField = fromJSONField
-
-instance ToField PackageMetadata where
-  toField = toJSONField
 
 data Dependent = Dependent
   { name        :: Text

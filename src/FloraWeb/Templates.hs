@@ -8,6 +8,7 @@ import Lucid
 import FloraWeb.Server.Auth
 import FloraWeb.Templates.Layout.App (footer, header)
 import FloraWeb.Templates.Types
+import FloraWeb.Session
 
 render :: TemplateEnv -> FloraHTML -> FloraPageM (Html ())
 render env template = pure $ toHtmlRaw $ runIdentity $
@@ -20,5 +21,5 @@ mkErrorPage env template = runIdentity $
 rendered :: FloraHTML -> FloraHTML
 rendered target = do
   header
-  target
+  main_ [] target
   footer

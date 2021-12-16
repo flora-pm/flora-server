@@ -69,10 +69,12 @@ library
     Flora.Model.Package
     Flora.Model.Package.Orphans
     Flora.Model.Package.Types
+    Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Orphans
     Flora.Model.Requirement
     Flora.Model.User
+    Flora.Model.User.Orphans
     Flora.Publish
     FloraWeb.Server
     FloraWeb.Server.Auth
@@ -80,11 +82,15 @@ library
     FloraWeb.Server.Logging.Tracing
     FloraWeb.Server.Pages
     FloraWeb.Server.Pages.Packages
+    FloraWeb.Server.Pages.Sessions
+    FloraWeb.Server.Util
+    FloraWeb.Session
     FloraWeb.Templates
     FloraWeb.Templates.Error
     FloraWeb.Templates.Layout.App
     FloraWeb.Templates.Pages.Home
     FloraWeb.Templates.Pages.Packages
+    FloraWeb.Templates.Pages.Sessions
     FloraWeb.Templates.Types
     FloraWeb.Types
     Lucid.Orphans
@@ -95,7 +101,8 @@ library
     , base                       ^>=4.14
     , blaze-builder
     , bytestring                 ^>=0.10
-    , Cabal                      ^>=3.2
+    , Cabal                      ^>=3.6
+    , clientsession              ^>=0.9
     , clock                      ^>=0.8
     , cmark-gfm                  ^>=0.2
     , colourista                 ^>=0.1
@@ -105,6 +112,7 @@ library
     , directory                  ^>=1.3
     , envparse                   ^>=0.5
     , hashable                   ^>=1.3
+    , http-api-data              ^>=0.4
     , http-types                 ^>=0.12
     , lucid
     , lucid-svg                  ^>=0.7
@@ -127,8 +135,9 @@ library
     , servant                    ^>=0.18
     , servant-lucid
     , servant-server             ^>=0.18
+    , stm                        ^>=2.5
     , text                       ^>=1.2
-    , text-display
+    , text-display               ^>=0.0
     , time                       ^>=1.9
     , uuid                       ^>=1.3
     , vector                     ^>=0.12
@@ -199,7 +208,6 @@ executable flora-test
   import:         common-extensions
   import:         common-ghc-options
   import:         common-rts-options
-  type:           exitcode-stdio-1.0
   main-is:        Main.hs
   hs-source-dirs: test
   build-depends:
