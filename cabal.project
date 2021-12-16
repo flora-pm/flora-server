@@ -8,9 +8,6 @@ optimization: False
 
 tests: True
 
-extra-lib-dirs:
-  /usr/pgsql-14/lib
-
 source-repository-package
     type: git
     location: https://github.com/supki/envparse
