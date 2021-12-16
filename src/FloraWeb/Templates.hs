@@ -5,11 +5,11 @@ import Control.Monad.Reader
 import Data.ByteString.Lazy
 import Lucid
 
+import FloraWeb.Server.Auth
 import FloraWeb.Templates.Layout.App (footer, header)
 import FloraWeb.Templates.Types
-import FloraWeb.Types
 
-render :: TemplateAssigns -> FloraHTML -> FloraM (Html ())
+render :: TemplateAssigns -> FloraHTML -> FloraPageM (Html ())
 render ta template = pure $ toHtmlRaw $ runIdentity $
   runReaderT (renderBST (rendered template)) ta
 

@@ -26,12 +26,11 @@ import Flora.Model.Package
 import Flora.Model.Package.Types
 import Flora.Model.Release
 import Flora.Model.Requirement
-import FloraWeb.Server.Auth ()
+import FloraWeb.Server.Auth
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Packages as Packages
 import FloraWeb.Templates.Types
-import FloraWeb.Types
 
 type Routes = ToServantApi Routes'
 
@@ -42,16 +41,16 @@ data Routes' mode = Routes'
   }
   deriving stock (Generic)
 
-server :: ToServant Routes' (AsServerT FloraM)
+server :: ToServant Routes' (AsServerT FloraPageM)
 server = genericServerT Routes'
   { --new = undefined
     show = showHandler
   , showVersion = showVersionHandler
   }
 
-showHandler :: Text -> Text -> FloraM (Html ())
+showHandler :: Text -> Text -> FloraPageM (Html ())
 showHandler namespaceText nameText = do
-  FloraEnv{pool} <- ask
+  FloraEnv{pool} <- asks (\callInfo -> callInfo ^. #floraEnv )
   case (validateNamespace namespaceText, validateName nameText) of
     (Just namespace, Just name) -> do
       result <- liftIO $ withPool pool $ getPackageByNamespaceAndName namespace name
@@ -65,9 +64,9 @@ showHandler namespaceText nameText = do
           render emptyAssigns $ Packages.showPackage latestRelease package dependents latestReleasedependencies
     _ -> renderError notFound404
 
-showVersionHandler :: Text -> Text -> Text -> FloraM (Html ())
+showVersionHandler :: Text -> Text -> Text -> FloraPageM (Html ())
 showVersionHandler namespaceText nameText versionText = do
-  FloraEnv{pool} <- ask
+  FloraEnv{pool} <- asks (\callInfo -> callInfo ^. #floraEnv)
   case (validateNamespace namespaceText, validateName nameText, validateVersion versionText) of
     (Just namespace, Just name, Just versionSpec) -> do
       result <- liftIO $ withPool pool $ getPackageByNamespaceAndName namespace name

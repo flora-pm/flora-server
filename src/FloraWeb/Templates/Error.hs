@@ -7,12 +7,12 @@ import qualified Data.Map.Strict as Map
 import Lucid
 import Network.HTTP.Types.Status
 
+import FloraWeb.Server.Auth
 import FloraWeb.Templates
 import FloraWeb.Templates.Types
-import FloraWeb.Types
 import Servant
 
-renderError :: Status -> FloraM a
+renderError :: Status -> FloraPageM a
 renderError status = do
   let assigns = TemplateAssigns (Map.singleton "display-title" "Flora :: *** Exception" )
   let body = mkErrorPage assigns $ showError status
