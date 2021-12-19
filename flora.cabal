@@ -32,6 +32,7 @@ common common-extensions
     GeneralizedNewtypeDeriving
     InstanceSigs
     KindSignatures
+    LambdaCase
     MultiParamTypeClasses
     NamedFieldPuns
     OverloadedLabels
@@ -43,6 +44,7 @@ common common-extensions
     StrictData
     TypeApplications
     TypeOperators
+    ViewPatterns
 
   default-language:   Haskell2010
 
@@ -62,6 +64,7 @@ library
   exposed-modules:
     Data.Aeson.Orphans
     Flora.Environment
+    Flora.Model.Category
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Orphans
@@ -153,10 +156,14 @@ executable flora-cli
   import:         common-ghc-options
   import:         common-rts-options
   main-is:        Main.hs
+  other-modules:  CoverageReport
   hs-source-dirs: app/cli
   build-depends:
+    , ansi-terminal
     , base
+    , Cabal
     , colourista
+    , directory
     , flora
     , flora-test-fixtures
     , optparse-applicative         ^>=0.16
@@ -165,6 +172,8 @@ executable flora-cli
     , postgresql-simple
     , postgresql-simple-migration
     , text
+    , text-display
+    , typed-process
     , uuid
 
 library flora-test-fixtures
