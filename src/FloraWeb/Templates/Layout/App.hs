@@ -64,7 +64,7 @@ footer =
 
       div_ [class_ "mt-8 md:mt-0 md:order-1"] $
         p_ [class_ "text-center text-base text-black dark:text-gray-400"]
-          "© 2021 Flora.pm. All rights reserved. MIT Licensed."
+          "© 2021 Flora.pm. All rights reserved. Licensed under BSD-3-Clause."
 
 ogTags :: FloraHTML
 ogTags = do
