@@ -58,6 +58,10 @@ in with pkgs; {
         hspec-pg-transact = dontCheck (super.hspec-pg-transact);
         postgresql-migration = unmarkBroken super.postgresql-migration;
         text-display = unmarkBroken super.text-display;
+        lucid-servant = super.callCabal2nix "lucid-servant" (fetchTarball {
+          url = "https://github.com/flora-pm/wai-middleware-heartbeat/archive/dae7b35.tar.gz";
+          sha256 = lib.fakeSha;
+        });
         wai-middleware-heartbeat = super.callCabal2nix "wai-middleware-heartbeat" (fetchTarball {
           url = "https://github.com/flora-pm/wai-middleware-heartbeat/archive/bd7dbbe.tar.gz";
           sha256 = "1s2flv2jhfnd4vdfg6rmvq7s852w1pypasdg0l6ih6raaqyqzybn";
