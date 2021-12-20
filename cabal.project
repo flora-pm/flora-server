@@ -23,13 +23,5 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/fimad/prometheus-haskell
-    tag: 43f19da
-    subdir: ./prometheus-metrics-ghc
-            ./prometheus-client 
-            ./wai-middleware-prometheus
-
-source-repository-package
-    type: git
     location: https://github.com/flora-pm/wai-middleware-heartbeat
     tag: bd7dbbe
