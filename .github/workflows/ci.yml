@@ -39,7 +39,8 @@ jobs:
 
     - name: Install Nix
       run: |
-        ./.github/workflows/install-nix.sh
+        cd .github/workflows
+        ./install-nix.sh
 
     - name: Configure
       run: |
