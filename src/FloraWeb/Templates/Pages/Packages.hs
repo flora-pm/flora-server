@@ -14,12 +14,12 @@ import Optics.Core ((^.))
 import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
 
+import qualified Data.Text as T
 import Flora.Model.Package.Types (Namespace, Package (..), PackageMetadata (..),
                                   PackageName)
 import Flora.Model.Release (Release (..))
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid.Base (makeAttribute)
-import qualified Data.Text as T
 
 
 showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> FloraHTML
