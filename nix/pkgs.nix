@@ -32,6 +32,11 @@ import ./pin.nix {
               pkgs.haskell.lib.unmarkBroken hpOld.postgresql-migration;
             text-display = pkgs.haskell.lib.unmarkBroken hpOld.text-display;
 
+            # here use hpNew to pull in data-sketches
+            prometheus-client = hpNew.callHackage "prometheus-client" "1.1.0" { };
+
+            PyF = hpOld.callHackage "PyF" "0.10.1.0" { };
+            data-sketches = hpOld.callHackage "data-sketches" "0.3.1.0" { };
             pcre2 = hpOld.callHackage "pcre2" "2.0.3" { };
             optics-core = hpOld.callHackage "optics-core" "0.4" { };
             # PyF = hpOld.callHackage "PyF" "0.10.2.0" { };
