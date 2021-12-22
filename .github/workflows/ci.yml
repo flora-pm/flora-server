@@ -43,10 +43,6 @@ jobs:
         cd .github/workflows
         ./install-nix.sh
 
-    - name: Configure
-      run: |
-        cabal configure --enable-tests --test-show-details=direct
-
     - name: Freeze
       run: |
         nix-shell --run 'cabal freeze'
