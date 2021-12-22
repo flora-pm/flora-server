@@ -32,7 +32,3 @@ jobs:
 
     - name: Running stylish-haskell
       run: nix-shell --run './.github/workflows/stylish-haskell-runner.sh'
-
-    - name: Test
-      run: |
-        nix-shell --run 'make test'
