@@ -45,7 +45,7 @@ import ./pin.nix {
             servant-lucid = hpNew.callCabal2nix "servant-lucid" (fetchTarball {
               url =
                 "https://github.com/haskell-servant/servant-lucid/archive/c6a7847.tar.gz";
-              sha256 = "1s2flv2jhfnd4vdfg6rmvq7s852w1pypasdg0l6ih6raaqyqzybn";
+              sha256 = "1ksc0k4kvl401qk9302plvkrn6q5a183s8nfify2dj3wjmwifm2d";
             }) { };
             envparse = hpNew.callCabal2nix "envparse" (fetchTarball {
               url = "https://github.com/supki/envparse/archive/de5944f.tar.gz";
