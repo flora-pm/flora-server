@@ -61,6 +61,7 @@ library
   import:          common-extensions
   import:          common-ghc-options
   hs-source-dirs:  src
+  pkgconfig-depends: ncurses
   exposed-modules:
     Data.Aeson.Orphans
     Flora.Environment
