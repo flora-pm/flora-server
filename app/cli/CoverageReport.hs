@@ -26,6 +26,7 @@ import System.Directory
 import System.IO
 import System.Process.Typed
 import Text.ParserCombinators.ReadP
+import Distribution.Utils.ShortText (fromShortText)
 
 data CoverageReportOptions = CoverageReportOptions
   { forceDownload :: Bool
@@ -60,7 +61,7 @@ fetchCategories CoverageReportOptions{..} = do
     clearLine
     T.putStr $ "\r[" <> display i <> "/" <> display total <> "] Parsing " <>  T.take 120 (T.drop 2 path)
     hFlush stdout
-    T.pack . category . packageDescription <$> readGenericPackageDescription silent (T.unpack path)
+    T.pack . fromShortText . category . packageDescription <$> readGenericPackageDescription silent (T.unpack path)
 
   clearLine
 
