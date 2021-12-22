@@ -13,6 +13,7 @@ pkgs.haskellPackages.shellFor {
       pkgs.stylish-haskell
       pkgs.git
       pkgs.haskellPackages.cabal-fmt
+      pkgs.postgresql
     ];
     exactDeps = true;
     NIX_PATH="nixpkgs=${pkgs.path}:.";
