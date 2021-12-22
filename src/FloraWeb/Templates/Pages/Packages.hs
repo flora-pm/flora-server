@@ -14,11 +14,13 @@ import Optics.Core ((^.))
 import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
 
+import qualified Data.Text as T
 import Flora.Model.Package.Types (Namespace, Package (..), PackageMetadata (..),
                                   PackageName)
 import Flora.Model.Release (Release (..))
 import FloraWeb.Templates.Types (FloraHTML)
-import Lucid.Alpine
+import Lucid.Base (makeAttribute)
+
 
 showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> FloraHTML
 showPackage latestRelease package@Package{namespace, name, synopsis} dependents dependencies = do
@@ -129,3 +131,13 @@ formatInstallString packageName Release{version} = pack . render $
     where
       rangedVersion :: Doc
       rangedVersion = "^>=" <> pretty version
+
+-- | x-model
+-- Synchronize a piece of data with an input element
+xModel_
+  :: [Text] -- ^ List of x-model modifiers
+  -> Text
+  -> Attribute
+xModel_ mods = case mods of
+  [] -> makeAttribute "x-model"
+  _  -> makeAttribute ("x-model." <> T.intercalate "." mods)

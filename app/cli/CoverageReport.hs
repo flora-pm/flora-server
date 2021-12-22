@@ -19,6 +19,7 @@ import Data.Traversable
 import Data.Version
 import Distribution.PackageDescription
 import Distribution.PackageDescription.Parsec
+import Distribution.Utils.ShortText (fromShortText)
 import Distribution.Verbosity
 import Numeric
 import System.Console.ANSI
@@ -60,7 +61,7 @@ fetchCategories CoverageReportOptions{..} = do
     clearLine
     T.putStr $ "\r[" <> display i <> "/" <> display total <> "] Parsing " <>  T.take 120 (T.drop 2 path)
     hFlush stdout
-    T.pack . category . packageDescription <$> readGenericPackageDescription silent (T.unpack path)
+    T.pack . fromShortText . category . packageDescription <$> readGenericPackageDescription silent (T.unpack path)
 
   clearLine
 

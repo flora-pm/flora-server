@@ -1,31 +1,21 @@
 name: CI
 
-# Trigger the workflow on push or pull request, but only for the main branch
 on:
   pull_request:
   push:
     branches: ['main', 'development']
 
 jobs:
-  cabal:
-    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        cabal: ['3.4.0.0']
-        ghc: ['8.10.7']
-
+  tests:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      if: github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.ref == 'refs/heads/main' || github.event.ref == 'refs/heads/development'
-
-    - uses: haskell/actions/setup@v1
-      id: setup-haskell-cabal
-      name: Setup Haskell
+    - uses: actions/checkout@v2.3.1
+    - uses: cachix/install-nix-action@v12
       with:
-        ghc-version: ${{ matrix.ghc }}
-        cabal-version: ${{ matrix.cabal }}
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - run: nix-build nix/ci.nix
+    - run: nix-shell --run "echo OK"
 
     - name: Configure environment
       run: |
@@ -37,36 +27,8 @@ jobs:
         echo 'HOME/.cabal/bin' >> $GITHUB_PATH
         echo 'HOME/.local/bin' >> $GITHUB_PATH
 
-    - name: Install Nix
-      run: |
-        ls -ah
-        cd .github/workflows
-        ./install-nix.sh
-
-    - name: Configure
-      run: |
-        cabal configure --enable-tests --test-show-details=direct
-
-    - name: Freeze
-      run: |
-        nix-shell --run 'cabal freeze'
-
-    - uses: actions/cache@v2
-      name: Cache ~/.cabal/store
-      with:
-        path: ~/.cabal/store
-        key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
-
     - name: Running hlint
       run: nix-shell --run './.github/workflows/hlint-runner.sh'
 
     - name: Running stylish-haskell
       run: nix-shell --run './.github/workflows/stylish-haskell-runner.sh'
-
-    - name: Build
-      run: |
-        nix-shell --run 'make build'
-
-    - name: Test
-      run: |
-        nix-shell --run 'make test'
