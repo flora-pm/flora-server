@@ -26,6 +26,8 @@ import ./pin.nix {
             postgresql-migration = pkgs.haskell.lib.unmarkBroken hpOld.postgresql-migration;
             text-display = pkgs.haskell.lib.unmarkBroken hpOld.text-display;
 
+            pcre2 = hpOld.callHackage "pcre2" "2.0.3" {};
+            optics-core = hpOld.callHackage "optics-core" "0.4" {};
             servant-lucid = hpOld.callHackage "servant-lucid" "0.9.0.3" {};
             envparse = hpNew.callCabal2nix "envparse" (fetchTarball {
                 url = "https://github.com/supki/envparse/archive/de5944f.tar.gz";
