@@ -8,6 +8,7 @@ set -xe
 echo $POSTGRES;
 
 export PATH=$PATH:$POSTGRES/bin
+export LC_ALL=C.UTF-8
 ln -s ${../migrations} ./migrations
 ${pkgs.haskellPackages.flora-server}/bin/flora-test
 
