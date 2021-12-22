@@ -61,7 +61,6 @@ library
   import:          common-extensions
   import:          common-ghc-options
   hs-source-dirs:  src
-  pkgconfig-depends: ncurses
   exposed-modules:
     Data.Aeson.Orphans
     Flora.Environment
@@ -96,7 +95,7 @@ library
     , base                       ^>=4.14
     , blaze-builder
     , bytestring                 ^>=0.10
-    , Cabal                      ^>=3.6
+    , Cabal                      ^>=3.2
     , clock                      ^>=0.8
     , cmark-gfm                  ^>=0.2
     , colourista                 ^>=0.1
