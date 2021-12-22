@@ -13,6 +13,11 @@ pkgs.haskellPackages.shellFor {
       pkgs.stylish-haskell
       pkgs.git
       pkgs.haskellPackages.cabal-fmt
+      pkgs.postgresql
+      pkgs.yarn
+      pkgs.concurrently
+      pkgs.esbuild
+      pkgs.nodePackages.postcss-cli
     ];
     exactDeps = true;
     NIX_PATH="nixpkgs=${pkgs.path}:.";

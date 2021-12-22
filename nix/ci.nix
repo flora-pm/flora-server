@@ -1,4 +1,8 @@
+let
+ pkgs = import ./pkgs.nix;
+in
 {
-  default = import ../default.nix {};
-  shell = (import ../shell.nix {});
+  default = pkgs.haskellPackages.flora-server;
+  shell = (import ../shell.nix {inherit pkgs;});
+  test = import ./test.nix {};
 }

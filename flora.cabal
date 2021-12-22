@@ -195,7 +195,7 @@ library flora-test-fixtures
     Flora.PackageFixtures
     Flora.UserFixtures
 
-test-suite flora-test
+executable flora-test
   import:         common-extensions
   import:         common-ghc-options
   import:         common-rts-options

@@ -19,6 +19,7 @@ import Data.Traversable
 import Data.Version
 import Distribution.PackageDescription
 import Distribution.PackageDescription.Parsec
+import Distribution.Utils.ShortText (fromShortText)
 import Distribution.Verbosity
 import Numeric
 import System.Console.ANSI
@@ -26,7 +27,6 @@ import System.Directory
 import System.IO
 import System.Process.Typed
 import Text.ParserCombinators.ReadP
-import Distribution.Utils.ShortText (fromShortText)
 
 data CoverageReportOptions = CoverageReportOptions
   { forceDownload :: Bool
