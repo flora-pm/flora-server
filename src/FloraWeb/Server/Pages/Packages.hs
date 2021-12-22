@@ -61,7 +61,7 @@ showHandler namespaceText nameText = do
           releases <- liftIO $ withPool pool $ getReleases (package ^. #packageId)
           let latestRelease =  maximumBy (compare `on` version) releases
           latestReleasedependencies <- liftIO $ withPool pool $ getRequirements (latestRelease ^. #releaseId)
-          render emptyAssigns $ Packages.showPackage latestRelease package dependents latestReleasedependencies
+          render defaultTemplateEnv $ Packages.showPackage latestRelease package dependents latestReleasedependencies
     _ -> renderError notFound404
 
 showVersionHandler :: Text -> Text -> Text -> FloraPageM (Html ())
@@ -79,7 +79,7 @@ showVersionHandler namespaceText nameText versionText = do
               Nothing -> renderError notFound404
               Just release -> do
                 releaseDependencies <- liftIO $ withPool pool $ getRequirements (release ^. #releaseId)
-                render emptyAssigns $ Packages.showPackage release package dependents releaseDependencies
+                render defaultTemplateEnv $ Packages.showPackage release package dependents releaseDependencies
     _ -> renderError notFound404
 
 

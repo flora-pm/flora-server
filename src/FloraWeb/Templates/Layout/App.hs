@@ -11,13 +11,13 @@ import PyF
 
 header :: FloraHTML
 header = do
-  assigns <- ask
+  TemplateEnv{title} <- ask
   doctype_
   html_ [lang_ "en", class_ "no-js dark"] $ do
     head_ $ do
       meta_ [charset_ "UTF-8"]
       meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
-      title_ (text $ getTitle assigns)
+      title_ (text title)
 
       script_ [type_ "module"] $ do
         toHtmlRaw @Text [fmt|
@@ -40,7 +40,7 @@ header = do
       theme
       link_ [rel_ "icon", href_ "/favicon.ico"]
       link_ [rel_ "icon", href_ "/favicon.svg", type_ "image/svg+xml"]
-      link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
+      -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
       meta_ [name_ "twitter:dnt", content_ "on"]
 
     body_ [class_ "bg-background dark:bg-background-dark dark:text-gray-100"]$ do
@@ -68,12 +68,12 @@ footer =
 
 ogTags :: FloraHTML
 ogTags = do
-      assigns <- ask
-      meta_ [property_ "og:title", content_ (getTitle assigns)]
-      meta_ [property_ "og:site_name", content_ "Hex"]
-      meta_ [property_ "og:description", content_ (getDescription assigns) ]
-      meta_ [property_ "og:url", content_ (getCanonicalURL assigns)]
-      meta_ [property_ "og:image", content_ (getImage assigns)]
+      TemplateEnv{title, description} <- ask
+      meta_ [property_ "og:title", content_ title]
+      meta_ [property_ "og:site_name", content_ "Flora"]
+      meta_ [property_ "og:description", content_ description ]
+      -- meta_ [property_ "og:url", content_ (getCanonicalURL assigns)]
+      -- meta_ [property_ "og:image", content_ (getImage assigns)]
       meta_ [property_ "og:image:width",  content_ "160"]
       meta_ [property_ "og:image:height", content_ "160"]
       meta_ [property_ "og:locale", content_ "en_GB"]
@@ -86,12 +86,12 @@ theme = do
 
 navBar :: FloraHTML
 navBar = do
-  ta <- ask
+  TemplateEnv{title} <- ask
   nav_ [class_ "border-b dark:border-transparent bg-gray-200 dark:bg-background-dark"] $ do
     div_ [class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "flex justify-between h-16"] $ do
         div_ [class_ "flex-shrink-0 flex items-center"] $ do
-          a_ [href_ "/", class_ "flex-shrink-0 py-2 border-b border-b-2 border-b-brand-purple inline-flex items-center px-1 pt-1 mx-7 font-bold text-black dark:text-gray-100"] (getDisplayTitle ta)
+          a_ [href_ "/", class_ "flex-shrink-0 py-2 border-b border-b-2 border-b-brand-purple inline-flex items-center px-1 pt-1 mx-7 font-bold text-black dark:text-gray-100"] (text title)
           navbarSearch
 
         let elementClass = "navbar-element py-2 border-b border-b-brand-purple inline-flex items-center px-1 pt-1 border-b-2 mx-7 text-black dark:text-gray-100"
@@ -103,7 +103,7 @@ navBar = do
 
 navbarSearch :: FloraHTML
 navbarSearch = do
-  flag <- asks getNavbarSearchFlag
+  flag <- asks displayNavbarSearch
   if flag
   then do
     form_ [class_ "w-full max-w-sm ml-5", action_ "#"] $ do
@@ -131,24 +131,3 @@ property_ = makeAttribute "property"
 
 text :: Text -> FloraHTML
 text = toHtml
-
-getTitle :: TemplateAssigns -> Text
-getTitle ta = getTA ta "Flora" "title"
-
-getNavbarSearchFlag :: TemplateAssigns -> Bool
-getNavbarSearchFlag ta =
-  case getTA ta "true" "navbar-search" of
-    "true" -> True
-    _      -> False
-
-getDisplayTitle :: TemplateAssigns -> FloraHTML
-getDisplayTitle ta = toHtml $ getTA ta "Flora :: [Package]" "display-title"
-
-getDescription :: TemplateAssigns -> Text
-getDescription ta = getTA ta "A package repository for the Haskell ecosystem" "description"
-
-getCanonicalURL :: TemplateAssigns -> Text
-getCanonicalURL ta = getTA ta "" "canonical_url"
-
-getImage :: TemplateAssigns -> Text
-getImage ta = getTA ta "" "image"

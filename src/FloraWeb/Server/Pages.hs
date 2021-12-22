@@ -7,7 +7,6 @@ import Servant.API.Generic
 import Servant.HTML.Lucid
 import Servant.Server.Generic
 
-import qualified Data.Map.Strict as Map
 import Flora.Environment
 import FloraWeb.Server.Auth
 import qualified FloraWeb.Server.Pages.Packages as Packages
@@ -45,13 +44,12 @@ ensureUser adminM = do
 
 homeHandler :: FloraPageM (Html ())
 homeHandler = do
-  let assigns = mkAssigns emptyAssigns (Just (UserAssigns $ Map.fromList [("navbar-search", "false")]))
-  render assigns Home.show
+  let templateEnv = defaultTemplateEnv{displayNavbarSearch = False}
+  render templateEnv Home.show
 
 aboutHandler :: FloraPageM (Html ())
 aboutHandler = do
-  let assigns = emptyAssigns
-  render assigns Home.about
+  render defaultTemplateEnv Home.about
 
 adminHandler :: FloraAdminM (Html ())
 adminHandler = undefined

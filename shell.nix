@@ -21,6 +21,7 @@ in with pkgs;
       stylish-haskell
       git
       haskellPackages.cabal-fmt
+      ncurses6
 
       # DB Deps
       postgresql_14

@@ -3,7 +3,6 @@ module FloraWeb.Templates.Error
   , showError
   ) where
 
-import qualified Data.Map.Strict as Map
 import Lucid
 import Network.HTTP.Types.Status
 
@@ -14,8 +13,8 @@ import Servant
 
 renderError :: Status -> FloraPageM a
 renderError status = do
-  let assigns = TemplateAssigns (Map.singleton "display-title" "Flora :: *** Exception" )
-  let body = mkErrorPage assigns $ showError status
+  let templateEnv =  defaultTemplateEnv{title = "Flora :: *** Exception"}
+  let body = mkErrorPage templateEnv $ showError status
   throwError $ ServerError{ errHTTPCode = statusCode status
                      , errBody = body
                      , errReasonPhrase = ""
