@@ -14,6 +14,9 @@ pkgs.haskellPackages.shellFor {
       pkgs.git
       pkgs.haskellPackages.cabal-fmt
       pkgs.postgresql
+      pkgs.yarn
+      pkgs.concurrently
+      pkgs.esbuild
     ];
     exactDeps = true;
     NIX_PATH="nixpkgs=${pkgs.path}:.";
