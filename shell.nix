@@ -17,6 +17,7 @@ pkgs.haskellPackages.shellFor {
       pkgs.yarn
       pkgs.concurrently
       pkgs.esbuild
+      pkgs.nodePackages.postcss-cli
     ];
     exactDeps = true;
     NIX_PATH="nixpkgs=${pkgs.path}:.";
