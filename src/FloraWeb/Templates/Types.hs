@@ -2,9 +2,9 @@ module FloraWeb.Templates.Types where
 
 import Control.Monad.Identity
 import Control.Monad.Reader
-import Lucid
-import GHC.Generics
 import Data.Text (Text)
+import GHC.Generics
+import Lucid
 
 type FloraHTML = HtmlT (ReaderT TemplateEnv Identity) ()
 
@@ -15,10 +15,10 @@ newtype FlashError = FlashError { getFlashInfo :: Text }
 
 data TemplateEnv = TemplateEnv
   { displayNavbarSearch :: Bool
-  , flashInfo :: Maybe FlashInfo
-  , flashError ::Maybe FlashError
-  , title :: Text
-  , description :: Text
+  , flashInfo           :: Maybe FlashInfo
+  , flashError          ::Maybe FlashError
+  , title               :: Text
+  , description         :: Text
   }
   deriving stock (Show, Generic)
 
