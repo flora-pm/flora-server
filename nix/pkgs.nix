@@ -17,10 +17,11 @@ import ./pin.nix {
                 url = "https://github.com/flora-pm/wai-middleware-heartbeat/archive/bd7dbbe.tar.gz";
                 sha256 = "1s2flv2jhfnd4vdfg6rmvq7s852w1pypasdg0l6ih6raaqyqzybn";
             }) {};
-            pg-entity = hpNew.callCabal2nix "pg-entity" (fetchTarball {
+            pg-entity = pkgs.haskell.lib.dontCheck (hpNew.callCabal2nix "pg-entity" (fetchTarball {
                 url = "https://github.com/tchoutri/pg-entity/archive/e5fc4cf.tar.gz";
                 sha256 = "06fbjim83mbpv9ixacq40ir3cfzdy4dbkqx5pawc8z0n8ncwb9zq";
-              }) {};
+            }) {});
+            pg-transact = pkgs.haskell.lib.dontCheck (pkgs.haskell.lib.unmarkBroken hpOld.pg-transact);
             hspec-pg-transact = pkgs.haskell.lib.dontCheck (hpOld.hspec-pg-transact);
             postgresql-migration = pkgs.haskell.lib.unmarkBroken hpOld.postgresql-migration;
             text-display = pkgs.haskell.lib.unmarkBroken hpOld.text-display;
