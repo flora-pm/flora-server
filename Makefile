@@ -7,7 +7,7 @@ build: ## Build the server without optimisations
 assets-deps: ## Install the dependencies of the frontend
 	@cd assets/ && yarn
 
-assets-build: ## Build the web assets
+assets-build: assets-deps ## Build the web assets
 	@cd assets/ && yarn build
 
 assets-watch: ## Continuously rebuild the web assets
