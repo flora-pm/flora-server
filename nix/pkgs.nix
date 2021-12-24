@@ -33,7 +33,8 @@ import ./pin.nix {
             text-display = pkgs.haskell.lib.unmarkBroken hpOld.text-display;
 
             # here use hpNew to pull in data-sketches
-            prometheus-client = hpNew.callHackage "prometheus-client" "1.1.0" { };
+            prometheus-client =
+              hpNew.callHackage "prometheus-client" "1.1.0" { };
 
             PyF = hpOld.callHackage "PyF" "0.10.1.0" { };
             data-sketches = hpOld.callHackage "data-sketches" "0.3.1.0" { };

@@ -1,8 +1,11 @@
 start: ## Start flora-server
 	@cabal run exe:flora-server
 
-build: ## Build the server without optimisations
+build: ## Build the backend
 	@cabal build -O0
+
+clean: ## Remove the cabal build artifacts
+	@cabal clean
 
 assets-deps: ## Install the dependencies of the frontend
 	@cd assets/ && yarn
@@ -52,12 +55,20 @@ ghcid-server: ## Start flora-server in ghcid
 lint: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
-style: ## Run the code styler (stylish-haskell)
+style: ## Run the code formatters (stylish-haskell, cabal-fmt, nixfmt)
 	@stylish-haskell -i -r src app test
 	@cabal-fmt -i flora.cabal
+	@nixfmt *.nix nix/*.nix
 
-nix-shell: ### Enter the nix shell
+nix-shell: ## Enter the Nix shell
 	@nix-shell
+
+nix-clean: ## Clean the Nix build artifacts
+	@nix-store --delete --ignore-liveness result
+	@rm result
+
+nix-build: ## Build the backend with Nix
+	@nix-build
 
 tags:
 	@ghc-tags -c
