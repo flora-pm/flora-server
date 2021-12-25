@@ -8,7 +8,9 @@ let
   ignore = import ./nix/gitignoreSource.nix { inherit (pkgs) lib; };
   # https://github.com/NixOS/nixpkgs/blob/dbacb52ad8/pkgs/development/haskell-modules/make-package-set.nix#L216
   src = ignore.gitignoreSource ./.;
-  cabal2nix = hpkgs.callCabal2nix "flora-server" src { };
+  cabal2nix = hpkgs.callCabal2nix "flora-server" src {
+    Cabal = hpkgs.callHackage "Cabal" "3.6.2.0" { };
+  };
   # https://github.com/NixOS/nixpkgs/blob/dbacb52ad8/pkgs/development/haskell-modules/generic-builder.nix#L13
 
 in pkgs.haskell.lib.overrideCabal cabal2nix (drv: {
