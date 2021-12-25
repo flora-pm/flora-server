@@ -17,16 +17,14 @@ migrate conn = do
   withPool pool $ do
     insertUser user1
     insertUser user2
-    insertUser ben
-    insertUser syl20
 
-    publishPackage [] ghcPrimRelease ghcPrim syl20
-    publishPackage [ghcBignumDepOnGhcPrim] ghcBignumRelease ghcBignum ben
-    publishPackage [baseDepOnGhcPrim, baseDepOnGhcBignum] baseRelease base ben
+    publishPackage [] ghcPrimRelease ghcPrim user2
+    publishPackage [ghcBignumDepOnGhcPrim] ghcBignumRelease ghcBignum user1
+    publishPackage [baseDepOnGhcPrim, baseDepOnGhcBignum] baseRelease base user1
     publishPackage [arrayDepOnBase] arrayRelease array user1
     publishPackage [deepseqDepOnBase, deepseqDepOnArray, deepseqDepOnGhcPrim] deepseqRelease deepseq user1
     publishPackage [stmDepOnBase, stmDepOnArray] stmRelease stm user1
     publishPackage [containersDepOnBase, containersDepOnArray, containersDepOnDeepseq] containersRelease containers user1
     publishPackage [integerGmpDepOnGhcPrim] integerGmpRelease integerGmp user1
-    publishPackage [bytestringDepOnBase, bytestringDepOnDeepseq, bytestringDepOnGhcBignum, bytestringDepOnGhcPrim, bytestringDepOnIntegerGmp] bytestringRelease bytestring syl20
+    publishPackage [bytestringDepOnBase, bytestringDepOnDeepseq, bytestringDepOnGhcBignum, bytestringDepOnGhcPrim, bytestringDepOnIntegerGmp] bytestringRelease bytestring user2
     publishPackage [binaryDepOnArray, binaryDepOnBase, binaryDepOnBytestring, binaryDepOnContainers, binaryDepOnGhcPrim] binaryRelease binary user2
