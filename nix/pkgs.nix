@@ -11,7 +11,9 @@ import ./pin.nix {
               sha256 = "1xg3jyhy60xxhcwcl8sc55r7yzya0nqjl8bchms6cvfnzldrcih5";
             };
           in {
-            flora-server = hpNew.callPackage ../default.nix { };
+            flora-server = hpNew.callPackage ../default.nix {
+              Cabal = hpOld.callHackage "Cabal" "3.6.2.0" { };
+            };
             wai-middleware-heartbeat =
               hpNew.callCabal2nix "wai-middleware-heartbeat" (fetchTarball {
                 url =
@@ -41,7 +43,6 @@ import ./pin.nix {
             pcre2 = hpOld.callHackage "pcre2" "2.0.3" { };
             optics-core = hpOld.callHackage "optics-core" "0.4" { };
             # PyF = hpOld.callHackage "PyF" "0.10.2.0" { };
-            # Cabal = hpOld.callHackage "Cabal" "3.6.2.0" { };
             lucid = hpOld.callHackage "lucid" "2.11.0" { };
             servant-lucid = hpNew.callCabal2nix "servant-lucid" (fetchTarball {
               url =
