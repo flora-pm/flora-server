@@ -44,7 +44,7 @@ repl: ## Start a REPL
 ghci: repl ## Start a REPL (alias for `make repl`)
 
 test: ## Run the test suite
-	@cabal test
+	@cabal run -- flora-test
 
 ghcid-test: ## Load the tests in ghcid and reload them on file change
 	@ghcid --command='cabal v2-repl flora-test' --test 'Main.main'

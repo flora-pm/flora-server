@@ -90,7 +90,7 @@ library
     Lucid.Orphans
 
   build-depends:
-    , aeson                      ^>=1.5
+    , aeson                      <=1.6
     , async                      ^>=2.2
     , base                       ^>=4.14
     , blaze-builder
