@@ -1,10 +1,10 @@
 module FloraWeb.Types where
 
 import Control.Monad.Reader (ReaderT)
-import Flora.Environment
-import Servant (Handler, FromHttpApiData(..))
-import Web.Cookie
 import qualified Data.Text.Encoding as TE
+import Flora.Environment
+import Servant (FromHttpApiData (..), Handler)
+import Web.Cookie
 
 type FloraM = ReaderT FloraEnv Handler
 

@@ -1,11 +1,9 @@
 module FloraWeb.Session where
 
 import Data.ByteString
+import qualified Data.UUID as UUID
 import Flora.Model.PersistentSession
 import Web.Cookie
-import qualified Data.UUID as UUID
-
-import Flora.Model.PersistentSession
 -- | This function builds a cookie with the provided content
 craftCookie :: PersistentSessionId -- ^ Cookie content
             -> Bool -- ^ Remember the cookie for 1 week

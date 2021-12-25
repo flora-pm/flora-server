@@ -6,16 +6,12 @@ import Data.Text
 import Lucid
 import Lucid.Base (makeAttribute)
 import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
-import PyF
 import Optics.Core
+import PyF
 
 import Flora.Model.User
 import FloraWeb.Session
 import FloraWeb.Templates.Types
-
-import FloraWeb.Session
-import FloraWeb.Templates.Types
-import Optics.Core
 -- import Flora.Model.PersistentSession
 -- import Data.Text.Display
 

@@ -6,9 +6,9 @@ import Data.ByteString.Lazy
 import Lucid
 
 import FloraWeb.Server.Auth
+import FloraWeb.Session
 import FloraWeb.Templates.Layout.App (footer, header)
 import FloraWeb.Templates.Types
-import FloraWeb.Session
 
 render :: TemplateEnv -> FloraHTML -> FloraPageM (Html ())
 render env template = pure $ toHtmlRaw $ runIdentity $

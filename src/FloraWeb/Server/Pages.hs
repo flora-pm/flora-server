@@ -3,21 +3,19 @@ module FloraWeb.Server.Pages where
 import Control.Monad.Reader
 import Lucid
 import Network.HTTP.Types
+import Optics.Core
 import Servant
 import Servant.API.Generic
 import Servant.HTML.Lucid
 import Servant.Server.Generic
-import Network.HTTP.Types
-import Optics.Core
 
 import FloraWeb.Server.Auth
-import FloraWeb.Templates
-import FloraWeb.Templates.Error
-import FloraWeb.Templates.Types
-import FloraWeb.Templates.Types
 import qualified FloraWeb.Server.Pages.Packages as Packages
 import qualified FloraWeb.Server.Pages.Sessions as Sessions
+import FloraWeb.Templates
+import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Home as Home
+import FloraWeb.Templates.Types
 
 type Routes = ToServantApi Routes'
 

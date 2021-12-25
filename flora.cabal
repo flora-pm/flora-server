@@ -101,7 +101,7 @@ library
     , base                       ^>=4.14
     , blaze-builder
     , bytestring                 ^>=0.10
-    , Cabal                      ^>=3.6
+    , Cabal                      ==3.6.2.0
     , clientsession              ^>=0.9
     , clock                      ^>=0.8
     , cmark-gfm                  ^>=0.2
