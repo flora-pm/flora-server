@@ -67,7 +67,7 @@ floraServer = Routes
   }
 
 naturalTransform :: FloraEnv -> FloraM a -> Handler a
-naturalTransform env app = 
+naturalTransform env app =
   runReaderT app env
 
 genAuthServerContext :: FloraEnv -> Context '[AuthHandler Request Session]

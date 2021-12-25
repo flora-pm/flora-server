@@ -1,9 +1,11 @@
 module Flora.Model.UserSession where
 
 import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
 import Data.Text
 import Data.Time
 import Data.UUID
+import qualified Data.UUID.V4 as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple
@@ -12,8 +14,6 @@ import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Transact
 import Env.Generic
-import qualified Data.Map.Strict as Map
-import qualified Data.UUID.V4 as UUID
 import Flora.Model.User (UserId)
 
 newtype UserSessionId = UserSessionId { getUserSessionId :: UUID }

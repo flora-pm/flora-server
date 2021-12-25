@@ -1,13 +1,17 @@
 module Flora.Model.PersistentSession where
 
+import Control.Monad.IO.Class
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Pool
 import Data.Text
+import Data.Text.Display
 import Data.Time
 import qualified Data.Time as Time
 import Data.UUID
 import qualified Data.UUID.V4 as UUID
 import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField
@@ -16,12 +20,8 @@ import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Transact
 import Env.Generic
 import Flora.Model.User (UserId)
-import Control.Monad.IO.Class
-import Data.Pool
 import Optics.Core
-import Database.PostgreSQL.Entity.DBT
 import Web.HttpApiData
-import Data.Text.Display
 
 newtype PersistentSessionId = PersistentSessionId { getPersistentSessionId :: UUID }
   deriving (Show, Eq, FromField, ToField, FromHttpApiData)

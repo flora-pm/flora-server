@@ -7,7 +7,6 @@ import Lucid
 import Network.HTTP.Types.Status
 
 import FloraWeb.Server.Auth
-import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Types
 import Servant
