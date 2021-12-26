@@ -49,10 +49,11 @@ runServer floraEnv = withStdoutLogger $ \logger -> do
                  (naturalTransform floraEnv) floraServer (genAuthServerContext floraEnv)
   let warpSettings = setPort (fromIntegral $ httpPort floraEnv ) $
                      setLogger logger $
-                     setOnException (sentryOnException (floraEnv ^. #logging))
+                     setOnException (sentryOnException (floraEnv ^. #environment)
+                                                       (floraEnv ^. #logging))
                      defaultSettings
   runSettings warpSettings $
-    prometheusMiddleware (floraEnv ^. #logging)
+    prometheusMiddleware (floraEnv ^. #environment) (floraEnv ^. #logging)
     . heartbeatMiddleware
     $ server
 

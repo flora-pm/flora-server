@@ -2,12 +2,14 @@
 module FloraWeb.Templates.Pages.Home where
 
 import CMarkGFM
+import Control.Monad.Reader
+import Data.Text (Text)
 import Lucid
 import Lucid.Svg (d_, fill_, path_, stroke_, stroke_linecap_, stroke_linejoin_,
                   stroke_width_, viewBox_)
 import PyF
 
-import Data.Text (Text)
+import Flora.Environment
 import FloraWeb.Templates.Types
 
 show :: FloraHTML
@@ -17,12 +19,17 @@ show = main_ $ do
 
 about :: FloraHTML
 about = do
+  TemplateEnv{environment} <- ask
   div_ [ class_ "max-w-7xl py-16 px-4 sm:pb-4 sm:pt-24 sm:px-6 lg:px-8 about-page" ] $ do
     div_ [class_ "divider text-center sm:mb-16"] $ do
       div_ [class_ "text-center"] $ do
         p_ [class_ "mt-1 text-4xl font-extrabold dark:text-gray-100 sm:text-5xl sm:tracking-tight lg:text-6xl"] "Flora.pm"
         p_ [class_ "max-w-xl mt-5 mx-auto text-xl dark:text-gray-100"] "An index for the Haskell ecosystem"
     div_ [class_ ""] $ do
+      case environment of
+          Production -> ""
+          Development ->
+            p_ [class_ "dark:bg-yellow-400 dark:text-black"] "⚠ You are using a development instance of Flora ⚠"
       aboutText
 
 aboutText :: FloraHTML
@@ -31,18 +38,21 @@ aboutText = do
   where
     text :: Text
     text = [fmt|
-
 <h3 class="font-bold text-xl dark:text-gray-100 mb-10"> What is Flora? </h3>
-Flora.pm is a package index for the <a href="https://haskell.org">Haskell</a> ecosystem. It indexes packages from <a href="https://hackage.haskell.org">Hackage</a>,
-and provides a number of new features and improvements:
 
-* Better category model, with elimination of duplicates and curation
+<div class="bullets">
+
+Flora.pm is a package index for the [Haskell](https://haskell.org) ecosystem. It indexes packages from [Hackage](https://hackage.haskell.org)
+and provides new features and improvements:
+
+* Curated category model, with elimination of duplicates
 * Package namespaces, so that packages with the same name can live without conflict
 * Beautiful package pages
 * Responsive interface for mobile devices
 * Dark mode
+</div>
 
-Flora is the work of volunteers, and the source can be read on <a href="https://gtihub.com/flora-pm/flora-server">Github</a>.
+Flora is the work of volunteers, and the source can be read on [GitHub](https://gtihub.com/flora-pm/flora-server).
 
 <h3 class="font-bold text-xl dark:text-gray-100 my-10"> Moderation and Code of Conduct </h3>
 

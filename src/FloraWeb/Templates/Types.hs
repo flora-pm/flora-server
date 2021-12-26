@@ -3,10 +3,13 @@ module FloraWeb.Templates.Types where
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Data.Text (Text)
-import Flora.Model.User
-import FloraWeb.Server.Auth
 import GHC.Generics
 import Lucid
+import Optics.Core
+
+import Flora.Environment
+import Flora.Model.User
+import FloraWeb.Server.Auth
 
 type FloraHTML = HtmlT (ReaderT TemplateEnv Identity) ()
 
@@ -29,6 +32,7 @@ data TemplateEnv = TemplateEnv
   , title               :: Text
   , description         :: Text
   , mUser               :: Maybe User
+  , environment         :: DeploymentEnv
   }
   deriving stock (Show, Generic)
 
@@ -40,7 +44,8 @@ defaultTemplateEnv = TemplateEnv
   , title = "Flora :: [Package]"
   , description = "Package index for the Haskell ecosystem"
   , mUser = Nothing
+  , environment = Development
   }
 
 fromSession :: Session -> TemplateEnv
-fromSession Session{mUser} = defaultTemplateEnv{mUser}
+fromSession Session{mUser, floraEnv} = defaultTemplateEnv{mUser, environment = floraEnv ^. #environment}

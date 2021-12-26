@@ -15,8 +15,8 @@ import qualified Network.Wai.Middleware.Prometheus as P
 import Prometheus as P
 import System.Clock (Clock (..), getTime)
 
-prometheusMiddleware :: LoggingEnv -> Application -> Application
-prometheusMiddleware LoggingEnv{prometheusEnabled, environment} =
+prometheusMiddleware :: DeploymentEnv -> LoggingEnv -> Application -> Application
+prometheusMiddleware environment LoggingEnv{prometheusEnabled} =
   if prometheusEnabled
   then P.prometheus config . instrument
   else id
@@ -24,7 +24,7 @@ prometheusMiddleware LoggingEnv{prometheusEnabled, environment} =
     config = PrometheusSettings ["metrics"] False True
     instrument :: Application -> Application
     instrument =
-      instrumentHandlerValueWithFilter environment P.ignoreRawResponses normalizeWaiRequestRoute
+      instrumentHandlerValueWithFilter (show environment) P.ignoreRawResponses normalizeWaiRequestRoute
 
 normalizeWaiRequestRoute ::Request -> Text
 normalizeWaiRequestRoute req = pathInfo

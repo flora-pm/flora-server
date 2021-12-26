@@ -34,16 +34,17 @@
 }
 
 ul[class="bullets"] {
-  padding: 0.188rem 0;
   li {
     list-style-type: disc;
     list-style-position: inside;
-    margin-top: 0.50em;
-    margin-bottom: 0.50em;
-    a {
-      display: block;
-      padding: 0.438rem 0.625rem;
-      color: #333;
+  }
+}
+
+div[class="bullets"]{
+  ul {
+    li {
+      list-style-type: disc;
+      list-style-position: inside;
     }
   }
 }
