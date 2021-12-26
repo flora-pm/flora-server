@@ -26,8 +26,8 @@ module.exports = {
   },
   variants: {
     display: ['responsive', 'dropdown']
-  }
+  },
   plugins: [
-    require('@tailwindcss/forms'),
+    // require('@tailwindcss/forms'),
   ],
 };
