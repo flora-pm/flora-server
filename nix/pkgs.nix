@@ -12,7 +12,6 @@ import ./pin.nix {
             };
           in {
             flora-server = hpNew.callPackage ../default.nix {
-              Cabal = hpOld.callHackage "Cabal" "3.6.2.0" { };
             };
             wai-middleware-heartbeat =
               hpNew.callCabal2nix "wai-middleware-heartbeat" (fetchTarball {
