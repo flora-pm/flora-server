@@ -68,7 +68,7 @@ displayLinks _release meta@PackageMetadata{..} = do
   div_ [class_ "mb-5"] $ do
     div_ [class_ "links mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "Links"
-    ul_ $ do
+    ul_ [class_ "bullets"]$ do
       li_ $ a_ [href_ (getHomepage meta)] "Homepage"
       li_ $ a_ [href_ documentation] "Documentation"
       li_ $ a_ [href_ sourceRepo ] "Source repository"

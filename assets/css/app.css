@@ -25,6 +25,30 @@
   background-color: rgba(102, 51, 153, var(--tw-bg-opacity));
 }
 
+#user-menu-nav{
+  display: none;
+}
+
+#navbar-right:focus-within #user-menu-nav{
+  display: block;
+}
+
+ul[class="bullets"] {
+  padding: 0.188rem 0;
+  li {
+    list-style-type: disc;
+    list-style-position: inside;
+    margin-top: 0.50em;
+    margin-bottom: 0.50em;
+    a {
+      display: block;
+      padding: 0.438rem 0.625rem;
+      color: #333;
+    }
+  }
+}
+
+/* Dark mode-specific rules */
 .dark{
   .navbar{
     background-color: #353746;
@@ -48,13 +72,7 @@
   }
 }
 
-li {
-  list-style-type: disc;
-  list-style-position: inside;
-  margin-top: 0.50em;
-  margin-bottom: 0.50em;
-}
-
+/* Large display rules */
 @media (min-width: 1024px) {
   .container{
     width: auto;

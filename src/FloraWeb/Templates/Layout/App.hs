@@ -81,7 +81,7 @@ navBar = do
           navbarSearch
 
         let elementClass = "navbar-element py-2 border-b border-b-2 border-b-brand-purple inline-flex items-center px-1 pt-1 mx-7 text-black dark:text-gray-100"
-        div_ [class_ "hidden margin-right flex sm:flex justify-end grid grid-rows-3 row-end-auto"] $ do
+        div_ [id_ "navbar-right", class_ "hidden margin-right flex sm:flex justify-end grid grid-rows-3 row-end-auto"] $ do
           a_ [href_ "/about", class_ elementClass] "About Flora"
           a_ [href_ "#",      class_ elementClass] "Packages"
           a_ [href_ "#",      class_ elementClass] "Guides"
@@ -102,12 +102,13 @@ navbarSearch = do
 userDropdown :: Text -> FloraHTML
 userDropdown elementClass = do
   TemplateEnv{mUser} <- ask
-  input_ [type_ "checkbox", id_ "user-menu"]
-  label_ [for_ "user-menu", class_ elementClass] "Menu"
-  ul_ [class_ "py-1 rounded-md dark:text-gray-100 text-black shadow-xs"] $ do
-    getUsernameOrLogin mUser
-    a_ [href_ "#", class_ ""] "Guides"
-    a_ [href_ "#", class_ ""] darkModeToggle
+  button_ [class_ elementClass] "Menu"
+  nav_ [tabindex_ "0", id_ "user-menu-nav"] $
+    ul_ [id_ "user-menu-content", class_ "py-1 rounded-md dark:text-gray-100 text-black shadow-xs origin-top-right absolute right-0 mt-2 w-56"] $ do
+        li_ [class_ "user-menu-element"] $ getUsernameOrLogin mUser
+        li_ [class_ "user-menu-element"] $ a_ [href_ "#", class_ ""] "Guides"
+        li_ [class_ "user-menu-element"] $ a_ [href_ "#", class_ ""] "Log off"
+        li_ [class_ "user-menu-element"] $ a_ [href_ "#", class_ ""] darkModeToggle
 
 -- logOffButton :: PersistentSessionId -> FloraHTML
 -- logOffButton sessionId = do
