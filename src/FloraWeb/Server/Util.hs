@@ -2,7 +2,6 @@ module FloraWeb.Server.Util where
 
 import Control.Monad.Except
 import Data.ByteString
-import qualified Data.ByteString.Char8 as C8
 import Servant
 import Web.Cookie
 

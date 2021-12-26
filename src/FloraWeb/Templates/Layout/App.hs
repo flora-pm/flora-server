@@ -10,7 +10,6 @@ import Optics.Core
 import PyF
 
 import Flora.Model.User
-import FloraWeb.Session
 import FloraWeb.Templates.Types
 -- import Flora.Model.PersistentSession
 -- import Data.Text.Display

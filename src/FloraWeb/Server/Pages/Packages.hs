@@ -60,7 +60,6 @@ showHandler namespaceText nameText = do
           let latestRelease =  maximumBy (compare `on` version) releases
           latestReleasedependencies <- liftIO $ withPool pool $ getRequirements (latestRelease ^. #releaseId)
           render defaultTemplateEnv $ Packages.showPackage latestRelease package dependents latestReleasedependencies
-          render emptyAssigns $ Packages.showPackage latestRelease package dependents latestReleasedependencies
     _ -> renderError notFound404
 
 showVersionHandler :: Text -> Text -> Text -> FloraPageM (Html ())

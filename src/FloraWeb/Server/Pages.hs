@@ -15,7 +15,6 @@ import qualified FloraWeb.Server.Pages.Sessions as Sessions
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Home as Home
-import FloraWeb.Templates.Types
 
 type Routes = ToServantApi Routes'
 

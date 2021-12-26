@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 module FloraWeb.Server.Pages.Sessions where
 
 import Control.Monad.Reader
@@ -22,7 +21,6 @@ import FloraWeb.Server.Util
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Pages.Sessions as Sessions
-import FloraWeb.Templates.Types
 
 type Routes = ToServantApi Routes'
 

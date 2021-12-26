@@ -1,6 +1,5 @@
 module FloraWeb.Session where
 
-import Data.ByteString
 import qualified Data.UUID as UUID
 import Flora.Model.PersistentSession
 import Web.Cookie
