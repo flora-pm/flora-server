@@ -13,5 +13,11 @@ let
 
 in pkgs.haskell.lib.overrideCabal cabal2nix (drv: {
   inherit src;
+  doBenchmark = false;
+  doCheck = true; # Run the flora tests
+  doHaddock = false;
+  doHoogle = false;
+  enableExecutableProfiling = false;
+  enableLibraryProfiling = false;
   isExecutable = true;
 })

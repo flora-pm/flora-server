@@ -17,6 +17,8 @@ pkgs.haskellPackages.shellFor {
     pkgs.concurrently
     pkgs.esbuild
     pkgs.nodePackages.postcss-cli
+    pkgs.iputils
+    pkgs.tmux
   ];
   exactDeps = true;
   NIX_PATH = "nixpkgs=${pkgs.path}:.";
@@ -24,5 +26,8 @@ pkgs.haskellPackages.shellFor {
     source environment.sh
     export LOCALE_ARCHIVE="/nix/store/m53mq2077pfxhqf37gdbj7fkkdc1c8hc-glibc-locales-2.27/lib/locale/locale-archive"
     export LC_ALL=C.UTF-8
+    printf "To start the server: \'make nix-build && make nix-start\'\n"
+    printf "To start the assets pipeline: \'make assets-watch\'\n"
+    printf "Happy hacking!\n"
   '';
 }
