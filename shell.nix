@@ -20,6 +20,7 @@ pkgs.haskellPackages.shellFor {
     pkgs.iputils
     pkgs.tmux
     pkgs.bash
+    pkgs.nixfmt
   ];
   exactDeps = true;
   NIX_PATH = "nixpkgs=${pkgs.path}:.";
