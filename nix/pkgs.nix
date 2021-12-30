@@ -38,11 +38,10 @@ import ./pin.nix {
             prometheus-client =
               hpNew.callHackage "prometheus-client" "1.1.0" { };
 
-            PyF = hpOld.callHackage "PyF" "0.10.1.0" { };
+            PyF = hpOld.callHackage "PyF" "0.10.2.0" { };
             data-sketches = hpOld.callHackage "data-sketches" "0.3.1.0" { };
             pcre2 = hpOld.callHackage "pcre2" "2.0.3" { };
             optics-core = hpOld.callHackage "optics-core" "0.4" { };
-            # PyF = hpOld.callHackage "PyF" "0.10.2.0" { };
             lucid = hpOld.callHackage "lucid" "2.11.0" { };
             servant-lucid = hpNew.callCabal2nix "servant-lucid" (fetchTarball {
               url =

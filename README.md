@@ -18,6 +18,14 @@ For ease of development, a `shell.nix` file is provided. It brings with it syste
 To jump into the development environment, use `make nix-shell`. It is impure by default, so your editor and development
 tools will still be accessible.
 
+## Installing using Docker instead
+
+If you are using an environment that is not friendly to nix, like MacOS, you may want to use Docker instead.
+
+To build the image, run `docker build -t flora-server .`. The build will take a while to download and set up dependencies the first time it is run, but subsequent builds should be significantly faster.
+
+The image is set up to run the nix-shell on boot, so once the build is complete simply run `docker run -it -p 8083:8083 --rm flora-server`. Then you should be able to build the server itself by `nix-build`, or use any of the `make` commands as described below. 
+
 ### Flora server
 
 Configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
@@ -55,6 +63,29 @@ $ make db-setup # Implies db-create
 
 you can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
 
+### Docker Workflow
+
+A docker-based workflow is provided:
+
+```bash
+# It's gonna take around 13 minutes the first time you build,
+# run "make docker-start" the next times.
+$ docker-compose up -d --build
+$ make docker-enter
+# You'll be in the docker container
+(docker)$ source environment.docker.sh
+(docker)$ make nix-tmux
+# You'll be in a tmux session, everything should be launched
+# Visit localhost:8084 from your web browser to see if it all works.
+
+# To provision the development database, type:
+$ make docker-enter
+(docker)$ source environment.docker.sh
+(docker)$ make db-drop
+(docker)$ db-setup # password is 'postgres' by default
+(docker)$ make nix-provision
+# And you should be good!
+```
 ---
 
 You can explore the Makefile rules by typing `make` in your shell.

@@ -19,12 +19,6 @@ assets-watch: ## Continuously rebuild the web assets
 assets-clean: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
 
-db-init: ## Initialize the dev database
-	@initdb -D _database
-
-db-start: ## Start the dev database
-	@postgres -D _database
-
 db-create: ## Create the database
 	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
@@ -35,7 +29,9 @@ db-setup: db-create ## Setup the dev database
 	@migrate init "$(FLORA_PG_CONNSTRING)" 
 	@migrate migrate "$(FLORA_PG_CONNSTRING)" migrations
 
-db-reset: db-drop db-setup ## Reset the dev database
+db-reset: db-drop db-setup db-provision ## Reset the dev database (uses Cabal)
+
+db-provision: ## Load the development data in the database
 	@cabal run -- flora-cli provision-fixtures
 
 repl: ## Start a REPL
@@ -60,15 +56,33 @@ style: ## Run the code formatters (stylish-haskell, cabal-fmt, nixfmt)
 	@cabal-fmt -i flora.cabal
 	@nixfmt *.nix nix/*.nix
 
+nix-build: ## Build the backend with Nix
+	@nix-build
+
+nix-start: ## Start the server build with Nix. Does not source the environment.
+	./result/bin/flora-server
+
 nix-shell: ## Enter the Nix shell
 	@nix-shell
+
+nix-provision: ## 
+	./result/bin/flora-cli provision-fixtures
 
 nix-clean: ## Clean the Nix build artifacts
 	@nix-store --delete --ignore-liveness result
 	@rm result
 
-nix-build: ## Build the backend with Nix
-	@nix-build
+nix-tmux: nix-build ## Start a tmux session with the nix build system
+	@./scripts/start-tmux.sh
+
+docker-build: ## Build the docker image
+	@docker-compose build
+
+docker-start: ## Start the container cluster
+	@docker-compose up -d
+
+docker-enter: ## Enter the docker environment
+	docker-compose exec flora-server "nix-shell"
 
 tags:
 	@ghc-tags -c
