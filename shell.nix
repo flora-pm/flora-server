@@ -16,7 +16,6 @@ pkgs.haskellPackages.shellFor {
     pkgs.yarn
     pkgs.concurrently
     pkgs.esbuild
-    pkgs.nodePackages.postcss-cli
     pkgs.iputils
     pkgs.tmux
     pkgs.bash
