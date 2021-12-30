@@ -69,6 +69,9 @@ nix-start: ## Start the server build with Nix. Does not source the environment.
 nix-shell: ## Enter the Nix shell
 	@nix-shell
 
+nix-provision: ## 
+	./result/bin/flora-cli provision-fixtures
+
 nix-clean: ## Clean the Nix build artifacts
 	@nix-store --delete --ignore-liveness result
 	@rm result
@@ -78,6 +81,12 @@ nix-tmux: nix-build ## Start a tmux session with the nix build system
 
 docker-build: ## Build the docker image
 	@docker-compose build
+
+docker-start: ## Start the container cluster
+	@docker-compose up -d
+
+docker-enter: ## Enter the docker environment
+	docker-compose exec flora-server "nix-shell"
 
 tags:
 	@ghc-tags -c

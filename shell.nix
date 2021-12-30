@@ -19,6 +19,7 @@ pkgs.haskellPackages.shellFor {
     pkgs.nodePackages.postcss-cli
     pkgs.iputils
     pkgs.tmux
+    pkgs.bash
   ];
   exactDeps = true;
   NIX_PATH = "nixpkgs=${pkgs.path}:.";

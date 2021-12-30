@@ -7,10 +7,10 @@ services:
       - "8084:8084"
     volumes:
       - database-data:/flora-server/pgdata/
-      - .:/flora-server
+      - .:/flora-server:Z
     links:
       - database
-          
+
   database:
     image: "postgres"
     container_name: database

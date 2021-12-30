@@ -3,6 +3,7 @@ FROM nixos/nix
 
 RUN nix-channel --update
 RUN nix-env -iA nixpkgs.gnumake
+
 # generate a working directory
 WORKDIR /flora-server 
 
@@ -16,3 +17,5 @@ RUN nix-shell
 # copy asset-relevant dependency files
 COPY assets/package.json assets/yarn.lock assets/
 RUN nix-shell --run "make assets-deps"
+
+CMD [ "/bin/sh", "-c", "sleep 1d"]

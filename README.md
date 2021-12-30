@@ -63,6 +63,21 @@ $ make db-setup # Implies db-create
 
 you can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
 
+### Docker Workflow
+
+A docker-based workflow is provided:
+
+```bash
+# It's gonna take around 13 minutes the first time you build,
+# run "make docker-start" the next times.
+$ docker-compose up -d --build
+$ make docker-enter
+# You'll be in the docker container
+(docker)$ source environment.docker.sh
+(docker)$ make nix-tmux
+# You'll be in a tmux session, everything should be launched
+# Visit localhost:8084 from your web browser to see if it all works.
+```
 ---
 
 You can explore the Makefile rules by typing `make` in your shell.
