@@ -25,12 +25,14 @@ header = do
       title_ (text title)
 
       script_ [type_ "module"] $ do
-        toHtmlRaw @Text [fmt|
+        toHtmlRaw @Text [str|
           document.documentElement.classList.remove('no-js');
           document.documentElement.classList.add('js');
           const html = document.querySelector('html');
           const checkbox = document.querySelector('#darkmode-toggle');
-          if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {{
+          if (localStorage.theme === 'dark'
+             || (!('theme' in localStorage)
+             && window.matchMedia('(prefers-color-scheme: dark)').matches)) {{
             html.classList.add('dark');
             checkbox.checked = true
           }} else {{
@@ -73,18 +75,19 @@ theme = do
 navBar :: FloraHTML
 navBar = do
   TemplateEnv{title} <- ask
+  ActiveElements{aboutNav, packagesNav} <- asks activeElements
   nav_ [class_ "border-b dark:border-transparent bg-gray-200 dark:bg-background-dark"] $ do
     div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "flex justify-between h-16 "] $ do
         div_ [class_ "flex-shrink-0 flex "] $ do
-          div_ [class_ "flex-shrink-0 border-b border-b-2 border-b-brand-purple py-2 px-1 pt-1 mx-7 items-center"] $
+          div_ [class_ "flex-shrink-0 border-b-2 border-b-brand-purple py-2 px-1 pt-1 mx-7 items-center"] $
             a_ [href_ "/", class_ "flex-shrink-0 py-2 inline-flex items-center font-bold text-black dark:text-gray-100"] (text title)
           navbarSearch
 
-        let elementClass = "navbar-element py-2 border-b border-b-2 border-b-brand-purple inline-flex items-center px-1 pt-1 mx-7 text-black dark:text-gray-100"
+        let elementClass = "navbar-element py-2 inline-flex items-center px-1 pt-1 mx-7 text-black dark:text-gray-100"
         div_ [id_ "navbar-right", class_ "hidden margin-right flex sm:flex justify-end grid grid-rows-3 row-end-auto"] $ do
-          a_ [href_ "/about", class_ elementClass] "About Flora"
-          a_ [href_ "#",      class_ elementClass] "Packages"
+          a_ [href_ "/about", class_ (elementClass <> isActive aboutNav)] "About Flora"
+          a_ [href_ "#",      class_ (elementClass <> isActive packagesNav)] "Packages"
           userDropdown elementClass
 
 navbarSearch :: FloraHTML
@@ -155,5 +158,7 @@ text = toHtml
 getUsernameOrLogin :: Maybe User -> FloraHTML
 getUsernameOrLogin Nothing     = a_ [href_ "/login"] "Login/Signup"
 getUsernameOrLogin (Just user) = a_ [href_ "#"] (text $ user ^. #username)
-  -- where
-    -- url = "/user/" <> user ^. #username
+
+isActive :: Bool -> Text
+isActive True = " active"
+isActive False = ""

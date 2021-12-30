@@ -71,6 +71,14 @@ div[class="bullets"]{
       color: #a68bfc;
     }
   }
+
+  .navbar-right{
+    .active{
+        --tw-border-opacity: 1;
+        border-bottom-color: rgb(102 51 153 / var(--tw-border-opacity));
+        border-bottom-width: 2px;
+    }
+  }
 }
 
 /* Large display rules */

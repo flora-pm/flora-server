@@ -37,7 +37,7 @@ aboutText = do
   toHtmlRaw $ commonmarkToHtml [optUnsafe] [] text
   where
     text :: Text
-    text = [fmt|
+    text = [str|
 <h3 class="font-bold text-xl dark:text-gray-100 mb-10"> What is Flora? </h3>
 
 <div class="bullets">

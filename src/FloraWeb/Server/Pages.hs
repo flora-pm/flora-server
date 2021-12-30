@@ -53,6 +53,9 @@ homeHandler = do
 
 aboutHandler :: FloraPageM (Html ())
 aboutHandler = do
+  env <- ask
+  let templateEnv = fromSession env
+        & (#activeElements ^. #aboutNav .~ True)
   render defaultTemplateEnv Home.about
 
 adminHandler :: FloraAdminM (Html ())
