@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Cache install Nix packages
-      uses: rikhuijzer/cache-install@v1
+      uses: rikhuijzer/cache-install@v1.0.8
       with:
         key: nix-${{ hashFiles('default.nix') }}
 
