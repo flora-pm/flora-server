@@ -73,8 +73,8 @@ $ make docker-enter
 # To provision the development database, type:
 $ make docker-enter
 (docker)$ source environment.docker.sh
-(docker)$ make db-drop
-(docker)$ db-setup # password is 'postgres' by default
+(docker)$ make db-drop  # password is 'postgres' by default
+(docker)$ make db-setup # password is 'postgres' by default
 (docker)$ make nix-provision
 # And you should be good!
 ```
