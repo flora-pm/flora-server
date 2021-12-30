@@ -19,12 +19,6 @@ assets-watch: ## Continuously rebuild the web assets
 assets-clean: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
 
-db-init: ## Initialize the dev database
-	@initdb -D _database
-
-db-start: ## Start the dev database
-	@postgres -D _database
-
 db-create: ## Create the database
 	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
@@ -35,7 +29,9 @@ db-setup: db-create ## Setup the dev database
 	@migrate init "$(FLORA_PG_CONNSTRING)" 
 	@migrate migrate "$(FLORA_PG_CONNSTRING)" migrations
 
-db-reset: db-drop db-setup ## Reset the dev database
+db-reset: db-drop db-setup db-provision ## Reset the dev database (uses Cabal)
+
+db-provision: ## Load the development data in the database
 	@cabal run -- flora-cli provision-fixtures
 
 repl: ## Start a REPL

@@ -77,6 +77,14 @@ $ make docker-enter
 (docker)$ make nix-tmux
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.
+
+# To provision the development database, type:
+$ make docker-enter
+(docker)$ source environment.docker.sh
+(docker)$ make db-drop
+(docker)$ db-setup # password is 'postgres' by default
+(docker)$ make nix-provision
+# And you should be good!
 ```
 ---
 
