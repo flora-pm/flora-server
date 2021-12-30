@@ -20,6 +20,10 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-unstable
 
+    - uses: cachix/cachix-action@v10
+      with:
+        name: flora-pm
+
     - run: nix-build nix/ci.nix
     - run: nix-shell --run "echo OK"
 
