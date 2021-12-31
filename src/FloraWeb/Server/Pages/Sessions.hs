@@ -23,31 +23,6 @@ import FloraWeb.Templates
 import FloraWeb.Templates.Pages.Sessions as Sessions
 import FloraWeb.Routes.Pages.Sessions
 
-type Routes = ToServantApi Routes'
-
-type CreateSession
-  = ReqBody '[FormUrlEncoded] LoginForm
-  :> Post '[HTML] (Html ())
-
-type DeleteSession
-  = Capture "session_id" PersistentSessionId
-  :> "delete"
-  :> Post '[HTML] NoContent
-
-data Routes' mode = Routes'
-  { new    :: mode :- Get '[HTML] (Html ())
-  , create :: mode :- CreateSession
-  , delete :: mode :- DeleteSession
-  } deriving stock (Generic)
-
-data LoginForm = LoginForm
-  { email    :: Text
-  , password :: Password
-  , remember :: Bool
-  }
-  deriving stock (Generic)
-  deriving anyclass FromForm
-
 server :: ToServant Routes' (AsServerT FloraPageM)
 server = genericServerT Routes'
   { new = newSessionHandler
