@@ -6,13 +6,13 @@ import Test.Hspec (Spec)
 import Test.Hspec.DB (describeDB, itDB)
 import Test.Hspec.Expectations.Lifted (shouldReturn)
 
-import Flora.Model.User 
-import FloraWeb.Routes.Pages.Sessions
-import FloraWeb.Client
-import Flora.UserFixtures
-import SpecHelpers
-import Optics.Core
 import Control.Monad.IO.Class
+import Flora.Model.User
+import Flora.UserFixtures
+import FloraWeb.Client
+import FloraWeb.Routes.Pages.Sessions
+import Optics.Core
+import SpecHelpers
 
 spec :: Spec
 spec = describeDB migrate "users" $ do
@@ -25,4 +25,4 @@ spec = describeDB migrate "users" $ do
   --   user <- randomUser $ randomUserTemplate{ password = pure hashedPassword }
   --   insertUser user
   --   let form = LoginForm (user ^. #email) "foobar2000" False
-  --   _ $ createSession form 
+  --   _ $ createSession form

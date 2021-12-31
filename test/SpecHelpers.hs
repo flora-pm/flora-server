@@ -7,24 +7,24 @@ import Data.Pool
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
+import qualified Data.UUID as UUID
 import Data.Word
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (Connection, close)
 import Database.PostgreSQL.Simple.Migration
-import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import GHC.Generics
-import Servant.Client
 import Hedgehog
-import System.IO.Unsafe (unsafePerformIO)
-import qualified Data.UUID as UUID
 import qualified Hedgehog.Gen as H
 import qualified Hedgehog.Range as Range
+import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
+import Servant.Client
+import System.IO.Unsafe (unsafePerformIO)
 
+import Control.Monad.Catch
 import Flora.Model.User
 import Flora.PackageFixtures
 import Flora.Publish
 import Flora.UserFixtures
-import Control.Monad.Catch
 
 migrate :: Connection -> IO ()
 migrate conn = do
@@ -48,13 +48,13 @@ migrate conn = do
 request :: (MonadIO m, MonadThrow m) => ClientM a -> m (Either ClientError a)
 request req = liftIO . runClientM req =<< getEnv managerSettings
 
-getEnv :: (MonadIO m, MonadThrow m) => ManagerSettings -> m ClientEnv         
-getEnv mgrSettings = do                                
-  mgr            <- liftIO $ newManager mgrSettings    
-  url            <- parseBaseUrl "localhost"           
+getEnv :: (MonadIO m, MonadThrow m) => ManagerSettings -> m ClientEnv
+getEnv mgrSettings = do
+  mgr            <- liftIO $ newManager mgrSettings
+  url            <- parseBaseUrl "localhost"
   pure . mkClientEnv mgr $ url { baseUrlPort = 8895 }
-                                                       
-managerSettings :: ManagerSettings                     
+
+managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
 
 genWord32 :: MonadGen m => m Word32
