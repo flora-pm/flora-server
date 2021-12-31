@@ -76,6 +76,7 @@ library
     Flora.Model.User
     Flora.Model.User.Orphans
     Flora.Publish
+    FloraWeb.Client
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Packages
@@ -138,6 +139,7 @@ library
     , resource-pool              ^>=0.2
     , servant                    ^>=0.18
     , servant-client
+    , servant-client-core
     , servant-lucid
     , servant-server             ^>=0.18
     , stm                        ^>=2.5
@@ -223,6 +225,7 @@ executable flora-test
     , containers
     , flora
     , flora-test-fixtures
+    , hedgehog
     , hspec
     , hspec-expectations-lifted
     , hspec-pg-transact
@@ -234,6 +237,7 @@ executable flora-test
     , postgresql-simple
     , resource-pool
     , string-qq
+    , text
     , time
     , uuid
     , vector

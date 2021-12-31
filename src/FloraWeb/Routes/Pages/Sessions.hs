@@ -34,4 +34,4 @@ data LoginForm = LoginForm
   , remember :: Bool
   }
   deriving stock (Generic)
-  deriving anyclass FromForm
+  deriving anyclass (FromForm, ToForm)

@@ -24,7 +24,7 @@ import Optics.Core
 import Web.HttpApiData
 
 newtype PersistentSessionId = PersistentSessionId { getPersistentSessionId :: UUID }
-  deriving (Show, Eq, FromField, ToField, FromHttpApiData)
+  deriving (Show, Eq, FromField, ToField, FromHttpApiData, ToHttpApiData)
     via UUID
   deriving Display
     via ShowInstance UUID
