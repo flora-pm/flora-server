@@ -8,6 +8,13 @@ optimization: False
 
 tests: True
 
+allow-newer: all
+
+test-show-details: direct
+
+package *
+  ghc-options: +RTS -A8G -RTS
+
 source-repository-package
     type: git
     location: https://github.com/supki/envparse
@@ -30,6 +37,3 @@ source-repository-package
     type: git
     location: https://github.com/flora-pm/wai-middleware-heartbeat
     tag: bd7dbbe
-
-allow-newer: all
-test-show-details: direct
