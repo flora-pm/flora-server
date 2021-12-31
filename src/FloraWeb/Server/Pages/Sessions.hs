@@ -21,6 +21,7 @@ import FloraWeb.Server.Util
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Pages.Sessions as Sessions
+import FloraWeb.Routes.Pages.Sessions
 
 type Routes = ToServantApi Routes'
 

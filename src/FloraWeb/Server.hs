@@ -4,32 +4,28 @@ import Colourista.IO (blueMessage)
 import Control.Monad
 import Control.Monad.Reader
 import Data.Maybe
+import Data.Text.Display
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Logger (withStdoutLogger)
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import Optics.Operators
-import qualified Prometheus
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc
 import Servant
 import Servant.API.Generic
 import Servant.Server.Experimental.Auth
 import Servant.Server.Generic
+import Web.Cookie
+import qualified Prometheus
 
-import Data.Text.Display
 import Flora.Environment
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Logging.Metrics
 import FloraWeb.Server.Logging.Tracing
 import qualified FloraWeb.Server.Pages as Pages
 import FloraWeb.Types
-
-data Routes mode = Routes
-  { assets :: mode :- "static" :> Raw
-  , pages  :: mode :- AuthProtect "cookie-auth" :> Pages.Routes
-  }
-  deriving stock (Generic)
+import FloraWeb.API
 
 runFlora :: IO ()
 runFlora = do

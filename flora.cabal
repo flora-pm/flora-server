@@ -76,6 +76,10 @@ library
     Flora.Model.User
     Flora.Model.User.Orphans
     Flora.Publish
+    FloraWeb.Routes
+    FloraWeb.Routes.Pages
+    FloraWeb.Routes.Pages.Packages
+    FloraWeb.Routes.Pages.Sessions
     FloraWeb.Server
     FloraWeb.Server.Auth
     FloraWeb.Server.Logging.Metrics

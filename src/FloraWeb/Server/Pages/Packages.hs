@@ -30,15 +30,8 @@ import FloraWeb.Server.Auth
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Packages as Packages
-
-type Routes = ToServantApi Routes'
-
-data Routes' mode = Routes'
-  { --new  :: mode :- "new" :> AuthProtect "cookie-auth" :> Get '[HTML] (Html ())
-    show :: mode :-  Capture "organisation" Text :> Capture "package" Text :> Get '[HTML] (Html ())
-  , showVersion :: mode :- Capture "organisation" Text :> Capture "package" Text :> Capture "version" Text :> Get '[HTML] (Html ())
-  }
-  deriving stock (Generic)
+import qualified FloraWeb.Routes.Pages.Packages as Packages
+import FloraWeb.Templates.Types
 
 server :: ToServant Routes' (AsServerT FloraPageM)
 server = genericServerT Routes'
