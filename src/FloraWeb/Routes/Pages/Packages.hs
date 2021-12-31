@@ -1,7 +1,13 @@
 module FloraWeb.Routes.Pages.Packages
   ( Routes
-  , server
+  , Routes'(..)
   ) where
+
+import Servant.API.Generic
+import Servant
+import Data.Text
+import Lucid
+import Servant.HTML.Lucid
 
 type Routes = ToServantApi Routes'
 

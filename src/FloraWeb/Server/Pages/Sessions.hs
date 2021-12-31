@@ -1,16 +1,12 @@
 module FloraWeb.Server.Pages.Sessions where
 
 import Control.Monad.Reader
-import Data.Password.Argon2
-import Data.Text
 import Database.PostgreSQL.Entity.DBT (withPool)
 import Lucid
 import Optics.Core
 import Servant
 import Servant.API.Generic
-import Servant.HTML.Lucid
 import Servant.Server.Generic
-import Web.FormUrlEncoded (FromForm)
 
 import Flora.Environment
 import Flora.Model.PersistentSession

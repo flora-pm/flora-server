@@ -4,28 +4,16 @@ import Control.Monad.Reader
 import Lucid
 import Network.HTTP.Types
 import Optics.Core
-import Servant
 import Servant.API.Generic
-import Servant.HTML.Lucid
 import Servant.Server.Generic
 
+import FloraWeb.Routes.Pages
 import FloraWeb.Server.Auth
-import qualified FloraWeb.Server.Pages.Packages as Packages
-import qualified FloraWeb.Server.Pages.Sessions as Sessions
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
+import qualified FloraWeb.Server.Pages.Packages as Packages
+import qualified FloraWeb.Server.Pages.Sessions as Sessions
 import qualified FloraWeb.Templates.Pages.Home as Home
-
-type Routes = ToServantApi Routes'
-
-data Routes' mode = Routes'
-  { home     :: mode :- Get '[HTML] (Html ())
-  , about    :: mode :- "about" :> Get '[HTML] (Html ())
-  , admin    :: mode :- "admin" :> Get '[HTML] (Html ())
-  , login    :: mode :- "login" :> Sessions.Routes
-  , packages :: mode :- "packages" :> Packages.Routes
-  }
-  deriving stock (Generic)
 
 server :: ToServant Routes' (AsServerT FloraPageM)
 server = genericServerT Routes'
@@ -53,10 +41,10 @@ homeHandler = do
 
 aboutHandler :: FloraPageM (Html ())
 aboutHandler = do
-  env <- ask
-  let templateEnv = fromSession env
-        & (#activeElements ^. #aboutNav .~ True)
-  render defaultTemplateEnv Home.about
+  session <- ask
+  let (templateEnv :: TemplateEnv) = fromSession session
+        & (#activeElements % #aboutNav .~ True)
+  render templateEnv Home.about
 
 adminHandler :: FloraAdminM (Html ())
 adminHandler = undefined

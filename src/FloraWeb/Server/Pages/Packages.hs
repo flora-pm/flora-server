@@ -13,9 +13,7 @@ import Lucid
 import Lucid.Orphans ()
 import Network.HTTP.Types.Status
 import Optics.Core
-import Servant
 import Servant.API.Generic
-import Servant.HTML.Lucid
 import Servant.Server.Generic
 
 import qualified Data.Text as T
@@ -30,8 +28,7 @@ import FloraWeb.Server.Auth
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Packages as Packages
-import qualified FloraWeb.Routes.Pages.Packages as Packages
-import FloraWeb.Templates.Types
+import FloraWeb.Routes.Pages.Packages 
 
 server :: ToServant Routes' (AsServerT FloraPageM)
 server = genericServerT Routes'
