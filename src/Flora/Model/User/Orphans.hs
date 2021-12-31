@@ -10,4 +10,3 @@ instance FromHttpApiData Password where
 
 instance ToHttpApiData Password where
   toUrlPiece = unsafeShowPassword
-

@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs        #-}
 {-# LANGUAGE TypeFamilies #-}
 module FloraWeb.Client where
 
@@ -43,9 +43,10 @@ floraClient = ($ genericClient)
 fakeSession :: Session
 fakeSession =
   let sessionId = PersistentSessionId $ read "8631b00a-f042-4751-9649-6b0aa617566f"
-      mUser = Nothing 
+      mUser = Nothing
       floraEnv = undefined
    in Session{..}
+
 anonymousRequest :: AuthenticatedRequest (AuthProtect "cookie-auth")
 anonymousRequest = mkAuthenticatedRequest fakeSession addSessionCookie
 

@@ -116,6 +116,7 @@ library
     , cryptohash-sha256          ^>=0.11
     , directory                  ^>=1.3
     , envparse                   ^>=0.5
+    , exceptions
     , hashable                   ^>=1.3
     , http-api-data              ^>=0.4
     , http-types                 ^>=0.12
@@ -223,12 +224,14 @@ executable flora-test
     , base
     , Cabal
     , containers
+    , exceptions
     , flora
     , flora-test-fixtures
     , hedgehog
     , hspec
     , hspec-expectations-lifted
     , hspec-pg-transact
+    , http-client
     , optics-core
     , password
     , pg-entity
@@ -236,6 +239,8 @@ executable flora-test
     , postgresql-migration
     , postgresql-simple
     , resource-pool
+    , servant-client
+    , servant-client-core
     , string-qq
     , text
     , time

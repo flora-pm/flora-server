@@ -1,6 +1,5 @@
 module FloraWeb.Routes.Pages.Sessions where
 
-import Data.Password.Argon2
 import Data.Text
 import Lucid
 import Servant
@@ -30,7 +29,7 @@ data Routes' mode = Routes'
 
 data LoginForm = LoginForm
   { email    :: Text
-  , password :: Password
+  , password :: Text
   , remember :: Bool
   }
   deriving stock (Generic)

@@ -8,6 +8,7 @@ import Servant
 import Servant.API.Generic
 import Servant.Server.Generic
 
+import Data.Password.Argon2
 import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
@@ -43,7 +44,7 @@ createSessionHandler LoginForm{email, password, remember} = do
       let templateEnv = defaultTemplateEnv{flashError = Just (mkError "Could not authenticate!")}
       render templateEnv Sessions.newSession
     Just user ->
-      if validatePassword password (user ^. #password)
+      if validatePassword (mkPassword password) (user ^. #password)
       then do
         liftIO $ putStrLn "User connected!"
         sessionId <- persistSession pool (user ^. #userId)
