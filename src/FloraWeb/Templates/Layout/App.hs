@@ -160,5 +160,5 @@ getUsernameOrLogin Nothing     = a_ [href_ "/login"] "Login/Signup"
 getUsernameOrLogin (Just user) = a_ [href_ "#"] (text $ user ^. #username)
 
 isActive :: Bool -> Text
-isActive True = " active"
+isActive True  = " active"
 isActive False = ""

@@ -137,6 +137,7 @@ library
     , raven-haskell              ^>=0.1
     , resource-pool              ^>=0.2
     , servant                    ^>=0.18
+    , servant-client
     , servant-lucid
     , servant-server             ^>=0.18
     , stm                        ^>=2.5

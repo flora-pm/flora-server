@@ -12,12 +12,12 @@ import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Orphans ()
+import FloraWeb.Routes.Pages.Sessions
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Util
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Pages.Sessions as Sessions
-import FloraWeb.Routes.Pages.Sessions
 
 server :: ToServant Routes' (AsServerT FloraPageM)
 server = genericServerT Routes'

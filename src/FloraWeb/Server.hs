@@ -10,21 +10,21 @@ import Network.Wai.Handler.Warp
 import Network.Wai.Logger (withStdoutLogger)
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import Optics.Operators
+import qualified Prometheus
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc
 import Servant
 import Servant.Server.Experimental.Auth
 import Servant.Server.Generic
-import qualified Prometheus
 
 import Flora.Environment
+import FloraWeb.Routes
+import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Logging.Metrics
 import FloraWeb.Server.Logging.Tracing
 import qualified FloraWeb.Server.Pages as Pages
-import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Types
-import FloraWeb.Routes
 
 runFlora :: IO ()
 runFlora = do

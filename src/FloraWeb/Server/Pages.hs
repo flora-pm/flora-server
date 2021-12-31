@@ -9,10 +9,10 @@ import Servant.Server.Generic
 
 import FloraWeb.Routes.Pages
 import FloraWeb.Server.Auth
-import FloraWeb.Templates
-import FloraWeb.Templates.Error
 import qualified FloraWeb.Server.Pages.Packages as Packages
 import qualified FloraWeb.Server.Pages.Sessions as Sessions
+import FloraWeb.Templates
+import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Home as Home
 
 server :: ToServant Routes' (AsServerT FloraPageM)

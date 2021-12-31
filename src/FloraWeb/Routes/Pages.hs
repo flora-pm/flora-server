@@ -2,10 +2,10 @@ module FloraWeb.Routes.Pages where
 
 import qualified FloraWeb.Routes.Pages.Packages as Packages
 import qualified FloraWeb.Routes.Pages.Sessions as Sessions
-import Servant.API.Generic
-import Servant
-import Servant.HTML.Lucid
 import Lucid
+import Servant
+import Servant.API.Generic
+import Servant.HTML.Lucid
 
 type Routes = ToServantApi Routes'
 

@@ -24,11 +24,11 @@ import Flora.Model.Package
 import Flora.Model.Package.Types
 import Flora.Model.Release
 import Flora.Model.Requirement
+import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Packages as Packages
-import FloraWeb.Routes.Pages.Packages 
 
 server :: ToServant Routes' (AsServerT FloraPageM)
 server = genericServerT Routes'
