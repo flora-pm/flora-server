@@ -34,13 +34,16 @@ db-reset: db-drop db-setup db-provision ## Reset the dev database (uses Cabal)
 db-provision: ## Load the development data in the database
 	@cabal run -- flora-cli provision-fixtures
 
-repl: ## Start a REPL
+repl: ## Start a cabal REPL
 	@cabal repl lib:flora
 
-ghci: repl ## Start a REPL (alias for `make repl`)
+ghci: repl ## Start a cabal REPL (alias for `make repl`)
 
 test: ## Run the test suite
 	@cabal run -- flora-test
+
+ghcid: ## Load the main library into ghcid and reload it on file change
+	@ghcid --target flora-server -l
 
 ghcid-test: ## Load the tests in ghcid and reload them on file change
 	@ghcid --command='cabal v2-repl flora-test' --test 'Main.main'
