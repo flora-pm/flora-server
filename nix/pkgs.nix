@@ -40,7 +40,8 @@ import ./pin.nix {
             data-sketches = hpOld.callHackage "data-sketches" "0.3.1.0" { };
             pcre2 = hpOld.callHackage "pcre2" "2.0.3" { };
             optics-core = hpOld.callHackage "optics-core" "0.4" { };
-            lucid = hpOld.callHackage "lucid" "2.11.0" { };
+            lucid = hpOld.callHackage "lucid" "2.10.0" { };
+            lucid-alpine = hpOld.callHackage "lucid-alpine" "0.1.0.4" { };
             servant-lucid = hpNew.callCabal2nix "servant-lucid" (fetchTarball {
               url =
                 "https://github.com/haskell-servant/servant-lucid/archive/c6a7847.tar.gz";

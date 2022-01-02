@@ -121,6 +121,7 @@ library
     , http-api-data              ^>=0.4
     , http-types                 ^>=0.12
     , lucid
+    , lucid-alpine               ^>=0.1.0.4
     , lucid-svg                  ^>=0.7
     , mtl                        ^>=2.2
     , optics-core                ^>=0.4

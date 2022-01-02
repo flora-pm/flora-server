@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module FloraWeb.Templates.Layout.App (header, footer) where
 
 import Control.Monad.Reader
@@ -6,6 +7,7 @@ import Data.Text
 import Lucid
 import Lucid.Base (makeAttribute)
 import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
+import Lucid.Alpine
 import Optics.Core
 import PyF
 
