@@ -44,6 +44,7 @@ header = do
           |]
 
       link_ [rel_ "stylesheet", href_ "/static/css/app.css"]
+      script_ [src_ "https://unpkg.com/alpinejs@3.7.1/dist/cdn.min.js", defer_ ""] ("" :: Text)
       meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
       ogTags
       theme
@@ -87,7 +88,7 @@ navBar = do
           navbarSearch
 
         let elementClass = "navbar-element py-2 inline-flex items-center px-1 pt-1 mx-7 text-black dark:text-gray-100"
-        div_ [id_ "navbar-right", class_ "hidden margin-right flex sm:flex justify-end grid grid-rows-3 row-end-auto"] $ do
+        div_ [id_ "navbar-right", class_ "hidden sm:flex justify-end"] $ do
           a_ [href_ "/about", class_ (elementClass <> isActive aboutNav)] "About Flora"
           a_ [href_ "#",      class_ (elementClass <> isActive packagesNav)] "Packages"
           userDropdown elementClass
@@ -107,13 +108,15 @@ navbarSearch = do
 userDropdown :: Text -> FloraHTML
 userDropdown elementClass = do
   TemplateEnv{mUser} <- ask
-  button_ [class_ elementClass] "Menu"
-  nav_ [tabindex_ "0", id_ "user-menu-nav"] $
-    ul_ [id_ "user-menu-content", class_ "py-1 rounded-md dark:text-gray-100 text-black shadow-xs origin-top-right absolute right-0 mt-2 w-56"] $ do
-        li_ [class_ "user-menu-element"] $ getUsernameOrLogin mUser
-        li_ [class_ "user-menu-element"] $ a_ [href_ "#", class_ ""] "Guides"
-        li_ [class_ "user-menu-element"] $ a_ [href_ "#", class_ ""] "Log off"
-        li_ [class_ "user-menu-element"] $ a_ [href_ "#", class_ ""] darkModeToggle
+  div_ [id_ "user-menu-container", xData_ (Just "{ userMenu: false }"), xOn_ "click.outside" "userMenu = false", xOn_ "keydown.escape" "userMenu = false", class_ "flex"] $ do
+    button_ [xOn_ "click" "userMenu = !userMenu", xBind_ "aria-expanded" "userMenu ? 'true' : 'false'", id_ "user-menu-btn", class_ elementClass] "Menu"
+    nav_ [xShow_ "userMenu", id_ "user-menu-nav", class_ "bg-background dark:bg-background-dark rounded-md absolute right-0 border-2 border-brand-purple"] $
+      ul_ [] $ do
+          li_ [class_ "user-menu-element"] $ getUsernameOrLogin mUser
+          li_ [class_ "user-menu-element"] $ a_ [href_ "#"] "Guides"
+          li_ [class_ "user-menu-element"] $ a_ [href_ "#"] "Log off"
+          li_ [class_ "user-menu-divider", role_ "separator"] $ ""
+          li_ [class_ "user-menu-element"] $ darkModeToggle
 
 -- logOffButton :: PersistentSessionId -> FloraHTML
 -- logOffButton sessionId = do
