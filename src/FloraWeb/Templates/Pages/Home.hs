@@ -42,7 +42,7 @@ and provides a number of new features and improvements:
 * Responsive interface for mobile devices
 * Dark mode
 
-Flora is the work of volunteers, and the source can be read on <a href="https://gtihub.com/flora-pm/flora-server">Github</a>.
+Flora is the work of volunteers, and the source can be read on <a href="https://github.com/flora-pm/flora-server">Github</a>.
 
 <h3 class="font-bold text-xl dark:text-gray-100 my-10"> Moderation and Code of Conduct </h3>
 
