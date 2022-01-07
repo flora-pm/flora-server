@@ -1,4 +1,4 @@
-<h1 align="center"> Flora </h1>
+<h1 align="center"> Flora <br> <small>A package index for the Haskell ecosystem</small> </h1>
 
 <p align="center">
 <a href="https://github.com/flora-pm/flora-server/actions">
@@ -9,7 +9,24 @@
 </a>
 </p>
 
-<img src="https://github.com/flora-pm/flora-server/raw/development/images/flora-about.png" alt="about page">
+<dl>
+  <p>
+  <dt>Flora.pm</dt>
+  <dd>A read-only mirror of hackage.haskell.org with an improved and lightweight interface.</dd>
+ </p>
+
+  <p>
+  <dt>Flora Server</dt>
+  <dd>An alternative package index server for the Haskell ecosystem with mirroring capabilities.</dd>
+  </p>
+</dl>
+
+
+**Read More**
+
+* [Code of Conduct](./CODE_OF_CONDUCT.md)
+* [Contribution Guide](./CONTRIBUTING.md)
+* [Development Wiki](https://github.com/flora-pm/flora-server/wiki)
 
 ## Installation and Configuration
 
@@ -45,7 +62,7 @@ $ make repl
 
 ### Database
 
-the Flora server uses PostgreSQL 14.1
+The Flora server uses PostgreSQL 14.1
 
 To create the database and apply the migrations, type:
 
