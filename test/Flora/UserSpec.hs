@@ -11,6 +11,6 @@ import SpecHelpers (migrate)
 spec :: Spec
 spec = describeDB migrate "users" $ do
   itDB "Fetch user by Id" $ do
-    getUserById (userId user1) `shouldReturn` Just user1
+    getUserById (userId hackageUser) `shouldReturn` Just hackageUser
   itDB "Fetch user by email" $ do
-    getUserByEmail (email user2) `shouldReturn` Just user2
+    getUserByEmail (email hackageUser) `shouldReturn` Just hackageUser
