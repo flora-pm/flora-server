@@ -31,6 +31,10 @@ import ./pin.nix {
             postgresql-migration =
               pkgs.haskell.lib.unmarkBroken hpOld.postgresql-migration;
             text-display = pkgs.haskell.lib.unmarkBroken hpOld.text-display;
+            # this is the old way of calling packages, I just ran cabal2nix
+            # and put it in that http-client.nix file.
+            # this prevents the cycle (nix'es callHackage uses cabal2nix which uses http-client apparently)
+            http-client = hpNew.callPackage ./cabal2nix/http-client.nix { };
 
             # here use hpNew to pull in data-sketches
             prometheus-client =

@@ -8,6 +8,7 @@ pkgs.runCommand "run-tests" ({ POSTGRES = pkgs.postgresql; }) ''
 
   export PATH=$PATH:$POSTGRES/bin
   export LC_ALL=C.UTF-8
+  export FLORA_HTTP_PORT=80
   ln -s ${../migrations} ./migrations
   ${pkgs.haskellPackages.flora-server}/bin/flora-test
 
