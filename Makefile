@@ -39,16 +39,17 @@ repl: ## Start a cabal REPL
 
 ghci: repl ## Start a cabal REPL (alias for `make repl`)
 
-test: ## Run the test suite
-	@cabal run -- flora-test
-
 ghcid: ## Load the main library into ghcid and reload it on file change
 	@ghcid --target flora-server -l
 
-ghcid-test: ## Load the tests in ghcid and reload them on file change
-	@ghcid --command='cabal v2-repl flora-test' --test 'Main.main'
+test: ## Run the test suite
+	./scripts/run-tests.sh
 
-ghcid-server: ## Start flora-server in ghcid
+watch-test: ## Load the tests in ghcid and reload them on file change
+	./scripts/run-tests.sh --watch
+	
+
+watch-server: ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
 
 lint: ## Run the code linter (HLint)
@@ -94,6 +95,8 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.* ?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 UNAME := $(shell uname)
+
+SHELL := /bin/bash
 
 ifeq ($(UNAME), Darwin)
 	PROCS := $(shell sysctl -n hw.logicalcpu)

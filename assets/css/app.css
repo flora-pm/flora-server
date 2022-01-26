@@ -25,6 +25,57 @@
   background-color: rgba(102, 51, 153, var(--tw-bg-opacity));
 }
 
+#user-menu-container {
+  position: relative;
+}
+
+#user-menu-nav{
+  z-index: 1;
+  top: 100%;
+  width: max-content;
+  max-width: 14rem;
+}
+
+.user-menu-element {
+  padding: 10px 15px;
+}
+
+.user-menu-element a,
+.user-menu-element a:visited {
+  color: inherit;
+  display: block;
+}
+
+.user-menu-element a:hover,
+.user-menu-element a:active,
+.user-menu-element a:focus {
+  text-decoration: underline;
+}
+
+.user-menu-divider {
+  display: block;
+  height: 1px;
+  background-color: currentColor;
+  opacity: .4;
+}
+
+ul[class="bullets"] {
+  li {
+    list-style-type: disc;
+    list-style-position: inside;
+  }
+}
+
+div[class="bullets"]{
+  ul {
+    li {
+      list-style-type: disc;
+      list-style-position: inside;
+    }
+  }
+}
+
+/* Dark mode-specific rules */
 .dark{
   .navbar{
     background-color: #353746;
@@ -46,15 +97,17 @@
       color: #a68bfc;
     }
   }
+
+  .navbar-right{
+    .active{
+        --tw-border-opacity: 1;
+        border-bottom-color: rgb(102 51 153 / var(--tw-border-opacity));
+        border-bottom-width: 2px;
+    }
+  }
 }
 
-li {
-  list-style-type: disc;
-  list-style-position: inside;
-  margin-top: 0.50em;
-  margin-bottom: 0.50em;
-}
-
+/* Large display rules */
 @media (min-width: 1024px) {
   .container{
     width: auto;

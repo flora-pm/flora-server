@@ -1,5 +1,6 @@
 {-# LANGUAGE QuasiQuotes          #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans -Wno-redundant-constraints #-}
 module Flora.Model.User where
 
@@ -19,7 +20,6 @@ import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics
-import GHC.Stack
 import GHC.TypeLits (ErrorMessage (..), TypeError)
 
 newtype UserId = UserId { getUserId :: UUID }
@@ -66,17 +66,17 @@ validatePassword :: Password -> PasswordHash Argon2 -> Bool
 validatePassword inputPassword hashedPassword =
   Argon2.checkPassword inputPassword hashedPassword == PasswordCheckSuccess
 
-insertUser :: HasCallStack => User -> DBT IO ()
+insertUser :: (MonadIO m) => User -> DBT m ()
 insertUser user = insert @User user
 
-getUserById :: HasCallStack => UserId -> DBT IO (Maybe User)
+getUserById :: (MonadIO m) => UserId -> DBT m (Maybe User)
 getUserById userId = selectById (Only userId)
 
-getUserByUsername :: HasCallStack => Text -> DBT IO (Maybe User)
+getUserByUsername :: (MonadIO m) => Text -> DBT m (Maybe User)
 getUserByUsername username = selectOneByField [field| username |] (Only username)
 
-getUserByEmail :: HasCallStack => Text -> DBT IO (Maybe User)
+getUserByEmail :: (MonadIO m) => Text -> DBT m (Maybe User)
 getUserByEmail email = selectOneByField [field| email |] (Only email)
 
-deleteUser :: HasCallStack => UserId -> DBT IO ()
+deleteUser :: (MonadIO m) => UserId -> DBT m ()
 deleteUser userId = delete @User (Only userId)

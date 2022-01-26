@@ -3,27 +3,36 @@ module Flora.PackageSpec where
 import Data.Set as Set
 import qualified Data.Vector as Vector
 import Optics.Core
-import SpecHelpers (migrate)
-import Test.Hspec (Spec)
-import Test.Hspec.DB (describeDB, itDB)
-import Test.Hspec.Expectations.Lifted
+import Test.Tasty
 
+-- import Flora.Model.Release
+-- import Flora.Model.Requirement
 import Flora.Model.Package
 import Flora.PackageFixtures
--- import Flora.Model.Requirement
--- import Flora.Model.Release
+import Flora.TestUtils
 
-spec :: Spec
-spec = describeDB migrate "packages" $ do
-  itDB "Insert base and its dependencies, and fetch it" $ do
-    getPackageById (base ^. #packageId) `shouldReturn` Just base
-  itDB "Fetch the dependents of ghc-prim" $ do
-    result <- Set.fromList . Vector.toList <$> getPackageDependents (array ^. #namespace) (ghcPrim ^. #name)
-    result `shouldBe` Set.fromList [base, ghcBignum, deepseq, bytestring, integerGmp, binary]
-  itDB "Fetch the dependents of array" $ do
-    result <- Set.fromList . Vector.toList <$> getPackageDependents (array ^. #namespace) (array ^. #name)
-    result `shouldBe` Set.fromList [stm, deepseq, containers, binary]
+spec :: TestM TestTree
+spec = testThese "packages"
+  [ testThis "Insert base and its dependencies, and fetch it" testGetPackageById
+  , testThis "Fetch the dependents of ghc-prim" testFetchGHCPrimDependents
+  , testThis "Fetch the dependents of array" testFetchDependentsOfArray
+  ]
+
+testGetPackageById :: TestM ()
+testGetPackageById = do
+    result <- liftDB $ getPackageById (base ^. #packageId)
+    assertEqual (Just base) result
+
+testFetchGHCPrimDependents :: TestM ()
+testFetchGHCPrimDependents = do
+    result <-  liftDB $ getPackageDependents (array ^. #namespace) (ghcPrim ^. #name)
+    assertEqual (Set.fromList [base, ghcBignum, deepseq, bytestring, integerGmp, binary]) (Set.fromList . Vector.toList $ result)
+
+testFetchDependentsOfArray :: TestM ()
+testFetchDependentsOfArray = do
+    result <- liftDB $ getPackageDependents (array ^. #namespace) (array ^. #name)
+    assertEqual (Set.fromList [stm, deepseq, containers, binary]) (Set.fromList . Vector.toList $ result)
+
   -- itDB "Fetch the requirements of array" $ do
   --   result <- Set.fromList . Vector.toList <$> getRequirements (arrayRelease ^. #releaseId)
   --   result `shouldBe` Set.fromList [(Namespace "haskell",PackageName "base",">=4.9 && <4.14")]
-

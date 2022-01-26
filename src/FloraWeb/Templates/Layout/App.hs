@@ -1,13 +1,21 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module FloraWeb.Templates.Layout.App (header, footer) where
 
-import Control.Monad.Reader (ask, asks)
+import Control.Monad.Reader
 import Data.Text
-import FloraWeb.Templates.Types
 import Lucid
+import Lucid.Alpine
 import Lucid.Base (makeAttribute)
 import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
+import Optics.Core
 import PyF
+
+import Data.Text.Display
+import Debug.Trace
+import Flora.Model.PersistentSession
+import Flora.Model.User
+import FloraWeb.Templates.Types
 
 header :: FloraHTML
 header = do
@@ -20,12 +28,14 @@ header = do
       title_ (text title)
 
       script_ [type_ "module"] $ do
-        toHtmlRaw @Text [fmt|
+        toHtmlRaw @Text [str|
           document.documentElement.classList.remove('no-js');
           document.documentElement.classList.add('js');
           const html = document.querySelector('html');
           const checkbox = document.querySelector('#darkmode-toggle');
-          if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {{
+          if (localStorage.theme === 'dark'
+             || (!('theme' in localStorage)
+             && window.matchMedia('(prefers-color-scheme: dark)').matches)) {{
             html.classList.add('dark');
             checkbox.checked = true
           }} else {{
@@ -35,6 +45,7 @@ header = do
           |]
 
       link_ [rel_ "stylesheet", href_ "/static/css/app.css"]
+      script_ [src_ "https://unpkg.com/alpinejs@3.7.1/dist/cdn.min.js", defer_ ""] ("" :: Text)
       meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
       ogTags
       theme
@@ -46,6 +57,84 @@ header = do
     body_ [class_ "bg-background dark:bg-background-dark dark:text-gray-100"]$ do
       script_ [src_ "/static/js/app.js", type_ "module"] ("" :: Text)
       navBar
+
+ogTags :: FloraHTML
+ogTags = do
+  TemplateEnv{title, description} <- ask
+  meta_ [property_ "og:title", content_ title]
+  meta_ [property_ "og:site_name", content_ "Flora"]
+  meta_ [property_ "og:description", content_ description ]
+  meta_ [property_ "og:url", content_ ""]
+  meta_ [property_ "og:image", content_ ""]
+  meta_ [property_ "og:image:width",  content_ "160"]
+  meta_ [property_ "og:image:height", content_ "160"]
+  meta_ [property_ "og:locale", content_ "en_GB"]
+  meta_ [property_ "og:type", content_ "website"]
+
+theme :: FloraHTML
+theme = do
+  meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
+  meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]
+
+navBar :: FloraHTML
+navBar = do
+  TemplateEnv{title} <- ask
+  ActiveElements{aboutNav, packagesNav} <- asks activeElements
+  nav_ [class_ "border-b dark:border-transparent bg-gray-200 dark:bg-background-dark"] $ do
+    div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
+      div_ [class_ "flex justify-between h-16 "] $ do
+        div_ [class_ "flex-shrink-0 flex "] $ do
+          div_ [class_ "flex-shrink-0 border-b-2 border-b-brand-purple py-2 px-1 pt-1 mx-7 items-center"] $
+            a_ [href_ "/", class_ "flex-shrink-0 py-2 inline-flex items-center font-bold text-black dark:text-gray-100"] (text title)
+          navbarSearch
+
+        let elementClass = "navbar-element py-2 inline-flex items-center px-1 pt-1 mx-7 text-black dark:text-gray-100"
+        div_ [id_ "navbar-right", class_ "hidden sm:flex justify-end"] $ do
+          a_ [href_ "/about", class_ (elementClass <> isActive aboutNav)] "About Flora"
+          a_ [href_ "#",      class_ (elementClass <> isActive packagesNav)] "Packages"
+          userDropdown elementClass
+
+navbarSearch :: FloraHTML
+navbarSearch = do
+  flag <- asks displayNavbarSearch
+  if flag
+  then do
+    form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "#"] $ do
+      div_ [class_ "flex items-center py-2"] $ do
+        input_ [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
+               , id_ "packageName", type_ "text", placeholder_ "Search a package"
+               ]
+    else pure mempty
+
+userDropdown :: Text -> FloraHTML
+userDropdown elementClass = do
+  TemplateEnv{mUser, sessionId} <- ask
+  div_ [id_ "user-menu-container", xData_ (Just "{ userMenu: false }"), xOn_ "click.outside" "userMenu = false", xOn_ "keydown.escape" "userMenu = false", class_ "flex"] $ do
+    button_ [xOn_ "click" "userMenu = !userMenu", xBind_ "aria-expanded" "userMenu ? 'true' : 'false'", id_ "user-menu-btn", class_ elementClass] "Menu"
+    nav_ [xShow_ "userMenu", id_ "user-menu-nav", class_ "bg-background dark:bg-background-dark rounded-md absolute right-0 border-2 border-brand-purple"] $
+      ul_ [] $ do
+          li_ [class_ "user-menu-element"] $ getUsernameOrLogin mUser
+          li_ [class_ "user-menu-element"] $ a_ [href_ "#"] "Guides"
+          logOff mUser sessionId
+          li_ [class_ "user-menu-divider", role_ "separator"] ""
+          li_ [class_ "user-menu-element"] darkModeToggle
+
+logOff :: Maybe User -> PersistentSessionId -> FloraHTML
+logOff Nothing _ = ""
+logOff (Just _) sessionId = li_ [class_ "user-menu-element"] $
+  form_ [action_ ("/sessions/delete/" <> display sessionId), method_ "post", id_ "logoff"] $ do
+    button_ [type_ "submit"] "Sign out"
+
+darkModeToggle :: FloraHTML
+darkModeToggle = do
+  div_ [class_ "flex justify-end items-center space-x-2"] $ do
+    span_ [class_ "text-sm text-gray-600 dark:text-gray-100"] "Light"
+    div_ [class_ ""] $ do
+      input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", checked_]
+      label_ [for_ "darkmode-toggle", class_ "cursor-pointer"] $
+        div_ [class_ "w-9 h-5 flex items-center bg-gray-600 dark:bg-gray-600 rounded-full p-1"] $ do
+          div_ [class_ "toggle-dot w-4 h-4 bg-white rounded-full bg-white shadow-md transform duration-200 ease-in-out"] ""
+    span_ [class_ "text-sm text-gray-600 dark:text-gray-100"] "Dark"
 
 footer :: FloraHTML
 footer =
@@ -66,64 +155,6 @@ footer =
         p_ [class_ "text-center text-base text-black dark:text-gray-400"]
           "© 2021 Flora.pm. All rights reserved. Licensed under BSD-3-Clause."
 
-ogTags :: FloraHTML
-ogTags = do
-      TemplateEnv{title, description} <- ask
-      meta_ [property_ "og:title", content_ title]
-      meta_ [property_ "og:site_name", content_ "Flora"]
-      meta_ [property_ "og:description", content_ description ]
-      -- meta_ [property_ "og:url", content_ (getCanonicalURL assigns)]
-      -- meta_ [property_ "og:image", content_ (getImage assigns)]
-      meta_ [property_ "og:image:width",  content_ "160"]
-      meta_ [property_ "og:image:height", content_ "160"]
-      meta_ [property_ "og:locale", content_ "en_GB"]
-      meta_ [property_ "og:type", content_ "website"]
-
-theme :: FloraHTML
-theme = do
-  meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
-  meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]
-
-navBar :: FloraHTML
-navBar = do
-  TemplateEnv{title} <- ask
-  nav_ [class_ "border-b dark:border-transparent bg-gray-200 dark:bg-background-dark"] $ do
-    div_ [class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
-      div_ [class_ "flex justify-between h-16"] $ do
-        div_ [class_ "flex-shrink-0 flex items-center"] $ do
-          a_ [href_ "/", class_ "flex-shrink-0 py-2 border-b border-b-2 border-b-brand-purple inline-flex items-center px-1 pt-1 mx-7 font-bold text-black dark:text-gray-100"] (text title)
-          navbarSearch
-
-        let elementClass = "navbar-element py-2 border-b border-b-brand-purple inline-flex items-center px-1 pt-1 border-b-2 mx-7 text-black dark:text-gray-100"
-        div_ [class_ "hidden margin-right flex sm:flex justify-end grid grid-rows-3 row-end-auto"] $ do
-          a_ [href_ "/about", class_ elementClass] "About Flora"
-          a_ [href_ "#",      class_ elementClass] "Packages"
-          a_ [href_ "#",      class_ elementClass] "Guides"
-          darkModeToggle
-
-navbarSearch :: FloraHTML
-navbarSearch = do
-  flag <- asks displayNavbarSearch
-  if flag
-  then do
-    form_ [class_ "w-full max-w-sm ml-5", action_ "#"] $ do
-      div_ [class_ "flex items-center py-2"] $ do
-        input_ [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
-               , id_ "packageName", type_ "text", placeholder_ "Search a package"
-               ]
-    else pure mempty
-
-darkModeToggle :: FloraHTML
-darkModeToggle = do
-  div_ [class_ "flex justify-end items-center space-x-2"] $ do
-    span_ [class_ "text-sm text-gray-600 dark:text-gray-100"] "Light"
-    div_ [class_ ""] $ do
-      input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", checked_]
-      label_ [for_ "darkmode-toggle", class_ "cursor-pointer"] $
-        div_ [class_ "w-9 h-5 flex items-center bg-gray-600 dark:bg-gray-600 rounded-full p-1"] $ do
-          div_ [class_ "toggle-dot w-4 h-4 bg-white rounded-full bg-white shadow-md transform duration-200 ease-in-out"] ""
-    span_ [class_ "text-sm text-gray-600 dark:text-gray-100"] "Dark"
-
 -- Helpers
 
 property_ :: Text -> Attribute
@@ -131,3 +162,11 @@ property_ = makeAttribute "property"
 
 text :: Text -> FloraHTML
 text = toHtml
+
+getUsernameOrLogin :: Maybe User -> FloraHTML
+getUsernameOrLogin Nothing     = a_ [href_ "/sessions/new"] "Login/Signup"
+getUsernameOrLogin (Just user) = a_ [href_ "#"] (text $ user ^. #username)
+
+isActive :: Bool -> Text
+isActive True  = " active"
+isActive False = ""

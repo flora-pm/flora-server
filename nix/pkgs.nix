@@ -11,9 +11,7 @@ import ./pin.nix {
               sha256 = "1xg3jyhy60xxhcwcl8sc55r7yzya0nqjl8bchms6cvfnzldrcih5";
             };
           in {
-            flora-server = hpNew.callPackage ../default.nix {
-              Cabal = hpOld.callHackage "Cabal" "3.6.2.0" { };
-            };
+            flora-server = hpNew.callPackage ../default.nix { };
             wai-middleware-heartbeat =
               hpNew.callCabal2nix "wai-middleware-heartbeat" (fetchTarball {
                 url =
@@ -33,6 +31,10 @@ import ./pin.nix {
             postgresql-migration =
               pkgs.haskell.lib.unmarkBroken hpOld.postgresql-migration;
             text-display = pkgs.haskell.lib.unmarkBroken hpOld.text-display;
+            # this is the old way of calling packages, I just ran cabal2nix
+            # and put it in that http-client.nix file.
+            # this prevents the cycle (nix'es callHackage uses cabal2nix which uses http-client apparently)
+            http-client = hpNew.callPackage ./cabal2nix/http-client.nix { };
 
             # here use hpNew to pull in data-sketches
             prometheus-client =
@@ -42,7 +44,8 @@ import ./pin.nix {
             data-sketches = hpOld.callHackage "data-sketches" "0.3.1.0" { };
             pcre2 = hpOld.callHackage "pcre2" "2.0.3" { };
             optics-core = hpOld.callHackage "optics-core" "0.4" { };
-            lucid = hpOld.callHackage "lucid" "2.11.0" { };
+            lucid = hpOld.callHackage "lucid" "2.10.0" { };
+            lucid-alpine = hpOld.callHackage "lucid-alpine" "0.1.0.4" { };
             servant-lucid = hpNew.callCabal2nix "servant-lucid" (fetchTarball {
               url =
                 "https://github.com/haskell-servant/servant-lucid/archive/c6a7847.tar.gz";

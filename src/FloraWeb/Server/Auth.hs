@@ -1,37 +1,86 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE UndecidableInstances  #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
-
-module FloraWeb.Server.Auth where
+module FloraWeb.Server.Auth
+  ( module FloraWeb.Server.Auth.Types
+  , FloraAuthContext
+  , authHandler
+  ) where
 
 import Control.Monad.Except
-import Control.Monad.Reader (ReaderT)
+import qualified Data.List as List
 import Data.Pool (Pool)
-import Data.UUID
+import qualified Data.UUID as UUID
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple
+import Debug.Trace
 import Network.Wai
 import Optics.Core
-import Servant.API (AuthProtect)
+import Servant.API (Header, Headers)
 import Servant.Server
-import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
-                                         mkAuthHandler)
+import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
 import Web.Cookie
 
 import Flora.Environment
+import Flora.Model.PersistentSession
 import Flora.Model.User
+import FloraWeb.Server.Auth.Types
+import FloraWeb.Session
+import FloraWeb.Types
+import Network.HTTP.Types (hCookie)
 
-type instance AuthServerData (AuthProtect "cookie-auth") = Maybe User
+type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
 
-type FloraPageM = ReaderT CallInfo Handler
+authHandler :: FloraEnv -> FloraAuthContext
+authHandler floraEnv = mkAuthHandler handler
+  where
+    pool = floraEnv ^. #pool
+    handler :: Request -> Handler (Headers '[Header "Set-Cookie" SetCookie] Session)
+    handler req = do
+      let cookies = traceShowId $ getCookies req
+      mbPersistentSessionId <- getSessionId cookies
+      mbPersistentSession <- getInTheFuckingSessionShinji pool mbPersistentSessionId
+      mUserInfo <- getUser pool mbPersistentSession
+      (mUser, sessionId) <- do
+        case mUserInfo of
+          Nothing -> do
+            nSessionId <- liftIO newPersistentSessionId
+            pure (Nothing, nSessionId)
+          Just (user, userSession) -> do
+            pure (Just user, userSession ^. #persistentSessionId)
+      webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
+      let sessionCookie = craftSessionCookie sessionId False
+      pure $ addCookie sessionCookie (Session{..})
 
-type FloraAdminM = ReaderT AuthedUser Handler
+
+getCookies :: Request -> Cookies
+getCookies req =
+  maybe [] parseCookies (List.lookup hCookie headers)
+  where
+    headers = requestHeaders req
+
+getSessionId :: Cookies -> Handler (Maybe PersistentSessionId)
+getSessionId cookies =
+  case List.lookup "flora_server_session" cookies of
+    Nothing -> pure Nothing
+    Just i ->
+      case PersistentSessionId <$> UUID.fromASCIIBytes i of
+          Nothing        -> pure Nothing
+          Just sessionId -> pure $ Just sessionId
+
+getInTheFuckingSessionShinji :: Pool Connection
+                             -> Maybe PersistentSessionId
+                             -> Handler (Maybe PersistentSession)
+getInTheFuckingSessionShinji _pool Nothing = pure Nothing
+getInTheFuckingSessionShinji pool (Just persistentSessionId) = do
+  result <- runExceptT $ liftIO $ withPool pool $ getPersistentSession persistentSessionId
+  case result of
+    Left _                   -> throwError err500
+    Right Nothing            -> pure Nothing
+    Right (Just userSession) -> pure $ Just userSession
+
+getUser :: Pool Connection -> Maybe PersistentSession -> Handler (Maybe (User, PersistentSession))
+getUser _ Nothing = pure Nothing
+getUser pool (Just userSession) = do
+  user <- lookupUser pool (userSession ^. #userId)
+  pure $ Just (user, userSession)
 
 lookupUser :: Pool Connection -> UserId -> Handler User
 lookupUser pool uid = do
@@ -40,19 +89,3 @@ lookupUser pool uid = do
     Left _            -> throwError (err403 { errBody = "Invalid Cookie" })
     Right Nothing     -> throwError (err403 { errBody = "Invalid Cookie" })
     Right (Just user) -> pure user
-
-authHandler :: FloraEnv -> AuthHandler Request (Maybe User)
-authHandler floraEnv = mkAuthHandler handler
-  where
-    throw401 msg = throwError $ err401 { errBody = msg }
-    handler :: Request -> Handler (Maybe User)
-    handler req = do
-      case lookup "cookie" $ requestHeaders req of
-        Nothing -> pure Nothing
-        Just cookie ->
-          case lookup "flora_server_cookie" $ parseCookies cookie of
-            Nothing -> pure Nothing
-            Just i ->
-              case fromASCIIBytes i of
-                Nothing  -> throw401 "Invalid token in cookie"
-                Just uid -> Just <$> lookupUser (floraEnv ^. #pool) (UserId uid)
