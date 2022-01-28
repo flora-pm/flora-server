@@ -89,7 +89,7 @@ defaultTemplateEnv = TemplateDefaults
   , activeElements = defaultActiveElements
   }
 
-fromSession :: (MonadIO m) => Session -> TemplateDefaults -> m TemplateEnv
+fromSession :: (MonadIO m) => Session p -> TemplateDefaults -> m TemplateEnv
 fromSession Session{sessionId, mUser=mu, webEnvStore} defaults = do
   floraEnv <- liftIO $ fetchFloraEnv webEnvStore
   let TemplateDefaults{..} = defaults & (#mUser .~ mu) & (#environment .~ (floraEnv ^. #environment))

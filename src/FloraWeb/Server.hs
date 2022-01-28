@@ -59,7 +59,7 @@ floraServer = Routes
       hoistServerWithContext
         (Proxy @Pages.Routes)
         (Proxy @'[FloraAuthContext])
-        (withReaderT (const sessionWithCookies)) -- Headers have been removed at this point, change it back if needed.
+        (withReaderT (const sessionWithCookies))
         Pages.server
   }
 

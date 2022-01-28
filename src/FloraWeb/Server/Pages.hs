@@ -21,20 +21,20 @@ server :: ToServant Routes' (AsServerT FloraPageM)
 server = genericServerT Routes'
   { home = homeHandler
   , about = aboutHandler
-  , admin = ensureUser adminHandler
+  , admin = ensureAdmin adminHandler
   , sessions = Sessions.server
   , packages = Packages.server
   }
 
-ensureUser :: FloraAdminM a -> FloraPageM a
-ensureUser adminM = do
+ensureAdmin :: FloraAdminM a -> FloraPageM a
+ensureAdmin adminM = do
   (Headers Session{sessionId, mUser} headers) <- ask
   case mUser of
     Nothing -> renderError forbidden403
-    Just user ->
+    Just _user ->
       withReaderT (\sessionWithCookies ->
         let Session{webEnvStore} = getResponse sessionWithCookies
-         in Headers ProtectedSession{..} headers) adminM
+         in Headers (Session{..} :: Session 'Admin) headers) adminM
 
 homeHandler :: FloraPageM (Html ())
 homeHandler = do

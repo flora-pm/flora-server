@@ -26,18 +26,18 @@ import FloraWeb.Session
 import FloraWeb.Types
 import Network.HTTP.Types (hCookie)
 
-type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
+type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
 
 authHandler :: FloraEnv -> FloraAuthContext
 authHandler floraEnv = mkAuthHandler handler
   where
     pool = floraEnv ^. #pool
-    handler :: Request -> Handler (Headers '[Header "Set-Cookie" SetCookie] Session)
+    handler :: Request -> Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
     handler req = do
       let cookies = traceShowId $ getCookies req
       mbPersistentSessionId <- getSessionId cookies
       mbPersistentSession <- getInTheFuckingSessionShinji pool mbPersistentSessionId
-      mUserInfo <- getUser pool mbPersistentSession
+      mUserInfo <- fetchUser pool mbPersistentSession
       (mUser, sessionId) <- do
         case mUserInfo of
           Nothing -> do
@@ -76,9 +76,9 @@ getInTheFuckingSessionShinji pool (Just persistentSessionId) = do
     Right Nothing            -> pure Nothing
     Right (Just userSession) -> pure $ Just userSession
 
-getUser :: Pool Connection -> Maybe PersistentSession -> Handler (Maybe (User, PersistentSession))
-getUser _ Nothing = pure Nothing
-getUser pool (Just userSession) = do
+fetchUser :: Pool Connection -> Maybe PersistentSession -> Handler (Maybe (User, PersistentSession))
+fetchUser _ Nothing = pure Nothing
+fetchUser pool (Just userSession) = do
   user <- lookupUser pool (userSession ^. #userId)
   pure $ Just (user, userSession)
 

@@ -37,22 +37,22 @@ f // f' = f >>> fromServant >>> f'
 (/:) :: (a -> b -> c) -> b -> a -> c
 (/:) = flip
 
-type instance AuthClientData (AuthProtect "cookie-auth") = Session
+type instance AuthClientData (AuthProtect "optional-cookie-auth") = Session 'Visitor
 
 floraClient :: (Routes (AsClientT ClientM) -> a) -> a
 floraClient = ($ genericClient)
 
-fakeSession :: Session
+fakeSession :: Session 'Visitor
 fakeSession =
   let sessionId = PersistentSessionId $ read "8631b00a-f042-4751-9649-6b0aa617566f"
       mUser = Nothing
       webEnvStore = undefined
    in Session{..}
 
-anonymousRequest :: AuthenticatedRequest (AuthProtect "cookie-auth")
+anonymousRequest :: AuthenticatedRequest (AuthProtect "optional-cookie-auth")
 anonymousRequest = mkAuthenticatedRequest fakeSession addSessionCookie
 
-addSessionCookie :: Session -> Client.Request -> Client.Request
+addSessionCookie :: Session p -> Client.Request -> Client.Request
 addSessionCookie session req = Client.addHeader "cookie" (session ^. #sessionId) req
 
 createSession :: Web.LoginForm -> ClientM (Union Web.CreateSessionResponses)

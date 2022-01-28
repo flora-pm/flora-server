@@ -1,6 +1,7 @@
 module FloraWeb.Session where
 
 import Control.Monad.Reader
+import Data.Kind
 import qualified Data.UUID as UUID
 import Servant (Header, Headers, addHeader, getResponse)
 import Web.Cookie
@@ -8,7 +9,8 @@ import Web.Cookie
 import Flora.Model.PersistentSession
 import FloraWeb.Server.Auth.Types
 
-getSession :: (MonadReader (Headers hs Session) m) => m Session
+getSession :: forall (pLevel :: ProtectionLevel) (hs :: [Type]) (m :: Type -> Type)
+           . (MonadReader (Headers hs (Session pLevel)) m) => m (Session pLevel)
 getSession = asks getResponse
 
 -- | This function builds a cookie with the provided content
