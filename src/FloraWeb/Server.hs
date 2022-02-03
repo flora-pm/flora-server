@@ -18,14 +18,14 @@ import Servant (Context (..), Handler, HasServer (hoistServerWithContext),
                 Proxy (Proxy), serveDirectoryWebApp)
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
-import Flora.Environment (FloraEnv (..), LoggingEnv(..), getFloraEnv)
+import Flora.Environment (FloraEnv (..), LoggingEnv (..), getFloraEnv)
 import FloraWeb.Routes
+import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler)
 import FloraWeb.Server.Logging.Metrics
 import FloraWeb.Server.Logging.Tracing
-import FloraWeb.Types
-import qualified FloraWeb.Routes.Pages as Pages
 import qualified FloraWeb.Server.Pages as Pages
+import FloraWeb.Types
 
 runFlora :: IO ()
 runFlora = do

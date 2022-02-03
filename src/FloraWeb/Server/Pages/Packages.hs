@@ -8,6 +8,7 @@ import Control.Monad.Reader
 import Data.Foldable
 import Data.Function
 import Data.Text
+import qualified Data.Text as T
 import Database.PostgreSQL.Entity.DBT (withPool)
 import Distribution.Parsec (simpleParsec)
 import Distribution.Types.Version (Version)
@@ -15,7 +16,6 @@ import Lucid
 import Lucid.Orphans ()
 import Network.HTTP.Types.Status
 import Optics.Core
-import qualified Data.Text as T
 
 import Flora.Environment
 import Flora.Model.Package
@@ -27,9 +27,9 @@ import FloraWeb.Server.Auth
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
+import qualified FloraWeb.Templates.Pages.Packages as Packages
 import FloraWeb.Types
 import Servant (ServerT)
-import qualified FloraWeb.Templates.Pages.Packages as Packages
 
 server :: ServerT Routes FloraPageM
 server = Routes'

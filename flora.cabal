@@ -62,10 +62,11 @@ common common-rts-options
   ghc-options: -rtsopts -threaded -with-rtsopts "-N -T"
 
 library
-  import:            common-extensions
-  import:            common-ghc-options
+  import:          common-extensions
+  import:          common-ghc-options
+
   -- pkgconfig-depends: libpq -any
-  hs-source-dirs:    src
+  hs-source-dirs:  src
   exposed-modules:
     Data.Aeson.Orphans
     Flora.Environment

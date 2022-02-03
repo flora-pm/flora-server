@@ -3,21 +3,21 @@ module FloraWeb.Server.Pages.Admin where
 import Control.Monad.Reader
 import Database.PostgreSQL.Entity.DBT (withPool)
 import Lucid
-import Servant
-import Optics.Core
 import Network.HTTP.Types.Status (notFound404)
+import Optics.Core
+import Servant
 
 import Flora.Environment
 import Flora.Model.Admin.Report
 import Flora.Model.User
+import qualified Flora.Model.User.Query as Query
 import FloraWeb.Routes.Pages.Admin
 import FloraWeb.Server.Auth
 import FloraWeb.Session (getSession)
 import FloraWeb.Templates
+import qualified FloraWeb.Templates.Admin as Templates
 import FloraWeb.Templates.Error
 import FloraWeb.Types (fetchFloraEnv)
-import qualified Flora.Model.User.Query as Query
-import qualified FloraWeb.Templates.Admin as Templates
 
 server :: ServerT Routes FloraPageM
 server = ensureAdmin $ Routes'
@@ -33,7 +33,7 @@ ensureAdmin :: ServerT Routes FloraAdminM -> ServerT Routes FloraPageM
 ensureAdmin adminM = do
   hoistServer (Proxy :: Proxy Routes) checkAdmin adminM
     where
-      checkAdmin :: FloraAdminM a -> FloraPageM a 
+      checkAdmin :: FloraAdminM a -> FloraPageM a
       checkAdmin adminRoutes = do
         (Headers session@Session{sessionId, mUser} headers) <- ask
         templateEnv <- fromSession session defaultTemplateEnv

@@ -5,12 +5,12 @@ import Optics.Core
 import Data.Text.Display
 import Lucid
 
+import Data.Foldable (forM_)
+import Data.Vector (Vector)
 import Flora.Model.Admin.Report
 import Flora.Model.User
-import FloraWeb.Templates.Types
-import Data.Vector (Vector)
-import Data.Foldable (forM_)
 import FloraWeb.Templates.Layout.App (text)
+import FloraWeb.Templates.Types
 
 index :: AdminReport -> FloraHTML
 index adminReport = do

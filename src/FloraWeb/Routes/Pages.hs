@@ -1,8 +1,8 @@
 module FloraWeb.Routes.Pages where
 
+import qualified FloraWeb.Routes.Pages.Admin as Admin
 import qualified FloraWeb.Routes.Pages.Packages as Packages
 import qualified FloraWeb.Routes.Pages.Sessions as Sessions
-import qualified FloraWeb.Routes.Pages.Admin as Admin
 import Lucid
 import Servant
 import Servant.API.Generic

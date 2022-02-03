@@ -7,9 +7,9 @@ import Lucid
 import Network.HTTP.Types.Status
 import Optics.Core
 
+import Control.Monad.Except (MonadError)
 import FloraWeb.Templates
 import Servant
-import Control.Monad.Except (MonadError)
 
 renderError :: (MonadError ServerError m)
             => TemplateEnv -> Status -> m a

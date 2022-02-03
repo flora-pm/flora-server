@@ -1,10 +1,10 @@
 module FloraWeb.Routes.Pages.Admin where
 
+import Flora.Model.User
 import Lucid
 import Servant
 import Servant.API.Generic
 import Servant.HTML.Lucid
-import Flora.Model.User
 
 type Routes = NamedRoutes Routes'
 

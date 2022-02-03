@@ -8,9 +8,9 @@ import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Transact (DBT)
 
-import Flora.Model.User
 import Data.Vector (Vector)
 import qualified Database.PostgreSQL.Entity.DBT as DBT
+import Flora.Model.User
 
 getUserById :: (MonadIO m) => UserId -> DBT m (Maybe User)
 getUserById userId = selectById (Only userId)
