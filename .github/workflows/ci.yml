@@ -11,6 +11,9 @@ jobs:
     steps:
 
     - uses: actions/checkout@v2.3.1
+    - uses: cachix/install-nix-action@v15
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
 
     - name: Set up Haskell
       id: setup-haskell
