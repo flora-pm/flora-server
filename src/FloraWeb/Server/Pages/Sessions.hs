@@ -11,6 +11,7 @@ import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Orphans ()
+import qualified Flora.Model.User.Query as Query
 import FloraWeb.Routes.Pages.Sessions
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Util
@@ -45,7 +46,7 @@ createSessionHandler :: LoginForm -> FloraPageM (Union CreateSessionResponses)
 createSessionHandler LoginForm{email, password} = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-  mUser <- liftIO $ withPool pool $ getUserByEmail email
+  mUser <- liftIO $ withPool pool $ Query.getUserByEmail email
   case mUser of
     Nothing -> do
       liftIO $ putStrLn "[+] Couldn't find user"

@@ -10,7 +10,7 @@ import Network.Wai.Handler.Warp (defaultSettings, runSettings, setLogger,
                                  setOnException, setPort)
 import Network.Wai.Logger (withStdoutLogger)
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
-import Optics.Operators ((^.))
+import Optics.Core
 import qualified Prometheus
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc (procMetrics)
@@ -19,21 +19,21 @@ import Servant (Context (..), Handler, HasServer (hoistServerWithContext),
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
 import Flora.Environment (FloraEnv (..), LoggingEnv (..), getFloraEnv)
-import FloraWeb.Routes (Routes (..))
+import FloraWeb.Routes
 import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler)
-import FloraWeb.Server.Logging.Metrics (prometheusMiddleware)
-import FloraWeb.Server.Logging.Tracing (sentryOnException)
+import FloraWeb.Server.Logging.Metrics
+import FloraWeb.Server.Logging.Tracing
 import qualified FloraWeb.Server.Pages as Pages
-import FloraWeb.Types (FloraM, WebEnv (WebEnv), WebEnvStore, newWebEnvStore)
+import FloraWeb.Types
 
 runFlora :: IO ()
 runFlora = do
   env <- getFloraEnv
   let baseURL = "http://localhost:" <> display (httpPort env)
   blueMessage $ "🌺 Starting Flora server on " <> baseURL
-  when (isJust $ env ^. #logging ^. #sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
-  when (env ^. #logging ^. #prometheusEnabled) $ do
+  when (isJust $ env ^. (#logging % #sentryDSN)) (blueMessage "📋 Connected to Sentry endpoint")
+  when (env ^. (#logging % #prometheusEnabled)) $ do
     blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
     Prometheus.register ghcMetrics
     void $ Prometheus.register procMetrics
@@ -67,7 +67,7 @@ floraServer = Routes
   }
 
 naturalTransform :: WebEnvStore -> FloraM a -> Handler a
-naturalTransform webEnvStore app = do
+naturalTransform webEnvStore app =
   runReaderT app webEnvStore
 
 genAuthServerContext :: FloraEnv -> Context '[FloraAuthContext]

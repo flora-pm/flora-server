@@ -12,6 +12,7 @@ import Test.Tasty
 
 import Flora.Environment
 import Flora.Model.User
+import Flora.Model.User.Query
 import Flora.TestUtils
 import Flora.UserFixtures
 import FloraWeb.Client as Client

@@ -10,7 +10,6 @@ import Data.Pool (Pool)
 import qualified Data.UUID as UUID
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple
-import Debug.Trace
 import Network.Wai
 import Optics.Core
 import Servant.API (Header, Headers)
@@ -21,6 +20,7 @@ import Web.Cookie
 import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
+import Flora.Model.User.Query
 import FloraWeb.Server.Auth.Types
 import FloraWeb.Session
 import FloraWeb.Types
@@ -34,7 +34,7 @@ authHandler floraEnv = mkAuthHandler handler
     pool = floraEnv ^. #pool
     handler :: Request -> Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
     handler req = do
-      let cookies = traceShowId $ getCookies req
+      let cookies = getCookies req
       mbPersistentSessionId <- getSessionId cookies
       mbPersistentSession <- getInTheFuckingSessionShinji pool mbPersistentSessionId
       mUserInfo <- fetchUser pool mbPersistentSession

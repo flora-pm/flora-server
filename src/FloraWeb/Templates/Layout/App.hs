@@ -1,6 +1,9 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-module FloraWeb.Templates.Layout.App (header, footer) where
+module FloraWeb.Templates.Layout.App
+  ( header
+  , footer
+  , text
+  ) where
 
 import Control.Monad.Reader
 import Data.Text
@@ -12,7 +15,6 @@ import Optics.Core
 import PyF
 
 import Data.Text.Display
-import Debug.Trace
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Templates.Types
@@ -115,6 +117,7 @@ userDropdown elementClass = do
       ul_ [] $ do
           li_ [class_ "user-menu-element"] $ getUsernameOrLogin mUser
           li_ [class_ "user-menu-element"] $ a_ [href_ "#"] "Guides"
+          adminLink mUser
           logOff mUser sessionId
           li_ [class_ "user-menu-divider", role_ "separator"] ""
           li_ [class_ "user-menu-element"] darkModeToggle
@@ -124,6 +127,10 @@ logOff Nothing _ = ""
 logOff (Just _) sessionId = li_ [class_ "user-menu-element"] $
   form_ [action_ ("/sessions/delete/" <> display sessionId), method_ "post", id_ "logoff"] $ do
     button_ [type_ "submit"] "Sign out"
+
+adminLink :: Maybe User -> FloraHTML
+adminLink (Just user) | user ^. #userFlags ^. #isAdmin = li_ [class_ "user-menu-element"] $ a_ [href_ "/admin"] "Admin Dashboard"
+adminLink _ = ""
 
 darkModeToggle :: FloraHTML
 darkModeToggle = do
@@ -164,8 +171,8 @@ text :: Text -> FloraHTML
 text = toHtml
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
-getUsernameOrLogin Nothing     = a_ [href_ "/sessions/new"] "Login/Signup"
-getUsernameOrLogin (Just user) = a_ [href_ "#"] (text $ user ^. #username)
+getUsernameOrLogin Nothing = a_ [href_ "/sessions/new"] "Login/Signup"
+getUsernameOrLogin _       = a_ [href_ "#"] "Profile"
 
 isActive :: Bool -> Text
 isActive True  = " active"

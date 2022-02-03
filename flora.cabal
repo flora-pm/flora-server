@@ -64,10 +64,13 @@ common common-rts-options
 library
   import:          common-extensions
   import:          common-ghc-options
+
+  -- pkgconfig-depends: libpq -any
   hs-source-dirs:  src
   exposed-modules:
     Data.Aeson.Orphans
     Flora.Environment
+    Flora.Model.Admin.Report
     Flora.Model.Category
     Flora.Model.Organisation
     Flora.Model.Package
@@ -79,10 +82,13 @@ library
     Flora.Model.Requirement
     Flora.Model.User
     Flora.Model.User.Orphans
+    Flora.Model.User.Query
+    Flora.Model.User.Update
     Flora.Publish
     FloraWeb.Client
     FloraWeb.Routes
     FloraWeb.Routes.Pages
+    FloraWeb.Routes.Pages.Admin
     FloraWeb.Routes.Pages.Packages
     FloraWeb.Routes.Pages.Sessions
     FloraWeb.Server
@@ -91,11 +97,13 @@ library
     FloraWeb.Server.Logging.Metrics
     FloraWeb.Server.Logging.Tracing
     FloraWeb.Server.Pages
+    FloraWeb.Server.Pages.Admin
     FloraWeb.Server.Pages.Packages
     FloraWeb.Server.Pages.Sessions
     FloraWeb.Server.Util
     FloraWeb.Session
     FloraWeb.Templates
+    FloraWeb.Templates.Admin
     FloraWeb.Templates.Error
     FloraWeb.Templates.Layout.App
     FloraWeb.Templates.Pages.Home

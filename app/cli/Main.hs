@@ -5,7 +5,7 @@ import Options.Applicative
 
 import Database.PostgreSQL.Entity.DBT
 import Flora.Environment
-import Flora.Model.User
+import Flora.Model.User.Update
 import Flora.PackageFixtures
 import Flora.Publish
 import Flora.UserFixtures
@@ -46,6 +46,7 @@ runOptions (Options Provision) = do
   withPool (env ^. #pool) $ do
     insertUser hackageUser
     insertUser user2
+    insertUser adminUser
 
     publishPackage [] ghcPrimRelease ghcPrim hackageUser
     publishPackage [ghcBignumDepOnGhcPrim] ghcBignumRelease ghcBignum hackageUser

@@ -20,6 +20,10 @@ module.exports = {
         "link": {
           "dark": "#4dabf7",
           "DEFAULT": "#1a0dab",
+        },
+        "admin-card": {
+          "dark": "#202936",
+          "DEFAULT": "#202936",
         }
       }
     },
