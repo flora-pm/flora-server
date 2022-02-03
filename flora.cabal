@@ -146,7 +146,7 @@ library
     , PyF                        ^>=0.10
     , raven-haskell              ^>=0.1
     , resource-pool              ^>=0.2
-    , servant                    ^>=0.18
+    , servant                    ^>=0.19
     , servant-client
     , servant-client-core
     , servant-lucid

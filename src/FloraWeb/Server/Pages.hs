@@ -4,8 +4,6 @@ import Control.Monad.Reader
 import Lucid
 import Network.HTTP.Types (forbidden403)
 import Optics.Core
-import Servant.API.Generic
-import Servant.Server.Generic
 
 import FloraWeb.Routes.Pages
 import FloraWeb.Server.Auth
@@ -17,8 +15,8 @@ import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Home as Home
 import Servant
 
-server :: ToServant Routes' (AsServerT FloraPageM)
-server = genericServerT Routes'
+server :: ServerT Routes FloraPageM
+server = Routes'
   { home = homeHandler
   , about = aboutHandler
   , admin = ensureAdmin adminHandler

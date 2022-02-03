@@ -1,28 +1,31 @@
 module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
-import Control.Monad
-import Control.Monad.Reader
-import Data.Maybe
-import Data.Text.Display
-import Network.Wai.Handler.Warp
+import Control.Monad (void, when)
+import Control.Monad.Reader (MonadIO (liftIO), ReaderT (runReaderT),
+                             withReaderT)
+import Data.Maybe (isJust)
+import Data.Text.Display (display)
+import Network.Wai.Handler.Warp (defaultSettings, runSettings, setLogger,
+                                 setOnException, setPort)
 import Network.Wai.Logger (withStdoutLogger)
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
-import Optics.Operators
+import Optics.Operators ((^.))
 import qualified Prometheus
 import Prometheus.Metric.GHC (ghcMetrics)
-import Prometheus.Metric.Proc
-import Servant hiding (Header, respond)
-import Servant.Server.Generic
+import Prometheus.Metric.Proc (procMetrics)
+import Servant (Context (..), Handler, HasServer (hoistServerWithContext),
+                Proxy (Proxy), serveDirectoryWebApp)
+import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
 import Flora.Environment (FloraEnv (..), LoggingEnv (..), getFloraEnv)
-import FloraWeb.Routes
+import FloraWeb.Routes (Routes (..))
 import qualified FloraWeb.Routes.Pages as Pages
-import FloraWeb.Server.Auth
-import FloraWeb.Server.Logging.Metrics
-import FloraWeb.Server.Logging.Tracing
+import FloraWeb.Server.Auth (FloraAuthContext, authHandler)
+import FloraWeb.Server.Logging.Metrics (prometheusMiddleware)
+import FloraWeb.Server.Logging.Tracing (sentryOnException)
 import qualified FloraWeb.Server.Pages as Pages
-import FloraWeb.Types
+import FloraWeb.Types (FloraM, WebEnv (WebEnv), WebEnvStore, newWebEnvStore)
 
 runFlora :: IO ()
 runFlora = do

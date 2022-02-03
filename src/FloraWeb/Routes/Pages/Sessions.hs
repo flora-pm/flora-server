@@ -11,15 +11,18 @@ import Flora.Model.PersistentSession
 import Flora.Model.User.Orphans ()
 import Web.Cookie
 
-type Routes = ToServantApi Routes'
+type Routes = NamedRoutes Routes'
 
 type NewSession
  = "new"
  :> UVerb 'GET '[HTML] NewSessionResponses
 
 type NewSessionResponses
- = '[ WithStatus 200 (Html ()) -- User is not logged-in, dispay the login page
-    , WithStatus 301 (Headers '[Header "Location" Text] NoContent)] -- User is already logged-in, redirect to home page
+ = '[ -- User is not logged-in, dispay the login page
+      WithStatus 200 (Html ())
+      -- User is already logged-in, redirect to home page
+    , WithStatus 301 (Headers '[Header "Location" Text] NoContent)
+    ]
 
 type CreateSession
   = "new"
@@ -27,8 +30,11 @@ type CreateSession
   :> UVerb 'POST '[HTML] CreateSessionResponses
 
 type CreateSessionResponses
- = '[ WithStatus 401 (Html ()) -- Failure, send login page back
-    , WithStatus 301 (Headers '[Header "Location" Text, Header "Set-Cookie" SetCookie] NoContent)] -- Success, redirected to home page
+ = '[ -- Failure, send login page back
+      WithStatus 401 (Html ())
+      -- Success, redirected to home page
+    , WithStatus 301 (Headers '[Header "Location" Text, Header "Set-Cookie" SetCookie] NoContent)
+    ]
 
 type DeleteSession
   = "delete"

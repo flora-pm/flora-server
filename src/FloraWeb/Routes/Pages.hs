@@ -7,7 +7,7 @@ import Servant
 import Servant.API.Generic
 import Servant.HTML.Lucid
 
-type Routes = ToServantApi Routes'
+type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
   { home     :: mode :- Get '[HTML] (Html ())

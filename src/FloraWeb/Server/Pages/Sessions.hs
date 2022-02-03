@@ -6,8 +6,6 @@ import qualified Data.Text as T
 import Data.Text.Display
 import Database.PostgreSQL.Entity.DBT (withPool)
 import Optics.Core
-import Servant.API.Generic
-import Servant.Server.Generic
 
 import Flora.Environment
 import Flora.Model.PersistentSession
@@ -22,8 +20,9 @@ import FloraWeb.Templates.Pages.Sessions as Sessions
 import FloraWeb.Types
 import Servant
 
-server :: ToServant Routes' (AsServerT FloraPageM)
-server = genericServerT Routes'
+-- server :: ToServant Routes' (AsServerT FloraPageM)
+server :: ServerT Routes FloraPageM
+server = Routes'
   { new = newSessionHandler
   , create = createSessionHandler
   , delete = deleteSessionHandler

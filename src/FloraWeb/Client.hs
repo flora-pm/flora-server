@@ -22,25 +22,10 @@ import FloraWeb.Server.Auth
 import Lucid.Orphans ()
 import qualified Servant.Client.Core as Client
 
--- Taken from https://blog.clement.delafargue.name/posts/2019-09-10-a-new-tale-of-servant-clients.html
---
--- While waiting for https://github.com/haskell-servant/servant/issues/1442 these combinators
--- live here.
-(//)
-  :: (m ~ AsClientT n)
-  => GenericServant routes m
-  => (a -> ToServant routes m)
-  -> (routes m -> b)
-  -> (a -> b)
-f // f' = f >>> fromServant >>> f'
-
-(/:) :: (a -> b -> c) -> b -> a -> c
-(/:) = flip
-
 type instance AuthClientData (AuthProtect "optional-cookie-auth") = Session 'Visitor
 
-floraClient :: (Routes (AsClientT ClientM) -> a) -> a
-floraClient = ($ genericClient)
+floraClient :: Routes (AsClientT ClientM)
+floraClient = genericClient
 
 fakeSession :: Session 'Visitor
 fakeSession =
@@ -56,4 +41,5 @@ addSessionCookie :: Session p -> Client.Request -> Client.Request
 addSessionCookie session req = Client.addHeader "cookie" (session ^. #sessionId) req
 
 createSession :: Web.LoginForm -> ClientM (Union Web.CreateSessionResponses)
-createSession loginForm = floraClient $ Web.pages /: anonymousRequest // Web.sessions // Web.create /: loginForm
+createSession loginForm =
+  floraClient // Web.pages /: anonymousRequest // Web.sessions // Web.create /: loginForm

@@ -13,8 +13,6 @@ import Lucid
 import Lucid.Orphans ()
 import Network.HTTP.Types.Status
 import Optics.Core
-import Servant.API.Generic
-import Servant.Server.Generic
 
 import qualified Data.Text as T
 import Distribution.Parsec (simpleParsec)
@@ -31,9 +29,10 @@ import FloraWeb.Templates
 import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Packages as Packages
 import FloraWeb.Types
+import Servant (ServerT)
 
-server :: ToServant Routes' (AsServerT FloraPageM)
-server = genericServerT Routes'
+server :: ServerT Routes FloraPageM
+server = Routes'
   { show = showHandler
   , showVersion = showVersionHandler
   }
