@@ -58,26 +58,10 @@ lint: ## Run the code linter (HLint)
 style: ## Run the code formatters (stylish-haskell, cabal-fmt, nixfmt)
 	@stylish-haskell -i -r src app test
 	@cabal-fmt -i flora.cabal
-	@nixfmt *.nix nix/*.nix
-
-nix-build: ## Build the backend with Nix
-	@nix-build
-
-nix-start: ## Start the server build with Nix. Does not source the environment.
-	./result/bin/flora-server
+	@nixfmt *.nix
 
 nix-shell: ## Enter the Nix shell
 	@nix-shell
-
-nix-provision: ## 
-	./result/bin/flora-cli provision-fixtures
-
-nix-clean: ## Clean the Nix build artifacts
-	@nix-store --delete --ignore-liveness result
-	@rm result
-
-nix-tmux: nix-build ## Start a tmux session with the nix build system
-	@./scripts/start-tmux.sh
 
 docker-build: ## Build the docker image
 	@docker-compose build

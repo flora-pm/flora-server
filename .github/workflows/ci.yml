@@ -11,25 +11,23 @@ jobs:
     steps:
 
     - uses: actions/checkout@v2.3.1
-
-    - name: Cache install Nix packages
-      uses: rikhuijzer/cache-install@v1.0.8
-      with:
-        key: nix-${{ hashFiles('default.nix') }}
-
-    - uses: cachix/install-nix-action@v12
+    - uses: cachix/install-nix-action@v15
       with:
         nix_path: nixpkgs=channel:nixos-unstable
 
-    - run: nix-build nix/ci.nix
-    - run: nix-shell --run "echo OK"
+    - name: Set up Haskell
+      id: setup-haskell
+      uses: haskell/actions/setup@v1
+      with:
+        ghc-version: '8.10.7'
+        cabal-version: 'latest'
 
     - name: Configure environment
       run: |
         echo '/usr/lib/postgresql/12/bin/' >> $GITHUB_PATH
-        echo "/nix/var/nix/profiles/per-user/$USER/profile/bin" >> "$GITHUB_PATH"
-        echo "/nix/var/nix/profiles/default/bin" >> "$GITHUB_PATH"
-        echo 'NIX_PATH="nixpkgs=channel:nixos-unstable"' >> "$GITHUB_ENV"
+        echo '/nix/var/nix/profiles/per-user/$USER/profile/bin' >> '$GITHUB_PATH'
+        echo '/nix/var/nix/profiles/default/bin' >> '$GITHUB_PATH'
+        echo 'NIX_PATH='nixpkgs=channel:nixos-unstable'' >> '$GITHUB_ENV'
         echo '$HOME/.ghcup/bin' >> $GITHUB_PATH
         echo 'HOME/.cabal/bin' >> $GITHUB_PATH
         echo 'HOME/.local/bin' >> $GITHUB_PATH
@@ -39,3 +37,17 @@ jobs:
 
     - name: Running stylish-haskell
       run: nix-shell --run './.github/workflows/stylish-haskell-runner.sh'
+
+    - name: Freeze
+      run: nix-shell --run 'cabal freeze'
+
+    - name: Cache
+      uses: actions/cache@v2.1.3
+      with:
+        path: ${{ steps.setup-haskell.outputs.cabal-store }}
+        key: ${{ hashFiles('cabal.project.freeze') }}
+
+    - name: Build
+      run: nix-shell --run 'cabal build'
+    - name: Test
+      run: nix-shell --run 'cabal test all'

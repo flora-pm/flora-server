@@ -109,7 +109,7 @@ navbarSearch = do
 userDropdown :: Text -> FloraHTML
 userDropdown elementClass = do
   TemplateEnv{mUser, sessionId} <- ask
-  div_ [id_ "user-menu-container", xData_ (Just "{ userMenu: false }"), xOn_ "click.outside" "userMenu = false", xOn_ "keydown.escape" "userMenu = false", class_ "flex"] $ do
+  div_ [id_ "user-menu-container", xData_ "{ userMenu: false }", xOn_ "click.outside" "userMenu = false", xOn_ "keydown.escape" "userMenu = false", class_ "flex"] $ do
     button_ [xOn_ "click" "userMenu = !userMenu", xBind_ "aria-expanded" "userMenu ? 'true' : 'false'", id_ "user-menu-btn", class_ elementClass] "Menu"
     nav_ [xShow_ "userMenu", id_ "user-menu-nav", class_ "bg-background dark:bg-background-dark rounded-md absolute right-0 border-2 border-brand-purple"] $
       ul_ [] $ do
