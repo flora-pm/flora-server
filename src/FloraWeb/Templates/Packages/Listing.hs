@@ -1,4 +1,5 @@
 module FloraWeb.Templates.Packages.Listing where
+
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Distribution.Types.Version (Version)

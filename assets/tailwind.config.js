@@ -12,6 +12,7 @@ module.exports = {
       colors: {
         "background": {
           "dark": "#25282a",
+          "dark-focused": "#3a3d3f",
           "DEFAULT": "#f3f4f6",
         },
         "brand-purple": {

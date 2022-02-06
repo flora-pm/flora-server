@@ -1,10 +1,18 @@
-module FloraWeb.Session where
+module FloraWeb.Session
+  ( module FloraWeb.Server.Auth.Types
+  , getSession
+  , craftSessionCookie
+  , emptySessionCookie
+  , addCookie
+  , deleteCookie
+  ) where
 
 import Control.Monad.Reader
 import Data.Kind
 import qualified Data.UUID as UUID
 import Servant (Header, Headers, addHeader, getResponse)
 import Web.Cookie
+
 
 import Flora.Model.PersistentSession
 import FloraWeb.Server.Auth.Types

@@ -107,6 +107,7 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.Publish
+    Flora.Search
     Flora.ThirdParties.Hackage.API
     Flora.ThirdParties.Hackage.Client
     FloraWeb.Client
@@ -141,6 +142,7 @@ library
     FloraWeb.Templates.Pages.Categories.Show
     FloraWeb.Templates.Pages.Home
     FloraWeb.Templates.Pages.Packages
+    FloraWeb.Templates.Pages.Search
     FloraWeb.Templates.Pages.Sessions
     FloraWeb.Templates.Types
     FloraWeb.Types

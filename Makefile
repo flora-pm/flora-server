@@ -10,13 +10,13 @@ clean: ## Remove the cabal build artifacts
 assets-deps: ## Install the dependencies of the frontend
 	@cd assets/ && yarn
 
-assets-build: assets-deps ## Build the web assets
+build-assets: assets-deps ## Build the web assets
 	@cd assets/ && yarn build
 
-assets-watch: ## Continuously rebuild the web assets
+watch-assets: ## Continuously rebuild the web assets
 	@cd assets/ && yarn watch
 
-assets-clean: ## Remove JS artifacts
+clean-assets: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
 
 db-create: ## Create the database
@@ -42,7 +42,7 @@ ghci: repl ## Start a cabal REPL (alias for `make repl`)
 watch: soufflé ## Load the main library and reload on file change
 	@ghcid --target flora-server -l
 
-test : soufflé ## Run the test suite
+test: soufflé ## Run the test suite
 	./scripts/run-tests.sh
 
 watch-test: soufflé ## Load the tests in ghcid and reload them on file change
