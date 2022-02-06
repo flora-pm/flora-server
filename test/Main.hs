@@ -15,6 +15,7 @@ main = do
   withResource (env ^. #pool) migrate
   spec <- traverse (`runTestM` env) specs
   defaultMain . testGroup "Flora Tests" $ spec
+
 specs :: [TestM TestTree]
 specs =
   [ UserSpec.spec

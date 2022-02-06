@@ -1,0 +1,68 @@
+name:          tasty-bench
+version:       0.3.1
+cabal-version: 1.18
+build-type:    Simple
+license:       MIT
+license-file:  LICENSE
+copyright:     2021 Andrew Lelechenko
+author:        Andrew Lelechenko
+maintainer:    Andrew Lelechenko <andrew.lelechenko@gmail.com>
+homepage:      https://github.com/Bodigrim/tasty-bench
+bug-reports:   https://github.com/Bodigrim/tasty-bench/issues
+category:      Development, Performance, Testing, Benchmarking
+synopsis:      Featherlight benchmark framework
+description:
+  Featherlight framework (only one file!)
+  for performance measurement with API mimicking
+  @criterion@ and @gauge@, featuring built-in comparison
+  against previous runs and between benchmarks. Our benchmarks are just
+  regular @tasty@ tests.
+
+extra-source-files:
+  changelog.md
+  README.md
+extra-doc-files:
+  example.svg
+
+tested-with: GHC == 9.2.1, GHC==9.0.1, GHC==8.10.7, GHC==8.8.4, GHC==8.6.5, GHC==8.4.4, GHC==8.2.2, GHC==8.0.2, GHC==7.10.3, GHC==7.8.4, GHC==7.6.3, GHC==7.4.2, GHC==7.2.2, GHC==7.0.4
+
+source-repository head
+  type: git
+  location: https://github.com/Bodigrim/tasty-bench
+
+flag tasty
+  default: True
+  manual: True
+  description:
+    When disabled, reduces API to functions independent of @tasty@: combinators
+    to construct @Benchmarkable@ and @measureCpuTime@.
+
+flag debug
+  default: False
+  manual: True
+  description:
+    Emit ongoing diagnostic information for benchmarks.
+
+library
+  exposed-modules:  Test.Tasty.Bench
+  hs-source-dirs:   .
+  default-language: Haskell2010
+  ghc-options:      -O2 -Wall -fno-warn-unused-imports
+  if impl(ghc < 7.10)
+    ghc-options:    -fcontext-stack=30
+  if impl(ghc >= 8.0)
+    ghc-options:    -Wcompat -Widentities
+
+  build-depends:
+    base >= 4.3 && < 5,
+    deepseq >= 1.1
+  if flag(tasty)
+    build-depends:
+      containers >= 0.4,
+      tasty >= 0.11.3
+  if impl(ghc < 7.8)
+    build-depends:
+      tagged >= 0.2
+
+  if flag(debug)
+    cpp-options: -DDEBUG

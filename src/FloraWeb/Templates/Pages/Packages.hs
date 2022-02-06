@@ -1,7 +1,6 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold)
-import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Display
 import Data.Vector (Vector)
@@ -71,7 +70,11 @@ displayLinks _release meta@PackageMetadata{..} = do
     ul_ [class_ "bullets"]$ do
       li_ $ a_ [href_ (getHomepage meta)] "Homepage"
       li_ $ a_ [href_ documentation] "Documentation"
-      li_ $ a_ [href_ sourceRepo ] "Source repository"
+      li_ $ displaySourceRepos sourceRepos
+
+displaySourceRepos :: [Text] -> FloraHTML
+displaySourceRepos [] = toHtml @Text "⚠ No source repository provided"
+displaySourceRepos x  = a_ [href_ (head x)] "Source repository"
 
 displayDependencies :: Vector (Namespace, PackageName, Text) -- ^ (Namespace, Name, Version requirement)
                     -> FloraHTML
@@ -117,7 +120,13 @@ renderDependency (namespace, name, version) = do
     toHtml version
 
 getHomepage :: PackageMetadata -> Text
-getHomepage PackageMetadata{..} = fromMaybe sourceRepo homepage
+getHomepage PackageMetadata{..} =
+  case homepage of
+    Just page -> page
+    Nothing ->
+      case sourceRepos of
+        [] -> "⚠  No homepage provided"
+        x  -> head x
 
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =

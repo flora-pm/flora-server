@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
-set -eaxo pipefail
-
-trap 'kill 0' EXIT
+set -eao pipefail
 
 source ./environment.test.sh
 
 if [ -z "$1" ] ;
 then
-  cabal run -- flora-test
+  cabal test
 else
   ghcid --command='cabal v2-repl flora-test' --test 'Main.main'
 fi

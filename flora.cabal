@@ -69,13 +69,19 @@ library
   hs-source-dirs:  src
   exposed-modules:
     Data.Aeson.Orphans
+    Data.Text.Display.Orphans
     Flora.Environment
+    Flora.Import.Package
+    Flora.Import.Types
     Flora.Model.Admin.Report
     Flora.Model.Category
     Flora.Model.Organisation
     Flora.Model.Package
+    Flora.Model.Package.Component
     Flora.Model.Package.Orphans
+    Flora.Model.Package.Query
     Flora.Model.Package.Types
+    Flora.Model.Package.Update
     Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Orphans
@@ -85,6 +91,8 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.Publish
+    Flora.ThirdParties.Hackage.API
+    Flora.ThirdParties.Hackage.Client
     FloraWeb.Client
     FloraWeb.Routes
     FloraWeb.Routes.Pages
@@ -104,6 +112,8 @@ library
     FloraWeb.Session
     FloraWeb.Templates
     FloraWeb.Templates.Admin
+    FloraWeb.Templates.Admin.Packages
+    FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
     FloraWeb.Templates.Layout.App
     FloraWeb.Templates.Pages.Home
@@ -121,7 +131,6 @@ library
     , bytestring                 ^>=0.10
     , Cabal                      ==3.6.2.0
     , case-insensitive
-    , clientsession              ^>=0.9
     , clock                      ^>=0.8
     , cmark-gfm                  ^>=0.2
     , colourista                 ^>=0.1
@@ -148,6 +157,7 @@ library
     , pg-transact                ^>=0.3
     , postgresql-simple          ^>=0.6
     , pretty                     ^>=1.1
+    , pretty-simple              ^>=4.0
     , prometheus-client          ^>=1.1
     , prometheus-metrics-ghc     ^>=1.0
     , prometheus-proc            ^>=0.1
@@ -155,16 +165,17 @@ library
     , raven-haskell              ^>=0.1
     , resource-pool              ^>=0.2
     , servant                    ^>=0.19
-    , servant-client
-    , servant-client-core
-    , servant-lucid
-    , servant-server             ^>=0.18
+    , servant-client             ^>=0.19
+    , servant-client-core        ^>=0.19
+    , servant-lucid              ^>=0.9
+    , servant-server             ^>=0.19
     , stm                        ^>=2.5
     , strict-concurrency
     , text                       ^>=1.2
     , text-display               ^>=0.0
     , time                       ^>=1.9
     , tmp-postgres
+    , transformers               ^>=0.5
     , uuid                       ^>=1.3
     , vector                     ^>=0.12
     , wai                        ^>=3.2
@@ -227,14 +238,13 @@ library flora-test-fixtures
     , uuid
     , vector
 
-  exposed-modules:
-    Flora.PackageFixtures
-    Flora.UserFixtures
+  exposed-modules: Flora.UserFixtures
 
-executable flora-test
+test-suite flora-test
   import:         common-extensions
   import:         common-ghc-options
   import:         common-rts-options
+  type:           exitcode-stdio-1.0
   main-is:        Main.hs
   hs-source-dirs: test
   build-depends:
@@ -258,6 +268,7 @@ executable flora-test
     , pg-transact
     , postgresql-migration
     , postgresql-simple
+    , pretty-simple
     , resource-pool
     , servant
     , servant-client

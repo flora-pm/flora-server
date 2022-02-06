@@ -1,0 +1,187 @@
+Name:                bytestring
+Version:             0.11.2.0
+Synopsis:            Fast, compact, strict and lazy byte strings with a list interface
+Description:
+    An efficient compact, immutable byte string type (both strict and lazy)
+    suitable for binary or 8-bit character data.
+    .
+    The 'ByteString' type represents sequences of bytes or 8-bit characters.
+    It is suitable for high performance use, both in terms of large data
+    quantities, or high speed requirements. The 'ByteString' functions follow
+    the same style as Haskell\'s ordinary lists, so it is easy to convert code
+    from using 'String' to 'ByteString'.
+    .
+    Two 'ByteString' variants are provided:
+    .
+      * Strict 'ByteString's keep the string as a single large array. This
+        makes them convenient for passing data between C and Haskell.
+    .
+      * Lazy 'ByteString's use a lazy list of strict chunks which makes it
+        suitable for I\/O streaming tasks.
+    .
+    The @Char8@ modules provide a character-based view of the same
+    underlying 'ByteString' types. This makes it convenient to handle mixed
+    binary and 8-bit character content (which is common in many file formats
+    and network protocols).
+    .
+    The 'Builder' module provides an efficient way to build up 'ByteString's
+    in an ad-hoc way by repeated concatenation. This is ideal for fast
+    serialisation or pretty printing.
+    .
+    There is also a 'ShortByteString' type which has a lower memory overhead
+    and can can be converted to or from a 'ByteString', but supports very few
+    other operations. It is suitable for keeping many short strings in memory.
+    .
+    'ByteString's are not designed for Unicode. For Unicode strings you should
+    use the 'Text' type from the @text@ package.
+    .
+    These modules are intended to be imported qualified, to avoid name clashes
+    with "Prelude" functions, e.g.
+    .
+    > import qualified Data.ByteString as BS
+
+License:             BSD3
+License-file:        LICENSE
+Category:            Data
+Copyright:           Copyright (c) Don Stewart          2005-2009,
+                               (c) Duncan Coutts        2006-2015,
+                               (c) David Roundy         2003-2005,
+                               (c) Jasper Van der Jeugt 2010,
+                               (c) Simon Meier          2010-2013.
+
+Author:              Don Stewart,
+                     Duncan Coutts
+Maintainer:          Haskell Bytestring Team <andrew.lelechenko@gmail.com>, Core Libraries Committee
+Homepage:            https://github.com/haskell/bytestring
+Bug-reports:         https://github.com/haskell/bytestring/issues
+Tested-With:         GHC==9.0.1,
+                     GHC==8.10.4,
+                     GHC==8.8.4,
+                     GHC==8.6.5,
+                     GHC==8.4.4,
+                     GHC==8.2.2,
+                     GHC==8.0.2
+Build-Type:          Simple
+Cabal-Version:       >= 1.10
+extra-source-files:  README.md Changelog.md
+
+source-repository head
+  type:     git
+  location: https://github.com/haskell/bytestring
+
+library
+  build-depends:     base >= 4.9 && < 5, ghc-prim, deepseq, template-haskell
+
+  exposed-modules:   Data.ByteString
+                     Data.ByteString.Char8
+                     Data.ByteString.Unsafe
+                     Data.ByteString.Internal
+                     Data.ByteString.Lazy
+                     Data.ByteString.Lazy.Char8
+                     Data.ByteString.Lazy.Internal
+                     Data.ByteString.Short
+                     Data.ByteString.Short.Internal
+
+                     Data.ByteString.Builder
+                     Data.ByteString.Builder.Extra
+                     Data.ByteString.Builder.Prim
+                     Data.ByteString.Builder.RealFloat
+
+                     -- perhaps only exposed temporarily
+                     Data.ByteString.Builder.Internal
+                     Data.ByteString.Builder.Prim.Internal
+  other-modules:     Data.ByteString.Builder.ASCII
+                     Data.ByteString.Builder.Prim.ASCII
+                     Data.ByteString.Builder.Prim.Binary
+                     Data.ByteString.Builder.Prim.Internal.Base16
+                     Data.ByteString.Builder.Prim.Internal.Floating
+                     Data.ByteString.Builder.RealFloat.F2S
+                     Data.ByteString.Builder.RealFloat.D2S
+                     Data.ByteString.Builder.RealFloat.Internal
+                     Data.ByteString.Builder.RealFloat.TableGenerator
+                     Data.ByteString.Lazy.Internal.Deque
+
+  default-language:  Haskell2010
+  other-extensions:  CPP,
+                     ForeignFunctionInterface,
+                     BangPatterns
+                     UnliftedFFITypes,
+                     MagicHash,
+                     UnboxedTuples,
+                     DeriveDataTypeable
+                     ScopedTypeVariables
+                     RankNTypes
+                     NamedFieldPuns
+
+  ghc-options:      -Wall -fwarn-tabs
+                    -O2
+                    -fmax-simplifier-iterations=10
+                    -fdicts-cheap
+                    -fspec-constr-count=6
+  
+  c-sources:        cbits/fpstring.c
+                    cbits/itoa.c
+  
+  if (arch(aarch64))
+    c-sources:        cbits/aarch64/is-valid-utf8.c
+  else
+    c-sources:        cbits/is-valid-utf8.c
+  
+  cc-options:        -std=c11
+ 
+  -- Required, due to the following issues:
+  -- * https://gitlab.haskell.org/ghc/ghc/-/issues/20525#note_385580
+  -- * https://gitlab.haskell.org/ghc/ghc/-/issues/19417
+  if os(windows)
+    extra-libraries:  gcc_s gcc
+
+  include-dirs:      include
+  includes:          fpstring.h
+  install-includes:  fpstring.h
+
+test-suite bytestring-tests
+  type:             exitcode-stdio-1.0
+  main-is:          Main.hs
+  other-modules:    Builder
+                    Data.ByteString.Builder.Prim.TestUtils
+                    Data.ByteString.Builder.Prim.Tests
+                    Data.ByteString.Builder.Tests
+                    IsValidUtf8
+                    LazyHClose
+                    Lift
+                    Properties
+                    Properties.ByteString
+                    Properties.ByteStringChar8
+                    Properties.ByteStringLazy
+                    Properties.ByteStringLazyChar8
+                    QuickCheckUtils
+  hs-source-dirs:   tests,
+                    tests/builder
+  build-depends:    base,
+                    bytestring,
+                    deepseq,
+                    ghc-prim,
+                    QuickCheck,
+                    tasty,
+                    tasty-quickcheck,
+                    template-haskell,
+                    transformers >= 0.3
+  ghc-options:      -fwarn-unused-binds
+                    -threaded -rtsopts
+  default-language: Haskell2010
+
+benchmark bytestring-bench
+  main-is:          BenchAll.hs
+  other-modules:    BenchBoundsCheckFusion
+                    BenchCount
+                    BenchCSV
+                    BenchIndices
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   bench
+  default-language: Haskell2010
+  ghc-options:      -O2 "-with-rtsopts=-A32m"
+  build-depends:    base,
+                    bytestring,
+                    deepseq,
+                    tasty-bench,
+                    random

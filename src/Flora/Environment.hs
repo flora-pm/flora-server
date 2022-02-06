@@ -155,7 +155,7 @@ parseTestConfig =
 getFloraEnv :: IO FloraEnv
 getFloraEnv = do
   config <- Env.parse id parseConfig
-  blueMessage $ "🔌 Connected to database at " <> displayConnectInfo (connectInfo config)
+  blueMessage $ "🔌 Connecting to database at " <> displayConnectInfo (connectInfo config)
   configToEnv config
 
 getFloraTestEnv :: IO TestEnv

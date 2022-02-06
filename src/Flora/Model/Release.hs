@@ -19,12 +19,15 @@ import Database.PostgreSQL.Transact (DBT)
 import Distribution.Types.Version (Version)
 import GHC.Generics (Generic)
 
+import Data.Text.Display
 import Flora.Model.Package (PackageId)
 import Flora.Model.Release.Orphans ()
 
 newtype ReleaseId = ReleaseId { getReleaseId :: UUID }
   deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
     via UUID
+  deriving Display
+    via ShowInstance UUID
 
 data Release = Release
   { -- | The unique ID of this release

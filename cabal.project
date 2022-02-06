@@ -2,7 +2,7 @@ packages: ./
 
 with-compiler: ghc-8.10.7
 
-jobs: $ncpus
+jobs: 8
 
 optimization: False
 
@@ -13,7 +13,7 @@ allow-newer: all
 test-show-details: direct
 
 package *
-  ghc-options: +RTS -A2G -RTS
+  ghc-options: "-L /usr/pgsql-14/lib"
 
 source-repository-package
     type: git
@@ -21,8 +21,6 @@ source-repository-package
     tag: 9dacea2bec9c6f5d9f7d46a2a1d9094cf6147fbf
     subdir: ./raven-haskell
 
-package pg-entity
-  ghc-options: "-L /usr/pgsql-14/lib"
 
 source-repository-package
     type: git
@@ -32,7 +30,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/tchoutri/pg-entity.git
-    tag: 45abf171fb7c3e0a4ec1137f79364239f1d2f24d
+    tag: 0e345c2
 
 source-repository-package
     type: git

@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes     #-}
-
 module Flora.Model.Package.Types where
 
 import Data.Aeson
 import Data.Aeson.Orphans ()
+import Data.Data
 import Data.Text (Text, unpack)
 import Data.Text.Display
 import Data.Time (UTCTime)
@@ -13,6 +13,7 @@ import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
+import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
@@ -22,15 +23,16 @@ import Lucid
 import qualified Text.PrettyPrint as PP
 import Text.Regex.Pcre2
 
-import Data.Data
-import Database.PostgreSQL.Simple.Newtypes
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
+import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
 newtype PackageId = PackageId { getPackageId :: UUID }
   deriving stock (Generic)
-  deriving (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON)
+  deriving (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
     via UUID
+  deriving Display
+    via ShowInstance UUID
 
 newtype PackageName = PackageName Text
   deriving stock (Show)
@@ -94,7 +96,7 @@ instance Entity Package where
 
 data PackageMetadata = PackageMetadata
   { license       :: SPDX.License
-  , sourceRepo    :: Text
+  , sourceRepos   :: [Text]
   , homepage      :: Maybe Text
   , documentation :: Text
   , bugTracker    :: Maybe Text
