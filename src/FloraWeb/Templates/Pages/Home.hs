@@ -52,7 +52,7 @@ and provides new features and improvements:
 * Dark mode
 </div>
 
-Flora is the work of volunteers, and the source can be read on [GitHub](https://gtihub.com/flora-pm/flora-server).
+Flora is the work of volunteers, and the source can be read on [GitHub](https://github.com/flora-pm/flora-server).
 
 <h3 class="font-bold text-xl dark:text-gray-100 my-10"> Moderation and Code of Conduct </h3>
 
