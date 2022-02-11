@@ -1,5 +1,5 @@
 -- A release belongs to a package, and contains multiple components.
-create table releases (
+create table if not exists releases (
   release_id uuid primary key,
   package_id uuid references packages,
   version text not null,

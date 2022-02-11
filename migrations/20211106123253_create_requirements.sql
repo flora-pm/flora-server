@@ -1,4 +1,4 @@
-create table requirements (
+create table if not exists requirements (
   requirement_id uuid primary key,
   package_component_id uuid references package_components not null, -- Points to the dependent
   package_id uuid references packages not null, -- Points to the dependency

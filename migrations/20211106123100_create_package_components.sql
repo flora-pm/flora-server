@@ -4,7 +4,7 @@
 -- All these are components have many dependency requirements
 create type component as enum ('library', 'executable', 'test', 'benchmark', 'foreign-library');
 
-create table package_components (
+create table if not exists package_components (
   package_component_id uuid primary key,
   release_id uuid references releases not null,
   component_name text not null,
