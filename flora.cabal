@@ -39,6 +39,7 @@ common common-extensions
     OverloadedStrings
     PolyKinds
     QuasiQuotes
+    QuasiQuotes
     RankNTypes
     RecordWildCards
     ScopedTypeVariables
