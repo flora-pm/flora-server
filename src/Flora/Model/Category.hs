@@ -1,7 +1,10 @@
 {-# LANGUAGE LambdaCase #-}
 module Flora.Model.Category
-  (  -- * Slugs
-    Slug
+  ( Category(..)
+  , CategoryId(..)
+  , mkCategory
+  -- * Slugs
+  , Slug
   , fromSlug
   , mkSlug
   , coerceSlug
@@ -21,6 +24,8 @@ import Data.Maybe
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
+
+import Flora.Model.Category.Types
 
 -- | A slug type for category slugs.
 data CategoryS

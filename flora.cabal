@@ -38,6 +38,7 @@ common common-extensions
     OverloadedLabels
     OverloadedStrings
     PolyKinds
+    QuasiQuotes
     RankNTypes
     RecordWildCards
     ScopedTypeVariables
@@ -75,6 +76,9 @@ library
     Flora.Import.Types
     Flora.Model.Admin.Report
     Flora.Model.Category
+    Flora.Model.Category.Query
+    Flora.Model.Category.Types
+    Flora.Model.Category.Update
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Component
@@ -142,6 +146,7 @@ library
     , lucid-svg                  ^>=0.7
     , mtl                        ^>=2.2
     , optics-core                ^>=0.4
+    , optparse-applicative       ^>=0.16
     , password                   ^>=3.0
     , password-types             ^>=1.0
     , pcre2                      ^>=2.0
@@ -161,6 +166,7 @@ library
     , servant-client-core        ^>=0.19
     , servant-lucid              ^>=0.9
     , servant-server             ^>=0.19
+    , slugify                    ^>=0.1
     , text                       ^>=1.2
     , text-display               ^>=0.0
     , time                       ^>=1.9
