@@ -45,9 +45,9 @@ jobs:
       uses: actions/cache@v2.1.3
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ${{ hashFiles('cabal.project.freeze') }}
+        key: ${{ runner.os }}
 
     - name: Build
-      run: nix-shell --run 'cabal build'
+      run: nix-shell --run 'make build'
     - name: Test
-      run: nix-shell --run 'cabal test all'
+      run: nix-shell --run 'make test'

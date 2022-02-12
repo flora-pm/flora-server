@@ -34,12 +34,12 @@ db-reset: db-drop db-setup db-provision ## Reset the dev database (uses Cabal)
 db-provision: ## Load the development data in the database
 	@cabal run -- flora-cli provision-fixtures
 
-repl: ## Start a cabal REPL
+repl: soufflé ## Start a cabal REPL
 	@cabal repl lib:flora
 
 ghci: repl ## Start a cabal REPL (alias for `make repl`)
 
-ghcid: ## Load the main library into ghcid and reload it on file change
+watch: soufflé ## Load the main library and reload on file change
 	@ghcid --target flora-server -l
 
 test: ## Run the test suite
@@ -70,6 +70,9 @@ docker-start: ## Start the container cluster
 
 docker-enter: ## Enter the docker environment
 	docker-compose exec flora-server "nix-shell"
+
+soufflé: ## Generate C++ files from the Soufflé Datalog definitions
+	cd cbits ; souffle -g categorise.{cpp,dl}
 
 tags:
 	@ghc-tags -c

@@ -66,6 +66,9 @@ common common-rts-options
 library
   import:          common-extensions
   import:          common-ghc-options
+  extra-libraries: stdc++
+  cxx-options:     -std=c++17 -Wall -D__EMBEDDED_SOUFFLE__
+  cxx-sources:     cbits/categorise.cpp
 
   -- pkgconfig-depends: libpq -any
   hs-source-dirs:  src
@@ -74,6 +77,7 @@ library
     Data.Text.Display.Orphans
     Flora.Environment
     Flora.Import.Categories
+    Flora.Import.Categories.Tuning
     Flora.Import.Package
     Flora.Import.Types
     Flora.Model.Admin.Report
@@ -92,6 +96,8 @@ library
     Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Orphans
+    Flora.Model.Release.Query
+    Flora.Model.Release.Update
     Flora.Model.Requirement
     Flora.Model.User
     Flora.Model.User.Orphans
@@ -144,9 +150,12 @@ library
     , envparse                   ^>=0.5
     , http-api-data              ^>=0.4
     , http-types                 ^>=0.12
+    , log-base                   ^>=0.11
     , lucid                      ^>=2.11
     , lucid-alpine               ^>=0.1
     , lucid-svg                  ^>=0.7
+    , monad-control              ^>=1.0
+    , monad-time                 ^>=0.3
     , mtl                        ^>=2.2
     , optics-core                ^>=0.4
     , optparse-applicative       ^>=0.16
@@ -170,12 +179,13 @@ library
     , servant-lucid              ^>=0.9
     , servant-server             ^>=0.19
     , slugify                    ^>=0.1
+    , souffle-haskell            ^>=3.3
     , text                       ^>=1.2
     , text-display               ^>=0.0
     , time                       ^>=1.9
     , tmp-postgres
-    , tomland                    ^>=1.3
     , transformers               ^>=0.5
+    , transformers-base          ^>=0.4
     , unordered-containers       ^>=0.2
     , uuid                       ^>=1.3
     , vector                     ^>=0.12
@@ -200,8 +210,7 @@ executable flora-cli
   import:         common-ghc-options
   import:         common-rts-options
   main-is:        Main.hs
-  other-modules: 
-    CoverageReport
+  other-modules:  CoverageReport
   hs-source-dirs: app/cli
   build-depends:
     , ansi-terminal
@@ -211,13 +220,15 @@ executable flora-cli
     , directory
     , flora
     , flora-test-fixtures
-    , tomland ^>=1.3
+    , log-base
+    , monad-control
     , optics-core
     , optparse-applicative  ^>=0.16
     , pg-entity
+    , pg-transact
     , text
     , text-display
-    , tomland               ^>=1.3
+    , transformers
     , typed-process
 
 library flora-test-fixtures
@@ -267,6 +278,7 @@ test-suite flora-test
     , vector
 
   other-modules:
+    Flora.CategorySpec
     Flora.PackageSpec
     Flora.TestUtils
     Flora.UserSpec

@@ -2,7 +2,9 @@
 module Main where
 
 import Control.Monad
+import Control.Monad.Trans.Class
 import Database.PostgreSQL.Entity.DBT
+import qualified Log
 import Optics.Core
 import Options.Applicative
 
@@ -36,7 +38,6 @@ parseCommand :: Parser Command
 parseCommand = subparser $
      command "provision-fixtures" (parseProvision `withInfo` "Load the fixtures into the database")
   <> command "coverage-report" (parseCoverageReport `withInfo` "Run a coverage report of the category mapping")
-
 
 parseProvision :: Parser Command
 parseProvision = pure Provision

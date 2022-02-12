@@ -4,6 +4,7 @@ import Data.Pool
 import Optics.Core
 import Test.Tasty (defaultMain, testGroup)
 
+import qualified Flora.CategorySpec as CategorySpec
 import Flora.Environment
 import qualified Flora.PackageSpec as PackageSpec
 import Flora.TestUtils
@@ -20,4 +21,5 @@ specs :: [TestM TestTree]
 specs =
   [ UserSpec.spec
   , PackageSpec.spec
+  , CategorySpec.spec
   ]

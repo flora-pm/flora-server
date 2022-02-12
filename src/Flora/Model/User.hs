@@ -19,7 +19,7 @@ import Data.Password.Argon2 (Argon2, Password,
                              PasswordCheck (PasswordCheckSuccess), PasswordHash)
 import qualified Data.Password.Argon2 as Argon2
 import Data.Text (Text)
-import Data.Text.Display (Display, displayBuilder)
+import Data.Text.Display (Display, ShowInstance (..), displayBuilder)
 import Data.Time (UTCTime)
 import qualified Data.Time as Time
 import Data.UUID
@@ -38,6 +38,8 @@ newtype UserId = UserId { getUserId :: UUID }
   deriving stock (Generic, Show)
   deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
     via UUID
+  deriving Display
+    via (ShowInstance UUID)
 
 data User = User
   { userId      :: UserId
@@ -53,6 +55,8 @@ data User = User
   deriving anyclass (FromRow, ToRow)
   deriving Entity
     via (GenericEntity '[TableName "users"] User)
+  deriving Display
+    via (ShowInstance User)
 
 data UserFlags = UserFlags
   { isAdmin  :: Bool

@@ -13,6 +13,7 @@ import Web.Cookie (SetCookie)
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Types
+import Log (LogT)
 
 data ProtectionLevel = Visitor | Authenticated | Admin
   deriving stock (Eq, Show, Generic)
@@ -25,10 +26,10 @@ data Session (protectionLevel :: ProtectionLevel) = Session
   } deriving stock (Generic)
 
 -- | Datatypes used for every route that doesn't *need* an authenticated user
-type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor)) Handler
+type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor)) (LogT Handler)
 
 -- | Datatypes used for routes that *need* an admin
-type FloraAdminM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Admin)) Handler
+type FloraAdminM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Admin)) (LogT Handler)
 
 type instance AuthServerData (AuthProtect "optional-cookie-auth") =
   (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
