@@ -202,7 +202,6 @@ executable flora-cli
   main-is:        Main.hs
   other-modules: 
     CoverageReport
-    GenCategories
   hs-source-dirs: app/cli
   build-depends:
     , ansi-terminal
