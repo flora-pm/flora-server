@@ -195,7 +195,9 @@ executable flora-cli
   import:         common-ghc-options
   import:         common-rts-options
   main-is:        Main.hs
-  other-modules:  CoverageReport
+  other-modules: 
+    CoverageReport
+    GenCategories
   hs-source-dirs: app/cli
   build-depends:
     , ansi-terminal
@@ -205,6 +207,7 @@ executable flora-cli
     , directory
     , flora
     , flora-test-fixtures
+    , tomland ^>=1.3
     , optics-core
     , optparse-applicative  ^>=0.16
     , pg-entity
