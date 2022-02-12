@@ -1,7 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module CoverageReport (runCoverageReport, CoverageReportOptions (..)) where
 
-import Flora.Model.Category
+import Flora.Model.Category.Coverage
 
 import Colourista
 import Control.Monad

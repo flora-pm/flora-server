@@ -72,10 +72,12 @@ library
     Data.Aeson.Orphans
     Data.Text.Display.Orphans
     Flora.Environment
+    Flora.Import.Categories
     Flora.Import.Package
     Flora.Import.Types
     Flora.Model.Admin.Report
     Flora.Model.Category
+    Flora.Model.Category.Coverage
     Flora.Model.Category.Query
     Flora.Model.Category.Types
     Flora.Model.Category.Update
@@ -195,8 +197,7 @@ executable flora-cli
   import:         common-ghc-options
   import:         common-rts-options
   main-is:        Main.hs
-  other-modules: 
-    CoverageReport
+  other-modules:  CoverageReport
   hs-source-dirs: app/cli
   build-depends:
     , ansi-terminal
@@ -206,12 +207,12 @@ executable flora-cli
     , directory
     , flora
     , flora-test-fixtures
-    , tomland ^>=1.3
     , optics-core
     , optparse-applicative  ^>=0.16
     , pg-entity
     , text
     , text-display
+    , tomland               ^>=1.3
     , typed-process
 
 library flora-test-fixtures
