@@ -89,3 +89,92 @@ synopsis = "Parser generators, combinators and tools to help with parsing"
 [xml]
 name = "XML"
 synopsis = "Libraries to consume and produce XML documents"
+||||||| parent of e680337 (Start the big ol' TOML of categories)
+=======
+# [slug]
+# name = "Display name"
+# synopsis = "One-line description"
+
+[algorithms]
+name = "Algorithms"
+synopsis = "Algorithms implemented in Haskell, like sorting, searching"
+
+[cryptography]
+name = "Cryptography"
+synopsis = "Algorithms for encrypting and hashing data"
+
+[development]
+name = "Development"
+synopsis = "Development helpers, integration with other languages"
+
+[distributed]
+name = "Distributed Systems & Computation"
+synopsis = "Tooling and techniques for writing distributed systems"
+
+[network]
+name = "Network Development"
+synopsis = "Connection pools, DNS, HTTP and API clients"
+
+[parsers]
+name = "Parsers"
+synopsis = "Libraries to ingest and parse data"
+
+[system]
+name = "System"
+synopsis = "Programming and communicating with the Operating System"
+
+[text]
+name = "Text"
+synopsis = "Working with textual data and algorithms"
+
+[web]
+name = "Web Development"
+synopsis = "Programming for the web"
+
+[language]
+name = "Language"
+synopsis = "Tooling for interfacing with other programming languages from Haskell programs"
+
+[natural-language]
+name = "Natural Language"
+synopsis = "Tooling to working with natural languages"
+
+[compilers-interpreters]
+name = "Compilers and Interpreters"
+synopsis = "Tooling to create compilers and interpreters"
+
+[ffi]
+name = "FFI"
+synopsis = "Tooling to work with the Foreign Function Interface"
+
+[bioinformatics]
+name = "Bioinformatics"
+synopsis = "Tooling, algorithms and techniques for the domain of Bioinformatics"
+
+[generics]
+name = "Generics"
+synopsis = "Tooling to work with Haskell's Generics"
+
+[databases]
+name = "Databases"
+synopsis = "Database drivers and interfaces"
+
+[testing]
+name = "Testing"
+synopsis = "Test frameworks"
+
+[data-structures]
+name = "Data Structures"
+synopsis = "Data structures, whether they are purely functional or mutable, there's always one for you"
+
+[game-dev]
+name = "Game development"
+synopsis = "Libraries used for game development"
+
+[parser-implementations]
+name = "Parse Implementations"
+synopsis = "Parsing data formats"
+
+[parsing]
+name = "Parsing"
+synopsis = "Parser generators, combinators and tools to help with parsing"
