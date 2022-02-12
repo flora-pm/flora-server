@@ -13,7 +13,6 @@ import Flora.Model.User.Update
 import Flora.UserFixtures
 
 import CoverageReport
-import GenCategories
 
 data Options = Options
   { cliCommand :: Command
