@@ -47,7 +47,6 @@ test: ## Run the test suite
 
 watch-test: ## Load the tests in ghcid and reload them on file change
 	./scripts/run-tests.sh --watch
-	
 
 watch-server: ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
