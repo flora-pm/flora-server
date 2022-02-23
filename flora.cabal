@@ -56,7 +56,7 @@ common common-ghc-options
     -Wall -Wcompat -Werror -Widentities -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
-    -flate-specialise -Wunused-packages
+    -flate-specialise
 
 common common-rts-options
   ghc-options: -rtsopts -threaded -with-rtsopts "-N -T"

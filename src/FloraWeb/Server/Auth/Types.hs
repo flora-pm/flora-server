@@ -14,9 +14,15 @@ import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Types
 
-type instance AuthServerData (AuthProtect "optional-cookie-auth") = (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
+data ProtectionLevel = Visitor | Authenticated | Admin
+  deriving stock (Eq, Show, Generic)
 
-type instance AuthServerData (AuthProtect "cookie-auth") = (Headers '[Header "Set-Cookie" SetCookie] (Session 'Authenticated))
+type role Session nominal
+data Session (protectionLevel :: ProtectionLevel) = Session
+  { sessionId   :: PersistentSessionId
+  , mUser       :: Maybe User
+  , webEnvStore :: WebEnvStore
+  } deriving stock (Generic)
 
 -- | Datatypes used for every route that doesn't *need* an authenticated user
 type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor)) Handler
@@ -24,16 +30,11 @@ type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Vi
 -- | Datatypes used for routes that *need* an admin
 type FloraAdminM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Admin)) Handler
 
-data ProtectionLevel = Visitor | Authenticated | Admin
-  deriving stock (Eq, Show, Generic)
+type instance AuthServerData (AuthProtect "optional-cookie-auth") =
+  (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
 
-type role Session nominal
-
-data Session (protectionLevel :: ProtectionLevel) = Session
-  { sessionId   :: PersistentSessionId
-  , mUser       :: Maybe User
-  , webEnvStore :: WebEnvStore
-  } deriving stock (Generic)
+type instance AuthServerData (AuthProtect "cookie-auth") =
+  (Headers '[Header "Set-Cookie" SetCookie] (Session 'Authenticated))
 
 getUnauthenticatedUser :: Session 'Visitor -> Maybe User
 getUnauthenticatedUser session = session ^. #mUser
