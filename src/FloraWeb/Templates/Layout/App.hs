@@ -51,8 +51,7 @@ header = do
       meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
       ogTags
       theme
-      link_ [rel_ "icon", href_ "/favicon.ico"]
-      link_ [rel_ "icon", href_ "/favicon.svg", type_ "image/svg+xml"]
+      link_ [rel_ "icon", href_ "/static/favicon.svg", type_ "image/svg+xml"]
       -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
       meta_ [name_ "twitter:dnt", content_ "on"]
 

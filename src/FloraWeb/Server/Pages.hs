@@ -14,7 +14,6 @@ import FloraWeb.Session
 import FloraWeb.Templates
 import qualified FloraWeb.Templates.Pages.Home as Home
 
-
 server :: ServerT Routes FloraPageM
 server = Routes'
   { home = homeHandler
