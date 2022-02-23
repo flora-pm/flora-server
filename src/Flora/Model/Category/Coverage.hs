@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Flora.Model.Category.Coverage 
+module Flora.Model.Category.Coverage
   (
   -- * Slugs
     Slug

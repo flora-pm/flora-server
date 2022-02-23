@@ -1,12 +1,12 @@
 module Flora.Model.Category.Query where
 
-import Flora.Model.Category.Types
 import Control.Monad.IO.Class
-import Database.PostgreSQL.Transact (DBT)
-import Database.PostgreSQL.Entity (selectById, selectOneByField)
-import Database.PostgreSQL.Simple
 import Data.Text (Text)
+import Database.PostgreSQL.Entity (selectById, selectOneByField)
 import Database.PostgreSQL.Entity.Types (field)
+import Database.PostgreSQL.Simple
+import Database.PostgreSQL.Transact (DBT)
+import Flora.Model.Category.Types
 
 getCategoryById :: (MonadIO m) => CategoryId -> DBT m (Maybe Category)
 getCategoryById categoryId = selectById (Only categoryId)

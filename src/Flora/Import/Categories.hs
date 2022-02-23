@@ -3,11 +3,11 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 module Flora.Import.Categories where
 
-import Toml
-import qualified Toml
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.UUID.V4 as UUID
 import Flora.Model.Category.Types (CategoryId (CategoryId))
-import qualified Data.List.NonEmpty as NonEmpty
+import Toml
+import qualified Toml
 -- import Data.Map (Map)
 -- import Flora.Model.Category.Types
 
