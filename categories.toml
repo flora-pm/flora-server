@@ -85,3 +85,7 @@ synopsis = "Parsing data formats"
 [parsing]
 name = "Parsing"
 synopsis = "Parser generators, combinators and tools to help with parsing"
+
+[xml]
+name = "XML"
+synopsis = "Libraries to consume and produce XML documents"
