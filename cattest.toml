@@ -1,7 +1,0 @@
-# [slug]
-# name = "Display name"
-# synopsis = "One-line description"
-
-[algorithms]
-name = "Algorithms"
-synopsis = "Algorithms implemented in Haskell, like sorting, searching"
