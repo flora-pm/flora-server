@@ -1,4 +1,4 @@
-create table users (
+create table if not exists users (
   user_id uuid primary key,
   username text unique not null,
   display_name text not null,

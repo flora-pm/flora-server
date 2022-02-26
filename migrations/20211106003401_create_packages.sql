@@ -1,5 +1,5 @@
 -- A package is comprised of metadata and has many releases.
-create table packages (
+create table if not exists packages (
   package_id uuid primary key,
   namespace text not null,
   name text not null,

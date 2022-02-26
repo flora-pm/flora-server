@@ -38,6 +38,7 @@ common common-extensions
     OverloadedLabels
     OverloadedStrings
     PolyKinds
+    QuasiQuotes
     RankNTypes
     RecordWildCards
     ScopedTypeVariables
@@ -71,10 +72,15 @@ library
     Data.Aeson.Orphans
     Data.Text.Display.Orphans
     Flora.Environment
+    Flora.Import.Categories
     Flora.Import.Package
     Flora.Import.Types
     Flora.Model.Admin.Report
     Flora.Model.Category
+    Flora.Model.Category.Coverage
+    Flora.Model.Category.Query
+    Flora.Model.Category.Types
+    Flora.Model.Category.Update
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Component
@@ -142,6 +148,7 @@ library
     , lucid-svg                  ^>=0.7
     , mtl                        ^>=2.2
     , optics-core                ^>=0.4
+    , optparse-applicative       ^>=0.16
     , password                   ^>=3.0
     , password-types             ^>=1.0
     , pcre2                      ^>=2.0
@@ -161,11 +168,14 @@ library
     , servant-client-core        ^>=0.19
     , servant-lucid              ^>=0.9
     , servant-server             ^>=0.19
+    , slugify                    ^>=0.1
     , text                       ^>=1.2
     , text-display               ^>=0.0
     , time                       ^>=1.9
     , tmp-postgres
+    , tomland                    ^>=1.3
     , transformers               ^>=0.5
+    , unordered-containers       ^>=0.2
     , uuid                       ^>=1.3
     , vector                     ^>=0.12
     , wai                        ^>=3.2
@@ -204,6 +214,7 @@ executable flora-cli
     , pg-entity
     , text
     , text-display
+    , tomland               ^>=1.3
     , typed-process
 
 library flora-test-fixtures

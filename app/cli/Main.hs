@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module Main where
 
 import Control.Monad
@@ -5,13 +6,15 @@ import Database.PostgreSQL.Entity.DBT
 import Optics.Core
 import Options.Applicative
 
-import CoverageReport
 import Flora.Environment
+import Flora.Import.Categories (importCategories)
 import Flora.Import.Package
 import Flora.Model.Package
-import Flora.Model.User
+import qualified Flora.Model.User
 import Flora.Model.User.Update
 import Flora.UserFixtures
+
+import CoverageReport
 
 data Options = Options
   { cliCommand :: Command
@@ -34,6 +37,7 @@ parseCommand = subparser $
      command "provision-fixtures" (parseProvision `withInfo` "Load the fixtures into the database")
   <> command "coverage-report" (parseCoverageReport `withInfo` "Run a coverage report of the category mapping")
 
+
 parseProvision :: Parser Command
 parseProvision = pure Provision
 
@@ -49,8 +53,11 @@ runOptions (Options Provision) = do
     insertUser user2
     insertUser adminUser
 
+    void importCategories
+
     void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "bytestring") "./test/fixtures/Cabal/"
     void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "parsec") "./test/fixtures/Cabal/"
+
 
 runOptions (Options (CoverageReport opts)) = runCoverageReport opts
 
