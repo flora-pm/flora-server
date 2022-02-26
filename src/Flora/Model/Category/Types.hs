@@ -3,6 +3,7 @@ module Flora.Model.Category.Types where
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import Data.UUID
+import qualified Data.UUID.V4 as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple
@@ -11,7 +12,6 @@ import Database.PostgreSQL.Simple.ToField (ToField)
 import GHC.Generics
 import Servant
 import Text.Slugify
-import qualified Data.UUID.V4 as UUID
 
 newtype CategoryId = CategoryId { getCategoryId :: UUID }
   deriving stock (Generic, Show)

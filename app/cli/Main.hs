@@ -7,12 +7,12 @@ import Optics.Core
 import Options.Applicative
 
 import Flora.Environment
+import Flora.Import.Categories (importCategories)
 import Flora.Import.Package
 import Flora.Model.Package
-import Flora.Import.Categories (importCategories)
+import qualified Flora.Model.User
 import Flora.Model.User.Update
 import Flora.UserFixtures
-import qualified Flora.Model.User
 
 import CoverageReport
 

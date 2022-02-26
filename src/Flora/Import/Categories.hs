@@ -1,27 +1,28 @@
 module Flora.Import.Categories where
 
-import Flora.Model.Category.Types (Category, mkCategoryId, mkCategory)
-import Toml (Key (Key), TOML, toList, tomlTables, AnyValue (AnyValue), unPiece, unKey, tomlPairs, parse, MatchError, Piece (Piece), matchText)
+import Control.Monad (forM_)
 import Control.Monad.IO.Class
-import qualified Data.Text.IO as T
-import qualified Data.List.NonEmpty as NE
 import Data.HashMap.Strict
-import Data.Text (Text)
 import qualified Data.HashMap.Strict as HM
 import Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NE
+import Data.Text (Text)
+import qualified Data.Text.IO as T
 import Database.PostgreSQL.Transact
+import Flora.Model.Category.Types (Category, mkCategory, mkCategoryId)
 import Flora.Model.Category.Update (insertCategory)
-import Control.Monad (forM_)
+import Toml (AnyValue (AnyValue), Key (Key), MatchError, Piece (Piece), TOML,
+             matchText, parse, toList, tomlPairs, tomlTables, unKey, unPiece)
 
 importCategories :: DBT IO ()
 importCategories = do
   (Right toml) <- Toml.parse <$> liftIO (T.readFile "./categories.toml")
   categories <- convertPairs (Toml.toList $ tomlTables toml)
-  forM_ categories insertCategory 
+  forM_ categories insertCategory
 
 convertPairs :: [(Key, TOML)] -> DBT IO [Category]
 convertPairs pairs =
-  let newPairs = fromTOML <$> pairs 
+  let newPairs = fromTOML <$> pairs
    in traverse go newPairs
   where
     fromTOML :: (Key, TOML) -> (Text, HashMap Key AnyValue)
@@ -47,7 +48,7 @@ getTextValue :: Text -> HashMap Key AnyValue -> Either MatchError Text
 getTextValue k hm =
   case HM.lookup (textToKey k) hm of
     Just (AnyValue val) -> Toml.matchText val
-    Nothing -> undefined
+    Nothing             -> undefined
 
 textToKey :: Text -> Key
 textToKey = Key . singletonNE . Piece
