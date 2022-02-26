@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module Main where
 
 import Control.Monad
@@ -8,9 +9,10 @@ import Options.Applicative
 import Flora.Environment
 import Flora.Import.Package
 import Flora.Model.Package
-import Flora.Model.User
+import Flora.Import.Categories (importCategories)
 import Flora.Model.User.Update
 import Flora.UserFixtures
+import qualified Flora.Model.User
 
 import CoverageReport
 
@@ -51,8 +53,11 @@ runOptions (Options Provision) = do
     insertUser user2
     insertUser adminUser
 
+    void importCategories
+
     void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "bytestring") "./test/fixtures/Cabal/"
     void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "parsec") "./test/fixtures/Cabal/"
+
 
 runOptions (Options (CoverageReport opts)) = runCoverageReport opts
 

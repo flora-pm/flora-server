@@ -11,6 +11,7 @@ import Database.PostgreSQL.Simple.ToField (ToField)
 import GHC.Generics
 import Servant
 import Text.Slugify
+import qualified Data.UUID.V4 as UUID
 
 newtype CategoryId = CategoryId { getCategoryId :: UUID }
   deriving stock (Generic, Show)
@@ -27,6 +28,9 @@ data Category = Category
   deriving anyclass (FromRow, ToRow)
   deriving Entity
     via (GenericEntity '[TableName "categories"] Category)
+
+mkCategoryId :: IO CategoryId
+mkCategoryId = CategoryId <$> UUID.nextRandom
 
 mkCategory :: CategoryId -- ^ Id of the category in the database
            -> Text -- ^ Name
