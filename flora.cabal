@@ -65,6 +65,9 @@ common common-rts-options
 library
   import:          common-extensions
   import:          common-ghc-options
+  extra-libraries: stdc++
+  cxx-options:     -std=c++17 -Wall -D__EMBEDDED_SOUFFLE__
+  cxx-sources:     cbits/categorize.cpp
 
   -- pkgconfig-depends: libpq -any
   hs-source-dirs:  src
@@ -73,6 +76,7 @@ library
     Data.Text.Display.Orphans
     Flora.Environment
     Flora.Import.Categories
+    Flora.Import.Categories.Tuning
     Flora.Import.Package
     Flora.Import.Types
     Flora.Model.Admin.Report
@@ -169,6 +173,7 @@ library
     , servant-lucid              ^>=0.9
     , servant-server             ^>=0.19
     , slugify                    ^>=0.1
+    , souffle-haskell            ^>=3.2
     , text                       ^>=1.2
     , text-display               ^>=0.0
     , time                       ^>=1.9

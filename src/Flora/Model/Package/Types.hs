@@ -22,6 +22,7 @@ import GHC.Generics
 import Lucid
 import qualified Text.PrettyPrint as PP
 import Text.Regex.Pcre2
+import qualified Language.Souffle.Interpreted as Souffle
 
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
@@ -36,8 +37,8 @@ newtype PackageId = PackageId { getPackageId :: UUID }
 
 newtype PackageName = PackageName Text
   deriving stock (Show)
-  deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml)
-    via Text
+  deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, Souffle.Marshal)
+    via Text 
 
 instance Pretty PackageName where
   pretty (PackageName txt) = PP.text $ unpack txt

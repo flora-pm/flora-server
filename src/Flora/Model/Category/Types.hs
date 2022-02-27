@@ -1,3 +1,4 @@
+{-# LANGUAGE RoleAnnotations #-}
 module Flora.Model.Category.Types where
 
 import Data.Aeson (FromJSON, ToJSON)
@@ -12,11 +13,17 @@ import Database.PostgreSQL.Simple.ToField (ToField)
 import GHC.Generics
 import Servant
 import Text.Slugify
+import qualified Language.Souffle.Interpreted as Souffle
 
 newtype CategoryId = CategoryId { getCategoryId :: UUID }
   deriving stock (Generic, Show)
   deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
     via UUID
+
+newtype CategoryName = CategoryName { getCategoryName :: Text }
+  deriving stock (Show)
+  deriving (Eq, Ord, Souffle.Marshal)
+    via Text
 
 data Category = Category
   { categoryId :: CategoryId
