@@ -1,0 +1,28 @@
+// input : user gives category (1 or more) to each package
+// output : normalized category
+
+.decl user_package_category(pkg_name: symbol, category: symbol)
+.input user_package_category
+
+.decl normalize_category(normalized: symbol, user_input: symbol)
+
+.decl normalized_package_category(pkg_name: symbol, category: symbol)
+.output normalized_package_category
+
+.decl normalize_issue(pkg_name: symbol, category: symbol)
+.output normalize_issue
+
+normalized_package_category(pkg, normalized) :-
+  user_package_category(pkg, user_category),
+  normalize_category(normalized, user_category).
+
+normalize_issue(pkg, category) :-
+  user_package_category(pkg, category),
+  !normalize_category(_, category).
+
+// The actual normalization rules for the categories:
+
+normalize_category("web", "web").
+normalize_category("web", "internet").
+normalize_category("web", "blabla").
+
