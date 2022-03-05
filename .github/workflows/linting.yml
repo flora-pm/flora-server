@@ -1,4 +1,4 @@
-name: CI
+name: Linting
 
 on:
   pull_request:
@@ -19,23 +19,22 @@ jobs:
         ghc-version: "8.10.7"
         cabal-version: "latest"
 
-    - name: Configure environment
-      run: |
-        ./.github/workflows/setup.sh
-        echo "/usr/lib/postgresql/14/bin/" >> $GITHUB_PATH
-        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
-        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-
     - name: Cache
       uses: actions/cache@v2.1.3
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ${{ runner.os }}
 
-    - name: Build
+    - name: Install tools
       run: |
-        make soufflé
-        make build
-    - name: Test
-      run: make test
+        cd ~/
+        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cabal install -j apply-refact stylish-haskell hlint
+
+    - name: Running hlint
+      run: ./.github/workflows/hlint-runner.sh
+
+    - name: Running stylish-haskell
+      run: ./.github/workflows/stylish-haskell-runner.sh

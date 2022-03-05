@@ -2,7 +2,9 @@
 
 sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-curl -s https://packagecloud.io/install/repositories/souffle-lang/souffle/script.deb.sh | sudo bash
 sudo apt -y update
-sudo apt -y install postgresql-14 souffle g++
+sudo apt -y install postgresql-14 g++ mcpp
+
+wget https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
+sudo dpkg -i ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb
 
