@@ -7,6 +7,7 @@ import qualified Data.Text.IO as T
 import qualified Data.Text.Internal.Builder as TB
 import GHC.Generics
 import qualified Language.Souffle.Interpreted as Souffle
+import System.IO (stderr)
 
 type CName = Text
 
@@ -70,7 +71,7 @@ normalise input = do
       Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
   if (not . null) (normalisationIssues result)
   then do
-    T.putStrLn $ "[!] Could not normalise these categories: " <> display (normalisationIssues result)
+    T.hPutStrLn stderr $ "[!] Could not normalise these categories: " <> display (normalisationIssues result)
     pure result
   else
     pure result

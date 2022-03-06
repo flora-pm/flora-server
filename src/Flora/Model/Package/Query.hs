@@ -6,13 +6,16 @@ module Flora.Model.Package.Query where
 import Control.Monad.IO.Class (MonadIO)
 import Data.Text (Text)
 import Data.Vector (Vector)
-import Database.PostgreSQL.Entity (_select, _selectWhere, selectById)
+import Database.PostgreSQL.Entity (_select, _selectWhere, joinSelectOneByField,
+                                   selectById)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Select), query, queryOne,
                                        query_)
 import Database.PostgreSQL.Entity.Types (Field, field)
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact (DBT)
+import Flora.Model.Category (Category)
+import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Package (Namespace, Package, PackageId, PackageName)
 import Flora.Model.Package.Component (ComponentId, ComponentType,
                                       PackageComponent)
@@ -75,14 +78,17 @@ getComponent releaseId name componentType =
       queryFields :: Vector Field
       queryFields = [ [field| release_id |], [field| name |],[field| component_type |] ]
 
-unsafeGetComponent :: MonadIO m => ReleaseId -> DBT m (Maybe PackageComponent)
+unsafeGetComponent :: MonadIO m
+                   => ReleaseId
+                   -> DBT m (Maybe PackageComponent)
 unsafeGetComponent releaseId =
   queryOne Select (_selectWhere @PackageComponent queryFields) (Only releaseId)
     where
       queryFields :: Vector Field
       queryFields = [ [field| release_id |] ]
 
-getRequirements :: MonadIO m => ReleaseId
+getRequirements :: MonadIO m
+                => ReleaseId
                    -- ^ Id of the release for which we want the dependencies
                 -> DBT m (Vector (Namespace, PackageName, Text))
                    -- ^ Returns a vector of (Namespace, Name, Version requirement)
@@ -94,3 +100,8 @@ getRequirements relId = query Select
      inner join releases as rel on rel.release_id = pc.release_id
    where rel."release_id" = ?
   |] (Only relId)
+
+getPackageCategories :: MonadIO m
+                     => PackageId
+                     ->  DBT m (Vector Category)
+getPackageCategories packageId = joinSelectOneByField @Category @PackageCategory [field| category_id |] [field| package_id |] packageId

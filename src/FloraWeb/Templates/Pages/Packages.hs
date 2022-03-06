@@ -14,18 +14,18 @@ import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
 
 import qualified Data.Text as T
+import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types (Namespace, Package (..), PackageMetadata (..),
                                   PackageName)
 import Flora.Model.Release (Release (..))
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid.Base (makeAttribute)
 
-
-showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> FloraHTML
-showPackage latestRelease package@Package{namespace, name, synopsis} dependents dependencies = do
+showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> Vector Category -> FloraHTML
+showPackage latestRelease package@Package{namespace, name, synopsis} dependents dependencies categories = do
   div_ [class_ "container dark:text-gray-100 text-black"] $ do
     presentationHeader latestRelease namespace name synopsis
-    packageBody package latestRelease dependencies dependents
+    packageBody package latestRelease dependencies dependents categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = do
@@ -37,12 +37,13 @@ presentationHeader release namespace name synopsis = do
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
-packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> FloraHTML
-packageBody Package{name, metadata} latestRelease dependencies dependents =
+packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> Vector Category -> FloraHTML
+packageBody Package{name, metadata} latestRelease dependencies dependents categories =
   div_ [class_ "package-body"] $ do
     div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
       div_ [class_ "package-left-column"] $ do
         div_ [class_ "grid-rows-3"] $ do
+          displayCategories categories
           displayLicense (metadata ^. #license)
           displayLinks latestRelease metadata
       div_ [class_ "col-span-2"] mempty
@@ -62,12 +63,20 @@ displayLicense license = do
       h3_ [class_ "lg:text-2xl package-body-section"] "License"
     p_ [class_ ""] $ toHtml license
 
+displayCategories :: Vector Category -> FloraHTML
+displayCategories categories = do
+  div_ [class_ "mb-5"] $ do
+    div_ [class_ "license mb-3"] $ do
+      h3_ [class_ "lg:text-2xl package-body-section"] "Categories"
+    ul_ [class_ ""] $ do
+      foldMap renderCategory categories
+
 displayLinks :: Release -> PackageMetadata -> FloraHTML
 displayLinks _release meta@PackageMetadata{..} = do
   div_ [class_ "mb-5"] $ do
     div_ [class_ "links mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "Links"
-    ul_ [class_ "bullets"]$ do
+    ul_ [class_ "bullets"] $ do
       li_ $ a_ [href_ (getHomepage meta)] "Homepage"
       li_ $ a_ [href_ documentation] "Documentation"
       li_ $ displaySourceRepos sourceRepos
@@ -118,6 +127,12 @@ renderDependency (namespace, name, version) = do
     a_ [href_ resource] (toHtml name)
     toHtmlRaw @Text "&nbsp;"
     toHtml version
+
+renderCategory :: Category -> FloraHTML
+renderCategory Category{name, slug} = do
+  let resource = "/categories/" <> slug
+  li_ [class_ "category"] $ do
+    a_ [href_ resource] (toHtml name)
 
 getHomepage :: PackageMetadata -> Text
 getHomepage PackageMetadata{..} =
