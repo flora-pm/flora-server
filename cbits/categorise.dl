@@ -68,6 +68,7 @@ normalise_category("Number Theory", "Mathematics").
 normalise_category("Math", "Mathematics").
 normalise_category("Mathematics", "Mathematics").
 normalise_category("Maths", "Mathematics").
+normalise_category("Algebra", "Mathematics").
 
 normalise_category("Parser Builder", "Parsers").
 normalise_category("Parser Combinators", "Parsers").

@@ -86,7 +86,7 @@ import Flora.UserFixtures
 import FloraWeb.Client
 
 newtype TestM (a :: Type) = TestM { getTestM :: ReaderT TestEnv IO a }
-  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow)
+  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadFail)
 
 liftDB :: DBT IO a -> TestM a
 liftDB comp = do

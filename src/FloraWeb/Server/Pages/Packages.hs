@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+
 module FloraWeb.Server.Pages.Packages
   ( Routes
   , server
@@ -52,7 +53,8 @@ showHandler namespaceText nameText = do
           releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
           let latestRelease =  maximumBy (compare `on` version) releases
           latestReleasedependencies <- liftIO $ withPool pool $ Query.getRequirements (latestRelease ^. #releaseId)
-          render templateEnv $ Packages.showPackage latestRelease package dependents latestReleasedependencies
+          categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #packageId)
+          render templateEnv $ Packages.showPackage latestRelease package dependents latestReleasedependencies categories
     _ -> renderError templateEnv notFound404
 
 showVersionHandler :: Text -> Text -> Text -> FloraPageM (Html ())
@@ -72,7 +74,8 @@ showVersionHandler namespaceText nameText versionText = do
               Nothing -> renderError templateEnv notFound404
               Just release -> do
                 releaseDependencies <- liftIO $ withPool pool $ Query.getRequirements (release ^. #releaseId)
-                render templateEnv $ Packages.showPackage release package dependents releaseDependencies
+                categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #packageId)
+                render templateEnv $ Packages.showPackage release package dependents releaseDependencies categories
     _ -> renderError templateEnv notFound404
 
 validateNamespace :: Text -> Maybe Namespace

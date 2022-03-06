@@ -429,6 +429,7 @@ SymbolTable symTable{
 	R"_(Number Theory)_",
 	R"_(Math)_",
 	R"_(Maths)_",
+	R"_(Algebra)_",
 	R"_(Parser Builder)_",
 	R"_(Parser Combinators)_",
 	R"_(Parser)_",
@@ -529,10 +530,6 @@ void runAll(std::string inputDirectoryArg = "", std::string outputDirectoryArg =
 }
 public:
 void printAll(std::string outputDirectoryArg = "") override {
-try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","category"},{"auxArity","0"},{"name","normalise_issue"},{"operation","output"},{"output-dir","."},{"params","{\"records\": {}, \"relation\": {\"arity\": 1, \"params\": [\"category\"]}}"},{"types","{\"ADTs\": {}, \"records\": {}, \"relation\": {\"arity\": 1, \"types\": [\"s:symbol\"]}}"}});
-if (!outputDirectoryArg.empty()) {directiveMap["output-dir"] = outputDirectoryArg;}
-IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll(*rel_4_normalise_issue);
-} catch (std::exception& e) {std::cerr << e.what();exit(1);}
 try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","category"},{"auxArity","0"},{"name","normalised_package_category"},{"operation","output"},{"output-dir","."},{"params","{\"records\": {}, \"relation\": {\"arity\": 1, \"params\": [\"category\"]}}"},{"types","{\"ADTs\": {}, \"records\": {}, \"relation\": {\"arity\": 1, \"types\": [\"s:symbol\"]}}"}});
 if (!outputDirectoryArg.empty()) {directiveMap["output-dir"] = outputDirectoryArg;}
 IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll(*rel_5_normalised_package_category);
@@ -540,6 +537,10 @@ IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll
 try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","slug\tname\tsynopsis"},{"auxArity","0"},{"name","flora_category"},{"operation","output"},{"output-dir","."},{"params","{\"records\": {}, \"relation\": {\"arity\": 3, \"params\": [\"slug\", \"name\", \"synopsis\"]}}"},{"types","{\"ADTs\": {}, \"records\": {}, \"relation\": {\"arity\": 3, \"types\": [\"s:symbol\", \"s:symbol\", \"s:symbol\"]}}"}});
 if (!outputDirectoryArg.empty()) {directiveMap["output-dir"] = outputDirectoryArg;}
 IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll(*rel_1_flora_category);
+} catch (std::exception& e) {std::cerr << e.what();exit(1);}
+try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","category"},{"auxArity","0"},{"name","normalise_issue"},{"operation","output"},{"output-dir","."},{"params","{\"records\": {}, \"relation\": {\"arity\": 1, \"params\": [\"category\"]}}"},{"types","{\"ADTs\": {}, \"records\": {}, \"relation\": {\"arity\": 1, \"types\": [\"s:symbol\"]}}"}});
+if (!outputDirectoryArg.empty()) {directiveMap["output-dir"] = outputDirectoryArg;}
+IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll(*rel_4_normalise_issue);
 } catch (std::exception& e) {std::cerr << e.what();exit(1);}
 }
 public:
@@ -562,12 +563,6 @@ public:
 void dumpOutputs() override {
 try {std::map<std::string, std::string> rwOperation;
 rwOperation["IO"] = "stdout";
-rwOperation["name"] = "normalise_issue";
-rwOperation["types"] = "{\"relation\": {\"arity\": 1, \"auxArity\": 0, \"types\": [\"s:symbol\"]}}";
-IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_4_normalise_issue);
-} catch (std::exception& e) {std::cerr << e.what();exit(1);}
-try {std::map<std::string, std::string> rwOperation;
-rwOperation["IO"] = "stdout";
 rwOperation["name"] = "normalised_package_category";
 rwOperation["types"] = "{\"relation\": {\"arity\": 1, \"auxArity\": 0, \"types\": [\"s:symbol\"]}}";
 IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_5_normalised_package_category);
@@ -577,6 +572,12 @@ rwOperation["IO"] = "stdout";
 rwOperation["name"] = "flora_category";
 rwOperation["types"] = "{\"relation\": {\"arity\": 3, \"auxArity\": 0, \"types\": [\"s:symbol\", \"s:symbol\", \"s:symbol\"]}}";
 IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_1_flora_category);
+} catch (std::exception& e) {std::cerr << e.what();exit(1);}
+try {std::map<std::string, std::string> rwOperation;
+rwOperation["IO"] = "stdout";
+rwOperation["name"] = "normalise_issue";
+rwOperation["types"] = "{\"relation\": {\"arity\": 1, \"auxArity\": 0, \"types\": [\"s:symbol\"]}}";
+IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_4_normalise_issue);
 } catch (std::exception& e) {std::cerr << e.what();exit(1);}
 }
 public:
@@ -913,95 +914,102 @@ CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->cre
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(88)),ramBitCast(RamSigned(49))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("Parser Builder","Parsers").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [72:1-72:49])_");
+();signalHandler->setMsg(R"_(normalise_category("Algebra","Mathematics").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [71:1-71:46])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
-Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(89)),ramBitCast(RamSigned(55))}};
+Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(89)),ramBitCast(RamSigned(49))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("Parser Combinators","Parsers").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [73:1-73:53])_");
+();signalHandler->setMsg(R"_(normalise_category("Parser Builder","Parsers").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [73:1-73:49])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(90)),ramBitCast(RamSigned(55))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("Parser","Parsers").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [74:1-74:41])_");
+();signalHandler->setMsg(R"_(normalise_category("Parser Combinators","Parsers").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [74:1-74:53])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(91)),ramBitCast(RamSigned(55))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("ParserCombinators","Parsers").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [75:1-75:52])_");
+();signalHandler->setMsg(R"_(normalise_category("Parser","Parsers").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [75:1-75:41])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(92)),ramBitCast(RamSigned(55))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
+();signalHandler->setMsg(R"_(normalise_category("ParserCombinators","Parsers").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [76:1-76:52])_");
+[&](){
+CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
+Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(93)),ramBitCast(RamSigned(55))}};
+rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
+}
 ();signalHandler->setMsg(R"_(normalise_category("Parsers","Parsers").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [76:1-76:42])_");
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [77:1-77:42])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(55)),ramBitCast(RamSigned(55))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
 ();signalHandler->setMsg(R"_(normalise_category("Parsing","Parsers").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [77:1-77:42])_");
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [78:1-78:42])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(58)),ramBitCast(RamSigned(55))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
 ();signalHandler->setMsg(R"_(normalise_category("Network","Network Development").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [79:1-79:54])_");
-[&](){
-CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
-Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(93)),ramBitCast(RamSigned(46))}};
-rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
-}
-();signalHandler->setMsg(R"_(normalise_category("Data Network","Network Development").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [80:1-80:59])_");
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [80:1-80:54])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(94)),ramBitCast(RamSigned(46))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("Network APIs","Network Development").
+();signalHandler->setMsg(R"_(normalise_category("Data Network","Network Development").
 in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [81:1-81:59])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(95)),ramBitCast(RamSigned(46))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("Network Control","Network Development").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [82:1-82:62])_");
+();signalHandler->setMsg(R"_(normalise_category("Network APIs","Network Development").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [82:1-82:59])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(96)),ramBitCast(RamSigned(46))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("NetworkAPI","Network Development").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [83:1-83:57])_");
+();signalHandler->setMsg(R"_(normalise_category("Network Control","Network Development").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [83:1-83:62])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(97)),ramBitCast(RamSigned(46))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("NetworkAPIs","Network Development").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [84:1-84:58])_");
+();signalHandler->setMsg(R"_(normalise_category("NetworkAPI","Network Development").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [84:1-84:57])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(98)),ramBitCast(RamSigned(46))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
-();signalHandler->setMsg(R"_(normalise_category("Networking","Network Development").
-in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [85:1-85:57])_");
+();signalHandler->setMsg(R"_(normalise_category("NetworkAPIs","Network Development").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [85:1-85:58])_");
 [&](){
 CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
 Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(99)),ramBitCast(RamSigned(46))}};
+rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
+}
+();signalHandler->setMsg(R"_(normalise_category("Networking","Network Development").
+in file /home/hecate/Projects/Flora/2-flora-server/cbits/categorise.dl [86:1-86:57])_");
+[&](){
+CREATE_OP_CONTEXT(rel_2_normalise_category_op_ctxt,rel_2_normalise_category->createContext());
+Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(100)),ramBitCast(RamSigned(46))}};
 rel_2_normalise_category->insert(tuple,READ_OP_CONTEXT(rel_2_normalise_category_op_ctxt));
 }
 ();if (pruneImdtRels) rel_1_flora_category->purge();

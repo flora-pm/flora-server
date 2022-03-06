@@ -9,11 +9,13 @@ import Debug.Pretty.Simple
 import Optics.Core
 import Test.Tasty
 
+import Control.Concurrent (threadDelay)
 import Data.Foldable
 import Data.Function
 import qualified Data.Vector as V
 import Flora.Import.Package
 import Flora.Import.Types
+import Flora.Model.Category (Category (slug))
 import qualified Flora.Model.Category.Query as Query
 import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
@@ -27,7 +29,8 @@ spec :: TestM TestTree
 spec = testThese "packages"
   [ testThis "Insert base and its dependencies, and fetch it" testGetPackageById
   , testThis "Insert containers and its dependencies" testInsertContainers
-  , testThis "@haskell/base belongs to the \"Prelude\" category" testBaseCategory
+  , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory
+  , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
   ]
 
 testGetPackageById :: TestM ()
@@ -38,7 +41,8 @@ testGetPackageById = do
 
 testInsertContainers :: TestM ()
 testInsertContainers = do
-    liftDB $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "containers") "./test/fixtures/Cabal/"
+    result <- liftDB $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "containers") "./test/fixtures/Cabal/"
+    liftIO $ print result
     dependencies <- liftDB $ do
       mPackage <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "containers")
       case mPackage of
@@ -59,8 +63,16 @@ testFetchGHCPrimDependents = do
       (Set.fromList [PackageName "base", PackageName "ghc-bignum", PackageName "deepseq", PackageName "bytestring", PackageName "integer-gmp", PackageName "binary"])
       (Set.fromList . fmap (view #name) $ Vector.toList result)
 
-testBaseCategory :: TestM ()
-testBaseCategory = do
+testThatBaseisInPreludeCategory :: TestM ()
+testThatBaseisInPreludeCategory = do
   liftDB $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "base") "./test/fixtures/Cabal/"
   result <- liftDB $ Query.getPackagesFromCategorySlug "prelude"
   assertEqual (Set.fromList [PackageName "base"]) (Set.fromList $ V.toList $ fmap (view #name) result)
+
+testThatSemigroupsIsInMathematicsAndDataStructures :: TestM ()
+testThatSemigroupsIsInMathematicsAndDataStructures = do
+  liftDB $ importPackage (hackageUser ^. #userId) (Namespace "hackage") (PackageName "semigroups") "./test/fixtures/Cabal/"
+  liftIO $ threadDelay 10000
+  Just semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
+  result <- liftDB $ Query.getPackageCategories (semigroups ^. #packageId)
+  assertEqual (Set.fromList ["data-structures", "maths"]) (Set.fromList $ slug <$> V.toList result)
