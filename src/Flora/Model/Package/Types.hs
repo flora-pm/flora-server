@@ -19,6 +19,7 @@ import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
 import qualified Distribution.SPDX.License as SPDX
 import GHC.Generics
+import qualified Language.Souffle.Interpreted as Souffle
 import Lucid
 import qualified Text.PrettyPrint as PP
 import Text.Regex.Pcre2
@@ -35,7 +36,8 @@ newtype PackageId = PackageId { getPackageId :: UUID }
     via ShowInstance UUID
 
 newtype PackageName = PackageName Text
-  deriving stock (Show)
+  deriving stock (Show, Generic)
+  deriving anyclass (Souffle.Marshal)
   deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml)
     via Text
 

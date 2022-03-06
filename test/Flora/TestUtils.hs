@@ -77,6 +77,7 @@ import qualified Test.Tasty as Test
 import qualified Test.Tasty.HUnit as Test
 
 import Flora.Environment
+import Flora.Import.Categories (importCategories)
 import Flora.Model.User
 import Flora.Model.User.Update
 import qualified Flora.Model.User.Update as Update
@@ -184,6 +185,7 @@ migrate conn = do
   void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
   pool <- createPool (pure conn) close 1 10 1
   withPool pool $ do
+    importCategories
     insertUser hackageUser
 
 genWord32 :: MonadGen m => m Word32

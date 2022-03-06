@@ -24,20 +24,21 @@ import Flora.Model.User.Query
 import FloraWeb.Server.Auth.Types
 import FloraWeb.Session
 import FloraWeb.Types
+import Log (LogT, Logger, defaultLogLevel, runLogT)
 import Network.HTTP.Types (hCookie)
 
 type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
 
-authHandler :: FloraEnv -> FloraAuthContext
-authHandler floraEnv = mkAuthHandler handler
+authHandler :: Logger -> FloraEnv -> FloraAuthContext
+authHandler logger floraEnv = mkAuthHandler (\request -> runLogT "flora-auth" logger defaultLogLevel (handler request))
   where
     pool = floraEnv ^. #pool
-    handler :: Request -> Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
+    handler :: Request -> LogT Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
     handler req = do
       let cookies = getCookies req
-      mbPersistentSessionId <- getSessionId cookies
-      mbPersistentSession <- getInTheFuckingSessionShinji pool mbPersistentSessionId
-      mUserInfo <- fetchUser pool mbPersistentSession
+      mbPersistentSessionId <- lift $ getSessionId cookies
+      mbPersistentSession <- lift $ getInTheFuckingSessionShinji pool mbPersistentSessionId
+      mUserInfo <- lift $ fetchUser pool mbPersistentSession
       (mUser, sessionId) <- do
         case mUserInfo of
           Nothing -> do
@@ -47,7 +48,7 @@ authHandler floraEnv = mkAuthHandler handler
             pure (Just user, userSession ^. #persistentSessionId)
       webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
       let sessionCookie = craftSessionCookie sessionId False
-      pure $ addCookie sessionCookie (Session{..})
+      lift $ pure $ addCookie sessionCookie (Session{..})
 
 
 getCookies :: Request -> Cookies

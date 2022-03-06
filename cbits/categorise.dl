@@ -1,0 +1,85 @@
+// vim: set ft=prolog
+// input : user gives category (1 or more) to each package
+// output : normalised category
+
+.decl user_package_category(category: symbol)
+.input user_package_category
+
+.decl normalised_package_category(category: symbol)
+.output normalised_package_category
+normalised_package_category(normalised) :-
+  user_package_category(user_category),
+  normalise_category(user_category, normalised).
+
+.decl normalise_issue(category: symbol)
+.output normalise_issue
+normalise_issue(category) :-
+  user_package_category(category),
+  !normalise_category(category, _).
+
+// Allowed flora categories
+.decl flora_category(slug: symbol, name: symbol, synopsis: symbol)
+.output flora_category
+flora_category("algorithms", "Algorithms", "Algorithms implemented in Haskell, like sorting, searching").
+flora_category("bioinformatics", "Bioinformatics", "Tooling, algorithms and techniques for the domain of Bioinformatics").
+flora_category("command-line", "CLI & TUI tooling", "Libraries to develope command-line interfaces").
+flora_category("compilers-interpreters", "Compilers and Interpreters", "Tooling to create compilers and interpreters").
+flora_category("cryptography", "Cryptography", "Algorithms for encrypting and hashing data").
+flora_category("data-structures", "Data Structures", "Data structures, whether they are purely functional or mutable, there's always one for you").
+flora_category("databases", "Databases", "Database drivers and interfaces").
+flora_category("development", "Development", "Development helpers, integration with other languages").
+flora_category("distributed", "Distributed Systems & Computation", "Tooling and techniques for writing distributed systems").
+flora_category("ffi", "FFI", "Tooling to work with the Foreign Function Interface").
+flora_category("game-dev", "Game development", "Libraries used for game development").
+flora_category("generics", "Generics", "Tooling to work with Haskell's Generics").
+flora_category("prelude", "Prelude", "Libraries that provide default imports").
+flora_category("language", "Language", "Tooling for interfacing with other programming languages from Haskell programs").
+flora_category("natural-language", "Natural Language", "Tooling to working with natural languages").
+flora_category("network", "Network Development", "Connection pools, DNS, HTTP, API clients and network protocols").
+flora_category("maths", "Mathematics", "Numerical and Mathematical packages").
+flora_category("parser-implementations", "Parser Implementations", "Parsing data formats").
+flora_category("parsers","Parsers", "Libraries to ingest and parse data").
+flora_category("parsing", "Parsing", "Parser generators, combinators and tools to help with parsing").
+flora_category("system", "System", "Programming and communicating with the Operating System").
+flora_category("testing", "Testing", "Test frameworks").
+flora_category("text", "Text", "Working with textual data and algorithms").
+flora_category("web", "Web Development", "Programming for the web").
+flora_category("xml", "XML", "Libraries to consume and produce XML documents").
+
+// The actual normalization rules for the categories:
+// The first case returns the name if it already appears in flora_category/3
+.decl normalise_category(user_input: symbol, normalised: symbol)
+normalise_category(X, X) :- flora_category(_, X, _).
+normalise_category("Algorithm", "Algorithms").
+
+normalise_category("Crypto", "Cryptography").
+
+normalise_category("CLI", "CLI & TUI Development").
+normalise_category("TUI", "CLI & TUI Development").
+
+normalise_category("Command Line", "CLI & TUI Development").
+normalise_category("CommandLine", "CLI & TUI Development").
+
+normalise_category("Numeric", "Mathematics").
+normalise_category("Numerical", "Mathematics").
+normalise_category("Numerics", "Mathematics").
+normalise_category("Arithmetic", "Mathematics").
+normalise_category("Number Theory", "Mathematics").
+normalise_category("Math", "Mathematics").
+normalise_category("Mathematics", "Mathematics").
+normalise_category("Maths", "Mathematics").
+
+normalise_category("Parser Builder", "Parsers").
+normalise_category("Parser Combinators", "Parsers").
+normalise_category("Parser", "Parsers").
+normalise_category("ParserCombinators", "Parsers").
+normalise_category("Parsers", "Parsers").
+normalise_category("Parsing", "Parsers").
+
+normalise_category("Network", "Network Development").
+normalise_category("Data Network", "Network Development").
+normalise_category("Network APIs", "Network Development").
+normalise_category("Network Control", "Network Development").
+normalise_category("NetworkAPI", "Network Development").
+normalise_category("NetworkAPIs", "Network Development").
+normalise_category("Networking", "Network Development").

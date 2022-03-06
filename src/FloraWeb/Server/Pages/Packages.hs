@@ -21,7 +21,7 @@ import Flora.Environment
 import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
 import Flora.Model.Release
-import Flora.Model.Requirement
+import qualified Flora.Model.Release.Query as Query
 import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth
 import FloraWeb.Session
@@ -49,9 +49,9 @@ showHandler namespaceText nameText = do
         Nothing -> renderError templateEnv notFound404
         Just package -> do
           dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
-          releases <- liftIO $ withPool pool $ getReleases (package ^. #packageId)
+          releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
           let latestRelease =  maximumBy (compare `on` version) releases
-          latestReleasedependencies <- liftIO $ withPool pool $ getRequirements (latestRelease ^. #releaseId)
+          latestReleasedependencies <- liftIO $ withPool pool $ Query.getRequirements (latestRelease ^. #releaseId)
           render templateEnv $ Packages.showPackage latestRelease package dependents latestReleasedependencies
     _ -> renderError templateEnv notFound404
 
@@ -67,11 +67,11 @@ showVersionHandler namespaceText nameText versionText = do
         Nothing -> renderError templateEnv notFound404
         Just package -> do
           dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
-          liftIO (withPool pool $ getReleaseByVersion (package ^. #packageId) versionSpec)
+          liftIO (withPool pool $ Query.getReleaseByVersion (package ^. #packageId) versionSpec)
             >>= \case
               Nothing -> renderError templateEnv notFound404
               Just release -> do
-                releaseDependencies <- liftIO $ withPool pool $ getRequirements (release ^. #releaseId)
+                releaseDependencies <- liftIO $ withPool pool $ Query.getRequirements (release ^. #releaseId)
                 render templateEnv $ Packages.showPackage release package dependents releaseDependencies
     _ -> renderError templateEnv notFound404
 

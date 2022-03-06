@@ -2,9 +2,9 @@ module FloraWeb.Server.Pages.Sessions where
 
 import Control.Monad.Reader
 import Data.Password.Argon2
-import qualified Data.Text as T
 import Data.Text.Display
 import Database.PostgreSQL.Entity.DBT (withPool)
+import qualified Log
 import Optics.Core
 
 import Flora.Environment
@@ -35,11 +35,11 @@ newSessionHandler = do
   let mUser = session ^. #mUser
   case mUser of
     Nothing -> do
-      liftIO $ putStrLn "[+] No user logged-in"
+      Log.logInfo_ "[+] No user logged-in"
       templateDefaults <- fromSession session defaultTemplateEnv
       respond $ WithStatus @200 $ renderUVerb templateDefaults Sessions.newSession
     Just u -> do
-      liftIO $ putStrLn $ "[+] User is already logged: " <> show u
+      Log.logInfo_ $ "[+] User is already logged: " <> display u
       respond $ WithStatus @301 (redirect "/")
 
 createSessionHandler :: LoginForm -> FloraPageM (Union CreateSessionResponses)
@@ -49,7 +49,7 @@ createSessionHandler LoginForm{email, password} = do
   mUser <- liftIO $ withPool pool $ Query.getUserByEmail email
   case mUser of
     Nothing -> do
-      liftIO $ putStrLn "[+] Couldn't find user"
+      Log.logInfo_ "[+] Couldn't find user"
       templateDefaults <- fromSession session defaultTemplateEnv
       let templateEnv = templateDefaults
               & (#flashError ?~ mkError "Could not authenticate")
@@ -57,13 +57,13 @@ createSessionHandler LoginForm{email, password} = do
     Just user ->
       if validatePassword (mkPassword password) (user ^. #password)
       then do
-        liftIO $ putStrLn "[+] User connected!"
+        Log.logInfo_ "[+] User connected!"
         sessionId <- persistSession pool (session ^. #sessionId) (user ^. #userId)
         let sessionCookie = craftSessionCookie sessionId True
         respond $ WithStatus @301 $
           redirectWithCookie "/" sessionCookie
       else do
-        liftIO $ putStrLn "[+] Couldn't authenticate user"
+        Log.logInfo_ "[+] Couldn't authenticate user"
         templateDefaults <- fromSession session defaultTemplateEnv
         let templateEnv = templateDefaults
                 & (#flashError ?~ mkError "Could not authenticate")
@@ -71,7 +71,7 @@ createSessionHandler LoginForm{email, password} = do
 
 deleteSessionHandler :: PersistentSessionId -> FloraPageM DeleteSessionResponse
 deleteSessionHandler sessionId = do
-  liftIO $ putStrLn $ T.unpack $ "[+] Logging-off session " <> display sessionId
+  Log.logInfo_ $ "[+] Logging-off session " <> display sessionId
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   liftIO $ withPool pool $ deleteSession sessionId

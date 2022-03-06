@@ -5,10 +5,7 @@ module Flora.Model.Package.Component
   , PackageComponent(..)
   , ComponentType(..)
   , CanonicalComponent(..)
-  , insertPackageComponent
-  , getComponentById
-  , getComponent
-  , unsafeGetComponent) where
+  ) where
 
 import Data.Aeson
 import Data.Aeson.Orphans ()
@@ -19,16 +16,13 @@ import Data.Text.Display
 import Data.Text.Encoding
 import qualified Data.Text.Lazy.Builder as B
 import Data.UUID
-import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (Select), queryOne)
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField (FromField (..), returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
-import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics
 import Optics.Core
 
@@ -124,23 +118,3 @@ data PackageComponent' = PackageComponent'
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (ToRow, FromRow)
-
-insertPackageComponent :: PackageComponent -> DBT IO ()
-insertPackageComponent = insert @PackageComponent
-
-getComponentById :: ComponentId -> DBT IO (Maybe PackageComponent)
-getComponentById componentId = selectById @PackageComponent (Only componentId)
-
-getComponent :: ReleaseId -> Text -> ComponentType -> DBT IO (Maybe PackageComponent)
-getComponent releaseId name componentType =
-  queryOne Select (_selectWhere @PackageComponent queryFields) (releaseId, name, componentType)
-    where
-      queryFields :: Vector Field
-      queryFields = [ [field| release_id |], [field| name |],[field| component_type |] ]
-
-unsafeGetComponent :: ReleaseId -> DBT IO (Maybe PackageComponent)
-unsafeGetComponent releaseId =
-  queryOne Select (_selectWhere @PackageComponent queryFields) (Only releaseId)
-    where
-      queryFields :: Vector Field
-      queryFields = [ [field| release_id |] ]
