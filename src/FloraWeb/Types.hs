@@ -32,11 +32,11 @@ data WebEnv = WebEnv
   deriving stock (Show, Generic)
 
 fetchFloraEnv :: WebEnvStore -> IO FloraEnv
-fetchFloraEnv (WebEnvStore mvar) = liftIO $
+fetchFloraEnv (WebEnvStore mvar) =
   readMVar mvar >>= \webEnv -> pure $ webEnv ^. #floraEnv
 
 getWebEnv :: WebEnvStore -> IO WebEnv
-getWebEnv (WebEnvStore mvar) = liftIO $ readMVar mvar
+getWebEnv (WebEnvStore mvar) = readMVar mvar
 
 modifyWebEnv :: WebEnvStore -> (WebEnv -> IO WebEnv) -> IO ()
 modifyWebEnv (WebEnvStore mvar) fun = modifyMVar_ mvar fun
