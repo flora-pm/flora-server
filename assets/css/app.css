@@ -118,6 +118,20 @@ div[class="bullets"]{
     margin-left: auto;
   }
 
+  .categories{
+    width: auto;
+    max-width: 1536px;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .category-card{
+    --tw-shadow-color: rgb(102 51 153 / 0.25);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
+
   .about-page{
     width: auto;
     max-width: 1000px;

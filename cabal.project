@@ -51,11 +51,6 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/haskell-text/text-display
-    tag: 70894d0
-
-source-repository-package
-    type: git
     location: https://github.com/scrive/log
     tag: 676402a18ca3af83d19585fb505813f539b08925
     subdir: ./log-base

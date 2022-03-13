@@ -10,6 +10,7 @@ import FloraWeb.Server.Auth
 import qualified FloraWeb.Server.Pages.Admin as Admin
 import qualified FloraWeb.Server.Pages.Packages as Packages
 import qualified FloraWeb.Server.Pages.Sessions as Sessions
+import qualified FloraWeb.Server.Pages.Categories as Categories
 import FloraWeb.Session
 import FloraWeb.Templates
 import qualified FloraWeb.Templates.Pages.Home as Home
@@ -21,6 +22,7 @@ server = Routes'
   , admin = Admin.server
   , sessions = Sessions.server
   , packages = Packages.server
+  , categories = Categories.server
   }
 
 homeHandler :: FloraPageM (Html ())

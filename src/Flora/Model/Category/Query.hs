@@ -13,6 +13,7 @@ import qualified Data.Text.IO as T
 import Database.PostgreSQL.Entity
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
+import Database.PostgreSQL.Entity.DBT
 
 getCategoryById :: (MonadIO m) => CategoryId -> DBT m (Maybe Category)
 getCategoryById categoryId = selectById (Only categoryId)
@@ -33,3 +34,6 @@ getPackagesFromCategorySlug slug = do
     Just Category{categoryId} -> do
       liftIO $ T.putStrLn "Category found!"
       joinSelectOneByField @Package @PackageCategory [field| package_id |] [field| category_id |] categoryId
+
+getAllCategories :: (MonadIO m) => DBT m (Vector Category)
+getAllCategories = query_ Select (_select @Category)

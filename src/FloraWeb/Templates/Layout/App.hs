@@ -102,7 +102,7 @@ navbarSearch = do
   then do
     form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "#"] $ do
       div_ [class_ "flex items-center py-2"] $ do
-        input_ [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
+        input_ [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
                , id_ "packageName", type_ "text", placeholder_ "Search a package"
                ]
     else pure mempty

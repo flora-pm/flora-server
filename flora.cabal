@@ -110,6 +110,7 @@ library
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Admin
+    FloraWeb.Routes.Pages.Categories
     FloraWeb.Routes.Pages.Packages
     FloraWeb.Routes.Pages.Sessions
     FloraWeb.Server
@@ -119,6 +120,7 @@ library
     FloraWeb.Server.Logging.Tracing
     FloraWeb.Server.Pages
     FloraWeb.Server.Pages.Admin
+    FloraWeb.Server.Pages.Categories
     FloraWeb.Server.Pages.Packages
     FloraWeb.Server.Pages.Sessions
     FloraWeb.Server.Util
@@ -129,6 +131,8 @@ library
     FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
     FloraWeb.Templates.Layout.App
+    FloraWeb.Templates.Pages.Categories
+    FloraWeb.Templates.Pages.Categories.Index
     FloraWeb.Templates.Pages.Home
     FloraWeb.Templates.Pages.Packages
     FloraWeb.Templates.Pages.Sessions
