@@ -81,6 +81,7 @@ library
     Flora.Import.Categories
     Flora.Import.Categories.Tuning
     Flora.Import.Package
+    Flora.Import.Package.Bulk
     Flora.Import.Types
     Flora.Model.Admin.Report
     Flora.Model.Category
@@ -112,6 +113,7 @@ library
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Admin
+    FloraWeb.Routes.Pages.Categories
     FloraWeb.Routes.Pages.Packages
     FloraWeb.Routes.Pages.Sessions
     FloraWeb.Server
@@ -121,6 +123,7 @@ library
     FloraWeb.Server.Metrics
     FloraWeb.Server.Pages
     FloraWeb.Server.Pages.Admin
+    FloraWeb.Server.Pages.Categories
     FloraWeb.Server.Pages.Packages
     FloraWeb.Server.Pages.Sessions
     FloraWeb.Server.Tracing
@@ -132,6 +135,10 @@ library
     FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
     FloraWeb.Templates.Layout.App
+    FloraWeb.Templates.Packages.Listing
+    FloraWeb.Templates.Pages.Categories
+    FloraWeb.Templates.Pages.Categories.Index
+    FloraWeb.Templates.Pages.Categories.Show
     FloraWeb.Templates.Pages.Home
     FloraWeb.Templates.Pages.Packages
     FloraWeb.Templates.Pages.Sessions
@@ -150,6 +157,7 @@ library
     , colourista                 ^>=0.1
     , containers                 ^>=0.6
     , cookie                     ^>=0.4
+    , directory                  ^>=1.3
     , envparse                   ^>=0.5
     , http-api-data              ^>=0.4
     , http-types                 ^>=0.12
@@ -184,11 +192,12 @@ library
     , slugify                    ^>=0.1
     , souffle-haskell            ^>=3.3
     , text                       ^>=1.2
-    , text-display               ^>=0.0
+    , text-display               ^>=0.0.2
     , time                       ^>=1.9
     , tmp-postgres
     , transformers               ^>=0.5
     , transformers-base          ^>=0.4
+    , typed-process              ^>=0.2
     , unordered-containers       ^>=0.2
     , uuid                       ^>=1.3
     , vector                     ^>=0.12

@@ -92,6 +92,7 @@ navBar = do
         let elementClass = "navbar-element py-2 inline-flex items-center px-1 pt-1 mx-7 text-black dark:text-gray-100"
         div_ [id_ "navbar-right", class_ "hidden sm:flex justify-end"] $ do
           a_ [href_ "/about", class_ (elementClass <> isActive aboutNav)] "About Flora"
+          a_ [href_ "/categories",      class_ (elementClass <> isActive packagesNav)] "Categories"
           a_ [href_ "#",      class_ (elementClass <> isActive packagesNav)] "Packages"
           userDropdown elementClass
 
@@ -102,7 +103,7 @@ navbarSearch = do
   then do
     form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "#"] $ do
       div_ [class_ "flex items-center py-2"] $ do
-        input_ [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
+        input_ [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
                , id_ "packageName", type_ "text", placeholder_ "Search a package"
                ]
     else pure mempty

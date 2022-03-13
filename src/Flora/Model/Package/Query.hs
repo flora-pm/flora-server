@@ -14,7 +14,8 @@ import Database.PostgreSQL.Entity.Types (Field, field)
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact (DBT)
-import Flora.Model.Category (Category)
+import Distribution.Types.Version (Version)
+import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Package (Namespace, Package, PackageId, PackageName)
 import Flora.Model.Package.Component (ComponentId, ComponentType,
@@ -103,5 +104,18 @@ getRequirements relId = query Select
 
 getPackageCategories :: MonadIO m
                      => PackageId
-                     ->  DBT m (Vector Category)
+                     -> DBT m (Vector Category)
 getPackageCategories packageId = joinSelectOneByField @Category @PackageCategory [field| category_id |] [field| package_id |] packageId
+
+getPackagesFromCategoryWithLatestVersion :: MonadIO m
+                                         => CategoryId
+                                         -> DBT m (Vector (Namespace, PackageName, Text, Version))
+getPackagesFromCategoryWithLatestVersion categoryId = query Select q (Only categoryId)
+  where
+    q = [sql|
+      select lv.namespace, lv.name, lv.synopsis, lv.version
+      from latest_versions as lv
+      inner join package_categories as pc on pc.package_id = lv.package_id
+      inner join categories as c on c.category_id = pc.category_id
+      where c.category_id = ?
+      |]
