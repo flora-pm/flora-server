@@ -82,7 +82,7 @@ help:
 
 UNAME := $(shell uname)
 
-SHELL := /bin/bash
+SHELL := /usr/bin/env bash
 
 ifeq ($(UNAME), Darwin)
 	PROCS := $(shell sysctl -n hw.logicalcpu)
