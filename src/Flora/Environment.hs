@@ -1,8 +1,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Flora.Environment
   ( FloraEnv(..)
-  , LoggingEnv(..)
   , DeploymentEnv(..)
+  , LoggingEnv(..)
+  , LoggingDestination(..)
   , TestEnv(..)
   , getFloraEnv
   , getFloraTestEnv
@@ -14,6 +15,7 @@ import Data.Bifunctor
 import Data.Pool (Pool, createPool)
 import Data.Text
 import qualified Data.Text as T
+import Data.Text.Display (Display (..))
 import Data.Time (NominalDiffTime)
 import Data.Word (Word16)
 import Database.PostgreSQL.Entity.DBT
@@ -37,12 +39,23 @@ data FloraEnv = FloraEnv
 data DeploymentEnv
   = Production
   | Development
-  | Tests
+  | Test
   deriving stock (Show, Eq, Generic, Enum, Bounded)
+
+instance Display DeploymentEnv where
+  displayBuilder Production  = "prod"
+  displayBuilder Development = "dev"
+  displayBuilder Test        = "test"
+
+data LoggingDestination
+  = StdOut -- ^ Logs are printed on the standard output
+  | Json -- ^ Logs are printed on the standard output in JSON format
+  deriving (Show, Generic)
 
 data LoggingEnv = LoggingEnv
   { sentryDSN         :: Maybe String
   , prometheusEnabled :: Bool
+  , logger            :: LoggingDestination
   }
   deriving stock (Show, Generic)
 
@@ -127,6 +140,7 @@ parseLoggingEnv =
   LoggingEnv
   <$> var (pure . Just <=< nonempty) "FLORA_SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
   <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Whether or not Prometheus is enabled")
+  <*> var loggingDestination "FLORA_LOGGING_DESTINATION" (help "Where do the logs go")
 
 parsePort :: Parser Error Word16
 parsePort = var port "FLORA_HTTP_PORT" (help "HTTP Port for Flora")
@@ -186,4 +200,10 @@ timeout t = second fromIntegral (int >=> nonNegative $ t)
 deploymentEnv :: Reader Error DeploymentEnv
 deploymentEnv "production"  = Right Production
 deploymentEnv "development" = Right Development
+deploymentEnv "test"        = Right Test
 deploymentEnv e             = Left $ unread e
+
+loggingDestination :: Reader Error LoggingDestination
+loggingDestination "stdout" = Right StdOut
+loggingDestination "json"   = Right Json
+loggingDestination e        = Left $ unread e

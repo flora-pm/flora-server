@@ -1,4 +1,4 @@
-module FloraWeb.Server.Logging.Tracing where
+module FloraWeb.Server.Tracing where
 
 import Control.Exception (SomeException)
 import Data.ByteString.Char8 (unpack)

@@ -58,7 +58,9 @@ common common-ghc-options
     -Wall -Wcompat -Werror -Widentities -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
-    -flate-specialise
+
+  if flag(release-build)
+    ghc-options: -flate-specialise -funbox-strict-fields
 
 common common-rts-options
   ghc-options: -rtsopts -threaded -with-rtsopts "-N -T"
@@ -115,12 +117,13 @@ library
     FloraWeb.Server
     FloraWeb.Server.Auth
     FloraWeb.Server.Auth.Types
-    FloraWeb.Server.Logging.Metrics
-    FloraWeb.Server.Logging.Tracing
+    FloraWeb.Server.Logging
+    FloraWeb.Server.Metrics
     FloraWeb.Server.Pages
     FloraWeb.Server.Pages.Admin
     FloraWeb.Server.Pages.Packages
     FloraWeb.Server.Pages.Sessions
+    FloraWeb.Server.Tracing
     FloraWeb.Server.Util
     FloraWeb.Session
     FloraWeb.Templates
@@ -190,7 +193,7 @@ library
     , uuid                       ^>=1.3
     , vector                     ^>=0.12
     , wai                        ^>=3.2
-    , wai-logger                 ^>=2.3
+    , wai-log                    ^>=0.3
     , wai-middleware-heartbeat   ^>=0.0
     , wai-middleware-prometheus  ^>=1.0
     , warp                       ^>=3.3
@@ -282,3 +285,10 @@ test-suite flora-test
     Flora.PackageSpec
     Flora.TestUtils
     Flora.UserSpec
+
+flag release-build
+  description:
+    Compile the project with additional optimisations (takes longer)  
+
+  default:     False
+  manual:      True

@@ -22,22 +22,23 @@ import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Query
 import FloraWeb.Server.Auth.Types
+import qualified FloraWeb.Server.Logging as Logging
 import FloraWeb.Session
 import FloraWeb.Types
-import Log (LogT, Logger, defaultLogLevel, runLogT)
+import Log (LogT, Logger)
 import Network.HTTP.Types (hCookie)
 
 type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
 
 authHandler :: Logger -> FloraEnv -> FloraAuthContext
-authHandler logger floraEnv = mkAuthHandler (\request -> runLogT "flora-auth" logger defaultLogLevel (handler request))
+authHandler logger floraEnv = mkAuthHandler (\request -> Logging.runLog floraEnv logger (handler request))
   where
     pool = floraEnv ^. #pool
     handler :: Request -> LogT Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
     handler req = do
       let cookies = getCookies req
       mbPersistentSessionId <- lift $ getSessionId cookies
-      mbPersistentSession <- lift $ getInTheFuckingSessionShinji pool mbPersistentSessionId
+      mbPersistentSession <- getInTheFuckingSessionShinji pool mbPersistentSessionId
       mUserInfo <- lift $ fetchUser pool mbPersistentSession
       (mUser, sessionId) <- do
         case mUserInfo of
@@ -49,7 +50,6 @@ authHandler logger floraEnv = mkAuthHandler (\request -> runLogT "flora-auth" lo
       webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
       let sessionCookie = craftSessionCookie sessionId False
       lift $ pure $ addCookie sessionCookie (Session{..})
-
 
 getCookies :: Request -> Cookies
 getCookies req =
@@ -68,14 +68,16 @@ getSessionId cookies =
 
 getInTheFuckingSessionShinji :: Pool Connection
                              -> Maybe PersistentSessionId
-                             -> Handler (Maybe PersistentSession)
+                             -> LogT Handler (Maybe PersistentSession)
 getInTheFuckingSessionShinji _pool Nothing = pure Nothing
 getInTheFuckingSessionShinji pool (Just persistentSessionId) = do
   result <- runExceptT $ liftIO $ withPool pool $ getPersistentSession persistentSessionId
   case result of
-    Left _                   -> throwError err500
     Right Nothing            -> pure Nothing
     Right (Just userSession) -> pure $ Just userSession
+    Left _                   -> do
+      Logging.alert "Database error when retrieving persistent session" []
+      throwError err500
 
 fetchUser :: Pool Connection -> Maybe PersistentSession -> Handler (Maybe (User, PersistentSession))
 fetchUser _ Nothing = pure Nothing

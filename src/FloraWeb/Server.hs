@@ -6,8 +6,8 @@ import Control.Monad.Reader (MonadIO (liftIO), ReaderT (runReaderT),
                              withReaderT)
 import Data.Maybe (isJust)
 import Data.Text.Display (display)
-import Network.Wai.Handler.Warp (defaultSettings, runSettings, setLogger,
-                                 setOnException, setPort)
+import Network.Wai.Handler.Warp (defaultSettings, runSettings, setOnException,
+                                 setPort)
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import Optics.Core
 import qualified Prometheus
@@ -24,14 +24,14 @@ import Flora.Environment (FloraEnv (..), LoggingEnv (..), getFloraEnv)
 import FloraWeb.Routes
 import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler)
-import FloraWeb.Server.Logging.Metrics
-import FloraWeb.Server.Logging.Tracing
+import qualified FloraWeb.Server.Logging as Logging
+import FloraWeb.Server.Metrics
 import qualified FloraWeb.Server.Pages as Pages
+import FloraWeb.Server.Tracing
 import FloraWeb.Types
 import Log (Logger, defaultLogLevel)
 import qualified Log
-import qualified Log.Backend.StandardOutput as Log
-import qualified Network.Wai.Logger as WAI
+import qualified Network.Wai.Log as WaiLog
 
 runFlora :: IO ()
 runFlora = bracket getFloraEnv shutdownFlora $ \env -> do
@@ -42,25 +42,28 @@ runFlora = bracket getFloraEnv shutdownFlora $ \env -> do
     blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
     Prometheus.register ghcMetrics
     void $ Prometheus.register procMetrics
-  runServer env
+  let withLogger = Logging.makeLogger (env ^. #logging ^. #logger)
+  withLogger $ \appLogger ->
+    runServer appLogger env
 
 shutdownFlora :: FloraEnv -> IO ()
 shutdownFlora env = do
   Pool.destroyAllResources (env ^. #pool)
 
-runServer :: FloraEnv -> IO ()
-runServer floraEnv = WAI.withStdoutLogger $ \waiLogger -> Log.withStdOutLogger $ \appLogger -> do
+runServer :: Logger -> FloraEnv -> IO ()
+runServer appLogger floraEnv = do
+  loggingMiddleware <- Logging.runLog floraEnv appLogger WaiLog.mkLogMiddleware
   let webEnv = WebEnv floraEnv
   webEnvStore  <- liftIO $ newWebEnvStore webEnv
   let server = mkServer appLogger webEnvStore floraEnv
   let warpSettings = setPort (fromIntegral $ httpPort floraEnv) $
-                     setLogger waiLogger $
                      setOnException (sentryOnException (floraEnv ^. #environment)
                                                        (floraEnv ^. #logging))
                      defaultSettings
   runSettings warpSettings $
     prometheusMiddleware (floraEnv ^. #environment) (floraEnv ^. #logging)
     . heartbeatMiddleware
+    . loggingMiddleware . const
     $ server
 
 mkServer :: Logger -> WebEnvStore -> FloraEnv -> Application

@@ -1,4 +1,4 @@
-module FloraWeb.Server.Logging.Metrics
+module FloraWeb.Server.Metrics
   ( prometheusMiddleware
   ) where
 

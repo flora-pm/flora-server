@@ -42,13 +42,13 @@ ghci: repl ## Start a cabal REPL (alias for `make repl`)
 watch: soufflé ## Load the main library and reload on file change
 	@ghcid --target flora-server -l
 
-test: ## Run the test suite
+test : soufflé ## Run the test suite
 	./scripts/run-tests.sh
 
-watch-test: ## Load the tests in ghcid and reload them on file change
+watch-test: soufflé ## Load the tests in ghcid and reload them on file change
 	./scripts/run-tests.sh --watch
 
-watch-server: ## Start flora-server in ghcid
+watch-server: soufflé ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
 
 lint: ## Run the code linter (HLint)
