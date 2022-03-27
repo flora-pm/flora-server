@@ -56,9 +56,9 @@ runOptions (Options Provision) = do
 
     void importCategories
 
-    void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "bytestring") "./test/fixtures/Cabal/"
-    void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "parsec") "./test/fixtures/Cabal/"
-    void $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "Cabal") "./test/fixtures/Cabal/"
+    void $ importPackage (hackageUser ^. #userId) (PackageName "bytestring") "./test/fixtures/Cabal/"
+    void $ importPackage (hackageUser ^. #userId) (PackageName "parsec") "./test/fixtures/Cabal/"
+    void $ importPackage (hackageUser ^. #userId) (PackageName "Cabal") "./test/fixtures/Cabal/"
 
 
 runOptions (Options (CoverageReport opts)) = runCoverageReport opts
