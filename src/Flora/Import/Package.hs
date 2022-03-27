@@ -34,8 +34,12 @@ import Distribution.Types.LibraryName
 import Distribution.Types.TestSuite
 import Distribution.Types.Version
 import Optics.Core
+import qualified System.Directory as System
+import System.Process.Typed
 
 import Control.Monad.Trans.Control (MonadTransControl)
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.UUID as UUID
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
@@ -52,7 +56,6 @@ import qualified Flora.Model.Release.Query as Query
 import Flora.Model.Requirement (Requirement (..), RequirementId (..),
                                 RequirementMetadata (..), flag)
 import Flora.Model.User
-import Flora.Publish
 import qualified Flora.Publish as Update
 import Log (LogT, MonadLog)
 
@@ -74,23 +77,30 @@ coreLibraries = Set.fromList
   , PackageName "ghc-boot-th"
   , PackageName "ghc-prim"
   , PackageName "integer-simple"
+  , PackageName "integer-gmp"
   , PackageName "mtl"
   , PackageName "parsec"
+  , PackageName "process"
   , PackageName "rts"
   , PackageName "stm"
   , PackageName "text"
+  , PackageName "transformers"
+  , PackageName "unix"
   ]
 
 importPackage :: (MonadIO m)
               => UserId    -- ^ The UserId of the stand-in user for Hackage, for instance.
-              -> Namespace -- ^ The namespace to which the package will belong.
               -> PackageName  -- ^ Name of the package and of the .cabal file
               -> FilePath -- ^ Directory where to find the .cabal files
               -> DBT m (Vector Package)
-importPackage userId namespace packageName directory = do
+importPackage userId packageName directory = do
   packageDeps <- buildSlices <$> importPackageDeps packageName directory
+  when (packageName == PackageName "Cabal") $ liftIO $ print packageDeps
   pTraceShowM packageDeps
-  Vector.mapM (\packageSet -> importCabal userId namespace (Set.findMin packageSet) directory) packageDeps
+  Vector.forM packageDeps
+              (\packageSet ->
+                let cabalPath = directory <> T.unpack (display packageName) <> ".cabal"
+                 in importCabal userId (Set.findMin packageSet) cabalPath directory)
 
 -- 1. Load the .cabal file at the given path
 -- 2. Translate it to a GenericPackageDescription
@@ -101,12 +111,13 @@ importPackage userId namespace packageName directory = do
 -- 7. Insert everything
 importCabal :: (MonadIO m)
             =>  UserId    -- ^ The UserId of the stand-in user for Hackage, for instance.
-            -> Namespace -- ^ The namespace to which the package will belong.
             -> PackageName  -- ^ Name of the package and of the .cabal file
+            -> FilePath -- ^ Path to the Cabal file
             -> FilePath -- ^ Directory where to find the .cabal files
             -> DBT m Package
-importCabal userId namespace packageName directory = do
-    genDesc <- liftIO $ loadFile (directory <> T.unpack (display packageName) <> ".cabal")
+importCabal userId packageName cabalFile directory = do
+    genDesc <- liftIO $ loadFile cabalFile
+    let namespace = if Set.member packageName coreLibraries then Namespace "haskell" else Namespace "hackage"
     result <- runExceptT $ do
       package <- lift (Query.getHaskellOrHackagePackage packageName)
                    >>= \case
@@ -163,8 +174,11 @@ importPackageDeps pName directory = do
             Just _ -> go (Set.deleteMin control) acc
             Nothing -> do
               genDesc <- loadFile (directory <> T.unpack (display p) <> ".cabal")
-              let dependencies = concat $ maybeToList $
-                    flattenPackageDescription genDesc ^. #library ^? _Just % #libBuildInfo % #targetBuildDepends
+              let dependencies =
+                    filter (\d -> Cabal.depPkgName d /= "unbuildable")
+                    $ concat
+                    $ maybeToList
+                    $ flattenPackageDescription genDesc ^. #library ^? _Just % #libBuildInfo % #targetBuildDepends
               let names =  Set.fromList $ fmap (PackageName . T.pack . Cabal.unPackageName . depPkgName) dependencies
               let names' = Set.filter (\x -> isNothing . Map.lookup x $ acc) names
               go (Set.union (Set.deleteMin control) names') (Map.insert p names acc)
@@ -208,7 +222,9 @@ buildSlices deps =
             else (workingSlice, Set.insert package workingRemaining)
 
 loadFile :: (MonadIO m) => FilePath -> m GenericPackageDescription
-loadFile path = liftIO $ fromJust . parseGenericPackageDescriptionMaybe <$> B.readFile path
+loadFile path = do
+  liftIO $ T.putStrLn $ "Looking up cabal file " <> display path
+  liftIO $ fromJust . parseGenericPackageDescriptionMaybe <$> B.readFile path
 
 extractComponents :: (MonadIO m)
                   => UserId
@@ -236,12 +252,13 @@ extractFromLib :: (MonadIO m)
                -> Library -- ^
                -> ExceptT ImportError (DBT m) (PackageComponent, [Requirement])
 extractFromLib userId directory dependentName releaseId packageName library = do
-  let dependencies = library ^. #libBuildInfo ^. #targetBuildDepends
+  let dependencies = filter (\d -> Cabal.depPkgName d /= "unbuildable")
+                   $ library ^. #libBuildInfo ^. #targetBuildDepends
   let libraryName = getLibName $ library ^. #libName
   let componentType = Component.Library
   let canonicalForm = CanonicalComponent libraryName componentType
   component <- createComponent releaseId canonicalForm
-  requirements <- traverse (\dependency -> depToRequirement userId directory dependentName dependency (component ^. #componentId)) dependencies
+  requirements <- mconcat <$> traverse (\dependency -> depToRequirement userId directory dependentName dependency (component ^. #componentId)) dependencies
   pure (component, requirements)
   where
     getLibName :: LibraryName -> Text
@@ -327,15 +344,15 @@ depToRequirement :: (MonadIO m)
                  -> DependentName -- ^ Namespace and PackageName of the package that requires it
                  -> Cabal.Dependency -- ^ Cabal datatype that expresses a dependency on a package name and a version
                  -> ComponentId -- ^ The Id of the release's component that depends on this requirement
-                 -> ExceptT ImportError (DBT m) Requirement
+                 -> ExceptT ImportError (DBT m) [Requirement]
 depToRequirement userId directory (dependentNamespace, dependentPackageName) cabalDependency packageComponentId = do
   let name = PackageName $ T.pack $ Cabal.unPackageName $ depPkgName cabalDependency
   let namespace = if Set.member name coreLibraries then Namespace "haskell" else Namespace "hackage"
   logImportMessage (dependentNamespace, dependentPackageName) $
+                   "Requiring @" <> display namespace <> "/" <> display name <> "…"
+  logImportMessage (dependentNamespace, dependentPackageName) $
                    "Creating Requirement for package component " <> display packageComponentId
                    <> " on " <> "@" <> display namespace <> "/" <> display name
-  logImportMessage (dependentNamespace, dependentPackageName) $
-                   "Requiring @" <> display namespace <> "/" <> display name <> "…"
   result <- lift $ Query.getPackageByNamespaceAndName namespace name
   case result of
     Just package@Package{packageId=dependencyPackageId} -> do
@@ -348,40 +365,30 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
       requirementId <- RequirementId <$> liftIO UUID.nextRandom
       let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
       let metadata = RequirementMetadata{ flag = Nothing }
-      pure Requirement{requirementId, packageComponentId, packageId=dependencyPackageId, requirement, metadata}
-    Nothing -> do
-      -- Checking if the package depends on itself
-      -- Unused when loading only main components of packages
-      if (dependentNamespace, dependentPackageName) == (namespace, name)
-      then do
-        let packageId = PackageId UUID.nil
-        logImportMessage (dependentNamespace, dependentPackageName) "A sub-component depends on the package itself."
-        requirementId <- RequirementId <$> liftIO UUID.nextRandom
-        let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
-        let metadata = RequirementMetadata{ flag = Nothing }
-        pure Requirement{..}
-      else do
-        logImportMessage (dependentNamespace, dependentPackageName) $
-          "Dependency @" <> display namespace <> "/" <> display name
-          <> " does not exist in the database, trying to import it from " <> T.pack directory
-        package <- lookupCabalFile userId namespace name directory
-        let packageId = package ^. #packageId
-        requirementId <- RequirementId <$> liftIO UUID.nextRandom
-        let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
-        let metadata = RequirementMetadata{ flag = Nothing }
-        pure Requirement{requirementId, packageComponentId, packageId, requirement, metadata}
-
--- | This function is used if the package of a requirement isn't already in the system.
--- Give it a directory where .cabal files are, a package name,
--- and if a .cabal file matches (case-sensitive) it will be imported.
-lookupCabalFile :: (MonadIO m)
-                => UserId
-                -> Namespace
-                -> PackageName
-                -> FilePath
-                -> ExceptT ImportError (DBT m) Package
-lookupCabalFile userId namespace packageName directory =
-  lift $ importCabal userId namespace packageName directory
+      let req = Requirement{requirementId, packageComponentId, packageId=dependencyPackageId, requirement, metadata}
+      pure [req]
+    Nothing | (dependentNamespace, dependentPackageName) == (namespace, name) -> do
+              -- Checking if the package depends on itself
+              -- Unused when loading only main components of packages
+                let packageId = PackageId UUID.nil
+                logImportMessage (dependentNamespace, dependentPackageName) "A sub-component depends on the package itself."
+                requirementId <- RequirementId <$> liftIO UUID.nextRandom
+                let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
+                let metadata = RequirementMetadata{ flag = Nothing }
+                let req = Requirement{..}
+                pure [req]
+            | otherwise -> do
+                logImportMessage (dependentNamespace, dependentPackageName) $
+                  "Dependency @" <> display namespace <> "/" <> display name
+                  <> " does not exist in the database, trying to import it from " <> T.pack directory
+                let cabalPath = directory <> T.unpack (display name) <> ".cabal"
+                package <- lift $ importCabal userId name cabalPath directory
+                let packageId = package ^. #packageId
+                requirementId <- RequirementId <$> liftIO UUID.nextRandom
+                let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
+                let metadata = RequirementMetadata{ flag = Nothing }
+                let req = Requirement{requirementId, packageComponentId, packageId, requirement, metadata}
+                pure [req]
 
 createComponent :: MonadIO m => ReleaseId -> CanonicalComponent -> ExceptT ImportError (DBT m) PackageComponent
 createComponent releaseId canonicalForm = do

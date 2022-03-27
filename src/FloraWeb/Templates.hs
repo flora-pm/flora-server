@@ -10,7 +10,7 @@ import Control.Monad.Reader
 import Data.ByteString.Lazy
 import Lucid
 
-import FloraWeb.Templates.Layout.App (footer, header)
+import FloraWeb.Templates.Layout.App (header)
 import FloraWeb.Templates.Types as Types
 
 render :: (Monad m) => TemplateEnv -> FloraHTML -> m (Html ())
@@ -29,4 +29,3 @@ rendered :: FloraHTML -> FloraHTML
 rendered target = do
   header
   main_ [] target
-  footer

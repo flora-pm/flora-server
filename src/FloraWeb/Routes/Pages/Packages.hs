@@ -12,9 +12,9 @@ import Servant.HTML.Lucid
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { show :: mode :-  Capture "organisation" Text :> Capture "package" Text
+  { show :: mode :-  Capture "namespace" Text :> Capture "package" Text
             :> Get '[HTML] (Html ())
-  , showVersion :: mode :- Capture "organisation" Text :> Capture "package" Text
+  , showVersion :: mode :- Capture "namespace" Text :> Capture "package" Text
                    :> Capture "version" Text :> Get '[HTML] (Html ())
   }
   deriving stock (Generic)

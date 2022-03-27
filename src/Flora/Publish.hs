@@ -48,6 +48,7 @@ publishForExistingPackage requirements components release package = do
       forM_ components Update.insertPackageComponent
       forM_ requirements Update.insertRequirement
       Update.refreshDependents
+      Update.refreshLatestVersions
       pure package
     Just r -> do
       liftIO $ T.putStrLn $ "[+] Release " <> display (package ^. #name) <> " v" <> display (r ^. #version) <> " already exists."
@@ -67,6 +68,7 @@ publishForNewPackage requirements components release userPackageCategories packa
   forM_ components Update.insertPackageComponent
   forM_ requirements Update.insertRequirement
   Update.refreshDependents
+  Update.refreshLatestVersions
   forM_ newCategories $
     \(NormalisedPackageCategory categoryName) -> Update.addToCategoryByName (package ^. #packageId) categoryName
   pure package

@@ -82,7 +82,7 @@ displayLinks _release meta@PackageMetadata{..} = do
       li_ $ displaySourceRepos sourceRepos
 
 displaySourceRepos :: [Text] -> FloraHTML
-displaySourceRepos [] = toHtml @Text "⚠ No source repository provided"
+displaySourceRepos [] = toHtml @Text "No source repository"
 displaySourceRepos x  = a_ [href_ (head x)] "Source repository"
 
 displayDependencies :: Vector (Namespace, PackageName, Text) -- ^ (Namespace, Name, Version requirement)

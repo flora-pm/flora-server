@@ -105,6 +105,29 @@ div[class="bullets"]{
         border-bottom-width: 2px;
     }
   }
+
+  .categories{
+    a {
+      color: unset;
+    }
+  }
+  .packages-list{
+    a {
+      color: unset;
+    }
+  }
+  .packages-list-item{
+    a {
+      display: block;
+      padding-top: 1em;
+      padding-bottom: 1em;
+      padding-left: 0.75em;
+    }
+    a:hover{
+      background-color: #333548;
+      border-radius: 5px;
+    }
+  }
 }
 
 /* Large display rules */
@@ -116,6 +139,20 @@ div[class="bullets"]{
     padding-left: 15px;
     margin-right: auto;
     margin-left: auto;
+  }
+
+  .categories{
+    width: auto;
+    max-width: 1536px;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .category-card{
+    --tw-shadow-color: rgb(102 51 153 / 0.25);
+    --tw-shadow: var(--tw-shadow-colored);
   }
 
   .about-page{

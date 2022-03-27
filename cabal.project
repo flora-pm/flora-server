@@ -1,6 +1,6 @@
 packages: ./
 
-index-state: 2022-03-08T10:53:01Z
+index-state: 2022-03-15T11:27:55Z
 
 with-compiler: ghc-8.10.7
 
@@ -48,11 +48,6 @@ source-repository-package
     type: git
     location: https://github.com/flora-pm/wai-middleware-heartbeat
     tag: bd7dbbe
-
-source-repository-package
-    type: git
-    location: https://github.com/haskell-text/text-display
-    tag: 70894d0
 
 source-repository-package
     type: git

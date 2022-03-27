@@ -35,13 +35,14 @@ spec = testThese "packages"
 
 testGetPackageById :: TestM ()
 testGetPackageById = do
-    liftDB $ importCabal (hackageUser ^. #userId) (Namespace "haskell") (PackageName "base") "./test/fixtures/Cabal/"
-    result <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
-    assertEqual (Just (PackageName "base")) (preview (_Just % #name) result)
+  let cabalPath = "./test/fixtures/Cabal/base.cabal"
+  liftDB $ importCabal (hackageUser ^. #userId) (PackageName "base") cabalPath "./test/fixtures/Cabal/"
+  result <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
+  assertEqual (Just (PackageName "base")) (preview (_Just % #name) result)
 
 testInsertContainers :: TestM ()
 testInsertContainers = do
-    result <- liftDB $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "containers") "./test/fixtures/Cabal/"
+    result <- liftDB $ importPackage (hackageUser ^. #userId) (PackageName "containers") "./test/fixtures/Cabal/"
     liftIO $ print result
     dependencies <- liftDB $ do
       mPackage <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "containers")
@@ -65,13 +66,13 @@ testFetchGHCPrimDependents = do
 
 testThatBaseisInPreludeCategory :: TestM ()
 testThatBaseisInPreludeCategory = do
-  liftDB $ importPackage (hackageUser ^. #userId) (Namespace "haskell") (PackageName "base") "./test/fixtures/Cabal/"
+  liftDB $ importPackage (hackageUser ^. #userId) (PackageName "base") "./test/fixtures/Cabal/"
   result <- liftDB $ Query.getPackagesFromCategorySlug "prelude"
   assertEqual (Set.fromList [PackageName "base"]) (Set.fromList $ V.toList $ fmap (view #name) result)
 
 testThatSemigroupsIsInMathematicsAndDataStructures :: TestM ()
 testThatSemigroupsIsInMathematicsAndDataStructures = do
-  liftDB $ importPackage (hackageUser ^. #userId) (Namespace "hackage") (PackageName "semigroups") "./test/fixtures/Cabal/"
+  liftDB $ importPackage (hackageUser ^. #userId) (PackageName "semigroups") "./test/fixtures/Cabal/"
   liftIO $ threadDelay 10000
   Just semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
   result <- liftDB $ Query.getPackageCategories (semigroups ^. #packageId)
