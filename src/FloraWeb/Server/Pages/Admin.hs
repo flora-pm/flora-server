@@ -9,7 +9,6 @@ import Servant
 
 import Flora.Environment
 import Flora.Model.Admin.Report
-import Flora.Model.Package (PackageId)
 import qualified Flora.Model.Package.Query as Query
 import Flora.Model.User
 import qualified Flora.Model.User.Query as Query
@@ -91,7 +90,7 @@ showUserHandler userId = do
 adminPackagesHandler :: ServerT PackagesAdminRoutes FloraAdminM
 adminPackagesHandler = PackagesAdminRoutes'
   { packageIndex = packageIndexHandler
-  , withPackage = withPackageHandler
+  -- , withPackage = withPackageHandler
   }
 
 packageIndexHandler :: FloraAdminM (Html ())
@@ -103,19 +102,19 @@ packageIndexHandler = do
   render templateEnv (Templates.indexPackages packages)
 
 
-withPackageHandler :: PackageId -> ServerT WithPackageAdminRoutes FloraAdminM
-withPackageHandler packageId = WithPackageAdminRoutes'
-  { showPackage = showPackageHandler packageId
-  }
+-- withPackageHandler ::  -> ServerT WithPackageAdminRoutes FloraAdminM
+-- withPackageHandler packageId = WithPackageAdminRoutes'
+--   { showPackage = showPackageHandler packageId
+--   }
 
-showPackageHandler :: PackageId -> FloraAdminM (Html ())
-showPackageHandler packageId = do
-  session <- getSession
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-  result <- liftIO $ withPool pool $ Query.getPackageById packageId
-  templateEnv <- fromSession session defaultTemplateEnv
-  case result of
-    Nothing -> renderError templateEnv notFound404
-    Just package -> do
-      render templateEnv (Templates.showPackage package)
+-- showPackageHandler :: PackageId -> FloraAdminM (Html ())
+-- showPackageHandler packageId = do
+--   session <- getSession
+--   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+--   result <- liftIO $ withPool pool $ Query.getPackageById packageId
+--   templateEnv <- fromSession session defaultTemplateEnv
+--   case result of
+--     Nothing -> renderError templateEnv notFound404
+--     Just package -> do
+--       render templateEnv (Templates.showPackage package)
 

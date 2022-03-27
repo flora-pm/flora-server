@@ -12,6 +12,7 @@ import Database.PostgreSQL.Transact (DBT)
 import qualified Data.Text.IO as T
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT
+import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
@@ -33,7 +34,19 @@ getPackagesFromCategorySlug slug = do
       pure Vector.empty
     Just Category{categoryId} -> do
       liftIO $ T.putStrLn "Category found!"
-      joinSelectOneByField @Package @PackageCategory [field| package_id |] [field| category_id |] categoryId
+      query Select [sql|
+        select p.namespace,
+               p.name,
+               p.synopsis,
+               p.metadata,
+               p.owner_id,
+               p.created_at,
+               p.updated_at,
+        from packages as p
+        inner join package_categories as pc on (p.namespace = pc.package_namespace and p.name = pc.package_name)
+        where pc.category_id = ?
+        |] (Only categoryId)
+      -- joinSelectOneByField @Package @PackageCategory [field| package_id |] [field| category_id |] categoryId
 
 getAllCategories :: (MonadIO m) => DBT m (Vector Category)
 getAllCategories = query_ Select (_select @Category)

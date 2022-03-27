@@ -110,7 +110,7 @@ importPackage userId packageName directory = do
 -- 6. Extract multiple 'Requirement's
 -- 7. Insert everything
 importCabal :: (MonadIO m)
-            =>  UserId    -- ^ The UserId of the stand-in user for Hackage, for instance.
+            => UserId    -- ^ The UserId of the stand-in user for Hackage, for instance.
             -> PackageName  -- ^ Name of the package and of the .cabal file
             -> FilePath -- ^ Path to the Cabal file
             -> FilePath -- ^ Directory where to find the .cabal files
@@ -127,19 +127,18 @@ importCabal userId packageName cabalFile directory = do
                              cabalToPackage userId (genDesc ^. #packageDescription) namespace packageName
                            Just package -> pure package
       release <- lift $
-        Query.getReleaseByVersion (package ^. #packageId) (genDesc ^. #packageDescription ^. #package ^. #pkgVersion)
+        Query.getReleaseByVersion (package ^. #namespace, package ^. #name)
+                                  ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
                   >>= \case
                           Nothing -> do
-                            r <- createRelease (package ^. #packageId)
-                                               (genDesc ^. #packageDescription ^. #package ^. #pkgVersion)
+                            r <- createRelease (package ^. #namespace) (package ^. #name)
+                                               ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
                             logImportMessage (namespace, packageName) $ "Creating Release "
                                 <> display (r ^. #releaseId) <> " for package " <> display (package ^. #name)
-                                <> " (package_id: " <> display (package ^. #packageId) <> ")"
                             pure r
                           Just release -> do
                             logImportMessage (namespace, packageName) $
                                   "Release found: releaseId: " <> display (release ^. #releaseId) <> " / packageId: "
-                                  <> display (package ^. #packageId)
                             pure release
       componentsAndRequirements <- extractComponents userId directory
                                       (namespace, packageName)
@@ -152,7 +151,7 @@ importCabal userId packageName cabalFile directory = do
     case result of
       Left err -> error $ "Encountered error during import: " <> show err
       Right (package, release, components, requirements) -> do
-        let rawCategoryField = T.pack $ Cabal.fromShortText $ genDesc ^. #packageDescription ^. #category
+        let rawCategoryField = T.pack $ Cabal.fromShortText $ genDesc ^. (#packageDescription % #category)
         let categoryList = fmap (UserPackageCategory . T.stripStart) (T.splitOn "," rawCategoryField)
         Update.publishPackage requirements components release categoryList package
 
@@ -253,7 +252,7 @@ extractFromLib :: (MonadIO m)
                -> ExceptT ImportError (DBT m) (PackageComponent, [Requirement])
 extractFromLib userId directory dependentName releaseId packageName library = do
   let dependencies = filter (\d -> Cabal.depPkgName d /= "unbuildable")
-                   $ library ^. #libBuildInfo ^. #targetBuildDepends
+                   $ library ^. (#libBuildInfo % #targetBuildDepends)
   let libraryName = getLibName $ library ^. #libName
   let componentType = Component.Library
   let canonicalForm = CanonicalComponent libraryName componentType
@@ -355,26 +354,28 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
                    <> " on " <> "@" <> display namespace <> "/" <> display name
   result <- lift $ Query.getPackageByNamespaceAndName namespace name
   case result of
-    Just package@Package{packageId=dependencyPackageId} -> do
+    Just package -> do
       logImportMessage (dependentNamespace, dependentPackageName) $
-              "Required package: " <> "name: " <> display (package ^. #name) <>
-              ", packageId: " <> display dependencyPackageId
+              "Required package: " <> "name: " <> display (package ^. #name)
       logImportMessage (dependentNamespace, dependentPackageName) $
                        "Dependency @" <> display namespace <> "/" <> display name <>
-                       " is in the database (" <> (T.pack . show $ dependencyPackageId) <> ")"
+                       " is in the database"
       requirementId <- RequirementId <$> liftIO UUID.nextRandom
       let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
       let metadata = RequirementMetadata{ flag = Nothing }
-      let req = Requirement{requirementId, packageComponentId, packageId=dependencyPackageId, requirement, metadata}
+      let reqNamespace = package ^. #namespace
+      let reqName = package ^. #name
+      let req = Requirement{requirementId, packageComponentId, packageNamespace=reqNamespace, packageName=reqName, requirement, metadata}
       pure [req]
     Nothing | (dependentNamespace, dependentPackageName) == (namespace, name) -> do
               -- Checking if the package depends on itself
               -- Unused when loading only main components of packages
-                let packageId = PackageId UUID.nil
                 logImportMessage (dependentNamespace, dependentPackageName) "A sub-component depends on the package itself."
                 requirementId <- RequirementId <$> liftIO UUID.nextRandom
                 let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
                 let metadata = RequirementMetadata{ flag = Nothing }
+                let packageNamespace = dependentNamespace
+                let packageName = dependentPackageName
                 let req = Requirement{..}
                 pure [req]
             | otherwise -> do
@@ -383,11 +384,12 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
                   <> " does not exist in the database, trying to import it from " <> T.pack directory
                 let cabalPath = directory <> T.unpack (display name) <> ".cabal"
                 package <- lift $ importCabal userId name cabalPath directory
-                let packageId = package ^. #packageId
                 requirementId <- RequirementId <$> liftIO UUID.nextRandom
+                let pNs = package ^. #namespace
+                let pN = package ^. #name
                 let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
                 let metadata = RequirementMetadata{ flag = Nothing }
-                let req = Requirement{requirementId, packageComponentId, packageId, requirement, metadata}
+                let req = Requirement{requirementId, packageComponentId, packageNamespace=pNs, packageName=pN, requirement, metadata}
                 pure [req]
 
 createComponent :: MonadIO m => ReleaseId -> CanonicalComponent -> ExceptT ImportError (DBT m) PackageComponent
@@ -395,8 +397,8 @@ createComponent releaseId canonicalForm = do
   componentId <- ComponentId <$> liftIO UUID.nextRandom
   pure PackageComponent{..}
 
-createRelease :: (MonadIO m) => PackageId -> Version -> DBT m Release
-createRelease packageId version = do
+createRelease :: (MonadIO m) => Namespace -> PackageName -> Version -> DBT m Release
+createRelease packageNamespace packageName version = do
   releaseId <- ReleaseId <$> liftIO UUID.nextRandom
   timestamp <- liftIO getCurrentTime
   let archiveChecksum = mempty
@@ -412,8 +414,7 @@ cabalToPackage :: (MonadIO m)
                -> ExceptT ImportError (DBT m) Package
 cabalToPackage ownerId packageDesc namespace name = do
   timestamp <- liftIO getCurrentTime
-  packageId <- PackageId <$> liftIO UUID.nextRandom
-  sourceRepos <- getRepoURL (PackageName $ display $ packageDesc ^. #package ^. #pkgName) (packageDesc ^. #sourceRepos)
+  sourceRepos <- getRepoURL (PackageName $ display $ packageDesc ^. (#package % #pkgName)) (packageDesc ^. #sourceRepos)
   let license = Cabal.license packageDesc
   let homepage = Just (display $ packageDesc ^. #homepage)
   let documentation = ""

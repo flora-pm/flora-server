@@ -1,25 +1,36 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes     #-}
-{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 
 module Flora.Model.Release.Query where
 
 import Control.Monad.IO.Class
 import Data.Vector (Vector)
-import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple
+import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne)
+import Database.PostgreSQL.Simple ()
 import Database.PostgreSQL.Transact (DBT)
 import Distribution.Make (Version)
 
-import Flora.Model.Package.Types (PackageId)
+import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Flora.Model.Package.Types
 import Flora.Model.Release (Release)
 
-getReleases :: MonadIO m => PackageId -> DBT m (Vector Release)
-getReleases pid = selectManyByField @Release [field| package_id |] (Only pid)
+getReleases :: MonadIO m => (Namespace, PackageName) -> DBT m (Vector Release)
+getReleases (namespace, packageName) = query Select
+  [sql|
+    select r.release_id, r.package_namespace, r.package_name, r.version, r.archive_checksum, r.created_at, r.updated_at
+    from releases as r
+    where r.package_namespace = ?
+      and r.package_name = ?
+    |] (namespace, packageName)
 
-getReleaseByVersion :: MonadIO m => PackageId -> Version -> DBT m (Maybe Release)
-getReleaseByVersion packageId version = queryOne Select querySpec (packageId, version)
+getReleaseByVersion :: MonadIO m => (Namespace, PackageName) -> Version -> DBT m (Maybe Release)
+getReleaseByVersion (namespace, packageName) version = queryOne Select querySpec (namespace, packageName, version)
   where
-    querySpec = _selectWhere @Release [ [field| package_id |], [field| version |]]
+    querySpec =
+      [sql|
+        select r.release_id, r.package_namespace, r.package_name, r.version, r.archive_checksum, r.created_at, r.updated_at
+        from releases as r
+        where r.package_namespace = ?
+          and r.package_name = ?
+          and r.version = ?
+      |]

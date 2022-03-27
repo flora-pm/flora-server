@@ -194,7 +194,6 @@ library
     , text                       ^>=1.2
     , text-display               ^>=0.0.2
     , time                       ^>=1.9
-    , tmp-postgres
     , transformers               ^>=0.5
     , transformers-base          ^>=0.4
     , typed-process              ^>=0.2

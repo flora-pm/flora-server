@@ -25,7 +25,7 @@ export FLORA_LOGGING_DESTINATION="stdout"
 #
 #   * Accept multiple packages with the same name but different case
 #   * Accept multiple users with the same name but different case
-export FLORA_COMPATIBILITY_MODE=true
+export FLORA_COMPATIBILITY_MODE="True"
 
 # Set these variables in `environment.local.sh`, which is not tracked by git.
 #export SENTRY_DSN="" # Set this variable to connecto to your Sentry instance

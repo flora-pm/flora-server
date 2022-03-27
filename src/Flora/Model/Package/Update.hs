@@ -7,7 +7,6 @@ import Control.Monad (void)
 import Control.Monad.IO.Class
 import Database.PostgreSQL.Entity (delete, insert)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
-import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact (DBT)
 
@@ -19,8 +18,8 @@ import Flora.Model.Requirement (Requirement)
 insertPackage :: (MonadIO m) => Package -> DBT m ()
 insertPackage package = insert @Package package
 
-deletePackage :: (MonadIO m) => PackageId -> DBT m ()
-deletePackage packageId = delete @Package (Only packageId)
+deletePackage :: (MonadIO m) => (Namespace, PackageName) -> DBT m ()
+deletePackage (namespace, packageName) = delete @Package (namespace, packageName)
 
 refreshDependents :: (MonadIO m) => DBT m ()
 refreshDependents = void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()

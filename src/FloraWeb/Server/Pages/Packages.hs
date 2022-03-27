@@ -50,10 +50,10 @@ showHandler namespaceText nameText = do
         Nothing -> renderError templateEnv notFound404
         Just package -> do
           dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
-          releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
+          releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #namespace, package ^. #name)
           let latestRelease =  maximumBy (compare `on` version) releases
           latestReleasedependencies <- liftIO $ withPool pool $ Query.getRequirements (latestRelease ^. #releaseId)
-          categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #packageId)
+          categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #namespace) (package ^. #name)
           render templateEnv $ Packages.showPackage latestRelease package dependents latestReleasedependencies categories
     _ -> renderError templateEnv notFound404
 
@@ -69,12 +69,13 @@ showVersionHandler namespaceText nameText versionText = do
         Nothing -> renderError templateEnv notFound404
         Just package -> do
           dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
-          liftIO (withPool pool $ Query.getReleaseByVersion (package ^. #packageId) versionSpec)
+          liftIO (withPool pool $ Query.getReleaseByVersion (package ^. #namespace, package ^. #name) versionSpec)
             >>= \case
               Nothing -> renderError templateEnv notFound404
               Just release -> do
                 releaseDependencies <- liftIO $ withPool pool $ Query.getRequirements (release ^. #releaseId)
-                categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #packageId)
+                categories <- liftIO $
+                  withPool pool $ Query.getPackageCategories (package ^. #namespace) (package ^. #name)
                 render templateEnv $ Packages.showPackage release package dependents releaseDependencies categories
     _ -> renderError templateEnv notFound404
 

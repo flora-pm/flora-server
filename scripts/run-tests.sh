@@ -6,6 +6,9 @@ source ./environment.test.sh
 
 export DATALOG_DIR="cbits/"
 
+make db-drop
+make db-setup
+
 if [ -z "$1" ] ;
 then
   cabal test

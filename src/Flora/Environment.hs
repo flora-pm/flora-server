@@ -12,7 +12,7 @@ module Flora.Environment
 import Colourista.IO (blueMessage)
 import Control.Monad ((>=>))
 import Data.Bifunctor
-import Data.Pool (Pool, createPool)
+import Data.Pool (Pool)
 import Data.Text
 import qualified Data.Text as T
 import Data.Text.Display (Display (..))
@@ -20,10 +20,10 @@ import Data.Time (NominalDiffTime)
 import Data.Word (Word16)
 import Database.PostgreSQL.Entity.DBT
 import qualified Database.PostgreSQL.Simple as PG
-import qualified Database.Postgres.Temp as Postgres.Temp
 import Env (AsUnread (unread), Error (..), Parser, Reader, def, help, nonempty,
             parse, str, switch, var, (<=<))
 import GHC.Generics
+import Optics.Core ((^.))
 import Text.Read (readMaybe)
 
 -- | The datatype that is used in the application
@@ -68,7 +68,7 @@ data FloraConfig = FloraConfig
   , logging     :: LoggingEnv
   , environment :: DeploymentEnv
   }
-  deriving stock Show
+  deriving stock (Show, Generic)
 
 data PoolConfig = PoolConfig
   { subPools          :: Int
@@ -78,7 +78,9 @@ data PoolConfig = PoolConfig
   deriving stock Show
 
 data TestConfig = TestConfig
-  { httpPort :: Word16
+  { httpPort    :: Word16
+  , dbConfig    :: PoolConfig
+  , connectInfo :: PG.ConnectInfo
   }
   deriving stock (Show, Generic)
 
@@ -95,14 +97,10 @@ configToEnv FloraConfig {..} = do
   pure FloraEnv {..}
 
 testConfigToTestEnv :: TestConfig -> IO TestEnv
-testConfigToTestEnv TestConfig{httpPort} = do
-  eitherDb <- Postgres.Temp.start
-  case eitherDb of
-      Right db -> do
-        pool <- createPool (PG.connectPostgreSQL $ Postgres.Temp.toConnectionString db)
-                           PG.close 1 100000000 50
-        pure TestEnv{..}
-      Left _ -> error "Fuck right off"
+testConfigToTestEnv config@TestConfig{..} = do
+  let PoolConfig {..} = config ^. #dbConfig
+  pool <- mkPool connectInfo subPools connectionTimeout connections
+  pure TestEnv{..}
 
 displayConnectInfo :: PG.ConnectInfo -> Text
 displayConnectInfo PG.ConnectInfo {..} = T.pack $
@@ -164,12 +162,15 @@ parseConfig =
 
 parseTestConfig :: Parser Error TestConfig
 parseTestConfig =
-  TestConfig <$> parsePort
+  TestConfig
+  <$> parsePort
+  <*> parsePoolConfig
+  <*> parseConnectInfo
 
 getFloraEnv :: IO FloraEnv
 getFloraEnv = do
   config <- Env.parse id parseConfig
-  blueMessage $ "🔌 Connecting to database at " <> displayConnectInfo (connectInfo config)
+  blueMessage $ "🔌 Connecting to database at " <> displayConnectInfo (config ^. #connectInfo)
   configToEnv config
 
 getFloraTestEnv :: IO TestEnv

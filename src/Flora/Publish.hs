@@ -30,17 +30,19 @@ publishPackage :: (MonadIO m)
                -> Package
                -> DBT m Package
 publishPackage requirements components release userPackageCategories package = do
-  result <- Query.getPackageById (package ^. #packageId)
+  result <- Query.getPackageByNamespaceAndName (package ^. #namespace) (package ^. #name)
   case result of
-    Just existingPackage -> publishForExistingPackage requirements components release existingPackage
-    Nothing -> publishForNewPackage requirements components release userPackageCategories package
+    Just existingPackage -> do
+      liftIO $ T.putStrLn $ "[+] Package " <> display (package ^. #name) <> " already exists."
+      publishForExistingPackage requirements components release existingPackage
+    Nothing -> do
+      publishForNewPackage requirements components release userPackageCategories package
 
 publishForExistingPackage :: (MonadIO m) => [Requirement] -> [PackageComponent] -> Release -> Package -> DBT m Package
 publishForExistingPackage requirements components release package = do
-  result <- Query.getReleaseByVersion (package ^. #packageId) (release ^. #version)
+  result <- Query.getReleaseByVersion (package ^. #namespace, package ^. #name) (release ^. #version)
   case result of
     Nothing -> do
-      liftIO $ T.putStrLn $ "[+] Package " <> display (package ^. #name) <> " already exists."
       liftIO $ T.putStrLn $ "[+] Inserting the following components: "
                          <> display (fmap canonicalForm components) <> " of " <> display (package ^. #name)
                          <> " v" <> display (release ^. #version)
@@ -70,5 +72,5 @@ publishForNewPackage requirements components release userPackageCategories packa
   Update.refreshDependents
   Update.refreshLatestVersions
   forM_ newCategories $
-    \(NormalisedPackageCategory categoryName) -> Update.addToCategoryByName (package ^. #packageId) categoryName
+    \(NormalisedPackageCategory categoryName) -> Update.addToCategoryByName (package ^. #namespace, package ^. #name) categoryName
   pure package

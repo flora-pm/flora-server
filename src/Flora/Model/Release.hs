@@ -12,7 +12,7 @@ import Distribution.Types.Version (Version)
 import GHC.Generics (Generic)
 
 import Data.Text.Display
-import Flora.Model.Package (PackageId)
+import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
 
 newtype ReleaseId = ReleaseId { getReleaseId :: UUID }
@@ -23,17 +23,19 @@ newtype ReleaseId = ReleaseId { getReleaseId :: UUID }
 
 data Release = Release
   { -- | The unique ID of this release
-    releaseId       :: ReleaseId
-    -- | The package ID to which this release is linked
-  , packageId       :: PackageId
+    releaseId        :: ReleaseId
+    -- | The package name and namespace to which this release is linked
+  , packageName      :: PackageName
+
+  , packageNamespace :: Namespace
     -- | The version that this release represents
-  , version         :: Version
+  , version          :: Version
     -- | The SHA256 checksum of the stored archive for this release
-  , archiveChecksum :: ByteString
+  , archiveChecksum  :: ByteString
     -- | Date of creation of this release
-  , createdAt       :: UTCTime
+  , createdAt        :: UTCTime
     -- | Last update timestamp for this release
-  , updatedAt       :: UTCTime
+  , updatedAt        :: UTCTime
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)

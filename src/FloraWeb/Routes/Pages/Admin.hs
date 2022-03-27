@@ -1,6 +1,5 @@
 module FloraWeb.Routes.Pages.Admin where
 
-import Flora.Model.Package (PackageId)
 import Flora.Model.User
 import Lucid
 import Servant
@@ -35,7 +34,7 @@ type PackagesAdminRoutes = NamedRoutes PackagesAdminRoutes'
 
 data PackagesAdminRoutes' mode = PackagesAdminRoutes'
   { packageIndex :: mode :- Get '[HTML] (Html ())
-  , withPackage :: mode :- Capture "package_id" PackageId :> WithPackageAdminRoutes
+  -- , withPackage :: mode :- Capture "package_id" PackageId :> WithPackageAdminRoutes
   }
   deriving stock (Generic)
 

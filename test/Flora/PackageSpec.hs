@@ -51,7 +51,7 @@ testInsertContainers = do
           assertFailure "Couldn't find @haskell/containers despite being inserted"
           undefined
         Just package -> do
-          releases <- Query.getReleases (package ^. #packageId)
+          releases <- Query.getReleases (package ^. #namespace, package ^. #name)
           let latestRelease =  maximumBy (compare `on` version) releases
           Query.getRequirements (latestRelease ^. #releaseId)
     assertEqual (Set.fromList [PackageName "base", PackageName "deepseq", PackageName "array"])
@@ -74,6 +74,6 @@ testThatSemigroupsIsInMathematicsAndDataStructures :: TestM ()
 testThatSemigroupsIsInMathematicsAndDataStructures = do
   liftDB $ importPackage (hackageUser ^. #userId) (PackageName "semigroups") "./test/fixtures/Cabal/"
   liftIO $ threadDelay 10000
-  Just semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
-  result <- liftDB $ Query.getPackageCategories (semigroups ^. #packageId)
+  Just _semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
+  result <- liftDB $ Query.getPackageCategories (Namespace "hackage") (PackageName "semigroups")
   assertEqual (Set.fromList ["data-structures", "maths"]) (Set.fromList $ slug <$> V.toList result)
