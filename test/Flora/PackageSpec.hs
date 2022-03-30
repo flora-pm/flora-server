@@ -31,6 +31,8 @@ spec = testThese "packages"
   , testThis "Insert containers and its dependencies" testInsertContainers
   , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory
   , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
+  , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
+  , testThis "Searching for \"base\" returns the correct results" testSearchingForBase
   ]
 
 testGetPackageById :: TestM ()
@@ -59,10 +61,10 @@ testInsertContainers = do
 
 testFetchGHCPrimDependents :: TestM ()
 testFetchGHCPrimDependents = do
-    result <-  liftDB $ Query.getPackageDependents (Namespace "haskell") (PackageName "ghc-prim")
-    assertEqual
-      (Set.fromList [PackageName "base", PackageName "ghc-bignum", PackageName "deepseq", PackageName "bytestring", PackageName "integer-gmp", PackageName "binary"])
-      (Set.fromList . fmap (view #name) $ Vector.toList result)
+  result <-  liftDB $ Query.getPackageDependents (Namespace "haskell") (PackageName "ghc-prim")
+  assertEqual
+    (Set.fromList [PackageName "base", PackageName "ghc-bignum", PackageName "deepseq", PackageName "bytestring", PackageName "integer-gmp", PackageName "binary"])
+    (Set.fromList . fmap (view #name) $ Vector.toList result)
 
 testThatBaseisInPreludeCategory :: TestM ()
 testThatBaseisInPreludeCategory = do
@@ -77,3 +79,19 @@ testThatSemigroupsIsInMathematicsAndDataStructures = do
   Just _semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
   result <- liftDB $ Query.getPackageCategories (Namespace "hackage") (PackageName "semigroups")
   assertEqual (Set.fromList ["data-structures", "maths"]) (Set.fromList $ slug <$> V.toList result)
+
+testCorrectNumberInHaskellNamespace :: TestM ()
+testCorrectNumberInHaskellNamespace = do
+  liftDB $ importCabal (hackageUser ^. #userId) (PackageName "Cabal") "./test/fixtures/Cabal/Cabal.cabal" "./test/fixtures/Cabal/"
+  results <- liftDB $ Query.getPackagesByNamespace (Namespace "haskell")
+  assertEqual 21 (Vector.length results)
+
+testSearchingForBase :: TestM ()
+testSearchingForBase = do
+  liftDB $ importCabal (hackageUser ^. #userId) (PackageName "base") "./test/fixtures/Cabal/base.cabal" "./test/fixtures/Cabal/"
+  result <- liftDB $ Query.searchPackage "base"
+  assertEqual (Vector.fromList [(PackageName "base", 1)])
+              (result <&> (,) <$> view _2 <*> view _5)
+
+testPackageSearchResultOrdering :: TestM ()
+testPackageSearchResultOrdering = undefined

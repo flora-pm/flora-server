@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 module Flora.Import.Package where
 
+import Control.Concurrent
 import Control.Monad.Except
 import qualified Data.ByteString as B
 import Data.Map (Map)
@@ -72,6 +73,7 @@ coreLibraries = Set.fromList
   , PackageName "binary"
   , PackageName "bytestring"
   , PackageName "containers"
+  , PackageName "directory"
   , PackageName "deepseq"
   , PackageName "ghc-bignum"
   , PackageName "ghc-boot-th"
@@ -116,44 +118,44 @@ importCabal :: (MonadIO m)
             -> FilePath -- ^ Directory where to find the .cabal files
             -> DBT m Package
 importCabal userId packageName cabalFile directory = do
-    genDesc <- liftIO $ loadFile cabalFile
-    let namespace = if Set.member packageName coreLibraries then Namespace "haskell" else Namespace "hackage"
-    result <- runExceptT $ do
-      package <- lift (Query.getHaskellOrHackagePackage packageName)
-                   >>= \case
-                           Nothing -> do
-                             logImportMessage (namespace, packageName) $
-                                "\"" <> display packageName <> "\" could not be found in the database."
-                             cabalToPackage userId (genDesc ^. #packageDescription) namespace packageName
-                           Just package -> pure package
-      release <- lift $
-        Query.getReleaseByVersion (package ^. #namespace, package ^. #name)
-                                  ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
-                  >>= \case
-                          Nothing -> do
-                            r <- createRelease (package ^. #namespace) (package ^. #name)
-                                               ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
-                            logImportMessage (namespace, packageName) $ "Creating Release "
-                                <> display (r ^. #releaseId) <> " for package " <> display (package ^. #name)
-                            pure r
-                          Just release -> do
-                            logImportMessage (namespace, packageName) $
-                                  "Release found: releaseId: " <> display (release ^. #releaseId) <> " / packageId: "
-                            pure release
-      componentsAndRequirements <- extractComponents userId directory
-                                      (namespace, packageName)
-                                      (flattenPackageDescription genDesc)
-                                      (release ^. #releaseId)
-                                      (package ^. #name)
-      let components = fmap fst componentsAndRequirements
-      let requirements = foldMap snd componentsAndRequirements
-      pure (package, release, components, requirements)
-    case result of
-      Left err -> error $ "Encountered error during import: " <> show err
-      Right (package, release, components, requirements) -> do
-        let rawCategoryField = T.pack $ Cabal.fromShortText $ genDesc ^. (#packageDescription % #category)
-        let categoryList = fmap (UserPackageCategory . T.stripStart) (T.splitOn "," rawCategoryField)
-        Update.publishPackage requirements components release categoryList package
+  let namespace = if Set.member packageName coreLibraries then Namespace "haskell" else Namespace "hackage"
+  genDesc <- liftIO $ loadFile cabalFile
+  result <- runExceptT $ do
+    package <- lift (Query.getHaskellOrHackagePackage packageName)
+                 >>= \case
+                         Nothing -> do
+                           logImportMessage (namespace, packageName) $
+                              "\"" <> display packageName <> "\" could not be found in the database."
+                           cabalToPackage userId (genDesc ^. #packageDescription) namespace packageName
+                         Just package -> pure package
+    release <- lift $
+      Query.getReleaseByVersion (package ^. #namespace, package ^. #name)
+                                ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
+                >>= \case
+                        Nothing -> do
+                          r <- createRelease (package ^. #namespace) (package ^. #name)
+                                             ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
+                          logImportMessage (namespace, packageName) $ "Creating Release "
+                              <> display (r ^. #releaseId) <> " for package " <> display (package ^. #name)
+                          pure r
+                        Just release -> do
+                          logImportMessage (namespace, packageName) $
+                                "Release found: releaseId: " <> display (release ^. #releaseId) <> " / packageId: "
+                          pure release
+    componentsAndRequirements <- extractComponents userId directory
+                                    (namespace, packageName)
+                                    (flattenPackageDescription genDesc)
+                                    (release ^. #releaseId)
+                                    (package ^. #name)
+    let components = fmap fst componentsAndRequirements
+    let requirements = foldMap snd componentsAndRequirements
+    pure (package, release, components, requirements)
+  case result of
+    Left err -> error $ "Encountered error during import: " <> show err
+    Right (package, release, components, requirements) -> do
+      let rawCategoryField = T.pack $ Cabal.fromShortText $ genDesc ^. (#packageDescription % #category)
+      let categoryList = fmap (UserPackageCategory . T.stripStart) (T.splitOn "," rawCategoryField)
+      Update.publishPackage requirements components release categoryList package
 
 importPackageDeps :: (MonadIO m) => PackageName -> FilePath -> DBT m (Map PackageName (Set PackageName))
 importPackageDeps pName directory = do

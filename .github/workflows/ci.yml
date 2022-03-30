@@ -8,8 +8,22 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
-
     - uses: actions/checkout@v2.3.1
 
     - name: Set up Haskell
@@ -39,3 +53,13 @@ jobs:
         make build
     - name: Test
       run: make test
+    env:
+      FLORA_DB_DATABASE: flora_test
+      FLORA_DB_PASSWORD: postgres
+      FLORA_DB_POOL_CONNECTIONS: 10
+      FLORA_DB_POST: 5432
+      FLORA_DB_SUB_POOLS: 10
+      FLORA_DB_TIMEOUT: 10
+      FLORA_DB_USER: postgres
+      FLORA_LOGGING_DESTINATION: stdout
+      FLORA_HTTP_PORT: 8083

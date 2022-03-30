@@ -1,3 +1,4 @@
+create extension if not exists pg_trgm;
 -- A package is comprised of metadata and has many releases.
 create table if not exists packages (
   namespace text not null,
@@ -9,3 +10,5 @@ create table if not exists packages (
   updated_at timestamptz not null,
   primary key(namespace, name)
 );
+
+create index package_name_namespace_trgm on packages USING GIN (name gin_trgm_ops);

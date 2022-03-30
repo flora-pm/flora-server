@@ -6,7 +6,8 @@ module Flora.Model.Package.Query where
 import Control.Monad.IO.Class (MonadIO)
 import Data.Text (Text)
 import Data.Vector (Vector)
-import Database.PostgreSQL.Entity (_select, _selectWhere, selectById)
+import Database.PostgreSQL.Entity (_select, _selectWhere, selectById,
+                                   selectManyByField)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Select), query, queryOne,
                                        query_)
 import Database.PostgreSQL.Entity.Types (Field, field)
@@ -15,13 +16,16 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact (DBT)
 import Distribution.Types.Version (Version)
 import Flora.Model.Category (Category, CategoryId)
-import Flora.Model.Package (Namespace, Package, PackageName)
+import Flora.Model.Package (Namespace (..), Package, PackageName)
 import Flora.Model.Package.Component (ComponentId, ComponentType,
                                       PackageComponent)
 import Flora.Model.Release (ReleaseId)
 
 getAllPackages :: (MonadIO m) => DBT m (Vector Package)
 getAllPackages = query_ Select (_select @Package)
+
+getPackagesByNamespace :: Namespace -> DBT IO (Vector Package)
+getPackagesByNamespace namespace = selectManyByField @Package [field| namespace |] (Only namespace)
 
 getPackageByNamespaceAndName :: (MonadIO m) => Namespace -> PackageName -> DBT m (Maybe Package)
 getPackageByNamespaceAndName namespace name = queryOne Select
@@ -111,8 +115,6 @@ getPackageCategories namespace packageName = query Select
       and pc.package_name = ?
   |] (namespace, packageName)
 
-  -- joinSelectOneByField @Category @PackageCategory [field| category_id |] [field| package_namespace |] packageId
-
 getPackagesFromCategoryWithLatestVersion :: MonadIO m
                                          => CategoryId
                                          -> DBT m (Vector (Namespace, PackageName, Text, Version))
@@ -126,3 +128,51 @@ getPackagesFromCategoryWithLatestVersion categoryId = query Select q (Only categ
       inner join categories as c on c.category_id = pc.category_id
       where c.category_id = ?
       |]
+
+searchPackage :: Text -> DBT IO (Vector (Namespace, PackageName, Text, Version, Float))
+searchPackage searchString = query Select [sql|
+  SELECT  lv."namespace"
+        , lv."name"
+        , lv."synopsis"
+        , lv."version"
+        , word_similarity(lv.name, ?) as rating
+  FROM latest_versions as lv
+  WHERE ? <% lv.name
+  GROUP BY
+      lv."namespace"
+    , lv."name"
+    , lv."synopsis"
+    , lv."version"
+  ORDER BY rating desc, count(lv."namespace") desc, lv.name asc;
+  |] (searchString, searchString)
+
+listAllPackages :: DBT IO (Vector (Namespace, PackageName, Text, Version, Float))
+listAllPackages = query_ Select [sql|
+  SELECT  lv."namespace"
+        , lv."name"
+        , lv."synopsis"
+        , lv."version"
+        , (1.0::real) as rating
+  FROM latest_versions as lv
+  GROUP BY
+      lv."namespace"
+    , lv."name"
+    , lv."synopsis"
+    , lv."version"
+  ORDER BY rating desc, count(lv."namespace") desc, lv.name asc;
+  |]
+
+searchPackageByNamespace :: Namespace -> Text -> DBT IO (Vector (Namespace, PackageName, Text, Float))
+searchPackageByNamespace (Namespace namespace) searchString = query Select [sql|
+  SELECT  p."namespace"
+        , p."name"
+        , p."synopsis"
+        , word_similarity(p.name, ?) as rating
+  FROM packages as p
+  WHERE ? <% p.name
+    AND p."namespace" = ?
+  GROUP BY
+      p."namespace"
+    , p."name"
+  ORDER BY rating desc, count(p."namespace") desc, p.name asc;
+  |] (searchString, searchString, namespace)

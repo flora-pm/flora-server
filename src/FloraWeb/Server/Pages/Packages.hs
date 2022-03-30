@@ -25,18 +25,23 @@ import Flora.Model.Release
 import qualified Flora.Model.Release.Query as Query
 import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth
+import FloraWeb.Server.Util (redirect)
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Packages as Packages
 import FloraWeb.Types
-import Servant (ServerT)
+import Servant (Header, Headers, NoContent, ServerT)
 
 server :: ServerT Routes FloraPageM
 server = Routes'
-  { show = showHandler
+  { index = indexHandler
+  , show = showHandler
   , showVersion = showVersionHandler
   }
+
+indexHandler :: FloraPageM (Headers '[Header "Location" Text] NoContent)
+indexHandler = pure $ redirect "/"
 
 showHandler :: Text -> Text -> FloraPageM (Html ())
 showHandler namespaceText nameText = do

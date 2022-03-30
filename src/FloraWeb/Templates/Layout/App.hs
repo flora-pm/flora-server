@@ -101,10 +101,10 @@ navbarSearch = do
   flag <- asks displayNavbarSearch
   if flag
   then do
-    form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "#"] $ do
+    form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "/search", method_ "GET"] $ do
       div_ [class_ "flex items-center py-2"] $ do
         input_ [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
-               , id_ "packageName", type_ "text", placeholder_ "Search a package"
+               , id_ "packageName", type_ "search", name_ "q", placeholder_ "Search a package"
                ]
     else pure mempty
 
@@ -160,7 +160,7 @@ footer =
 
       div_ [class_ "mt-8 md:mt-0 md:order-1"] $
         p_ [class_ "text-center text-base text-black dark:text-gray-400"]
-          "© 2021 Flora.pm. All rights reserved. Licensed under BSD-3-Clause."
+          "© 2022 Flora.pm. All rights reserved. Licensed under BSD-3-Clause."
 
 -- Helpers
 
