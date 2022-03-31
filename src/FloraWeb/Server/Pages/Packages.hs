@@ -23,15 +23,16 @@ import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
 import Flora.Model.Release
 import qualified Flora.Model.Release.Query as Query
+import qualified Flora.Search as Search
 import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth
-import FloraWeb.Server.Util (redirect)
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Error
 import qualified FloraWeb.Templates.Pages.Packages as Packages
+import qualified FloraWeb.Templates.Pages.Search as Search
 import FloraWeb.Types
-import Servant (Header, Headers, NoContent, ServerT)
+import Servant (ServerT)
 
 server :: ServerT Routes FloraPageM
 server = Routes'
@@ -40,8 +41,15 @@ server = Routes'
   , showVersion = showVersionHandler
   }
 
-indexHandler :: FloraPageM (Headers '[Header "Location" Text] NoContent)
-indexHandler = pure $ redirect "/"
+indexHandler :: FloraPageM (Html ())
+indexHandler = do
+  session <- getSession
+  templateDefaults <- fromSession session defaultTemplateEnv
+  results <- Search.listAllPackages
+  let (templateEnv :: TemplateEnv) =
+        templateDefaults & #displayNavbarSearch .~ False
+  render templateEnv $ Search.showAllPackages results
+
 
 showHandler :: Text -> Text -> FloraPageM (Html ())
 showHandler namespaceText nameText = do

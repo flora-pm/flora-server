@@ -1,7 +1,6 @@
 module FloraWeb.Routes.Pages.Packages
   ( Routes
   , Routes'(..)
-  , GetRedirect
   ) where
 
 import Data.Text
@@ -12,11 +11,8 @@ import Servant.HTML.Lucid
 
 type Routes = NamedRoutes Routes'
 
-type GetRedirect
-  = Verb 'GET 301 '[HTML] (Headers '[Header "Location" Text] NoContent)
-
 data Routes' mode = Routes'
-  { index :: mode :- GetRedirect
+  { index :: mode :- Get '[HTML] (Html ())
   , show  :: mode :-  Capture "organisation" Text
              :> Capture "package" Text
              :> Get '[HTML] (Html ())

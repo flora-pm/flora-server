@@ -93,7 +93,7 @@ navBar = do
         div_ [id_ "navbar-right", class_ "hidden sm:flex justify-end"] $ do
           a_ [href_ "/about", class_ (elementClass <> isActive aboutNav)] "About Flora"
           a_ [href_ "/categories",      class_ (elementClass <> isActive packagesNav)] "Categories"
-          a_ [href_ "#",      class_ (elementClass <> isActive packagesNav)] "Packages"
+          a_ [href_ "/packages",      class_ (elementClass <> isActive packagesNav)] "Packages"
           userDropdown elementClass
 
 navbarSearch :: FloraHTML
