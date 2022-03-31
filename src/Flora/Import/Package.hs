@@ -101,8 +101,9 @@ importPackage userId packageName directory = do
   pTraceShowM packageDeps
   Vector.forM packageDeps
               (\packageSet ->
-                let cabalPath = directory <> T.unpack (display packageName) <> ".cabal"
-                 in importCabal userId (Set.findMin packageSet) cabalPath directory)
+                let package = Set.findMin packageSet
+                    cabalPath = directory <> T.unpack (display package) <> ".cabal"
+                 in importCabal userId package cabalPath directory)
 
 -- 1. Load the .cabal file at the given path
 -- 2. Translate it to a GenericPackageDescription
@@ -126,8 +127,14 @@ importCabal userId packageName cabalFile directory = do
                          Nothing -> do
                            logImportMessage (namespace, packageName) $
                               "\"" <> display packageName <> "\" could not be found in the database."
+                           logImportMessage (namespace, packageName) $
+                              "Creating new package for " <> display packageName <> "."
                            cabalToPackage userId (genDesc ^. #packageDescription) namespace packageName
-                         Just package -> pure package
+                         Just package -> do
+                           logImportMessage (namespace, packageName) $
+                              "Package " <> display packageName <> "exists."
+                           pure package
+    liftIO $ T.putStrLn $ "[+] Package " <> display packageName <> " in importCabal"
     release <- lift $
       Query.getReleaseByVersion (package ^. #packageId)
                                 ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))

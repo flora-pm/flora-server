@@ -30,12 +30,14 @@ publishPackage :: (MonadIO m)
                -> Package
                -> DBT m Package
 publishPackage requirements components release userPackageCategories package = do
+  liftIO $ T.putStrLn $ "[+] Package " <> display (package ^. #name) <> ": "
   result <- Query.getPackageByNamespaceAndName (package ^. #namespace) (package ^. #name)
   case result of
     Just existingPackage -> do
       liftIO $ T.putStrLn $ "[+] Package " <> display (package ^. #name) <> " already exists."
       publishForExistingPackage requirements components release existingPackage
     Nothing -> do
+      liftIO $ T.putStrLn $ "[+] Package " <> display (package ^. #name) <> " does not exist."
       publishForNewPackage requirements components release userPackageCategories package
 
 publishForExistingPackage :: (MonadIO m) => [Requirement] -> [PackageComponent] -> Release -> Package -> DBT m Package
