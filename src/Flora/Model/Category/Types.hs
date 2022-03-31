@@ -45,8 +45,7 @@ newtype PackageCategoryId = PackageCategoryId { getPackageCategoryId :: UUID }
 
 data PackageCategory = PackageCategory
   { packageCategoryId :: PackageCategoryId
-  , packageNamespace  :: Namespace
-  , packageName       :: PackageName
+  , packageId         :: PackageId
   , categoryId        :: CategoryId
   }
   deriving stock (Eq, Generic, Show)

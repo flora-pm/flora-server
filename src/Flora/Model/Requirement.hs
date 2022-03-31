@@ -26,10 +26,8 @@ data Requirement = Requirement
     requirementId      :: RequirementId
   , -- | Package component that depends on this requirement
     packageComponentId :: ComponentId
-    -- | Package that is being depended on
-  , packageNamespace   :: Namespace
-
-  , packageName        :: PackageName
+  , -- | Package that is being depended on
+    packageId          :: PackageId
   , -- | The human-readable version range expression of this requirement
     requirement        :: Text
   , -- | Additional metadata, like flags

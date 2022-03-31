@@ -1,16 +1,12 @@
 -- A release belongs to a package, and contains multiple components.
 create table if not exists releases (
   release_id uuid primary key,
-  package_name text not null,
-  package_namespace text not null,
+  package_id uuid references packages,
   version text not null,
   archive_checksum text not null,
   created_at timestamptz not null,
-  updated_at timestamptz not null,
-
-  constraint fk_package
-    foreign key (package_name, package_namespace)
-      references packages(name, namespace)
+  updated_at timestamptz not null
 );
 
-create unique index on releases(package_name, package_namespace, version);
+create index on releases(package_id);
+create unique index on releases(package_id, version);

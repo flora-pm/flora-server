@@ -40,7 +40,7 @@ publishPackage requirements components release userPackageCategories package = d
 
 publishForExistingPackage :: (MonadIO m) => [Requirement] -> [PackageComponent] -> Release -> Package -> DBT m Package
 publishForExistingPackage requirements components release package = do
-  result <- Query.getReleaseByVersion (package ^. #namespace, package ^. #name) (release ^. #version)
+  result <- Query.getReleaseByVersion (package ^. #packageId) (release ^. #version)
   case result of
     Nothing -> do
       liftIO $ T.putStrLn $ "[+] Inserting the following components: "
@@ -72,5 +72,5 @@ publishForNewPackage requirements components release userPackageCategories packa
   Update.refreshDependents
   Update.refreshLatestVersions
   forM_ newCategories $
-    \(NormalisedPackageCategory categoryName) -> Update.addToCategoryByName (package ^. #namespace, package ^. #name) categoryName
+    \(NormalisedPackageCategory categoryName) -> Update.addToCategoryByName (package ^. #packageId) categoryName
   pure package

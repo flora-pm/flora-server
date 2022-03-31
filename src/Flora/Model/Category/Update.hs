@@ -14,16 +14,16 @@ import Flora.Model.Package.Types
 insertCategory :: (MonadIO m) => Category -> DBT m ()
 insertCategory category = insert @Category category
 
-addToCategory :: (MonadIO m) => (Namespace, PackageName) -> CategoryId -> DBT m ()
-addToCategory (namespace, packageName) categoryId = do
+addToCategory :: (MonadIO m) => PackageId -> CategoryId -> DBT m ()
+addToCategory packageId categoryId = do
   packageCategoryId <- PackageCategoryId <$> liftIO UUID.nextRandom
-  insert @PackageCategory (packageCategoryId, namespace, packageName, categoryId)
+  insert @PackageCategory (packageCategoryId, packageId, categoryId)
 
-addToCategoryByName :: (MonadIO m)  => (Namespace, PackageName) -> Text -> DBT m ()
-addToCategoryByName (namespace, packageName) categoryName = do
+addToCategoryByName :: (MonadIO m) => PackageId -> Text -> DBT m ()
+addToCategoryByName packageId categoryName = do
   mCategory <- Query.getCategoryByName categoryName
   case mCategory of
     Nothing -> do
       liftIO $ T.putStrLn ("Could not find category " <> categoryName)
     Just Category{categoryId} -> do
-      addToCategory (namespace, packageName) categoryId
+      addToCategory packageId categoryId

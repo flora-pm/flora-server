@@ -35,7 +35,8 @@ getPackagesFromCategorySlug slug = do
     Just Category{categoryId} -> do
       liftIO $ T.putStrLn "Category found!"
       query Select [sql|
-        select  p.namespace
+        select  p.package_id
+              , p.namespace
               , p.name
               , p.synopsis
               , p.metadata
@@ -43,7 +44,7 @@ getPackagesFromCategorySlug slug = do
               , p.created_at
               , p.updated_at
         from packages as p
-        inner join package_categories as pc on (p.namespace = pc.package_namespace and p.name = pc.package_name)
+        inner join package_categories as pc on (p.namespace = pc.package_id)
         where pc.category_id = ?
         |] (Only categoryId)
 

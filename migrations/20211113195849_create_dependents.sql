@@ -15,13 +15,14 @@
 
 create materialized view dependents (
   name,
-  namespace) as
-  select distinct p4.name as name, p4.namespace as namespace
+  namespace,
+  dependent_id) as
+  select distinct p4.name as name, p4.namespace as namespace, p0.package_id as dependent_id
   from packages as p0
-    inner join "releases" as r1 on (r1."package_namespace" = p0."namespace" and r1."package_name" = p0."name")
+    inner join "releases" as r1 on r1."package_id" = p0."package_id"
     inner join "package_components" as pc2 on pc2."release_id" = r1."release_id"
     inner join "requirements" as r3 on r3."package_component_id" = pc2."package_component_id"
-    inner join "packages" as p4 on (r3."package_namespace" = p4."namespace" and r3."package_name" = p4."name");
+    inner join "packages" as p4 on p4."package_id" = r3."package_id";
 
-create index on dependents (name, namespace);
-create unique index on dependents (name, namespace);
+create index on dependents (name, dependent_id);
+create unique index on dependents (name, namespace, dependent_id);

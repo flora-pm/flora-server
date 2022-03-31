@@ -33,6 +33,7 @@ spec = testThese "packages"
   , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
   , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
   , testThis "Searching for \"base\" returns the correct results" testSearchingForBase
+  , testThis "@haskell/bytestring has the correct number of dependents" testBytestringDependents
   ]
 
 testGetPackageById :: TestM ()
@@ -53,7 +54,7 @@ testInsertContainers = do
           assertFailure "Couldn't find @haskell/containers despite being inserted"
           undefined
         Just package -> do
-          releases <- Query.getReleases (package ^. #namespace, package ^. #name)
+          releases <- Query.getReleases (package ^. #packageId)
           let latestRelease =  maximumBy (compare `on` version) releases
           Query.getRequirements (latestRelease ^. #releaseId)
     assertEqual (Set.fromList [PackageName "base", PackageName "deepseq", PackageName "array"])
@@ -76,8 +77,8 @@ testThatSemigroupsIsInMathematicsAndDataStructures :: TestM ()
 testThatSemigroupsIsInMathematicsAndDataStructures = do
   liftDB $ importPackage (hackageUser ^. #userId) (PackageName "semigroups") "./test/fixtures/Cabal/"
   liftIO $ threadDelay 10000
-  Just _semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
-  result <- liftDB $ Query.getPackageCategories (Namespace "hackage") (PackageName "semigroups")
+  Just semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
+  result <- liftDB $ Query.getPackageCategories (semigroups ^. #packageId)
   assertEqual (Set.fromList ["data-structures", "maths"]) (Set.fromList $ slug <$> V.toList result)
 
 testCorrectNumberInHaskellNamespace :: TestM ()
@@ -93,5 +94,17 @@ testSearchingForBase = do
   assertEqual (Vector.fromList [(PackageName "base", 1)])
               (result <&> (,) <$> view _2 <*> view _5)
 
-testPackageSearchResultOrdering :: TestM ()
-testPackageSearchResultOrdering = undefined
+testBytestringDependents :: TestM ()
+testBytestringDependents = do
+  liftDB $ importCabal (hackageUser ^. #userId) (PackageName "semigroups") "./test/fixtures/Cabal/semigroups.cabal" "./test/fixtures/Cabal/"
+  results <- liftDB $ Query.getPackageDependents (Namespace "haskell") (PackageName "bytestring")
+  assertEqual 8
+              (Vector.length results)
+
+testBytestringDependencies :: TestM ()
+testBytestringDependencies = do
+  bytestring <- liftDB $ fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "bytestring")
+  releases <- liftDB $ Query.getReleases (bytestring ^. #packageId)
+  let latestRelease =  maximumBy (compare `on` version) releases
+  latestReleasedependencies <- liftDB $ Query.getRequirements (latestRelease ^. #releaseId)
+  assertEqual 4 (Vector.length latestReleasedependencies)

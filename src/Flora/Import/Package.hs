@@ -129,11 +129,11 @@ importCabal userId packageName cabalFile directory = do
                            cabalToPackage userId (genDesc ^. #packageDescription) namespace packageName
                          Just package -> pure package
     release <- lift $
-      Query.getReleaseByVersion (package ^. #namespace, package ^. #name)
+      Query.getReleaseByVersion (package ^. #packageId)
                                 ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
                 >>= \case
                         Nothing -> do
-                          r <- createRelease (package ^. #namespace) (package ^. #name)
+                          r <- createRelease (package ^. #packageId)
                                              ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
                           logImportMessage (namespace, packageName) $ "Creating Release "
                               <> display (r ^. #releaseId) <> " for package " <> display (package ^. #name)
@@ -365,9 +365,8 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
       requirementId <- RequirementId <$> liftIO UUID.nextRandom
       let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
       let metadata = RequirementMetadata{ flag = Nothing }
-      let reqNamespace = package ^. #namespace
-      let reqName = package ^. #name
-      let req = Requirement{requirementId, packageComponentId, packageNamespace=reqNamespace, packageName=reqName, requirement, metadata}
+      let packageId = package ^. #packageId
+      let req = Requirement{requirementId, packageId, packageComponentId, requirement, metadata}
       pure [req]
     Nothing | (dependentNamespace, dependentPackageName) == (namespace, name) -> do
               -- Checking if the package depends on itself
@@ -376,8 +375,7 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
                 requirementId <- RequirementId <$> liftIO UUID.nextRandom
                 let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
                 let metadata = RequirementMetadata{ flag = Nothing }
-                let packageNamespace = dependentNamespace
-                let packageName = dependentPackageName
+                let packageId = PackageId UUID.nil
                 let req = Requirement{..}
                 pure [req]
             | otherwise -> do
@@ -387,11 +385,10 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
                 let cabalPath = directory <> T.unpack (display name) <> ".cabal"
                 package <- lift $ importCabal userId name cabalPath directory
                 requirementId <- RequirementId <$> liftIO UUID.nextRandom
-                let pNs = package ^. #namespace
-                let pN = package ^. #name
+                let packageId = package ^. #packageId
                 let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
                 let metadata = RequirementMetadata{ flag = Nothing }
-                let req = Requirement{requirementId, packageComponentId, packageNamespace=pNs, packageName=pN, requirement, metadata}
+                let req = Requirement{requirementId, packageComponentId, packageId, requirement, metadata}
                 pure [req]
 
 createComponent :: MonadIO m => ReleaseId -> CanonicalComponent -> ExceptT ImportError (DBT m) PackageComponent
@@ -399,8 +396,8 @@ createComponent releaseId canonicalForm = do
   componentId <- ComponentId <$> liftIO UUID.nextRandom
   pure PackageComponent{..}
 
-createRelease :: (MonadIO m) => Namespace -> PackageName -> Version -> DBT m Release
-createRelease packageNamespace packageName version = do
+createRelease :: (MonadIO m) => PackageId -> Version -> DBT m Release
+createRelease packageId version = do
   releaseId <- ReleaseId <$> liftIO UUID.nextRandom
   timestamp <- liftIO getCurrentTime
   let archiveChecksum = mempty
@@ -416,6 +413,7 @@ cabalToPackage :: (MonadIO m)
                -> ExceptT ImportError (DBT m) Package
 cabalToPackage ownerId packageDesc namespace name = do
   timestamp <- liftIO getCurrentTime
+  packageId <- PackageId <$> liftIO UUID.nextRandom
   sourceRepos <- getRepoURL (PackageName $ display $ packageDesc ^. (#package % #pkgName)) (packageDesc ^. #sourceRepos)
   let license = Cabal.license packageDesc
   let homepage = Just (display $ packageDesc ^. #homepage)

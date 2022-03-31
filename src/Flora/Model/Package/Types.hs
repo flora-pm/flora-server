@@ -8,6 +8,7 @@ import Data.Data
 import Data.Text (Text, unpack)
 import Data.Text.Display
 import Data.Time (UTCTime)
+import Data.UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple.FromField (FromField (..))
@@ -25,6 +26,14 @@ import Text.Regex.Pcre2
 
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
+import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
+
+newtype PackageId = PackageId { getPackageId :: UUID }
+  deriving stock (Generic)
+  deriving (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+    via UUID
+  deriving Display
+    via ShowInstance UUID
 
 newtype PackageName = PackageName Text
   deriving stock (Show, Generic)
@@ -62,7 +71,8 @@ parseNamespace txt =
   else Nothing
 
 data Package = Package
-  { namespace :: Namespace
+  { packageId :: PackageId
+  , namespace :: Namespace
   , name      :: PackageName
   , synopsis  :: Text
   , metadata  :: PackageMetadata
@@ -75,8 +85,9 @@ data Package = Package
 
 instance Entity Package where
   tableName = "packages"
-  primaryKey = [field| (namespace, name) |]
-  fields = [ [field| namespace |]
+  primaryKey = [field| package_id |]
+  fields = [ [field| package_id |]
+           , [field| namespace |]
            , [field| name |]
            , [field| synopsis |]
            , [field| metadata :: jsonb |]
@@ -98,8 +109,9 @@ data PackageMetadata = PackageMetadata
 
 
 data Dependent = Dependent
-  { name      :: Text
-  , namespace :: Text
+  { name        :: Text
+  , namespace   :: Text
+  , dependentId :: PackageId
   }
   deriving stock (Eq, Show,Generic)
   deriving anyclass (FromRow, ToRow)

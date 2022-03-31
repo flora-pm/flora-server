@@ -6,8 +6,8 @@ module Flora.Model.Package.Query where
 import Control.Monad.IO.Class (MonadIO)
 import Data.Text (Text)
 import Data.Vector (Vector)
-import Database.PostgreSQL.Entity (_select, _selectWhere, selectById,
-                                   selectManyByField)
+import Database.PostgreSQL.Entity (_select, _selectWhere, joinSelectOneByField,
+                                   selectById, selectManyByField)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Select), query, queryOne,
                                        query_)
 import Database.PostgreSQL.Entity.Types (Field, field)
@@ -16,7 +16,8 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact (DBT)
 import Distribution.Types.Version (Version)
 import Flora.Model.Category (Category, CategoryId)
-import Flora.Model.Package (Namespace (..), Package, PackageName)
+import Flora.Model.Category.Types (PackageCategory)
+import Flora.Model.Package (Namespace (..), Package, PackageId, PackageName)
 import Flora.Model.Package.Component (ComponentId, ComponentType,
                                       PackageComponent)
 import Flora.Model.Release (ReleaseId)
@@ -35,35 +36,36 @@ getPackageByNamespaceAndName namespace name = queryOne Select
 -- | This function is to be used when in Hackage Compatibility Mode.
 getHaskellOrHackagePackage :: (MonadIO m) => PackageName -> DBT m (Maybe Package)
 getHaskellOrHackagePackage packageName = queryOne Select [sql|
-  SELECT DISTINCT p."namespace",
-                  p."name",
-                  p."synopsis",
-                  p."metadata",
-                  p."owner_id",
-                  p."created_at",
-                  p."updated_at"
+  SELECT DISTINCT   p."package_id"
+                  , p."namespace"
+                  , p."name"
+                  , p."synopsis"
+                  , p."metadata"
+                  , p."owner_id"
+                  , p."created_at"
+                  , p."updated_at"
   FROM "packages" AS p
   WHERE p."namespace" IN ('haskell', 'hackage')
     AND p."name" = ?
   |] (Only packageName)
 
 -- | Remove the manual fields and use pg-entity
-getPackageDependents :: MonadIO m => Namespace
+getPackageDependents :: MonadIO m
+                     => Namespace
                      -> PackageName
                      -> DBT m (Vector Package)
 getPackageDependents namespace name  = query Select [sql|
-  SELECT DISTINCT p."namespace",
-                  p."name",
-                  p."synopsis",
-                  p."metadata",
-                  p."owner_id",
-                  p."created_at",
-                  p."updated_at"
-  FROM   "packages" AS p
-         INNER JOIN "dependents" AS dep
-                 ON (p."namespace" = dep."namespace"
-                     AND p."name" = dep."name"
-                    )
+  SELECT DISTINCT   p."package_id"
+                  , p."namespace"
+                  , p."name"
+                  , p."synopsis"
+                  , p."metadata"
+                  , p."owner_id"
+                  , p."created_at"
+                  , p."updated_at"
+  FROM "packages" AS p
+        INNER JOIN "dependents" AS dep
+                ON p."package_id" = dep."dependent_id"
   WHERE  dep."namespace" = ?
     AND  dep."name" = ?
   |] (namespace, name)
@@ -95,25 +97,16 @@ getRequirements :: MonadIO m
 getRequirements relId = query Select
   [sql|
     select dependency.namespace, dependency.name, req.requirement from requirements as req
-     inner join packages as dependency on dependency.namespace = req.package_namespace
-                                         and dependency.name = req.package_name
+     inner join packages as dependency on dependency.package_id = req.package_id
      inner join package_components as pc ON pc.package_component_id = req.package_component_id
      inner join releases as rel on rel.release_id = pc.release_id
-   where rel."release_id" = ?
+    where rel."release_id" = ?
   |] (Only relId)
 
 getPackageCategories :: MonadIO m
-                     => Namespace
-                     -> PackageName
+                     => PackageId
                      -> DBT m (Vector Category)
-getPackageCategories namespace packageName = query Select
-  [sql|
-    select c.category_id, c.name, c.slug, c.synopsis
-    from categories as c
-    inner join package_categories as pc on pc.category_id = c.category_id
-    where pc.package_namespace = ?
-      and pc.package_name = ?
-  |] (namespace, packageName)
+getPackageCategories packageId = joinSelectOneByField @Category @PackageCategory [field| category_id |] [field| package_id |] packageId
 
 getPackagesFromCategoryWithLatestVersion :: MonadIO m
                                          => CategoryId
@@ -121,11 +114,9 @@ getPackagesFromCategoryWithLatestVersion :: MonadIO m
 getPackagesFromCategoryWithLatestVersion categoryId = query Select q (Only categoryId)
   where
     q = [sql|
-      select lv.namespace, lv.name, lv.synopsis, lv.version
-      from latest_versions as lv
-      inner join package_categories as pc on pc.package_namespace = lv.namespace
-                                          and pc.package_name = lv.name
-      inner join categories as c on c.category_id = pc.category_id
+      select lv.namespace, lv.name, lv.synopsis, lv.version from latest_versions as lv
+        inner join package_categories as pc on pc.package_id = lv.package_id
+        inner join categories as c on c.category_id = pc.category_id
       where c.category_id = ?
       |]
 
