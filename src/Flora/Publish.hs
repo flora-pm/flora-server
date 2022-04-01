@@ -4,9 +4,9 @@ import Control.Monad
 import Data.Text.Display
 import Database.PostgreSQL.Transact
 import Optics.Core
-
 import Control.Monad.IO.Class
 import qualified Data.Text.IO as T
+
 import Flora.Import.Categories.Tuning
 import qualified Flora.Import.Categories.Tuning as Tuning
 import qualified Flora.Model.Category.Update as Update

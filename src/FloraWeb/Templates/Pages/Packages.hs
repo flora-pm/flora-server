@@ -126,7 +126,9 @@ renderDependency (namespace, name, version) = do
   li_ [class_ "dependency"] $ do
     a_ [href_ resource] (toHtml name)
     toHtmlRaw @Text "&nbsp;"
-    toHtml version
+    if version == ">=0"
+    then ""
+    else toHtml version
 
 renderCategory :: Category -> FloraHTML
 renderCategory Category{name, slug} = do

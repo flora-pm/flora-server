@@ -132,7 +132,7 @@ importCabal userId packageName cabalFile directory = do
                            cabalToPackage userId (genDesc ^. #packageDescription) namespace packageName
                          Just package -> do
                            logImportMessage (namespace, packageName) $
-                              "Package " <> display packageName <> "exists."
+                              "Package " <> display packageName <> " exists."
                            pure package
     liftIO $ T.putStrLn $ "[+] Package " <> display packageName <> " in importCabal"
     release <- lift $
