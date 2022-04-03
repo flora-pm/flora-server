@@ -35,6 +35,11 @@ For ease of development, a `shell.nix` file is provided. It brings with it syste
 To jump into the development environment, use `make nix-shell`. It is impure by default, so your editor and development
 tools will still be accessible.
 
+### System dependencies
+
+* libpq
+* Soufflé Datalog
+
 ### Flora server
 
 Configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
