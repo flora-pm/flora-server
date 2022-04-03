@@ -40,7 +40,7 @@ runFlora = bracket getFloraEnv shutdownFlora $ \env -> do
   when (isJust $ env ^. (#logging % #sentryDSN)) (blueMessage "📋 Connected to Sentry endpoint")
   when (env ^. (#logging % #prometheusEnabled)) $ do
     blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
-    Prometheus.register ghcMetrics
+    void $ Prometheus.register ghcMetrics
     void $ Prometheus.register procMetrics
   let withLogger = Logging.makeLogger (env ^. #logging ^. #logger)
   withLogger $ \appLogger ->

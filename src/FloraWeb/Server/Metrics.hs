@@ -24,7 +24,7 @@ prometheusMiddleware environment LoggingEnv{prometheusEnabled} =
     config = PrometheusSettings ["metrics"] False True
     instrument :: Application -> Application
     instrument =
-      instrumentHandlerValueWithFilter (show environment) P.ignoreRawResponses normalizeWaiRequestRoute
+      instrumentHandlerValueWithFilter environment P.ignoreRawResponses normalizeWaiRequestRoute
 
 normalizeWaiRequestRoute ::Request -> Text
 normalizeWaiRequestRoute req = pathInfo
@@ -32,13 +32,13 @@ normalizeWaiRequestRoute req = pathInfo
     pathInfo :: Text
     pathInfo = "/" <> T.intercalate "/" (Wai.pathInfo req)
 
-countRoute :: Text
-           -> Text       -- ^ handler label
+countRoute :: Text -- ^ handler
            -> Text -- ^ method
            -> Text -- ^ status
+           -> Text -- ^ environment
            -> IO ()
-countRoute environment handler method status =
-  P.withLabel routeCounter (handler, method, status, environment) P.incCounter
+countRoute handler method status_code environment =
+  P.withLabel routeCounter (handler, method, status_code, environment) P.incCounter
 
 routeCounter :: P.Vector P.Label4 P.Counter
 routeCounter = P.unsafeRegister $ P.vector ("handler", "method", "status_code", "environment")
@@ -48,7 +48,7 @@ routeCounter = P.unsafeRegister $ P.vector ("handler", "method", "status_code", 
 {-# NOINLINE routeCounter #-}
 
 instrumentHandlerValueWithFilter ::
-  String
+  DeploymentEnv
   -> (Wai.Response -> Maybe Wai.Response) -- ^ Response filter
   -> (Wai.Request -> Text) -- ^ The function used to derive the "handler" value in Prometheus
   -> Wai.Application -- ^ The app to instrument
@@ -61,7 +61,7 @@ instrumentHandlerValueWithFilter environment resFilter f app req respond = do
       Just res' -> do
         end <- getTime Monotonic
         let method = decodeUtf8 (Wai.requestMethod req)
-        let status = T.pack (show (HTTP.statusCode (Wai.responseStatus res')))
-        countRoute (f req) method status (display environment)
-        P.observeSeconds (f req) (Just method) (Just status) start end
+        let status_code = display (show (HTTP.statusCode (Wai.responseStatus res')))
+        countRoute (f req) method status_code (display environment)
+        P.observeSeconds (f req) (Just method) (Just status_code) start end
     respond res
