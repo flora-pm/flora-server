@@ -1,11 +1,11 @@
 module Flora.Publish where
 
 import Control.Monad
+import Control.Monad.IO.Class
 import Data.Text.Display
+import qualified Data.Text.IO as T
 import Database.PostgreSQL.Transact
 import Optics.Core
-import Control.Monad.IO.Class
-import qualified Data.Text.IO as T
 
 import Flora.Import.Categories.Tuning
 import qualified Flora.Import.Categories.Tuning as Tuning
