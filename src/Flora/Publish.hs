@@ -22,13 +22,14 @@ import Flora.Model.Requirement (Requirement)
 {- TODO: Audit log of the published package
    TODO: Publish artifacts
 -}
-publishPackage :: (MonadIO m)
-               => [Requirement]
-               -> [PackageComponent]
-               -> Release
-               -> [UserPackageCategory]
-               -> Package
-               -> DBT m Package
+publishPackage ::
+  (MonadIO m) =>
+  [Requirement] ->
+  [PackageComponent] ->
+  Release ->
+  [UserPackageCategory] ->
+  Package ->
+  DBT m Package
 publishPackage requirements components release userPackageCategories package = do
   liftIO $ T.putStrLn $ "[+] Package " <> display (package ^. #name) <> ": "
   result <- Query.getPackageByNamespaceAndName (package ^. #namespace) (package ^. #name)
@@ -45,12 +46,17 @@ publishForExistingPackage requirements components release package = do
   result <- Query.getReleaseByVersion (package ^. #packageId) (release ^. #version)
   case result of
     Nothing -> do
-      liftIO $ T.putStrLn $ "[+] Inserting the following components: "
-                         <> display (fmap canonicalForm components) <> " of " <> display (package ^. #name)
-                         <> " v" <> display (release ^. #version)
+      liftIO $
+        T.putStrLn $
+          "[+] Inserting the following components: "
+            <> display (fmap canonicalForm components)
+            <> " of "
+            <> display (package ^. #name)
+            <> " v"
+            <> display (release ^. #version)
       Update.insertRelease release
-      forM_ components Update.insertPackageComponent
-      forM_ requirements Update.insertRequirement
+      Update.bulkInsertPackageComponents components
+      Update.bulkInsertRequirements requirements
       Update.refreshDependents
       Update.refreshLatestVersions
       pure package
@@ -64,13 +70,18 @@ publishForNewPackage requirements components release userPackageCategories packa
   liftIO $ T.putStrLn $ "[+] Normalising user-supplied categories: " <> display userPackageCategories
   newCategories <- liftIO $ normalisedCategories <$> Tuning.normalise userPackageCategories
   liftIO $ T.putStrLn $ "[+] Inserting package " <> display (package ^. #name)
-  liftIO $ T.putStrLn $ "[+] Inserting the following components: of "
-                      <> display (package ^. #name) <> " v" <> display (release ^. #version)
-                      <> ": " <> display (fmap canonicalForm components)
+  liftIO $
+    T.putStrLn $
+      "[+] Inserting the following components: of "
+        <> display (package ^. #name)
+        <> " v"
+        <> display (release ^. #version)
+        <> ": "
+        <> display (fmap canonicalForm components)
   Update.insertPackage package
   Update.insertRelease release
-  forM_ components Update.insertPackageComponent
-  forM_ requirements Update.insertRequirement
+  Update.bulkInsertPackageComponents components
+  Update.bulkInsertRequirements requirements
   Update.refreshDependents
   Update.refreshLatestVersions
   forM_ newCategories $

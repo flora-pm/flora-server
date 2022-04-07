@@ -7,4 +7,3 @@ sudo apt -y install postgresql-14 g++ mcpp
 
 wget https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
 sudo dpkg -i ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb
-

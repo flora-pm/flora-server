@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+
 module Data.Aeson.Orphans where
 
 import Data.Aeson

@@ -1,22 +1,27 @@
 {-# LANGUAGE UndecidableInstances #-}
-
 {-# OPTIONS_GHC -fno-warn-orphans -Wno-redundant-constraints #-}
+
 module Flora.Model.User
-  ( UserId(..)
-  , User(..)
-  , UserFlags(..)
+  ( UserId (..)
+  , User (..)
+  , UserFlags (..)
   , UserCreationForm
   , AdminCreationForm
   , mkUser
   , mkAdmin
   , hashPassword
   , validatePassword
-  ) where
+  )
+where
 
 import Control.Monad.IO.Class
 import Data.Aeson
-import Data.Password.Argon2 (Argon2, Password,
-                             PasswordCheck (PasswordCheckSuccess), PasswordHash)
+import Data.Password.Argon2
+  ( Argon2
+  , Password
+  , PasswordCheck (PasswordCheckSuccess)
+  , PasswordHash
+  )
 import qualified Data.Password.Argon2 as Argon2
 import Data.Text (Text)
 import Data.Text.Display (Display, ShowInstance (..), displayBuilder)
@@ -34,32 +39,36 @@ import GHC.Generics
 import GHC.TypeLits (ErrorMessage (..), TypeError)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
-newtype UserId = UserId { getUserId :: UUID }
+newtype UserId = UserId {getUserId :: UUID}
   deriving stock (Generic, Show)
-  deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
+  deriving
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
     via UUID
-  deriving Display
+  deriving
+    (Display)
     via (ShowInstance UUID)
 
 data User = User
-  { userId      :: UserId
-  , username    :: Text
-  , email       :: Text
+  { userId :: UserId
+  , username :: Text
+  , email :: Text
   , displayName :: Text
-  , password    :: PasswordHash Argon2
-  , userFlags   :: UserFlags
-  , createdAt   :: UTCTime
-  , updatedAt   :: UTCTime
+  , password :: PasswordHash Argon2
+  , userFlags :: UserFlags
+  , createdAt :: UTCTime
+  , updatedAt :: UTCTime
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow, ToRow)
-  deriving Entity
+  deriving
+    (Entity)
     via (GenericEntity '[TableName "users"] User)
-  deriving Display
+  deriving
+    (Display)
     via (ShowInstance User)
 
 data UserFlags = UserFlags
-  { isAdmin  :: Bool
+  { isAdmin :: Bool
   , canLogin :: Bool
   }
   deriving stock (Eq, Generic, Show)
@@ -73,14 +82,14 @@ instance ToField UserFlags where
 
 data UserCreationForm = UserCreationForm
   { username :: Text
-  , email    :: Text
+  , email :: Text
   , password :: PasswordHash Argon2
   }
   deriving stock (Eq, Show, Generic)
 
 data AdminCreationForm = AdminCreationForm
   { username :: Text
-  , email    :: Text
+  , email :: Text
   , password :: PasswordHash Argon2
   }
   deriving stock (Eq, Show, Generic)
@@ -95,10 +104,10 @@ instance TypeError (CannotDisplayPassword "Text") => Display Password where
 
 type CannotDisplayPassword e =
   'Text "🚫 Tried to convert plain-text Password to " ':<>: 'Text e ':<>: 'Text "!"
-  ':$$: 'Text "  This is likely a security leak. Please make sure whether this was intended."
-  ':$$: 'Text "  If this is intended, please use 'unsafeShowPassword' before converting to "
-  ':<>: 'Text e
-  ':$$: 'Text ""
+    ':$$: 'Text "  This is likely a security leak. Please make sure whether this was intended."
+    ':$$: 'Text "  If this is intended, please use 'unsafeShowPassword' before converting to "
+    ':<>: 'Text e
+    ':$$: 'Text ""
 
 deriving via Text instance ToField (PasswordHash a)
 deriving via Text instance FromField (PasswordHash a)
@@ -110,7 +119,7 @@ mkUser UserCreationForm{username, email, password} = do
   let createdAt = timestamp
   let updatedAt = timestamp
   let displayName = ""
-  let userFlags = UserFlags{ isAdmin = False, canLogin = True }
+  let userFlags = UserFlags{isAdmin = False, canLogin = True}
   pure User{..}
 
 mkAdmin :: MonadIO m => AdminCreationForm -> m User
@@ -120,7 +129,7 @@ mkAdmin AdminCreationForm{username, email, password} = do
   let createdAt = timestamp
   let updatedAt = timestamp
   let displayName = ""
-  let userFlags = UserFlags{ isAdmin = True, canLogin = False }
+  let userFlags = UserFlags{isAdmin = True, canLogin = False}
   pure User{..}
 
 hashPassword :: (MonadIO m) => Password -> m (PasswordHash Argon2)

@@ -9,8 +9,8 @@ import Servant.HTML.Lucid
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { index    :: mode :- Get '[HTML] (Html ())
-  , users    :: mode :- "users" :> AdminUsersRoutes
+  { index :: mode :- Get '[HTML] (Html ())
+  , users :: mode :- "users" :> AdminUsersRoutes
   , packages :: mode :- "packages" :> PackagesAdminRoutes
   }
   deriving stock (Generic)
@@ -19,7 +19,7 @@ type AdminUsersRoutes = NamedRoutes AdminUsersRoutes'
 
 data AdminUsersRoutes' mode = AdminUsersRoutes'
   { userIndex :: mode :- Get '[HTML] (Html ())
-  , withUser  :: mode :- Capture "user_id" UserId :> AdminWithUserRoutes
+  , withUser :: mode :- Capture "user_id" UserId :> AdminWithUserRoutes
   }
   deriving stock (Generic)
 

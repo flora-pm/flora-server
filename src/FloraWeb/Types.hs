@@ -1,14 +1,16 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+
 module FloraWeb.Types
   ( FloraM
   , WebEnvStore
-  , GetCookies(..)
-  , WebEnv(..)
+  , GetCookies (..)
+  , WebEnv (..)
   , newWebEnvStore
   , fetchFloraEnv
   , modifyWebEnv
   , getWebEnv
-  ) where
+  )
+where
 
 import Control.Concurrent.MVar
 import Control.Monad.IO.Class
@@ -29,7 +31,7 @@ newtype WebEnvStore = WebEnvStore (MVar WebEnv)
 data WebEnv = WebEnv
   { floraEnv :: FloraEnv
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic)
 
 fetchFloraEnv :: WebEnvStore -> IO FloraEnv
 fetchFloraEnv (WebEnvStore mvar) =
@@ -52,4 +54,4 @@ instance FromHttpApiData GetCookies where
   parseQueryParam = pure . GetCookies . parseCookies . TE.encodeUtf8
 
 instance MonadTime Handler where
-    currentTime = liftIO currentTime
+  currentTime = liftIO currentTime

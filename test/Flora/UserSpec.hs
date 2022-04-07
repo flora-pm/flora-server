@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module Flora.UserSpec where
 
 import Control.Monad
@@ -19,21 +20,23 @@ import FloraWeb.Client as Client
 import FloraWeb.Routes.Pages.Sessions
 
 spec :: TestM TestTree
-spec = testThese "users"
-  [ testThis "Fetch user by Id"    fetchUserById
-  , testThis "Fetch user by email" fetchUserByEmail
-  -- , testThis "Authenticate an arbitrary user" authenticateUser
-  ]
+spec =
+  testThese
+    "users"
+    [ testThis "Fetch user by Id" fetchUserById
+    , testThis "Fetch user by email" fetchUserByEmail
+    -- , testThis "Authenticate an arbitrary user" authenticateUser
+    ]
 
 fetchUserById :: TestM ()
 fetchUserById = do
-   result <- liftDB $ getUserById (hackageUser ^. #userId)
-   assertEqual (Just hackageUser) result
+  result <- liftDB $ getUserById (hackageUser ^. #userId)
+  assertEqual (Just hackageUser) result
 
 fetchUserByEmail :: TestM ()
 fetchUserByEmail = do
-    result <- liftDB $ getUserByEmail (hackageUser ^. #email)
-    assertEqual (Just hackageUser) result
+  result <- liftDB $ getUserByEmail (hackageUser ^. #email)
+  assertEqual (Just hackageUser) result
 
 -- authenticateUser :: TestM ()
 -- authenticateUser = do

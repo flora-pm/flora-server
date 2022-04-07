@@ -15,27 +15,30 @@ import Data.Text.Display
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
 
-newtype ReleaseId = ReleaseId { getReleaseId :: UUID }
-  deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
+newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
+  deriving
+    (Eq, Show, FromField, ToField, FromJSON, ToJSON)
     via UUID
-  deriving Display
+  deriving
+    (Display)
     via ShowInstance UUID
 
 data Release = Release
-  { -- | The unique ID of this release
-    releaseId       :: ReleaseId
-    -- | The package to which this release is linked
-  , packageId       :: PackageId
-    -- | The version that this release represents
-  , version         :: Version
-    -- | The SHA256 checksum of the stored archive for this release
+  { releaseId :: ReleaseId
+  -- ^ The unique ID of this release
+  , packageId :: PackageId
+  -- ^ The package to which this release is linked
+  , version :: Version
+  -- ^ The version that this release represents
   , archiveChecksum :: ByteString
-    -- | Date of creation of this release
-  , createdAt       :: UTCTime
-    -- | Last update timestamp for this release
-  , updatedAt       :: UTCTime
+  -- ^ The SHA256 checksum of the stored archive for this release
+  , createdAt :: UTCTime
+  -- ^ Date of creation of this release
+  , updatedAt :: UTCTime
+  -- ^ Last update timestamp for this release
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
-  deriving (Entity)
+  deriving
+    (Entity)
     via (GenericEntity '[TableName "releases"] Release)

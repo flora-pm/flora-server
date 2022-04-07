@@ -3,7 +3,8 @@
 module FloraWeb.Server.Pages.Packages
   ( Routes
   , server
-  ) where
+  )
+where
 
 import Control.Monad.Reader
 import Data.Foldable
@@ -35,11 +36,12 @@ import FloraWeb.Types
 import Servant (ServerT)
 
 server :: ServerT Routes FloraPageM
-server = Routes'
-  { index = indexHandler
-  , show = showHandler
-  , showVersion = showVersionHandler
-  }
+server =
+  Routes'
+    { index = indexHandler
+    , show = showHandler
+    , showVersion = showVersionHandler
+    }
 
 indexHandler :: FloraPageM (Html ())
 indexHandler = do
@@ -49,7 +51,6 @@ indexHandler = do
   let (templateEnv :: TemplateEnv) =
         templateDefaults & #displayNavbarSearch .~ False
   render templateEnv $ Search.showAllPackages results
-
 
 showHandler :: Text -> Text -> FloraPageM (Html ())
 showHandler namespaceText nameText = do
@@ -64,7 +65,7 @@ showHandler namespaceText nameText = do
         Just package -> do
           dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
           releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
-          let latestRelease =  maximumBy (compare `on` version) releases
+          let latestRelease = maximumBy (compare `on` version) releases
           latestReleasedependencies <- liftIO $ withPool pool $ Query.getRequirements (latestRelease ^. #releaseId)
           categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #packageId)
           render templateEnv $ Packages.showPackage latestRelease package dependents latestReleasedependencies categories
@@ -87,8 +88,9 @@ showVersionHandler namespaceText nameText versionText = do
               Nothing -> renderError templateEnv notFound404
               Just release -> do
                 releaseDependencies <- liftIO $ withPool pool $ Query.getRequirements (release ^. #releaseId)
-                categories <- liftIO $
-                  withPool pool $ Query.getPackageCategories (package ^. #packageId)
+                categories <-
+                  liftIO $
+                    withPool pool $ Query.getPackageCategories (package ^. #packageId)
                 render templateEnv $ Packages.showPackage release package dependents releaseDependencies categories
     _ -> renderError templateEnv notFound404
 

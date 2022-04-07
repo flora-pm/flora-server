@@ -13,12 +13,12 @@ import Servant.HTML.Lucid
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { home       :: mode :- Get '[HTML] (Html ())
-  , about      :: mode :- "about" :> Get '[HTML] (Html ())
-  , admin      :: mode :- "admin" :> Admin.Routes
-  , sessions   :: mode :- "sessions" :> Sessions.Routes
-  , packages   :: mode :- "packages" :> Packages.Routes
+  { home :: mode :- Get '[HTML] (Html ())
+  , about :: mode :- "about" :> Get '[HTML] (Html ())
+  , admin :: mode :- "admin" :> Admin.Routes
+  , sessions :: mode :- "sessions" :> Sessions.Routes
+  , packages :: mode :- "packages" :> Packages.Routes
   , categories :: mode :- "categories" :> Categories.Routes
-  , search     :: mode :- "search" :> QueryParam "q" Text :> Get '[HTML] (Html ())
+  , search :: mode :- "search" :> QueryParam "q" Text :> Get '[HTML] (Html ())
   }
   deriving stock (Generic)

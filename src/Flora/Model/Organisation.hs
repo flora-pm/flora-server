@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE QuasiQuotes     #-}
+{-# LANGUAGE QuasiQuotes #-}
+
 module Flora.Model.Organisation where
 
 import Data.Aeson
@@ -8,8 +9,12 @@ import Data.Time (UTCTime)
 import Data.UUID
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (Select), query, queryOne,
-                                       query_)
+import Database.PostgreSQL.Entity.DBT
+  ( QueryNature (Select)
+  , query
+  , queryOne
+  , query_
+  )
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.FromField (FromField (..))
@@ -22,36 +27,38 @@ import GHC.Generics
 
 import Flora.Model.User
 
-newtype OrganisationId = OrganisationId { getOrganisationId :: UUID }
-  deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
+newtype OrganisationId = OrganisationId {getOrganisationId :: UUID}
+  deriving
+    (Eq, Show, FromField, ToField, FromJSON, ToJSON)
     via UUID
 
 data Organisation = Organisation
   { organisationId :: OrganisationId
-  , name           :: Text
-  , createdAt      :: UTCTime
-  , updatedAt      :: UTCTime
+  , name :: Text
+  , createdAt :: UTCTime
+  , updatedAt :: UTCTime
   }
-  deriving stock (Eq, Show,Generic)
+  deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
-  deriving (Entity)
+  deriving
+    (Entity)
     via (GenericEntity '[TableName "organisations"] Organisation)
 
-newtype UserOrganisationId
-  = UserOrganisationId { getUserOrganisationId :: UUID }
+newtype UserOrganisationId = UserOrganisationId {getUserOrganisationId :: UUID}
   deriving stock (Eq, Generic)
   deriving newtype (FromField, FromJSON, Show, ToField, ToJSON)
 
-data UserOrganisation
-  = UserOrganisation { userOrganisationId :: UserOrganisationId
-                     , userId             :: UserId
-                     , organisationId     :: OrganisationId
-                     , isAdmin            :: Bool
-                     }
-    deriving stock (Eq, Generic, Show)
-    deriving anyclass (FromRow, ToRow)
-    deriving Entity
-      via (GenericEntity '[TableName "user_organisation"] UserOrganisation)
+data UserOrganisation = UserOrganisation
+  { userOrganisationId :: UserOrganisationId
+  , userId :: UserId
+  , organisationId :: OrganisationId
+  , isAdmin :: Bool
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromRow, ToRow)
+  deriving
+    (Entity)
+    via (GenericEntity '[TableName "user_organisation"] UserOrganisation)
 
 insertOrganisation :: Organisation -> DBT IO ()
 insertOrganisation org = insert @Organisation org
@@ -73,8 +80,8 @@ getUserOrganisationById uoId = selectById @UserOrganisation (Only uoId)
 
 getUserOrganisation :: UserId -> OrganisationId -> DBT IO (Maybe UserOrganisation)
 getUserOrganisation userId orgId = queryOne Select q (userId, orgId)
-    where q = _selectWhere @UserOrganisation [[field| user_id |], [field| organisation_id |]]
-
+  where
+    q = _selectWhere @UserOrganisation [[field| user_id |], [field| organisation_id |]]
 
 attachUser :: UserId -> OrganisationId -> UserOrganisationId -> DBT IO ()
 attachUser userId organisationId uoId = do
@@ -82,7 +89,9 @@ attachUser userId organisationId uoId = do
 
 getUsers :: OrganisationId -> DBT IO (Vector User)
 getUsers orgId = query Select q (Only orgId)
-    where q = [sql|
+  where
+    q =
+      [sql|
         SELECT u.user_id, u.username, u.email, u.display_name, u.password, u.created_at, u.updated_at
         FROM users AS u
             JOIN user_organisation AS uo
@@ -92,7 +101,9 @@ getUsers orgId = query Select q (Only orgId)
 
 getAdmins :: OrganisationId -> DBT IO (Vector User)
 getAdmins orgId = query Select q (Only orgId)
-    where q = [sql|
+  where
+    q =
+      [sql|
         SELECT u.user_id, u.username, u.email, u.display_name, u.password, u.created_at, u.updated_at
         FROM users AS u
             JOIN user_organisation AS uo

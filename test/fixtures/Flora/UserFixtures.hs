@@ -12,27 +12,29 @@ hackageUser =
       displayName = "Stand-in Hackage user"
       password = unsafePerformIO $ hashPassword $ mkPassword "pZFZEFEZFZEFZEFZFZE"
       userFlags =
-        UserFlags { isAdmin = False
-                  , canLogin = False
-                  }
-      createdAt   = read "2021-04-23 10:00:00 UTC"
-      updatedAt   = read "2021-04-23 10:00:00 UTC"
+        UserFlags
+          { isAdmin = False
+          , canLogin = False
+          }
+      createdAt = read "2021-04-23 10:00:00 UTC"
+      updatedAt = read "2021-04-23 10:00:00 UTC"
    in User{..}
 
 user2 :: User
 user2 =
-  let userId      = UserId (read "44495a98-a475-11eb-94f3-5405db82c3cd")
-      username    = "blue_devil"
-      email       = "princess_jack@example.com"
+  let userId = UserId (read "44495a98-a475-11eb-94f3-5405db82c3cd")
+      username = "blue_devil"
+      email = "princess_jack@example.com"
       displayName = "Princess Jack Moonshine"
-      password    = unsafePerformIO $ hashPassword $ mkPassword "DRINK!"
+      password = unsafePerformIO $ hashPassword $ mkPassword "DRINK!"
       userFlags =
-        UserFlags { isAdmin = False
-                  , canLogin = True
-                  }
-      createdAt   = read "2021-04-23 14:00:00 UTC"
-      updatedAt   = read "2021-04-23 14:30:00 UTC"
-   in User { .. }
+        UserFlags
+          { isAdmin = False
+          , canLogin = True
+          }
+      createdAt = read "2021-04-23 14:00:00 UTC"
+      updatedAt = read "2021-04-23 14:30:00 UTC"
+   in User{..}
 
 adminUser :: User
 adminUser =
@@ -42,9 +44,10 @@ adminUser =
       displayName = "Admin User"
       password = unsafePerformIO $ hashPassword $ mkPassword "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH"
       userFlags =
-        UserFlags { isAdmin = True
-                  , canLogin = True
-                  }
+        UserFlags
+          { isAdmin = True
+          , canLogin = True
+          }
       createdAt = read "2021-12-23 11:00:00 UTC"
       updatedAt = read "2021-12-23 11:00:00 UTC"
-  in User{..}
+   in User{..}

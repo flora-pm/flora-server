@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module FloraWeb.Templates.Admin.Packages where
 
 import Data.Text.Display

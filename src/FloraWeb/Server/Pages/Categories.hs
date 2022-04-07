@@ -21,10 +21,11 @@ import qualified FloraWeb.Templates.Pages.Categories as Template
 import FloraWeb.Types (fetchFloraEnv)
 
 server :: ServerT Routes FloraPageM
-server = Routes'
-  { index = indexHandler
-  , show = showHandler
-  }
+server =
+  Routes'
+    { index = indexHandler
+    , show = showHandler
+    }
 
 indexHandler :: FloraPageM (Html ())
 indexHandler = do
@@ -39,7 +40,7 @@ showHandler categorySlug = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   templateEnv <- fromSession session defaultTemplateEnv
-  result <-liftIO $ withPool pool $ Query.getCategoryBySlug categorySlug
+  result <- liftIO $ withPool pool $ Query.getCategoryBySlug categorySlug
   case result of
     Nothing -> renderError templateEnv notFound404
     Just cat -> do

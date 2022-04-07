@@ -36,4 +36,3 @@ displayUser User{username, email, userFlags} = do
 
 showUser :: User -> FloraHTML
 showUser _user = undefined
-

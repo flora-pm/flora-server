@@ -8,36 +8,42 @@ import Data.UUID (UUID)
 import Database.PostgreSQL.Entity (Entity)
 import Database.PostgreSQL.Entity.Types (GenericEntity, TableName)
 import Database.PostgreSQL.Simple (FromRow, ToRow)
-import Database.PostgreSQL.Simple.FromField (FromField, fromField,
-                                             fromJSONField)
+import Database.PostgreSQL.Simple.FromField
+  ( FromField
+  , fromField
+  , fromJSONField
+  )
 import Database.PostgreSQL.Simple.ToField (ToField, toField, toJSONField)
 import GHC.Generics (Generic)
 
 import Flora.Model.Package.Component
 import Flora.Model.Package.Types
 
-newtype RequirementId = RequirementId { getRequirementId :: UUID }
-  deriving (Eq, Show, FromField, ToField, FromJSON, ToJSON)
+newtype RequirementId = RequirementId {getRequirementId :: UUID}
+  deriving
+    (Eq, Show, FromField, ToField, FromJSON, ToJSON)
     via UUID
-  deriving Display via ShowInstance UUID
+  deriving (Display) via ShowInstance UUID
 
 data Requirement = Requirement
-  { -- | Unique identifier o this requirement in the database
-    requirementId      :: RequirementId
-  , -- | Package component that depends on this requirement
-    packageComponentId :: ComponentId
-  , -- | Package that is being depended on
-    packageId          :: PackageId
-  , -- | The human-readable version range expression of this requirement
-    requirement        :: Text
-  , -- | Additional metadata, like flags
-    metadata           :: RequirementMetadata
+  { requirementId :: RequirementId
+  -- ^ Unique identifier o this requirement in the database
+  , packageComponentId :: ComponentId
+  -- ^ Package component that depends on this requirement
+  , packageId :: PackageId
+  -- ^ Package that is being depended on
+  , requirement :: Text
+  -- ^ The human-readable version range expression of this requirement
+  , metadata :: RequirementMetadata
+  -- ^ Additional metadata, like flags
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
-  deriving (Entity)
+  deriving
+    (Entity)
     via (GenericEntity '[TableName "requirements"] Requirement)
-  deriving Display
+  deriving
+    (Display)
     via ShowInstance Requirement
 
 data RequirementMetadata = RequirementMetadata

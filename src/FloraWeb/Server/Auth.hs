@@ -2,7 +2,8 @@ module FloraWeb.Server.Auth
   ( module FloraWeb.Server.Auth.Types
   , FloraAuthContext
   , authHandler
-  ) where
+  )
+where
 
 import Control.Monad.Except
 import qualified Data.List as List
@@ -63,19 +64,20 @@ getSessionId cookies =
     Nothing -> pure Nothing
     Just i ->
       case PersistentSessionId <$> UUID.fromASCIIBytes i of
-          Nothing        -> pure Nothing
-          Just sessionId -> pure $ Just sessionId
+        Nothing -> pure Nothing
+        Just sessionId -> pure $ Just sessionId
 
-getInTheFuckingSessionShinji :: Pool Connection
-                             -> Maybe PersistentSessionId
-                             -> LogT Handler (Maybe PersistentSession)
+getInTheFuckingSessionShinji ::
+  Pool Connection ->
+  Maybe PersistentSessionId ->
+  LogT Handler (Maybe PersistentSession)
 getInTheFuckingSessionShinji _pool Nothing = pure Nothing
 getInTheFuckingSessionShinji pool (Just persistentSessionId) = do
   result <- runExceptT $ liftIO $ withPool pool $ getPersistentSession persistentSessionId
   case result of
-    Right Nothing            -> pure Nothing
+    Right Nothing -> pure Nothing
     Right (Just userSession) -> pure $ Just userSession
-    Left _                   -> do
+    Left _ -> do
       Logging.alert "Database error when retrieving persistent session" []
       throwError err500
 
@@ -89,6 +91,6 @@ lookupUser :: Pool Connection -> UserId -> Handler User
 lookupUser pool uid = do
   result <- runExceptT $ liftIO $ withPool pool $ getUserById uid
   case result of
-    Left _            -> throwError (err403 { errBody = "Invalid Cookie" })
-    Right Nothing     -> throwError (err403 { errBody = "Invalid Cookie" })
+    Left _ -> throwError (err403{errBody = "Invalid Cookie"})
+    Right Nothing -> throwError (err403{errBody = "Invalid Cookie"})
     Right (Just user) -> pure user

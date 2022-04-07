@@ -1,4 +1,5 @@
 {-# LANGUAGE PartialTypeSignatures #-}
+
 module FloraWeb.Server.Pages where
 
 import Lucid
@@ -19,15 +20,16 @@ import qualified FloraWeb.Templates.Pages.Home as Home
 import qualified FloraWeb.Templates.Pages.Search as Search
 
 server :: ServerT Routes FloraPageM
-server = Routes'
-  { home = homeHandler
-  , about = aboutHandler
-  , admin = Admin.server
-  , sessions = Sessions.server
-  , packages = Packages.server
-  , categories = Categories.server
-  , search = searchHandler
-  }
+server =
+  Routes'
+    { home = homeHandler
+    , about = aboutHandler
+    , admin = Admin.server
+    , sessions = Sessions.server
+    , packages = Packages.server
+    , categories = Categories.server
+    , search = searchHandler
+    }
 
 homeHandler :: FloraPageM (Html ())
 homeHandler = do
@@ -40,8 +42,9 @@ aboutHandler :: FloraPageM (Html ())
 aboutHandler = do
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
-  let (templateEnv :: TemplateEnv) = templateDefaults
-        & #activeElements % #aboutNav .~ True
+  let (templateEnv :: TemplateEnv) =
+        templateDefaults
+          & #activeElements % #aboutNav .~ True
   render templateEnv Home.about
 
 searchHandler :: Maybe Text -> FloraPageM (Html ())

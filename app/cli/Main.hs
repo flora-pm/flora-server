@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module Main where
 
 import Control.Monad
@@ -20,7 +21,8 @@ import CoverageReport
 
 data Options = Options
   { cliCommand :: Command
-  } deriving stock (Show, Eq)
+  }
+  deriving stock (Show, Eq)
 
 data Command
   = Provision
@@ -35,16 +37,18 @@ parseOptions =
   Options <$> parseCommand
 
 parseCommand :: Parser Command
-parseCommand = subparser $
-     command "provision-fixtures" (parseProvision `withInfo` "Load the fixtures into the database")
-  <> command "coverage-report" (parseCoverageReport `withInfo` "Run a coverage report of the category mapping")
+parseCommand =
+  subparser $
+    command "provision-fixtures" (parseProvision `withInfo` "Load the fixtures into the database")
+      <> command "coverage-report" (parseCoverageReport `withInfo` "Run a coverage report of the category mapping")
 
 parseProvision :: Parser Command
 parseProvision = pure Provision
 
 parseCoverageReport :: Parser Command
-parseCoverageReport = CoverageReport . CoverageReportOptions
-  <$> switch ( long "force-download" <> help "Always download and extract the package index" )
+parseCoverageReport =
+  CoverageReport . CoverageReportOptions
+    <$> switch (long "force-download" <> help "Always download and extract the package index")
 
 runOptions :: Options -> IO ()
 runOptions (Options Provision) = do
@@ -59,8 +63,6 @@ runOptions (Options Provision) = do
     void $ importPackage (hackageUser ^. #userId) (PackageName "parsec") "./test/fixtures/Cabal/"
     void $ importPackage (hackageUser ^. #userId) (PackageName "Cabal") "./test/fixtures/Cabal/"
     void $ importPackage (hackageUser ^. #userId) (PackageName "bytestring") "./test/fixtures/Cabal/"
-
-
 runOptions (Options (CoverageReport opts)) = runCoverageReport opts
 
 withInfo :: Parser a -> String -> ParserInfo a
