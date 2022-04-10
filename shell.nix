@@ -13,7 +13,6 @@ pkgs.mkShell rec {
     pkgs.haskellPackages.apply-refact
     pkgs.haskellPackages.cabal-fmt
     pkgs.hlint
-    pkgs.iputils
     pkgs.ncurses6
     pkgs.nixfmt
     pkgs.postgresql_14
