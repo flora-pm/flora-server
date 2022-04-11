@@ -34,7 +34,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/tchoutri/pg-entity.git
-    tag: 46abbd3dfd44157aab88b28ada36da5b28b87ee9
+    tag: 14d7031
 
 source-repository-package
     type: git
