@@ -21,7 +21,6 @@ import FloraWeb.Templates.Pages.Sessions as Sessions
 import FloraWeb.Types
 import Servant
 
--- server :: ToServant Routes' (AsServerT FloraPageM)
 server :: ServerT Routes FloraPageM
 server =
   Routes'
