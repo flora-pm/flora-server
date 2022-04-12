@@ -3,7 +3,8 @@ module FloraWeb.Templates
   , renderUVerb
   , mkErrorPage
   , module Types
-  ) where
+  )
+where
 
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.Reader
@@ -14,16 +15,22 @@ import FloraWeb.Templates.Layout.App (header)
 import FloraWeb.Templates.Types as Types
 
 render :: (Monad m) => TemplateEnv -> FloraHTML -> m (Html ())
-render env template = pure $ toHtmlRaw $ runIdentity $
-  runReaderT (renderBST (rendered template)) env
+render env template =
+  pure $
+    toHtmlRaw $
+      runIdentity $
+        runReaderT (renderBST (rendered template)) env
 
 renderUVerb :: TemplateEnv -> FloraHTML -> Html ()
-renderUVerb env template = toHtmlRaw $ runIdentity $
-  runReaderT (renderBST (rendered template)) env
+renderUVerb env template =
+  toHtmlRaw $
+    runIdentity $
+      runReaderT (renderBST (rendered template)) env
 
 mkErrorPage :: TemplateEnv -> FloraHTML -> ByteString
-mkErrorPage env template = runIdentity $
-  runReaderT (renderBST (rendered template)) env
+mkErrorPage env template =
+  runIdentity $
+    runReaderT (renderBST (rendered template)) env
 
 rendered :: FloraHTML -> FloraHTML
 rendered target = do

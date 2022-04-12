@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+
 module Flora.Model.Admin.Report where
 
 import Data.Maybe
@@ -10,7 +11,7 @@ import GHC.Generics
 
 data AdminReport = AdminReport
   { totalPackages :: Int
-  , totalUsers    :: Int
+  , totalUsers :: Int
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow)
@@ -18,7 +19,8 @@ data AdminReport = AdminReport
 getReport :: DBT IO AdminReport
 getReport = fromJust <$> queryOne_ Select querySpec
   where
-    querySpec = [sql|
+    querySpec =
+      [sql|
     select
       ( select count(*) from packages
       ) as total_packages,

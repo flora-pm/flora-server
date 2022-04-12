@@ -14,9 +14,7 @@ pkgs.mkShell rec {
     pkgs.haskellPackages.cabal-fmt
     pkgs.hlint
     pkgs.ncurses6
-    pkgs.nixfmt
     pkgs.postgresql_14
-    pkgs.stylish-haskell
     pkgs.tmux
     pkgs.yarn
     pkgs.libffi

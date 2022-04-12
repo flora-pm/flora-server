@@ -13,8 +13,9 @@ showPackage :: (Namespace, PackageName, Text, Version) -> FloraHTML
 showPackage (namespace, name, synopsis, version) = do
   a_ [href_ ("/packages/@" <> display namespace <> "/" <> display name)] $ do
     div_ [class_ "text-slate-300 hover:text-slate-200"] $ do
-      p_ [class_ "package-name inline text-link dark:text-link-dark"]
-          (toHtml $ prettyPackageName namespace name)
+      p_
+        [class_ "package-name inline text-link dark:text-link-dark"]
+        (toHtml $ prettyPackageName namespace name)
       p_ [class_ "synopsis inline ml-3"] (toHtml synopsis)
     div_ [class_ "text-slate-300 text-sm"] $ "v" <> toHtml (display version)
 

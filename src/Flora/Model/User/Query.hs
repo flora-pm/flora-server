@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+
 module Flora.Model.User.Query where
 
 import Control.Monad.IO.Class

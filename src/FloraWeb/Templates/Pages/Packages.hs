@@ -15,8 +15,12 @@ import qualified Text.PrettyPrint as PP
 
 import qualified Data.Text as T
 import Flora.Model.Category (Category (..))
-import Flora.Model.Package.Types (Namespace, Package (..), PackageMetadata (..),
-                                  PackageName)
+import Flora.Model.Package.Types
+  ( Namespace
+  , Package (..)
+  , PackageMetadata (..)
+  , PackageName
+  )
 import Flora.Model.Release (Release (..))
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid.Base (makeAttribute)
@@ -83,10 +87,12 @@ displayLinks _release meta@PackageMetadata{..} = do
 
 displaySourceRepos :: [Text] -> FloraHTML
 displaySourceRepos [] = toHtml @Text "No source repository"
-displaySourceRepos x  = a_ [href_ (head x)] "Source repository"
+displaySourceRepos x = a_ [href_ (head x)] "Source repository"
 
-displayDependencies :: Vector (Namespace, PackageName, Text) -- ^ (Namespace, Name, Version requirement)
-                    -> FloraHTML
+displayDependencies ::
+  -- | (Namespace, Name, Version requirement)
+  Vector (Namespace, PackageName, Text) ->
+  FloraHTML
 displayDependencies dependencies = do
   div_ [class_ "mb-5"] $ do
     div_ [class_ "links mb-3"] $ do
@@ -99,12 +105,18 @@ displayInstructions packageName latestRelease = do
   div_ [class_ "mb-5"] $ do
     div_ [class_ "links mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "Installation"
-    div_  [class_ "items-top"] $ do
+    div_ [class_ "items-top"] $ do
       div_ [class_ "space-y-2"] $ do
         label_ [for_ "install-string", class_ "font-light"] "In your .cabal file:"
-        input_ [ class_ "font-mono shadow-sm text-base w-full bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block border-gray-800 dark:border-gray-800 rounded-md"
-               , type_ "text", id_ "install-string", onfocus_ "this.select();", value_ (formatInstallString packageName latestRelease), readonly_ "readonly", xModel_ [] "input"
-               ]
+        input_
+          [ class_ "font-mono shadow-sm text-base w-full bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block border-gray-800 dark:border-gray-800 rounded-md"
+          , type_ "text"
+          , id_ "install-string"
+          , onfocus_ "this.select();"
+          , value_ (formatInstallString packageName latestRelease)
+          , readonly_ "readonly"
+          , xModel_ [] "input"
+          ]
 
 displayDependents :: Vector Package -> FloraHTML
 displayDependents dependents = do
@@ -127,8 +139,8 @@ renderDependency (namespace, name, version) = do
     a_ [href_ resource] (toHtml name)
     toHtmlRaw @Text "&nbsp;"
     if version == ">=0"
-    then ""
-    else toHtml version
+      then ""
+      else toHtml version
 
 renderCategory :: Category -> FloraHTML
 renderCategory Category{name, slug} = do
@@ -143,27 +155,30 @@ getHomepage PackageMetadata{..} =
     Nothing ->
       case sourceRepos of
         [] -> "⚠  No homepage provided"
-        x  -> head x
+        x -> head x
 
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =
   if V.null vector
-  then vector
-  else V.tail $ V.concatMap (\word -> V.fromList [sep, word]) vector
+    then vector
+    else V.tail $ V.concatMap (\word -> V.fromList [sep, word]) vector
 
 formatInstallString :: PackageName -> Release -> Text
-formatInstallString packageName Release{version} = pack . render $
-  hcat [pretty packageName, PP.space, rangedVersion, "," ]
-    where
-      rangedVersion :: Doc
-      rangedVersion = "^>=" <> pretty version
+formatInstallString packageName Release{version} =
+  pack . render $
+    hcat [pretty packageName, PP.space, rangedVersion, ","]
+  where
+    rangedVersion :: Doc
+    rangedVersion = "^>=" <> pretty version
 
--- | x-model
--- Synchronize a piece of data with an input element
-xModel_
-  :: [Text] -- ^ List of x-model modifiers
-  -> Text
-  -> Attribute
+{- | x-model
+ Synchronize a piece of data with an input element
+-}
+xModel_ ::
+  -- | List of x-model modifiers
+  [Text] ->
+  Text ->
+  Attribute
 xModel_ mods = case mods of
   [] -> makeAttribute "x-model"
-  _  -> makeAttribute ("x-model." <> T.intercalate "." mods)
+  _ -> makeAttribute ("x-model." <> T.intercalate "." mods)

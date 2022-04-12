@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+
 module Flora.Model.User.Orphans where
 
 import Data.Password.Argon2 (Password, PasswordHash, unsafeShowPassword)

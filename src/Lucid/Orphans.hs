@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Lucid.Orphans where
 
 import Blaze.ByteString.Builder (Builder)
@@ -18,7 +19,7 @@ instance ToHtml Version where
 
 instance ToHtml UTCTime where
   toHtml = build . Blaze.fromHtmlEscapedString . show
-  toHtmlRaw = build .  Blaze.fromString . show
+  toHtmlRaw = build . Blaze.fromString . show
 
 instance ToHtml SPDX.License where
   toHtml = build . Blaze.fromHtmlEscapedString . Pretty.prettyShow
@@ -32,5 +33,5 @@ instance MimeUnrender HTML NoContent where
 
 -- | Create an 'HtmlT' directly from a 'Builder'.
 build :: Monad m => Builder -> HtmlT m ()
-build b = HtmlT (return (const b,()))
+build b = HtmlT (return (const b, ()))
 {-# INLINE build #-}

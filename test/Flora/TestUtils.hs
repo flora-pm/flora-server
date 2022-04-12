@@ -1,12 +1,13 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module Flora.TestUtils
-  (
-  -- * Test group functions
+  ( -- * Test group functions
     testRequest
   , testThis
   , testThese
-  -- * Assertion functions
+
+    -- * Assertion functions
   , assertEqual
   , assertFailure
   , assertRight
@@ -17,12 +18,14 @@ module Flora.TestUtils
   , assertLeft'
   , assertClientLeft
   , assertClientLeft'
-  -- * Database migration
+
+    -- * Database migration
   , migrate
-  -- * Random fixtures
+
+    -- * Random fixtures
   , randomUser
   , randomUserTemplate
-  , RandomUserTemplate(..)
+  , RandomUserTemplate (..)
   , genUser
   , genPassword
   , genDisplayName
@@ -32,14 +35,17 @@ module Flora.TestUtils
   , genUTCTime
   , genUUID
   , genWord32
-  -- * TestM and helpers
-  , TestM(..)
+
+    -- * TestM and helpers
+  , TestM (..)
   , liftDB
   , runTestM
   , getTestEnv
-  -- * HUnit re-exports
+
+    -- * HUnit re-exports
   , TestTree
-  ) where
+  )
+where
 
 import Control.Exception (throw)
 import Control.Monad (void)
@@ -85,7 +91,7 @@ import Flora.Publish
 import Flora.UserFixtures
 import FloraWeb.Client
 
-newtype TestM (a :: Type) = TestM { getTestM :: ReaderT TestEnv IO a }
+newtype TestM (a :: Type) = TestM {getTestM :: ReaderT TestEnv IO a}
   deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadFail)
 
 liftDB :: DBT IO a -> TestM a
@@ -120,33 +126,35 @@ assertFailure :: (MonadIO m) => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
 assertRight :: HasCallStack => Either a b -> TestM b
-assertRight (Left _a)  = liftIO $ Test.assertFailure "Test return Left instead of Right"
+assertRight (Left _a) = liftIO $ Test.assertFailure "Test return Left instead of Right"
 assertRight (Right b) = pure b
 
 assertRight' :: Either a b -> TestM ()
 assertRight' = void . assertRight
 
 assertClientRight :: HasCallStack => String -> TestM (Either ClientError a) -> TestM a
-assertClientRight name request = request >>=
-  \case
-    Right a -> pure a
-    Left err -> throw $ mkUserError $ name <> ": " <> show err <> " " <> prettyCallStack callStack
+assertClientRight name request =
+  request
+    >>= \case
+      Right a -> pure a
+      Left err -> throw $ mkUserError $ name <> ": " <> show err <> " " <> prettyCallStack callStack
 
 assertClientRight' :: HasCallStack => String -> TestM (Either ClientError a) -> TestM ()
 assertClientRight' name request = void $ assertClientRight name request
 
 assertLeft :: HasCallStack => Either a b -> TestM a
-assertLeft (Left a)  = pure a
+assertLeft (Left a) = pure a
 assertLeft (Right _b) = liftIO $ Test.assertFailure "Test return Right instead of Left"
 
 assertLeft' :: Either a b -> TestM ()
 assertLeft' = void . assertLeft
 
 assertClientLeft :: HasCallStack => String -> TestM (Either ClientError b) -> TestM ClientError
-assertClientLeft name request = request >>=
-  \case
-    Right _  -> throw $ mkUserError $ name <> " "  <> prettyCallStack callStack
-    Left err -> pure err
+assertClientLeft name request =
+  request
+    >>= \case
+      Right _ -> throw $ mkUserError $ name <> " " <> prettyCallStack callStack
+      Left err -> pure err
 
 assertClientLeft' :: HasCallStack => String -> TestM (Either ClientError a) -> TestM ()
 assertClientLeft' name request = void $ assertClientLeft name request
@@ -173,9 +181,9 @@ testRequest req = liftIO . runClientM req =<< getEnv managerSettings
 
 getEnv :: (MonadIO m, MonadThrow m) => ManagerSettings -> m ClientEnv
 getEnv mgrSettings = do
-  mgr            <- liftIO $ newManager mgrSettings
-  url            <- parseBaseUrl "localhost"
-  pure . mkClientEnv mgr $ url { baseUrlPort = 8891 }
+  mgr <- liftIO $ newManager mgrSettings
+  url <- parseBaseUrl "localhost"
+  pure . mkClientEnv mgr $ url{baseUrlPort = 8891}
 
 managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
@@ -183,7 +191,7 @@ managerSettings = defaultManagerSettings
 migrate :: Connection -> IO ()
 migrate conn = do
   void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
-  pool <- createPool (pure conn) close 1 10 1
+  pool <- newPool (pure conn) close 10 1
   withPool pool $ do
     importCategories
     insertUser hackageUser
@@ -209,9 +217,9 @@ genUserId = UserId <$> genUUID
 genEmail :: MonadGen m => m Text
 genEmail = do
   prefix <- H.text (Range.constant 3 10) H.ascii
-  domain <- H.text (Range.constant 2 7)  H.ascii
-  tld    <- H.text (Range.constant 2 10) H.ascii
-  pure ( prefix <> "@" <> domain <> "." <> tld)
+  domain <- H.text (Range.constant 2 7) H.ascii
+  tld <- H.text (Range.constant 2 10) H.ascii
+  pure (prefix <> "@" <> domain <> "." <> tld)
 
 genUsername :: MonadGen m => m Text
 genUsername = H.text (Range.constant 1 25) H.ascii
@@ -239,39 +247,48 @@ genUser = do
   pure User{..}
 
 data RandomUserTemplate m = RandomUserTemplate
-  { userId      :: m UserId
-  , username    :: m Text
-  , email       :: m Text
+  { userId :: m UserId
+  , username :: m Text
+  , email :: m Text
   , displayName :: m Text
-  , password    :: m (PasswordHash Argon2)
-  , userFlags   :: m UserFlags
-  , createdAt   :: m UTCTime
-  , updatedAt   :: m UTCTime
-  } deriving stock (Generic)
+  , password :: m (PasswordHash Argon2)
+  , userFlags :: m UserFlags
+  , createdAt :: m UTCTime
+  , updatedAt :: m UTCTime
+  }
+  deriving stock (Generic)
 
 randomUserTemplate :: MonadIO m => RandomUserTemplate m
-randomUserTemplate = RandomUserTemplate
-  { userId      = H.sample genUserId
-  , username    = H.sample genUsername
-  , email       = H.sample genEmail
-  , displayName = H.sample genDisplayName
-  , password    = H.sample genPassword
-  , userFlags   = H.sample genUserFlags
-  , createdAt   = H.sample genUTCTime
-  , updatedAt   = H.sample genUTCTime
-  }
+randomUserTemplate =
+  RandomUserTemplate
+    { userId = H.sample genUserId
+    , username = H.sample genUsername
+    , email = H.sample genEmail
+    , displayName = H.sample genDisplayName
+    , password = H.sample genPassword
+    , userFlags = H.sample genUserFlags
+    , createdAt = H.sample genUTCTime
+    , updatedAt = H.sample genUTCTime
+    }
 
 randomUser :: MonadIO m => RandomUserTemplate m -> m User
-randomUser RandomUserTemplate{ userId = generateUserId, username = generateUsername, email = generateEmail
-                             , displayName = generateDisplayName, password = generatePassword
-                             , userFlags = generateUserFlags
-                             , createdAt = generateCreatedAt, updatedAt = generateUpdatedAt } = do
-  userId      <- generateUserId
-  username    <- generateUsername
-  email       <- generateEmail
-  displayName <- generateDisplayName
-  password    <- generatePassword
-  userFlags   <- generateUserFlags
-  createdAt   <- generateCreatedAt
-  updatedAt   <- generateUpdatedAt
-  pure User{..}
+randomUser
+  RandomUserTemplate
+    { userId = generateUserId
+    , username = generateUsername
+    , email = generateEmail
+    , displayName = generateDisplayName
+    , password = generatePassword
+    , userFlags = generateUserFlags
+    , createdAt = generateCreatedAt
+    , updatedAt = generateUpdatedAt
+    } = do
+    userId <- generateUserId
+    username <- generateUsername
+    email <- generateEmail
+    displayName <- generateDisplayName
+    password <- generatePassword
+    userFlags <- generateUserFlags
+    createdAt <- generateCreatedAt
+    updatedAt <- generateUpdatedAt
+    pure User{..}

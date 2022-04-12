@@ -23,25 +23,30 @@ import Flora.Model.User (UserId)
 import Optics.Core
 import Web.HttpApiData
 
-newtype PersistentSessionId = PersistentSessionId { getPersistentSessionId :: UUID }
-  deriving (Show, Eq, FromField, ToField, FromHttpApiData, ToHttpApiData)
+newtype PersistentSessionId = PersistentSessionId {getPersistentSessionId :: UUID}
+  deriving
+    (Show, Eq, FromField, ToField, FromHttpApiData, ToHttpApiData)
     via UUID
-  deriving Display
+  deriving
+    (Display)
     via ShowInstance UUID
 
 data PersistentSession = PersistentSession
   { persistentSessionId :: PersistentSessionId
-  , userId              :: UserId
-  , sessionData         :: SessionData
-  , createdAt           :: UTCTime
-  } deriving stock (Show, Eq, Generic)
-    deriving anyclass (FromRow, ToRow)
-    deriving Entity
-      via (GenericEntity '[TableName "persistent_sessions"] PersistentSession)
+  , userId :: UserId
+  , sessionData :: SessionData
+  , createdAt :: UTCTime
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (FromRow, ToRow)
+  deriving
+    (Entity)
+    via (GenericEntity '[TableName "persistent_sessions"] PersistentSession)
 
 newtype SessionData = SessionData {getSessionData :: Map Text Text}
   deriving stock (Show, Eq, Generic)
-  deriving (FromField, ToField)
+  deriving
+    (FromField, ToField)
     via Aeson (Map Text Text)
 
 newPersistentSessionId :: IO PersistentSessionId
@@ -53,10 +58,12 @@ newPersistentSession userId persistentSessionId = do
   let sessionData = SessionData Map.empty
   pure PersistentSession{..}
 
-persistSession :: (MonadIO m) => Pool Connection
-               -> PersistentSessionId
-               -> UserId
-               -> m PersistentSessionId
+persistSession ::
+  (MonadIO m) =>
+  Pool Connection ->
+  PersistentSessionId ->
+  UserId ->
+  m PersistentSessionId
 persistSession pool persistentSessionId userId = do
   persistentSession <- liftIO $ newPersistentSession userId persistentSessionId
   liftIO $ withPool pool $ insertSession persistentSession

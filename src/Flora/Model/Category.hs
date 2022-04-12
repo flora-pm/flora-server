@@ -1,9 +1,10 @@
 module Flora.Model.Category
-  ( Category(..)
-  , CategoryId(..)
-  , CategoryName(..)
+  ( Category (..)
+  , CategoryId (..)
+  , CategoryName (..)
   , mkCategory
   , mkCategoryId
-  ) where
+  )
+where
 
 import Flora.Model.Category.Types

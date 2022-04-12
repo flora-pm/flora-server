@@ -13,14 +13,16 @@ type CName = Text
 
 -- | This is a tag for our datalog program
 data Categoriser = Categoriser
-  deriving Souffle.Program
-    via Souffle.ProgramOptions Categoriser "categorise" '[UserPackageCategory, NormalisedPackageCategory, NormaliseIssue ]
+  deriving
+    (Souffle.Program)
+    via Souffle.ProgramOptions Categoriser "categorise" '[UserPackageCategory, NormalisedPackageCategory, NormaliseIssue]
 
 -- | A package name and category provided by users. Input to our program.
 data UserPackageCategory = UserPackageCategory Text
   deriving anyclass (Souffle.Marshal)
   deriving stock (Generic, Eq, Show)
-  deriving Souffle.Fact
+  deriving
+    (Souffle.Fact)
     via Souffle.FactOptions UserPackageCategory "user_package_category" 'Souffle.Input
 
 instance Display UserPackageCategory where
@@ -30,14 +32,16 @@ instance Display UserPackageCategory where
 data NormalisedPackageCategory = NormalisedPackageCategory CName
   deriving anyclass (Souffle.Marshal)
   deriving stock (Generic, Eq, Show)
-  deriving Souffle.Fact
+  deriving
+    (Souffle.Fact)
     via Souffle.FactOptions NormalisedPackageCategory "normalised_package_category" 'Souffle.Output
 
 -- | A report that arises if no normalisation could be done.
 data NormaliseIssue = NormaliseIssue CName
   deriving anyclass (Souffle.Marshal)
   deriving stock (Generic, Eq, Show)
-  deriving Souffle.Fact
+  deriving
+    (Souffle.Fact)
     via Souffle.FactOptions NormaliseIssue "normalise_issue" 'Souffle.Output
 
 instance Display NormaliseIssue where
@@ -45,36 +49,38 @@ instance Display NormaliseIssue where
 
 data Results = Results
   { normalisedCategories :: [NormalisedPackageCategory]
-  , normalisationIssues  :: [NormaliseIssue]
+  , normalisationIssues :: [NormaliseIssue]
   }
   deriving stock (Generic, Eq, Show)
 
 data SourceCategories = SourceCategories
-  deriving Souffle.Program
+  deriving
+    (Souffle.Program)
     via Souffle.ProgramOptions SourceCategories "categorise" '[CanonicalCategory]
 
 data CanonicalCategory = CanonicalCategory Text Text Text
   deriving anyclass (Souffle.Marshal)
   deriving stock (Generic, Eq, Show)
-  deriving Souffle.Fact
+  deriving
+    (Souffle.Fact)
     via Souffle.FactOptions CanonicalCategory "flora_category" 'Souffle.Output
 
 -- | Entrypoint to the Soufflé datalog engine.
 normalise :: [UserPackageCategory] -> IO Results
 normalise input = do
-  result <- liftIO $ Souffle.runSouffle Categoriser $ \case
-    Nothing ->
-      error "Failed to load Souffle program!"
-    Just prog -> do
-      Souffle.addFacts prog input
-      Souffle.run prog
-      Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
+  result <- liftIO $
+    Souffle.runSouffle Categoriser $ \case
+      Nothing ->
+        error "Failed to load Souffle program!"
+      Just prog -> do
+        Souffle.addFacts prog input
+        Souffle.run prog
+        Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
   if (not . null) (normalisationIssues result)
-  then do
-    T.hPutStrLn stderr $ "[!] Could not normalise these categories: " <> display (normalisationIssues result)
-    pure result
-  else
-    pure result
+    then do
+      T.hPutStrLn stderr $ "[!] Could not normalise these categories: " <> display (normalisationIssues result)
+      pure result
+    else pure result
 
 sourceCategories :: IO [CanonicalCategory]
 sourceCategories = do

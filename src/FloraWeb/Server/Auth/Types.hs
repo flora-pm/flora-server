@@ -1,4 +1,5 @@
 {-# LANGUAGE RoleAnnotations #-}
+
 module FloraWeb.Server.Auth.Types where
 
 import Control.Monad.Reader (ReaderT)
@@ -20,10 +21,11 @@ data ProtectionLevel = Visitor | Authenticated | Admin
 
 type role Session nominal
 data Session (protectionLevel :: ProtectionLevel) = Session
-  { sessionId   :: PersistentSessionId
-  , mUser       :: Maybe User
+  { sessionId :: PersistentSessionId
+  , mUser :: Maybe User
   , webEnvStore :: WebEnvStore
-  } deriving stock (Generic)
+  }
+  deriving stock (Generic)
 
 -- | Datatypes used for every route that doesn't *need* an authenticated user
 type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor)) (LogT Handler)
@@ -31,11 +33,13 @@ type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Vi
 -- | Datatypes used for routes that *need* an admin
 type FloraAdminM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Admin)) (LogT Handler)
 
-type instance AuthServerData (AuthProtect "optional-cookie-auth") =
-  (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
+type instance
+  AuthServerData (AuthProtect "optional-cookie-auth") =
+    (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
 
-type instance AuthServerData (AuthProtect "cookie-auth") =
-  (Headers '[Header "Set-Cookie" SetCookie] (Session 'Authenticated))
+type instance
+  AuthServerData (AuthProtect "cookie-auth") =
+    (Headers '[Header "Set-Cookie" SetCookie] (Session 'Authenticated))
 
 getUnauthenticatedUser :: Session 'Visitor -> Maybe User
 getUnauthenticatedUser session = session ^. #mUser

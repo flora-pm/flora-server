@@ -1,14 +1,15 @@
 module FloraWeb.Templates.Types
   ( FloraHTML
-  , FlashInfo(..)
+  , FlashInfo (..)
   , mkInfo
-  , FlashError(..)
+  , FlashError (..)
   , mkError
-  , TemplateEnv(..)
+  , TemplateEnv (..)
   , fromSession
-  , ActiveElements(..)
+  , ActiveElements (..)
   , defaultTemplateEnv
-  ) where
+  )
+where
 
 import Control.Monad.Identity
 import Control.Monad.Reader
@@ -25,72 +26,77 @@ import FloraWeb.Types
 
 type FloraHTML = HtmlT (ReaderT TemplateEnv Identity) ()
 
-newtype FlashInfo = FlashInfo { getFlashInfo :: Text }
-  deriving Show via Text
+newtype FlashInfo = FlashInfo {getFlashInfo :: Text}
+  deriving (Show) via Text
 
 mkInfo :: Text -> FlashInfo
 mkInfo = FlashInfo
 
-newtype FlashError = FlashError { getFlashInfo :: Text }
-  deriving Show via Text
+newtype FlashError = FlashError {getFlashInfo :: Text}
+  deriving (Show) via Text
 
 mkError :: Text -> FlashError
 mkError = FlashError
 
 data TemplateEnv = TemplateEnv
   { displayNavbarSearch :: Bool
-  , flashInfo           :: Maybe FlashInfo
-  , flashError          :: Maybe FlashError
-  , title               :: Text
-  , description         :: Text
-  , mUser               :: Maybe User
-  , sessionId           :: PersistentSessionId
-  , environment         :: DeploymentEnv
-  , activeElements      :: ActiveElements
+  , flashInfo :: Maybe FlashInfo
+  , flashError :: Maybe FlashError
+  , title :: Text
+  , description :: Text
+  , mUser :: Maybe User
+  , sessionId :: PersistentSessionId
+  , environment :: DeploymentEnv
+  , activeElements :: ActiveElements
   }
   deriving stock (Show, Generic)
 
 -- | This record holds flags for UI elements that must be marked active in the templates.
 data ActiveElements = ActiveElements
-  { aboutNav    :: Bool
+  { aboutNav :: Bool
   , packagesNav :: Bool
-  , menuNav     :: Bool
+  , menuNav :: Bool
   }
   deriving stock (Show, Generic)
 
 data TemplateDefaults = TemplateDefaults
   { displayNavbarSearch :: Bool
-  , flashInfo           :: Maybe FlashInfo
-  , flashError          :: Maybe FlashError
-  , title               :: Text
-  , description         :: Text
-  , mUser               :: Maybe User
-  , environment         :: DeploymentEnv
-  , activeElements      :: ActiveElements
+  , flashInfo :: Maybe FlashInfo
+  , flashError :: Maybe FlashError
+  , title :: Text
+  , description :: Text
+  , mUser :: Maybe User
+  , environment :: DeploymentEnv
+  , activeElements :: ActiveElements
   }
   deriving stock (Show, Generic)
 
 defaultActiveElements :: ActiveElements
-defaultActiveElements = ActiveElements
-  { aboutNav = False
-  , packagesNav = False
-  , menuNav = False
-  }
+defaultActiveElements =
+  ActiveElements
+    { aboutNav = False
+    , packagesNav = False
+    , menuNav = False
+    }
 
 defaultTemplateEnv :: TemplateDefaults
-defaultTemplateEnv = TemplateDefaults
-  { displayNavbarSearch = True
-  , flashInfo = Nothing
-  , flashError = Nothing
-  , title = "Flora :: [Package]"
-  , description = "Package index for the Haskell ecosystem"
-  , mUser = Nothing
-  , environment = Development
-  , activeElements = defaultActiveElements
-  }
+defaultTemplateEnv =
+  TemplateDefaults
+    { displayNavbarSearch = True
+    , flashInfo = Nothing
+    , flashError = Nothing
+    , title = "Flora :: [Package]"
+    , description = "Package index for the Haskell ecosystem"
+    , mUser = Nothing
+    , environment = Development
+    , activeElements = defaultActiveElements
+    }
 
-fromSession :: (MonadIO m)
-            => Session pLevel -> TemplateDefaults -> m TemplateEnv
+fromSession ::
+  (MonadIO m) =>
+  Session pLevel ->
+  TemplateDefaults ->
+  m TemplateEnv
 fromSession session defaults = do
   let sessionId = session ^. #sessionId
   let muser = session ^. #mUser

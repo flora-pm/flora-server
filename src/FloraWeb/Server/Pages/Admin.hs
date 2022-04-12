@@ -23,31 +23,36 @@ import FloraWeb.Templates.Error
 import FloraWeb.Types (fetchFloraEnv)
 
 server :: ServerT Routes FloraPageM
-server = ensureAdmin $ Routes'
-  { index = indexHandler
-  , users = adminUsersHandler
-  , packages = adminPackagesHandler
-  }
+server =
+  ensureAdmin $
+    Routes'
+      { index = indexHandler
+      , users = adminUsersHandler
+      , packages = adminPackagesHandler
+      }
 
--- | This function converts a sub-tree of routes that require 'Admin' role
--- to a sub-tree of Flora pages.
--- It acts as the safeguard that rejects non-admins from protected routes.
-
+{- | This function converts a sub-tree of routes that require 'Admin' role
+ to a sub-tree of Flora pages.
+ It acts as the safeguard that rejects non-admins from protected routes.
+-}
 ensureAdmin :: ServerT Routes FloraAdminM -> ServerT Routes FloraPageM
 ensureAdmin adminM = do
   hoistServer (Proxy :: Proxy Routes) checkAdmin adminM
-    where
-      checkAdmin :: FloraAdminM a -> FloraPageM a
-      checkAdmin adminRoutes = do
-        (Headers session@Session{sessionId, mUser} headers) <- ask
-        templateEnv <- fromSession session defaultTemplateEnv
-        case mUser ^? _Just % #userFlags % #isAdmin of
-          Just True ->
-            withReaderT (\sessionWithCookies ->
-              let Session{webEnvStore} = getResponse sessionWithCookies
-               in Headers (Session{..} :: Session 'Admin) headers) adminRoutes
-          Just False -> renderError templateEnv notFound404
-          Nothing -> renderError templateEnv notFound404
+  where
+    checkAdmin :: FloraAdminM a -> FloraPageM a
+    checkAdmin adminRoutes = do
+      (Headers session@Session{sessionId, mUser} headers) <- ask
+      templateEnv <- fromSession session defaultTemplateEnv
+      case mUser ^? _Just % #userFlags % #isAdmin of
+        Just True ->
+          withReaderT
+            ( \sessionWithCookies ->
+                let Session{webEnvStore} = getResponse sessionWithCookies
+                 in Headers (Session{..} :: Session 'Admin) headers
+            )
+            adminRoutes
+        Just False -> renderError templateEnv notFound404
+        Nothing -> renderError templateEnv notFound404
 
 indexHandler :: FloraAdminM (Html ())
 indexHandler = do
@@ -58,10 +63,11 @@ indexHandler = do
   render templateDefaults (Templates.index report)
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdminM
-adminUsersHandler = AdminUsersRoutes'
-  { userIndex = userIndexHandler
-  , withUser  = withUserHandler
-  }
+adminUsersHandler =
+  AdminUsersRoutes'
+    { userIndex = userIndexHandler
+    , withUser = withUserHandler
+    }
 
 userIndexHandler :: FloraAdminM (Html ())
 userIndexHandler = do
@@ -72,9 +78,10 @@ userIndexHandler = do
   render templateEnv (Templates.indexUsers users)
 
 withUserHandler :: UserId -> ServerT AdminWithUserRoutes FloraAdminM
-withUserHandler userId = AdminWithUserRoutes'
-  { showUser = showUserHandler userId
-  }
+withUserHandler userId =
+  AdminWithUserRoutes'
+    { showUser = showUserHandler userId
+    }
 
 showUserHandler :: UserId -> FloraAdminM (Html ())
 showUserHandler userId = do
@@ -88,10 +95,11 @@ showUserHandler userId = do
       render templateEnv (Templates.showUser user)
 
 adminPackagesHandler :: ServerT PackagesAdminRoutes FloraAdminM
-adminPackagesHandler = PackagesAdminRoutes'
-  { packageIndex = packageIndexHandler
-  -- , withPackage = withPackageHandler
-  }
+adminPackagesHandler =
+  PackagesAdminRoutes'
+    { packageIndex = packageIndexHandler
+    -- , withPackage = withPackageHandler
+    }
 
 packageIndexHandler :: FloraAdminM (Html ())
 packageIndexHandler = do
@@ -100,7 +108,6 @@ packageIndexHandler = do
   packages <- liftIO $ withPool pool Query.getAllPackages
   templateEnv <- fromSession session defaultTemplateEnv
   render templateEnv (Templates.indexPackages packages)
-
 
 -- withPackageHandler ::  -> ServerT WithPackageAdminRoutes FloraAdminM
 -- withPackageHandler packageId = WithPackageAdminRoutes'
@@ -117,4 +124,3 @@ packageIndexHandler = do
 --     Nothing -> renderError templateEnv notFound404
 --     Just package -> do
 --       render templateEnv (Templates.showPackage package)
-
