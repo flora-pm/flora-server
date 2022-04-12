@@ -4,6 +4,10 @@ FROM haskell:8.10
 # generate a working directory
 WORKDIR /flora-server 
 
+# install the pg_config executable
+RUN apt-get update
+RUN apt-get install -y libpq-dev
+
 # copy the files relevant to build core dependencies
 COPY cabal.project flora.cabal shell.nix environment.sh environment.docker.sh Makefile scripts/start-tmux.sh ./
 
