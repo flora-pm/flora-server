@@ -33,11 +33,17 @@ instance Display Target where
   displayBuilder Dependents = "dependents"
   displayBuilder Dependencies = "dependencies"
 
-showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> Vector Category -> FloraHTML
-showPackage latestRelease package@Package{namespace, name, synopsis} dependents dependencies categories = do
+showPackage :: Release
+            -> Package
+            -> Vector Package
+            -> Word
+            -> Vector (Namespace, PackageName, Text)
+            -> Word
+            -> Vector Category -> FloraHTML
+showPackage latestRelease package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
   div_ [class_ "container dark:text-gray-100 text-black"] $ do
     presentationHeader latestRelease namespace name synopsis
-    packageBody package latestRelease dependencies dependents categories
+    packageBody package latestRelease dependencies numberOfDependencies dependents numberOfDependents categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = do
@@ -49,8 +55,8 @@ presentationHeader release namespace name synopsis = do
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
-packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> Vector Category -> FloraHTML
-packageBody Package{namespace, name = packageName, metadata} latestRelease dependencies dependents categories =
+packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
+packageBody Package{namespace, name = packageName, metadata} latestRelease dependencies numberOfDependencies dependents numberOfDependents categories =
   div_ [class_ "package-body"] $ do
     div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
       div_ [class_ "package-left-column"] $ do
@@ -61,9 +67,9 @@ packageBody Package{namespace, name = packageName, metadata} latestRelease depen
       div_ [class_ "col-span-2"] mempty
       div_ [class_ "package-right-column"] $ do
         div_ [class_ "grid-rows-3"] $ do
-          displayDependencies (namespace, packageName) dependencies
+          displayDependencies (namespace, packageName) numberOfDependencies dependencies 
           displayInstructions packageName latestRelease
-          displayDependents (namespace, packageName) dependents
+          displayDependents (namespace, packageName) numberOfDependents dependents
 
 displayReleaseVersion :: Release -> FloraHTML
 displayReleaseVersion Release{version} = toHtml version
@@ -99,12 +105,14 @@ displaySourceRepos x = a_ [href_ (head x)] "Source repository"
 displayDependencies ::
   -- | The package namespace and name
   (Namespace, PackageName) ->
+  -- | Number of dependencies
+  Word -> 
   -- | (Namespace, Name, Version requirement)
   Vector (Namespace, PackageName, Text) ->
   FloraHTML
-displayDependencies (namespace, packageName) dependencies = do
+displayDependencies (namespace, packageName) numberOfDependencies dependencies = do
   div_ [class_ "mb-5"] $ do
-    h3_ [class_ "lg:text-2xl package-body-section mb-3"] (toHtml $ "Dependencies (" <> display (Vector.length dependencies) <> ")")
+    h3_ [class_ "lg:text-2xl package-body-section mb-3"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
     ul_ [class_ "dependencies grid-cols-3"] $ do
       let deps = foldMap renderDependency dependencies
       deps <> showAll (namespace, packageName, Dependencies)
@@ -131,10 +139,13 @@ displayInstructions packageName latestRelease = do
           , xModel_ [] "input"
           ]
 
-displayDependents :: (Namespace, PackageName) -> Vector Package -> FloraHTML
-displayDependents (namespace, packageName) dependents = do
+displayDependents :: (Namespace, PackageName)
+                  -> Word
+                  -> Vector Package
+                  -> FloraHTML
+displayDependents (namespace, packageName) numberOfDependents dependents = do
   div_ [class_ "mb-5 dependents"] $ do
-    h3_ [class_ "lg:text-2xl package-body-section dependents mb-3"] (toHtml $ "Dependents (" <> display (Vector.length dependents) <> ")")
+    h3_ [class_ "lg:text-2xl package-body-section dependents mb-3"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")
     if Vector.null dependents
       then ""
       else

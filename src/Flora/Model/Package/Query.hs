@@ -81,6 +81,23 @@ getPackageDependents namespace packageName = query Select q (namespace, packageN
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
+getNumberOfPackageDependents :: MonadIO m => Namespace -> PackageName -> DBT m Word
+getNumberOfPackageDependents namespace packageName = do
+  (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
+  case result of
+    Just (Only n) -> pure $ fromIntegral n
+    Nothing -> pure 0
+
+numberOfPackageDependentsQuery :: Query
+numberOfPackageDependentsQuery = [sql|
+  SELECT DISTINCT count(p."package_id")
+  FROM "packages" AS p
+        INNER JOIN "dependents" AS dep
+                ON p."package_id" = dep."dependent_id"
+  WHERE  dep."namespace" = ?
+    AND  dep."name" = ?
+  |]
+
 packageDependentsQuery :: Query
 packageDependentsQuery =
   [sql|
@@ -172,6 +189,23 @@ getRequirementsQuery :: Query
 getRequirementsQuery =
   [sql|
     select distinct dependency.namespace, dependency.name, req.requirement from requirements as req
+     inner join packages as dependency on dependency.package_id = req.package_id
+     inner join package_components as pc ON pc.package_component_id = req.package_component_id
+     inner join releases as rel on rel.release_id = pc.release_id
+    where rel."release_id" = ?
+  |]
+
+getNumberOfPackageRequirements :: MonadIO m => ReleaseId -> DBT m Word
+getNumberOfPackageRequirements releaseId = do
+  (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageRequirementsQuery (Only releaseId)
+  case result of
+    Just (Only n) -> pure $ fromIntegral n
+    Nothing -> pure 0
+
+numberOfPackageRequirementsQuery :: Query
+numberOfPackageRequirementsQuery = [sql|
+    select distinct count(*)
+     from requirements as req
      inner join packages as dependency on dependency.package_id = req.package_id
      inner join package_components as pc ON pc.package_component_id = req.package_component_id
      inner join releases as rel on rel.release_id = pc.release_id

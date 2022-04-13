@@ -67,40 +67,39 @@ showHandler namespaceText packageNameText = do
       case result of
         Nothing -> renderError templateEnv notFound404
         Just package -> do
-          dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
           releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
           let latestRelease = maximumBy (compare `on` version) releases
-          latestReleasedependencies <-
-            liftIO $ withPool pool $ Query.getRequirements (latestRelease ^. #releaseId)
-          categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #packageId)
-          render templateEnv $
-            Packages.showPackage latestRelease package dependents latestReleasedependencies categories
+          showPackageVersion namespace name (latestRelease ^. #version)
     _ -> renderError templateEnv notFound404
 
 showVersionHandler :: Text -> Text -> Text -> FloraPageM (Html ())
 showVersionHandler namespaceText packageNameText versionText = do
   session <- getSession
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   templateEnv <- fromSession session defaultTemplateEnv
   case (validateNamespace namespaceText, validateName packageNameText, validateVersion versionText) of
-    (Just namespace, Just name, Just versionSpec) -> do
-      result <- liftIO $ withPool pool $ Query.getPackageByNamespaceAndName namespace name
-      case result of
-        Nothing -> renderError templateEnv notFound404
-        Just package -> do
-          dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace name
-          liftIO (withPool pool $ Query.getReleaseByVersion (package ^. #packageId) versionSpec)
-            >>= \case
-              Nothing -> renderError templateEnv notFound404
-              Just release -> do
-                releaseDependencies <-
-                  liftIO $ withPool pool $ Query.getRequirements (release ^. #releaseId)
-                categories <-
-                  liftIO $
-                    withPool pool $ Query.getPackageCategories (package ^. #packageId)
-                render templateEnv $
-                  Packages.showPackage release package dependents releaseDependencies categories
+    (Just namespace, Just name, Just versionSpec) -> showPackageVersion namespace name versionSpec
     _ -> renderError templateEnv notFound404
+
+showPackageVersion :: Namespace -> PackageName -> Version -> FloraPageM (Html ())
+showPackageVersion namespace packageName version = do
+  session <- getSession
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  templateEnv <- fromSession session defaultTemplateEnv
+  result <- liftIO $ withPool pool $ Query.getPackageByNamespaceAndName namespace packageName
+  case result of
+    Nothing -> renderError templateEnv notFound404
+    Just package -> do
+      dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace packageName
+      liftIO (withPool pool $ Query.getReleaseByVersion (package ^. #packageId) version)
+        >>= \case
+          Nothing -> renderError templateEnv notFound404
+          Just release -> do
+            releaseDependencies <- liftIO $ withPool pool $ Query.getRequirements (release ^. #releaseId)
+            categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #packageId)
+            numberOfDependents <- withPool pool $ Query.getNumberOfPackageDependents namespace packageName
+            numberOfDependencies <- withPool pool $ Query.getNumberOfPackageRequirements (release ^. #releaseId)
+            render templateEnv $ Packages.showPackage release package dependents numberOfDependents releaseDependencies numberOfDependencies categories
+
 
 showDependentsHandler :: Text -> Text -> FloraPageM (Html ())
 showDependentsHandler namespaceText packageNameText = do
