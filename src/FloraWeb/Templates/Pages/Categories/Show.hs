@@ -2,13 +2,13 @@ module FloraWeb.Templates.Pages.Categories.Show where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
-import Data.Vector (Vector, forM_)
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Distribution.Types.Version (Version)
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package (Namespace, PackageName)
 import FloraWeb.Templates (FloraHTML)
-import FloraWeb.Templates.Packages.Listing as Listing
+import FloraWeb.Templates.Packages.Listing (packageListing)
 import Lucid
 
 showCategory :: Category -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
@@ -27,10 +27,3 @@ presentationHeader Category{name, synopsis} numberOfPackages = do
         span_ [class_ "dark:text-gray-200 version"] $ toHtml $ display numberOfPackages <> " packages"
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
-
-packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
-packageListing packages = do
-  ul_ [class_ "packages-list"] $ do
-    forM_ packages $ \pInfo -> do
-      li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
-        Listing.showPackage pInfo

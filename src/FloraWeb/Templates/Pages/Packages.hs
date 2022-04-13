@@ -14,6 +14,7 @@ import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
 
 import qualified Data.Text as T
+import qualified Data.Vector as Vector
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
@@ -24,6 +25,13 @@ import Flora.Model.Package.Types
 import Flora.Model.Release (Release (..))
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid.Base (makeAttribute)
+
+data Target = Dependents | Dependencies
+  deriving stock (Eq, Ord)
+
+instance Display Target where
+  displayBuilder Dependents = "dependents"
+  displayBuilder Dependencies = "dependencies"
 
 showPackage :: Release -> Package -> Vector Package -> Vector (Namespace, PackageName, Text) -> Vector Category -> FloraHTML
 showPackage latestRelease package@Package{namespace, name, synopsis} dependents dependencies categories = do
@@ -42,7 +50,7 @@ presentationHeader release namespace name synopsis = do
       p_ [class_ ""] (toHtml synopsis)
 
 packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Vector Package -> Vector Category -> FloraHTML
-packageBody Package{name, metadata} latestRelease dependencies dependents categories =
+packageBody Package{namespace, name = packageName, metadata} latestRelease dependencies dependents categories =
   div_ [class_ "package-body"] $ do
     div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
       div_ [class_ "package-left-column"] $ do
@@ -53,9 +61,9 @@ packageBody Package{name, metadata} latestRelease dependencies dependents catego
       div_ [class_ "col-span-2"] mempty
       div_ [class_ "package-right-column"] $ do
         div_ [class_ "grid-rows-3"] $ do
-          displayDependencies dependencies
-          displayInstructions name latestRelease
-          displayDependents dependents
+          displayDependencies (namespace, packageName) dependencies
+          displayInstructions packageName latestRelease
+          displayDependents (namespace, packageName) dependents
 
 displayReleaseVersion :: Release -> FloraHTML
 displayReleaseVersion Release{version} = toHtml version
@@ -78,8 +86,7 @@ displayCategories categories = do
 displayLinks :: Release -> PackageMetadata -> FloraHTML
 displayLinks _release meta@PackageMetadata{..} = do
   div_ [class_ "mb-5"] $ do
-    div_ [class_ "links mb-3"] $ do
-      h3_ [class_ "lg:text-2xl package-body-section"] "Links"
+    h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Links"
     ul_ [class_ "bullets"] $ do
       li_ $ a_ [href_ (getHomepage meta)] "Homepage"
       li_ $ a_ [href_ documentation] "Documentation"
@@ -90,21 +97,27 @@ displaySourceRepos [] = toHtml @Text "No source repository"
 displaySourceRepos x = a_ [href_ (head x)] "Source repository"
 
 displayDependencies ::
+  -- | The package namespace and name
+  (Namespace, PackageName) ->
   -- | (Namespace, Name, Version requirement)
   Vector (Namespace, PackageName, Text) ->
   FloraHTML
-displayDependencies dependencies = do
+displayDependencies (namespace, packageName) dependencies = do
   div_ [class_ "mb-5"] $ do
-    div_ [class_ "links mb-3"] $ do
-      h3_ [class_ "lg:text-2xl package-body-section"] "Dependencies"
+    h3_ [class_ "lg:text-2xl package-body-section mb-3"] (toHtml $ "Dependencies (" <> display (Vector.length dependencies) <> ")")
     ul_ [class_ "dependencies grid-cols-3"] $ do
-      foldMap renderDependency dependencies
+      let deps = foldMap renderDependency dependencies
+      deps <> showAll (namespace, packageName, Dependencies)
+
+showAll :: (Namespace, PackageName, Target) -> FloraHTML
+showAll (namespace, packageName, target) = do
+  let resource = "/packages/@" <> display namespace <> "/" <> display packageName <> "/" <> display target
+  a_ [class_ "dependency", href_ resource] "Show all…"
 
 displayInstructions :: PackageName -> Release -> FloraHTML
 displayInstructions packageName latestRelease = do
   div_ [class_ "mb-5"] $ do
-    div_ [class_ "links mb-3"] $ do
-      h3_ [class_ "lg:text-2xl package-body-section"] "Installation"
+    h3_ [class_ "lg:text-2xl package-body-section mb-3"] "Installation"
     div_ [class_ "items-top"] $ do
       div_ [class_ "space-y-2"] $ do
         label_ [for_ "install-string", class_ "font-light"] "In your .cabal file:"
@@ -118,12 +131,15 @@ displayInstructions packageName latestRelease = do
           , xModel_ [] "input"
           ]
 
-displayDependents :: Vector Package -> FloraHTML
-displayDependents dependents = do
-  div_ [class_ "mb-5 dependents w-1/4"] $ do
-    div_ [class_ "mb-3"] $ do
-      h3_ [class_ "lg:text-2xl package-body-section"] "Dependents"
-    fold $ intercalateVec ", " $ fmap renderDependent dependents
+displayDependents :: (Namespace, PackageName) -> Vector Package -> FloraHTML
+displayDependents (namespace, packageName) dependents = do
+  div_ [class_ "mb-5 dependents"] $ do
+    h3_ [class_ "lg:text-2xl package-body-section dependents mb-3"] (toHtml $ "Dependents (" <> display (Vector.length dependents) <> ")")
+    if Vector.null dependents
+      then ""
+      else
+        let deps = fold $ intercalateVec ", " $ fmap renderDependent dependents
+         in deps <> ", " <> showAll (namespace, packageName, Dependents)
 
 renderDependent :: Package -> FloraHTML
 renderDependent Package{name, namespace} = do

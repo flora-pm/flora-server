@@ -129,7 +129,7 @@ testBytestringDependents = do
       (PackageName "semigroups")
       "./test/fixtures/Cabal/semigroups.cabal"
       "./test/fixtures/Cabal/"
-  results <- liftDB $ Query.getPackageDependents (Namespace "haskell") (PackageName "bytestring")
+  results <- liftDB $ Query.getAllPackageDependents (Namespace "haskell") (PackageName "bytestring")
   assertEqual
     8
     (Vector.length results)

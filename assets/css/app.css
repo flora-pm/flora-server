@@ -198,9 +198,14 @@ div[class="bullets"]{
   .package-body-section{
     font-weight: 700;
     display: inline-block;
+    white-space: nowrap;
   }
 
   .dependency{
+    white-space: nowrap;
+  }
+
+  .dependents{
     white-space: nowrap;
   }
 
