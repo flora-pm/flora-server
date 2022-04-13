@@ -30,4 +30,8 @@ showPackage (namespace, name, synopsis, versionRange) = do
         [class_ "package-name inline text-link dark:text-link-dark"]
         (toHtml $ prettyPackageName namespace name)
       p_ [class_ "synopsis inline ml-3"] (toHtml synopsis)
-    div_ [class_ "text-slate-300 text-sm"] $ toHtml versionRange
+    div_ [class_ "text-slate-300 text-sm"] $ toHtml version
+      where
+        version = if versionRange == ">=0"
+                  then ""
+                  else toHtml versionRange

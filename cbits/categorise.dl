@@ -29,6 +29,7 @@ flora_category("data-structures", "Data Structures", "Data structures, whether t
 flora_category("databases", "Databases", "Database drivers and interfaces").
 flora_category("development", "Development", "Development helpers, integration with other languages").
 flora_category("distributed", "Distributed Systems & Computation", "Tooling and techniques for writing distributed systems").
+flora_category("distribution", "Distribution", "Building, Packaging and Distributing software in Haskell").
 flora_category("ffi", "FFI", "Tooling to work with the Foreign Function Interface").
 flora_category("game-dev", "Game development", "Libraries used for game development").
 flora_category("generics", "Generics", "Tooling to work with Haskell's Generics").
