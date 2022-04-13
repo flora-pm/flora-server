@@ -33,13 +33,15 @@ instance Display Target where
   displayBuilder Dependents = "dependents"
   displayBuilder Dependencies = "dependencies"
 
-showPackage :: Release
-            -> Package
-            -> Vector Package
-            -> Word
-            -> Vector (Namespace, PackageName, Text)
-            -> Word
-            -> Vector Category -> FloraHTML
+showPackage ::
+  Release ->
+  Package ->
+  Vector Package ->
+  Word ->
+  Vector (Namespace, PackageName, Text) ->
+  Word ->
+  Vector Category ->
+  FloraHTML
 showPackage latestRelease package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
   div_ [class_ "container dark:text-gray-100 text-black"] $ do
     presentationHeader latestRelease namespace name synopsis
@@ -63,11 +65,11 @@ packageBody Package{namespace, name = packageName, metadata} latestRelease depen
         div_ [class_ "grid-rows-3"] $ do
           displayCategories categories
           displayLicense (metadata ^. #license)
-          displayLinks latestRelease metadata
+          displayLinks packageName latestRelease metadata
       div_ [class_ "col-span-2"] mempty
       div_ [class_ "package-right-column"] $ do
         div_ [class_ "grid-rows-3"] $ do
-          displayDependencies (namespace, packageName) numberOfDependencies dependencies 
+          displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayInstructions packageName latestRelease
           displayDependents (namespace, packageName) numberOfDependents dependents
 
@@ -89,13 +91,13 @@ displayCategories categories = do
     ul_ [class_ ""] $ do
       foldMap renderCategory categories
 
-displayLinks :: Release -> PackageMetadata -> FloraHTML
-displayLinks _release meta@PackageMetadata{..} = do
+displayLinks :: PackageName -> Release -> PackageMetadata -> FloraHTML
+displayLinks packageName _release meta@PackageMetadata{..} = do
   div_ [class_ "mb-5"] $ do
     h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Links"
     ul_ [class_ "bullets"] $ do
       li_ $ a_ [href_ (getHomepage meta)] "Homepage"
-      li_ $ a_ [href_ documentation] "Documentation"
+      li_ $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
       li_ $ displaySourceRepos sourceRepos
 
 displaySourceRepos :: [Text] -> FloraHTML
@@ -106,7 +108,7 @@ displayDependencies ::
   -- | The package namespace and name
   (Namespace, PackageName) ->
   -- | Number of dependencies
-  Word -> 
+  Word ->
   -- | (Namespace, Name, Version requirement)
   Vector (Namespace, PackageName, Text) ->
   FloraHTML
@@ -139,10 +141,11 @@ displayInstructions packageName latestRelease = do
           , xModel_ [] "input"
           ]
 
-displayDependents :: (Namespace, PackageName)
-                  -> Word
-                  -> Vector Package
-                  -> FloraHTML
+displayDependents ::
+  (Namespace, PackageName) ->
+  Word ->
+  Vector Package ->
+  FloraHTML
 displayDependents (namespace, packageName) numberOfDependents dependents = do
   div_ [class_ "mb-5 dependents"] $ do
     h3_ [class_ "lg:text-2xl package-body-section dependents mb-3"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")

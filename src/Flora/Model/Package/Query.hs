@@ -89,7 +89,8 @@ getNumberOfPackageDependents namespace packageName = do
     Nothing -> pure 0
 
 numberOfPackageDependentsQuery :: Query
-numberOfPackageDependentsQuery = [sql|
+numberOfPackageDependentsQuery =
+  [sql|
   SELECT DISTINCT count(p."package_id")
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
@@ -203,7 +204,8 @@ getNumberOfPackageRequirements releaseId = do
     Nothing -> pure 0
 
 numberOfPackageRequirementsQuery :: Query
-numberOfPackageRequirementsQuery = [sql|
+numberOfPackageRequirementsQuery =
+  [sql|
     select distinct count(*)
      from requirements as req
      inner join packages as dependency on dependency.package_id = req.package_id

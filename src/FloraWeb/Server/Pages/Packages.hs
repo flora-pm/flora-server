@@ -100,7 +100,6 @@ showPackageVersion namespace packageName version = do
             numberOfDependencies <- withPool pool $ Query.getNumberOfPackageRequirements (release ^. #releaseId)
             render templateEnv $ Packages.showPackage release package dependents numberOfDependents releaseDependencies numberOfDependencies categories
 
-
 showDependentsHandler :: Text -> Text -> FloraPageM (Html ())
 showDependentsHandler namespaceText packageNameText = do
   session <- getSession
