@@ -240,6 +240,7 @@ executable flora-cli
     , monad-control
     , optics-core
     , optparse-applicative  ^>=0.16
+    , password-types
     , pg-entity
     , pg-transact
     , text
