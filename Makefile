@@ -5,6 +5,7 @@ build: ## Build the backend
 	@cabal build -j -O0
 
 clean: ## Remove the cabal build artifacts
+	@rm cbits/*.cpp
 	@cabal clean
 
 assets-deps: ## Install the dependencies of the frontend
@@ -31,7 +32,7 @@ db-setup: db-create ## Setup the dev database
 
 db-reset: db-drop db-setup db-provision ## Reset the dev database (uses Cabal)
 
-db-provision: ## Load the development data in the database
+db-provision: build ## Load the development data in the database
 	@cabal run -- flora-cli provision-fixtures
 
 repl: soufflé ## Start a cabal REPL
