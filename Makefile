@@ -62,14 +62,14 @@ style: ## Run the code formatters (stylish-haskell, cabal-fmt, nixfmt)
 nix-shell: ## Enter the Nix shell
 	@nix-shell
 
-docker-build: ## Build the docker image
-	@docker-compose build
-
 docker-start: ## Start the container cluster
-	@docker-compose up -d
+	@docker-compose up -d --build
 
 docker-enter: ## Enter the docker environment
-	docker-compose exec flora-server "nix-shell"
+	docker-compose exec flora-server "zsh"
+
+start-tmux: ## Start a Tmux session with hot code reloading
+	./scripts/start-tmux.sh
 
 soufflé: ## Generate C++ files from the Soufflé Datalog definitions
 	cd cbits ; souffle -g categorise.{cpp,dl}

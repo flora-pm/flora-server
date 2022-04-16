@@ -79,15 +79,16 @@ you can also use `db-create` and `db-drop` to create and delete the database in 
 
 ### Docker Workflow
 
-A docker-based workflow is provided:
+A docker-based workflow is provided. The idea is to develop from within a container that brings with it all dependencies,
+and communicates with another container for the Postgres database.
 
 ```bash
-# It's gonna take around 13 minutes the first time you build,
-# run "make docker-start" the next times.
-$ docker-compose up -d --build
+# It's gonna take around 13 minutes the first time you build
+$ make docker-start
+# Once the containers are running, you can enter the development environment and start hacking
 $ make docker-enter
-# You'll be in the docker container
-(docker)$ source environment.docker.sh
+# You'll be in the docker container. Environment variables are automatically set 
+# so you should be able to start Flora
 (docker)$ make nix-tmux
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.

@@ -1,22 +1,39 @@
 # syntax=docker/dockerfile:1
-FROM haskell:8.10
+FROM gbogard/haskell-bullseye:8.10.7
 
 # generate a working directory
 WORKDIR /flora-server 
 
-# install the pg_config executable
-RUN apt-get update
-RUN apt-get install -y libpq-dev
+# install dependencies (pg_config & yarn)
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list 
+RUN apt update
+RUN apt install -y nodejs yarn libpq-dev mcpp wget zsh tmux
+
+# install soufflé
+RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
+RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb
+
+# setup ZSH
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # copy the files relevant to build core dependencies
-COPY cabal.project flora.cabal shell.nix environment.sh environment.docker.sh Makefile scripts/start-tmux.sh ./
+COPY src ./src
+COPY app ./app
+COPY cbits ./cbits
+COPY cabal.project flora.cabal shell.nix environment.sh Makefile scripts/start-tmux.sh ./
+COPY scripts/shell-welcome.txt /etc/motd
+COPY scripts/.zshrc /root/.zshrc
 
-RUN cabal update
-# let nix build the dependencies. This uses nix-shell to cache the setup phase.
-RUN cabal build -j4
+# Compile Souffle source files
+RUN make souffle
 
-# copy asset-relevant dependency files
-COPY assets/package.json assets/yarn.lock assets/
-RUN make assets-deps
+# copy and build the assets
+COPY assets ./assets
+RUN make build-assets
+
+# build Haskell dependencies
+RUN cabal build --only-dependencies -j8
 
 CMD [ "/bin/sh", "-c", "sleep 1d"]

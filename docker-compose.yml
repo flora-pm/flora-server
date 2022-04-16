@@ -2,7 +2,7 @@ version: "3"
 services:
   flora-server:
     build: .
-    container_name: flora-server
+    container_name: flora-server-dev-env
     ports:
       - "8084:8084"
     volumes:
@@ -14,12 +14,13 @@ services:
   database:
     image: "postgres"
     container_name: database
+    ports:
+      - "5432:5432"
     expose:
       - "5432"
     env_file:
       - database.env
     volumes:
-      - database-data:/flora-server/pgdata/
-    
+      - database-data:/var/lib/postgresql/data    
 volumes:
   database-data:
