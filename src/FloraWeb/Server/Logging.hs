@@ -2,7 +2,8 @@ module FloraWeb.Server.Logging
   ( alert
   , makeLogger
   , runLog
-  ) where
+  )
+where
 
 import Data.Aeson.Types (Pair)
 import Data.Kind (Type)
@@ -17,20 +18,22 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Text.Display (display)
 import Flora.Environment
 import Optics.Core ((^.))
+
 -- | Wrapper around 'Log.runLogT' with necessary metadata
-runLog :: forall (m :: Type -> Type) a.
-           FloraEnv
-        -> Logger
-        -> LogT m a
-        -> m a
+runLog ::
+  forall (m :: Type -> Type) a.
+  FloraEnv ->
+  Logger ->
+  LogT m a ->
+  m a
 runLog env logger logAction =
   Log.runLogT ("flora-" <> suffix) logger defaultLogLevel logAction
-    where
-      suffix = display $ env ^. #environment
+  where
+    suffix = display $ env ^. #environment
 
 makeLogger :: LoggingDestination -> (Logger -> IO a) -> IO a
 makeLogger StdOut = Log.withStdOutLogger
-makeLogger Json   = Log.withJsonStdOutLogger
+makeLogger Json = Log.withJsonStdOutLogger
 
 alert :: (MonadIO m, MonadBase IO m) => Text -> [Pair] -> LogT m ()
 alert message details = do

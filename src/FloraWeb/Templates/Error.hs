@@ -1,7 +1,8 @@
 module FloraWeb.Templates.Error
   ( renderError
   , showError
-  ) where
+  )
+where
 
 import Lucid
 import Network.HTTP.Types.Status
@@ -11,16 +12,21 @@ import Control.Monad.Except (MonadError)
 import FloraWeb.Templates
 import Servant
 
-renderError :: (MonadError ServerError m)
-            => TemplateEnv -> Status -> m a
+renderError ::
+  (MonadError ServerError m) =>
+  TemplateEnv ->
+  Status ->
+  m a
 renderError env status = do
   let templateEnv = env & (#title .~ "Flora :: *** Exception")
   let body = mkErrorPage templateEnv $ showError status
-  throwError $ ServerError{ errHTTPCode = statusCode status
-                          , errBody = body
-                          , errReasonPhrase = ""
-                          , errHeaders = []
-                          }
+  throwError $
+    ServerError
+      { errHTTPCode = statusCode status
+      , errBody = body
+      , errReasonPhrase = ""
+      , errHeaders = []
+      }
 
 showError :: Status -> FloraHTML
 showError status = do

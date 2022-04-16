@@ -1,5 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeFamilies #-}
+
 module Flora.ThirdParties.Hackage.Client where
 
 import Servant.API ()

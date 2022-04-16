@@ -21,13 +21,13 @@ import FloraWeb.Templates.Pages.Sessions as Sessions
 import FloraWeb.Types
 import Servant
 
--- server :: ToServant Routes' (AsServerT FloraPageM)
 server :: ServerT Routes FloraPageM
-server = Routes'
-  { new = newSessionHandler
-  , create = createSessionHandler
-  , delete = deleteSessionHandler
-  }
+server =
+  Routes'
+    { new = newSessionHandler
+    , create = createSessionHandler
+    , delete = deleteSessionHandler
+    }
 
 newSessionHandler :: FloraPageM (Union NewSessionResponses)
 newSessionHandler = do
@@ -51,23 +51,26 @@ createSessionHandler LoginForm{email, password} = do
     Nothing -> do
       Log.logInfo_ "[+] Couldn't find user"
       templateDefaults <- fromSession session defaultTemplateEnv
-      let templateEnv = templateDefaults
+      let templateEnv =
+            templateDefaults
               & (#flashError ?~ mkError "Could not authenticate")
       respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
     Just user ->
       if validatePassword (mkPassword password) (user ^. #password)
-      then do
-        Log.logInfo_ "[+] User connected!"
-        sessionId <- persistSession pool (session ^. #sessionId) (user ^. #userId)
-        let sessionCookie = craftSessionCookie sessionId True
-        respond $ WithStatus @301 $
-          redirectWithCookie "/" sessionCookie
-      else do
-        Log.logInfo_ "[+] Couldn't authenticate user"
-        templateDefaults <- fromSession session defaultTemplateEnv
-        let templateEnv = templateDefaults
-                & (#flashError ?~ mkError "Could not authenticate")
-        respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
+        then do
+          Log.logInfo_ "[+] User connected!"
+          sessionId <- persistSession pool (session ^. #sessionId) (user ^. #userId)
+          let sessionCookie = craftSessionCookie sessionId True
+          respond $
+            WithStatus @301 $
+              redirectWithCookie "/" sessionCookie
+        else do
+          Log.logInfo_ "[+] Couldn't authenticate user"
+          templateDefaults <- fromSession session defaultTemplateEnv
+          let templateEnv =
+                templateDefaults
+                  & (#flashError ?~ mkError "Could not authenticate")
+          respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
 
 deleteSessionHandler :: PersistentSessionId -> FloraPageM DeleteSessionResponse
 deleteSessionHandler sessionId = do

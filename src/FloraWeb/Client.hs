@@ -1,6 +1,7 @@
-{-# LANGUAGE GADTs        #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module FloraWeb.Client where
 
 import Control.Arrow ((>>>))

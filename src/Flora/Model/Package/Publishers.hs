@@ -10,19 +10,21 @@ import Database.PostgreSQL.Transact
 import Flora.User (UserId)
 import GHC.Generics
 
-newtype PackagePublisherId = PackagePublisherId { getPackagePublisherId :: UUID }
-  deriving (Eq, Show, FromField, ToField)
+newtype PackagePublisherId = PackagePublisherId {getPackagePublisherId :: UUID}
+  deriving
+    (Eq, Show, FromField, ToField)
     via UUID
 
 data PackagePublisher = PackagePublisher
   { packagePublisherId :: PackagePublisherId
-  , packageNamespace   :: Namespace
-  , packageName        :: PackageName
-  , publisherId        :: UserId
+  , packageNamespace :: Namespace
+  , packageName :: PackageName
+  , publisherId :: UserId
   }
-  deriving stock (Eq, Show,Generic)
+  deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
-  deriving (Entity)
+  deriving
+    (Entity)
     via (GenericEntity '[TableName "package_publishers"] PackagePublisher)
 
 insertPackagePublisher :: PackagePublisher -> DBT IO ()

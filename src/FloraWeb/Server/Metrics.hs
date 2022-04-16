@@ -1,6 +1,7 @@
 module FloraWeb.Server.Metrics
   ( prometheusMiddleware
-  ) where
+  )
+where
 
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -18,41 +19,52 @@ import System.Clock (Clock (..), getTime)
 prometheusMiddleware :: DeploymentEnv -> LoggingEnv -> Application -> Application
 prometheusMiddleware environment LoggingEnv{prometheusEnabled} =
   if prometheusEnabled
-  then P.prometheus config . instrument
-  else id
+    then P.prometheus config . instrument
+    else id
   where
     config = PrometheusSettings ["metrics"] False True
     instrument :: Application -> Application
     instrument =
       instrumentHandlerValueWithFilter environment P.ignoreRawResponses normalizeWaiRequestRoute
 
-normalizeWaiRequestRoute ::Request -> Text
+normalizeWaiRequestRoute :: Request -> Text
 normalizeWaiRequestRoute req = pathInfo
   where
     pathInfo :: Text
     pathInfo = "/" <> T.intercalate "/" (Wai.pathInfo req)
 
-countRoute :: Text -- ^ handler
-           -> Text -- ^ method
-           -> Text -- ^ status
-           -> Text -- ^ environment
-           -> IO ()
+countRoute ::
+  -- | handler
+  Text ->
+  -- | method
+  Text ->
+  -- | status
+  Text ->
+  -- | environment
+  Text ->
+  IO ()
 countRoute handler method status_code environment =
   P.withLabel routeCounter (handler, method, status_code, environment) P.incCounter
 
 routeCounter :: P.Vector P.Label4 P.Counter
-routeCounter = P.unsafeRegister $ P.vector ("handler", "method", "status_code", "environment")
-                                $ P.counter info
+routeCounter =
+  P.unsafeRegister $
+    P.vector ("handler", "method", "status_code", "environment") $
+      P.counter info
   where
     info = P.Info "route_counter" "How many times was this route accessed"
 {-# NOINLINE routeCounter #-}
 
 instrumentHandlerValueWithFilter ::
-  DeploymentEnv
-  -> (Wai.Response -> Maybe Wai.Response) -- ^ Response filter
-  -> (Wai.Request -> Text) -- ^ The function used to derive the "handler" value in Prometheus
-  -> Wai.Application -- ^ The app to instrument
-  -> Wai.Application -- ^ The instrumented app
+  DeploymentEnv ->
+  -- | Response filter
+  (Wai.Response -> Maybe Wai.Response) ->
+  -- | The function used to derive the "handler" value in Prometheus
+  (Wai.Request -> Text) ->
+  -- | The app to instrument
+  Wai.Application ->
+  -- | The instrumented app
+  Wai.Application
 instrumentHandlerValueWithFilter environment resFilter f app req respond = do
   start <- getTime Monotonic
   app req $ \res -> do

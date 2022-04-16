@@ -1,7 +1,8 @@
 module FloraWeb.Routes.Pages.Categories
   ( Routes
-  , Routes'(..)
-  ) where
+  , Routes' (..)
+  )
+where
 
 import Data.Text
 import Lucid
@@ -13,7 +14,6 @@ type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
-  , show  :: mode :-  Capture "category" Text :> Get '[HTML] (Html ())
+  , show :: mode :- Capture "category" Text :> Get '[HTML] (Html ())
   }
   deriving stock (Generic)
-

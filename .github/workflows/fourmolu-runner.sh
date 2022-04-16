@@ -4,7 +4,7 @@ set -eux
 
 git add .
 
-stylish-haskell -c .stylish-haskell.yaml -r src test app -i
+fourmolu --mode check $(git ls-files '*.hs')
 
 git status
 

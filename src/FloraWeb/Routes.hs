@@ -9,6 +9,6 @@ type ServerRoutes = NamedRoutes Routes
 
 data Routes mode = Routes
   { assets :: mode :- "static" :> Raw
-  , pages  :: mode :- AuthProtect "optional-cookie-auth" :> Pages.Routes
+  , pages :: mode :- AuthProtect "optional-cookie-auth" :> Pages.Routes
   }
   deriving stock (Generic)

@@ -8,14 +8,15 @@ import Database.PostgreSQL.Simple.ToField
 import Flora.Release
 import GHC.Generics
 
-newtype DownloadId = DownloadId { getDownloadId :: UUID }
+newtype DownloadId = DownloadId {getDownloadId :: UUID}
   deriving stock (Generic, Show)
-  deriving (Eq, Ord, FromJSON, ToJSON, FromField, ToField)
+  deriving
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField)
     via UUID
 
 data Download = Download
   { downloadId :: DownloadId
-  , releaseId  :: ReleaseId
-  , downloads  :: Integer
-  , day        :: UTCTime
+  , releaseId :: ReleaseId
+  , downloads :: Integer
+  , day :: UTCTime
   }

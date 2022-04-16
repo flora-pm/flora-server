@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE QuasiQuotes     #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Flora.Model.Release.Query where
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+
 module Flora.Model.Category.Query where
 
 import Control.Monad.IO.Class
@@ -26,15 +27,18 @@ getCategoryByName :: (MonadIO m) => Text -> DBT m (Maybe Category)
 getCategoryByName categoryName = selectOneByField [field| name |] (Only categoryName)
 
 getPackagesFromCategorySlug :: (MonadIO m) => Text -> DBT m (Vector Package)
-getPackagesFromCategorySlug slug = do
-  getCategoryBySlug slug
-  >>= \case
-    Nothing -> do
-      liftIO $ T.putStrLn $ "Could not find category from slug: \"" <> slug <> "\""
-      pure Vector.empty
-    Just Category{categoryId} -> do
-      liftIO $ T.putStrLn "Category found!"
-      query Select [sql|
+getPackagesFromCategorySlug slug =
+  do
+    getCategoryBySlug slug
+    >>= \case
+      Nothing -> do
+        liftIO $ T.putStrLn $ "Could not find category from slug: \"" <> slug <> "\""
+        pure Vector.empty
+      Just Category{categoryId} -> do
+        liftIO $ T.putStrLn "Category found!"
+        query
+          Select
+          [sql|
         select  p.package_id
               , p.namespace
               , p.name
@@ -44,9 +48,10 @@ getPackagesFromCategorySlug slug = do
               , p.created_at
               , p.updated_at
         from packages as p
-        inner join package_categories as pc on (p.namespace = pc.package_id)
+        inner join package_categories as pc on (p.package_id = pc.package_id)
         where pc.category_id = ?
-        |] (Only categoryId)
+        |]
+          (Only categoryId)
 
 getAllCategories :: (MonadIO m) => DBT m (Vector Category)
 getAllCategories = query_ Select (_select @Category)

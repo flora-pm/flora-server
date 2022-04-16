@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module Flora.CategorySpec where
 
 import Control.Monad.IO.Class
@@ -19,9 +20,11 @@ import Flora.TestUtils
 import Flora.UserFixtures
 
 spec :: TestM TestTree
-spec = testThese "category tuning"
-  [ testThis "Test that the category unification algorithm works" testUnificationAlgorithm
-  ]
+spec =
+  testThese
+    "category tuning"
+    [ testThis "Test that the category unification algorithm works" testUnificationAlgorithm
+    ]
 
 testUnificationAlgorithm :: TestM ()
 testUnificationAlgorithm = do
@@ -35,5 +38,4 @@ testUnificationAlgorithm = do
     >>= assertEqual (Results [NormalisedPackageCategory "CLI & TUI Development"] [])
 
   liftIO (Tuning.normalise [UserPackageCategory "Numeric", UserPackageCategory "Parser Builder"])
-    >>= assertEqual (Results [NormalisedPackageCategory "Mathematics",NormalisedPackageCategory "Parsers"] [])
-
+    >>= assertEqual (Results [NormalisedPackageCategory "Mathematics", NormalisedPackageCategory "Parsers"] [])

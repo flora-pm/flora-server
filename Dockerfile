@@ -15,25 +15,22 @@ RUN apt install -y nodejs yarn libpq-dev mcpp wget zsh tmux
 RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
 RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb
 
-# setup ZSH
+# configure the shell
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-
-# copy the files relevant to build core dependencies
-COPY src ./src
-COPY app ./app
-COPY cbits ./cbits
-COPY cabal.project flora.cabal shell.nix environment.sh Makefile scripts/start-tmux.sh ./
 COPY scripts/shell-welcome.txt /etc/motd
 COPY scripts/.zshrc /root/.zshrc
 
+# build Haskell dependencies
+COPY Makefile cabal.project flora.cabal ./
+RUN cabal build --only-dependencies -j8
+
 # Compile Souffle source files
+COPY cbits ./cbits
 RUN make souffle
 
 # copy and build the assets
 COPY assets ./assets
 RUN make build-assets
 
-# build Haskell dependencies
-RUN cabal build --only-dependencies -j8
-
+RUN echo $PATH > /etc/profile
 CMD [ "/bin/sh", "-c", "sleep 1d"]

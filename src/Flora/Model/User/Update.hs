@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+
 module Flora.Model.User.Update where
 
 import Control.Monad
@@ -22,7 +23,8 @@ addAdmin form = do
 lockAccount :: (MonadIO m) => UserId -> DBT m ()
 lockAccount userId = void $ execute Update q (Only userId)
   where
-    q = [sql|
+    q =
+      [sql|
         update users as u set user_flags = jsonb_set(user_flags, '{canLogin}', 'false', false)
         where u.user_id = ?;
       |]
@@ -30,7 +32,8 @@ lockAccount userId = void $ execute Update q (Only userId)
 unlockAccount :: (MonadIO m) => UserId -> DBT m ()
 unlockAccount userId = void $ execute Update q (Only userId)
   where
-    q = [sql|
+    q =
+      [sql|
         update users as u set user_flags = jsonb_set(user_flags, '{canLogin}', 'true', false)
         where u.user_id = ?;
       |]
