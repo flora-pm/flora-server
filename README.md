@@ -1,6 +1,10 @@
 <h1 align="center"> Flora <br> <small>A package index for the Haskell ecosystem</small> </h1>
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/flora-pm/flora-server/development/assets/favicon.svg" height=250 width=250 alt="Logo" />
+</p>
+<p align="center">
+
 <a href="https://github.com/flora-pm/flora-server/actions">
   <img src="https://img.shields.io/github/workflow/status/flora-pm/flora-server/CI/development?style=flat-square" alt="CI badge" />
 </a>
