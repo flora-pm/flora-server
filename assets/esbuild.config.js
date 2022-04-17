@@ -17,6 +17,6 @@ esbuild.build({
   bundle: true,
   sourcemap: sourcemap,
   minify: minify,
-  target: "es2016",
+  target: "es2018",
   watch: watch_fs,
 })

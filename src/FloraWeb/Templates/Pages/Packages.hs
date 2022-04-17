@@ -69,8 +69,8 @@ packageBody Package{namespace, name = packageName, metadata} latestRelease depen
       div_ [class_ "col-span-2"] mempty
       div_ [class_ "package-right-column"] $ do
         div_ [class_ "grid-rows-3"] $ do
-          displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayInstructions packageName latestRelease
+          displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayDependents (namespace, packageName) numberOfDependents dependents
 
 displayReleaseVersion :: Release -> FloraHTML
@@ -117,7 +117,9 @@ displayDependencies (namespace, packageName) numberOfDependencies dependencies =
     h3_ [class_ "lg:text-2xl package-body-section mb-3"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
     ul_ [class_ "dependencies grid-cols-3"] $ do
       let deps = foldMap renderDependency dependencies
-      deps <> showAll (namespace, packageName, Dependencies)
+      if fromIntegral (Vector.length dependencies) <= numberOfDependencies
+        then deps
+        else deps <> showAll (namespace, packageName, Dependencies)
 
 showAll :: (Namespace, PackageName, Target) -> FloraHTML
 showAll (namespace, packageName, target) = do
@@ -153,7 +155,9 @@ displayDependents (namespace, packageName) numberOfDependents dependents = do
       then ""
       else
         let deps = fold $ intercalateVec ", " $ fmap renderDependent dependents
-         in deps <> ", " <> showAll (namespace, packageName, Dependents)
+         in if fromIntegral (Vector.length dependents) <= numberOfDependents
+              then deps
+              else deps <> ", " <> showAll (namespace, packageName, Dependents)
 
 renderDependent :: Package -> FloraHTML
 renderDependent Package{name, namespace} = do
