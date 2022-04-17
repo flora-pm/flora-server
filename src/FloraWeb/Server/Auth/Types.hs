@@ -11,6 +11,7 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthServerData)
 import Web.Cookie (SetCookie)
 
+import Data.UUID (UUID)
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Types
@@ -32,6 +33,9 @@ type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Vi
 
 -- | Datatypes used for routes that *need* an admin
 type FloraAdminM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Admin)) (LogT Handler)
+
+-- | The monad for the development websockets
+type FloraDevSocket = ReaderT UUID (LogT Handler)
 
 type instance
   AuthServerData (AuthProtect "optional-cookie-auth") =

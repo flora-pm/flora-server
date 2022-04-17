@@ -16,6 +16,13 @@ source-repository head
   type:     git
   location: https://github.com/flora/server
 
+flag prod
+  description:
+    Compile the project with additional optimisations (takes longer)  
+
+  default:     False
+  manual:      True
+
 common common-extensions
   default-extensions:
     NoMonomorphismRestriction
@@ -58,7 +65,7 @@ common common-ghc-options
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
 
-  if flag(release-build)
+  if flag(prod)
     ghc-options: -flate-specialise -funbox-strict-fields
 
 common common-rts-options
@@ -109,6 +116,7 @@ library
     Flora.Search
     Flora.ThirdParties.Hackage.API
     Flora.ThirdParties.Hackage.Client
+    FloraWeb.Autoreload
     FloraWeb.Client
     FloraWeb.Routes
     FloraWeb.Routes.Pages
@@ -194,6 +202,7 @@ library
     , servant-client-core        ^>=0.19
     , servant-lucid              ^>=0.9
     , servant-server             ^>=0.19
+    , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
     , souffle-haskell            ^>=3.3
     , text                       ^>=1.2
@@ -210,6 +219,7 @@ library
     , wai-middleware-heartbeat   ^>=0.0
     , wai-middleware-prometheus  ^>=1.0
     , warp                       ^>=3.3
+    , websockets                 ^>=0.12
 
 executable flora-server
   import:         common-extensions
@@ -286,10 +296,3 @@ test-suite flora-test
     Flora.PackageSpec
     Flora.TestUtils
     Flora.UserSpec
-
-flag release-build
-  description:
-    Compile the project with additional optimisations (takes longer)  
-
-  default:     False
-  manual:      True
