@@ -1,12 +1,8 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-
 module Main where
 
 import Control.Monad
-import Control.Monad.Trans.Class
 import Data.Password.Types
 import Database.PostgreSQL.Entity.DBT
-import qualified Log
 import Optics.Core
 import Options.Applicative
 
@@ -15,12 +11,12 @@ import Flora.Import.Categories (importCategories)
 import Flora.Import.Package
 import Flora.Model.Package
 import Flora.Model.User
-import qualified Flora.Model.User
 import Flora.Model.User.Update
-import Flora.UserFixtures
 
 import CoverageReport
+import Data.Maybe
 import Data.Text (Text)
+import qualified Flora.Model.User.Query as Query
 import GHC.Generics (Generic)
 
 data Options = Options
@@ -98,9 +94,7 @@ runOptions (Options (CreateUser opts)) = do
 runOptions (Options Provision) = do
   env <- getFloraEnv
   withPool (env ^. #pool) $ do
-    insertUser hackageUser
-    insertUser user2
-    insertUser adminUser
+    hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
 
     void importCategories
 

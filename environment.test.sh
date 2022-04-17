@@ -1,7 +1,7 @@
 . environment.sh
 
 export FLORA_HTTP_PORT=8085
-export FLORA_ENVIRONMENT="tests"
+export FLORA_ENVIRONMENT="test"
 export FLORA_DOMAIN="localhost"
 
 export FLORA_DB_DATABASE="flora_test"

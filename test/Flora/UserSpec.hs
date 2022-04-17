@@ -15,26 +15,25 @@ import Flora.Environment
 import Flora.Model.User
 import Flora.Model.User.Query
 import Flora.TestUtils
-import Flora.UserFixtures
 import FloraWeb.Client as Client
 import FloraWeb.Routes.Pages.Sessions
 
-spec :: TestM TestTree
-spec =
+spec :: Fixtures -> TestM TestTree
+spec fixtures =
   testThese
     "users"
-    [ testThis "Fetch user by Id" fetchUserById
-    , testThis "Fetch user by email" fetchUserByEmail
+    [ testThis "Fetch user by Id" $ fetchUserById fixtures
+    , testThis "Fetch user by email" $ fetchUserByEmail fixtures
     -- , testThis "Authenticate an arbitrary user" authenticateUser
     ]
 
-fetchUserById :: TestM ()
-fetchUserById = do
+fetchUserById :: Fixtures -> TestM ()
+fetchUserById Fixtures{hackageUser} = do
   result <- liftDB $ getUserById (hackageUser ^. #userId)
   assertEqual (Just hackageUser) result
 
-fetchUserByEmail :: TestM ()
-fetchUserByEmail = do
+fetchUserByEmail :: Fixtures -> TestM ()
+fetchUserByEmail Fixtures{hackageUser} = do
   result <- liftDB $ getUserByEmail (hackageUser ^. #email)
   assertEqual (Just hackageUser) result
 

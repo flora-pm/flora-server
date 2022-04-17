@@ -20,7 +20,7 @@ module Flora.TestUtils
   , assertClientLeft'
 
     -- * Database migration
-  , migrate
+  , testMigrations
 
     -- * Random fixtures
   , randomUser
@@ -38,9 +38,11 @@ module Flora.TestUtils
 
     -- * TestM and helpers
   , TestM (..)
+  , Fixtures (..)
   , liftDB
   , runTestM
   , getTestEnv
+  , getFixtures
 
     -- * HUnit re-exports
   , TestTree
@@ -82,17 +84,28 @@ import Test.Tasty
 import qualified Test.Tasty as Test
 import qualified Test.Tasty.HUnit as Test
 
+import Data.Maybe (fromJust)
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
 import Flora.Model.User
+import qualified Flora.Model.User.Query as Query
 import Flora.Model.User.Update
 import qualified Flora.Model.User.Update as Update
 import Flora.Publish
-import Flora.UserFixtures
 import FloraWeb.Client
 
 newtype TestM (a :: Type) = TestM {getTestM :: ReaderT TestEnv IO a}
   deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadFail)
+
+data Fixtures = Fixtures
+  { hackageUser :: User
+  }
+  deriving stock (Generic, Show, Eq)
+
+getFixtures :: DBT IO Fixtures
+getFixtures = do
+  hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
+  pure Fixtures{..}
 
 liftDB :: DBT IO a -> TestM a
 liftDB comp = do
@@ -188,13 +201,12 @@ getEnv mgrSettings = do
 managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
 
-migrate :: Connection -> IO ()
-migrate conn = do
+testMigrations :: Connection -> IO ()
+testMigrations conn = do
   void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
   pool <- newPool (pure conn) close 10 1
   withPool pool $ do
     importCategories
-    insertUser hackageUser
 
 genWord32 :: MonadGen m => m Word32
 genWord32 = H.word32 (Range.constant minBound maxBound)

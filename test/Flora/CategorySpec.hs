@@ -17,7 +17,6 @@ import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
 import Flora.Model.User
 import Flora.TestUtils
-import Flora.UserFixtures
 
 spec :: TestM TestTree
 spec =
