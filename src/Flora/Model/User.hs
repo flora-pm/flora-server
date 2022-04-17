@@ -5,8 +5,8 @@ module Flora.Model.User
   ( UserId (..)
   , User (..)
   , UserFlags (..)
-  , UserCreationForm
-  , AdminCreationForm
+  , UserCreationForm (..)
+  , AdminCreationForm (..)
   , mkUser
   , mkAdmin
   , hashPassword

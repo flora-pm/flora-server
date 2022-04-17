@@ -201,7 +201,6 @@ library flora-test-fixtures
 
   exposed-modules:
     Flora.PackageFixtures
-    Flora.UserFixtures
 
 executable flora-test
   import:         common-extensions

@@ -2,14 +2,12 @@
 
 module Flora.PackageSpec where
 
-import Control.Monad.IO.Class
 import Data.Maybe
 import qualified Data.Set as Set
 import qualified Data.Vector as Vector
 import Optics.Core
 import Test.Tasty
 
-import qualified Control.Concurrent as System
 import Data.Foldable
 import Data.Function
 import qualified Data.Vector as V
@@ -22,32 +20,29 @@ import Flora.Model.Release
 import qualified Flora.Model.Release.Query as Query
 import Flora.Model.User
 import Flora.TestUtils
-import Flora.UserFixtures
 
-spec :: TestM TestTree
-spec =
+spec :: Fixtures -> TestM TestTree
+spec fixtures =
   testThese
     "packages"
-    [ testThis "Insert base and its dependencies, and fetch it" testGetPackageById
-    , testThis "Insert containers and its dependencies" testInsertContainers
-    , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory
-    , testThis
-        "@hackage/semigroups belongs to appropriate categories"
-        testThatSemigroupsIsInMathematicsAndDataStructures
-    , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
-    , testThis "Searching for \"base\" returns the correct results" testSearchingForBase
-    , testThis "@haskell/bytestring has the correct number of dependents" testBytestringDependents
+    [ testThis "Insert base and its dependencies, and fetch it" $ testGetPackageById fixtures
+    , testThis "Insert containers and its dependencies" $ testInsertContainers fixtures
+    , testThis "@haskell/base belongs to the \"Prelude\" category" $ testThatBaseisInPreludeCategory fixtures
+    , testThis "@hackage/semigroups belongs to appropriate categories" $ testThatSemigroupsIsInMathematicsAndDataStructures fixtures
+    , testThis "The \"haskell\" namespace has the correct number of packages" $ testCorrectNumberInHaskellNamespace fixtures
+    , testThis "Searching for \"base\" returns the correct results" $ testSearchingForBase fixtures
+    , testThis "@haskell/bytestring has the correct number of dependents" $ testBytestringDependents fixtures
     ]
 
-testGetPackageById :: TestM ()
-testGetPackageById = do
+testGetPackageById :: Fixtures -> TestM ()
+testGetPackageById Fixtures{hackageUser} = do
   let cabalPath = "./test/fixtures/Cabal/base.cabal"
   liftDB $ importCabal (hackageUser ^. #userId) (PackageName "base") cabalPath "./test/fixtures/Cabal/"
   result <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
   assertEqual (Just (PackageName "base")) (preview (_Just % #name) result)
 
-testInsertContainers :: TestM ()
-testInsertContainers = do
+testInsertContainers :: Fixtures -> TestM ()
+testInsertContainers Fixtures{hackageUser} = do
   _result <- liftDB $ importPackage (hackageUser ^. #userId) (PackageName "containers") "./test/fixtures/Cabal/"
   dependencies <- liftDB $ do
     mPackage <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "containers")
@@ -78,21 +73,21 @@ testFetchGHCPrimDependents = do
     )
     (Set.fromList . fmap (view #name) $ Vector.toList result)
 
-testThatBaseisInPreludeCategory :: TestM ()
-testThatBaseisInPreludeCategory = do
+testThatBaseisInPreludeCategory :: Fixtures -> TestM ()
+testThatBaseisInPreludeCategory Fixtures{hackageUser} = do
   liftDB $ importPackage (hackageUser ^. #userId) (PackageName "base") "./test/fixtures/Cabal/"
   result <- liftDB $ Query.getPackagesFromCategorySlug "prelude"
   assertEqual (Set.fromList [PackageName "base"]) (Set.fromList $ V.toList $ fmap (view #name) result)
 
-testThatSemigroupsIsInMathematicsAndDataStructures :: TestM ()
-testThatSemigroupsIsInMathematicsAndDataStructures = do
+testThatSemigroupsIsInMathematicsAndDataStructures :: Fixtures -> TestM ()
+testThatSemigroupsIsInMathematicsAndDataStructures Fixtures{hackageUser} = do
   liftDB $ importPackage (hackageUser ^. #userId) (PackageName "semigroups") "./test/fixtures/Cabal/"
   Just semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
   result <- liftDB $ Query.getPackageCategories (semigroups ^. #packageId)
   assertEqual (Set.fromList ["data-structures", "maths"]) (Set.fromList $ slug <$> V.toList result)
 
-testCorrectNumberInHaskellNamespace :: TestM ()
-testCorrectNumberInHaskellNamespace = do
+testCorrectNumberInHaskellNamespace :: Fixtures -> TestM ()
+testCorrectNumberInHaskellNamespace Fixtures{hackageUser} = do
   liftDB $
     importCabal
       (hackageUser ^. #userId)
@@ -102,8 +97,8 @@ testCorrectNumberInHaskellNamespace = do
   results <- liftDB $ Query.getPackagesByNamespace (Namespace "haskell")
   assertEqual 21 (Vector.length results)
 
-testSearchingForBase :: TestM ()
-testSearchingForBase = do
+testSearchingForBase :: Fixtures -> TestM ()
+testSearchingForBase Fixtures{hackageUser} = do
   liftDB $
     importCabal
       (hackageUser ^. #userId)
@@ -121,8 +116,8 @@ testSearchingForBase = do
     (Vector.fromList [(PackageName "base", 1.0), (PackageName "base-orphans", 0.3846154)])
     (result <&> (,) <$> view _2 <*> view _5)
 
-testBytestringDependents :: TestM ()
-testBytestringDependents = do
+testBytestringDependents :: Fixtures -> TestM ()
+testBytestringDependents Fixtures{hackageUser} = do
   liftDB $
     importCabal
       (hackageUser ^. #userId)

@@ -65,6 +65,7 @@ jobs:
         createdb -h "${FLORA_DB_HOST}" -p "${FLORA_DB_PORT}" -U "${FLORA_DB_USER}" -w "${FLORA_DB_DATABASE}"
         migrate init "${FLORA_PG_CONNSTRING}" 
         migrate migrate "${FLORA_PG_CONNSTRING}" migrations
+        cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         cabal test
       env:
         PGPASSWORD: "postgres"

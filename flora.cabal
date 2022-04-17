@@ -235,28 +235,17 @@ executable flora-cli
     , colourista
     , directory
     , flora
-    , flora-test-fixtures
     , log-base
     , monad-control
     , optics-core
     , optparse-applicative  ^>=0.16
+    , password-types
     , pg-entity
     , pg-transact
     , text
     , text-display
     , transformers
     , typed-process
-
-library flora-test-fixtures
-  import:          common-extensions
-  import:          common-ghc-options
-  hs-source-dirs:  test/fixtures
-  build-depends:
-    , base
-    , flora
-    , password
-
-  exposed-modules: Flora.UserFixtures
 
 test-suite flora-test
   import:         common-extensions
@@ -270,7 +259,6 @@ test-suite flora-test
     , containers
     , exceptions
     , flora
-    , flora-test-fixtures
     , hedgehog
     , http-client           ==0.7.10
     , optics-core
