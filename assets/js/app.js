@@ -1,3 +1,7 @@
+import Alpine from 'alpinejs'
+window.Alpine = Alpine
+Alpine.start()
+
 const checkbox = document.querySelector("#darkmode-toggle");
 const html = document.querySelector("html");
 

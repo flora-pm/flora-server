@@ -17,12 +17,13 @@
 }
 
 .error-code{
-  color: rgba(102, 51, 153, var(--tw-bg-opacity));
+  --tw-bg-opacity: 1;
+  color: hsl(270, 50%, 40%);
 }
 
 .error-page-button{
   --tw-bg-opacity: 1;
-  background-color: rgba(102, 51, 153, var(--tw-bg-opacity));
+  background-color: hsl(270, 50%, 40%);
 }
 
 #user-menu-container {
@@ -75,33 +76,42 @@ div[class="bullets"]{
   }
 }
 
+.navbar-element {
+    color: hsl(0, 0%, 100%);
+}
+
+.navbar-element:hover{
+    --tw-text-opacity: 1;
+    color: hsl(254.3,95%,76.7%);
+}
+
 /* Dark mode-specific rules */
 .dark{
   .navbar{
-    background-color: #353746;
+    background-color: hsl(0.65, 0.14%, 0.24%);
   }
 
   .navbar-element:hover{
     --tw-text-opacity: 1;
-    color: #a68bfc;
+    color: hsl(254.3,95%,76.7%);
   }
 
   .social-button:hover{
     --tw-text-opacity: 1;
-    color: #a68bfc;
+    color: hsl(254.3,95%,76.7%);
   }
 
   .package-body{
     a:hover{
       --tw-text-opacity: 1;
-      color: #a68bfc;
+      color: hsl(254.3,95%,76.7%);
     }
   }
 
   .navbar-right{
     .active{
         --tw-border-opacity: 1;
-        border-bottom-color: rgb(102 51 153 / var(--tw-border-opacity));
+        border-bottom-color: hsl(270, 50%, 40%);
         border-bottom-width: 2px;
     }
   }
@@ -124,7 +134,7 @@ div[class="bullets"]{
       padding-left: 0.75em;
     }
     a:hover{
-      background-color: #333548;
+      background-color: hsl(234, 17%, 24%);
       border-radius: 5px;
     }
   }
@@ -186,7 +196,7 @@ div[class="bullets"]{
   .divider{
     padding-bottom: 1em;
     margin-bottom: .66em;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid hsl(0, 0%, 80%);
   }
 
   .version{

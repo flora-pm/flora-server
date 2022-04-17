@@ -48,9 +48,9 @@ header = do
             checkbox.checked = false
           }}
           |]
+      script_ [src_ "/static/js/app.js", type_ "module", defer_ ""] ("" :: Text)
 
       link_ [rel_ "stylesheet", href_ "/static/css/app.css"]
-      script_ [src_ "https://unpkg.com/alpinejs@3.7.1/dist/cdn.min.js", defer_ ""] ("" :: Text)
       meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
       ogTags
       theme
@@ -59,7 +59,6 @@ header = do
       meta_ [name_ "twitter:dnt", content_ "on"]
 
     body_ [class_ "bg-background dark:bg-background-dark dark:text-gray-100"] $ do
-      script_ [src_ "/static/js/app.js", type_ "module"] ("" :: Text)
       navBar
 
 ogTags :: FloraHTML
@@ -84,15 +83,15 @@ navBar :: FloraHTML
 navBar = do
   TemplateEnv{title} <- ask
   ActiveElements{aboutNav, packagesNav} <- asks activeElements
-  nav_ [class_ "border-b dark:border-transparent bg-gray-200 dark:bg-background-dark"] $ do
+  nav_ [class_ "border-b dark:border-transparent bg-brand-purple dark:bg-navbar-dark mb-3"] $ do
     div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "flex justify-between h-16 "] $ do
         div_ [class_ "flex-shrink-0 flex "] $ do
-          div_ [class_ "flex-shrink-0 border-b-2 border-b-brand-purple py-2 px-1 pt-1 mx-7 items-center"] $
-            a_ [href_ "/", class_ "flex-shrink-0 py-2 inline-flex items-center font-bold text-black dark:text-gray-100"] (text title)
+          div_ [class_ "flex-shrink-0 border-b-2 border-b-brand-purple py-2 px-1 pt-1 mx-7 text-white-200 items-center"] $
+            a_ [href_ "/", class_ "navbar-element flex-shrink-0 py-2 inline-flex items-center font-bold text-white-200 dark:text-gray-100"] (text title)
           navbarSearch
 
-        let elementClass = "navbar-element py-2 inline-flex items-center px-1 pt-1 mx-7 text-black dark:text-gray-100"
+        let elementClass = "font-bold navbar-element py-2 inline-flex items-center px-1 pt-1 mx-7 text-white-200 dark:text-gray-100"
         div_ [id_ "navbar-right", class_ "hidden sm:flex justify-end"] $ do
           a_ [href_ "/about", class_ (elementClass <> isActive aboutNav)] "About Flora"
           a_ [href_ "/categories", class_ (elementClass <> isActive packagesNav)] "Categories"

@@ -16,7 +16,10 @@ module.exports = {
           "DEFAULT": "#f3f4f6",
         },
         "brand-purple": {
-          "DEFAULT": "#663399",
+          "DEFAULT": "#4e315e",
+        },
+        "navbar": {
+          "dark": "#1D2021"
         },
         "link": {
           "dark": "#4dabf7",
