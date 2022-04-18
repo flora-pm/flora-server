@@ -205,6 +205,7 @@ library
     , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
     , souffle-haskell            ^>=3.3
+    , template-haskell
     , text                       ^>=1.2
     , text-display               ^>=0.0.2
     , time                       ^>=1.9

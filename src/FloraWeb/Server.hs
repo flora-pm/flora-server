@@ -11,8 +11,6 @@ import Control.Monad.Reader
 import Data.Maybe (isJust)
 import qualified Data.Pool as Pool
 import Data.Text.Display (display)
-import qualified Data.UUID.V4 as UUID
-import qualified GHC.IO.Unsafe as Unsafe
 import Log (Logger, defaultLogLevel)
 import qualified Log
 import Network.Wai.Handler.Warp
@@ -69,6 +67,7 @@ shutdownFlora env = do
 
 runServer :: Logger -> FloraEnv -> IO ()
 runServer appLogger floraEnv = do
+  liftIO $ putStrLn "lol"
   loggingMiddleware <- Logging.runLog floraEnv appLogger WaiLog.mkLogMiddleware
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
@@ -105,13 +104,10 @@ floraServer =
     , autoreload =
         hoistServer
           (Proxy @AutoreloadRoute)
-          ( \handler ->
-              let connId = Unsafe.unsafePerformIO UUID.nextRandom
-               in withReaderT (const connId) handler
+          ( \handler -> withReaderT (const Autoreload.genUUID) handler
           )
           Autoreload.server
     }
-{-# NOINLINE floraServer #-}
 
 naturalTransform :: Logger -> WebEnvStore -> FloraM a -> Handler a
 naturalTransform logger webEnvStore app =
