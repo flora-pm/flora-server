@@ -12,6 +12,7 @@ module.exports = {
       colors: {
         "background": {
           "dark": "#25282a",
+          "darker": "#1D2021",
           "dark-focused": "#3a3d3f",
           "DEFAULT": "#f3f4f6",
         },
