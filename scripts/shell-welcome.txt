@@ -7,6 +7,6 @@
                           
                             
 To start the server: 'make watch-server'
-To start the assets pipeline: 'make assets-watch'
+To start the assets pipeline: 'make watch-assets'
 
 Happy hacking!

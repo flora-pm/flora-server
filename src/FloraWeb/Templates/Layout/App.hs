@@ -1,14 +1,18 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module FloraWeb.Templates.Layout.App
-  ( header
-  , footer
-  , text
+  ( header,
+    footer,
+    text,
   )
 where
 
 import Control.Monad.Reader
 import Data.Text
+import Data.Text.Display
+import Flora.Model.PersistentSession
+import Flora.Model.User
+import FloraWeb.Templates.Types
 import Lucid
 import Lucid.Alpine
 import Lucid.Base (makeAttribute)
@@ -16,54 +20,45 @@ import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 import Optics.Core
 import PyF
 
-import Data.Text.Display
-import Flora.Model.PersistentSession
-import Flora.Model.User
-import FloraWeb.Templates.Types
-
 header :: FloraHTML
 header = do
-  TemplateEnv{title} <- ask
+  TemplateEnv {title} <- ask
   doctype_
-  html_ [lang_ "en", class_ "no-js dark"] $ do
-    head_ $ do
-      meta_ [charset_ "UTF-8"]
-      meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
-      title_ (text title)
+  html_
+    [ lang_ "en",
+      class_ "no-js",
+      xBind_ "class" "darkMode ? 'dark' : ''",
+      xData_ "{ darkMode: localStorage.getItem('darkMode') !== 'false' }",
+      xInit_ "$watch('darkMode', val => localStorage.setItem('darkMode', val))"
+    ]
+    $ do
+      head_ $ do
+        meta_ [charset_ "UTF-8"]
+        meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
+        title_ (text title)
 
-      script_ [type_ "module"] $ do
-        toHtmlRaw @Text
-          [str|
+        script_ [type_ "module"] $ do
+          toHtmlRaw @Text
+            [str|
           document.documentElement.classList.remove('no-js');
           document.documentElement.classList.add('js');
-          const html = document.querySelector('html');
-          const checkbox = document.querySelector('#darkmode-toggle');
-          if (localStorage.theme === 'dark'
-             || (!('theme' in localStorage)
-             && window.matchMedia('(prefers-color-scheme: dark)').matches)) {{
-            html.classList.add('dark');
-            checkbox.checked = true
-          }} else {{
-            html.classList.remove('dark');
-            checkbox.checked = false
-          }}
           |]
-      script_ [src_ "/static/js/app.js", type_ "module", defer_ ""] ("" :: Text)
+        script_ [src_ "/static/js/app.js", type_ "module", defer_ ""] ("" :: Text)
 
-      link_ [rel_ "stylesheet", href_ "/static/css/app.css"]
-      meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
-      ogTags
-      theme
-      link_ [rel_ "icon", href_ "/static/favicon.svg", type_ "image/svg+xml"]
-      -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
-      meta_ [name_ "twitter:dnt", content_ "on"]
+        link_ [rel_ "stylesheet", href_ "/static/css/app.css"]
+        meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
+        ogTags
+        theme
+        link_ [rel_ "icon", href_ "/static/favicon.svg", type_ "image/svg+xml"]
+        -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
+        meta_ [name_ "twitter:dnt", content_ "on"]
 
-    body_ [class_ "bg-background dark:bg-background-dark dark:text-gray-100"] $ do
-      navBar
+      body_ [class_ "bg-background dark:bg-background-dark dark:text-gray-100"] $ do
+        navBar
 
 ogTags :: FloraHTML
 ogTags = do
-  TemplateEnv{title, description} <- ask
+  TemplateEnv {title, description} <- ask
   meta_ [property_ "og:title", content_ title]
   meta_ [property_ "og:site_name", content_ "Flora"]
   meta_ [property_ "og:description", content_ description]
@@ -79,24 +74,52 @@ theme = do
   meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
   meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]
 
+brand :: FloraHTML
+brand = do
+  TemplateEnv {title, mobileTitle} <- ask
+  let link = a_ [href_ "/", id_ "brand", class_ "font-bold text-white dark:text-gray-100"]
+  let containerBaseClasses = "flex items-center border-b-4 border-brand-purple flex-shrink-0 h-16"
+  div_ [class_ $ containerBaseClasses <> " hidden md:flex"] $ link (text title)
+  div_ [class_ $ containerBaseClasses <> " md:hidden", xOn_ "click.prevent" "menuOpen = !menuOpen"] $ link (text mobileTitle)
+
+navBarLink :: Text -> Text -> Text -> Bool -> FloraHTML
+navBarLink additionalClasses href label isActive' =
+  let baseClasses = "font-bold inline-flex items-center py-3 mx-4 text-white dark:text-gray-100 "
+   in a_ [href_ href, class_ (baseClasses <> additionalClasses <> " " <> isActive isActive')] (text label)
+
+navBarLink' :: Text -> Text -> Bool -> FloraHTML
+navBarLink' = navBarLink ""
+
 navBar :: FloraHTML
 navBar = do
-  TemplateEnv{title} <- ask
-  ActiveElements{aboutNav, packagesNav} <- asks activeElements
-  nav_ [class_ "border-b dark:border-transparent bg-brand-purple dark:bg-navbar-dark mb-3"] $ do
+  ActiveElements {aboutNav, packagesNav} <- asks activeElements
+  TemplateEnv {title} <- ask
+  let menuClasses =
+        "md:flex flex md:items-center "
+          <> "bg-brand-purple-dark md:bg-brand-purple dark:bg-navbar-darker md:dark:bg-navbar-dark "
+          <> "flex flex-col md:flex-row absolute md:relative top-[100%] left-0 w-full md:w-auto md:top-0"
+  nav_ [class_ "sticky top-0 left-0 md:relative border-b dark:border-transparent bg-brand-purple dark:bg-navbar-dark mb-3 z-10", xData_ "{menuOpen: false}"] $ do
     div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
-      div_ [class_ "flex justify-between h-16 "] $ do
-        div_ [class_ "flex-shrink-0 flex "] $ do
-          div_ [class_ "flex-shrink-0 border-b-2 border-b-brand-purple py-2 px-1 pt-1 mx-7 text-white-200 items-center"] $
-            a_ [href_ "/", class_ "navbar-element flex-shrink-0 py-2 inline-flex items-center font-bold text-white-200 dark:text-gray-100"] (text title)
+      div_ [class_ "md:flex md:justify-between h-16 "] $ do
+        div_ [id_ "navbar-left", class_ "flex flex-shrink-0"] $ do
+          brand
           navbarSearch
 
-        let elementClass = "font-bold navbar-element py-2 inline-flex items-center px-1 pt-1 mx-7 text-white-200 dark:text-gray-100"
-        div_ [id_ "navbar-right", class_ "hidden sm:flex justify-end"] $ do
-          a_ [href_ "/about", class_ (elementClass <> isActive aboutNav)] "About Flora"
-          a_ [href_ "/categories", class_ (elementClass <> isActive packagesNav)] "Categories"
-          a_ [href_ "/packages", class_ (elementClass <> isActive packagesNav)] "Packages"
-          userDropdown elementClass
+        div_ [id_ "navbar-right", class_ menuClasses, xBind_ "class" "!menuOpen ? 'hidden' : ''"] $ do
+          navBarLink "md:hidden " "/" title False
+          navBarLink' "/about" "About Flora" aboutNav
+          navBarLink' "/categories" "Categories" packagesNav
+          navBarLink' "/packages" "Packages" packagesNav
+          navBarLink' "#" "Guides" False
+          userMenu
+          darkModeToggle
+
+userMenu :: FloraHTML
+userMenu = do
+  TemplateEnv {mUser, sessionId} <- ask
+  getUsernameOrLogin mUser
+  adminLink mUser
+  logOff mUser sessionId
 
 navbarSearch :: FloraHTML
 navbarSearch = do
@@ -106,27 +129,13 @@ navbarSearch = do
       form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "/search", method_ "GET"] $ do
         div_ [class_ "flex items-center py-2"] $ do
           input_
-            [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
-            , id_ "packageName"
-            , type_ "search"
-            , name_ "q"
-            , placeholder_ "Search a package"
+            [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple",
+              id_ "packageName",
+              type_ "search",
+              name_ "q",
+              placeholder_ "Search a package"
             ]
     else pure mempty
-
-userDropdown :: Text -> FloraHTML
-userDropdown elementClass = do
-  TemplateEnv{mUser, sessionId} <- ask
-  div_ [id_ "user-menu-container", xData_ "{ userMenu: false }", xOn_ "click.outside" "userMenu = false", xOn_ "keydown.escape" "userMenu = false", class_ "flex"] $ do
-    button_ [xOn_ "click" "userMenu = !userMenu", xBind_ "aria-expanded" "userMenu ? 'true' : 'false'", id_ "user-menu-btn", class_ elementClass] "Menu"
-    nav_ [xShow_ "userMenu", id_ "user-menu-nav", class_ "bg-background dark:bg-background-dark rounded-md absolute right-0 border-2 border-brand-purple"] $
-      ul_ [] $ do
-        li_ [class_ "user-menu-element"] $ getUsernameOrLogin mUser
-        li_ [class_ "user-menu-element"] $ a_ [href_ "#"] "Guides"
-        adminLink mUser
-        logOff mUser sessionId
-        li_ [class_ "user-menu-divider", role_ "separator"] ""
-        li_ [class_ "user-menu-element"] darkModeToggle
 
 logOff :: Maybe User -> PersistentSessionId -> FloraHTML
 logOff Nothing _ = ""
@@ -140,14 +149,16 @@ adminLink _ = ""
 
 darkModeToggle :: FloraHTML
 darkModeToggle = do
-  div_ [class_ "flex justify-end items-center space-x-2"] $ do
-    span_ [class_ "text-sm text-gray-600 dark:text-gray-100"] "Light"
-    div_ [class_ ""] $ do
-      input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", checked_]
-      label_ [for_ "darkmode-toggle", class_ "cursor-pointer"] $
-        div_ [class_ "w-9 h-5 flex items-center bg-gray-600 dark:bg-gray-600 rounded-full p-1"] $ do
-          div_ [class_ "toggle-dot w-4 h-4 bg-white rounded-full bg-white shadow-md transform duration-200 ease-in-out"] ""
-    span_ [class_ "text-sm text-gray-600 dark:text-gray-100"] "Dark"
+  let lightModeContent = do
+        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6 mr-2"]
+        "Dark Mode"
+  let darkModeContent = do
+        img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 mr-2 invert"]
+        "Light Mode"
+  let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200  dark:bg-brand-purple"
+  button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false", class_ $ "hidden dark:inline-flex " <> buttonBaseClasses] darkModeContent
+  button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false", class_ $ "dark:hidden " <> buttonBaseClasses] lightModeContent
+  input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "darkMode"]
 
 footer :: FloraHTML
 footer =
@@ -178,8 +189,8 @@ text :: Text -> FloraHTML
 text = toHtml
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
-getUsernameOrLogin Nothing = a_ [href_ "/sessions/new"] "Login/Signup"
-getUsernameOrLogin _ = a_ [href_ "#"] "Profile"
+getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login/Signup" False
+getUsernameOrLogin _ = navBarLink' "#" "Profile" False
 
 isActive :: Bool -> Text
 isActive True = " active"
