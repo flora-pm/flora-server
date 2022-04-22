@@ -1,9 +1,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module FloraWeb.Templates.Layout.App
-  ( header,
-    footer,
-    text,
+  ( header
+  , footer
+  , text
   )
 where
 
@@ -22,14 +22,14 @@ import PyF
 
 header :: FloraHTML
 header = do
-  TemplateEnv {title} <- ask
+  TemplateEnv{title} <- ask
   doctype_
   html_
-    [ lang_ "en",
-      class_ "no-js",
-      xBind_ "class" "darkMode ? 'dark' : ''",
-      xData_ "{ darkMode: localStorage.getItem('darkMode') !== 'false' }",
-      xInit_ "$watch('darkMode', val => localStorage.setItem('darkMode', val))"
+    [ lang_ "en"
+    , class_ "no-js"
+    , xBind_ "class" "darkMode ? 'dark' : ''"
+    , xData_ "{ darkMode: localStorage.getItem('darkMode') !== 'false' }"
+    , xInit_ "$watch('darkMode', val => localStorage.setItem('darkMode', val))"
     ]
     $ do
       head_ $ do
@@ -58,7 +58,7 @@ header = do
 
 ogTags :: FloraHTML
 ogTags = do
-  TemplateEnv {title, description} <- ask
+  TemplateEnv{title, description} <- ask
   meta_ [property_ "og:title", content_ title]
   meta_ [property_ "og:site_name", content_ "Flora"]
   meta_ [property_ "og:description", content_ description]
@@ -76,9 +76,9 @@ theme = do
 
 brand :: FloraHTML
 brand = do
-  TemplateEnv {title, mobileTitle} <- ask
+  TemplateEnv{title, mobileTitle} <- ask
   let link = a_ [href_ "/", id_ "brand", class_ "font-bold text-white dark:text-gray-100"]
-  let containerBaseClasses = "flex items-center border-b-4 border-brand-purple flex-shrink-0 h-16"
+  let containerBaseClasses = "flex items-center border-b-4 border-brand-purple-light dark:border-brand-purple flex-shrink-0 h-16"
   div_ [class_ $ containerBaseClasses <> " hidden md:flex"] $ link (text title)
   div_ [class_ $ containerBaseClasses <> " md:hidden", xOn_ "click.prevent" "menuOpen = !menuOpen"] $ link (text mobileTitle)
 
@@ -92,8 +92,8 @@ navBarLink' = navBarLink ""
 
 navBar :: FloraHTML
 navBar = do
-  ActiveElements {aboutNav, packagesNav} <- asks activeElements
-  TemplateEnv {title} <- ask
+  ActiveElements{aboutNav, packagesNav} <- asks activeElements
+  TemplateEnv{title} <- ask
   let menuClasses =
         "md:flex flex md:items-center "
           <> "bg-brand-purple-dark md:bg-brand-purple dark:bg-navbar-darker md:dark:bg-navbar-dark "
@@ -116,7 +116,7 @@ navBar = do
 
 userMenu :: FloraHTML
 userMenu = do
-  TemplateEnv {mUser, sessionId} <- ask
+  TemplateEnv{mUser, sessionId} <- ask
   getUsernameOrLogin mUser
   adminLink mUser
   logOff mUser sessionId
@@ -129,11 +129,11 @@ navbarSearch = do
       form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "/search", method_ "GET"] $ do
         div_ [class_ "flex items-center py-2"] $ do
           input_
-            [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple",
-              id_ "packageName",
-              type_ "search",
-              name_ "q",
-              placeholder_ "Search a package"
+            [ class_ "rounded-full bg:bg-background dark:bg-background-dark w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
+            , id_ "packageName"
+            , type_ "search"
+            , name_ "q"
+            , placeholder_ "Search a package"
             ]
     else pure mempty
 

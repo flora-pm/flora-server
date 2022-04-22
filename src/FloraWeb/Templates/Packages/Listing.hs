@@ -11,21 +11,23 @@ import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
 import FloraWeb.Templates (FloraHTML)
 
-presentationHeader :: Text -> Word -> FloraHTML
-presentationHeader searchString numberOfPackages = do
-  div_ [class_ "divider"] $ do
-    div_ [class_ "px-4 py-5 sm:px-6 sm:py-24 lg:py-4 lg:px-8"] $
-      h2_ [class_ "text-center text-2xl tracking-tight sm:text-2xl lg:text-5xl"] $ do
-        span_ [class_ "headline"] $ toHtml searchString
-        toHtmlRaw @Text "&nbsp;"
-        span_ [class_ "dark:text-gray-200 version"] $ toHtml $ display numberOfPackages <> " packages"
+searchResultsAside :: Maybe Text -> Word -> FloraHTML
+searchResultsAside mSearchString numberOfPackages = do
+  div_ [class_ "px-4 py-3 sm:px-6 bg-white shadow-sm dark:bg-slate-600 rounded-md flex items-center"] $ do
+    case mSearchString of
+      Just searchString -> do
+        img_ [src_ "/static/icons/search.svg", class_ "h-6 w-6 mr-2 dark:invert"]
+        div_ [] $ do
+          h5_ [] $ toHtml searchString
+          strong_ [class_ "dark:text-gray-200"] $ toHtml $ display numberOfPackages <> " packages"
+      Nothing -> span_ [class_ "dark:text-gray-200"] $ toHtml $ display numberOfPackages <> " packages"
 
 showPackage :: (Namespace, PackageName, Text, Version) -> FloraHTML
 showPackage (namespace, name, synopsis, version) = do
   let href = href_ ("/packages/@" <> display namespace <> "/" <> display name)
-  let classes = "card text-inherit my-4 md:my-6" 
+  let classes = "card text-inherit my-4 md:my-6"
   a_ [href, class_ classes] $ do
-    h3_ [class_"text-brand-purple dark:text-brand-purple-light"] $ do
+    h3_ [class_ "text-brand-purple dark:text-brand-purple-light"] $ do
       strong_ [] . toHtml $ prettyPackageName namespace name
       small_ [class_ "mx-2"] $ "v" <> (toHtml . display $ version)
     p_ [class_ "text-neutral-900 dark:text-gray-200"] $ toHtml synopsis
@@ -37,6 +39,5 @@ packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 packageListing packages = do
   ul_ [class_ "packages-list"] $ do
     Vector.forM_ packages $ \pInfo -> do
-      li_ [class_ "px-2 md:px-0"] $
+      li_ [] $
         showPackage pInfo
-

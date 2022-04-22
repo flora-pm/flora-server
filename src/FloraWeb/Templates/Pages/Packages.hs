@@ -43,7 +43,7 @@ showPackage ::
   Vector Category ->
   FloraHTML
 showPackage latestRelease package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
-  div_ [class_ "container dark:text-gray-100 text-black"] $ do
+  div_ [class_ "larger-container"] $ do
     presentationHeader latestRelease namespace name synopsis
     packageBody package latestRelease dependencies numberOfDependencies dependents numberOfDependents categories
 
@@ -60,13 +60,12 @@ presentationHeader release namespace name synopsis = do
 packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
 packageBody Package{namespace, name = packageName, metadata} latestRelease dependencies numberOfDependencies dependents numberOfDependents categories =
   div_ [class_ "package-body"] $ do
-    div_ [class_ "grid grid-cols-4 gap-2 mt-8"] $ do
+    div_ [class_ "grid md:grid-cols-2 gap-2 mt-8"] $ do
       div_ [class_ "package-left-column"] $ do
         div_ [class_ "grid-rows-3"] $ do
           displayCategories categories
           displayLicense (metadata ^. #license)
           displayLinks packageName latestRelease metadata
-      div_ [class_ "col-span-2"] mempty
       div_ [class_ "package-right-column"] $ do
         div_ [class_ "grid-rows-3"] $ do
           displayInstructions packageName latestRelease
