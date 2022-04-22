@@ -18,7 +18,8 @@ module.exports = {
         },
         "brand-purple": {
           "DEFAULT": "#4e315e",
-          "dark": "#352140"
+          "dark": "#352140",
+          "light": "#EFC3F5"
         },
         "navbar": {
           "dark": "#1D2021",

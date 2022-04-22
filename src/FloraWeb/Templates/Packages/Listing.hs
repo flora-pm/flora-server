@@ -22,13 +22,13 @@ presentationHeader searchString numberOfPackages = do
 
 showPackage :: (Namespace, PackageName, Text, Version) -> FloraHTML
 showPackage (namespace, name, synopsis, version) = do
-  a_ [href_ ("/packages/@" <> display namespace <> "/" <> display name)] $ do
-    div_ [class_ "text-slate-300 hover:text-slate-200"] $ do
-      p_
-        [class_ "package-name inline text-link dark:text-link-dark"]
-        (toHtml $ prettyPackageName namespace name)
-      p_ [class_ "synopsis inline ml-3"] (toHtml synopsis)
-    div_ [class_ "text-slate-300 text-sm"] $ "v" <> toHtml (display version)
+  let href = href_ ("/packages/@" <> display namespace <> "/" <> display name)
+  let classes = "card text-inherit my-4 md:my-6" 
+  a_ [href, class_ classes] $ do
+    h3_ [class_"text-brand-purple dark:text-brand-purple-light"] $ do
+      strong_ [] . toHtml $ prettyPackageName namespace name
+      small_ [class_ "mx-2"] $ "v" <> (toHtml . display $ version)
+    p_ [class_ "text-neutral-900 dark:text-gray-200"] $ toHtml synopsis
 
 prettyPackageName :: Namespace -> PackageName -> Text
 prettyPackageName namespace name = "@" <> display namespace <> "/" <> display name
@@ -37,8 +37,6 @@ packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 packageListing packages = do
   ul_ [class_ "packages-list"] $ do
     Vector.forM_ packages $ \pInfo -> do
-      li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
+      li_ [class_ "px-2 md:px-0"] $
         showPackage pInfo
 
-getPackageInfo :: Package -> Version -> (Namespace, PackageName, Text, Version)
-getPackageInfo Package{namespace, name, synopsis} version = (namespace, name, synopsis, version)
