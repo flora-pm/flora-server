@@ -12,10 +12,14 @@
   .larger-container {
     @apply max-w-7xl mx-auto px-2;
   }  
-}
 
-.larger-container {
-  @apply max-w-7xl mx-auto px-2;
+  .form-input {
+    @apply my-1 rounded-md p-2 text-gray-900 placeholder-gray-600 border-1 border-gray-500;
+  }
+
+  .btn {
+    @apply rounded-md p-2 hover:bg-brand-purple-dark 
+  }
 }
 
 #navbar-search-package-name {
@@ -100,14 +104,6 @@ div[class="bullets"] {
     padding-left: 15px;
     margin-right: auto;
     margin-left: auto;
-  }
-
-  body {
-    height: 100%;
-  }
-
-  html {
-    height: 100%;
   }
 
   .navbar {

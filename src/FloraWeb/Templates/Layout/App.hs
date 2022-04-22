@@ -98,7 +98,7 @@ navBar = do
         "md:flex flex md:items-center "
           <> "bg-brand-purple-dark md:bg-brand-purple dark:bg-navbar-darker md:dark:bg-navbar-dark "
           <> "flex flex-col md:flex-row absolute md:relative top-[100%] left-0 w-full md:w-auto md:top-0"
-  nav_ [class_ "sticky top-0 left-0 md:relative border-b dark:border-transparent bg-brand-purple dark:bg-navbar-dark mb-3 z-10", xData_ "{menuOpen: false}"] $ do
+  nav_ [class_ "sticky top-0 left-0 border-b dark:border-transparent bg-brand-purple dark:bg-navbar-dark mb-3 z-10", xData_ "{menuOpen: false}"] $ do
     div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "md:flex md:justify-between h-16 "] $ do
         div_ [id_ "navbar-left", class_ "flex flex-shrink-0"] $ do
@@ -139,9 +139,10 @@ navbarSearch = do
 
 logOff :: Maybe User -> PersistentSessionId -> FloraHTML
 logOff Nothing _ = ""
-logOff (Just _) sessionId = li_ [class_ "user-menu-element"] $
+logOff (Just _) sessionId =
   form_ [action_ ("/sessions/delete/" <> display sessionId), method_ "post", id_ "logoff"] $ do
-    button_ [type_ "submit"] "Sign out"
+    let btnClasses = "font-bold inline-flex items-center py-3 mx-4 text-white dark:text-gray-100 "
+    button_ [type_ "submit", class_ btnClasses] "Sign out"
 
 adminLink :: Maybe User -> FloraHTML
 adminLink (Just user) | user ^. #userFlags ^. #isAdmin = li_ [class_ "user-menu-element"] $ a_ [href_ "/admin"] "Admin Dashboard"

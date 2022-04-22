@@ -21,3 +21,4 @@ assets/fonts
 result*
 cbits/*.cpp
 pgdata/
+.vscode/
