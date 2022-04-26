@@ -71,7 +71,7 @@ $ make repl
 
 ### Database
 
-The Flora server uses PostgreSQL 14.1
+The Flora server uses PostgreSQL 14.
 
 To create the database and apply the migrations, type:
 
