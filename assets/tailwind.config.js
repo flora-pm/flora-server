@@ -12,14 +12,18 @@ module.exports = {
       colors: {
         "background": {
           "dark": "#25282a",
+          "darker": "#1D2021",
           "dark-focused": "#3a3d3f",
           "DEFAULT": "#f3f4f6",
         },
         "brand-purple": {
           "DEFAULT": "#4e315e",
+          "dark": "#352140",
+          "light": "#EFC3F5"
         },
         "navbar": {
-          "dark": "#1D2021"
+          "dark": "#1D2021",
+          "darker": "#16191a"
         },
         "link": {
           "dark": "#4dabf7",

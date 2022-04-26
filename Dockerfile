@@ -4,12 +4,13 @@ FROM gbogard/haskell-bullseye:8.10.7
 # generate a working directory
 WORKDIR /flora-server 
 
-# install dependencies (pg_config & yarn)
+# install dependencies (pg_config, postgresql-client, postrgresql-migrations & yarn)
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list 
 RUN apt update
-RUN apt install -y nodejs yarn libpq-dev mcpp wget zsh tmux
+RUN apt install -y nodejs yarn libpq-dev mcpp wget zsh tmux postgresql-client
+RUN cabal install postgresql-migration
 
 # install soufflé
 RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb

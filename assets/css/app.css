@@ -4,60 +4,36 @@
 
 @layer base {
   a {
-    @apply text-link dark:text-link-dark
+    @apply text-link dark:text-brand-purple-light;
   }
 }
 
-#darkmode-toggle:checked ~ label div.toggle-dot {
-  @apply translate-x-3;
+@layer components {
+  .larger-container {
+    @apply max-w-7xl mx-auto px-2;
+  }  
+
+  .form-input {
+    @apply my-1 rounded-md p-2 text-gray-900 placeholder-gray-600 border-1 border-gray-500;
+  }
+
+  .btn {
+    @apply rounded-md p-2 hover:bg-brand-purple-dark 
+  }
 }
 
 #navbar-search-package-name {
   padding-left: 20px;
 }
 
-.error-code{
+.error-code {
   --tw-bg-opacity: 1;
   color: hsl(270, 50%, 40%);
 }
 
-.error-page-button{
+.error-page-button {
   --tw-bg-opacity: 1;
   background-color: hsl(270, 50%, 40%);
-}
-
-#user-menu-container {
-  position: relative;
-}
-
-#user-menu-nav{
-  z-index: 1;
-  top: 100%;
-  width: max-content;
-  max-width: 14rem;
-}
-
-.user-menu-element {
-  padding: 10px 15px;
-}
-
-.user-menu-element a,
-.user-menu-element a:visited {
-  color: inherit;
-  display: block;
-}
-
-.user-menu-element a:hover,
-.user-menu-element a:active,
-.user-menu-element a:focus {
-  text-decoration: underline;
-}
-
-.user-menu-divider {
-  display: block;
-  height: 1px;
-  background-color: currentColor;
-  opacity: .4;
 }
 
 ul[class="bullets"] {
@@ -67,7 +43,7 @@ ul[class="bullets"] {
   }
 }
 
-div[class="bullets"]{
+div[class="bullets"] {
   ul {
     li {
       list-style-type: disc;
@@ -77,72 +53,37 @@ div[class="bullets"]{
 }
 
 .navbar-element {
-    color: hsl(0, 0%, 100%);
+  color: hsl(0, 0%, 100%);
 }
 
-.navbar-element:hover{
-    --tw-text-opacity: 1;
-    color: hsl(254.3,95%,76.7%);
+.navbar-element:hover {
+  --tw-text-opacity: 1;
+  color: hsl(254.3, 95%, 76.7%);
 }
 
 /* Dark mode-specific rules */
-.dark{
-  .navbar{
-    background-color: hsl(0.65, 0.14%, 0.24%);
-  }
+.dark {
 
-  .navbar-element:hover{
+  .social-button:hover {
     --tw-text-opacity: 1;
-    color: hsl(254.3,95%,76.7%);
+    color: hsl(254.3, 95%, 76.7%);
   }
 
-  .social-button:hover{
-    --tw-text-opacity: 1;
-    color: hsl(254.3,95%,76.7%);
-  }
+}
 
-  .package-body{
-    a:hover{
-      --tw-text-opacity: 1;
-      color: hsl(254.3,95%,76.7%);
-    }
-  }
+.divider {
+  padding-bottom: 1em;
+  margin-bottom: 0.66em;
+  border-bottom: 1px solid hsl(0, 0%, 80%);
+}
 
-  .navbar-right{
-    .active{
-        --tw-border-opacity: 1;
-        border-bottom-color: hsl(270, 50%, 40%);
-        border-bottom-width: 2px;
-    }
-  }
-
-  .categories{
-    a {
-      color: unset;
-    }
-  }
-  .packages-list{
-    a {
-      color: unset;
-    }
-  }
-  .packages-list-item{
-    a {
-      display: block;
-      padding-top: 1em;
-      padding-bottom: 1em;
-      padding-left: 0.75em;
-    }
-    a:hover{
-      background-color: hsl(234, 17%, 24%);
-      border-radius: 5px;
-    }
-  }
+.card {
+  @apply block bg-white dark:bg-background-darker rounded-lg shadow-lg py-4 px-8;
 }
 
 /* Large display rules */
 @media (min-width: 1024px) {
-  .container{
+  .container {
     width: auto;
     max-width: 1100px;
     padding-right: 15px;
@@ -151,21 +92,12 @@ div[class="bullets"]{
     margin-left: auto;
   }
 
-  .categories{
-    width: auto;
-    max-width: 1536px;
-    padding-right: 15px;
-    padding-left: 15px;
-    margin-right: auto;
-    margin-left: auto;
-  }
-
-  .category-card{
+  .card {
     --tw-shadow-color: rgb(102 51 153 / 0.25);
     --tw-shadow: var(--tw-shadow-colored);
   }
 
-  .about-page{
+  .about-page {
     width: auto;
     max-width: 1000px;
     padding-right: 15px;
@@ -174,56 +106,26 @@ div[class="bullets"]{
     margin-left: auto;
   }
 
-  body{
-    height: 100%;
-  }
-
-  html{
-    height: 100%;
-  }
-
-  .navbar{
+  .navbar {
     margin-bottom: 20rem;
     font-size: 1.5rem;
     line-height: 2rem;
     margin-bottom: 4rem;
   }
 
-  .headline{
+  .headline {
     margin-bottom: 5px;
   }
 
-  .divider{
-    padding-bottom: 1em;
-    margin-bottom: .66em;
-    border-bottom: 1px solid hsl(0, 0%, 80%);
-  }
 
-  .version{
+
+  .version {
     font-size: 1.3rem;
     line-height: 1.3rem;
     padding-left: 4px;
   }
 
-  .package-body-section{
-    font-weight: 700;
-    display: inline-block;
+  .dependency {
     white-space: nowrap;
-  }
-
-  .dependency{
-    white-space: nowrap;
-  }
-
-  .package-left-column{
-    --tw-space-y-reverse: 0;
-    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(1rem * var(--tw-space-y-reverse));
-  }
-
-  .package-right-column{
-    --tw-space-y-reverse: 0;
-    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(1rem * var(--tw-space-y-reverse));
   }
 }

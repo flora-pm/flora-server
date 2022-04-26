@@ -6,13 +6,13 @@ import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import Flora.Model.Package (Namespace, PackageName)
 import FloraWeb.Templates (FloraHTML)
-import FloraWeb.Templates.Packages.Listing (presentationHeader, prettyPackageName)
+import FloraWeb.Templates.Packages.Listing (prettyPackageName, searchResultsAside)
 import Lucid
 
 showDependencies :: Text -> Vector (Namespace, PackageName, Text, Text) -> FloraHTML
 showDependencies searchString packagesInfo = do
   div_ [class_ "container dark:text-gray-100 text-black"] $ do
-    presentationHeader searchString (fromIntegral $ Vector.length packagesInfo)
+    searchResultsAside (Just searchString) (fromIntegral $ Vector.length packagesInfo)
     packageListing packagesInfo
 
 packageListing :: Vector (Namespace, PackageName, Text, Text) -> FloraHTML

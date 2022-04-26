@@ -87,7 +87,9 @@ A docker-based workflow is provided. The idea is to develop from within a contai
 and communicates with another container for the Postgres database.
 
 ```bash
-# It's gonna take around 13 minutes the first time you build
+# You need to build the container first. It's gonna take around 13 minutes the first time you build
+$ make docker-build
+# Start the container.
 $ make docker-start
 # Once the containers are running, you can enter the development environment and start hacking
 $ make docker-enter

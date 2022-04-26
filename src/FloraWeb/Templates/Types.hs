@@ -43,6 +43,7 @@ data TemplateEnv = TemplateEnv
   , flashInfo :: Maybe FlashInfo
   , flashError :: Maybe FlashError
   , title :: Text
+  , mobileTitle :: Text
   , description :: Text
   , mUser :: Maybe User
   , sessionId :: PersistentSessionId
@@ -64,6 +65,7 @@ data TemplateDefaults = TemplateDefaults
   , flashInfo :: Maybe FlashInfo
   , flashError :: Maybe FlashError
   , title :: Text
+  , mobileTitle :: Text
   , description :: Text
   , mUser :: Maybe User
   , environment :: DeploymentEnv
@@ -86,6 +88,7 @@ defaultTemplateEnv =
     , flashInfo = Nothing
     , flashError = Nothing
     , title = "Flora :: [Package]"
+    , mobileTitle = "☰ Flora"
     , description = "Package index for the Haskell ecosystem"
     , mUser = Nothing
     , environment = Development

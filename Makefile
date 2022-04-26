@@ -64,8 +64,11 @@ style: ## Run the code formatters (stylish-haskell, cabal-fmt, nixfmt)
 nix-shell: ## Enter the Nix shell
 	@nix-shell
 
-docker-start: ## Start the container cluster
+docker-build: ## Build and start the container cluster
 	@docker-compose up -d --build
+
+docker-start: ## Start the container cluster
+	@docker-compose up -d
 
 docker-enter: ## Enter the docker environment
 	docker-compose exec flora-server "zsh"

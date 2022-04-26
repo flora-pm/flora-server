@@ -52,9 +52,7 @@ indexHandler = do
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
   results <- Search.listAllPackages
-  let (templateEnv :: TemplateEnv) =
-        templateDefaults & #displayNavbarSearch .~ False
-  render templateEnv $ Search.showAllPackages results
+  render templateDefaults $ Search.showAllPackages results
 
 showHandler :: Text -> Text -> FloraPageM (Html ())
 showHandler namespaceText packageNameText = do
