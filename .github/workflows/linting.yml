@@ -6,7 +6,7 @@ on:
     branches: ["main", "development"]
 
 jobs:
-  linting:
+  styling:
     runs-on: ubuntu-latest
     steps:
 
@@ -23,7 +23,7 @@ jobs:
       uses: actions/cache@v2.1.3
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ${{ runner.os }}-linting
+        key: ${{ runner.os }}-styling
 
     - name: Install tools
       run: |
@@ -31,10 +31,23 @@ jobs:
         echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        cabal install -j apply-refact fourmolu hlint
-
-    - name: Running hlint
-      run: ./.github/workflows/hlint-runner.sh
+        cabal install -j fourmolu
 
     - name: Running fourmolu
       run: ./.github/workflows/fourmolu-runner.sh
+
+  hlint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: 'Set up HLint'
+      uses: rwe/actions-hlint-setup@v1
+      with:
+        version: '3.3.6'
+
+    - name: 'Run HLint'
+      uses: rwe/actions-hlint-run@v1
+      with:
+        path: '["src/", "app/", "test/"]'
+        fail-on: warning
