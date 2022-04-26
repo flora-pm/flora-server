@@ -14,7 +14,7 @@
   }  
 
   .form-input {
-    @apply my-1 rounded-md p-2 text-gray-900 placeholder-gray-600 border-1 border-gray-500;
+    @apply my-1 rounded-md p-2 text-gray-900 placeholder-gray-600 border-2 border-gray-500;
   }
 
   .btn {
