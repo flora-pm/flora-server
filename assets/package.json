@@ -20,7 +20,7 @@
     "watch": "concurrently \"yarn:watch-css\" \"yarn:watch-js\" \"yarn:watch-static-files\"",
     "build": "concurrently \"yarn:build-css\" \"yarn:build-js\" \"yarn:copy-static-files\"",
     "watch-js": "node esbuild.config.js",
-    "build-js": "esbuild js/app.js --asset-names=[name]-[hash].js --bundle --minify --target=es2016 --outdir=../static/js/",
+    "build-js": "esbuild js/app.js --asset-names=[name]-[hash].js --bundle --minify --outdir=../static/js/",
     "watch-css": "postcss css/app.css -o ../static/css/app.css -w",
     "build-css": "NODE_BUILD=prod postcss css/app.css -o ../static/css/app.css",
     "copy-static-files": "cpx **/*.{svg,png,jpg} ../static",
