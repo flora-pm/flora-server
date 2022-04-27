@@ -113,7 +113,8 @@ displayDependencies (namespace, packageName) numberOfDependencies dependencies =
     h3_ [class_ "lg:text-2xl package-body-section mb-3"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
     ul_ [class_ "dependencies grid-cols-3"] $ do
       let deps = foldMap renderDependency dependencies
-      if fromIntegral (Vector.length dependencies) <= numberOfDependencies
+      let numberOfShownDependencies = fromIntegral @Int @Word (Vector.length dependencies)
+      if numberOfShownDependencies >= numberOfDependencies
         then deps
         else deps <> showAll (namespace, packageName, Dependencies)
 
@@ -128,7 +129,7 @@ displayInstructions packageName latestRelease = do
     h3_ [class_ "lg:text-2xl package-body-section mb-3"] "Installation"
     div_ [class_ "items-top"] $ do
       div_ [class_ "space-y-2"] $ do
-        label_ [for_ "install-string", class_ "font-light"] "In your .cabal file:"
+        label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
         input_
           [ class_ "font-mono shadow-sm text-base w-full bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block border-gray-800 dark:border-gray-800 rounded-md"
           , type_ "text"
@@ -150,7 +151,7 @@ displayDependents (namespace, packageName) numberOfDependents dependents = do
       then ""
       else
         let deps = fold $ intercalateVec ", " $ fmap renderDependent dependents
-         in if fromIntegral (Vector.length dependents) <= numberOfDependents
+         in if fromIntegral (Vector.length dependents) >= numberOfDependents
               then deps
               else deps <> ", " <> showAll (namespace, packageName, Dependents)
 
