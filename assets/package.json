@@ -23,7 +23,7 @@
     "build-js": "esbuild js/app.js --asset-names=[name]-[hash].js --bundle --minify --outdir=../static/js/",
     "watch-css": "postcss css/app.css -o ../static/css/app.css -w",
     "build-css": "NODE_BUILD=prod postcss css/app.css -o ../static/css/app.css",
-    "copy-static-files": "cpx **/*.{svg,png,jpg} ../static",
-    "watch-static-files": "cpx **/*.{svg,png,jpg} ../static -w"
+    "copy-static-files": "cpx \"**/*.{svg,png,jpg}\" ../static",
+    "watch-static-files": "cpx \"**/*.{svg,png,jpg}\" ../static -w"
   }
 }
