@@ -17,7 +17,7 @@ showDependencies searchString packagesInfo = do
 
 packageListing :: Vector (Namespace, PackageName, Text, Text) -> FloraHTML
 packageListing packages = do
-  ul_ [class_ "packages-list"] $ do
+  ul_ [class_ "packages-list space-y-4"] $ do
     Vector.forM_ packages $ \pInfo -> do
       li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
         showPackage pInfo
