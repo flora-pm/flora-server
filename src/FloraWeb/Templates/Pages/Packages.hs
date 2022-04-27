@@ -5,24 +5,23 @@ import Data.Text (Text, pack)
 import Data.Text.Display
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import qualified Data.Vector as Vector
 import Distribution.Pretty (pretty)
 import qualified Distribution.SPDX.License as SPDX
+import Flora.Model.Category (Category (..))
+import Flora.Model.Package.Types
+  ( Namespace
+  , Package (..)
+  , PackageMetadata (..)
+  , PackageName
+  )
+import Flora.Model.Release (Release (..))
+import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
 import Lucid.Orphans ()
 import Optics.Core ((^.))
 import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
-
-import qualified Data.Vector as Vector
-import Flora.Model.Category (Category (..))
-import Flora.Model.Package.Types
-  ( Namespace,
-    Package (..),
-    PackageMetadata (..),
-    PackageName,
-  )
-import Flora.Model.Release (Release (..))
-import FloraWeb.Templates.Types (FloraHTML)
 
 data Target = Dependents | Dependencies
   deriving stock (Eq, Ord)
