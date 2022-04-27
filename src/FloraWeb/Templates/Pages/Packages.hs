@@ -13,18 +13,16 @@ import Optics.Core ((^.))
 import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
 
-import qualified Data.Text as T
 import qualified Data.Vector as Vector
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
-  ( Namespace
-  , Package (..)
-  , PackageMetadata (..)
-  , PackageName
+  ( Namespace,
+    Package (..),
+    PackageMetadata (..),
+    PackageName,
   )
 import Flora.Model.Release (Release (..))
 import FloraWeb.Templates.Types (FloraHTML)
-import Lucid.Base (makeAttribute)
 
 data Target = Dependents | Dependencies
   deriving stock (Eq, Ord)
@@ -60,13 +58,13 @@ presentationHeader release namespace name synopsis = do
 packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
 packageBody Package{namespace, name = packageName, metadata} latestRelease dependencies numberOfDependencies dependents numberOfDependents categories =
   div_ [class_ "package-body"] $ do
-    div_ [class_ "grid md:grid-cols-2 gap-2 mt-8"] $ do
-      div_ [class_ "package-left-column"] $ do
+    div_ [class_ "md:flex"] $ do
+      div_ [class_ "package-left-column grow"] $ do
         div_ [class_ "grid-rows-3"] $ do
           displayCategories categories
           displayLicense (metadata ^. #license)
           displayLinks packageName latestRelease metadata
-      div_ [class_ "package-right-column"] $ do
+      div_ [class_ "package-right-column md:max-w-xs"] $ do
         div_ [class_ "grid-rows-3"] $ do
           displayInstructions packageName latestRelease
           displayDependencies (namespace, packageName) numberOfDependencies dependencies
@@ -139,7 +137,6 @@ displayInstructions packageName latestRelease = do
           , onfocus_ "this.select();"
           , value_ (formatInstallString packageName latestRelease)
           , readonly_ "readonly"
-          , xModel_ [] "input"
           ]
 
 displayDependents ::
@@ -203,15 +200,3 @@ formatInstallString packageName Release{version} =
   where
     rangedVersion :: Doc
     rangedVersion = "^>=" <> pretty version
-
-{- | x-model
- Synchronize a piece of data with an input element
--}
-xModel_ ::
-  -- | List of x-model modifiers
-  [Text] ->
-  Text ->
-  Attribute
-xModel_ mods = case mods of
-  [] -> makeAttribute "x-model"
-  _ -> makeAttribute ("x-model." <> T.intercalate "." mods)
