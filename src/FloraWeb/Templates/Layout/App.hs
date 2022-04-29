@@ -110,7 +110,6 @@ navBar = do
           navBarLink' "/about" "About Flora" aboutNav
           navBarLink' "/categories" "Categories" packagesNav
           navBarLink' "/packages" "Packages" packagesNav
-          navBarLink' "#" "Guides" False
           userMenu
           darkModeToggle
 
