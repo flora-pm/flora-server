@@ -1,4 +1,5 @@
 {-# LANGUAGE ExplicitNamespaces #-}
+
 module FloraWeb.Routes.Pages.Search where
 
 import Data.Text (Text)
