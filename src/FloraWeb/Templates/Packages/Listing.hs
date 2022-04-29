@@ -13,7 +13,7 @@ import FloraWeb.Templates (FloraHTML)
 
 searchResultsAside :: Maybe Text -> Word -> FloraHTML
 searchResultsAside mSearchString numberOfPackages = do
-  div_ [class_ "px-4 py-3 sm:px-6 bg-white shadow-sm dark:bg-slate-600 rounded-md flex items-center"] $ do
+  div_ [class_ "px-4 py-3 sm:px-6 bg-white shadow-sm dark:bg-slate-600 rounded-md flex items-center mb-5"] $ do
     case mSearchString of
       Just searchString -> do
         img_ [src_ "/static/icons/search.svg", class_ "h-6 w-6 mr-2 dark:invert"]
@@ -37,7 +37,7 @@ prettyPackageName namespace name = "@" <> display namespace <> "/" <> display na
 
 packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 packageListing packages = do
-  ul_ [class_ "packages-list"] $ do
+  ul_ [class_ "packages-list space-y-4"] $ do
     Vector.forM_ packages $ \pInfo -> do
       li_ [] $
         showPackage pInfo
