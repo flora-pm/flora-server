@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module FloraWeb.Autoreload where
 
 import FloraWeb.Server.Auth (FloraDevSocket)
