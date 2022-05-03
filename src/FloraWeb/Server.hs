@@ -67,7 +67,6 @@ shutdownFlora env = do
 
 runServer :: Logger -> FloraEnv -> IO ()
 runServer appLogger floraEnv = do
-  liftIO $ putStrLn "lol"
   loggingMiddleware <- Logging.runLog floraEnv appLogger WaiLog.mkLogMiddleware
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
