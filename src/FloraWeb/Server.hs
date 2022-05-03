@@ -104,7 +104,7 @@ floraServer =
     , autoreload =
         hoistServer
           (Proxy @AutoreloadRoute)
-          ( \handler -> withReaderT (const Autoreload.genUUID) handler
+          ( \handler -> withReaderT (const ()) handler
           )
           Autoreload.server
     }
