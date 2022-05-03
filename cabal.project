@@ -6,8 +6,6 @@ with-compiler: ghc-8.10.7
 
 jobs: 8
 
-optimization: False
-
 tests: True
 
 allow-newer: all
@@ -16,6 +14,7 @@ test-show-details: direct
 
 package *
   ghc-options: "-L /usr/pgsql-14/lib"
+  flags: -prod
 
 package warp
   flags: -x509

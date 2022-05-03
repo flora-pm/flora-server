@@ -12,8 +12,8 @@ if (process.env.NODE_ENV === 'prod') {
 }
 
 esbuild.build({
-  entryPoints: ['./js/app.js'],
-  outfile: `${copyDest}/js/app.js`,
+  entryPoints: ['./js/app.js', './js/autoreload.js'],
+  outdir: `${copyDest}/js/`,
   bundle: true,
   sourcemap: sourcemap,
   minify: minify,
