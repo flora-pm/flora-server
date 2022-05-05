@@ -1,4 +1,9 @@
-module FloraWeb.Templates.Packages.Listing where
+module FloraWeb.Templates.Packages.Listing
+  ( searchResultsAside
+  , packageListing
+  , showPackageWithRange
+  , showPackageWithVersion
+  ) where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
@@ -22,22 +27,35 @@ searchResultsAside mSearchString numberOfPackages = do
           strong_ [class_ "dark:text-gray-200"] $ toHtml $ display numberOfPackages <> " packages"
       Nothing -> span_ [class_ "dark:text-gray-200"] $ toHtml $ display numberOfPackages <> " packages"
 
-showPackage :: (Namespace, PackageName, Text, Version) -> FloraHTML
-showPackage (namespace, name, synopsis, version) = do
-  let href = href_ ("/packages/@" <> display namespace <> "/" <> display name)
-  let classes = "card text-inherit my-4 md:my-6"
-  a_ [href, class_ classes] $ do
-    h3_ [class_ "text-brand-purple dark:text-brand-purple-light"] $ do
-      strong_ [] . toHtml $ prettyPackageName namespace name
-      small_ [class_ "mx-2"] $ "v" <> (toHtml . display $ version)
-    p_ [class_ "text-neutral-900 dark:text-gray-200"] $ toHtml synopsis
-
-prettyPackageName :: Namespace -> PackageName -> Text
-prettyPackageName namespace name = "@" <> display namespace <> "/" <> display name
-
+-- | Render a list of package informations
 packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 packageListing packages = do
   ul_ [class_ "packages-list space-y-4"] $ do
     Vector.forM_ packages $ \pInfo -> do
-      li_ [] $
-        showPackage pInfo
+      li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
+        showPackageWithVersion pInfo
+
+showPackageWithVersion :: (Namespace, PackageName, Text, Version) -> FloraHTML
+showPackageWithVersion (namespace, name, synopsis, version) = 
+  showPackage (namespace, name, synopsis, display version)
+
+showPackageWithRange :: (Namespace, PackageName, Text, Text) -> FloraHTML
+showPackageWithRange (namespace, name, synopsis, versionRange) = 
+  showPackage (namespace, name, synopsis, range)
+  where
+    range = if versionRange == ">=0"
+              then ""
+              else versionRange
+
+showPackage :: (Namespace, PackageName, Text, Text) -> FloraHTML
+showPackage (namespace, name, synopsis, version) = do
+  let href = href_ ("/packages/@" <> display namespace <> "/" <> display name)
+  let classes = "card text-inherit my-4 md:my-6"
+  a_ [href, class_ classes] $ do
+    p_ [class_ "package-name inline text-link dark:text-link-dark"] $
+      strong_ [] . toHtml $ prettyPackageName namespace name
+  div_ [class_ "text-slate-300 text-sm"] $ toHtml version
+  p_ [class_ "text-neutral-900 dark:text-gray-200"] $ toHtml synopsis
+
+prettyPackageName :: Namespace -> PackageName -> Text
+prettyPackageName namespace name = "@" <> display namespace <> "/" <> display name
