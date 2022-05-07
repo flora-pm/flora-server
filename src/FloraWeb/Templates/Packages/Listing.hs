@@ -1,9 +1,11 @@
 module FloraWeb.Templates.Packages.Listing
   ( searchResultsAside
   , packageListing
+  , packageListingWithRange
   , showPackageWithRange
   , showPackageWithVersion
-  ) where
+  )
+where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
@@ -35,17 +37,25 @@ packageListing packages = do
       li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
         showPackageWithVersion pInfo
 
+packageListingWithRange :: Vector (Namespace, PackageName, Text, Text) -> FloraHTML
+packageListingWithRange packages = do
+  ul_ [class_ "packages-list space-y-4"] $ do
+    Vector.forM_ packages $ \pInfo -> do
+      li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
+        showPackageWithRange pInfo
+
 showPackageWithVersion :: (Namespace, PackageName, Text, Version) -> FloraHTML
-showPackageWithVersion (namespace, name, synopsis, version) = 
+showPackageWithVersion (namespace, name, synopsis, version) =
   showPackage (namespace, name, synopsis, display version)
 
 showPackageWithRange :: (Namespace, PackageName, Text, Text) -> FloraHTML
-showPackageWithRange (namespace, name, synopsis, versionRange) = 
+showPackageWithRange (namespace, name, synopsis, versionRange) =
   showPackage (namespace, name, synopsis, range)
   where
-    range = if versionRange == ">=0"
-              then ""
-              else versionRange
+    range =
+      if versionRange == ">=0"
+        then ""
+        else versionRange
 
 showPackage :: (Namespace, PackageName, Text, Text) -> FloraHTML
 showPackage (namespace, name, synopsis, version) = do
