@@ -67,9 +67,10 @@ common common-ghc-options
 
   if flag(prod)
     ghc-options: -flate-specialise -funbox-strict-fields
+    cpp-options: -DPROD
 
 common common-rts-options
-  ghc-options: -rtsopts -threaded -with-rtsopts "-N -T"
+  ghc-options: -threaded "-with-rtsopts=-N -T" -I0
 
 library
   import:          common-extensions
