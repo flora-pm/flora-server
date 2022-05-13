@@ -70,7 +70,7 @@ common common-ghc-options
     cpp-options: -DPROD
 
 common common-rts-options
-  ghc-options: -threaded "-with-rtsopts=-N -T" -I0
+  ghc-options: -threaded "-with-rtsopts=-N -T"
 
 library
   import:          common-extensions

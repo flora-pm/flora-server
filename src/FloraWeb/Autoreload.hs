@@ -5,6 +5,9 @@ import Network.WebSockets (Connection)
 import Servant
 import Servant.API.Generic
 import Servant.API.WebSocket
+import qualified Network.WebSockets as Websocket
+import Control.Monad (void)
+import Control.Monad.IO.Class
 
 type AutoreloadRoute = NamedRoutes AutoreloadRoute'
 data AutoreloadRoute' mode = AutoreloadRoute'
@@ -20,4 +23,5 @@ server =
 
 autoreloadHandler :: Connection -> FloraDevSocket ()
 autoreloadHandler connection = do
-  autoreloadHandler connection
+  void $ liftIO $ Websocket.receiveDataMessage connection
+  autoreloadHandler connection 
