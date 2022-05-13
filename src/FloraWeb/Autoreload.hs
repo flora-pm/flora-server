@@ -1,13 +1,13 @@
 module FloraWeb.Autoreload where
 
+import Control.Monad (void)
+import Control.Monad.IO.Class
 import FloraWeb.Server.Auth (FloraDevSocket)
 import Network.WebSockets (Connection)
+import qualified Network.WebSockets as Websocket
 import Servant
 import Servant.API.Generic
 import Servant.API.WebSocket
-import qualified Network.WebSockets as Websocket
-import Control.Monad (void)
-import Control.Monad.IO.Class
 
 type AutoreloadRoute = NamedRoutes AutoreloadRoute'
 data AutoreloadRoute' mode = AutoreloadRoute'
@@ -24,4 +24,4 @@ server =
 autoreloadHandler :: Connection -> FloraDevSocket ()
 autoreloadHandler connection = do
   void $ liftIO $ Websocket.receiveDataMessage connection
-  autoreloadHandler connection 
+  autoreloadHandler connection
