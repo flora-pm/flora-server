@@ -79,9 +79,11 @@ start-tmux: ## Start a Tmux session with hot code reloading
 soufflé: ## Generate C++ files from the Soufflé Datalog definitions
 	cd cbits ; souffle -g categorise.{cpp,dl}
 
-tags:
+tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c
 
+design-system: ## Generate the HTML components used by the design system
+	@cabal run -- flora-cli gen-design-system
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.* ?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 

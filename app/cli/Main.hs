@@ -18,6 +18,7 @@ import Data.Maybe
 import Data.Text (Text)
 import qualified Flora.Model.User.Query as Query
 import GHC.Generics (Generic)
+import DesignSystem (generateComponents)
 
 data Options = Options
   { cliCommand :: Command
@@ -107,7 +108,7 @@ runOptions (Options (CreateUser opts)) = do
         templateUser <- mkUser UserCreationForm{..}
         let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
         insertUser user
-runOptions (Options GenDesignSystemComponents) = pure ()
+runOptions (Options GenDesignSystemComponents) = generateComponents
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

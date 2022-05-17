@@ -120,6 +120,7 @@ library
     FloraWeb.Autoreload
     FloraWeb.Client
     FloraWeb.Components.CategoryCard
+    FloraWeb.Components.PackageListItem
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Admin
@@ -239,18 +240,21 @@ executable flora-cli
   import:         common-ghc-options
   import:         common-rts-options
   main-is:        Main.hs
-  other-modules:  
+  other-modules:
     CoverageReport
     DesignSystem
+
   hs-source-dirs: app/cli
   build-depends:
     , ansi-terminal
     , base
+    , bytestring
     , Cabal
     , colourista
     , directory
     , flora
     , log-base
+    , lucid
     , monad-control
     , optics-core
     , optparse-applicative  ^>=0.16
@@ -261,6 +265,8 @@ executable flora-cli
     , text-display
     , transformers
     , typed-process
+    , uuid
+    , vector
 
 test-suite flora-test
   import:         common-extensions

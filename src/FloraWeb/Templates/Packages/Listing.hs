@@ -17,6 +17,7 @@ import Lucid
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
 import FloraWeb.Templates (FloraHTML)
+import FloraWeb.Components.PackageListItem (packageListItem)
 
 searchResultsAside :: Maybe Text -> Word -> FloraHTML
 searchResultsAside mSearchString numberOfPackages = do
@@ -46,26 +47,13 @@ packageListingWithRange packages = do
 
 showPackageWithVersion :: (Namespace, PackageName, Text, Version) -> FloraHTML
 showPackageWithVersion (namespace, name, synopsis, version) =
-  showPackage (namespace, name, synopsis, display version)
+  packageListItem (namespace, name, synopsis, display version)
 
 showPackageWithRange :: (Namespace, PackageName, Text, Text) -> FloraHTML
 showPackageWithRange (namespace, name, synopsis, versionRange) =
-  showPackage (namespace, name, synopsis, range)
+  packageListItem (namespace, name, synopsis, range)
   where
     range =
       if versionRange == ">=0"
         then ""
         else versionRange
-
-showPackage :: (Namespace, PackageName, Text, Text) -> FloraHTML
-showPackage (namespace, name, synopsis, version) = do
-  let href = href_ ("/packages/@" <> display namespace <> "/" <> display name)
-  let classes = "block text-inherit my-4 md:my-6"
-  a_ [href, class_ classes] $ do
-    h4_ [class_ "package-name inline text-link dark:text-link-dark mr-2"] $
-      strong_ [] . toHtml $ prettyPackageName namespace name
-    p_ [class_ "inline text-neutral-900 dark:text-gray-200"] $ toHtml synopsis
-    div_ [class_ "text-slate-300 text-sm"] $ toHtml version
-
-prettyPackageName :: Namespace -> PackageName -> Text
-prettyPackageName namespace name = "@" <> display namespace <> "/" <> display name
