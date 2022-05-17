@@ -29,7 +29,7 @@ newtype ComponentTitle = ComponentTitle Text
 
 generateComponents :: IO ()
 generateComponents = forM_ components $ \(filename, title, name, template) -> do
-  let html =  renderHtml template
+  let html = TL.replace "\"" "\\\"" $ renderHtml template
   writeComponent filename title name html
   
 renderHtml :: FloraHTML -> TL.Text
@@ -46,8 +46,8 @@ writeComponent filename title name html =
 -- | A component is represented by a 4-tuple of 
 components :: Vector (FilePath, ComponentTitle, ComponentName, FloraHTML)
 components = Vector.fromList
-  [ ("package-list--item", ComponentTitle "Package List/Item", ComponentName "PackageListItem", packageListItemExample)
-  , ("category-card", ComponentTitle "Category/Card", ComponentName "CategoryCard", categoryCardExample)
+  [ ("package-list--item", ComponentTitle "Package List", ComponentName "PackageListItem", packageListItemExample)
+  , ("category-card", ComponentTitle "Category", ComponentName "CategoryCard", categoryCardExample)
   ]
 
 -----------------------
