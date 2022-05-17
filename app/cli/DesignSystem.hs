@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 module DesignSystem where
 
 import Control.Monad.Trans.Reader (runReaderT)
@@ -16,14 +17,15 @@ import FloraWeb.Templates (FloraHTML, defaultTemplateEnv, defaultsToEnv)
 import Flora.Model.Package
 import Flora.Model.Category
 import qualified Flora.Model.Category as Category
+import PyF (fmt)
 
 newtype ComponentName = ComponentName String
   deriving newtype (Eq, Ord, Show)
 
 generateComponents :: IO ()
-generateComponents = forM_ components $ \(name, template) -> do
+generateComponents = forM_ components $ \(filename, name, template) -> do
   let html =  renderHtml template
-  writeComponent name html
+  writeComponent filename name html
   
 renderHtml :: FloraHTML -> ByteString
 renderHtml template =
@@ -31,15 +33,30 @@ renderHtml template =
     where
       templateEnv = defaultsToEnv defaultTemplateEnv
 
-writeComponent :: ComponentName -> ByteString -> IO ()
-writeComponent componentName html =
-  ByteString.writeFile ("./assets/design/components/" <> show componentName <> ".html") html
+writeComponent :: FilePath -> ComponentName -> ByteString -> IO ()
+writeComponent filename name html =
+  ByteString.writeFile ("./design/stories/" <> filename <> ".stories.js") 
+                       (storyTemplate name html)
 
-components :: Vector (ComponentName, FloraHTML)
+-- | A component is represented by a 4-tuple of 
+components :: Vector (FilePath, ComponentName, FloraHTML)
 components = Vector.fromList
-  [ (ComponentName "package-list-item", packageListItemExample)
-  , (ComponentName "category-card", categoryCardExample)
+  [ ("package-list--item", ComponentName "Package List/Item", packageListItemExample)
+  , ("category-card", ComponentName "Category/Card", categoryCardExample)
   ]
+
+-----------------------
+-- Storybook Helpers --
+-----------------------
+
+storyTemplate :: ComponentName -> ByteString -> ByteString
+storyTemplate (ComponentName name) html = [fmt| 
+    export default {{
+      title: 'Example/Headings'
+    }};
+
+    export const {name} = () => {html}
+    |]
 
 --------------
 -- Examples --

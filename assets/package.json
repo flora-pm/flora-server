@@ -17,11 +17,12 @@
     "tailwindcss": "^3.0.0"
   },
   "scripts": {
-    "watch": "concurrently \"yarn:watch-css\" \"yarn:watch-js\" \"yarn:watch-static-files\"",
+    "watch": "concurrently \"yarn:watch-css\" \"yarn:watch-js\" \"yarn:watch-static-files\" \"yarn:watch-design-system-css\"",
     "build": "concurrently \"yarn:build-css\" \"yarn:build-js\" \"yarn:copy-static-files\"",
     "watch-js": "node esbuild.config.js",
     "build-js": "esbuild js/app.js --asset-names=[name]-[hash].js --bundle --minify --outdir=../static/js/",
     "watch-css": "postcss css/app.css -o ../static/css/app.css -w",
+    "watch-design-system-css": "postcss css/app.css -o ../design/app.css -w",
     "build-css": "NODE_BUILD=prod postcss css/app.css -o ../static/css/app.css",
     "copy-static-files": "cpx \"**/*.{svg,png,jpg}\" ../static",
     "watch-static-files": "cpx \"**/*.{svg,png,jpg}\" ../static -w"

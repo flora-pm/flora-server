@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "sb": "^6.4.22"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.17.12",
+    "@pbutlewski/storybook-html": "^5.0.2",
+    "@storybook/addon-actions": "^6.4.22",
+    "@storybook/addon-essentials": "^6.4.22",
+    "@storybook/addon-links": "^6.4.22",
+    "@storybook/addon-storysource": "^6.4.22",
+    "@storybook/html": "^6.4.22",
+    "babel-loader": "^8.2.5"
+  },
+  "scripts": {
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
+  }
+}

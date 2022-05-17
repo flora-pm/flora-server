@@ -261,6 +261,7 @@ executable flora-cli
     , password-types
     , pg-entity
     , pg-transact
+    , PyF
     , text
     , text-display
     , transformers
