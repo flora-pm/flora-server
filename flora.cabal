@@ -239,7 +239,9 @@ executable flora-cli
   import:         common-ghc-options
   import:         common-rts-options
   main-is:        Main.hs
-  other-modules:  CoverageReport
+  other-modules:  
+    CoverageReport
+    DesignSystem
   hs-source-dirs: app/cli
   build-depends:
     , ansi-terminal

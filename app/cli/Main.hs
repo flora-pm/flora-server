@@ -28,6 +28,7 @@ data Command
   = Provision
   | CoverageReport CoverageReportOptions
   | CreateUser UserCreationOptions
+  | GenDesignSystemComponents
   deriving stock (Show, Eq)
 
 data UserCreationOptions = UserCreationOptions
@@ -40,7 +41,7 @@ data UserCreationOptions = UserCreationOptions
   deriving stock (Generic, Show, Eq)
 
 main :: IO ()
-main = runOptions =<< execParser (parseOptions `withInfo` "CLI helper for flora-server")
+main = runOptions =<< execParser (parseOptions `withInfo` "CLI tool for flora-server")
 
 parseOptions :: Parser Options
 parseOptions =
@@ -52,6 +53,7 @@ parseCommand =
     command "provision-fixtures" (parseProvision `withInfo` "Load the test fixtures into the database")
       <> command "coverage-report" (parseCoverageReport `withInfo` "Run a coverage report of the category mapping")
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
+      <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
 
 parseProvision :: Parser Command
 parseProvision = pure Provision
@@ -72,7 +74,21 @@ parseCreateUser =
             <*> switch (long "can-login" <> help "The user can log in")
         )
 
+parseGenDesignSystem :: Parser Command
+parseGenDesignSystem = pure GenDesignSystemComponents
+
 runOptions :: Options -> IO ()
+runOptions (Options (CoverageReport opts)) = runCoverageReport opts
+runOptions (Options Provision) = do
+  env <- getFloraEnv
+  withPool (env ^. #pool) $ do
+    hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
+
+    void importCategories
+
+    void $ importPackage (hackageUser ^. #userId) (PackageName "parsec") "./test/fixtures/Cabal/"
+    void $ importPackage (hackageUser ^. #userId) (PackageName "Cabal") "./test/fixtures/Cabal/"
+    void $ importPackage (hackageUser ^. #userId) (PackageName "bytestring") "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
   env <- getFloraEnv
   withPool (env ^. #pool) $ do
@@ -91,17 +107,7 @@ runOptions (Options (CreateUser opts)) = do
         templateUser <- mkUser UserCreationForm{..}
         let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
         insertUser user
-runOptions (Options Provision) = do
-  env <- getFloraEnv
-  withPool (env ^. #pool) $ do
-    hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
-
-    void importCategories
-
-    void $ importPackage (hackageUser ^. #userId) (PackageName "parsec") "./test/fixtures/Cabal/"
-    void $ importPackage (hackageUser ^. #userId) (PackageName "Cabal") "./test/fixtures/Cabal/"
-    void $ importPackage (hackageUser ^. #userId) (PackageName "bytestring") "./test/fixtures/Cabal/"
-runOptions (Options (CoverageReport opts)) = runCoverageReport opts
+runOptions (Options GenDesignSystemComponents) = pure ()
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
