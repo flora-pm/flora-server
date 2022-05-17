@@ -32,14 +32,14 @@ searchResultsAside mSearchString numberOfPackages = do
 -- | Render a list of package informations
 packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 packageListing packages = do
-  ul_ [class_ "packages-list space-y-4"] $ do
+  ul_ [class_ "packages-list space-y-4 mt-8"] $ do
     Vector.forM_ packages $ \pInfo -> do
       li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
         showPackageWithVersion pInfo
 
 packageListingWithRange :: Vector (Namespace, PackageName, Text, Text) -> FloraHTML
 packageListingWithRange packages = do
-  ul_ [class_ "packages-list space-y-4"] $ do
+  ul_ [class_ "packages-list space-y-4 mt-8"] $ do
     Vector.forM_ packages $ \pInfo -> do
       li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
         showPackageWithRange pInfo
@@ -60,12 +60,12 @@ showPackageWithRange (namespace, name, synopsis, versionRange) =
 showPackage :: (Namespace, PackageName, Text, Text) -> FloraHTML
 showPackage (namespace, name, synopsis, version) = do
   let href = href_ ("/packages/@" <> display namespace <> "/" <> display name)
-  let classes = "card text-inherit my-4 md:my-6"
+  let classes = "block text-inherit my-4 md:my-6"
   a_ [href, class_ classes] $ do
-    p_ [class_ "package-name inline text-link dark:text-link-dark"] $
+    h4_ [class_ "package-name inline text-link dark:text-link-dark mr-2"] $
       strong_ [] . toHtml $ prettyPackageName namespace name
-  div_ [class_ "text-slate-300 text-sm"] $ toHtml version
-  p_ [class_ "text-neutral-900 dark:text-gray-200"] $ toHtml synopsis
+    p_ [class_ "inline text-neutral-900 dark:text-gray-200"] $ toHtml synopsis
+    div_ [class_ "text-slate-300 text-sm"] $ toHtml version
 
 prettyPackageName :: Namespace -> PackageName -> Text
 prettyPackageName namespace name = "@" <> display namespace <> "/" <> display name

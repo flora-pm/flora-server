@@ -119,6 +119,7 @@ library
     Flora.ThirdParties.Hackage.Client
     FloraWeb.Autoreload
     FloraWeb.Client
+    FloraWeb.Components.CategoryCard
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Admin

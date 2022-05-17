@@ -68,7 +68,6 @@ div[class="bullets"] {
     --tw-text-opacity: 1;
     color: hsl(254.3, 95%, 76.7%);
   }
-
 }
 
 .divider {
@@ -85,7 +84,7 @@ div[class="bullets"] {
 @media (min-width: 1024px) {
   .container {
     width: auto;
-    max-width: 1100px;
+    max-width: 1300px;
     padding-right: 15px;
     padding-left: 15px;
     margin-right: auto;
@@ -117,7 +116,9 @@ div[class="bullets"] {
     margin-bottom: 5px;
   }
 
-
+  ul.packages-list a:hover {
+    background: hsl(231.4, 13%, 21.2%);
+  }
 
   .version {
     font-size: 1.3rem;
