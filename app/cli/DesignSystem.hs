@@ -18,45 +18,50 @@ import Flora.Model.Package
 import Flora.Model.Category
 import qualified Flora.Model.Category as Category
 import PyF (fmt)
+import Data.Text (Text)
+import qualified Data.Text.Lazy as TL
 
-newtype ComponentName = ComponentName String
+newtype ComponentName = ComponentName Text
+  deriving newtype (Eq, Ord, Show)
+
+newtype ComponentTitle = ComponentTitle Text
   deriving newtype (Eq, Ord, Show)
 
 generateComponents :: IO ()
-generateComponents = forM_ components $ \(filename, name, template) -> do
+generateComponents = forM_ components $ \(filename, title, name, template) -> do
   let html =  renderHtml template
-  writeComponent filename name html
+  writeComponent filename title name html
   
-renderHtml :: FloraHTML -> ByteString
+renderHtml :: FloraHTML -> TL.Text
 renderHtml template =
-  runIdentity $ runReaderT (renderBST template) templateEnv
+  runIdentity $ runReaderT (renderTextT template) templateEnv
     where
       templateEnv = defaultsToEnv defaultTemplateEnv
 
-writeComponent :: FilePath -> ComponentName -> ByteString -> IO ()
-writeComponent filename name html =
+writeComponent :: FilePath -> ComponentTitle -> ComponentName -> TL.Text -> IO ()
+writeComponent filename title name html =
   ByteString.writeFile ("./design/stories/" <> filename <> ".stories.js") 
-                       (storyTemplate name html)
+                       (storyTemplate title name html)
 
 -- | A component is represented by a 4-tuple of 
-components :: Vector (FilePath, ComponentName, FloraHTML)
+components :: Vector (FilePath, ComponentTitle, ComponentName, FloraHTML)
 components = Vector.fromList
-  [ ("package-list--item", ComponentName "Package List/Item", packageListItemExample)
-  , ("category-card", ComponentName "Category/Card", categoryCardExample)
+  [ ("package-list--item", ComponentTitle "Package List/Item", ComponentName "PackageListItem", packageListItemExample)
+  , ("category-card", ComponentTitle "Category/Card", ComponentName "CategoryCard", categoryCardExample)
   ]
 
 -----------------------
 -- Storybook Helpers --
 -----------------------
 
-storyTemplate :: ComponentName -> ByteString -> ByteString
-storyTemplate (ComponentName name) html = [fmt| 
-    export default {{
-      title: 'Example/Headings'
-    }};
+storyTemplate :: ComponentTitle -> ComponentName -> TL.Text -> ByteString
+storyTemplate (ComponentTitle title)(ComponentName name) html = [fmt| 
+export default {{
+  title: "{title}"
+}};
 
-    export const {name} = () => {html}
-    |]
+export const {name} = () => "{html}"
+|]
 
 --------------
 -- Examples --
