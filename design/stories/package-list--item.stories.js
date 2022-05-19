@@ -1,6 +1,6 @@
  
 export default {
-  title: "Package List"
+  title: "Components/Package List"
 };
 
-export const PackageListItem = () => "<a href=\"/packages/@haskell/base\" class=\"block text-inherit my-4 md:my-6\"><h4 class=\"package-name inline text-link dark:text-link-dark mr-2\"><strong>@haskell/base</strong></h4><p class=\"inline text-neutral-900 dark:text-gray-200\">Basic libraries</p><div class=\"text-slate-300 text-sm\">4.16.0.0</div></a>"
+export const PackageListItem = () => "<li class=\"packages-list-item xl:text-xl dark:text-gray-200 p-3\"><a href=\"/packages/@haskell/base\" class=\"block text-inherit md:my-6\"><h4 class=\"package-name inline mr-2\"><strong>@haskell/base</strong></h4><p class=\"inline text-neutral-900 dark:text-gray-200\">Basic libraries</p><div class=\"text-slate-300 text-sm mt-2\">4.16.0.0</div></a></li>"

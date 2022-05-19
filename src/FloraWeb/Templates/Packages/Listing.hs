@@ -33,16 +33,14 @@ searchResultsAside mSearchString numberOfPackages = do
 -- | Render a list of package informations
 packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 packageListing packages = do
-  ul_ [class_ "packages-list space-y-4 mt-8"] $ do
+  ul_ [class_ "packages-list space-y-2"] $ do
     Vector.forM_ packages $ \pInfo -> do
-      li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
         showPackageWithVersion pInfo
 
 packageListingWithRange :: Vector (Namespace, PackageName, Text, Text) -> FloraHTML
 packageListingWithRange packages = do
-  ul_ [class_ "packages-list space-y-4 mt-8"] $ do
+  ul_ [class_ "packages-list space-y-2"] $ do
     Vector.forM_ packages $ \pInfo -> do
-      li_ [class_ "packages-list-item xl:text-xl dark:text-gray-200"] $
         showPackageWithRange pInfo
 
 showPackageWithVersion :: (Namespace, PackageName, Text, Version) -> FloraHTML

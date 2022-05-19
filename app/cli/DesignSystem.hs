@@ -46,7 +46,8 @@ writeComponent filename title name html =
 -- | A component is represented by a 4-tuple of 
 components :: Vector (FilePath, ComponentTitle, ComponentName, FloraHTML)
 components = Vector.fromList
-  [ ("package-list--item", ComponentTitle "Package List", ComponentName "PackageListItem", packageListItemExample)
+  [ ( "package-list--item", ComponentTitle "Package List"
+    , ComponentName "PackageListItem", packageListItemExample)
   , ("category-card", ComponentTitle "Category", ComponentName "CategoryCard", categoryCardExample)
   ]
 
@@ -57,7 +58,7 @@ components = Vector.fromList
 storyTemplate :: ComponentTitle -> ComponentName -> TL.Text -> ByteString
 storyTemplate (ComponentTitle title)(ComponentName name) html = [fmt| 
 export default {{
-  title: "{title}"
+  title: "Components/{title}"
 }};
 
 export const {name} = () => "{html}"
@@ -80,7 +81,8 @@ categoryCardExample =
   Component.categoryCard categoryExample
 
 categoryExample :: Category
-categoryExample = Category.mkCategory (CategoryId UUID.nil) "Prelude" Nothing "Libraries that provide default imports"
+categoryExample =
+  Category.mkCategory (CategoryId UUID.nil) "Prelude" Nothing "Libraries that provide default imports"
 
 namespaceExample :: Namespace
 namespaceExample = Namespace "haskell"

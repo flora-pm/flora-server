@@ -1,0 +1,26 @@
+import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs';
+
+<Meta title="Colors" />
+
+<ColorPalette>
+  <ColorItem
+    title="theme.color.greyscale"
+    subtitle="Some of the greys"
+    colors={{ White: '#FFFFFF', Alabaster: '#F8F8F8', Concrete: '#F3F3F3' }}
+  />
+  <ColorItem
+    title="Dark Backgrounds"
+    colors={{
+      "bg-dark-1": "#0f1827",
+      "bg-dark-2": "#232d3d",
+    }}
+  />
+  <ColorItem 
+    title="Primary shades" 
+    subtitle="Purple" 
+    colors={{
+      "brand-purple-1 (Pantone 525 C)": 'hsl(294, 37%, 27%)',
+      "brand-purple-2 (Pantone 260)": 'hsl(297, 52%, 60%)'
+      }} 
+  />
+</ColorPalette>

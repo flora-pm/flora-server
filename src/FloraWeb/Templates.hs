@@ -15,7 +15,7 @@ import Lucid
 
 import Data.Text (Text)
 import Flora.Environment (DeploymentEnv (..))
-import FloraWeb.Templates.Layout.App (header)
+import FloraWeb.Components.Header (header)
 import FloraWeb.Templates.Types as Types
 import Optics.Core
 

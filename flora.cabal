@@ -121,6 +121,9 @@ library
     FloraWeb.Client
     FloraWeb.Components.CategoryCard
     FloraWeb.Components.PackageListItem
+    FloraWeb.Components.Navbar
+    FloraWeb.Components.Header
+    FloraWeb.Components.Utils
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Admin
@@ -147,7 +150,6 @@ library
     FloraWeb.Templates.Admin.Packages
     FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
-    FloraWeb.Templates.Layout.App
     FloraWeb.Templates.Packages.Dependencies
     FloraWeb.Templates.Packages.Dependents
     FloraWeb.Templates.Packages.Listing

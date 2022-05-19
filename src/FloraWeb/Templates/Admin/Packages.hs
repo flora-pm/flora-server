@@ -12,7 +12,7 @@ import Data.Vector (Vector)
 import Flora.Model.Admin.Report
 import Flora.Model.Package (Package (..))
 import Flora.Model.User
-import FloraWeb.Templates.Layout.App (text)
+import FloraWeb.Components.Utils (text)
 import FloraWeb.Templates.Types
 
 indexPackages :: Vector Package -> FloraHTML
