@@ -126,6 +126,10 @@ div[class="bullets"] {
     @apply dark:bg-dark-2;
   }
 
+  ul.packages-list a:hover h4 {
+    text-decoration: underline;
+  }
+
   .version {
     font-size: 1.3rem;
     line-height: 1.3rem;
