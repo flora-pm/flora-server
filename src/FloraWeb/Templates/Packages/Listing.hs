@@ -16,8 +16,8 @@ import Lucid
 
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
-import FloraWeb.Templates (FloraHTML)
 import FloraWeb.Components.PackageListItem (packageListItem)
+import FloraWeb.Templates (FloraHTML)
 
 searchResultsAside :: Maybe Text -> Word -> FloraHTML
 searchResultsAside mSearchString numberOfPackages = do
@@ -35,13 +35,13 @@ packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 packageListing packages = do
   ul_ [class_ "packages-list space-y-2"] $ do
     Vector.forM_ packages $ \pInfo -> do
-        showPackageWithVersion pInfo
+      showPackageWithVersion pInfo
 
 packageListingWithRange :: Vector (Namespace, PackageName, Text, Text) -> FloraHTML
 packageListingWithRange packages = do
   ul_ [class_ "packages-list space-y-2"] $ do
     Vector.forM_ packages $ \pInfo -> do
-        showPackageWithRange pInfo
+      showPackageWithRange pInfo
 
 showPackageWithVersion :: (Namespace, PackageName, Text, Version) -> FloraHTML
 showPackageWithVersion (namespace, name, synopsis, version) =

@@ -19,12 +19,12 @@ import GHC.Generics
 import Lucid
 import Optics.Core
 
+import qualified Data.UUID as UUID
 import Flora.Environment
 import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User
 import FloraWeb.Server.Auth
 import FloraWeb.Types
-import qualified Data.UUID as UUID
 
 type FloraHTML = HtmlT (ReaderT TemplateEnv Identity) ()
 

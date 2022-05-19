@@ -1,16 +1,16 @@
 module FloraWeb.Components.Navbar where
 
-import Control.Monad.Reader (asks, ask)
+import Control.Monad.Reader (ask, asks)
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Lucid
 import Lucid.Alpine
 import Optics.Core
 
-import Flora.Model.PersistentSession (PersistentSessionId(..))
-import Flora.Model.User (User(..), UserFlags(..))
-import FloraWeb.Templates.Types
+import Flora.Model.PersistentSession (PersistentSessionId (..))
+import Flora.Model.User (User (..), UserFlags (..))
 import FloraWeb.Components.Utils
+import FloraWeb.Templates.Types
 
 navbar :: FloraHTML
 navbar = do
@@ -34,7 +34,6 @@ navbar = do
           navBarLink' "/packages" "Packages" packagesNav
           userMenu
           darkModeToggle
-
 
 brand :: FloraHTML
 brand = do

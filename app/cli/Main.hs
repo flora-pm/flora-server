@@ -16,9 +16,9 @@ import Flora.Model.User.Update
 import CoverageReport
 import Data.Maybe
 import Data.Text (Text)
+import DesignSystem (generateComponents)
 import qualified Flora.Model.User.Query as Query
 import GHC.Generics (Generic)
-import DesignSystem (generateComponents)
 
 data Options = Options
   { cliCommand :: Command

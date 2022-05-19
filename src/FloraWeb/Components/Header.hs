@@ -6,10 +6,9 @@ import Lucid
 import Lucid.Alpine
 import PyF
 
-import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.Utils (property_, text)
-
+import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
 
 header :: FloraHTML
 header = do
@@ -64,4 +63,3 @@ theme :: FloraHTML
 theme = do
   meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
   meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]
-

@@ -3,7 +3,7 @@ module FloraWeb.Components.Utils where
 import Data.Text (Text)
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid (Attribute, toHtml)
-import Lucid.Base ( makeAttribute )
+import Lucid.Base (makeAttribute)
 
 text :: Text -> FloraHTML
 text = toHtml
