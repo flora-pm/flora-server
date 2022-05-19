@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
@@ -32,16 +31,14 @@ import Servant
   , Handler
   , HasServer (hoistServerWithContext)
   , Proxy (Proxy)
+  , hoistServer
   , serveDirectoryWebApp
   )
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
 import Flora.Environment (FloraEnv (..), LoggingEnv (..), getFloraEnv)
-#ifndef PROD
 import FloraWeb.Autoreload (AutoreloadRoute)
-import Servant (hoistServer)
 import qualified FloraWeb.Autoreload as Autoreload
-#endif
 import FloraWeb.Routes
 import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler)
@@ -103,14 +100,12 @@ floraServer =
           (Proxy @'[FloraAuthContext])
           (\f -> withReaderT (const sessionWithCookies) f)
           Pages.server
-#ifndef PROD
     , autoreload =
         hoistServer
           (Proxy @AutoreloadRoute)
           ( \handler -> withReaderT (const ()) handler
           )
           Autoreload.server
-#endif
     }
 
 naturalTransform :: Logger -> WebEnvStore -> FloraM a -> Handler a

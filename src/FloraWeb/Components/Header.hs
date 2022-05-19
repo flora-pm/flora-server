@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module FloraWeb.Components.Header where
 
 import Control.Monad.Reader
