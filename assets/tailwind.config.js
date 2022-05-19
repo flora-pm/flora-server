@@ -10,24 +10,16 @@ module.exports = {
         sans: ["Inter var", ...defaultTheme.fontFamily.sans],
       },
       colors: {
-        "background": {
-          "dark": "#25282a",
-          "darker": "#1D2021",
-          "dark-focused": "#3a3d3f",
-          "DEFAULT": "#f3f4f6",
-        },
+        "dark": "#0f1827",
+        "dark-1": "#0f1827",
+        "dark-2": "#232d3d",
+        "dark-focused": "#3a3d3f",
         "brand-purple": {
-          "DEFAULT": "#4e315e",
-          "dark": "#352140",
-          "light": "#EFC3F5"
-        },
-        "navbar": {
-          "dark": "#1D2021",
-          "darker": "#16191a"
-        },
+          "1": "hsl(294, 37%, 27%)",
+          "2": "hsl(297, 52%, 60%)"
+          },
         "link": {
           "dark": "#4dabf7",
-          "DEFAULT": "#1a0dab",
         },
         "admin-card": {
           "dark": "#202936",

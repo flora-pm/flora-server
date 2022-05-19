@@ -69,7 +69,7 @@ common common-ghc-options
     ghc-options: -flate-specialise -funbox-strict-fields
 
 common common-rts-options
-  ghc-options: -rtsopts -threaded -with-rtsopts "-N -T"
+  ghc-options: -threaded "-with-rtsopts=-N -T"
 
 library
   import:          common-extensions
@@ -118,6 +118,11 @@ library
     Flora.ThirdParties.Hackage.Client
     FloraWeb.Autoreload
     FloraWeb.Client
+    FloraWeb.Components.CategoryCard
+    FloraWeb.Components.Header
+    FloraWeb.Components.Navbar
+    FloraWeb.Components.PackageListItem
+    FloraWeb.Components.Utils
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Admin
@@ -144,7 +149,6 @@ library
     FloraWeb.Templates.Admin.Packages
     FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
-    FloraWeb.Templates.Layout.App
     FloraWeb.Templates.Packages.Dependencies
     FloraWeb.Templates.Packages.Dependents
     FloraWeb.Templates.Packages.Listing
@@ -237,26 +241,34 @@ executable flora-cli
   import:         common-ghc-options
   import:         common-rts-options
   main-is:        Main.hs
-  other-modules:  CoverageReport
+  other-modules:
+    CoverageReport
+    DesignSystem
+
   hs-source-dirs: app/cli
   build-depends:
     , ansi-terminal
     , base
+    , bytestring
     , Cabal
     , colourista
     , directory
     , flora
     , log-base
+    , lucid
     , monad-control
     , optics-core
     , optparse-applicative  ^>=0.16
     , password-types
     , pg-entity
     , pg-transact
+    , PyF
     , text
     , text-display
     , transformers
     , typed-process
+    , uuid
+    , vector
 
 test-suite flora-test
   import:         common-extensions

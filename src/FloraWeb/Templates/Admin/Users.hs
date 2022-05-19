@@ -6,7 +6,7 @@ import Optics.Core
 import Data.Foldable (forM_)
 import Data.Vector (Vector)
 import Flora.Model.User
-import FloraWeb.Templates.Layout.App (text)
+import FloraWeb.Components.Utils (text)
 import FloraWeb.Templates.Types
 
 indexUsers :: Vector User -> FloraHTML

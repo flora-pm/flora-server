@@ -4,7 +4,7 @@
 
 @layer base {
   a {
-    @apply text-link dark:text-brand-purple-light;
+    @apply dark:text-brand-purple-2;
   }
 }
 
@@ -18,7 +18,7 @@
   }
 
   .btn {
-    @apply rounded-md p-2 hover:bg-brand-purple-dark 
+    @apply rounded-md p-2 hover:bg-brand-purple-1
   }
 }
 
@@ -63,12 +63,10 @@ div[class="bullets"] {
 
 /* Dark mode-specific rules */
 .dark {
-
   .social-button:hover {
     --tw-text-opacity: 1;
     color: hsl(254.3, 95%, 76.7%);
   }
-
 }
 
 .divider {
@@ -77,22 +75,26 @@ div[class="bullets"] {
   border-bottom: 1px solid hsl(0, 0%, 80%);
 }
 
-.card {
-  @apply block bg-white dark:bg-background-darker rounded-lg shadow-lg py-4 px-8;
+.category-card {
+  @apply py-4 px-8;
+}
+
+.category-card:hover {
+  @apply block bg-white dark:bg-dark-2;
 }
 
 /* Large display rules */
 @media (min-width: 1024px) {
   .container {
     width: auto;
-    max-width: 1100px;
+    max-width: 1300px;
     padding-right: 15px;
     padding-left: 15px;
     margin-right: auto;
     margin-left: auto;
   }
 
-  .card {
+  .category-card {
     --tw-shadow-color: rgb(102 51 153 / 0.25);
     --tw-shadow: var(--tw-shadow-colored);
   }
@@ -117,7 +119,16 @@ div[class="bullets"] {
     margin-bottom: 5px;
   }
 
+  ul.packages-list a {
+    @apply py-3 pl-4;
+  }
+  ul.packages-list a:hover {
+    @apply dark:bg-dark-2;
+  }
 
+  ul.packages-list a:hover h4 {
+    text-decoration: underline;
+  }
 
   .version {
     font-size: 1.3rem;

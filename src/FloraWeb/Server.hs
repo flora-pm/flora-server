@@ -87,7 +87,7 @@ runServer appLogger floraEnv = do
       $ server
 
 mkServer :: Logger -> WebEnvStore -> FloraEnv -> Application
-mkServer logger webEnvStore floraEnv =
+mkServer logger webEnvStore floraEnv = do
   genericServeTWithContext (naturalTransform logger webEnvStore) floraServer (genAuthServerContext logger floraEnv)
 
 floraServer :: Routes (AsServerT FloraM)

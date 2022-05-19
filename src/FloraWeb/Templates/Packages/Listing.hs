@@ -1,4 +1,11 @@
-module FloraWeb.Templates.Packages.Listing where
+module FloraWeb.Templates.Packages.Listing
+  ( searchResultsAside
+  , packageListing
+  , packageListingWithRange
+  , showPackageWithRange
+  , showPackageWithVersion
+  )
+where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
@@ -9,6 +16,7 @@ import Lucid
 
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
+import FloraWeb.Components.PackageListItem (packageListItem)
 import FloraWeb.Templates (FloraHTML)
 
 searchResultsAside :: Maybe Text -> Word -> FloraHTML
@@ -22,22 +30,28 @@ searchResultsAside mSearchString numberOfPackages = do
           strong_ [class_ "dark:text-gray-200"] $ toHtml $ display numberOfPackages <> " packages"
       Nothing -> span_ [class_ "dark:text-gray-200"] $ toHtml $ display numberOfPackages <> " packages"
 
-showPackage :: (Namespace, PackageName, Text, Version) -> FloraHTML
-showPackage (namespace, name, synopsis, version) = do
-  let href = href_ ("/packages/@" <> display namespace <> "/" <> display name)
-  let classes = "card text-inherit my-4 md:my-6"
-  a_ [href, class_ classes] $ do
-    h3_ [class_ "text-brand-purple dark:text-brand-purple-light"] $ do
-      strong_ [] . toHtml $ prettyPackageName namespace name
-      small_ [class_ "mx-2"] $ "v" <> (toHtml . display $ version)
-    p_ [class_ "text-neutral-900 dark:text-gray-200"] $ toHtml synopsis
-
-prettyPackageName :: Namespace -> PackageName -> Text
-prettyPackageName namespace name = "@" <> display namespace <> "/" <> display name
-
+-- | Render a list of package informations
 packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 packageListing packages = do
-  ul_ [class_ "packages-list space-y-4"] $ do
+  ul_ [class_ "packages-list space-y-2"] $ do
     Vector.forM_ packages $ \pInfo -> do
-      li_ [] $
-        showPackage pInfo
+      showPackageWithVersion pInfo
+
+packageListingWithRange :: Vector (Namespace, PackageName, Text, Text) -> FloraHTML
+packageListingWithRange packages = do
+  ul_ [class_ "packages-list space-y-2"] $ do
+    Vector.forM_ packages $ \pInfo -> do
+      showPackageWithRange pInfo
+
+showPackageWithVersion :: (Namespace, PackageName, Text, Version) -> FloraHTML
+showPackageWithVersion (namespace, name, synopsis, version) =
+  packageListItem (namespace, name, synopsis, display version)
+
+showPackageWithRange :: (Namespace, PackageName, Text, Text) -> FloraHTML
+showPackageWithRange (namespace, name, synopsis, versionRange) =
+  packageListItem (namespace, name, synopsis, range)
+  where
+    range =
+      if versionRange == ">=0"
+        then ""
+        else versionRange

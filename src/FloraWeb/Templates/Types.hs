@@ -5,6 +5,7 @@ module FloraWeb.Templates.Types
   , FlashError (..)
   , mkError
   , TemplateEnv (..)
+  , defaultsToEnv
   , fromSession
   , ActiveElements (..)
   , defaultTemplateEnv
@@ -18,8 +19,9 @@ import GHC.Generics
 import Lucid
 import Optics.Core
 
+import qualified Data.UUID as UUID
 import Flora.Environment
-import Flora.Model.PersistentSession (PersistentSessionId)
+import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User
 import FloraWeb.Server.Auth
 import FloraWeb.Types
@@ -94,6 +96,12 @@ defaultTemplateEnv =
     , environment = Development
     , activeElements = defaultActiveElements
     }
+
+-- | ⚠  DO NOT USE THIS FUNCTION IF YOU DON'T KNOW WHAT YOU'RE DOING
+defaultsToEnv :: TemplateDefaults -> TemplateEnv
+defaultsToEnv TemplateDefaults{..} =
+  let sessionId = PersistentSessionId UUID.nil
+   in TemplateEnv{..}
 
 fromSession ::
   (MonadIO m) =>

@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module FloraWeb.Routes where
 
 import Servant

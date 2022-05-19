@@ -25,17 +25,17 @@ flora_category("bioinformatics", "Bioinformatics", "Tooling, algorithms and tech
 flora_category("command-line", "CLI & TUI tooling", "Libraries to develope command-line interfaces").
 flora_category("compilers-interpreters", "Compilers and Interpreters", "Tooling to create compilers and interpreters").
 flora_category("cryptography", "Cryptography", "Algorithms for encrypting and hashing data").
-flora_category("data-structures", "Data Structures", "Data structures, whether they are purely functional or mutable, there's always one for you").
+flora_category("data-structures", "Data Structures", "Data structures, whether purely functional or mutable").
 flora_category("databases", "Databases", "Database drivers and interfaces").
 flora_category("development", "Development", "Development helpers, integration with other languages").
 flora_category("distributed", "Distributed Systems & Computation", "Tooling and techniques for writing distributed systems").
 flora_category("distribution", "Distribution", "Building, Packaging and Distributing software in Haskell").
-flora_category("ffi", "FFI", "Tooling to work with the Foreign Function Interface").
+flora_category("ffi", "FFI", "Working with the Foreign Function Interface").
 flora_category("game-dev", "Game development", "Libraries used for game development").
-flora_category("generics", "Generics", "Tooling to work with Haskell's Generics").
-flora_category("language", "Language", "Tooling for interfacing with other programming languages from Haskell programs").
+flora_category("generics", "Generics", "Working with Haskell's Generics mechanism").
+flora_category("language", "Language", "Interfacing with other programming languages from Haskell").
 flora_category("maths", "Mathematics", "Numerical and Mathematical packages").
-flora_category("natural-language", "Natural Language", "Tooling to working with natural languages").
+flora_category("natural-language", "Natural Language", "Tooling to work with natural languages").
 flora_category("network", "Network Development", "Connection pools, DNS, HTTP, API clients and network protocols").
 flora_category("parser-implementations", "Parser Implementations", "Parsing data formats").
 flora_category("parsers","Parsers", "Libraries to ingest and parse data").
