@@ -2,12 +2,6 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-@layer base {
-  a {
-    @apply dark:text-brand-purple-2;
-  }
-}
-
 @layer components {
   .larger-container {
     @apply max-w-7xl mx-auto px-2;
@@ -18,9 +12,14 @@
   }
 
   .btn {
-    @apply rounded-md p-2 hover:bg-brand-purple-1
+    @apply rounded-md p-2 hover:bg-purple-1
+  }
+
+  a:hover {
+    @apply underline;
   }
 }
+
 
 #navbar-search-package-name {
   padding-left: 20px;
@@ -67,6 +66,23 @@ div[class="bullets"] {
     --tw-text-opacity: 1;
     color: hsl(254.3, 95%, 76.7%);
   }
+
+  .navbar-search {
+    @apply rounded-full bg-dark-2 w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-dark-2;
+  }
+
+  a {
+    @apply text-purple-10;
+    text-decoration: none;
+  }
+
+  .category-card__synopsis {
+    @apply text-gray-100;
+  }
+
+  .category-card__name {
+    @apply text-purple-10;
+  }
 }
 
 .divider {
@@ -80,7 +96,23 @@ div[class="bullets"] {
 }
 
 .category-card:hover {
-  @apply block bg-white dark:bg-dark-2;
+  @apply block bg-white dark:bg-dark-1;
+}
+
+ul.package-list a {
+  @apply py-3 pl-4;
+}
+
+ul.package-list a:hover {
+  @apply dark:bg-dark-2;
+}
+
+ul.package-list a:hover .package-list__item__name {
+  text-decoration: underline;
+}
+
+.package-list__item__name {
+  @apply dark:text-purple-10;
 }
 
 /* Large display rules */
@@ -117,17 +149,6 @@ div[class="bullets"] {
 
   .headline {
     margin-bottom: 5px;
-  }
-
-  ul.packages-list a {
-    @apply py-3 pl-4;
-  }
-  ul.packages-list a:hover {
-    @apply dark:bg-dark-2;
-  }
-
-  ul.packages-list a:hover h4 {
-    text-decoration: underline;
   }
 
   .version {
