@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
 module Flora.Import.Package where
@@ -149,41 +150,9 @@ importCabal userId packageName cabalFile directory = do
   let namespace = if Set.member packageName coreLibraries then Namespace "haskell" else Namespace "hackage"
   genDesc <- liftIO $ loadFile cabalFile
   result <- runExceptT $ do
-    package <-
-      lift (Query.getHaskellOrHackagePackage packageName)
-        >>= \case
-          Nothing -> do
-            logImportMessage (namespace, packageName) $
-              "\"" <> display packageName <> "\" could not be found in the database."
-            logImportMessage (namespace, packageName) $
-              "Creating new package for " <> display packageName <> "."
-            cabalToPackage userId (genDesc ^. #packageDescription) namespace packageName
-          Just package -> do
-            logImportMessage (namespace, packageName) $
-              "Package " <> display packageName <> "exists."
-            pure package
+    package <- importPackageData userId genDesc namespace packageName
     liftIO $ T.putStrLn $ "[+] Package " <> display packageName <> " in importCabal"
-    release <-
-      lift $
-        Query.getReleaseByVersion
-          (package ^. #packageId)
-          ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
-          >>= \case
-            Nothing -> do
-              r <-
-                createRelease
-                  (package ^. #packageId)
-                  ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
-              logImportMessage (namespace, packageName) $
-                "Creating Release "
-                  <> display (r ^. #releaseId)
-                  <> " for package "
-                  <> display (package ^. #name)
-              pure r
-            Just release -> do
-              logImportMessage (namespace, packageName) $
-                "Release found: releaseId: " <> display (release ^. #releaseId) <> " / packageId: "
-              pure release
+    release <- lift $ importRelease genDesc namespace packageName package
     componentsAndRequirements <-
       extractComponents
         userId
@@ -201,6 +170,41 @@ importCabal userId packageName cabalFile directory = do
       let rawCategoryField = T.pack $ Cabal.fromShortText $ genDesc ^. (#packageDescription % #category)
       let categoryList = fmap (UserPackageCategory . T.stripStart) (T.splitOn "," rawCategoryField)
       Update.publishPackage requirements components release categoryList package
+
+importPackageData :: (MonadIO m) => UserId -> GenericPackageDescription -> Namespace -> PackageName -> ExceptT ImportError (DBT m) Package
+importPackageData userId genDesc namespace packageName = do
+  result <- lift $ Query.getHaskellOrHackagePackage packageName
+  case result of
+    Nothing -> do
+      logImportMessage (namespace, packageName) $
+        "\"" <> display packageName <> "\" could not be found in the database."
+      logImportMessage (namespace, packageName) $
+        "Creating new package for " <> display packageName <> "."
+      cabalToPackage userId (genDesc ^. #packageDescription) namespace packageName
+    Just package -> do
+      logImportMessage (namespace, packageName) $
+        "Package " <> display packageName <> "exists."
+      pure package
+
+importRelease :: (MonadIO m) => GenericPackageDescription -> Namespace -> PackageName -> Package -> DBT m Release
+importRelease genDesc namespace packageName package = do
+  result <- Query.getReleaseByVersion (package ^. #packageId) ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
+  case result of
+    Nothing -> do
+      r <-
+        createRelease
+          (package ^. #packageId)
+          ((genDesc ^. #packageDescription) ^. (#package % #pkgVersion))
+      logImportMessage (namespace, packageName) $
+        "Creating Release "
+          <> display (r ^. #releaseId)
+          <> " for package "
+          <> display (package ^. #name)
+      pure r
+    Just release -> do
+      logImportMessage (namespace, packageName) $
+        "Release found: releaseId: " <> display (release ^. #releaseId) <> " / packageId: "
+      pure release
 
 importPackageDeps :: (MonadIO m) => PackageName -> FilePath -> DBT m (Map PackageName (Set PackageName))
 importPackageDeps pName directory = do
