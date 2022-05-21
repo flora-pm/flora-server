@@ -18,9 +18,9 @@ navbar = do
   TemplateEnv{title} <- ask
   let menuClasses =
         "md:flex flex md:items-center "
-          <> "bg-brand-purple-1 md:bg-brand-purple-1 dark:bg-dark-2 md:dark:bg-navbar-dark "
+          <> "bg-purple-1 md:bg-purple-1 dark:bg-dark-1 md:dark:bg-navbar-dark "
           <> "flex flex-col md:flex-row absolute md:relative top-[100%] left-0 w-full md:w-auto md:top-0"
-  nav_ [class_ "sticky top-0 left-0 border-b dark:border-transparent bg-brand-purple-1 dark:bg-dark-2 mb-3 z-10", xData_ "{menuOpen: false}"] $ do
+  nav_ [class_ "sticky top-0 left-0 border-b dark:border-transparent bg-purple-1 dark:bg-dark-1 mb-3 z-10", xData_ "{menuOpen: false}"] $ do
     div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "md:flex md:justify-between h-16 "] $ do
         div_ [id_ "navbar-left", class_ "flex flex-shrink-0"] $ do
@@ -39,7 +39,7 @@ brand :: FloraHTML
 brand = do
   TemplateEnv{title, mobileTitle} <- ask
   let link = a_ [href_ "/", id_ "brand", class_ "font-bold text-white dark:text-gray-100"]
-  let containerBaseClasses = "flex items-center border-b-4 border-brand-purple-1 dark:border-brand-purple-1 flex-shrink-0 h-16"
+  let containerBaseClasses = "flex items-center border-b-4 border-purple-1 dark:border-purple-1 flex-shrink-0 h-16"
   div_ [class_ $ containerBaseClasses <> " hidden md:flex"] $ link (text title)
   div_ [class_ $ containerBaseClasses <> " md:hidden", xOn_ "click.prevent" "menuOpen = !menuOpen"] $ link (text mobileTitle)
 
@@ -75,7 +75,7 @@ navbarSearch = do
       form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "/search", method_ "GET"] $ do
         div_ [class_ "flex items-center py-2"] $ do
           input_
-            [ class_ "rounded-full bg:bg-background dark:bg-background-dark-2 w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-brand-purple"
+            [ class_ "navbar-search"
             , id_ "packageName"
             , type_ "search"
             , name_ "q"
@@ -102,7 +102,7 @@ darkModeToggle = do
   let darkModeContent = do
         img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 mr-2 invert"]
         "Light Mode"
-  let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200 dark:bg-brand-purple-1"
+  let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200 dark:bg-purple-3"
   button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false", class_ $ "hidden dark:inline-flex " <> buttonBaseClasses] darkModeContent
   button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false", class_ $ "dark:hidden " <> buttonBaseClasses] lightModeContent
   input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "darkMode"]
