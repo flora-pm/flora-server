@@ -123,6 +123,7 @@ library
     FloraWeb.Components.Navbar
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.Utils
+    FloraWeb.Components.PackageListHeader
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Admin
