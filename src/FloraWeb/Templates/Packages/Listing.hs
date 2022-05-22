@@ -1,6 +1,5 @@
 module FloraWeb.Templates.Packages.Listing
-  ( searchResultsAside
-  , packageListing
+  ( packageListing
   , packageListingWithRange
   , showPackageWithRange
   , showPackageWithVersion
@@ -18,17 +17,6 @@ import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
 import FloraWeb.Components.PackageListItem (packageListItem)
 import FloraWeb.Templates (FloraHTML)
-
-searchResultsAside :: Maybe Text -> Word -> FloraHTML
-searchResultsAside mSearchString numberOfPackages = do
-  div_ [class_ "px-4 py-3 sm:px-6 bg-white shadow-sm dark:bg-slate-600 rounded-md flex items-center mb-5"] $ do
-    case mSearchString of
-      Just searchString -> do
-        img_ [src_ "/static/icons/search.svg", class_ "h-6 w-6 mr-2 dark:invert"]
-        div_ [] $ do
-          h5_ [] $ toHtml searchString
-          strong_ [class_ "dark:text-gray-200"] $ toHtml $ display numberOfPackages <> " packages"
-      Nothing -> span_ [class_ "dark:text-gray-200"] $ toHtml $ display numberOfPackages <> " packages"
 
 -- | Render a list of package informations
 packageListing :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML

@@ -29,4 +29,4 @@ searchHandler (Just searchString) = do
   session <- getSession
   templateEnv <- fromSession session defaultTemplateEnv
   results <- Search.searchPackageByName searchString
-  render templateEnv $ Search.showResults (Just searchString) results
+  render templateEnv $ Search.showResults searchString results
