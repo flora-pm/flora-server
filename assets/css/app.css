@@ -22,6 +22,7 @@
 
 a {
   text-decoration: none;
+  @apply dark:text-purple-7 text-blue-6;
 }
 
 #navbar-search-package-name {
@@ -79,10 +80,6 @@ div[class="bullets"] {
     --tw-text-opacity: 1;
     color: hsl(254.3, 95%, 76.7%);
   }
-
-  a {
-    @apply text-purple-7;
-  }
 }
 
 .divider {
@@ -108,6 +105,10 @@ li.package-list-item a:hover {
 }
 
 li.package-list-item a:hover h4.package-list-item__name {
+  text-decoration: underline;
+}
+
+li.category a:hover  {
   text-decoration: underline;
 }
 
