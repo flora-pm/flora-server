@@ -45,7 +45,7 @@ header = do
         -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
         meta_ [name_ "twitter:dnt", content_ "on"]
 
-      body_ [class_ "bg-background dark:bg-dark-2 dark:text-gray-100"] $ do
+      body_ [class_ "bg-background dark:bg-blue-2 dark:text-gray-100"] $ do
         navbar
 
 ogTags :: FloraHTML

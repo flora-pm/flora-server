@@ -84,8 +84,8 @@ searchBar =
     div_ [class_ "main-search max-w-md mx-auto flex justify-center rounded-xl border-2 overflow-hidden"] $ do
       input_
         [ class_
-            "text-2xl text-gray-800 dark:bg-background-dark dark:focus-within:bg-dark-3 dark:text-gray-300 block rounded-md border-0 \
-            \ focus:outline-none focus:ring-0 focus:brand-purple flex-grow p-2 ml-2 dark:bg-dark-2"
+            "text-2xl text-gray-800 dark:bg-background-dark dark:focus-within:bg-blue-3 dark:text-gray-300 block rounded-md border-0 \
+            \ focus:outline-none focus:ring-0 focus:brand-purple flex-grow p-2 ml-2 dark:bg-blue-2"
         , type_ "search"
         , name_ "q"
         , placeholder_ "Find a package"

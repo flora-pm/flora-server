@@ -56,15 +56,15 @@ presentationHeader release namespace name synopsis = do
 
 packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
 packageBody Package{namespace, name = packageName, metadata} latestRelease dependencies numberOfDependencies dependents numberOfDependents categories =
-  div_ [class_ "package-body"] $ do
-    div_ [class_ "md:flex"] $ do
+  div_ $ do
+    div_ [class_ "package-body md:flex"] $ do
       div_ [class_ "package-left-column grow"] $ do
-        div_ [class_ "grid-rows-3"] $ do
+        ul_ [class_ "package-left-rows grid-rows-3"] $ do
           displayCategories categories
           displayLicense (metadata ^. #license)
           displayLinks packageName latestRelease metadata
       div_ [class_ "package-right-column md:max-w-xs"] $ do
-        div_ [class_ "grid-rows-3"] $ do
+        ul_ [class_ "package-right-rows grid-rows-3"] $ do
           displayInstructions packageName latestRelease
           displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayDependents (namespace, packageName) numberOfDependents dependents
@@ -74,27 +74,27 @@ displayReleaseVersion Release{version} = toHtml version
 
 displayLicense :: SPDX.License -> FloraHTML
 displayLicense license = do
-  div_ [class_ "mb-5"] $ do
+  li_ [class_ "mb-5"] $ do
     div_ [class_ "license mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "License"
-    p_ [class_ ""] $ toHtml license
+    p_ [class_ "package-body-section__"] $ toHtml license
 
 displayCategories :: Vector Category -> FloraHTML
 displayCategories categories = do
-  div_ [class_ "mb-5"] $ do
+  li_ [class_ "mb-5"] $ do
     div_ [class_ "license mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "Categories"
-    ul_ [class_ ""] $ do
+    ul_ [class_ "categories"] $ do
       foldMap renderCategory categories
 
 displayLinks :: PackageName -> Release -> PackageMetadata -> FloraHTML
 displayLinks packageName _release meta@PackageMetadata{..} = do
-  div_ [class_ "mb-5"] $ do
+  li_ [class_ "mb-5"] $ do
     h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Links"
-    ul_ [class_ "bullets"] $ do
-      li_ $ a_ [href_ (getHomepage meta)] "Homepage"
-      li_ $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
-      li_ $ displaySourceRepos sourceRepos
+    ul_ [class_ "links"] $ do
+      li_ [class_ "package-link"] $ a_ [href_ (getHomepage meta)] "Homepage"
+      li_ [class_ "package-link"] $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
+      li_ [class_ "package-link"] $ displaySourceRepos sourceRepos
 
 displaySourceRepos :: [Text] -> FloraHTML
 displaySourceRepos [] = toHtml @Text "No source repository"
@@ -109,7 +109,7 @@ displayDependencies ::
   Vector (Namespace, PackageName, Text) ->
   FloraHTML
 displayDependencies (namespace, packageName) numberOfDependencies dependencies = do
-  div_ [class_ "mb-5"] $ do
+  li_ [class_ "mb-5"] $ do
     h3_ [class_ "lg:text-2xl package-body-section mb-3"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
     ul_ [class_ "dependencies grid-cols-3"] $ do
       let deps = foldMap renderDependency dependencies
@@ -125,7 +125,7 @@ showAll (namespace, packageName, target) = do
 
 displayInstructions :: PackageName -> Release -> FloraHTML
 displayInstructions packageName latestRelease = do
-  div_ [class_ "mb-5"] $ do
+  li_ [class_ "mb-5"] $ do
     h3_ [class_ "lg:text-2xl package-body-section mb-3"] "Installation"
     div_ [class_ "items-top"] $ do
       div_ [class_ "space-y-2"] $ do
@@ -145,7 +145,7 @@ displayDependents ::
   Vector Package ->
   FloraHTML
 displayDependents (namespace, packageName) numberOfDependents dependents = do
-  div_ [class_ "mb-5 dependents"] $ do
+  li_ [class_ "mb-5 dependents"] $ do
     h3_ [class_ "lg:text-2xl package-body-section dependents mb-3"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")
     if Vector.null dependents
       then ""
@@ -160,7 +160,7 @@ renderDependent Package{name, namespace} = do
   let qualifiedName = toHtml $ "@" <> display namespace <> "/" <> display name
   let resource = "/packages/@" <> display namespace <> "/" <> display name
 
-  a_ [class_ "dependency", href_ resource] qualifiedName
+  a_ [class_ "dependent", href_ resource] qualifiedName
 
 renderDependency :: (Namespace, PackageName, Text) -> FloraHTML
 renderDependency (namespace, name, version) = do
