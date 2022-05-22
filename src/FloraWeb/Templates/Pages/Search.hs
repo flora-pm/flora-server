@@ -5,10 +5,10 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Distribution.Types.Version (Version)
 import Flora.Model.Package (Namespace, PackageName)
+import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Templates
 import FloraWeb.Templates.Packages.Listing (packageListing)
 import Lucid
-import FloraWeb.Components.PackageListHeader (presentationHeader)
 
 showAllPackages :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 showAllPackages = showResults "Packages"

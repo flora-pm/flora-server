@@ -121,9 +121,9 @@ library
     FloraWeb.Components.CategoryCard
     FloraWeb.Components.Header
     FloraWeb.Components.Navbar
+    FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.Utils
-    FloraWeb.Components.PackageListHeader
     FloraWeb.Routes
     FloraWeb.Routes.Pages
     FloraWeb.Routes.Pages.Admin

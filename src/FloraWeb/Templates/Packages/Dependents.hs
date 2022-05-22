@@ -5,10 +5,10 @@ import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import Distribution.Types.Version (Version)
 import Flora.Model.Package (Namespace, PackageName)
+import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Templates (FloraHTML)
 import FloraWeb.Templates.Packages.Listing
 import Lucid
-import FloraWeb.Components.PackageListHeader (presentationHeader)
 
 showDependents :: Text -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 showDependents searchString packagesInfo = do

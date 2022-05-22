@@ -8,9 +8,9 @@ import Lucid
 
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package (Namespace, PackageName)
+import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Templates (FloraHTML)
 import FloraWeb.Templates.Packages.Listing (packageListing)
-import FloraWeb.Components.PackageListHeader (presentationHeader)
 
 showCategory :: Category -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 showCategory Category{name, synopsis} packagesInfo = do
