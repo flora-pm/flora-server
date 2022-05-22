@@ -15,11 +15,14 @@
     @apply rounded-md p-2 hover:bg-purple-1
   }
 
-  a:hover {
+  a:hover h2 {
     @apply underline;
   }
 }
 
+a {
+  text-decoration: none;
+}
 
 #navbar-search-package-name {
   padding-left: 20px;
@@ -73,7 +76,6 @@ div[class="bullets"] {
 
   a {
     @apply text-purple-10;
-    text-decoration: none;
   }
 
   .category-card__synopsis {
@@ -92,11 +94,11 @@ div[class="bullets"] {
 }
 
 .category-card {
-  @apply py-4 px-8;
+  @apply block py-4 px-8;
 }
 
 .category-card:hover {
-  @apply block bg-white dark:bg-dark-1;
+  @apply bg-white dark:bg-dark-1;
 }
 
 ul.package-list a {
@@ -107,7 +109,7 @@ ul.package-list a:hover {
   @apply dark:bg-dark-2;
 }
 
-ul.package-list a:hover .package-list__item__name {
+ul.package-list a:hover h4.package-list__item__name {
   text-decoration: underline;
 }
 
