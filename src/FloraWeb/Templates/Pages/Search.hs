@@ -11,7 +11,7 @@ import FloraWeb.Templates.Packages.Listing (packageListing)
 import Lucid
 
 showAllPackages :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
-showAllPackages = showResults "Packages"
+showAllPackages = showResults ""
 
 showResults :: Text -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 showResults searchString packagesInfo = do

@@ -103,16 +103,28 @@ ul.package-list a {
   @apply py-3 pl-4;
 }
 
-ul.package-list a:hover {
-  @apply dark:bg-blue-2;
+li.package-list-item a:hover {
+  @apply dark:bg-blue-1;
 }
 
-ul.package-list a:hover h4.package-list__item__name {
+li.package-list-item a:hover h4.package-list-item__name {
   text-decoration: underline;
 }
 
-.package-list__item__name {
-  @apply dark:text-purple-7;
+.package-list-item {
+  @apply xl:text-xl;
+}
+
+.package-list-item__name {
+  @apply inline mr-2 text-gray-1 dark:text-purple-7;
+}
+
+.package-list-item__version {
+  @apply text-sm mt-2 text-gray-2 dark:text-gray-7;
+}
+
+.package-list-item__synopsis {
+  @apply inline dark:text-gray-7;
 }
 
 /* Large display rules */
