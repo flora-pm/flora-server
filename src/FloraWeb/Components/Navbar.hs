@@ -29,7 +29,7 @@ navbar = do
 
         div_ [id_ "navbar-right", class_ menuClasses, xBind_ "class" "!menuOpen ? 'hidden' : ''"] $ do
           navBarLink "md:hidden " "/" title False
-          navBarLink' "/about" "About Flora" aboutNav
+          navBarLink' "/about" "About" aboutNav
           navBarLink' "/categories" "Categories" packagesNav
           navBarLink' "/packages" "Packages" packagesNav
           userMenu
@@ -39,8 +39,9 @@ brand :: FloraHTML
 brand = do
   TemplateEnv{title, mobileTitle} <- ask
   let link = a_ [href_ "/", id_ "brand", class_ "font-bold text-white dark:text-gray-100"]
-  let containerBaseClasses = "flex items-center border-b-4 border-purple-1 dark:border-purple-1 flex-shrink-0 h-16"
-  div_ [class_ $ containerBaseClasses <> " hidden md:flex"] $ link (text title)
+  let containerBaseClasses = "flex items-center flex-shrink-0 h-16"
+  div_ [class_ $ containerBaseClasses <> " hidden md:flex"] $
+    div_ [class_ "border-b-4 border-gray-7 dark:border-purple-1 pb-2"] $ link (text title)
   div_ [class_ $ containerBaseClasses <> " md:hidden", xOn_ "click.prevent" "menuOpen = !menuOpen"] $ link (text mobileTitle)
 
 navBarLink ::
