@@ -56,7 +56,9 @@ div[class="bullets"] {
 
 .navbar-search {
   color: hsl(0, 0%, 100%);
-  @apply rounded-full;
+  @apply rounded-full w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2;
+  @apply dark:bg-blue-2 dark:border-blue-2;
+  @apply text-gray-1
 }
 
 .navbar-element:hover {
@@ -78,14 +80,9 @@ div[class="bullets"] {
     color: hsl(254.3, 95%, 76.7%);
   }
 
-  .navbar-search {
-    @apply bg-blue-2 w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2 border-blue-2;
-  }
-
   a {
     @apply text-purple-7;
   }
-
 }
 
 .divider {
