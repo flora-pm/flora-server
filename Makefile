@@ -2,7 +2,7 @@ start: ## Start flora-server
 	@cabal run exe:flora-server
 
 build: ## Build the backend
-	@cabal build -j -O0
+	@cabal build -j -O1
 
 clean: ## Remove the cabal build artifacts
 	@rm cbits/*.cpp
