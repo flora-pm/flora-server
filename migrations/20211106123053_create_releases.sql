@@ -4,6 +4,7 @@ create table if not exists releases (
   package_id uuid references packages,
   version text not null,
   archive_checksum text not null,
+  uploaded_at timestamptz,
   created_at timestamptz not null,
   updated_at timestamptz not null
 );

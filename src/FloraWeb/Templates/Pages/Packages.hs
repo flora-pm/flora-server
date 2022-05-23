@@ -3,7 +3,7 @@ module FloraWeb.Templates.Pages.Packages where
 import Data.Foldable (fold)
 import Data.Text (Text, pack)
 import Data.Text.Display
-import Data.Vector (Vector)
+import Data.Vector (Vector, forM_)
 import qualified Data.Vector as V
 import qualified Data.Vector as Vector
 import Distribution.Pretty (pretty)
@@ -22,6 +22,10 @@ import Lucid.Orphans ()
 import Optics.Core ((^.))
 import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
+import qualified Data.Time as Time
+import Data.Time (defaultTimeLocale)
+import qualified FloraWeb.Links as Links
+import Servant (ToHttpApiData(..))
 
 data Target = Dependents | Dependencies
   deriving stock (Eq, Ord)
@@ -32,6 +36,7 @@ instance Display Target where
 
 showPackage ::
   Release ->
+  Vector Release ->
   Package ->
   Vector Package ->
   Word ->
@@ -39,10 +44,10 @@ showPackage ::
   Word ->
   Vector Category ->
   FloraHTML
-showPackage latestRelease package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
+showPackage latestRelease packageReleases package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
   div_ [class_ "larger-container"] $ do
     presentationHeader latestRelease namespace name synopsis
-    packageBody package latestRelease dependencies numberOfDependencies dependents numberOfDependents categories
+    packageBody package latestRelease packageReleases dependencies numberOfDependencies dependents numberOfDependents categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = do
@@ -54,8 +59,8 @@ presentationHeader release namespace name synopsis = do
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
-packageBody :: Package -> Release -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
-packageBody Package{namespace, name = packageName, metadata} latestRelease dependencies numberOfDependencies dependents numberOfDependents categories =
+packageBody :: Package -> Release -> Vector Release -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
+packageBody Package{namespace, name = packageName, metadata} latestRelease packageReleases dependencies numberOfDependencies dependents numberOfDependents categories =
   div_ $ do
     div_ [class_ "package-body md:flex"] $ do
       div_ [class_ "package-left-column grow"] $ do
@@ -63,6 +68,7 @@ packageBody Package{namespace, name = packageName, metadata} latestRelease depen
           displayCategories categories
           displayLicense (metadata ^. #license)
           displayLinks packageName latestRelease metadata
+          displayVersions namespace packageName packageReleases
       div_ [class_ "package-right-column md:max-w-xs"] $ do
         ul_ [class_ "package-right-rows grid-rows-3"] $ do
           displayInstructions packageName latestRelease
@@ -100,6 +106,23 @@ displayLinks packageName _release meta@PackageMetadata{..} = do
 displaySourceRepos :: [Text] -> FloraHTML
 displaySourceRepos [] = toHtml @Text "No source repository"
 displaySourceRepos x = a_ [href_ (head x)] "Source repository"
+
+displayVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
+displayVersions namespace packageName versions =
+  li_ [class_ "mb-5"] $ do
+    h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Versions"
+    ul_ [class_ "package-versions"] $ do
+      forM_ versions displayVersion
+  where
+    displayVersion :: Release -> FloraHTML
+    displayVersion release =
+      li_ [class_ "package-version"] $ do
+        a_ [href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)) )] $
+          strong_ (toHtml $ display (release ^. #version))
+        case release ^. #uploadedAt of
+          Nothing -> ""
+          Just ts ->
+            span_ [] (toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts)
 
 displayDependencies ::
   -- | The package namespace and name

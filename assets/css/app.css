@@ -133,6 +133,10 @@ li.dependents a.dependent:hover {
   @apply inline dark:text-gray-7;
 }
 
+.package-version {
+  @apply dark:text-purple-7;
+}
+
 /* Large display rules */
 @media (min-width: 1024px) {
   .container {
