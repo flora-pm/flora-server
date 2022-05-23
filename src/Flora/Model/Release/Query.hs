@@ -24,7 +24,7 @@ getReleaseByVersion packageId version = queryOne Select querySpec (packageId, ve
   where
     querySpec =
       [sql|
-        select r.release_id, r.package_id, r.version, r.archive_checksum, r.created_at, r.updated_at
+        select r.release_id, r.package_id, r.version, r.archive_checksum, r.uploaded_at, r.created_at, r.updated_at
         from releases as r
         where r.package_id = ?
           and r.version = ?

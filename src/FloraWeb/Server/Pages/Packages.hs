@@ -87,6 +87,7 @@ showPackageVersion namespace packageName version = do
   case result of
     Nothing -> renderError templateEnv notFound404
     Just package -> do
+      releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
       dependents <- liftIO $ withPool pool $ Query.getPackageDependents namespace packageName
       liftIO (withPool pool $ Query.getReleaseByVersion (package ^. #packageId) version)
         >>= \case
@@ -96,7 +97,7 @@ showPackageVersion namespace packageName version = do
             categories <- liftIO $ withPool pool $ Query.getPackageCategories (package ^. #packageId)
             numberOfDependents <- withPool pool $ Query.getNumberOfPackageDependents namespace packageName
             numberOfDependencies <- withPool pool $ Query.getNumberOfPackageRequirements (release ^. #releaseId)
-            render templateEnv $ Packages.showPackage release package dependents numberOfDependents releaseDependencies numberOfDependencies categories
+            render templateEnv $ Packages.showPackage release releases package dependents numberOfDependents releaseDependencies numberOfDependencies categories
 
 showDependentsHandler :: Text -> Text -> FloraPageM (Html ())
 showDependentsHandler namespaceText packageNameText = do

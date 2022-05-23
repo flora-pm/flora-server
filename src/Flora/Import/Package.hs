@@ -469,6 +469,7 @@ createRelease packageId version = do
   releaseId <- ReleaseId <$> liftIO UUID.nextRandom
   timestamp <- liftIO getCurrentTime
   let archiveChecksum = mempty
+  let uploadedAt = Nothing
   let createdAt = timestamp
   let updatedAt = timestamp
   pure Release{..}

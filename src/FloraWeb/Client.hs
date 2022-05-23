@@ -22,7 +22,7 @@ import qualified Servant.Client.Core as Client
 
 -- type instance AuthClientData (AuthProtect "optional-cookie-auth") = Session 'Visitor
 
--- floraClient :: Pages.Routes (AsClientT ClientM)
+-- floraClient :: Client ClientM Pages.Routes
 -- floraClient = genericClient
 
 -- fakeSession :: Session 'Visitor
