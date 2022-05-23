@@ -488,18 +488,12 @@ cabalToPackage ownerId packageDesc namespace name = do
   let homepage = Just (display $ packageDesc ^. #homepage)
   let documentation = ""
   let bugTracker = Just (display $ packageDesc ^. #bugReports)
+  let maintainer = display $ packageDesc ^. #maintainer
   let metadata = PackageMetadata{..}
   let synopsis = display $ packageDesc ^. #synopsis
   let createdAt = timestamp
   let updatedAt = timestamp
   pure $ Package{..}
-
--- getPackageName :: GenericPackageDescription -> ExceptT ImportError (DBT m) PackageName
--- getPackageName genDesc = do
---   let pkgName = display $ genDesc ^. #packageDescription ^. #package ^. #pkgName
---   case parsePackageName pkgName of
---     Nothing   -> throwError $ InvalidPackageName pkgName
---     Just name -> pure name
 
 getRepoURL :: (MonadIO m) => PackageName -> [Cabal.SourceRepo] -> ExceptT ImportError (DBT m) [Text]
 getRepoURL _ [] = pure []
