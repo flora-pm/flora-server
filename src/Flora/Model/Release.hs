@@ -33,8 +33,8 @@ data Release = Release
   , archiveChecksum :: ByteString
   -- ^ The SHA256 checksum of the stored archive for this release
   , uploadedAt :: Maybe UTCTime
-  --  ^ The timestamp of upload, provided by Hackage
-  , createdAt :: UTCTime
+  , --  ^ The timestamp of upload, provided by Hackage
+    createdAt :: UTCTime
   -- ^ Date of creation of this release
   , updatedAt :: UTCTime
   -- ^ Last update timestamp for this release

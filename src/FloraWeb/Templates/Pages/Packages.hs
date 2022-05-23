@@ -3,6 +3,8 @@ module FloraWeb.Templates.Pages.Packages where
 import Data.Foldable (fold)
 import Data.Text (Text, pack)
 import Data.Text.Display
+import Data.Time (defaultTimeLocale)
+import qualified Data.Time as Time
 import Data.Vector (Vector, forM_)
 import qualified Data.Vector as V
 import qualified Data.Vector as Vector
@@ -16,16 +18,14 @@ import Flora.Model.Package.Types
   , PackageName
   )
 import Flora.Model.Release (Release (..))
+import qualified FloraWeb.Links as Links
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
 import Lucid.Orphans ()
 import Optics.Core ((^.))
+import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
-import qualified Data.Time as Time
-import Data.Time (defaultTimeLocale)
-import qualified FloraWeb.Links as Links
-import Servant (ToHttpApiData(..))
 
 data Target = Dependents | Dependencies
   deriving stock (Eq, Ord)
@@ -117,7 +117,7 @@ displayVersions namespace packageName versions =
     displayVersion :: Release -> FloraHTML
     displayVersion release =
       li_ [class_ "package-version"] $ do
-        a_ [href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)) )] $
+        a_ [href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)))] $
           strong_ (toHtml $ display (release ^. #version))
         case release ^. #uploadedAt of
           Nothing -> ""
