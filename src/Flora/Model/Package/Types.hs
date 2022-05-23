@@ -108,6 +108,7 @@ data PackageMetadata = PackageMetadata
   , homepage :: Maybe Text
   , documentation :: Text
   , bugTracker :: Maybe Text
+  , maintainer :: Text
   }
   deriving stock (Eq, Ord, Show, Generic, Typeable)
   deriving anyclass (ToJSON, FromJSON)

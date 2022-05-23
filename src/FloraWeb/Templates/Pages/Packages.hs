@@ -66,6 +66,7 @@ packageBody Package{namespace, name = packageName, metadata} latestRelease depen
       div_ [class_ "package-right-column md:max-w-xs"] $ do
         ul_ [class_ "package-right-rows grid-rows-3"] $ do
           displayInstructions packageName latestRelease
+          displayMaintainer (metadata ^. #maintainer)
           displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayDependents (namespace, packageName) numberOfDependents dependents
 
@@ -138,6 +139,12 @@ displayInstructions packageName latestRelease = do
           , value_ (formatInstallString packageName latestRelease)
           , readonly_ "readonly"
           ]
+
+displayMaintainer :: Text -> FloraHTML
+displayMaintainer maintainerInfo = do
+  li_ [class_ "mb-5"] $ do
+    h3_ [class_ "lg:text-2xl package-body-esction mb-3"] "Maintainer"
+    p_ (toHtml maintainerInfo)
 
 displayDependents ::
   (Namespace, PackageName) ->
