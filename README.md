@@ -3,13 +3,17 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/flora-pm/flora-server/development/assets/favicon.svg" height=250 width=250 alt="Logo" />
 </p>
-<p align="center">
 
+<p align="center">
 <a href="https://github.com/flora-pm/flora-server/actions">
   <img src="https://img.shields.io/github/workflow/status/flora-pm/flora-server/CI/development?style=flat-square" alt="CI badge" />
 </a>
 <a href="https://haskell.org">
   <img src="https://img.shields.io/badge/Made%20in-Haskell-%235e5086?logo=haskell&style=flat-square" alt="made with Haskell"/>
+</a>
+
+<a href="https://app.element.io/#/room/#flora-pm:matrix.org">
+  <img src="https://img.shields.io/badge/matrix-%23flora--pm%3Amatrix.org-brightgreen?style=flat-square&logo=matrix" alt="Matrix chatroom badge" />
 </a>
 </p>
 
