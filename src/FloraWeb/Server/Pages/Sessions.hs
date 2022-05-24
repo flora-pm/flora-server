@@ -3,10 +3,10 @@ module FloraWeb.Server.Pages.Sessions where
 import Control.Monad.Reader
 import Data.Password.Argon2
 import Data.Text.Display
-import Database.PostgreSQL.Entity.DBT (withPool)
 import qualified Log
 import Optics.Core
 
+import Database.PostgreSQL.Entity.DBT
 import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User

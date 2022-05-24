@@ -24,6 +24,7 @@ import Optics.Core
 
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
+import qualified Lucid
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
@@ -42,6 +43,21 @@ deterministicReleaseId (PackageId packageId) version =
     versionBs = structuredEncode version
     packageIdBs = toByteString packageId
 
+{- | a wrapper that attaches from and tofield instances
+ for a text db row for LucidHtml
+-}
+newtype TextHtml = MkTextHtml (Lucid.Html ())
+  deriving stock (Show, Generic)
+
+instance Eq TextHtml where
+  (==) (MkTextHtml a) (MkTextHtml b) = Lucid.renderText a == Lucid.renderText b
+
+--
+instance FromField TextHtml where
+  fromField field bs = MkTextHtml . Lucid.toHtmlRaw @Text <$> fromField field bs
+instance ToField TextHtml where
+  toField (MkTextHtml x) = toField $ Lucid.renderText x
+
 data Release = Release
   { releaseId :: ReleaseId
   -- ^ The unique ID of this release
@@ -59,6 +75,7 @@ data Release = Release
   -- ^ Date of creation of this release
   , updatedAt :: UTCTime
   -- ^ Last update timestamp for this release
+  , readme :: Maybe TextHtml
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)

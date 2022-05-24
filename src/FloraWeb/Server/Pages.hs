@@ -16,13 +16,15 @@ import qualified FloraWeb.Server.Pages.Sessions as Sessions
 import FloraWeb.Session
 import FloraWeb.Templates
 import qualified FloraWeb.Templates.Pages.Home as Home
+import qualified OddJobs.Endpoints as OddJobs
+import qualified OddJobs.Types as OddJobs
 
-server :: ServerT Routes FloraPageM
-server =
+server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPageM
+server cfg env =
   Routes'
     { home = homeHandler
     , about = aboutHandler
-    , admin = Admin.server
+    , admin = Admin.server cfg env
     , sessions = Sessions.server
     , packages = Packages.server
     , categories = Categories.server

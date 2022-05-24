@@ -20,6 +20,12 @@ pkgs.mkShell rec {
     pkgs.yarn
     pkgs.libffi
     pkgs.zlib
+    (pkgs.haskell.lib.dontCheck
+      (pkgs.haskell.packages."ghc921".callHackageDirect {
+        pkg = "fourmolu";
+        ver = "0.7.0.1";
+        sha256 = "0wrcmd7v0sfyagiwqxnh117xqikid3hfz2vkxzihywx0ld7jp780";
+      } { }))
     (import ./nix/pin2.nix { }).souffle
   ];
   exactDeps = true;

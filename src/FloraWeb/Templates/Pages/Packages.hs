@@ -16,10 +16,11 @@ import Flora.Model.Package.Types
   , Package (..)
   , PackageName
   )
-import Flora.Model.Release (Release (..), ReleaseMetadata (..))
+import Flora.Model.Release (Release (..), ReleaseMetadata (..), TextHtml (..))
 import qualified FloraWeb.Links as Links
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
+import Lucid.Base (relaxHtmlT)
 import Lucid.Orphans ()
 import Optics.Core
 import Servant (ToHttpApiData (..))
@@ -70,12 +71,23 @@ packageBody Package{namespace, name = packageName} latestRelease@Release{metadat
           displayLicense (metadata ^. #license)
           displayLinks packageName latestRelease metadata
           displayVersions namespace packageName packageReleases numberOfReleases
+      div_ [class_ "package-readme-column grow"] $ do
+        ul_ [class_ "package-left-rows grid-rows-3"] $ do
+          displayReadme latestRelease
       div_ [class_ "package-right-column md:max-w-xs"] $ do
         ul_ [class_ "package-right-rows grid-rows-3"] $ do
           displayInstructions packageName latestRelease
           displayMaintainer (metadata ^. #maintainer)
           displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayDependents (namespace, packageName) numberOfDependents dependents
+
+displayReadme :: Release -> FloraHTML
+displayReadme release = li_ [class_ "mb-5"] $ do
+  div_ [class_ "license mb-3"] $
+    h3_ [class_ "lg:text-2xl package-body-section"] "Readme"
+  ul_ [class_ "readme"] $ case readme release of
+    Nothing -> toHtml @Text "no readme available"
+    Just (MkTextHtml readme) -> relaxHtmlT readme
 
 displayReleaseVersion :: Release -> FloraHTML
 displayReleaseVersion Release{version} = toHtml version

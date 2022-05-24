@@ -1,7 +1,6 @@
 module Main where
 
 import Data.Password.Types
-import Database.PostgreSQL.Entity.DBT
 import Optics.Core
 import Options.Applicative
 
@@ -14,6 +13,7 @@ import Control.Exception
 import CoverageReport
 import Data.Maybe
 import Data.Text (Text)
+import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple.Errors (ConstraintViolation (..), catchViolation)
 import DesignSystem (generateComponents)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)

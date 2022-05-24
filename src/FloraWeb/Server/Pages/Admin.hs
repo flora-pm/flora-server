@@ -1,7 +1,7 @@
 module FloraWeb.Server.Pages.Admin where
 
 import Control.Monad.Reader
-import Database.PostgreSQL.Entity.DBT (withPool)
+import Database.PostgreSQL.Entity.DBT
 import Lucid
 import Network.HTTP.Types.Status (notFound404)
 import Optics.Core
@@ -10,8 +10,10 @@ import Servant
 import Flora.Environment
 import Flora.Model.Admin.Report
 import qualified Flora.Model.Package.Query as Query
+import Flora.Model.Release.Query
 import Flora.Model.User
 import qualified Flora.Model.User.Query as Query
+import Flora.OddJobs
 import FloraWeb.Routes.Pages.Admin
 import FloraWeb.Server.Auth
 import FloraWeb.Session (getSession)
@@ -21,14 +23,19 @@ import qualified FloraWeb.Templates.Admin.Packages as Templates
 import qualified FloraWeb.Templates.Admin.Users as Templates
 import FloraWeb.Templates.Error
 import FloraWeb.Types (fetchFloraEnv)
+import Log.Class
+import qualified OddJobs.Endpoints as OddJobs
+import qualified OddJobs.Types as OddJobs
 
-server :: ServerT Routes FloraPageM
-server =
+server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPageM
+server cfg env =
   ensureAdmin $
     Routes'
       { index = indexHandler
       , users = adminUsersHandler
       , packages = adminPackagesHandler
+      , oddJobs = OddJobs.server cfg env (lift . lift)
+      , makeReadmes = makeReadmesHandler
       }
 
 {- | This function converts a sub-tree of routes that require 'Admin' role
@@ -61,6 +68,21 @@ indexHandler = do
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   report <- liftIO $ withPool pool getReport
   render templateDefaults (Templates.index report)
+
+makeReadmesHandler :: FloraAdminM (Html ())
+makeReadmesHandler = localDomain "makeReadmesHandler" $ do
+  logInfo "opening the readmes magic" ("" :: String)
+  session <- getSession
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+
+  logInfo "scheduling readme jabbb" ("" :: String)
+  releases <- liftIO $ withPool pool getPackageReleases
+  logInfo "got releases! qeueing the queue" ("" :: String)
+  forM_ releases $ \(releaseId, version, packagename) -> do
+    liftIO $ scheduleReadmeJob pool releaseId packagename version
+
+  logInfo "done" ("exceptional" :: String)
+  throwError $ err301{errHeaders = [("Location", "/admin")]}
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdminM
 adminUsersHandler =

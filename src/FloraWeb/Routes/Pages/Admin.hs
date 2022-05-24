@@ -2,6 +2,7 @@ module FloraWeb.Routes.Pages.Admin where
 
 import Flora.Model.User
 import Lucid
+import qualified OddJobs.Endpoints as OddJobs
 import Servant
 import Servant.API.Generic
 import Servant.HTML.Lucid
@@ -10,6 +11,8 @@ type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
+  , makeReadmes :: mode :- "readmes" :> Post '[HTML] (Html ())
+  , oddJobs :: mode :- "odd-jobs" :> OddJobs.FinalAPI -- they compose :o
   , users :: mode :- "users" :> AdminUsersRoutes
   , packages :: mode :- "packages" :> PackagesAdminRoutes
   }

@@ -2,12 +2,12 @@ module FloraWeb.Server.Pages.Categories where
 
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
-import Database.PostgreSQL.Entity.DBT (withPool)
 import Lucid (Html)
 import Network.HTTP.Types (notFound404)
 import Optics.Core ((^.))
 import Servant (ServerT)
 
+import Database.PostgreSQL.Entity.DBT
 import Flora.Environment (FloraEnv (..))
 import qualified Flora.Model.Category.Query as Query
 import Flora.Model.Category.Types (Category (..))

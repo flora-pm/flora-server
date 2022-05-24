@@ -53,6 +53,9 @@ newtype PackageName = PackageName Text
     (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, ToHttpApiData)
     via Text
 
+unPackageName :: PackageName -> Text
+unPackageName (PackageName txt) = txt
+
 instance Pretty PackageName where
   pretty (PackageName txt) = PP.text $ unpack txt
 

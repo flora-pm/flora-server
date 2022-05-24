@@ -105,3 +105,14 @@ endif
 .PHONY: all $(MAKECMDGOALS)
 
 .DEFAULT_GOAL := help
+
+.PHONY: migration
+migration: ## Generate timestamped database migration boilerplate files
+	@if test -z "$$name"; then \
+	  echo "Usage: make migration name=some-name"; \
+	else \
+	  migName="`date -u '+%Y%m%d%H%M%S'`_$$name"; \
+	  fname="migrations/$$migName.sql"; \
+	  touch "$$fname"; \
+	  echo "Touched $$fname";\
+	fi
