@@ -46,7 +46,7 @@ tools will still be accessible.
 ### System dependencies
 
 * libpq
-* Soufflé Datalog
+* [Soufflé Datalog](https://github.com/souffle-lang/souffle/releases) >=v2.2 
 
 ### Flora server
 
