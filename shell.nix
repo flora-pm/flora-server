@@ -19,7 +19,7 @@ pkgs.mkShell rec {
     pkgs.yarn
     pkgs.libffi
     pkgs.zlib
-    pkgs.souffle
+    (import ./nix/pin2.nix { }).souffle
   ];
   exactDeps = true;
   NIX_PATH = "nixpkgs=${pkgs.path}:.";
