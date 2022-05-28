@@ -197,6 +197,7 @@ library
     , postgresql-simple          ^>=0.6
     , pretty                     ^>=1.1
     , pretty-simple              ^>=4.0
+    , process                    ^>=1.6
     , prometheus-client          ^>=1.1
     , prometheus-metrics-ghc     ^>=1.0
     , prometheus-proc            ^>=0.1
