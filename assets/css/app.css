@@ -83,6 +83,8 @@ div[class="bullets"] {
 
 .category-card {
   @apply block py-4 px-8;
+  width: 400px;
+  height: 112px;
 }
 
 .category-card:hover {
