@@ -122,7 +122,7 @@ ul.package-list a {
 }
 
 li.package-list-item a:hover {
-  @apply dark:bg-blue-1;
+  @apply bg-gray-7 dark:bg-blue-1;
 }
 
 li.package-list-item a:hover h4.package-list-item__name {
