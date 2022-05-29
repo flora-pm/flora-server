@@ -165,6 +165,15 @@ li.dependents a.dependent:hover {
   @apply dark:text-purple-7;
 }
 
+.main-search {
+  @apply bg-white dark:bg-blue-2;
+}
+
+.search-bar {
+  height: 450;
+}
+
+
 /* Large display rules */
 @media (min-width: 1024px) {
   .container {
