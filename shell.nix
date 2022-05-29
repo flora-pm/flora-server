@@ -12,6 +12,7 @@ pkgs.mkShell rec {
     pkgs.git
     pkgs.haskellPackages.apply-refact
     pkgs.haskellPackages.cabal-fmt
+    (pkgs.haskell.lib.markUnbroken pkgs.haskellPackages.postgresql-migration)
     pkgs.hlint
     pkgs.ncurses6
     pkgs.postgresql_14
