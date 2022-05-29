@@ -83,11 +83,13 @@ searchBar :: FloraHTML
 searchBar =
   form_ [action_ "/search", method_ "GET"] $ do
     div_ [class_ "main-search max-w-md mx-auto flex justify-center rounded-xl border-2 overflow-hidden"] $ do
+      label_ [for_ "search"] ""
       input_
         [ class_
             "text-2xl text-gray-800 dark:bg-background-dark dark:focus-within:bg-blue-3 dark:text-gray-300 block rounded-md border-0 \
             \ focus:outline-none focus:ring-0 focus:brand-purple flex-grow p-2 ml-2 dark:bg-blue-2"
         , type_ "search"
+        , id_ "search"
         , name_ "q"
         , placeholder_ "Find a package"
         , value_ ""
