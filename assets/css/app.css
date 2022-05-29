@@ -114,7 +114,7 @@ div[class="bullets"] {
 }
 
 .category-card:hover {
-  @apply bg-white dark:bg-blue-1;
+  @apply bg-gray-7 dark:bg-blue-1;
 }
 
 ul.package-list a {
