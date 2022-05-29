@@ -58,6 +58,7 @@ server {
         expires max;
         autoindex off;
         add_header Cache-Control public;
+        add_header X-Content-Type-Options nosniff;
     }
 
     location / {
