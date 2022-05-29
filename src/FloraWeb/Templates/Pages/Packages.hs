@@ -84,7 +84,7 @@ displayLicense license = do
   li_ [class_ "mb-5"] $ do
     div_ [class_ "license mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "License"
-    p_ [class_ "package-body-section__"] $ toHtml license
+    p_ [class_ "package-body-section__license"] $ toHtml license
 
 displayCategories :: Vector Category -> FloraHTML
 displayCategories categories = do
@@ -117,8 +117,9 @@ displayVersions namespace packageName versions =
     displayVersion :: Release -> FloraHTML
     displayVersion release =
       li_ [class_ "package-version"] $ do
-        a_ [href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)))] $
-          strong_ (toHtml $ display (release ^. #version))
+        a_
+          [href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)))]
+          (toHtml $ display (release ^. #version))
         case release ^. #uploadedAt of
           Nothing -> ""
           Just ts ->
@@ -155,7 +156,7 @@ displayInstructions packageName latestRelease = do
       div_ [class_ "space-y-2"] $ do
         label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
         input_
-          [ class_ "font-mono shadow-sm text-base w-full bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block border-gray-800 dark:border-gray-800 rounded-md"
+          [ class_ "package-install-string"
           , type_ "text"
           , id_ "install-string"
           , onfocus_ "this.select();"
@@ -166,8 +167,8 @@ displayInstructions packageName latestRelease = do
 displayMaintainer :: Text -> FloraHTML
 displayMaintainer maintainerInfo = do
   li_ [class_ "mb-5"] $ do
-    h3_ [class_ "lg:text-2xl package-body-esction mb-3"] "Maintainer"
-    p_ (toHtml maintainerInfo)
+    h3_ [class_ "lg:text-2xl package-body-section mb-3"] "Maintainer"
+    p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
 
 displayDependents ::
   (Namespace, PackageName) ->

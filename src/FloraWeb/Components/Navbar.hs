@@ -41,7 +41,7 @@ brand = do
   let link = a_ [href_ "/", id_ "brand", class_ "font-bold text-white dark:text-gray-100"]
   let containerBaseClasses = "flex items-center flex-shrink-0 h-16"
   div_ [class_ $ containerBaseClasses <> " hidden md:flex"] $
-    div_ [class_ "border-b-4 border-gray-7 dark:border-purple-1 pb-2"] $ link (text title)
+    div_ [class_ "brand"] $ link (text title)
   div_ [class_ $ containerBaseClasses <> " md:hidden", xOn_ "click.prevent" "menuOpen = !menuOpen"] $ link (text mobileTitle)
 
 navBarLink ::
