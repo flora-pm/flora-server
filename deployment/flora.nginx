@@ -28,7 +28,6 @@ server {
   access_log /var/log/nginx/flora_access.log;
   error_log /var/log/nginx/flora_error.log;
 
-
   # favicon
   location = /favicon.ico {
     log_not_found off;
