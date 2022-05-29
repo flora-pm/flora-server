@@ -75,9 +75,10 @@ navbarSearch = do
     then do
       form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "/search", method_ "GET"] $ do
         div_ [class_ "flex items-center py-2"] $ do
+          label_ [for_ "search"] ""
           input_
             [ class_ "navbar-search"
-            , id_ "packageName"
+            , id_ "search"
             , type_ "search"
             , name_ "q"
             , placeholder_ "Search a package"
