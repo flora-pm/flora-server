@@ -95,6 +95,7 @@ library
     Flora.Model.Category.Query
     Flora.Model.Category.Types
     Flora.Model.Category.Update
+    Flora.Model.Downloads
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Component
@@ -119,6 +120,7 @@ library
     FloraWeb.Autoreload
     FloraWeb.Client
     FloraWeb.Components.CategoryCard
+    FloraWeb.Components.Footer
     FloraWeb.Components.Header
     FloraWeb.Components.Navbar
     FloraWeb.Components.PackageListHeader
@@ -167,6 +169,7 @@ library
 
   build-depends:
     , aeson                      <=1.6
+    , async                      ^>=2.2
     , base                       ^>=4.14
     , blaze-builder
     , bytestring                 ^>=0.10
@@ -176,9 +179,12 @@ library
     , colourista                 ^>=0.1
     , containers                 ^>=0.6
     , cookie                     ^>=0.4
+    , cryptohash                 ^>=0.11
     , directory                  ^>=1.3
     , envparse                   ^>=0.5
+    , filepath                   ^>=1.4
     , http-api-data              ^>=0.4
+    , http-client                ==0.7.10
     , http-types                 ^>=0.12
     , log-base                   ^>=0.11
     , lucid                      ^>=2.11
@@ -197,7 +203,6 @@ library
     , postgresql-simple          ^>=0.6
     , pretty                     ^>=1.1
     , pretty-simple              ^>=4.0
-    , process                    ^>=1.6
     , prometheus-client          ^>=1.1
     , prometheus-metrics-ghc     ^>=1.0
     , prometheus-proc            ^>=0.1
@@ -212,6 +217,8 @@ library
     , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
     , souffle-haskell            ^>=3.3
+    , streaming                  ^>=0.2
+    , split                      ^>=0.2
     , template-haskell
     , text                       ^>=1.2
     , text-display               ^>=0.0.2
@@ -257,6 +264,7 @@ executable flora-cli
     , colourista
     , directory
     , flora
+    , http-client                ==0.7.10
     , log-base
     , lucid
     , monad-control
@@ -265,6 +273,7 @@ executable flora-cli
     , password-types
     , pg-entity
     , pg-transact
+    , postgresql-simple
     , PyF
     , text
     , text-display

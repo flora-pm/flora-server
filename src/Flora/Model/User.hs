@@ -2,25 +2,25 @@
 {-# OPTIONS_GHC -fno-warn-orphans -Wno-redundant-constraints #-}
 
 module Flora.Model.User
-  ( UserId (..)
-  , User (..)
-  , UserFlags (..)
-  , UserCreationForm (..)
-  , AdminCreationForm (..)
-  , mkUser
-  , mkAdmin
-  , hashPassword
-  , validatePassword
+  ( UserId (..),
+    User (..),
+    UserFlags (..),
+    UserCreationForm (..),
+    AdminCreationForm (..),
+    mkUser,
+    mkAdmin,
+    hashPassword,
+    validatePassword,
   )
 where
 
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Password.Argon2
-  ( Argon2
-  , Password
-  , PasswordCheck (PasswordCheckSuccess)
-  , PasswordHash
+  ( Argon2,
+    Password,
+    PasswordCheck (PasswordCheckSuccess),
+    PasswordHash,
   )
 import qualified Data.Password.Argon2 as Argon2
 import Data.Text (Text)
@@ -106,7 +106,7 @@ type CannotDisplayPassword e =
   'Text "🚫 Tried to convert plain-text Password to " ':<>: 'Text e ':<>: 'Text "!"
     ':$$: 'Text "  This is likely a security leak. Please make sure whether this was intended."
     ':$$: 'Text "  If this is intended, please use 'unsafeShowPassword' before converting to "
-    ':<>: 'Text e
+      ':<>: 'Text e
     ':$$: 'Text ""
 
 deriving via Text instance ToField (PasswordHash a)

@@ -133,7 +133,10 @@ latestVersions = concatMap (take 1 . sortOn secondPart) . groupBy ((==) `on` fir
   where
     firstPart = T.takeWhile (/= '/') . T.drop 2 -- Keep only the package name
     secondPart =
-      Down . map fst . readP_to_S (parseVersion <* eof) . T.unpack
+      Down
+        . map fst
+        . readP_to_S (parseVersion <* eof)
+        . T.unpack
         . T.takeWhile (/= '/')
         . T.drop 1
         . T.dropWhile (/= '/')

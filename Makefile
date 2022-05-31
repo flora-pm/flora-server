@@ -36,6 +36,9 @@ db-provision: build ## Load the development data in the database
 	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
 	@cabal run -- flora-cli provision-fixtures
 
+import-from-hackage: ## Imports every cabal file from the ./index-01 directory
+	@cabal run -- flora-cli import-packages ./01-index
+
 repl: soufflé ## Start a cabal REPL
 	@cabal repl lib:flora
 
@@ -84,6 +87,7 @@ tags: ## Generate ctags for the project with `ghc-tags`
 
 design-system: ## Generate the HTML components used by the design system
 	@cabal run -- flora-cli gen-design-system
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.* ?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 

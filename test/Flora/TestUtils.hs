@@ -3,49 +3,49 @@
 
 module Flora.TestUtils
   ( -- * Test group functions
-    testRequest
-  , testThis
-  , testThese
+    testRequest,
+    testThis,
+    testThese,
 
     -- * Assertion functions
-  , assertEqual
-  , assertFailure
-  , assertRight
-  , assertRight'
-  , assertClientRight
-  , assertClientRight'
-  , assertLeft
-  , assertLeft'
-  , assertClientLeft
-  , assertClientLeft'
+    assertEqual,
+    assertFailure,
+    assertRight,
+    assertRight',
+    assertClientRight,
+    assertClientRight',
+    assertLeft,
+    assertLeft',
+    assertClientLeft,
+    assertClientLeft',
 
     -- * Database migration
-  , testMigrations
+    testMigrations,
 
     -- * Random fixtures
-  , randomUser
-  , randomUserTemplate
-  , RandomUserTemplate (..)
-  , genUser
-  , genPassword
-  , genDisplayName
-  , genUsername
-  , genEmail
-  , genUserId
-  , genUTCTime
-  , genUUID
-  , genWord32
+    randomUser,
+    randomUserTemplate,
+    RandomUserTemplate (..),
+    genUser,
+    genPassword,
+    genDisplayName,
+    genUsername,
+    genEmail,
+    genUserId,
+    genUTCTime,
+    genUUID,
+    genWord32,
 
     -- * TestM and helpers
-  , TestM (..)
-  , Fixtures (..)
-  , liftDB
-  , runTestM
-  , getTestEnv
-  , getFixtures
+    TestM (..),
+    Fixtures (..),
+    liftDB,
+    runTestM,
+    getTestEnv,
+    getFixtures,
 
     -- * HUnit re-exports
-  , TestTree
+    TestTree,
   )
 where
 

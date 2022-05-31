@@ -1,6 +1,6 @@
 module Flora.Model.Package
-  ( module Flora.Model.Package.Types
-  , formatPackage
+  ( module Flora.Model.Package.Types,
+    formatPackage,
   )
 where
 

@@ -25,18 +25,22 @@ a {
   @apply dark:text-purple-7 text-blue-6;
 }
 
+.brand {
+  @apply border-b-4 border-gray-7 dark:border-purple-6 pb-2
+}
+
 #navbar-search-package-name {
   padding-left: 20px;
 }
 
 .error-code {
   --tw-bg-opacity: 1;
-  color: hsl(270, 50%, 40%);
+  @apply dark:text-purple-6 text-purple-1;
 }
 
 .error-page-button {
   --tw-bg-opacity: 1;
-  background-color: hsl(270, 50%, 40%);
+  @apply dark:bg-purple-3 bg-purple-1;
 }
 
 div[class="bullets"] {
@@ -48,11 +52,33 @@ div[class="bullets"] {
   }
 }
 
+.package-body {
+  a {
+    font-weight: 500;
+  }
+
+  .maintainer-info {
+    font-weight: 500;
+  }
+
+  .package-body-section__license {
+    font-weight: 500;
+  }
+  
+  .package-install-string {
+    font-weight: 500;
+  }
+}
+
+.package-install-string {
+  @apply font-mono shadow-sm text-base w-full bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block border-gray-800 dark:border-gray-800 rounded-md;
+}
+
 .navbar-search {
   color: hsl(0, 0%, 100%);
   @apply rounded-full w-full mr-3 pl-3 py-1 px-1 leading-tight focus:outline-none border border-2;
   @apply dark:bg-blue-2 dark:border-blue-2;
-  @apply text-gray-1
+  @apply text-gray-1 dark:text-gray-100
 }
 
 .navbar-element:hover {
@@ -83,10 +109,12 @@ div[class="bullets"] {
 
 .category-card {
   @apply block py-4 px-8;
+  width: 400px;
+  height: 112px;
 }
 
 .category-card:hover {
-  @apply bg-white dark:bg-blue-1;
+  @apply bg-gray-7 dark:bg-blue-1;
 }
 
 ul.package-list a {
@@ -94,7 +122,7 @@ ul.package-list a {
 }
 
 li.package-list-item a:hover {
-  @apply dark:bg-blue-1;
+  @apply bg-gray-7 dark:bg-blue-1;
 }
 
 li.package-list-item a:hover h4.package-list-item__name {
@@ -130,12 +158,21 @@ li.dependents a.dependent:hover {
 }
 
 .package-list-item__synopsis {
-  @apply inline dark:text-gray-7;
+  @apply inline text-black dark:text-gray-7;
 }
 
 .package-version {
   @apply dark:text-purple-7;
 }
+
+.main-search {
+  @apply bg-white dark:bg-blue-2;
+}
+
+.search-bar {
+  height: 450;
+}
+
 
 /* Large display rules */
 @media (min-width: 1024px) {

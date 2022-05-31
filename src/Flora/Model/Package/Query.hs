@@ -7,17 +7,17 @@ import Control.Monad.IO.Class (MonadIO)
 import Data.Text (Text)
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
-  ( joinSelectOneByField
-  , selectById
-  , selectManyByField
-  , _select
-  , _selectWhere
+  ( joinSelectOneByField,
+    selectById,
+    selectManyByField,
+    _select,
+    _selectWhere,
   )
 import Database.PostgreSQL.Entity.DBT
-  ( QueryNature (Select)
-  , query
-  , queryOne
-  , query_
+  ( QueryNature (Select),
+    query,
+    queryOne,
+    query_,
   )
 import Database.PostgreSQL.Entity.Types (Field, field)
 import Database.PostgreSQL.Simple (Only (Only), Query)
@@ -28,9 +28,9 @@ import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Package (Namespace (..), Package, PackageId, PackageName)
 import Flora.Model.Package.Component
-  ( ComponentId
-  , ComponentType
-  , PackageComponent
+  ( ComponentId,
+    ComponentType,
+    PackageComponent,
   )
 import Flora.Model.Release (ReleaseId)
 

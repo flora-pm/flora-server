@@ -111,6 +111,13 @@ $ make docker-enter
 (docker)$ make nix-provision
 # And you should be good!
 ```
+
+### Importing everything from Hackage
+
+1. Download the archive containing all packages [here](https://hackage.haskell.org/01-index.tar)
+2. Extract it in Flora's root directory. You should now have a `01-index` folder
+3. Run `make import-from-hackage`
+
 ---
 
 You can explore the Makefile rules by typing `make` in your shell.

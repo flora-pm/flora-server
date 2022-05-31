@@ -1,6 +1,7 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Display
 import Data.Time (defaultTimeLocale)
@@ -12,10 +13,10 @@ import Distribution.Pretty (pretty)
 import qualified Distribution.SPDX.License as SPDX
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
-  ( Namespace
-  , Package (..)
-  , PackageMetadata (..)
-  , PackageName
+  ( Namespace,
+    Package (..),
+    PackageMetadata (..),
+    PackageName,
   )
 import Flora.Model.Release (Release (..))
 import qualified FloraWeb.Links as Links
@@ -46,7 +47,7 @@ showPackage ::
   FloraHTML
 showPackage latestRelease packageReleases package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
   div_ [class_ "larger-container"] $ do
-    presentationHeader latestRelease namespace name synopsis
+    presentationHeader latestRelease namespace name (fromMaybe "" synopsis)
     packageBody package latestRelease packageReleases dependencies numberOfDependencies dependents numberOfDependents categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
@@ -66,13 +67,13 @@ packageBody Package{namespace, name = packageName, metadata} latestRelease packa
       div_ [class_ "package-left-column grow"] $ do
         ul_ [class_ "package-left-rows grid-rows-3"] $ do
           displayCategories categories
-          displayLicense (metadata ^. #license)
-          displayLinks packageName latestRelease metadata
+          foldMap (displayLicense . license) metadata
+          foldMap (displayLinks packageName latestRelease) metadata
           displayVersions namespace packageName packageReleases
       div_ [class_ "package-right-column md:max-w-xs"] $ do
         ul_ [class_ "package-right-rows grid-rows-3"] $ do
           displayInstructions packageName latestRelease
-          displayMaintainer (metadata ^. #maintainer)
+          foldMap (displayMaintainer . maintainer) metadata
           displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayDependents (namespace, packageName) numberOfDependents dependents
 
@@ -84,7 +85,7 @@ displayLicense license = do
   li_ [class_ "mb-5"] $ do
     div_ [class_ "license mb-3"] $ do
       h3_ [class_ "lg:text-2xl package-body-section"] "License"
-    p_ [class_ "package-body-section__"] $ toHtml license
+    p_ [class_ "package-body-section__license"] $ toHtml license
 
 displayCategories :: Vector Category -> FloraHTML
 displayCategories categories = do
@@ -117,8 +118,9 @@ displayVersions namespace packageName versions =
     displayVersion :: Release -> FloraHTML
     displayVersion release =
       li_ [class_ "package-version"] $ do
-        a_ [href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)))] $
-          strong_ (toHtml $ display (release ^. #version))
+        a_
+          [href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)))]
+          (toHtml $ display (release ^. #version))
         case release ^. #uploadedAt of
           Nothing -> ""
           Just ts ->
@@ -155,7 +157,7 @@ displayInstructions packageName latestRelease = do
       div_ [class_ "space-y-2"] $ do
         label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
         input_
-          [ class_ "font-mono shadow-sm text-base w-full bg-transparent focus:ring-indigo-500 focus:border-indigo-500 block border-gray-800 dark:border-gray-800 rounded-md"
+          [ class_ "package-install-string"
           , type_ "text"
           , id_ "install-string"
           , onfocus_ "this.select();"
@@ -166,8 +168,8 @@ displayInstructions packageName latestRelease = do
 displayMaintainer :: Text -> FloraHTML
 displayMaintainer maintainerInfo = do
   li_ [class_ "mb-5"] $ do
-    h3_ [class_ "lg:text-2xl package-body-esction mb-3"] "Maintainer"
-    p_ (toHtml maintainerInfo)
+    h3_ [class_ "lg:text-2xl package-body-section mb-3"] "Maintainer"
+    p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
 
 displayDependents ::
   (Namespace, PackageName) ->
