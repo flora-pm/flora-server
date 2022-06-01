@@ -95,6 +95,7 @@ library
     Flora.Model.Category.Query
     Flora.Model.Category.Types
     Flora.Model.Category.Update
+    Flora.Model.Downloads
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Component
@@ -119,6 +120,7 @@ library
     FloraWeb.Autoreload
     FloraWeb.Client
     FloraWeb.Components.CategoryCard
+    FloraWeb.Components.Footer
     FloraWeb.Components.Header
     FloraWeb.Components.Navbar
     FloraWeb.Components.PackageListHeader

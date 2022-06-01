@@ -18,10 +18,15 @@ packageLink :: Namespace -> PackageName -> Link
 packageLink (Namespace namespace) (PackageName packageName) =
   links
     // Web.packages
-    // Web.show /: namespace /: packageName
+    // Web.show
+    /: namespace
+    /: packageName
 
 packageVersionLink :: Namespace -> PackageName -> Version -> Link
 packageVersionLink (Namespace namespace) (PackageName packageName) version =
   links
     // Web.packages
-    // Web.showVersion /: ("@" <> namespace) /: packageName /: display version
+    // Web.showVersion
+    /: ("@" <> namespace)
+    /: packageName
+    /: display version

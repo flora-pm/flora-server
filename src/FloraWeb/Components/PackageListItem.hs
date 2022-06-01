@@ -16,7 +16,8 @@ packageListItem (namespace, name, synopsis, version) = do
   li_ [class_ "package-list-item"] $
     a_ [href, class_ "block md:my-6"] $ do
       h4_ [class_ "package-list-item__name"] $
-        strong_ [class_ ""] . toHtml $ prettyPackageName namespace name
+        strong_ [class_ ""] . toHtml $
+          prettyPackageName namespace name
       p_ [class_ "package-list-item__synopsis"] $ toHtml synopsis
       div_ [class_ "package-list-item__version"] $ toHtml version
 
