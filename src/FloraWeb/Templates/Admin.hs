@@ -22,11 +22,13 @@ dataReport adminReport = do
         [class_ "text-sm font-medium truncate"]
         "Total Packages"
       dd_ [class_ "mt-1 text-3xl font-semibold"] $
-        toHtml $ display (adminReport ^. #totalPackages)
+        toHtml $
+          display (adminReport ^. #totalPackages)
 
     div_ [class_ cardClass] $ do
       dt_
         [class_ "text-sm font-medium truncate"]
         "Total Users"
       dd_ [class_ "mt-1 text-3xl font-semibold"] $
-        toHtml $ display (adminReport ^. #totalUsers)
+        toHtml $
+          display (adminReport ^. #totalUsers)

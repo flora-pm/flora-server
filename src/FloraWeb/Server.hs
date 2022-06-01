@@ -79,12 +79,12 @@ runServer appLogger floraEnv = do
                 (floraEnv ^. #logging)
             )
             defaultSettings
-  runSettings warpSettings $
-    prometheusMiddleware (floraEnv ^. #environment) (floraEnv ^. #logging)
+  runSettings warpSettings
+    $ prometheusMiddleware (floraEnv ^. #environment) (floraEnv ^. #logging)
       . heartbeatMiddleware
       . loggingMiddleware
       . const
-      $ server
+    $ server
 
 mkServer :: Logger -> WebEnvStore -> FloraEnv -> Application
 mkServer logger webEnvStore floraEnv = do

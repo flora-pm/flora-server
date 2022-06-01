@@ -414,7 +414,8 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
   logImportMessage (dependentNamespace, dependentPackageName) $
     "Requiring @" <> display namespace <> "/" <> display name <> "…"
   logImportMessage (dependentNamespace, dependentPackageName) $
-    "Creating Requirement for package component " <> display packageComponentId
+    "Creating Requirement for package component "
+      <> display packageComponentId
       <> " on "
       <> "@"
       <> display namespace
@@ -426,7 +427,10 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
       logImportMessage (dependentNamespace, dependentPackageName) $
         "Required package: " <> "name: " <> display (package ^. #name)
       logImportMessage (dependentNamespace, dependentPackageName) $
-        "Dependency @" <> display namespace <> "/" <> display name
+        "Dependency @"
+          <> display namespace
+          <> "/"
+          <> display name
           <> " is in the database"
       requirementId <- RequirementId <$> liftIO UUID.nextRandom
       let requirement = display $ prettyShow $ Cabal.depVerRange cabalDependency
@@ -447,7 +451,10 @@ depToRequirement userId directory (dependentNamespace, dependentPackageName) cab
           pure [req]
       | otherwise -> do
           logImportMessage (dependentNamespace, dependentPackageName) $
-            "Dependency @" <> display namespace <> "/" <> display name
+            "Dependency @"
+              <> display namespace
+              <> "/"
+              <> display name
               <> " does not exist in the database, trying to import it from "
               <> T.pack directory
           let cabalPath = directory <> T.unpack (display name) <> ".cabal"
@@ -504,7 +511,11 @@ logImportMessage :: (MonadIO m) => (Namespace, PackageName) -> Text -> m ()
 logImportMessage (namespace, name) message =
   liftIO $
     T.putStrLn $
-      "[!] (@" <> display namespace <> "/" <> display name <> ")"
+      "[!] (@"
+        <> display namespace
+        <> "/"
+        <> display name
+        <> ")"
         <> " "
         <> message
         <> "\n"

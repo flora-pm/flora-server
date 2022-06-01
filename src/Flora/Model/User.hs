@@ -106,7 +106,7 @@ type CannotDisplayPassword e =
   'Text "🚫 Tried to convert plain-text Password to " ':<>: 'Text e ':<>: 'Text "!"
     ':$$: 'Text "  This is likely a security leak. Please make sure whether this was intended."
     ':$$: 'Text "  If this is intended, please use 'unsafeShowPassword' before converting to "
-    ':<>: 'Text e
+      ':<>: 'Text e
     ':$$: 'Text ""
 
 deriving via Text instance ToField (PasswordHash a)
