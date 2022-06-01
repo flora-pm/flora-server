@@ -1,4 +1,4 @@
-module Flora.Downloads where
+module Flora.Model.Downloads where
 
 import Data.Aeson
 import Data.Time (UTCTime)
