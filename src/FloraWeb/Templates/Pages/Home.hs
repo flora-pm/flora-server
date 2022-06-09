@@ -67,7 +67,8 @@ Flora is the work of volunteers, and the source can be read on [GitHub](https://
 <h3 class="font-bold text-xl dark:text-gray-100 my-10"> Moderation and Code of Conduct </h3>
 
 The Flora project is governed by a [Code of Conduct](https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md).
-If you feel like a resource on the service or a participant in the project has an inappropriate behaviour in relation to the code of conduct at [moderation@flora.pm](mailto:moderation@flora.pm).
+If you feel like a resource on the service or a participant in the project has an inappropriate behaviour in relation to the code of conduct,
+please contact [moderation@flora.pm](mailto:moderation@flora.pm).
 
 |]
 
@@ -82,11 +83,14 @@ searchBar :: FloraHTML
 searchBar =
   form_ [action_ "/search", method_ "GET"] $ do
     div_ [class_ "main-search max-w-md mx-auto flex justify-center rounded-xl border-2 overflow-hidden"] $ do
+      label_ [for_ "search"] ""
       input_
         [ class_
-            "text-2xl text-gray-800 dark:bg-background-dark dark:focus-within:bg-blue-3 dark:text-gray-300 block rounded-md border-0 \
-            \ focus:outline-none focus:ring-0 focus:brand-purple flex-grow p-2 ml-2 dark:bg-blue-2"
+            "search-bar text-2xl text-gray-800 dark:bg-dark dark:focus-within:bg-blue-3 \
+            \ dark:text-gray-300 block rounded-md border-0 focus:outline-none focus:ring-0 \
+            \ focus:brand-purple flex-grow p-2 ml-2 dark:bg-blue-2"
         , type_ "search"
+        , id_ "search"
         , name_ "q"
         , placeholder_ "Find a package"
         , value_ ""
