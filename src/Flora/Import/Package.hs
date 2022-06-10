@@ -58,6 +58,7 @@ import Flora.Model.User
 import GHC.Generics (Generic)
 import qualified System.Directory as System
 import System.FilePath
+import Flora.Model.Package.Types (Package(synopsis))
 
 {- | This tuple represents the package that depends on any associated dependency/requirement.
  It is used in the recursive loading of Cabal files
@@ -195,7 +196,7 @@ extractPackageDataFromCabal userId genericDesc = do
           { packageId
           , namespace
           , name = packageName
-          , synopsis = Nothing
+          , synopsis = packageDesc ^. #synopsis % to display % to Just
           , metadata = Just metadata
           , ownerId = userId
           , createdAt = timestamp
