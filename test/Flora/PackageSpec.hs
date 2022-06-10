@@ -11,6 +11,7 @@ import Test.Tasty
 import Data.Foldable
 import Data.Function
 import qualified Data.Vector as V
+import Flora.Environment (TestEnv (TestEnv))
 import Flora.Import.Package
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Model.Category (Category (..))
@@ -121,8 +122,9 @@ testBytestringDependencies = do
   assertEqual 4 (Vector.length latestReleasedependencies)
 
 importAllPackages :: Fixtures -> TestM ()
-importAllPackages fixtures =
-  liftDB $
-    importAllFilesInRelativeDirectory
-      (fixtures ^. #hackageUser % #userId)
-      "./test/fixtures/Cabal/"
+importAllPackages fixtures = do
+  TestEnv _ pool <- getTestEnv
+  importAllFilesInRelativeDirectory
+    pool
+    (fixtures ^. #hackageUser % #userId)
+    "./test/fixtures/Cabal/"

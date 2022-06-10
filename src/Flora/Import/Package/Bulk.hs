@@ -7,9 +7,10 @@ import qualified System.Directory as System
 
 import Control.Concurrent (getNumCapabilities, modifyMVar, newMVar)
 import Control.Concurrent.Async (async, wait)
-import Control.Monad
 import Data.Function
-import Database.PostgreSQL.Transact (DBT)
+import Data.Pool (Pool)
+import Database.PostgreSQL.Entity.DBT
+import Database.PostgreSQL.Simple (Connection)
 import Flora.Import.Package (loadAndExtractCabalFile, persistImportOutput)
 import qualified Flora.Model.Package.Update as Update
 import qualified Flora.Model.Release.Update as Update
@@ -20,30 +21,29 @@ import qualified Streaming.Prelude as Str
 import System.FilePath
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
-importAllFilesInRelativeDirectory :: MonadIO m => UserId -> FilePath -> DBT m ()
-importAllFilesInRelativeDirectory user dir = do
+importAllFilesInRelativeDirectory :: MonadIO m => Pool Connection -> UserId -> FilePath -> m ()
+importAllFilesInRelativeDirectory pool user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importAllFilesInDirectory user workdir
+  importAllFilesInDirectory pool user workdir
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
-importAllFilesInDirectory :: MonadIO m => UserId -> FilePath -> DBT m ()
-importAllFilesInDirectory user dir = do
+importAllFilesInDirectory :: MonadIO m => Pool Connection -> UserId -> FilePath -> m ()
+importAllFilesInDirectory pool user dir = do
   parallelWorkers <- liftIO getNumCapabilities
+  let chunkSize = 200
   countMVar <- liftIO $ newMVar @Int 0
   findAllCabalFilesInDirectory dir
-    & Str.mapM (liftIO . async . loadAndExtractCabalFile user)
-    & chunksOf parallelWorkers
+    & parMapM parallelWorkers (liftIO . loadAndExtractCabalFile user)
+    & chunksOf chunkSize
     & Str.mapped Str.toList
     & Str.mapM_ (persistChunk countMVar)
-  Update.refreshLatestVersions
-  Update.refreshDependents
+  withPool pool $ Update.refreshLatestVersions >> Update.refreshDependents
   where
-    persistChunk countMvar = traverse_ (processItem countMvar)
-    processItem countMvar asyncImportOutput = do
-      importOutput <- liftIO $ wait asyncImportOutput
-      persistImportOutput importOutput
-      newCount <- liftIO $ modifyMVar countMvar (\c -> pure (c + 1, c + 1))
-      liftIO $ when (newCount `mod` 100 == 0) (putStrLn $ "✅ Processed " <> show newCount <> " new component releases")
+    persistChunk countMvar chunk = do
+      let size = length chunk
+      newCount <- liftIO $ modifyMVar countMvar (\c -> pure (c + size, c + size))
+      withPool pool $ traverse_ persistImportOutput chunk
+      liftIO . putStrLn $ "✅ Processed " <> show newCount <> " new cabal files"
 
 {- | Finds all cabal files in the provided directory recursively
  Hits are written to the output channel as they are found, so it should be possible to process
@@ -66,3 +66,12 @@ findAllCabalFilesInDirectory workdir = do
         True -> inspectDir fullPath
         False | ".cabal" `isSuffixOf` fullPath -> Str.yield fullPath
         _ -> pure ()
+
+-- | Replaces each element of a stream with the result of an action, processing elements of the stream concurrently
+parMapM :: MonadIO m => Int -> (a -> IO b) -> Stream (Of a) m () -> Stream (Of b) m ()
+parMapM concurrentActions f str =
+  Str.mapM (liftIO . async . f) str
+    & chunksOf concurrentActions
+    & Str.mapped Str.toList
+    & Str.mapM (liftIO . traverse wait)
+    & Str.concat

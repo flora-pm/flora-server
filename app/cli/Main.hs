@@ -88,9 +88,7 @@ runOptions (Options (CoverageReport opts)) = runCoverageReport opts
 runOptions (Options Provision) = do
   env <- getFloraEnv
   catchViolation catViolationCatcher $ withPool (env ^. #pool) importCategories
-  withPool (env ^. #pool) $ do
-    hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
-    importAllFilesInRelativeDirectory (hackageUser ^. #userId) "./test/fixtures/Cabal/"
+  importFolderOfCabalFiles env "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
   env <- getFloraEnv
   withPool (env ^. #pool) $ do
@@ -112,9 +110,12 @@ runOptions (Options (CreateUser opts)) = do
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path)) = do
   env <- getFloraEnv
-  withPool (env ^. #pool) $ do
-    hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
-    importAllFilesInRelativeDirectory (hackageUser ^. #userId) path
+  importFolderOfCabalFiles env path
+
+importFolderOfCabalFiles :: FloraEnv -> FilePath -> IO ()
+importFolderOfCabalFiles env path = do
+  user <- withPool (env ^. #pool) (fromJust <$> Query.getUserByUsername "hackage-user")
+  importAllFilesInRelativeDirectory (env ^. #pool) (user ^. #userId) path
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
