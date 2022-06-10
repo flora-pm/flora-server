@@ -16,12 +16,24 @@ import Flora.Model.Package.Component (PackageComponent)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
+import Optics.Core
 
 insertPackage :: (MonadIO m) => Package -> DBT m ()
 insertPackage package = insert @Package package
 
 upsertPackage :: (MonadIO m) => Package -> DBT m ()
-upsertPackage package = upsert @Package package packageFieldsToUpsert
+upsertPackage package =
+  case package ^. #status of
+    UnknownPackage -> upsert @Package package [[field| owner_id |]]
+    FullyImportedPackage ->
+      upsert @Package
+        package
+        [ [field| synopsis |]
+        , [field| metadata :: jsonb |]
+        , [field| updated_at |]
+        , [field| status |]
+        , [field| owner_id |]
+        ]
 
 deletePackage :: (MonadIO m) => (Namespace, PackageName) -> DBT m ()
 deletePackage (namespace, packageName) = delete @Package (namespace, packageName)

@@ -29,7 +29,6 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Data.Vector
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
@@ -133,14 +132,6 @@ instance Entity Package where
     , [field| updated_at |]
     , [field| status |]
     ]
-
-packageFieldsToUpsert :: Vector Field
-packageFieldsToUpsert =
-  [ [field| synopsis |]
-  , [field| metadata :: jsonb |]
-  , [field| updated_at |]
-  , [field| status |]
-  ]
 
 data PackageMetadata = PackageMetadata
   { license :: SPDX.License
