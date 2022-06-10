@@ -64,9 +64,10 @@ parseCommand =
       <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
 
 parseProvision :: Parser Command
-parseProvision = subparser $
-  command "categories" (pure (Provision Categories) `withInfo` "Load the canonical categories in the system")
-  <> command "test-packages" (pure (Provision TestPackages) `withInfo` "Load the test packages in the database")
+parseProvision =
+  subparser $
+    command "categories" (pure (Provision Categories) `withInfo` "Load the canonical categories in the system")
+      <> command "test-packages" (pure (Provision TestPackages) `withInfo` "Load the test packages in the database")
 
 parseCoverageReport :: Parser Command
 parseCoverageReport =

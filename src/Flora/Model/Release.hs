@@ -47,7 +47,7 @@ data Release = Release
   -- ^ The SHA256 checksum of the stored archive for this release
   , uploadedAt :: Maybe UTCTime
   , --  ^ The timestamp of upload, provided by Hackage
-  createdAt :: UTCTime
+    createdAt :: UTCTime
   -- ^ Date of creation of this release
   , updatedAt :: UTCTime
   -- ^ Last update timestamp for this release

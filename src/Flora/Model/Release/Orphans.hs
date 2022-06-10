@@ -7,11 +7,11 @@ import qualified Data.ByteString.Char8 as C8
 import Data.Text.Display
 import qualified Data.Text.Lazy.Builder as Builder
 import Database.PostgreSQL.Simple.FromField
-  ( Conversion,
-    Field,
-    FromField (..),
-    ResultError (ConversionFailed, UnexpectedNull),
-    returnError,
+  ( Conversion
+  , Field
+  , FromField (..)
+  , ResultError (ConversionFailed, UnexpectedNull)
+  , returnError
   )
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Distribution.Parsec

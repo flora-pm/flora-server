@@ -13,10 +13,10 @@ import Distribution.Pretty (pretty)
 import qualified Distribution.SPDX.License as SPDX
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
-  ( Namespace,
-    Package (..),
-    PackageMetadata (..),
-    PackageName,
+  ( Namespace
+  , Package (..)
+  , PackageMetadata (..)
+  , PackageName
   )
 import Flora.Model.Release (Release (..))
 import qualified FloraWeb.Links as Links

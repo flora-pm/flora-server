@@ -2,11 +2,11 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module Flora.Model.Package.Component
-  ( ComponentId (..),
-    PackageComponent (..),
-    ComponentType (..),
-    CanonicalComponent (..),
-    deterministicComponentId,
+  ( ComponentId (..)
+  , PackageComponent (..)
+  , ComponentType (..)
+  , CanonicalComponent (..)
+  , deterministicComponentId
   )
 where
 

@@ -10,9 +10,9 @@ import Database.PostgreSQL.Entity (Entity)
 import Database.PostgreSQL.Entity.Types (GenericEntity, TableName)
 import Database.PostgreSQL.Simple (FromRow, ToRow)
 import Database.PostgreSQL.Simple.FromField
-  ( FromField,
-    fromField,
-    fromJSONField,
+  ( FromField
+  , fromField
+  , fromJSONField
   )
 import Database.PostgreSQL.Simple.ToField (ToField, toField, toJSONField)
 import GHC.Generics (Generic)

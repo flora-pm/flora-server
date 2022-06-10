@@ -2,25 +2,25 @@
 {-# OPTIONS_GHC -fno-warn-orphans -Wno-redundant-constraints #-}
 
 module Flora.Model.User
-  ( UserId (..),
-    User (..),
-    UserFlags (..),
-    UserCreationForm (..),
-    AdminCreationForm (..),
-    mkUser,
-    mkAdmin,
-    hashPassword,
-    validatePassword,
+  ( UserId (..)
+  , User (..)
+  , UserFlags (..)
+  , UserCreationForm (..)
+  , AdminCreationForm (..)
+  , mkUser
+  , mkAdmin
+  , hashPassword
+  , validatePassword
   )
 where
 
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Password.Argon2
-  ( Argon2,
-    Password,
-    PasswordCheck (PasswordCheckSuccess),
-    PasswordHash,
+  ( Argon2
+  , Password
+  , PasswordCheck (PasswordCheckSuccess)
+  , PasswordHash
   )
 import qualified Data.Password.Argon2 as Argon2
 import Data.Text (Text)

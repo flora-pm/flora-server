@@ -49,10 +49,10 @@ import qualified Flora.Model.Package.Update as Update
 import Flora.Model.Release
 import qualified Flora.Model.Release.Update as Update
 import Flora.Model.Requirement
-  ( Requirement (..),
-    RequirementMetadata (..),
-    deterministicRequirementId,
-    flag,
+  ( Requirement (..)
+  , RequirementMetadata (..)
+  , deterministicRequirementId
+  , flag
   )
 import Flora.Model.User
 import GHC.Generics (Generic)

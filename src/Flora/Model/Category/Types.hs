@@ -42,15 +42,8 @@ data Category = Category
     (Entity)
     via (GenericEntity '[TableName "categories"] Category)
 
-newtype PackageCategoryId = PackageCategoryId {getPackageCategoryId :: UUID}
-  deriving stock (Generic, Show)
-  deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
-    via UUID
-
 data PackageCategory = PackageCategory
-  { packageCategoryId :: PackageCategoryId
-  , packageId :: PackageId
+  { packageId :: PackageId
   , categoryId :: CategoryId
   }
   deriving stock (Eq, Generic, Show)

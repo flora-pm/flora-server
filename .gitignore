@@ -23,3 +23,4 @@ result*
 cbits/*.cpp
 pgdata/
 .vscode/
+.DS_Store
