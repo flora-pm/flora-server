@@ -26,11 +26,16 @@ data Options = Options
   deriving stock (Show, Eq)
 
 data Command
-  = Provision
+  = Provision ProvisionTarget
   | CoverageReport CoverageReportOptions
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
   | ImportPackages FilePath
+  deriving stock (Show, Eq)
+
+data ProvisionTarget
+  = Categories
+  | TestPackages
   deriving stock (Show, Eq)
 
 data UserCreationOptions = UserCreationOptions
@@ -52,14 +57,16 @@ parseOptions =
 parseCommand :: Parser Command
 parseCommand =
   subparser $
-    command "provision-fixtures" (parseProvision `withInfo` "Load the test fixtures into the database")
+    command "provision" (parseProvision `withInfo` "Load the test fixtures into the database")
       <> command "coverage-report" (parseCoverageReport `withInfo` "Run a coverage report of the category mapping")
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
       <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
       <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
 
 parseProvision :: Parser Command
-parseProvision = pure Provision
+parseProvision = subparser $
+  command "categories" (pure (Provision Categories) `withInfo` "Load the canonical categories in the system")
+  <> command "test-packages" (pure (Provision TestPackages) `withInfo` "Load the test packages in the database")
 
 parseCoverageReport :: Parser Command
 parseCoverageReport =
@@ -85,9 +92,11 @@ parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
 
 runOptions :: Options -> IO ()
 runOptions (Options (CoverageReport opts)) = runCoverageReport opts
-runOptions (Options Provision) = do
+runOptions (Options (Provision Categories)) = do
   env <- getFloraEnv
   catchViolation catViolationCatcher $ withPool (env ^. #pool) importCategories
+runOptions (Options (Provision TestPackages)) = do
+  env <- getFloraEnv
   importFolderOfCabalFiles env "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
   env <- getFloraEnv
