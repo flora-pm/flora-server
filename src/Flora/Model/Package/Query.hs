@@ -110,6 +110,7 @@ packageDependentsQuery =
                   , p."owner_id"
                   , p."created_at"
                   , p."updated_at"
+                  , p."status"
   FROM "packages" AS p
 
         INNER JOIN "dependents" AS dep
