@@ -58,7 +58,6 @@ import Flora.Model.User
 import GHC.Generics (Generic)
 import qualified System.Directory as System
 import System.FilePath
-import Flora.Model.Package.Types (Package(synopsis))
 
 {- | This tuple represents the package that depends on any associated dependency/requirement.
  It is used in the recursive loading of Cabal files
