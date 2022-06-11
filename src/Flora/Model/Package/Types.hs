@@ -3,6 +3,7 @@
 
 module Flora.Model.Package.Types where
 
+import qualified Crypto.Hash.MD5 as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.Data
@@ -10,12 +11,11 @@ import Data.Text (Text, unpack)
 import Data.Text.Display
 import Data.Time (UTCTime)
 import Data.UUID
-import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple.FromField (FromField (..))
+import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes
-import Database.PostgreSQL.Simple.ToField (ToField (..))
+import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
 import qualified Distribution.SPDX.License as SPDX
@@ -25,6 +25,10 @@ import Lucid
 import qualified Text.PrettyPrint as PP
 import Text.Regex.Pcre2
 
+import Data.ByteString (ByteString)
+import Data.ByteString.Lazy (fromStrict)
+import Data.Maybe (fromJust)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
@@ -37,6 +41,11 @@ newtype PackageId = PackageId {getPackageId :: UUID}
   deriving
     (Display)
     via ShowInstance UUID
+
+-- | Generates a package id deterministically by hashing the namespace and the package name
+deterministicPackageId :: Namespace -> PackageName -> PackageId
+deterministicPackageId (Namespace ns) (PackageName name) =
+  PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ ns <> name
 
 newtype PackageName = PackageName Text
   deriving stock (Show, Generic)
@@ -75,15 +84,36 @@ parseNamespace txt =
     then Just $ Namespace txt
     else Nothing
 
+data PackageStatus = UnknownPackage | FullyImportedPackage
+  deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
+
+parsePackageStatus :: ByteString -> Maybe PackageStatus
+parsePackageStatus "unknown" = pure UnknownPackage
+parsePackageStatus "fully-imported" = pure FullyImportedPackage
+parsePackageStatus _ = Nothing
+
+instance Display PackageStatus where
+  displayBuilder UnknownPackage = "unknown"
+  displayBuilder FullyImportedPackage = "fully-imported"
+
+instance FromField PackageStatus where
+  fromField f Nothing = returnError UnexpectedNull f ""
+  fromField _ (Just bs) | Just status <- parsePackageStatus bs = pure status
+  fromField f (Just bs) = returnError ConversionFailed f $ unpack $ "Conversion error: Expected component to be one of " <> display @[PackageStatus] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
+
+instance ToField PackageStatus where
+  toField = Escape . encodeUtf8 . display
+
 data Package = Package
   { packageId :: PackageId
   , namespace :: Namespace
   , name :: PackageName
-  , synopsis :: Text
-  , metadata :: PackageMetadata
+  , synopsis :: Maybe Text
+  , metadata :: Maybe PackageMetadata
   , ownerId :: UserId
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
+  , status :: PackageStatus
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, ToRow)
@@ -100,6 +130,7 @@ instance Entity Package where
     , [field| owner_id |]
     , [field| created_at |]
     , [field| updated_at |]
+    , [field| status |]
     ]
 
 data PackageMetadata = PackageMetadata

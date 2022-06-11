@@ -1,17 +1,21 @@
 module Flora.Model.Release where
 
+import qualified Crypto.Hash.MD5 as MD5
 import Data.Aeson (FromJSON, ToJSON)
 import Data.ByteString
 import Data.Time (UTCTime)
-import Data.UUID (UUID)
+import Data.UUID (UUID, fromByteString, toByteString)
 import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
 import Database.PostgreSQL.Simple (FromRow, ToRow)
 import Database.PostgreSQL.Simple.FromField (FromField)
 import Database.PostgreSQL.Simple.ToField (ToField)
-import Distribution.Types.Version (Version)
+import Distribution.Types.Version
 import GHC.Generics (Generic)
 
+import Data.ByteString.Lazy (fromStrict, toStrict)
+import Data.Maybe (fromJust)
 import Data.Text.Display
+import Distribution.Utils.Structured (structuredEncode)
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
 
@@ -22,6 +26,15 @@ newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
     (Display)
     via ShowInstance UUID
+
+-- | Generates a release id deterministically by hashing the package id and a version
+deterministicReleaseId :: PackageId -> Version -> ReleaseId
+deterministicReleaseId (PackageId packageId) version =
+  ReleaseId . fromJust . fromByteString . fromStrict . MD5.hash . toStrict $ concatenatedBs
+  where
+    concatenatedBs = packageIdBs <> versionBs
+    versionBs = structuredEncode version
+    packageIdBs = toByteString packageId
 
 data Release = Release
   { releaseId :: ReleaseId

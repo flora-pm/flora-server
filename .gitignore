@@ -1,4 +1,5 @@
 &
+01-index
 .envrc
 .hie
 .hspec-failures
@@ -22,3 +23,5 @@ result*
 cbits/*.cpp
 pgdata/
 .vscode/
+.DS_Store
+tags.lock

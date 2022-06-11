@@ -1,6 +1,7 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Display
 import Data.Time (defaultTimeLocale)
@@ -46,7 +47,7 @@ showPackage ::
   FloraHTML
 showPackage latestRelease packageReleases package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
   div_ [class_ "larger-container"] $ do
-    presentationHeader latestRelease namespace name synopsis
+    presentationHeader latestRelease namespace name (fromMaybe "" synopsis)
     packageBody package latestRelease packageReleases dependencies numberOfDependencies dependents numberOfDependents categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
@@ -66,13 +67,13 @@ packageBody Package{namespace, name = packageName, metadata} latestRelease packa
       div_ [class_ "package-left-column grow"] $ do
         ul_ [class_ "package-left-rows grid-rows-3"] $ do
           displayCategories categories
-          displayLicense (metadata ^. #license)
-          displayLinks packageName latestRelease metadata
+          foldMap (displayLicense . license) metadata
+          foldMap (displayLinks packageName latestRelease) metadata
           displayVersions namespace packageName packageReleases
       div_ [class_ "package-right-column md:max-w-xs"] $ do
         ul_ [class_ "package-right-rows grid-rows-3"] $ do
           displayInstructions packageName latestRelease
-          displayMaintainer (metadata ^. #maintainer)
+          foldMap (displayMaintainer . maintainer) metadata
           displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayDependents (namespace, packageName) numberOfDependents dependents
 

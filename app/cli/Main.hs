@@ -1,6 +1,5 @@
 module Main where
 
-import Control.Monad
 import Data.Password.Types
 import Database.PostgreSQL.Entity.DBT
 import Optics.Core
@@ -8,15 +7,16 @@ import Options.Applicative
 
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
-import Flora.Import.Package
-import Flora.Model.Package
 import Flora.Model.User
 import Flora.Model.User.Update
 
+import Control.Exception
 import CoverageReport
 import Data.Maybe
 import Data.Text (Text)
+import Database.PostgreSQL.Simple.Errors (ConstraintViolation (..), catchViolation)
 import DesignSystem (generateComponents)
+import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import qualified Flora.Model.User.Query as Query
 import GHC.Generics (Generic)
 
@@ -26,10 +26,16 @@ data Options = Options
   deriving stock (Show, Eq)
 
 data Command
-  = Provision
+  = Provision ProvisionTarget
   | CoverageReport CoverageReportOptions
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
+  | ImportPackages FilePath
+  deriving stock (Show, Eq)
+
+data ProvisionTarget
+  = Categories
+  | TestPackages
   deriving stock (Show, Eq)
 
 data UserCreationOptions = UserCreationOptions
@@ -51,13 +57,17 @@ parseOptions =
 parseCommand :: Parser Command
 parseCommand =
   subparser $
-    command "provision-fixtures" (parseProvision `withInfo` "Load the test fixtures into the database")
+    command "provision" (parseProvision `withInfo` "Load the test fixtures into the database")
       <> command "coverage-report" (parseCoverageReport `withInfo` "Run a coverage report of the category mapping")
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
       <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
+      <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
 
 parseProvision :: Parser Command
-parseProvision = pure Provision
+parseProvision =
+  subparser $
+    command "categories" (pure (Provision Categories) `withInfo` "Load the canonical categories in the system")
+      <> command "test-packages" (pure (Provision TestPackages) `withInfo` "Load the test packages in the database")
 
 parseCoverageReport :: Parser Command
 parseCoverageReport =
@@ -78,18 +88,17 @@ parseCreateUser =
 parseGenDesignSystem :: Parser Command
 parseGenDesignSystem = pure GenDesignSystemComponents
 
+parseImportPackages :: Parser Command
+parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
+
 runOptions :: Options -> IO ()
 runOptions (Options (CoverageReport opts)) = runCoverageReport opts
-runOptions (Options Provision) = do
+runOptions (Options (Provision Categories)) = do
   env <- getFloraEnv
-  withPool (env ^. #pool) $ do
-    hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
-
-    void importCategories
-
-    void $ importPackage (hackageUser ^. #userId) (PackageName "parsec") "./test/fixtures/Cabal/"
-    void $ importPackage (hackageUser ^. #userId) (PackageName "Cabal") "./test/fixtures/Cabal/"
-    void $ importPackage (hackageUser ^. #userId) (PackageName "bytestring") "./test/fixtures/Cabal/"
+  catchViolation catViolationCatcher $ withPool (env ^. #pool) importCategories
+runOptions (Options (Provision TestPackages)) = do
+  env <- getFloraEnv
+  importFolderOfCabalFiles env "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
   env <- getFloraEnv
   withPool (env ^. #pool) $ do
@@ -109,6 +118,18 @@ runOptions (Options (CreateUser opts)) = do
         let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
         insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
+runOptions (Options (ImportPackages path)) = do
+  env <- getFloraEnv
+  importFolderOfCabalFiles env path
+
+importFolderOfCabalFiles :: FloraEnv -> FilePath -> IO ()
+importFolderOfCabalFiles env path = do
+  user <- withPool (env ^. #pool) (fromJust <$> Query.getUserByUsername "hackage-user")
+  importAllFilesInRelativeDirectory (env ^. #pool) (user ^. #userId) path
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
+
+catViolationCatcher :: Exception e => e -> ConstraintViolation -> IO ()
+catViolationCatcher _ (UniqueViolation _) = pure ()
+catViolationCatcher e _ = throwIO e

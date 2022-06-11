@@ -6,9 +6,11 @@ module Flora.Model.Package.Component
   , PackageComponent (..)
   , ComponentType (..)
   , CanonicalComponent (..)
+  , deterministicComponentId
   )
 where
 
+import qualified Crypto.Hash.MD5 as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.ByteString
@@ -28,6 +30,8 @@ import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import GHC.Generics
 import Optics.Core
 
+import Data.ByteString.Lazy (fromStrict)
+import Data.Maybe
 import Flora.Model.Release
 
 newtype ComponentId = ComponentId {getComponentId :: UUID}
@@ -36,6 +40,12 @@ newtype ComponentId = ComponentId {getComponentId :: UUID}
     (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON)
     via UUID
   deriving (Display) via ShowInstance UUID
+
+deterministicComponentId :: ReleaseId -> CanonicalComponent -> ComponentId
+deterministicComponentId releaseId canonicalForm =
+  ComponentId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
+  where
+    concatenated = display releaseId <> display canonicalForm
 
 data ComponentType
   = Library
@@ -53,13 +63,9 @@ instance Display ComponentType where
   displayBuilder ForeignLib = "foreign-library"
 
 instance FromField ComponentType where
-  fromField f mdata =
-    case mdata of
-      Nothing -> returnError UnexpectedNull f ""
-      Just bs ->
-        case parseComponentType bs of
-          Just a -> pure a
-          Nothing -> returnError ConversionFailed f $ T.unpack $ "Conversion error: Expected component to be one of " <> display @[ComponentType] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
+  fromField f Nothing = returnError UnexpectedNull f ""
+  fromField _ (Just bs) | Just status <- parseComponentType bs = pure status
+  fromField f (Just bs) = returnError ConversionFailed f $ T.unpack $ "Conversion error: Expected component to be one of " <> display @[ComponentType] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
 
 parseComponentType :: ByteString -> Maybe ComponentType
 parseComponentType "library" = Just Library
