@@ -23,10 +23,10 @@ packageReleasesQuery = _selectWhere @Release [[field| package_id |]]
 
 getReleases :: MonadIO m => PackageId -> DBT m (Vector Release)
 getReleases pid = do
-  results <- query Select (packageReleasesQuery <> " LIMIT 6") (Only pid)
+  results <- query Select packageReleasesQuery (Only pid)
   if Vector.null results
     then pure results
-    else pure $ Vector.reverse $ Vector.modify MVector.sort results
+    else pure $ Vector.take 6 $ Vector.reverse $ Vector.modify MVector.sort results
 
 getAllReleases :: MonadIO m => PackageId -> DBT m (Vector Release)
 getAllReleases pid = do
