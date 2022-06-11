@@ -95,7 +95,7 @@ testCorrectNumberInHaskellNamespace :: Fixtures -> TestM ()
 testCorrectNumberInHaskellNamespace fixtures = do
   importAllPackages fixtures
   results <- liftDB $ Query.getPackagesByNamespace (Namespace "haskell")
-  assertEqual 21 (Vector.length results)
+  assertEqual (Set.size coreLibraries) (Vector.length results)
 
 testSearchingForBase :: Fixtures -> TestM ()
 testSearchingForBase fixtures = do
@@ -110,7 +110,7 @@ testBytestringDependents fixtures = do
   importAllPackages fixtures
   results <- liftDB $ Query.getAllPackageDependents (Namespace "haskell") (PackageName "bytestring")
   assertEqual
-    8
+    9
     (Vector.length results)
 
 testBytestringDependencies :: TestM ()

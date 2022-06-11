@@ -24,3 +24,4 @@ cbits/*.cpp
 pgdata/
 .vscode/
 .DS_Store
+tags.lock

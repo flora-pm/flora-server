@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 module Flora.Model.Category.Update where
 
 import Control.Monad.IO.Class

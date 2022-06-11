@@ -47,6 +47,7 @@ getPackagesFromCategorySlug slug =
               , p.owner_id
               , p.created_at
               , p.updated_at
+              , p.status
         from packages as p
         inner join package_categories as pc on (p.package_id = pc.package_id)
         where pc.category_id = ?
