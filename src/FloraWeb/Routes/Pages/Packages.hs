@@ -17,31 +17,31 @@ data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
   , show ::
       mode
-        :- Capture "namespace" Namespace
-          :> Capture "package" PackageName
+        :- Capture' '[Lenient] "namespace" Namespace
+          :> Capture' '[Lenient] "package" PackageName
           :> Get '[HTML] (Html ())
   , showDependents ::
       mode
-        :- Capture "namespace" Namespace
-          :> Capture "package" PackageName
+        :- Capture' '[Lenient] "namespace" Namespace
+          :> Capture' '[Lenient] "package" PackageName
           :> "dependents"
           :> Get '[HTML] (Html ())
   , showDependencies ::
       mode
-        :- Capture "namespace" Namespace
-          :> Capture "package" PackageName
+        :- Capture' '[Lenient] "namespace" Namespace
+          :> Capture' '[Lenient] "package" PackageName
           :> "dependencies"
           :> Get '[HTML] (Html ())
   , showVersion ::
       mode
-        :- Capture "namespace" Namespace
-          :> Capture "package" PackageName
-          :> Capture "version" Version
+        :- Capture' '[Lenient] "namespace" Namespace
+          :> Capture' '[Lenient] "package" PackageName
+          :> Capture' '[Lenient] "version" Version
           :> Get '[HTML] (Html ())
   , listVersions ::
       mode
-        :- Capture "namespace" Namespace
-          :> Capture "package" PackageName
+        :- Capture' '[Lenient] "namespace" Namespace
+          :> Capture' '[Lenient] "package" PackageName
           :> "versions"
           :> Get '[HTML] (Html ())
   }

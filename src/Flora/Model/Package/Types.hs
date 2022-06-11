@@ -101,7 +101,7 @@ parseNamespace txt =
     else Nothing
 
 data PackageStatus = UnknownPackage | FullyImportedPackage
-  deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
+ deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
 
 parsePackageStatus :: ByteString -> Maybe PackageStatus
 parsePackageStatus "unknown" = pure UnknownPackage
