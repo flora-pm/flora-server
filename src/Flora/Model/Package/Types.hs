@@ -28,10 +28,12 @@ import Text.Regex.Pcre2
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust)
+import qualified Data.Text as Text
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
-import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
+import Servant (FromHttpApiData (..))
+import Web.HttpApiData (ToHttpApiData)
 
 newtype PackageId = PackageId {getPackageId :: UUID}
   deriving stock (Generic)
@@ -51,7 +53,7 @@ newtype PackageName = PackageName Text
   deriving stock (Show, Generic)
   deriving anyclass (Souffle.Marshal)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml)
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, ToHttpApiData)
     via Text
 
 instance Pretty PackageName where
@@ -59,6 +61,12 @@ instance Pretty PackageName where
 
 instance Display PackageName where
   displayBuilder (PackageName name) = displayBuilder name
+
+instance FromHttpApiData PackageName where
+  parseUrlPiece piece =
+    case parsePackageName piece of
+      Nothing -> Left "Could not parse package name"
+      Just a -> Right a
 
 parsePackageName :: Text -> Maybe PackageName
 parsePackageName txt =
@@ -69,7 +77,7 @@ parsePackageName txt =
 newtype Namespace = Namespace Text
   deriving stock (Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml)
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, ToHttpApiData)
     via Text
 
 instance Pretty Namespace where
@@ -77,6 +85,14 @@ instance Pretty Namespace where
 
 instance Display Namespace where
   displayBuilder (Namespace name) = displayBuilder name
+
+instance FromHttpApiData Namespace where
+  parseUrlPiece piece =
+    case result of
+      Nothing -> Left "Could not parse namespace"
+      Just a -> Right a
+    where
+      result = Text.stripPrefix "@" piece >>= parseNamespace
 
 parseNamespace :: Text -> Maybe Namespace
 parseNamespace txt =

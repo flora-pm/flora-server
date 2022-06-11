@@ -18,6 +18,7 @@ import Data.Text.Display
 import Distribution.Utils.Structured (structuredEncode)
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
+import Optics.Core
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
@@ -57,3 +58,6 @@ data Release = Release
   deriving
     (Entity)
     via (GenericEntity '[TableName "releases"] Release)
+
+instance Ord Release where
+  compare x y = compare (x ^. #version) (y ^. #version)

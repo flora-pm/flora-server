@@ -4,7 +4,8 @@ module FloraWeb.Routes.Pages.Packages
   )
 where
 
-import Data.Text
+import Distribution.Types.Version (Version)
+import Flora.Model.Package (Namespace, PackageName)
 import Lucid
 import Servant
 import Servant.API.Generic
@@ -16,26 +17,32 @@ data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
   , show ::
       mode
-        :- Capture "namespace" Text
-          :> Capture "package" Text
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
           :> Get '[HTML] (Html ())
   , showDependents ::
       mode
-        :- Capture "namespace" Text
-          :> Capture "package" Text
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
           :> "dependents"
           :> Get '[HTML] (Html ())
   , showDependencies ::
       mode
-        :- Capture "namespace" Text
-          :> Capture "package" Text
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
           :> "dependencies"
           :> Get '[HTML] (Html ())
   , showVersion ::
       mode
-        :- Capture "namespace" Text
-          :> Capture "package" Text
-          :> Capture "version" Text
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
+          :> Capture "version" Version
+          :> Get '[HTML] (Html ())
+  , listVersions ::
+      mode
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
+          :> "versions"
           :> Get '[HTML] (Html ())
   }
   deriving stock (Generic)

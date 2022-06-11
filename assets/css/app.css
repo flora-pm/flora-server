@@ -129,18 +129,6 @@ li.package-list-item a:hover h4.package-list-item__name {
   text-decoration: underline;
 }
 
-li.category a:hover {
-  text-decoration: underline;
-}
-
-li.dependency a:hover {
-  text-decoration: underline;
-}
-
-li.dependents a.dependent:hover {
-  text-decoration: underline;
-}
-
 .package-link a:hover {
   text-decoration: underline;
 }
@@ -163,6 +151,51 @@ li.dependents a.dependent:hover {
 
 .package-version {
   @apply dark:text-purple-7;
+}
+
+
+ul.version-list a {
+  @apply py-3 pl-4;
+}
+
+li.version-list-item a:hover {
+  @apply bg-gray-7 dark:bg-blue-1;
+}
+
+li.version-list-item a:hover h4.version-list-item__name {
+  text-decoration: underline;
+}
+
+.version-link a:hover {
+  text-decoration: underline;
+}
+
+.version-list-item {
+  @apply xl:text-xl;
+}
+
+.version-list-item__name {
+  @apply inline mr-2 text-gray-1 dark:text-purple-7;
+}
+
+.version-list-item__version {
+  @apply text-sm mt-2 text-gray-2 dark:text-gray-7;
+}
+
+.version-list-item__synopsis {
+  @apply inline text-black dark:text-gray-7;
+}
+
+li.category a:hover {
+  text-decoration: underline;
+}
+
+li.dependency a:hover {
+  text-decoration: underline;
+}
+
+li.dependents a.dependent:hover {
+  text-decoration: underline;
 }
 
 .main-search {

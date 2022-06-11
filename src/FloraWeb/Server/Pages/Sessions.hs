@@ -14,7 +14,7 @@ import Flora.Model.User.Orphans ()
 import qualified Flora.Model.User.Query as Query
 import FloraWeb.Routes.Pages.Sessions
 import FloraWeb.Server.Auth
-import FloraWeb.Server.Util
+import FloraWeb.Server.Utils
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Pages.Sessions as Sessions

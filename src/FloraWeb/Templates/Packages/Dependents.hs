@@ -11,7 +11,7 @@ import FloraWeb.Templates.Packages.Listing
 import Lucid
 
 showDependents :: Text -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
-showDependents searchString packagesInfo = do
+showDependents searchString packagesInfo =
   div_ [class_ "container dark:text-gray-100 text-black"] $ do
     presentationHeader searchString "" (fromIntegral $ Vector.length packagesInfo)
     div_ [class_ "md:col-span-3"] $ packageListing packagesInfo
