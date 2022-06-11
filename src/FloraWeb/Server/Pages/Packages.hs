@@ -55,7 +55,7 @@ showHandler namespace packageName = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   package <- guardThatPackageExists namespace packageName
-  releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
+  releases <- liftIO $ withPool pool $ Query.getAllReleases (package ^. #packageId)
   let latestRelease = maximumBy (compare `on` version) releases
   showPackageVersion namespace packageName (latestRelease ^. #version)
 
@@ -107,7 +107,7 @@ showDependenciesHandler namespace packageName = do
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   templateEnv <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
-  releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
+  releases <- liftIO $ withPool pool $ Query.getAllReleases (package ^. #packageId)
   let latestRelease = maximumBy (compare `on` version) releases
   latestReleasedependencies <-
     liftIO $ withPool pool $ Query.getAllRequirements (latestRelease ^. #releaseId)
@@ -122,5 +122,5 @@ listVersionsHandler namespace packageName = do
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   templateEnv <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
-  releases <- liftIO $ withPool pool $ Query.getReleases (package ^. #packageId)
+  releases <- liftIO $ withPool pool $ Query.getAllReleases (package ^. #packageId)
   render templateEnv $ PackageVersions.listVersions namespace packageName releases
