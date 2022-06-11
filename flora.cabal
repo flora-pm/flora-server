@@ -126,6 +126,8 @@ library
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.Utils
+    FloraWeb.Components.VersionListHeader
+    FloraWeb.Components.VersionListItem
     FloraWeb.Links
     FloraWeb.Routes
     FloraWeb.Routes.Pages
@@ -137,6 +139,7 @@ library
     FloraWeb.Server
     FloraWeb.Server.Auth
     FloraWeb.Server.Auth.Types
+    FloraWeb.Server.Guards
     FloraWeb.Server.Logging
     FloraWeb.Server.Metrics
     FloraWeb.Server.Pages
@@ -146,7 +149,7 @@ library
     FloraWeb.Server.Pages.Search
     FloraWeb.Server.Pages.Sessions
     FloraWeb.Server.Tracing
-    FloraWeb.Server.Util
+    FloraWeb.Server.Utils
     FloraWeb.Session
     FloraWeb.Templates
     FloraWeb.Templates.Admin
@@ -156,6 +159,7 @@ library
     FloraWeb.Templates.Packages.Dependencies
     FloraWeb.Templates.Packages.Dependents
     FloraWeb.Templates.Packages.Listing
+    FloraWeb.Templates.Packages.Versions
     FloraWeb.Templates.Pages.Categories
     FloraWeb.Templates.Pages.Categories.Index
     FloraWeb.Templates.Pages.Categories.Show
@@ -217,8 +221,8 @@ library
     , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
     , souffle-haskell            ^>=3.3
-    , streaming                  ^>=0.2
     , split                      ^>=0.2
+    , streaming                  ^>=0.2
     , template-haskell
     , text                       ^>=1.2
     , text-display               ^>=0.0.2
@@ -229,6 +233,7 @@ library
     , unordered-containers       ^>=0.2
     , uuid                       ^>=1.3
     , vector                     ^>=0.12
+    , vector-algorithms          ^>=0.8
     , wai                        ^>=3.2
     , wai-log                    ^>=0.3
     , wai-middleware-heartbeat   ^>=0.0
@@ -264,7 +269,7 @@ executable flora-cli
     , colourista
     , directory
     , flora
-    , http-client                ==0.7.10
+    , http-client           ==0.7.10
     , log-base
     , lucid
     , monad-control

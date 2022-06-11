@@ -207,7 +207,7 @@ getNumberOfPackageRequirements releaseId = do
 numberOfPackageRequirementsQuery :: Query
 numberOfPackageRequirementsQuery =
   [sql|
-    select distinct count(*)
+    select distinct count(rel."release_id")
      from requirements as req
      inner join packages as dependency on dependency.package_id = req.package_id
      inner join package_components as pc ON pc.package_component_id = req.package_component_id

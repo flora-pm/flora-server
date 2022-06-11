@@ -1,6 +1,5 @@
 module FloraWeb.Links where
 
-import Data.Text.Display (display)
 import Distribution.Version (Version)
 import Flora.Model.Package (Namespace (..), PackageName (..))
 import Flora.Model.Release.Orphans ()
@@ -15,7 +14,7 @@ links :: Pages.Routes' (Links.AsLink Link)
 links = Links.allFieldLinks
 
 packageLink :: Namespace -> PackageName -> Link
-packageLink (Namespace namespace) (PackageName packageName) =
+packageLink namespace packageName =
   links
     // Web.packages
     // Web.show
@@ -23,10 +22,10 @@ packageLink (Namespace namespace) (PackageName packageName) =
     /: packageName
 
 packageVersionLink :: Namespace -> PackageName -> Version -> Link
-packageVersionLink (Namespace namespace) (PackageName packageName) version =
+packageVersionLink namespace packageName version =
   links
     // Web.packages
     // Web.showVersion
-    /: ("@" <> namespace)
+    /: namespace
     /: packageName
-    /: display version
+    /: version

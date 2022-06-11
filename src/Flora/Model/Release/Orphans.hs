@@ -4,6 +4,7 @@ module Flora.Model.Release.Orphans where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as C8
+import qualified Data.Text as Text
 import Data.Text.Display
 import qualified Data.Text.Lazy.Builder as Builder
 import Database.PostgreSQL.Simple.FromField
@@ -20,6 +21,7 @@ import qualified Distribution.Pretty as Pretty
 import Distribution.Simple.Utils (fromUTF8BS)
 import Distribution.Types.Version
 import Distribution.Types.VersionRange
+import Servant (FromHttpApiData (..), ToHttpApiData (..))
 
 instance FromField Version where
   fromField :: Field -> Maybe ByteString -> Conversion Version
@@ -32,6 +34,15 @@ instance FromField Version where
           Nothing ->
             returnError ConversionFailed f $
               "Conversion error: Expected valid version expression, got: " <> fromUTF8BS bs
+
+instance ToHttpApiData Version where
+  toUrlPiece = Text.pack . Pretty.prettyShow
+
+instance FromHttpApiData Version where
+  parseUrlPiece piece =
+    case simpleParsec $ Text.unpack piece of
+      Nothing -> Left $ "Could not parse version string: " <> piece
+      Just a -> Right a
 
 instance ToField Version where
   toField = Escape . C8.pack . Pretty.prettyShow

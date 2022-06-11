@@ -28,16 +28,18 @@ import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
 
-data Target = Dependents | Dependencies
+data Target = Dependents | Dependencies | Versions
   deriving stock (Eq, Ord)
 
 instance Display Target where
   displayBuilder Dependents = "dependents"
   displayBuilder Dependencies = "dependencies"
+  displayBuilder Versions = "versions"
 
 showPackage ::
   Release ->
   Vector Release ->
+  Word -> 
   Package ->
   Vector Package ->
   Word ->
@@ -45,10 +47,10 @@ showPackage ::
   Word ->
   Vector Category ->
   FloraHTML
-showPackage latestRelease packageReleases package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
+showPackage latestRelease packageReleases numberOfReleases package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
   div_ [class_ "larger-container"] $ do
     presentationHeader latestRelease namespace name (fromMaybe "" synopsis)
-    packageBody package latestRelease packageReleases dependencies numberOfDependencies dependents numberOfDependents categories
+    packageBody package latestRelease packageReleases numberOfReleases dependencies numberOfDependencies dependents numberOfDependents categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = do
@@ -60,8 +62,8 @@ presentationHeader release namespace name synopsis = do
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
-packageBody :: Package -> Release -> Vector Release -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
-packageBody Package{namespace, name = packageName, metadata} latestRelease packageReleases dependencies numberOfDependencies dependents numberOfDependents categories =
+packageBody :: Package -> Release -> Vector Release -> Word -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
+packageBody Package{namespace, name = packageName, metadata} latestRelease packageReleases numberOfReleases dependencies numberOfDependencies dependents numberOfDependents categories =
   div_ $ do
     div_ [class_ "package-body md:flex"] $ do
       div_ [class_ "package-left-column grow"] $ do
@@ -69,7 +71,7 @@ packageBody Package{namespace, name = packageName, metadata} latestRelease packa
           displayCategories categories
           foldMap (displayLicense . license) metadata
           foldMap (displayLinks packageName latestRelease) metadata
-          displayVersions namespace packageName packageReleases
+          displayVersions namespace packageName packageReleases numberOfReleases
       div_ [class_ "package-right-column md:max-w-xs"] $ do
         ul_ [class_ "package-right-rows grid-rows-3"] $ do
           displayInstructions packageName latestRelease
@@ -108,12 +110,15 @@ displaySourceRepos :: [Text] -> FloraHTML
 displaySourceRepos [] = toHtml @Text "No source repository"
 displaySourceRepos x = a_ [href_ (head x)] "Source repository"
 
-displayVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
-displayVersions namespace packageName versions =
+displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
+displayVersions namespace packageName versions numberOfReleases =
   li_ [class_ "mb-5"] $ do
     h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Versions"
     ul_ [class_ "package-versions"] $ do
       forM_ versions displayVersion
+      if fromIntegral (Vector.length versions) >= numberOfReleases
+      then ""
+      else showAll (namespace, packageName, Versions)
   where
     displayVersion :: Release -> FloraHTML
     displayVersion release =

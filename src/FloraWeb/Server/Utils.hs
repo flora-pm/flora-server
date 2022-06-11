@@ -1,4 +1,4 @@
-module FloraWeb.Server.Util where
+module FloraWeb.Server.Utils where
 
 import Data.Text (Text)
 import Servant
