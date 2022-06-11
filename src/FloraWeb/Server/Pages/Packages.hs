@@ -15,22 +15,22 @@ import Servant (ServerT)
 
 import Flora.Environment
 import Flora.Model.Package
+import qualified Flora.Model.Package.Query as Query
 import Flora.Model.Release
+import qualified Flora.Model.Release.Query as Query
+import qualified Flora.Search as Search
 import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Guards
 import FloraWeb.Session
 import FloraWeb.Templates
-import FloraWeb.Types
-import Optics.Core
-import qualified Flora.Model.Package.Query as Query
-import qualified Flora.Model.Release.Query as Query
-import qualified Flora.Search as Search
 import qualified FloraWeb.Templates.Packages.Dependencies as PackageDependencies
 import qualified FloraWeb.Templates.Packages.Dependents as PackageDependents
 import qualified FloraWeb.Templates.Packages.Versions as PackageVersions
 import qualified FloraWeb.Templates.Pages.Packages as Packages
 import qualified FloraWeb.Templates.Pages.Search as Search
+import FloraWeb.Types
+import Optics.Core
 
 server :: ServerT Routes FloraPageM
 server =

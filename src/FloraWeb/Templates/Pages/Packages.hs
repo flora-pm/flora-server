@@ -39,7 +39,7 @@ instance Display Target where
 showPackage ::
   Release ->
   Vector Release ->
-  Word -> 
+  Word ->
   Package ->
   Vector Package ->
   Word ->
@@ -117,8 +117,8 @@ displayVersions namespace packageName versions numberOfReleases =
     ul_ [class_ "package-versions"] $ do
       forM_ versions displayVersion
       if fromIntegral (Vector.length versions) >= numberOfReleases
-      then ""
-      else showAll (namespace, packageName, Versions)
+        then ""
+        else showAll (namespace, packageName, Versions)
   where
     displayVersion :: Release -> FloraHTML
     displayVersion release =

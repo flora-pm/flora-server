@@ -56,7 +56,7 @@ data Release = Release
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
   deriving
-    Entity
+    (Entity)
     via (GenericEntity '[TableName "releases"] Release)
 
 instance Ord Release where
