@@ -8,15 +8,15 @@ import Data.Text.Display (display)
 import FloraWeb.Templates (FloraHTML)
 import Lucid
 
-import Flora.Model.Package (Namespace, PackageName, formatPackage)
+import Flora.Model.Package (Namespace, PackageName)
 
 packageListItem :: (Namespace, PackageName, Text, Text) -> FloraHTML
-packageListItem (namespace, name, synopsis, version) = do
-  let href = href_ ("/packages/@" <> display namespace <> "/" <> display name)
+packageListItem (namespace, packageName, synopsis, version) = do
+  let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
     a_ [href, class_ "block md:my-6"] $ do
       h4_ [class_ "package-list-item__name"] $
         strong_ [class_ ""] . toHtml $
-          formatPackage namespace name
+          display namespace <> "/" <> display packageName
       p_ [class_ "package-list-item__synopsis"] $ toHtml synopsis
       div_ [class_ "package-list-item__version"] $ toHtml version

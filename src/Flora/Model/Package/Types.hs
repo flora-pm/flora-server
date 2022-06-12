@@ -7,7 +7,7 @@ import qualified Crypto.Hash.MD5 as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.Data
-import Data.Text (Text, unpack)
+import Data.Text (Text, unpack, isPrefixOf)
 import Data.Text.Display
 import Data.Time (UTCTime)
 import Data.UUID
@@ -27,7 +27,7 @@ import Text.Regex.Pcre2
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import qualified Data.Text as Text
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Flora.Model.Package.Orphans ()
@@ -77,26 +77,35 @@ parsePackageName txt =
 newtype Namespace = Namespace Text
   deriving stock (Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, ToHttpApiData)
+    (Eq, Ord, FromJSON, ToJSON, ToHtml, ToHttpApiData)
     via Text
+
+instance ToField Namespace where
+  toField (Namespace txt) = toField $ fromMaybe txt (Text.stripPrefix "@" txt)
+
+instance FromField Namespace where
+  fromField f dat = do
+    (rawField :: Text) <- fromField f dat
+    pure $ Namespace rawField
 
 instance Pretty Namespace where
   pretty (Namespace txt) = PP.text $ unpack txt
 
 instance Display Namespace where
-  displayBuilder (Namespace name) = displayBuilder name
+  displayBuilder (Namespace name) =
+    if "@" `isPrefixOf` name
+    then displayBuilder name
+    else "@"<> displayBuilder name
 
 instance FromHttpApiData Namespace where
   parseUrlPiece piece =
-    case result of
+    case parseNamespace piece of
       Nothing -> Left "Could not parse namespace"
       Just a -> Right a
-    where
-      result = Text.stripPrefix "@" piece >>= parseNamespace
 
 parseNamespace :: Text -> Maybe Namespace
 parseNamespace txt =
-  if matches "[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
+  if matches "@[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
     then Just $ Namespace txt
     else Nothing
 

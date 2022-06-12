@@ -1,9 +1,11 @@
 module Flora.Search where
 
-import Data.Text
+import Data.Text (Text)
 import Data.Vector (Vector)
 
 import Control.Monad.IO.Class
+import Data.Text.Display (Display (..))
+import qualified Data.Text.Lazy.Builder as Builder
 import Database.PostgreSQL.Entity.DBT (withPool)
 import Distribution.Types.Version (Version)
 import Flora.Environment (FloraEnv (..))
@@ -14,21 +16,29 @@ import FloraWeb.Session (Session (..), getSession)
 import FloraWeb.Types (fetchFloraEnv)
 import Optics.Core
 
--- searchPackageByNamespace :: Namespace -> Text -> FloraPageM (Vector Package)
--- searchPackageByNamespace (Namespace namespace) query = undefined
+data SearchAction
+  = ListAllPackages
+  | SearchPackages Text
+  deriving (Eq, Ord, Show)
 
-searchPackageByName :: Text -> FloraPageM (Vector (Namespace, PackageName, Text, Version))
-searchPackageByName queryString = do
+instance Display SearchAction where
+  displayBuilder ListAllPackages = "Packages"
+  displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
+
+searchPackageByName :: Word -> Text -> FloraPageM (Vector (Namespace, PackageName, Text, Version))
+searchPackageByName pageNumber queryString = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-  results <- liftIO $ withPool pool $ Query.searchPackage queryString
+  results <- liftIO $ withPool pool $ Query.searchPackage pageNumber queryString
   let getInfo = (,,,) <$> view _1 <*> view _2 <*> view _3 <*> view _4
   pure $ fmap getInfo results
 
-listAllPackages :: FloraPageM (Vector (Namespace, PackageName, Text, Version))
-listAllPackages = do
+listAllPackages :: Word -> FloraPageM (Word, Vector (Namespace, PackageName, Text, Version))
+listAllPackages pageNumber = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-  results <- liftIO $ withPool pool Query.listAllPackages
+  results <- liftIO $ withPool pool $ Query.listAllPackages pageNumber
+  count <- liftIO $ withPool pool Query.countPackages
   let getInfo = (,,,) <$> view _1 <*> view _2 <*> view _3 <*> view _4
-  pure $ fmap getInfo results
+  let resultVector = fmap getInfo results
+  pure (count, resultVector)

@@ -13,7 +13,7 @@ import Lucid
 
 versionListItem :: Namespace -> PackageName -> Version -> FloraHTML
 versionListItem namespace packageName version = do
-  let href = href_ ("/packages/@" <> display namespace <> "/" <> display packageName <> "/" <> display version)
+  let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName <> "/" <> display version)
   li_ [class_ "version-list-item"] $
     a_ [href, class_ "block md:my-4"] $ do
       h4_ [class_ "version-list-item__name"] $

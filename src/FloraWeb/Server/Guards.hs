@@ -1,8 +1,6 @@
 module FloraWeb.Server.Guards where
 
 import Control.Monad.IO.Class (MonadIO (..))
-import Data.Text (Text)
-import qualified Data.Text as Text
 import Database.PostgreSQL.Entity.DBT (withPool)
 import Distribution.Types.Version (Version)
 import Flora.Environment (FloraEnv (..))
@@ -42,7 +40,3 @@ guardThatReleaseExists namespace packageName version = do
   case result of
     Nothing -> renderError templateEnv notFound404
     Just release -> pure release
-
-validateNamespace :: Text -> Maybe Namespace
-validateNamespace txt =
-  parseNamespace =<< Text.stripPrefix "@" txt

@@ -19,6 +19,6 @@ presentationHeader title subtitle numberOfPackages = do
       h2_ [class_ "text-center text-2xl tracking-tight sm:text-2xl lg:text-5xl"] $ do
         span_ [class_ "headline"] $ toHtml title
         toHtmlRaw @Text "&nbsp;"
-        span_ [class_ "dark:text-gray-200 version"] $ toHtml $ display numberOfPackages <> " packages"
+        span_ [class_ "dark:text-gray-200 version"] $ toHtml $ display numberOfPackages <> " results"
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml subtitle)

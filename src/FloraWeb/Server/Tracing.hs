@@ -1,8 +1,12 @@
 module FloraWeb.Server.Tracing where
 
-import Control.Exception (SomeException)
+import Control.Exception (SomeException, throw)
+import Data.Aeson ((.=))
+import qualified Data.Aeson as Aeson
 import Data.ByteString.Char8 (unpack)
+import Data.Text.Display (display)
 import Flora.Environment
+import Log (LogLevel (..), Logger, logAttention, runLogT)
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Optics.Core
@@ -10,10 +14,13 @@ import System.Log.Raven (initRaven, register, silentFallback)
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))
 
-sentryOnException :: DeploymentEnv -> LoggingEnv -> Maybe Request -> SomeException -> IO ()
-sentryOnException environment tracingEnv mRequest exception =
+onException :: Logger -> DeploymentEnv -> LoggingEnv -> Maybe Request -> SomeException -> IO ()
+onException logger environment tracingEnv mRequest exception =
   case tracingEnv ^. #sentryDSN of
-    Nothing -> pure ()
+    Nothing -> Log.runLogT "flora" logger LogAttention $ do
+      logAttention "Unhandled exception" $
+        Aeson.object ["exception" .= display (show exception)]
+      throw exception
     Just sentryDSN -> do
       sentryService <-
         initRaven

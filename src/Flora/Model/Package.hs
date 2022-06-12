@@ -9,4 +9,4 @@ import Data.Text.Display (display)
 import Flora.Model.Package.Types
 
 formatPackage :: Namespace -> PackageName -> Text
-formatPackage namespace packageName = "@" <> display namespace <> "/" <> display packageName
+formatPackage namespace packageName = display namespace <> "/" <> display packageName

@@ -125,6 +125,7 @@ library
     FloraWeb.Components.Navbar
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
+    FloraWeb.Components.PaginationNav
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
     FloraWeb.Components.VersionListItem
@@ -193,6 +194,7 @@ library
     , log-base                   ^>=0.11
     , lucid                      ^>=2.11
     , lucid-alpine               ^>=0.1
+    , lucid-aria                 ^>=0.1
     , lucid-svg                  ^>=0.7
     , monad-control              ^>=1.0
     , monad-time                 ^>=0.3
@@ -220,7 +222,7 @@ library
     , servant-server             ^>=0.19
     , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
-    , souffle-haskell            ^>=3.3
+    , souffle-haskell            ^>=3.4
     , split                      ^>=0.2
     , streaming                  ^>=0.2
     , template-haskell

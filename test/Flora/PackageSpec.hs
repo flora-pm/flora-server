@@ -32,7 +32,6 @@ spec fixtures =
     , testThis "@haskell/base belongs to the \"Prelude\" category" $ testThatBaseisInPreludeCategory fixtures
     , testThis "@hackage/semigroups belongs to appropriate categories" $ testThatSemigroupsIsInMathematicsAndDataStructures fixtures
     , testThis "The \"haskell\" namespace has the correct number of packages" $ testCorrectNumberInHaskellNamespace fixtures
-    , testThis "Searching for \"base\" returns the correct results" $ testSearchingForBase fixtures
     , testThis "@haskell/bytestring has the correct number of dependents" $ testBytestringDependents fixtures
     ]
 
@@ -96,14 +95,6 @@ testCorrectNumberInHaskellNamespace fixtures = do
   importAllPackages fixtures
   results <- liftDB $ Query.getPackagesByNamespace (Namespace "haskell")
   assertEqual (Set.size coreLibraries) (Vector.length results)
-
-testSearchingForBase :: Fixtures -> TestM ()
-testSearchingForBase fixtures = do
-  importAllPackages fixtures
-  result <- liftDB $ Query.searchPackage "base"
-  assertEqual
-    (Vector.fromList [(PackageName "base", 1.0), (PackageName "base-orphans", 0.3846154)])
-    (result <&> (,) <$> view _2 <*> view _5)
 
 testBytestringDependents :: Fixtures -> TestM ()
 testBytestringDependents fixtures = do
