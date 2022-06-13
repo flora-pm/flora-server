@@ -14,6 +14,7 @@ import Lucid.Orphans ()
 import Servant (ServerT)
 
 import Data.Maybe (fromMaybe)
+import Data.Text.Display (display)
 import Flora.Environment
 import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
@@ -31,9 +32,8 @@ import qualified FloraWeb.Templates.Packages.Versions as PackageVersions
 import qualified FloraWeb.Templates.Pages.Packages as Packages
 import qualified FloraWeb.Templates.Pages.Search as Search
 import FloraWeb.Types
-import Optics.Core
-import Data.Text.Display (display)
 import qualified Log
+import Optics.Core
 
 server :: ServerT Routes FloraPageM
 server =

@@ -7,7 +7,7 @@ import qualified Crypto.Hash.MD5 as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.Data
-import Data.Text (Text, unpack, isPrefixOf)
+import Data.Text (Text, isPrefixOf, unpack)
 import Data.Text.Display
 import Data.Time (UTCTime)
 import Data.UUID
@@ -94,8 +94,8 @@ instance Pretty Namespace where
 instance Display Namespace where
   displayBuilder (Namespace name) =
     if "@" `isPrefixOf` name
-    then displayBuilder name
-    else "@"<> displayBuilder name
+      then displayBuilder name
+      else "@" <> displayBuilder name
 
 instance FromHttpApiData Namespace where
   parseUrlPiece piece =
