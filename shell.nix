@@ -29,6 +29,6 @@ pkgs.mkShell rec {
     source environment.sh
     export LOCALE_ARCHIVE="/nix/store/m53mq2077pfxhqf37gdbj7fkkdc1c8hc-glibc-locales-2.27/lib/locale/locale-archive"
     export LC_ALL=C.UTF-8
-    cat scripts/nix-welcome.txt
+    cat scripts/shell-welcome.txt
   '';
 }
