@@ -1,20 +1,28 @@
 module FloraWeb.Templates.Pages.Search where
 
-import Data.Text
+import Control.Monad (when)
+import Data.Text (Text)
 import Data.Vector (Vector)
-import qualified Data.Vector as V
 import Distribution.Types.Version (Version)
 import Flora.Model.Package (Namespace, PackageName)
+import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
+import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Templates
 import FloraWeb.Templates.Packages.Listing (packageListing)
 import Lucid
 
-showAllPackages :: Vector (Namespace, PackageName, Text, Version) -> FloraHTML
-showAllPackages = showResults ""
-
-showResults :: Text -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
-showResults searchString packagesInfo = do
+showAllPackages :: Word -> Word -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
+showAllPackages count currentPage packagesInfo = do
   div_ [class_ "container dark:text-gray-100 text-black"] $ do
-    presentationHeader searchString "" (fromIntegral $ V.length packagesInfo)
+    presentationHeader "Packages" "" count
     div_ [class_ "md:col-span-3"] $ packageListing packagesInfo
+    paginationNav count currentPage ListAllPackages
+
+showResults :: Text -> Word -> Word -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
+showResults searchString count currentPage packagesInfo = do
+  div_ [class_ "container dark:text-gray-100 text-black"] $ do
+    presentationHeader searchString "" count
+    div_ [class_ "md:col-span-3"] $ packageListing packagesInfo
+    when (count <= 30) $
+      paginationNav count currentPage (SearchPackages searchString)

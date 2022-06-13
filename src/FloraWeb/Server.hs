@@ -74,7 +74,8 @@ runServer appLogger floraEnv = do
   let warpSettings =
         setPort (fromIntegral $ httpPort floraEnv) $
           setOnException
-            ( sentryOnException
+            ( onException
+                appLogger
                 (floraEnv ^. #environment)
                 (floraEnv ^. #logging)
             )

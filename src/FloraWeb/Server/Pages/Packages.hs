@@ -13,6 +13,7 @@ import Lucid
 import Lucid.Orphans ()
 import Servant (ServerT)
 
+import Data.Maybe (fromMaybe)
 import Flora.Environment
 import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
@@ -31,6 +32,8 @@ import qualified FloraWeb.Templates.Pages.Packages as Packages
 import qualified FloraWeb.Templates.Pages.Search as Search
 import FloraWeb.Types
 import Optics.Core
+import Data.Text.Display (display)
+import qualified Log
 
 server :: ServerT Routes FloraPageM
 server =
@@ -43,12 +46,13 @@ server =
     , listVersions = listVersionsHandler
     }
 
-indexHandler :: FloraPageM (Html ())
-indexHandler = do
+indexHandler :: Maybe Word -> FloraPageM (Html ())
+indexHandler pageParam = do
+  let pageNumber = fromMaybe 1 pageParam
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
-  results <- Search.listAllPackages
-  render templateDefaults $ Search.showAllPackages results
+  (count, results) <- Search.listAllPackages pageNumber
+  render templateDefaults $ Search.showAllPackages count pageNumber results
 
 showHandler :: Namespace -> PackageName -> FloraPageM (Html ())
 showHandler namespace packageName = do
@@ -98,11 +102,12 @@ showDependentsHandler namespace packageName = do
   results <- withPool pool $ Query.getAllPackageDependentsWithLatestVersion namespace packageName
   render templateEnv $
     PackageDependents.showDependents
-      ("Dependents of " <> formatPackage namespace packageName)
+      ("Dependents of " <> display namespace <> "/" <> display packageName)
       results
 
 showDependenciesHandler :: Namespace -> PackageName -> FloraPageM (Html ())
 showDependenciesHandler namespace packageName = do
+  Log.logInfo_ $ display $ Prelude.show namespace
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   templateEnv <- fromSession session defaultTemplateEnv
@@ -113,7 +118,7 @@ showDependenciesHandler namespace packageName = do
     liftIO $ withPool pool $ Query.getAllRequirements (latestRelease ^. #releaseId)
   render templateEnv $
     PackageDependencies.showDependencies
-      ("Dependencies of " <> formatPackage namespace packageName)
+      ("Dependencies of " <> display namespace <> "/" <> display packageName)
       latestReleasedependencies
 
 listVersionsHandler :: Namespace -> PackageName -> FloraPageM (Html ())

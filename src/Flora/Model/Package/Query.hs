@@ -17,6 +17,7 @@ import Database.PostgreSQL.Entity.DBT
   ( QueryNature (Select)
   , query
   , queryOne
+  , queryOne_
   , query_
   )
 import Database.PostgreSQL.Entity.Types (Field, field)
@@ -119,11 +120,21 @@ packageDependentsQuery =
     AND  dep."name" = ?
   |]
 
-getAllPackageDependentsWithLatestVersion :: MonadIO m => Namespace -> PackageName -> DBT m (Vector (Namespace, PackageName, Text, Version))
-getAllPackageDependentsWithLatestVersion namespace packageName = query Select packageDependentsWithLatestVersionQuery (namespace, packageName)
+getAllPackageDependentsWithLatestVersion ::
+  MonadIO m =>
+  Namespace ->
+  PackageName ->
+  DBT m (Vector (Namespace, PackageName, Text, Version))
+getAllPackageDependentsWithLatestVersion namespace packageName =
+  query Select packageDependentsWithLatestVersionQuery (namespace, packageName)
 
-getPackageDependentsWithLatestVersion :: MonadIO m => Namespace -> PackageName -> DBT m (Vector (Namespace, PackageName, Text, Version))
-getPackageDependentsWithLatestVersion namespace packageName = query Select q (namespace, packageName)
+getPackageDependentsWithLatestVersion ::
+  MonadIO m =>
+  Namespace ->
+  PackageName ->
+  DBT m (Vector (Namespace, PackageName, Text, Version))
+getPackageDependentsWithLatestVersion namespace packageName =
+  query Select q (namespace, packageName)
   where
     q = packageDependentsWithLatestVersionQuery <> " LIMIT 6"
 
@@ -219,7 +230,12 @@ getPackageCategories ::
   MonadIO m =>
   PackageId ->
   DBT m (Vector Category)
-getPackageCategories packageId = joinSelectOneByField @Category @PackageCategory [field| category_id |] [field| package_id |] packageId
+getPackageCategories packageId =
+  joinSelectOneByField @Category
+    @PackageCategory
+    [field| category_id |]
+    [field| package_id |]
+    packageId
 
 getPackagesFromCategoryWithLatestVersion ::
   MonadIO m =>
@@ -235,47 +251,92 @@ getPackagesFromCategoryWithLatestVersion categoryId = query Select q (Only categ
       where c.category_id = ?
       |]
 
-searchPackage :: Text -> DBT IO (Vector (Namespace, PackageName, Text, Version, Float))
-searchPackage searchString =
-  query
-    Select
-    [sql|
-  SELECT  lv."namespace"
+searchPackage ::
+  Word ->
+  Text ->
+  DBT IO (Vector (Namespace, PackageName, Text, Version, Float))
+searchPackage pageNumber searchString =
+  let limit = 30
+      offset = pageNumber * limit
+   in query
+        Select
+        [sql|
+      SELECT  lv."namespace"
+            , lv."name"
+            , lv."synopsis"
+            , lv."version"
+            , word_similarity(lv.name, ?) as rating
+      FROM latest_versions as lv
+      WHERE ? <% lv.name
+      GROUP BY
+          lv."namespace"
         , lv."name"
         , lv."synopsis"
         , lv."version"
-        , word_similarity(lv.name, ?) as rating
-  FROM latest_versions as lv
-  WHERE ? <% lv.name
-  GROUP BY
-      lv."namespace"
-    , lv."name"
-    , lv."synopsis"
-    , lv."version"
-  ORDER BY rating desc, count(lv."namespace") desc, lv.name asc;
-  |]
-    (searchString, searchString)
+      ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
+      LIMIT 30
+      OFFSET ?
+      ;
+      |]
+        (searchString, searchString, offset)
 
-listAllPackages :: DBT IO (Vector (Namespace, PackageName, Text, Version, Float))
-listAllPackages =
-  query_
-    Select
-    [sql|
-  SELECT  lv."namespace"
-        , lv."name"
-        , lv."synopsis"
-        , lv."version"
-        , (1.0::real) as rating
-  FROM latest_versions as lv
-  GROUP BY
-      lv."namespace"
-    , lv."name"
-    , lv."synopsis"
-    , lv."version"
-  ORDER BY rating desc, count(lv."namespace") desc, lv.name asc;
-  |]
+listAllPackages :: Word -> DBT IO (Vector (Namespace, PackageName, Text, Version, Float))
+listAllPackages pageNumber =
+  let limit = 30
+      offset = pageNumber * limit
+   in query
+        Select
+        [sql|
+    SELECT  lv."namespace"
+          , lv."name"
+          , lv."synopsis"
+          , lv."version"
+          , (1.0::real) as rating
+    FROM latest_versions as lv
+    GROUP BY
+        lv."namespace"
+      , lv."name"
+      , lv."synopsis"
+      , lv."version"
+    ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
+    LIMIT 30
+    OFFSET ?
+    ;
+    |]
+        (Only offset)
 
-searchPackageByNamespace :: Namespace -> Text -> DBT IO (Vector (Namespace, PackageName, Text, Float))
+countPackages :: DBT IO Word
+countPackages = do
+  (result :: Maybe (Only Int)) <-
+    queryOne_
+      Select
+      [sql|
+    SELECT DISTINCT COUNT(*)
+    FROM packages
+    |]
+  case result of
+    Just (Only n) -> pure $ fromIntegral n
+    Nothing -> pure 0
+
+countPackagesByName :: Text -> DBT IO Word
+countPackagesByName searchString = do
+  (result :: Maybe (Only Int)) <-
+    queryOne
+      Select
+      [sql|
+        SELECT DISTINCT COUNT(*)
+        FROM latest_versions as lv
+        WHERE ? <% lv.name
+      |]
+      (Only searchString)
+  case result of
+    Just (Only n) -> pure $ fromIntegral n
+    Nothing -> pure 0
+
+searchPackageByNamespace ::
+  Namespace ->
+  Text ->
+  DBT IO (Vector (Namespace, PackageName, Text, Float))
 searchPackageByNamespace (Namespace namespace) searchString =
   query
     Select

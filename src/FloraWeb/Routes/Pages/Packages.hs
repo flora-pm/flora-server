@@ -14,7 +14,10 @@ import Servant.HTML.Lucid
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { index :: mode :- Get '[HTML] (Html ())
+  { index ::
+      mode
+        :- QueryParam "page" Word
+          :> Get '[HTML] (Html ())
   , show ::
       mode
         :- Capture "namespace" Namespace

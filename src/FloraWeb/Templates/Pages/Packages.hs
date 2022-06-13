@@ -57,7 +57,7 @@ presentationHeader release namespace name synopsis = do
   div_ [class_ "divider"] $ do
     div_ [class_ "px-4 py-5 sm:px-6 sm:py-24 lg:py-4 lg:px-8"] $
       h2_ [class_ "text-center text-2xl tracking-tight sm:text-2xl lg:text-5xl"] $ do
-        span_ [class_ "headline"] $ "@" <> toHtml namespace <> "/" <> toHtml name
+        span_ [class_ "headline"] $ toHtml namespace <> "/" <> toHtml name
         span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
@@ -151,7 +151,7 @@ displayDependencies (namespace, packageName) numberOfDependencies dependencies =
 
 showAll :: (Namespace, PackageName, Target) -> FloraHTML
 showAll (namespace, packageName, target) = do
-  let resource = "/packages/@" <> display namespace <> "/" <> display packageName <> "/" <> display target
+  let resource = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> display target
   a_ [class_ "dependency", href_ resource] "Show all…"
 
 displayInstructions :: PackageName -> Release -> FloraHTML
@@ -194,14 +194,14 @@ displayDependents (namespace, packageName) numberOfDependents dependents = do
 
 renderDependent :: Package -> FloraHTML
 renderDependent Package{name, namespace} = do
-  let qualifiedName = toHtml $ "@" <> display namespace <> "/" <> display name
-  let resource = "/packages/@" <> display namespace <> "/" <> display name
+  let qualifiedName = toHtml $ display namespace <> "/" <> display name
+  let resource = "/packages/" <> display namespace <> "/" <> display name
 
   a_ [class_ "dependent", href_ resource] qualifiedName
 
 renderDependency :: (Namespace, PackageName, Text) -> FloraHTML
 renderDependency (namespace, name, version) = do
-  let resource = "/packages/@" <> display namespace <> "/" <> display name
+  let resource = "/packages/" <> display namespace <> "/" <> display name
   li_ [class_ "dependency"] $ do
     a_ [href_ resource] (toHtml name)
     toHtmlRaw @Text "&nbsp;"

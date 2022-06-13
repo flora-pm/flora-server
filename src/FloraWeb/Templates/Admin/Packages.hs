@@ -35,7 +35,7 @@ indexPackages packages = do
 displayPackage :: Package -> FloraHTML
 displayPackage Package{namespace, name, updatedAt} = do
   tr_ $ do
-    td_ [class_ "px-6 py-4 whitespace-nowrap text-sm font-medium"] (text $ "@" <> display namespace <> "/" <> display name)
+    td_ [class_ "px-6 py-4 whitespace-nowrap text-sm font-medium"] (text $ display namespace <> "/" <> display name)
     td_ [class_ "px-6 py-4 whitespace-nowrap text-sm font-medium"] (text $ display updatedAt)
 
 showPackage :: Package -> FloraHTML
