@@ -6,35 +6,17 @@ on:
     branches: ["main", "development"]
 
 jobs:
-  styling:
+  fourmolu:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
 
-    - uses: actions/checkout@v2.3.1
-
-    - name: Set up Haskell
-      id: setup-haskell
-      uses: haskell/actions/setup@v1
+    - uses: fourmolu/fourmolu-action@v2
       with:
-        ghc-version: "8.10.7"
-        cabal-version: "latest"
-
-    - name: Cache
-      uses: actions/cache@v2.1.3
-      with:
-        path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ${{ runner.os }}-styling
-
-    - name: Install tools
-      run: |
-        cd ~/
-        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
-        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        cabal install -j fourmolu
-
-    - name: Running fourmolu
-      run: ./.github/workflows/fourmolu-runner.sh
+        pattern: |
+          src/**/*.hs
+          test/**/*.hs
+          app/**/*.hs
 
   hlint:
     runs-on: ubuntu-latest

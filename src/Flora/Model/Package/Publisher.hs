@@ -1,4 +1,4 @@
-module Flora.Package.Publishers where
+module Flora.Package.Publisher where
 
 import Data.UUID (UUID)
 import Database.PostgreSQL.Entity
