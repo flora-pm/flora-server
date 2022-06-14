@@ -100,7 +100,6 @@ library
     Flora.Model.Package
     Flora.Model.Package.Component
     Flora.Model.Package.Orphans
-    Flora.Model.Package.Publisher
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
