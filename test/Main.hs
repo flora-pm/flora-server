@@ -8,9 +8,9 @@ import Database.PostgreSQL.Entity.DBT (withPool)
 import qualified Flora.CategorySpec as CategorySpec
 import Flora.Environment
 import qualified Flora.PackageSpec as PackageSpec
+import qualified Flora.TemplateSpec as TemplateSpec
 import Flora.TestUtils
 import qualified Flora.UserSpec as UserSpec
-import qualified Flora.TemplateSpec as TemplateSpec
 
 main :: IO ()
 main = do
