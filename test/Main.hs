@@ -8,6 +8,7 @@ import Database.PostgreSQL.Entity.DBT (withPool)
 import qualified Flora.CategorySpec as CategorySpec
 import Flora.Environment
 import qualified Flora.PackageSpec as PackageSpec
+import qualified Flora.TemplateSpec as TemplateSpec
 import Flora.TestUtils
 import qualified Flora.UserSpec as UserSpec
 
@@ -24,4 +25,5 @@ specs fixtures =
   [ UserSpec.spec fixtures
   , PackageSpec.spec fixtures
   , CategorySpec.spec
+  , TemplateSpec.spec
   ]

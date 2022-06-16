@@ -33,7 +33,8 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 import Servant (FromHttpApiData (..))
-import Web.HttpApiData (ToHttpApiData)
+import Web.HttpApiData (ToHttpApiData (..))
+import Web.Internal.HttpApiData (unsafeToEncodedUrlPiece)
 
 newtype PackageId = PackageId {getPackageId :: UUID}
   deriving stock (Generic)
@@ -77,7 +78,7 @@ parsePackageName txt =
 newtype Namespace = Namespace Text
   deriving stock (Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, ToHtml, ToHttpApiData)
+    (Eq, Ord, FromJSON, ToJSON, ToHtml)
     via Text
 
 instance ToField Namespace where
@@ -96,6 +97,10 @@ instance Display Namespace where
     if "@" `isPrefixOf` name
       then displayBuilder name
       else "@" <> displayBuilder name
+
+instance ToHttpApiData Namespace where
+  toUrlPiece (Namespace ns) = "@" <> ns
+  toEncodedUrlPiece = unsafeToEncodedUrlPiece
 
 instance FromHttpApiData Namespace where
   parseUrlPiece piece =

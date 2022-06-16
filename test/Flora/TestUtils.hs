@@ -132,6 +132,7 @@ testThese groupName tests = fmap (Test.testGroup groupName) newTests
     newTests :: TestM [TestTree]
     newTests = sequenceA tests
 
+-- | 'assertEqual' @expected@ @actual@
 assertEqual :: (Eq a, Show a) => a -> a -> TestM ()
 assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 
