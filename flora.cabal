@@ -298,11 +298,14 @@ test-suite flora-test
   hs-source-dirs: test
   build-depends:
     , base
+    , bytestring
+    , Cabal
     , containers
     , exceptions
     , flora
     , hedgehog
     , http-client           ==0.7.10
+    , network-uri
     , optics-core
     , password
     , pg-entity
@@ -327,5 +330,6 @@ test-suite flora-test
     Flora.CabalSpec
     Flora.CategorySpec
     Flora.PackageSpec
+    Flora.TemplateSpec
     Flora.TestUtils
     Flora.UserSpec

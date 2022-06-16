@@ -10,6 +10,7 @@ import Flora.Environment
 import qualified Flora.PackageSpec as PackageSpec
 import Flora.TestUtils
 import qualified Flora.UserSpec as UserSpec
+import qualified Flora.TemplateSpec as TemplateSpec
 
 main :: IO ()
 main = do
@@ -24,4 +25,5 @@ specs fixtures =
   [ UserSpec.spec fixtures
   , PackageSpec.spec fixtures
   , CategorySpec.spec
+  , TemplateSpec.spec
   ]
