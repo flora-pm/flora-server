@@ -144,10 +144,10 @@ packageDependentsWithLatestVersionQuery =
         INNER JOIN "dependents" AS dep
                 ON p."package_id" = dep."dependent_id"
         INNER JOIN "releases" AS r 
-                ON r."package_id" = p."package_id"
+                ON r."package_id" = p."package_id"p
   WHERE  dep."namespace" = ?
     AND  dep."name" = ?
-  GROUP BY (p.namespace, p.name, p.synopsis)
+  GROUP BY (p.namespace, p.name, r.synopsis)
   |]
 
 getComponentById :: MonadIO m => ComponentId -> DBT m (Maybe PackageComponent)
