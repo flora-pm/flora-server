@@ -3,38 +3,34 @@
 
 module Flora.Model.Package.Types where
 
-import qualified Crypto.Hash.MD5 as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
-import Data.Data
+import Data.ByteString (ByteString)
+import Data.ByteString.Lazy (fromStrict)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Text (Text, isPrefixOf, unpack)
 import Data.Text.Display
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
 import Data.UUID
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
-import qualified Distribution.SPDX.License as SPDX
 import GHC.Generics
-import qualified Language.Souffle.Interpreted as Souffle
 import Lucid
-import qualified Text.PrettyPrint as PP
+import Servant (FromHttpApiData (..))
 import Text.Regex.Pcre2
-
-import Data.ByteString (ByteString)
-import Data.ByteString.Lazy (fromStrict)
-import Data.Maybe (fromJust, fromMaybe)
+import Web.HttpApiData (ToHttpApiData (..))
+import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.Text as Text
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import qualified Language.Souffle.Interpreted as Souffle
+import qualified Text.PrettyPrint as PP
+
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
-import Servant (FromHttpApiData (..))
-import Web.HttpApiData (ToHttpApiData (..))
-import Web.Internal.HttpApiData (unsafeToEncodedUrlPiece)
 
 newtype PackageId = PackageId {getPackageId :: UUID}
   deriving stock (Generic)
@@ -100,7 +96,6 @@ instance Display Namespace where
 
 instance ToHttpApiData Namespace where
   toUrlPiece (Namespace ns) = "@" <> ns
-  toEncodedUrlPiece = unsafeToEncodedUrlPiece
 
 instance FromHttpApiData Namespace where
   parseUrlPiece piece =
@@ -138,8 +133,6 @@ data Package = Package
   { packageId :: PackageId
   , namespace :: Namespace
   , name :: PackageName
-  , synopsis :: Maybe Text
-  , metadata :: Maybe PackageMetadata
   , ownerId :: UserId
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
@@ -155,25 +148,11 @@ instance Entity Package where
     [ [field| package_id |]
     , [field| namespace |]
     , [field| name |]
-    , [field| synopsis |]
-    , [field| metadata :: jsonb |]
     , [field| owner_id |]
     , [field| created_at |]
     , [field| updated_at |]
     , [field| status |]
     ]
-
-data PackageMetadata = PackageMetadata
-  { license :: SPDX.License
-  , sourceRepos :: [Text]
-  , homepage :: Maybe Text
-  , documentation :: Text
-  , bugTracker :: Maybe Text
-  , maintainer :: Text
-  }
-  deriving stock (Eq, Ord, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON)
-  deriving (ToField, FromField) via Aeson PackageMetadata
 
 data Dependent = Dependent
   { name :: Text

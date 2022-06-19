@@ -57,8 +57,6 @@ getHaskellOrHackagePackage packageName =
   SELECT DISTINCT   p."package_id"
                   , p."namespace"
                   , p."name"
-                  , p."synopsis"
-                  , p."metadata"
                   , p."owner_id"
                   , p."created_at"
                   , p."updated_at"
@@ -106,16 +104,13 @@ packageDependentsQuery =
   SELECT DISTINCT   p."package_id"
                   , p."namespace"
                   , p."name"
-                  , p."synopsis"
-                  , p."metadata"
                   , p."owner_id"
                   , p."created_at"
                   , p."updated_at"
                   , p."status"
   FROM "packages" AS p
-
-        INNER JOIN "dependents" AS dep
-                ON p."package_id" = dep."dependent_id"
+  INNER JOIN "dependents" AS dep
+        ON p."package_id" = dep."dependent_id"
   WHERE  dep."namespace" = ?
     AND  dep."name" = ?
   |]
@@ -143,7 +138,7 @@ packageDependentsWithLatestVersionQuery =
   [sql|
   SELECT DISTINCT   p."namespace"
                   , p."name"
-                  , p."synopsis"
+                  , r."synopsis"
                   , max(r."version")
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
@@ -343,7 +338,7 @@ searchPackageByNamespace (Namespace namespace) searchString =
     [sql|
   SELECT  p."namespace"
         , p."name"
-        , p."synopsis"
+        , ""
         , word_similarity(p.name, ?) as rating
   FROM packages as p
   WHERE ? <% p.name

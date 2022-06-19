@@ -181,33 +181,35 @@ extractPackageDataFromCabal userId genericDesc = do
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart) (T.splitOn "," rawCategoryField)
   categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
+  let package =
+        Package
+          { packageId
+          , namespace
+          , name = packageName
+          , ownerId = userId
+          , createdAt = timestamp
+          , updatedAt = timestamp
+          , status = FullyImportedPackage
+          }
+
   let metadata =
-        PackageMetadata
+        ReleaseMetadata
           { license = Cabal.license packageDesc
           , sourceRepos
           , homepage = packageDesc ^. #homepage % to display % to Just
           , documentation = ""
           , bugTracker = packageDesc ^. #bugReports % to display % to Just
           , maintainer = packageDesc ^. #maintainer % to display
+          , synopsis = packageDesc ^. #synopsis % to display
           }
-  let package =
-        Package
-          { packageId
-          , namespace
-          , name = packageName
-          , synopsis = packageDesc ^. #synopsis % to display % to Just
-          , metadata = Just metadata
-          , ownerId = userId
-          , createdAt = timestamp
-          , updatedAt = timestamp
-          , status = FullyImportedPackage
-          }
+
   let release =
         Release
           { releaseId
           , packageId
           , version = packageVersion
           , archiveChecksum = mempty
+          , metadata = metadata
           , uploadedAt = Nothing
           , createdAt = timestamp
           , updatedAt = timestamp
@@ -242,8 +244,6 @@ extractLibrary package release lib = do
       let name = depName & unPackageName & pack & PackageName
           namespace = chooseNamespace name
           packageId = deterministicPackageId namespace name
-          synopsis = Nothing
-          metadata = Nothing
           ownerId = package ^. #ownerId
           createdAt = package ^. #createdAt
           updatedAt = package ^. #updatedAt

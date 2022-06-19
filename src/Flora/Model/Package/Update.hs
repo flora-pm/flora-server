@@ -28,9 +28,7 @@ upsertPackage package =
     FullyImportedPackage ->
       upsert @Package
         package
-        [ [field| synopsis |]
-        , [field| metadata :: jsonb |]
-        , [field| updated_at |]
+        [ [field| updated_at |]
         , [field| status |]
         , [field| owner_id |]
         ]

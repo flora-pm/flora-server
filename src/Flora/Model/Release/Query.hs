@@ -36,16 +36,7 @@ getAllReleases pid = do
     else pure $ Vector.reverse $ Vector.modify MVector.sort results
 
 getReleaseByVersion :: MonadIO m => PackageId -> Version -> DBT m (Maybe Release)
-getReleaseByVersion packageId version =
-  queryOne Select querySpec (packageId, version)
-  where
-    querySpec =
-      [sql|
-          select r.release_id, r.package_id, r.version, r.archive_checksum, r.uploaded_at, r.created_at, r.updated_at
-          from releases as r
-          where r.package_id = ?
-            and r.version = ?
-        |]
+getReleaseByVersion packageId version = queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
 
 getNumberOfReleases :: MonadIO m => PackageId -> DBT m Word
 getNumberOfReleases pid = do
