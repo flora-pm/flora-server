@@ -327,25 +327,3 @@ countPackagesByName searchString = do
   case result of
     Just (Only n) -> pure $ fromIntegral n
     Nothing -> pure 0
-
-searchPackageByNamespace ::
-  Namespace ->
-  Text ->
-  DBT IO (Vector (Namespace, PackageName, Text, Float))
-searchPackageByNamespace (Namespace namespace) searchString =
-  query
-    Select
-    [sql|
-  SELECT  p."namespace"
-        , p."name"
-        , ""
-        , word_similarity(p.name, ?) as rating
-  FROM packages as p
-  WHERE ? <% p.name
-    AND p."namespace" = ?
-  GROUP BY
-      p."namespace"
-    , p."name"
-  ORDER BY rating desc, count(p."namespace") desc, p.name asc;
-  |]
-    (searchString, searchString, namespace)
