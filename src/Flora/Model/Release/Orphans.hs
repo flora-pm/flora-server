@@ -18,6 +18,7 @@ import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Distribution.Parsec
 import Distribution.Pretty (prettyShow)
 import qualified Distribution.Pretty as Pretty
+import qualified Distribution.SPDX.License as SPDX
 import Distribution.Simple.Utils (fromUTF8BS)
 import Distribution.Types.Version
 import Distribution.Types.VersionRange
@@ -64,3 +65,18 @@ instance ToField VersionRange where
 
 instance Display Version where
   displayBuilder = Builder.fromString . prettyShow
+
+instance FromField SPDX.License where
+  fromField :: Field -> Maybe ByteString -> Conversion SPDX.License
+  fromField f mdata =
+    case mdata of
+      Nothing -> returnError UnexpectedNull f ""
+      Just bs ->
+        case simpleParsec (fromUTF8BS bs) of
+          Just (a :: SPDX.License) -> pure a
+          Nothing ->
+            returnError ConversionFailed f $
+              "Conversion error: Expected valid SPDX identifier for 'license', got: " <> fromUTF8BS bs
+
+instance ToField SPDX.License where
+  toField = Escape . C8.pack . Pretty.prettyShow

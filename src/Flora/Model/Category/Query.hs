@@ -42,8 +42,6 @@ getPackagesFromCategorySlug slug =
         select  p.package_id
               , p.namespace
               , p.name
-              , p.synopsis
-              , p.metadata
               , p.owner_id
               , p.created_at
               , p.updated_at

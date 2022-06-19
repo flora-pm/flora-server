@@ -1,7 +1,6 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold)
-import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text.Display
 import Data.Time (defaultTimeLocale)
@@ -15,15 +14,14 @@ import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
   , Package (..)
-  , PackageMetadata (..)
   , PackageName
   )
-import Flora.Model.Release (Release (..))
+import Flora.Model.Release (Release (..), ReleaseMetadata (..))
 import qualified FloraWeb.Links as Links
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
 import Lucid.Orphans ()
-import Optics.Core ((^.))
+import Optics.Core
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import qualified Text.PrettyPrint as PP
@@ -47,9 +45,9 @@ showPackage ::
   Word ->
   Vector Category ->
   FloraHTML
-showPackage latestRelease packageReleases numberOfReleases package@Package{namespace, name, synopsis} dependents numberOfDependents dependencies numberOfDependencies categories = do
+showPackage latestRelease packageReleases numberOfReleases package@Package{namespace, name} dependents numberOfDependents dependencies numberOfDependencies categories = do
   div_ [class_ "larger-container"] $ do
-    presentationHeader latestRelease namespace name (fromMaybe "" synopsis)
+    presentationHeader latestRelease namespace name (latestRelease ^. #metadata % #synopsis)
     packageBody package latestRelease packageReleases numberOfReleases dependencies numberOfDependencies dependents numberOfDependents categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
@@ -63,19 +61,19 @@ presentationHeader release namespace name synopsis = do
       p_ [class_ ""] (toHtml synopsis)
 
 packageBody :: Package -> Release -> Vector Release -> Word -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
-packageBody Package{namespace, name = packageName, metadata} latestRelease packageReleases numberOfReleases dependencies numberOfDependencies dependents numberOfDependents categories =
+packageBody Package{namespace, name = packageName} latestRelease@Release{metadata} packageReleases numberOfReleases dependencies numberOfDependencies dependents numberOfDependents categories =
   div_ $ do
     div_ [class_ "package-body md:flex"] $ do
       div_ [class_ "package-left-column grow"] $ do
         ul_ [class_ "package-left-rows grid-rows-3"] $ do
           displayCategories categories
-          foldMap (displayLicense . license) metadata
-          foldMap (displayLinks packageName latestRelease) metadata
+          displayLicense (metadata ^. #license)
+          displayLinks packageName latestRelease metadata
           displayVersions namespace packageName packageReleases numberOfReleases
       div_ [class_ "package-right-column md:max-w-xs"] $ do
         ul_ [class_ "package-right-rows grid-rows-3"] $ do
           displayInstructions packageName latestRelease
-          foldMap (displayMaintainer . maintainer) metadata
+          displayMaintainer (metadata ^. #maintainer)
           displayDependencies (namespace, packageName) numberOfDependencies dependencies
           displayDependents (namespace, packageName) numberOfDependents dependents
 
@@ -97,8 +95,8 @@ displayCategories categories = do
     ul_ [class_ "categories"] $ do
       foldMap renderCategory categories
 
-displayLinks :: PackageName -> Release -> PackageMetadata -> FloraHTML
-displayLinks packageName _release meta@PackageMetadata{..} = do
+displayLinks :: PackageName -> Release -> ReleaseMetadata -> FloraHTML
+displayLinks packageName _release meta@ReleaseMetadata{..} = do
   li_ [class_ "mb-5"] $ do
     h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Links"
     ul_ [class_ "links"] $ do
@@ -215,8 +213,8 @@ renderCategory Category{name, slug} = do
   li_ [class_ "category"] $ do
     a_ [href_ resource] (toHtml name)
 
-getHomepage :: PackageMetadata -> Text
-getHomepage PackageMetadata{..} =
+getHomepage :: ReleaseMetadata -> Text
+getHomepage ReleaseMetadata{..} =
   case homepage of
     Just page -> page
     Nothing ->

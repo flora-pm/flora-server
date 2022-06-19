@@ -57,8 +57,6 @@ getHaskellOrHackagePackage packageName =
   SELECT DISTINCT   p."package_id"
                   , p."namespace"
                   , p."name"
-                  , p."synopsis"
-                  , p."metadata"
                   , p."owner_id"
                   , p."created_at"
                   , p."updated_at"
@@ -106,16 +104,13 @@ packageDependentsQuery =
   SELECT DISTINCT   p."package_id"
                   , p."namespace"
                   , p."name"
-                  , p."synopsis"
-                  , p."metadata"
                   , p."owner_id"
                   , p."created_at"
                   , p."updated_at"
                   , p."status"
   FROM "packages" AS p
-
-        INNER JOIN "dependents" AS dep
-                ON p."package_id" = dep."dependent_id"
+  INNER JOIN "dependents" AS dep
+        ON p."package_id" = dep."dependent_id"
   WHERE  dep."namespace" = ?
     AND  dep."name" = ?
   |]
@@ -143,7 +138,7 @@ packageDependentsWithLatestVersionQuery =
   [sql|
   SELECT DISTINCT   p."namespace"
                   , p."name"
-                  , p."synopsis"
+                  , r."synopsis"
                   , max(r."version")
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
@@ -152,7 +147,7 @@ packageDependentsWithLatestVersionQuery =
                 ON r."package_id" = p."package_id"
   WHERE  dep."namespace" = ?
     AND  dep."name" = ?
-  GROUP BY (p.namespace, p.name, p.synopsis)
+  GROUP BY (p.namespace, p.name, r.synopsis)
   |]
 
 getComponentById :: MonadIO m => ComponentId -> DBT m (Maybe PackageComponent)
@@ -332,25 +327,3 @@ countPackagesByName searchString = do
   case result of
     Just (Only n) -> pure $ fromIntegral n
     Nothing -> pure 0
-
-searchPackageByNamespace ::
-  Namespace ->
-  Text ->
-  DBT IO (Vector (Namespace, PackageName, Text, Float))
-searchPackageByNamespace (Namespace namespace) searchString =
-  query
-    Select
-    [sql|
-  SELECT  p."namespace"
-        , p."name"
-        , p."synopsis"
-        , word_similarity(p.name, ?) as rating
-  FROM packages as p
-  WHERE ? <% p.name
-    AND p."namespace" = ?
-  GROUP BY
-      p."namespace"
-    , p."name"
-  ORDER BY rating desc, count(p."namespace") desc, p.name asc;
-  |]
-    (searchString, searchString, namespace)
