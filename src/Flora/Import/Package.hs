@@ -99,6 +99,7 @@ coreLibraries =
     , PackageName "integer-simple"
     , PackageName "integer-gmp"
     , PackageName "mtl"
+    , PackageName "parallel"
     , PackageName "parsec"
     , PackageName "process"
     , PackageName "rts"
