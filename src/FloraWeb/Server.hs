@@ -36,7 +36,10 @@ import Servant
   )
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
-import Flora.Environment (FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import Control.Concurrent
+import qualified Control.Exception.Safe as Safe
+import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import qualified Flora.Environment.OddJobs as OddJobs
 import FloraWeb.Autoreload (AutoreloadRoute)
 import qualified FloraWeb.Autoreload as Autoreload
 import FloraWeb.Routes
@@ -47,6 +50,9 @@ import FloraWeb.Server.Metrics
 import qualified FloraWeb.Server.Pages as Pages
 import FloraWeb.Server.Tracing
 import FloraWeb.Types
+import qualified OddJobs.Endpoints as OddJobs
+import OddJobs.Job (startJobRunner)
+import qualified OddJobs.Types as OddJobs
 
 runFlora :: IO ()
 runFlora = bracket getFloraEnv shutdownFlora $ \env -> do
@@ -65,12 +71,22 @@ shutdownFlora :: FloraEnv -> IO ()
 shutdownFlora env = do
   Pool.destroyAllResources (env ^. #pool)
 
+logException :: DeploymentEnv -> Logger -> Safe.SomeException -> IO ()
+logException env logger exception =
+  Logging.runLog env logger $ Log.logAttention "odd-jobs runner crashed " (show exception)
+
 runServer :: Logger -> FloraEnv -> IO ()
 runServer appLogger floraEnv = do
-  loggingMiddleware <- Logging.runLog floraEnv appLogger WaiLog.mkLogMiddleware
+  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv ^. #config) appLogger $ pool floraEnv
+      oddJobsCfg = OddJobs.makeConfig (floraEnv ^. #config) appLogger $ pool floraEnv
+
+  forkIO $
+    Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv ^. #environment) appLogger)
+  loggingMiddleware <- Logging.runLog (floraEnv ^. #environment) appLogger WaiLog.mkLogMiddleware
+  oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
-  let server = mkServer appLogger webEnvStore floraEnv
+  let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv
   let warpSettings =
         setPort (fromIntegral $ httpPort floraEnv) $
           setOnException
@@ -87,12 +103,12 @@ runServer appLogger floraEnv = do
       . const
     $ server
 
-mkServer :: Logger -> WebEnvStore -> FloraEnv -> Application
-mkServer logger webEnvStore floraEnv = do
-  genericServeTWithContext (naturalTransform logger webEnvStore) floraServer (genAuthServerContext logger floraEnv)
+mkServer :: Logger -> WebEnvStore -> FloraEnv -> OddJobs.UIConfig -> OddJobs.Env -> Application
+mkServer logger webEnvStore floraEnv cfg env = do
+  genericServeTWithContext (naturalTransform logger webEnvStore) (floraServer cfg env) (genAuthServerContext logger floraEnv)
 
-floraServer :: Routes (AsServerT FloraM)
-floraServer =
+floraServer :: OddJobs.UIConfig -> OddJobs.Env -> Routes (AsServerT FloraM)
+floraServer cfg env =
   Routes
     { assets = serveDirectoryWebApp "./static"
     , pages = \sessionWithCookies ->
@@ -100,7 +116,7 @@ floraServer =
           (Proxy @Pages.Routes)
           (Proxy @'[FloraAuthContext])
           (\f -> withReaderT (const sessionWithCookies) f)
-          Pages.server
+          (Pages.server cfg env)
     , autoreload =
         hoistServer
           (Proxy @AutoreloadRoute)

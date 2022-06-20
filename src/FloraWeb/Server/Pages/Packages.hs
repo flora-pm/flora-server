@@ -7,7 +7,6 @@ where
 import Control.Monad.Reader
 import Data.Foldable
 import Data.Function
-import Database.PostgreSQL.Entity.DBT (withPool)
 import Distribution.Types.Version (Version)
 import Lucid
 import Lucid.Orphans ()
@@ -15,6 +14,7 @@ import Servant (ServerT)
 
 import Data.Maybe (fromMaybe)
 import Data.Text.Display (display)
+import Database.PostgreSQL.Entity.DBT
 import Flora.Environment
 import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
@@ -51,8 +51,8 @@ indexHandler pageParam = do
   let pageNumber = fromMaybe 1 pageParam
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
-  (count, results) <- Search.listAllPackages pageNumber
-  render templateDefaults $ Search.showAllPackages count pageNumber results
+  (count', results) <- Search.listAllPackages pageNumber
+  render templateDefaults $ Search.showAllPackages count' pageNumber results
 
 showHandler :: Namespace -> PackageName -> FloraPageM (Html ())
 showHandler namespace packageName = do

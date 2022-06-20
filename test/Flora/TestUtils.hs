@@ -63,7 +63,6 @@ import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import Data.Word
-import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (Connection, close)
 import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Transact
@@ -85,6 +84,7 @@ import qualified Test.Tasty as Test
 import qualified Test.Tasty.HUnit as Test
 
 import Data.Maybe (fromJust)
+import Database.PostgreSQL.Entity.DBT
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
 import Flora.Model.User
@@ -205,7 +205,14 @@ managerSettings = defaultManagerSettings
 testMigrations :: Connection -> IO ()
 testMigrations conn = do
   void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
-  pool <- newPool (pure conn) close 10 1
+  pool <-
+    newPool $
+      PoolConfig
+        { createResource = pure conn
+        , freeResource = close
+        , poolCacheTTL = 10
+        , poolMaxResources = 1
+        }
   withPool pool $ do
     importCategories
 

@@ -1,22 +1,28 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Flora.Model.Release.Query where
+module Flora.Model.Release.Query
+  ( getReleases
+  , getReleaseByVersion
+  , getPackageReleases
+  , getAllReleases
+  , getNumberOfReleases
+  )
+where
 
 import Control.Monad.IO.Class
 import Data.Vector (Vector)
+import qualified Data.Vector as Vector
 import Data.Vector.Algorithms.Intro as MVector
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne)
 import Database.PostgreSQL.Entity.Types (field)
+import Database.PostgreSQL.Simple (Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact (DBT)
 import Distribution.Make (Version)
-
-import qualified Data.Vector as Vector
-import Database.PostgreSQL.Simple.Types
 import Flora.Model.Package.Types
-import Flora.Model.Release (Release)
+import Flora.Model.Release
 
 packageReleasesQuery :: Query
 packageReleasesQuery = _selectWhere @Release [[field| package_id |]]
@@ -35,6 +41,19 @@ getAllReleases pid = do
     then pure results
     else pure $ Vector.reverse $ Vector.modify MVector.sort results
 
+getPackageReleases :: MonadIO m => DBT m (Vector (ReleaseId, Version, PackageName))
+getPackageReleases =
+  query Select querySpec ()
+  where
+    querySpec :: Query
+    querySpec =
+      [sql|
+        select r.release_id, r.version, p."name"
+        from releases as r
+        join packages as p
+        on p.package_id = r.package_id
+      |]
+
 getReleaseByVersion :: MonadIO m => PackageId -> Version -> DBT m (Maybe Release)
 getReleaseByVersion packageId version = queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
 
@@ -47,7 +66,7 @@ getNumberOfReleases pid = do
 
 numberOfReleasesQuery :: Query
 numberOfReleasesQuery =
-  [sql| 
+  [sql|
   SELECT DISTINCT COUNT(rel."package_id")
   FROM releases AS rel
   WHERE rel."package_id" = ?

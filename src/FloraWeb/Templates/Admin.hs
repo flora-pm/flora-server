@@ -32,3 +32,20 @@ dataReport adminReport = do
       dd_ [class_ "mt-1 text-3xl font-semibold"] $
         toHtml $
           display (adminReport ^. #totalUsers)
+
+    div_ [class_ cardClass] $ do
+      dt_
+        [class_ "text-sm font-medium truncate"]
+        "Do the readmes"
+
+      dd_ [class_ "mt-1 text-3xl font-semibold"] $
+        form_ [action_ "/admin/readmes", method_ "POST"] $ do
+          button_ [class_ "on-readmes"] "Mk readmes"
+
+    a_ [href_ "/admin/odd-jobs"] $
+      div_ [class_ cardClass] $ do
+        dt_
+          [class_ "text-sm font-medium truncate"]
+          "Odd jobs ui"
+        dd_ [class_ "mt-1 text-3xl font-semibold"] $
+          button_ [class_ "on-readmes"] "odd jobs ui"

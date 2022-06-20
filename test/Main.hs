@@ -4,9 +4,10 @@ import Data.Pool
 import Optics.Core
 import Test.Tasty (defaultMain, testGroup)
 
-import Database.PostgreSQL.Entity.DBT (withPool)
+import Database.PostgreSQL.Entity.DBT
 import qualified Flora.CategorySpec as CategorySpec
 import Flora.Environment
+import qualified Flora.OddJobSpec as OddJobSpec
 import qualified Flora.PackageSpec as PackageSpec
 import qualified Flora.TemplateSpec as TemplateSpec
 import Flora.TestUtils
@@ -18,7 +19,7 @@ main = do
   withResource (env ^. #pool) testMigrations
   fixtures <- withPool (env ^. #pool) getFixtures
   spec <- traverse (`runTestM` env) (specs fixtures)
-  defaultMain . testGroup "Flora Tests" $ spec
+  defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 
 specs :: Fixtures -> [TestM TestTree]
 specs fixtures =

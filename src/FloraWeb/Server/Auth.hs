@@ -9,7 +9,6 @@ import Control.Monad.Except
 import qualified Data.List as List
 import Data.Pool (Pool)
 import qualified Data.UUID as UUID
-import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple
 import Network.Wai
 import Optics.Core
@@ -18,6 +17,7 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
 import Web.Cookie
 
+import Database.PostgreSQL.Entity.DBT
 import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
@@ -32,7 +32,7 @@ import Network.HTTP.Types (hCookie)
 type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
 
 authHandler :: Logger -> FloraEnv -> FloraAuthContext
-authHandler logger floraEnv = mkAuthHandler (\request -> Logging.runLog floraEnv logger (handler request))
+authHandler logger floraEnv = mkAuthHandler (\request -> Logging.runLog (floraEnv ^. #environment) logger (handler request))
   where
     pool = floraEnv ^. #pool
     handler :: Request -> LogT Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
