@@ -7,7 +7,8 @@ create table if not exists releases (
   archive_checksum text not null,
   uploaded_at timestamptz,
   created_at timestamptz not null,
-  updated_at timestamptz not null
+  updated_at timestamptz not null,
+  readme text
 );
 
 create index on releases(package_id);
