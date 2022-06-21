@@ -64,9 +64,10 @@ navBarLink' = navBarLink ""
 
 userMenu :: FloraHTML
 userMenu = do
+  ActiveElements{adminDashboard} <- asks activeElements
   TemplateEnv{mUser, sessionId} <- ask
   getUsernameOrLogin mUser
-  adminLink mUser
+  adminLink adminDashboard mUser
   logOff mUser sessionId
 
 navbarSearch :: FloraHTML
@@ -93,9 +94,9 @@ logOff (Just _) sessionId =
     let btnClasses = "font-bold inline-flex items-center py-3 mx-4 text-white dark:text-gray-100 "
     button_ [type_ "submit", class_ btnClasses] "Sign out"
 
-adminLink :: Maybe User -> FloraHTML
-adminLink (Just user) | user ^. #userFlags ^. #isAdmin = li_ [class_ "user-menu-element"] $ a_ [href_ "/admin"] "Admin Dashboard"
-adminLink _ = ""
+adminLink :: Bool -> Maybe User -> FloraHTML
+adminLink active (Just user) | user ^. #userFlags ^. #isAdmin = navBarLink' "/admin" "Admin Dashboard" active
+adminLink _ _ = ""
 
 darkModeToggle :: FloraHTML
 darkModeToggle = do
@@ -106,13 +107,15 @@ darkModeToggle = do
         img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 mr-2 invert"]
         "Light Mode"
   let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200 dark:bg-purple-3"
-  button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false", class_ $ "hidden dark:inline-flex " <> buttonBaseClasses] darkModeContent
-  button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false", class_ $ "dark:hidden " <> buttonBaseClasses] lightModeContent
+  button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false",
+           class_ $ "hidden dark:inline-flex " <> buttonBaseClasses] darkModeContent
+  button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false",
+           class_ $ "dark:hidden " <> buttonBaseClasses] lightModeContent
   input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "darkMode"]
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
 getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login/Signup" False
-getUsernameOrLogin _ = navBarLink' "#" "Profile" False
+getUsernameOrLogin _ = ""--navBarLink' "#" "Profile" False
 
 isActive :: Bool -> Text
 isActive True = " active"

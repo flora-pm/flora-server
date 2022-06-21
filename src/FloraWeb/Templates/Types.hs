@@ -59,6 +59,7 @@ data ActiveElements = ActiveElements
   { aboutNav :: Bool
   , packagesNav :: Bool
   , menuNav :: Bool
+  , adminDashboard :: Bool
   }
   deriving stock (Show, Generic)
 
@@ -81,6 +82,7 @@ defaultActiveElements =
     { aboutNav = False
     , packagesNav = False
     , menuNav = False
+    , adminDashboard = False
     }
 
 defaultTemplateEnv :: TemplateDefaults
@@ -113,5 +115,7 @@ fromSession session defaults = do
   let muser = session ^. #mUser
   let webEnvStore = session ^. #webEnvStore
   floraEnv <- liftIO $ fetchFloraEnv webEnvStore
-  let TemplateDefaults{..} = defaults & (#mUser .~ muser) & (#environment .~ (floraEnv ^. #environment))
+  let TemplateDefaults{..} =
+        defaults & (#mUser .~ muser)
+                 & (#environment .~ (floraEnv ^. #environment))
   pure TemplateEnv{..}
