@@ -83,8 +83,6 @@ packageBody Package{namespace, name = packageName} latestRelease@Release{metadat
 
 displayReadme :: Release -> FloraHTML
 displayReadme release = li_ [class_ "mb-5"] $ do
-  div_ [class_ "license mb-3"] $
-    h3_ [class_ "lg:text-2xl package-body-section"] "Readme"
   ul_ [class_ "readme"] $ case readme release of
     Nothing -> toHtml @Text "no readme available"
     Just (MkTextHtml readme) -> relaxHtmlT readme

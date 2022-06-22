@@ -94,6 +94,7 @@ data ReleaseMetadata = ReleaseMetadata
   , bugTracker :: Maybe Text
   , maintainer :: Text
   , synopsis :: Text
+  , description :: Text
   }
   deriving stock (Eq, Ord, Show, Generic, Typeable)
   deriving anyclass (ToJSON, FromJSON)

@@ -64,10 +64,10 @@ ensureAdmin adminM = do
 indexHandler :: FloraAdminM (Html ())
 indexHandler = do
   session <- getSession
-  templateDefaults <- fromSession session defaultTemplateEnv
+  templateEnv <- fromSession session defaultTemplateEnv >>= \te -> pure $ set (#activeElements % #adminDashboard) True te
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   report <- liftIO $ withPool pool getReport
-  render templateDefaults (Templates.index report)
+  render templateEnv (Templates.index report)
 
 makeReadmesHandler :: FloraAdminM (Html ())
 makeReadmesHandler = localDomain "makeReadmesHandler" $ do

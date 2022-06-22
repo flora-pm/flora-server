@@ -202,6 +202,7 @@ extractPackageDataFromCabal userId genericDesc = do
           , bugTracker = packageDesc ^. #bugReports % to display % to Just
           , maintainer = packageDesc ^. #maintainer % to display
           , synopsis = packageDesc ^. #synopsis % to display
+          , description = packageDesc ^. #description % to display
           }
 
   let release =
