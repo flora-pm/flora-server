@@ -107,15 +107,21 @@ darkModeToggle = do
         img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 mr-2 invert"]
         "Light Mode"
   let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200 dark:bg-purple-3"
-  button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false",
-           class_ $ "hidden dark:inline-flex " <> buttonBaseClasses] darkModeContent
-  button_ [xOn_ "click" "darkMode = !darkMode; menuOpen = false",
-           class_ $ "dark:hidden " <> buttonBaseClasses] lightModeContent
+  button_
+    [ xOn_ "click" "darkMode = !darkMode; menuOpen = false"
+    , class_ $ "hidden dark:inline-flex " <> buttonBaseClasses
+    ]
+    darkModeContent
+  button_
+    [ xOn_ "click" "darkMode = !darkMode; menuOpen = false"
+    , class_ $ "dark:hidden " <> buttonBaseClasses
+    ]
+    lightModeContent
   input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "darkMode"]
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
 getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login/Signup" False
-getUsernameOrLogin _ = ""--navBarLink' "#" "Profile" False
+getUsernameOrLogin _ = "" -- navBarLink' "#" "Profile" False
 
 isActive :: Bool -> Text
 isActive True = " active"
