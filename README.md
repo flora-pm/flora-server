@@ -50,7 +50,7 @@ tools will still be accessible.
 
 ### Flora server
 
-Configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
+The configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
 server will tell you which ones are missing.
 
 To start in the best of conditions, create a file called `environment.local.sh` with the following content:
@@ -88,7 +88,7 @@ you can also use `db-create` and `db-drop` to create and delete the database in 
 ### Docker Workflow
 
 A docker-based workflow is provided. The idea is to develop from within a container that brings with it all dependencies,
-and communicates with another container for the Postgres database.
+and communicates with another container for the PostgreSQL database.
 
 ```bash
 # You need to build the container first. It's gonna take around 13 minutes the first time you build

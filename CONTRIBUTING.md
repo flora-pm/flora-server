@@ -5,6 +5,21 @@ but we need you to read this document when you open your PR or your issue:
 
 We need you to read and acknowledge our [Code of Conduct][CoC] document.
 
+The following Haskell command-line tools will have to be installed:
+
+* `postgresql-migration`: The tool used to perform schema migrations
+* `fourmolu`: The tool to style the code base
+* `hlint` & `apply-refact`: The tools to enforce certain patterns in the code base ("lint")
+* `cabal-fmt` and `nixfmt`: the tools to style the cabal and nix files
+* `ghcid`: The tool to automatically reload the Haskell code base upon source changes
+
+```bash
+$ cabal install -j postgresql-migration fourmolu hlint apply-refact cabal-fmt nixfmt ghcid
+```
+
+* `yarn`: The tool that handles the JavaScript code bases
+* `esbuild`: The tool that handles asset bundling
+
 ### Pull Requests
 
 You need to
