@@ -4,21 +4,22 @@
 module Flora.Environment.OddJobs where
 
 import Data.Pool hiding (PoolConfig)
+import qualified Database.PostgreSQL.Simple as PG
 import Log hiding (LogLevel)
 import OddJobs.ConfigBuilder
-import OddJobs.Job (Config(..))
-import OddJobs.Types (UIConfig(..), ConcurrencyControl (..), Job)
-import qualified Database.PostgreSQL.Simple as PG
+import OddJobs.Job (Config (..))
+import OddJobs.Types (ConcurrencyControl (..), Job, UIConfig (..))
 
 import Flora.Environment.Config
 import Flora.OddJobs.Types
 
-makeConfig :: JobsRunnerEnv -- ^ 
-           -> FloraConfig -- ^ 
-           -> Logger -- ^ 
-           -> Pool PG.Connection -- ^ 
-           -> (Pool PG.Connection -> Job -> JobsRunnerM ()) -- ^ 
-           -> Config
+makeConfig ::
+  JobsRunnerEnv ->
+  FloraConfig ->
+  Logger ->
+  Pool PG.Connection ->
+  (Pool PG.Connection -> Job -> JobsRunnerM ()) ->
+  Config
 makeConfig runnerEnv cfg logger pool runnerContinuation =
   mkConfig
     (flip $ structuredLogging cfg logger)
@@ -31,4 +32,3 @@ makeConfig runnerEnv cfg logger pool runnerContinuation =
 makeUIConfig :: FloraConfig -> Logger -> Pool PG.Connection -> UIConfig
 makeUIConfig cfg logger pool =
   mkUIConfig (flip $ structuredLogging cfg logger) jobTableName pool id
-

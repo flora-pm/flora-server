@@ -13,32 +13,32 @@ module Flora.OddJobs
   )
 where
 
+import qualified Commonmark
 import Commonmark.Extensions (emojiSpec)
 import Control.Exception
 import Control.Monad.IO.Class
-import Data.Aeson (fromJSON, Result (..))
+import Data.Aeson (Result (..), fromJSON)
 import Data.Pool
 import Data.Text
 import Data.Text.Display
+import qualified Data.Text.Lazy as TL
 import Database.PostgreSQL.Entity.DBT
+import qualified Database.PostgreSQL.Simple as PG
 import Distribution.Types.Version
 import GHC.Stack
 import Log
+import qualified Lucid
 import Network.HTTP.Types (notFound404)
 import OddJobs.Job (Job (..), createJob)
 import Optics.Core
-import Servant.Client (ClientError(..))
-import Servant.Client.Core (ResponseF(..))
-import qualified Commonmark
-import qualified Data.Text.Lazy as TL
-import qualified Database.PostgreSQL.Simple as PG
-import qualified Lucid
+import Servant.Client (ClientError (..))
+import Servant.Client.Core (ResponseF (..))
 
 import Flora.Model.Package
 import Flora.Model.Release
 import Flora.Model.Release.Update (updateReadme)
 import Flora.OddJobs.Types
-import Flora.ThirdParties.Hackage.API (VersionedPackage(..))
+import Flora.ThirdParties.Hackage.API (VersionedPackage (..))
 import qualified Flora.ThirdParties.Hackage.Client as Hackage
 
 scheduleReadmeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
@@ -58,8 +58,8 @@ makeReadme pool pay@MkReadmePayload{..} = localDomain ("for-package " <> display
     Left e@(FailureResponse _ response) -> do
       -- If the README simply doesn't exist, we skip it by marking it as successful.
       if response ^. #responseStatusCode == notFound404
-      then liftIO $ withPool pool $ updateReadme mpReleaseId Nothing
-      else throw e 
+        then liftIO $ withPool pool $ updateReadme mpReleaseId Nothing
+        else throw e
     Left e -> throw e
     Right bodyText -> do
       logInfo "got a body" bodyText
@@ -75,7 +75,6 @@ makeReadme pool pay@MkReadmePayload{..} = localDomain ("for-package " <> display
           readmeBody = Lucid.toHtmlRaw @Text $ TL.toStrict htmlTxt
 
       liftIO $ withPool pool $ updateReadme mpReleaseId (Just $ MkTextHtml readmeBody)
-
 
 runner :: Pool PG.Connection -> Job -> JobsRunnerM ()
 runner pool job = localDomain "job-runner" $

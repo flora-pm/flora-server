@@ -9,8 +9,8 @@ import Servant.Client
 import Control.Monad.Reader
 import Data.Proxy
 import Data.Text
+import Flora.OddJobs.Types (JobsRunnerEnv (..), JobsRunnerM)
 import Flora.ThirdParties.Hackage.API as API
-import Flora.OddJobs.Types (JobsRunnerM, JobsRunnerEnv (..))
 
 request :: ClientM a -> JobsRunnerM (Either ClientError a)
 request req = do
@@ -29,6 +29,7 @@ getHackageUser username = hackageClient // API.withUser /: username // API.getUs
 
 getPackageReadme :: VersionedPackage -> ClientM Text
 getPackageReadme versionedPackage =
-  hackageClient 
-    // API.withPackage /: versionedPackage
-    // API.getReadme
+  hackageClient
+    // API.withPackage
+    /: versionedPackage
+      // API.getReadme

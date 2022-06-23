@@ -44,7 +44,7 @@ import qualified Flora.Import.Categories.Tuning as Tuning
 import qualified Flora.Model.Category.Update as Update
 import Flora.Model.Package.Component as Component
 import Flora.Model.Package.Orphans ()
-import Flora.Model.Package.Types 
+import Flora.Model.Package.Types
 import qualified Flora.Model.Package.Update as Update
 import Flora.Model.Release
 import qualified Flora.Model.Release.Update as Update

@@ -3,30 +3,30 @@
 
 module Flora.OddJobs.Types where
 
+import qualified Commonmark
 import Control.Exception (Exception)
 import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Reader ( ReaderT, MonadReader, runReaderT )
+import Control.Monad.Reader (MonadReader, ReaderT, runReaderT)
 import Data.Aeson
 import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Distribution.Pretty
-import Distribution.Version (Version, versionNumbers, mkVersion)
+import Distribution.Version (Version, mkVersion, versionNumbers)
 import GHC.Generics (Generic)
-import GHC.Stack (HasCallStack, prettyCallStack, callStack)
+import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Log hiding (LogLevel)
 import Network.HTTP.Client
 import OddJobs.Job (Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (FailureMode)
-import qualified Commonmark
-import qualified Data.Text as Text
 
-import Flora.Environment.Config
-import FloraWeb.Server.Logging
-import Flora.Model.Package (PackageName(..))
-import Flora.Model.Release (ReleaseId)
-import Servant (ToHttpApiData)
 import Data.Text.Display
+import Flora.Environment.Config
+import Flora.Model.Package (PackageName (..))
+import Flora.Model.Release (ReleaseId)
+import FloraWeb.Server.Logging
+import Servant (ToHttpApiData)
 
 newtype JobsRunnerM a = JobsRunnerM {getJobRunnerM :: ReaderT JobsRunnerEnv (LogT IO) a}
   deriving newtype
@@ -39,7 +39,7 @@ newtype JobsRunnerM a = JobsRunnerM {getJobRunnerM :: ReaderT JobsRunnerEnv (Log
     )
 
 runJobRunnerM :: JobsRunnerEnv -> Logger -> JobsRunnerM a -> IO a
-runJobRunnerM runnerEnv logger jobRunner = 
+runJobRunnerM runnerEnv logger jobRunner =
   Log.runLogT "flora-jobs" logger defaultLogLevel (runReaderT (getJobRunnerM jobRunner) runnerEnv)
 
 data JobsRunnerEnv = JobsRunnerEnv
@@ -67,7 +67,8 @@ renderExceptionWithCallstack errors valueConstructor =
     <> " */)"
 
 newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
-  deriving (Pretty, ToHttpApiData, Display)
+  deriving
+    (Pretty, ToHttpApiData, Display)
     via Version
 
 instance ToJSON IntAesonVersion where
@@ -118,4 +119,3 @@ structuredLogging FloraConfig{..} logger b =
     LevelWarn -> logAttention "LevelWarn" b
     LevelError -> logAttention "LevelError" b
     (LevelOther x) -> logAttention ("LevelOther " <> Text.pack (show x)) b
-
