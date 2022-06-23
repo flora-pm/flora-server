@@ -1,5 +1,6 @@
 module FloraWeb.Server where
 
+import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 import Control.Monad (void, when)
@@ -53,6 +54,9 @@ import FloraWeb.Types
 import qualified OddJobs.Endpoints as OddJobs
 import OddJobs.Job (startJobRunner)
 import qualified OddJobs.Types as OddJobs
+import qualified Network.HTTP.Client as HTTP
+import Flora.OddJobs.Types (RunnerEnv(..))
+import qualified Flora.OddJobs as OddJobs
 
 runFlora :: IO ()
 runFlora = bracket getFloraEnv shutdownFlora $ \env -> do
@@ -77,8 +81,14 @@ logException env logger exception =
 
 runServer :: Logger -> FloraEnv -> IO ()
 runServer appLogger floraEnv = do
+  httpManager <- HTTP.newManager tlsManagerSettings
+  let runnerEnv = RunnerEnv httpManager
   let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv ^. #config) appLogger $ pool floraEnv
-      oddJobsCfg = OddJobs.makeConfig (floraEnv ^. #config) appLogger $ pool floraEnv
+      oddJobsCfg = OddJobs.makeConfig runnerEnv
+                                      (floraEnv ^. #config)
+                                      appLogger 
+                                      (floraEnv ^. #pool)
+                                      OddJobs.runner
 
   forkIO $
     Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv ^. #environment) appLogger)
@@ -104,11 +114,11 @@ runServer appLogger floraEnv = do
     $ server
 
 mkServer :: Logger -> WebEnvStore -> FloraEnv -> OddJobs.UIConfig -> OddJobs.Env -> Application
-mkServer logger webEnvStore floraEnv cfg env = do
-  genericServeTWithContext (naturalTransform logger webEnvStore) (floraServer cfg env) (genAuthServerContext logger floraEnv)
+mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
+  genericServeTWithContext (naturalTransform logger webEnvStore) (floraServer cfg jobsRunnerEnv) (genAuthServerContext logger floraEnv)
 
 floraServer :: OddJobs.UIConfig -> OddJobs.Env -> Routes (AsServerT FloraM)
-floraServer cfg env =
+floraServer cfg jobsRunnerEnv =
   Routes
     { assets = serveDirectoryWebApp "./static"
     , pages = \sessionWithCookies ->
@@ -116,7 +126,7 @@ floraServer cfg env =
           (Proxy @Pages.Routes)
           (Proxy @'[FloraAuthContext])
           (\f -> withReaderT (const sessionWithCookies) f)
-          (Pages.server cfg env)
+          (Pages.server cfg jobsRunnerEnv)
     , autoreload =
         hoistServer
           (Proxy @AutoreloadRoute)

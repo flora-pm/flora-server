@@ -46,10 +46,28 @@ showPackage ::
   Word ->
   Vector Category ->
   FloraHTML
-showPackage latestRelease packageReleases numberOfReleases package@Package{namespace, name} dependents numberOfDependents dependencies numberOfDependencies categories = do
-  div_ [class_ "larger-container"] $ do
-    presentationHeader latestRelease namespace name (latestRelease ^. #metadata % #synopsis)
-    packageBody package latestRelease packageReleases numberOfReleases dependencies numberOfDependencies dependents numberOfDependents categories
+showPackage
+  latestRelease
+  packageReleases
+  numberOfReleases
+  package@Package{namespace, name}
+  dependents
+  numberOfDependents
+  dependencies
+  numberOfDependencies
+  categories =
+    div_ [class_ "larger-container"] $ do
+      presentationHeader latestRelease namespace name (latestRelease ^. #metadata % #synopsis)
+      packageBody
+        package
+        latestRelease
+        packageReleases
+        numberOfReleases
+        dependencies
+        numberOfDependencies
+        dependents
+        numberOfDependents
+        categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = do
@@ -61,29 +79,48 @@ presentationHeader release namespace name synopsis = do
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
-packageBody :: Package -> Release -> Vector Release -> Word -> Vector (Namespace, PackageName, Text) -> Word -> Vector Package -> Word -> Vector Category -> FloraHTML
-packageBody Package{namespace, name = packageName} latestRelease@Release{metadata} packageReleases numberOfReleases dependencies numberOfDependencies dependents numberOfDependents categories =
-  div_ $ do
-    div_ [class_ "package-body md:flex"] $ do
-      div_ [class_ "package-left-column grow"] $ do
-        ul_ [class_ "package-left-rows grid-rows-3"] $ do
-          displayCategories categories
-          displayLicense (metadata ^. #license)
-          displayLinks packageName latestRelease metadata
-          displayVersions namespace packageName packageReleases numberOfReleases
-      div_ [class_ "package-readme-column grow"] $ do
-        ul_ [class_ "package-left-rows grid-rows-3"] $ do
-          displayReadme latestRelease
-      div_ [class_ "package-right-column md:max-w-xs"] $ do
-        ul_ [class_ "package-right-rows grid-rows-3"] $ do
-          displayInstructions packageName latestRelease
-          displayMaintainer (metadata ^. #maintainer)
-          displayDependencies (namespace, packageName) numberOfDependencies dependencies
-          displayDependents (namespace, packageName) numberOfDependents dependents
+packageBody ::
+  Package ->
+  Release ->
+  Vector Release ->
+  Word ->
+  Vector (Namespace, PackageName, Text) ->
+  Word ->
+  Vector Package ->
+  Word ->
+  Vector Category ->
+  FloraHTML
+packageBody
+  Package{namespace, name = packageName}
+  latestRelease@Release{metadata}
+  packageReleases
+  numberOfReleases
+  dependencies
+  numberOfDependencies
+  dependents
+  numberOfDependents
+  categories =
+    div_ $ do
+      div_ [class_ "package-body md:flex"] $ do
+        div_ [class_ "package-left-column grow"] $ do
+          ul_ [class_ "package-left-rows grid-rows-3"] $ do
+            displayCategories categories
+            displayLicense (metadata ^. #license)
+            displayLinks packageName latestRelease metadata
+            displayVersions namespace packageName packageReleases numberOfReleases
+        div_ [class_ "package-readme-column grow"] $ do
+          div_ [class_ "grid-rows-3 package-readme"] $ do
+            displayReadme latestRelease
+        div_ [class_ "package-right-column md:max-w-xs"] $ do
+          ul_ [class_ "package-right-rows grid-rows-3"] $ do
+            displayInstructions packageName latestRelease
+            displayMaintainer (metadata ^. #maintainer)
+            displayDependencies (namespace, packageName) numberOfDependencies dependencies
+            displayDependents (namespace, packageName) numberOfDependents dependents
 
 displayReadme :: Release -> FloraHTML
-displayReadme release = li_ [class_ "mb-5"] $ do
-  ul_ [class_ "readme"] $ case readme release of
+displayReadme release =
+  case readme release of
     Nothing -> toHtml @Text "no readme available"
     Just (MkTextHtml readme) -> relaxHtmlT readme
 

@@ -152,7 +152,11 @@ div[class="bullets"] {
   @apply bg-gray-7 dark:bg-blue-1;
 }
 .package-readme-column{
-    margin: 0 2em;
+  margin: 0 2em;
+  overflow: auto;
+}
+
+.package-readme{
 }
 
 ul.package-list a {
