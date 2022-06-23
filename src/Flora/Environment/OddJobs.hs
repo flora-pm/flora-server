@@ -13,7 +13,7 @@ import qualified Database.PostgreSQL.Simple as PG
 import Flora.Environment.Config
 import Flora.OddJobs.Types
 
-makeConfig :: RunnerEnv -- ^ 
+makeConfig :: JobsRunnerEnv -- ^ 
            -> FloraConfig -- ^ 
            -> Logger -- ^ 
            -> Pool PG.Connection -- ^ 

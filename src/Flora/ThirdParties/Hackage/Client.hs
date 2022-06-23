@@ -10,11 +10,11 @@ import Control.Monad.Reader
 import Data.Proxy
 import Data.Text
 import Flora.ThirdParties.Hackage.API as API
-import Flora.OddJobs.Types (JobsRunnerM, RunnerEnv (..))
+import Flora.OddJobs.Types (JobsRunnerM, JobsRunnerEnv (..))
 
 request :: ClientM a -> JobsRunnerM (Either ClientError a)
 request req = do
-  RunnerEnv{httpManager} <- ask
+  JobsRunnerEnv{httpManager} <- ask
   let clientEnv = mkClientEnv httpManager BaseUrl{baseUrlScheme = Https, baseUrlHost = "hackage.haskell.org", baseUrlPort = 443, baseUrlPath = ""}
   liftIO $ runClientM req clientEnv
 
@@ -27,5 +27,8 @@ listHackageUsers = hackageClient // API.listUsers
 getHackageUser :: Text -> ClientM HackageUserDetailsObject
 getHackageUser username = hackageClient // API.withUser /: username // API.getUser
 
-getPackageReadme :: Text -> ClientM Text
-getPackageReadme packageName = hackageClient // API.withPackage /: packageName // API.getReadme
+getPackageReadme :: VersionedPackage -> ClientM Text
+getPackageReadme versionedPackage =
+  hackageClient 
+    // API.withPackage /: versionedPackage
+    // API.getReadme

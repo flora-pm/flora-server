@@ -55,8 +55,8 @@ import qualified OddJobs.Endpoints as OddJobs
 import OddJobs.Job (startJobRunner)
 import qualified OddJobs.Types as OddJobs
 import qualified Network.HTTP.Client as HTTP
-import Flora.OddJobs.Types (RunnerEnv(..))
 import qualified Flora.OddJobs as OddJobs
+import Flora.OddJobs.Types (JobsRunnerEnv(..))
 
 runFlora :: IO ()
 runFlora = bracket getFloraEnv shutdownFlora $ \env -> do
@@ -82,7 +82,7 @@ logException env logger exception =
 runServer :: Logger -> FloraEnv -> IO ()
 runServer appLogger floraEnv = do
   httpManager <- HTTP.newManager tlsManagerSettings
-  let runnerEnv = RunnerEnv httpManager
+  let runnerEnv = JobsRunnerEnv httpManager
   let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv ^. #config) appLogger $ pool floraEnv
       oddJobsCfg = OddJobs.makeConfig runnerEnv
                                       (floraEnv ^. #config)

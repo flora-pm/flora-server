@@ -25,22 +25,24 @@ import Flora.Environment.Config
 import FloraWeb.Server.Logging
 import Flora.Model.Package (PackageName(..))
 import Flora.Model.Release (ReleaseId)
+import Servant (ToHttpApiData)
+import Data.Text.Display
 
-newtype JobsRunnerM a = JobsRunnerM {getJobRunnerM :: ReaderT RunnerEnv (LogT IO) a}
+newtype JobsRunnerM a = JobsRunnerM {getJobRunnerM :: ReaderT JobsRunnerEnv (LogT IO) a}
   deriving newtype
     ( Functor
     , Applicative
     , Monad
     , MonadIO
     , MonadLog
-    , MonadReader RunnerEnv
+    , MonadReader JobsRunnerEnv
     )
 
-runJobRunnerM :: RunnerEnv -> Logger -> JobsRunnerM a -> IO a
+runJobRunnerM :: JobsRunnerEnv -> Logger -> JobsRunnerM a -> IO a
 runJobRunnerM runnerEnv logger jobRunner = 
   Log.runLogT "flora-jobs" logger defaultLogLevel (runReaderT (getJobRunnerM jobRunner) runnerEnv)
 
-data RunnerEnv = RunnerEnv
+data JobsRunnerEnv = JobsRunnerEnv
   { httpManager :: Manager
   }
   deriving stock (Generic)
@@ -65,7 +67,8 @@ renderExceptionWithCallstack errors valueConstructor =
     <> " */)"
 
 newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
-  deriving newtype (Pretty)
+  deriving (Pretty, ToHttpApiData, Display)
+    via Version
 
 instance ToJSON IntAesonVersion where
   toJSON (MkIntAesonVersion x) = toJSON $ versionNumbers x
