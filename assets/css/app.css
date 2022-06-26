@@ -2,6 +2,8 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+@import "package-readme.css";
+
 @layer components {
   .larger-container {
     @apply max-w-7xl mx-auto px-2;
@@ -152,7 +154,8 @@ div[class="bullets"] {
   @apply bg-gray-7 dark:bg-blue-1;
 }
 .package-readme-column{
-    margin: 0 2em;
+  margin: 0 2em;
+  overflow: auto;
 }
 
 ul.package-list a {

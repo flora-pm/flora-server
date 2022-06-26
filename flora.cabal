@@ -116,6 +116,7 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.OddJobs
+    Flora.OddJobs.Types
     Flora.Publish
     Flora.Search
     Flora.ThirdParties.Hackage.API
@@ -186,6 +187,7 @@ library
     , cmark-gfm                  ^>=0.2
     , colourista                 ^>=0.1
     , commonmark
+    , commonmark-extensions
     , containers                 ^>=0.6
     , cookie                     ^>=0.4
     , cryptohash                 ^>=0.11
@@ -195,6 +197,7 @@ library
     , filepath                   ^>=1.4
     , http-api-data              ^>=0.4
     , http-client                ==0.7.10
+    , http-client-tls
     , http-types                 ^>=0.12
     , lens
     , log-base                   ^>=0.11

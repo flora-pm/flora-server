@@ -1,12 +1,8 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE QuasiQuotes #-}
-
 -- | Represents the various jobs that can be run
 module Flora.OddJobs
   ( scheduleReadmeJob
-  , runner
   , jobTableName
+  , runner
 
     -- * exposed for testing
 
@@ -18,57 +14,32 @@ module Flora.OddJobs
 where
 
 import qualified Commonmark
+import Commonmark.Extensions (emojiSpec)
 import Control.Exception
-import qualified Control.Lens as L
-import Control.Monad
 import Control.Monad.IO.Class
-import Data.Aeson (FromJSON, ToJSON)
-import qualified Data.Aeson as Aes
-import Data.ByteString.Lazy (ByteString, toStrict)
+import Data.Aeson (Result (..), fromJSON)
 import Data.Pool
 import Data.Text
-import Data.Text.Encoding
-import Data.Text.Encoding.Error
+import Data.Text.Display
 import qualified Data.Text.Lazy as TL
-import Database.PostgreSQL.Entity (updateFieldsBy)
 import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Entity.Types (field)
 import qualified Database.PostgreSQL.Simple as PG
-import Database.PostgreSQL.Simple.Types
-import Distribution.Pretty
 import Distribution.Types.Version
-import Flora.Model.Package
-import Flora.Model.Release
-import GHC.Generics
 import GHC.Stack
 import Log
 import qualified Lucid
-import qualified Network.Wreq as Wreq
-import OddJobs.Job
+import Network.HTTP.Types (notFound404)
+import OddJobs.Job (Job (..), createJob)
+import Optics.Core
+import Servant.Client (ClientError (..))
+import Servant.Client.Core (ResponseF (..))
 
-newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
-  deriving newtype (Pretty)
-
-instance ToJSON IntAesonVersion where
-  toJSON (MkIntAesonVersion x) = Aes.toJSON $ versionNumbers x
-
-instance FromJSON IntAesonVersion where
-  parseJSON val = MkIntAesonVersion . mkVersion <$> Aes.parseJSON val
-
-data ReadmePayload = MkReadmePayload
-  { mpPackage :: PackageName
-  , mpReleaseId :: ReleaseId -- needed to write the readme in db
-  , mpVersion :: IntAesonVersion
-  }
-  deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
-
--- these represent the possible odd jobs we can run.
-data FloraOddJobs
-  = MkReadme ReadmePayload
-  | DoNothing -- needed to keep this type tagged
-  deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
+import Flora.Model.Package
+import Flora.Model.Release
+import Flora.Model.Release.Update (updateReadme)
+import Flora.OddJobs.Types
+import Flora.ThirdParties.Hackage.API (VersionedPackage (..))
+import qualified Flora.ThirdParties.Hackage.Client as Hackage
 
 scheduleReadmeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
 scheduleReadmeJob conn rid package version =
@@ -78,72 +49,38 @@ scheduleReadmeJob conn rid package version =
       jobTableName
       (MkReadme $ MkReadmePayload package rid $ MkIntAesonVersion version)
 
-jobTableName :: QualifiedIdentifier
-jobTableName = "oddjobs"
+makeReadme :: HasCallStack => Pool PG.Connection -> ReadmePayload -> JobsRunnerM ()
+makeReadme pool pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPackage) $ do
+  logInfo "making readme" pay
+  let payload = VersionedPackage mpPackage mpVersion
+  gewt <- Hackage.request $ Hackage.getPackageReadme payload
+  case gewt of
+    Left e@(FailureResponse _ response) -> do
+      -- If the README simply doesn't exist, we skip it by marking it as successful.
+      if response ^. #responseStatusCode == notFound404
+        then liftIO $ withPool pool $ updateReadme mpReleaseId Nothing
+        else throw e
+    Left e -> throw e
+    Right bodyText -> do
+      logInfo "got a body" bodyText
 
-runner :: Pool PG.Connection -> Job -> LogT IO ()
+      htmlTxt <- do
+        -- let extensions = emojiSpec
+        -- Commonmark.commonmarkWith extensions ("readme " <> show mpPackage) bodyText
+        pure (Commonmark.commonmark ("readme " <> show mpPackage) bodyText)
+          >>= \case
+            Left exception -> throw (MarkdownFailed exception)
+            Right (y :: Commonmark.Html ()) -> pure $ Commonmark.renderHtml y
+
+      let readmeBody :: Lucid.Html ()
+          readmeBody = Lucid.toHtmlRaw @Text $ TL.toStrict htmlTxt
+
+      liftIO $ withPool pool $ updateReadme mpReleaseId (Just $ MkTextHtml readmeBody)
+
+runner :: Pool PG.Connection -> Job -> JobsRunnerM ()
 runner pool job = localDomain "job-runner" $
-  case Aes.fromJSON (jobPayload job) of
-    Aes.Error str -> logAttention "decode error" str
-    Aes.Success val -> case val of
+  case fromJSON (jobPayload job) of
+    Error str -> logAttention "decode error" str
+    Success val -> case val of
       DoNothing -> logInfo "doing nothing" ()
       MkReadme x -> makeReadme pool x
-
-makeReadme :: HasCallStack => Pool PG.Connection -> ReadmePayload -> LogT IO ()
-makeReadme pool pay@MkReadmePayload{..} = localDomain ("for-package " <> package) $ do
-  logInfo "making readme" pay
-  gewt <-
-    liftIO $
-      Wreq.get $
-        "https://hackage.haskell.org/package/"
-          <> unpack package
-          <> "-"
-          <> prettyShow mpVersion
-          <> "/readme.txt"
-
-  logInfo "got a response" ()
-
-  let respBody :: ByteString
-      respBody = gewt L.^. Wreq.responseBody
-
-  bodyText <- case decodeUtf8' (toStrict respBody) of
-    Left exception -> liftIO $ throwIO $ DecodeFailed exception
-    Right x -> pure x
-
-  logInfo "got a body" bodyText
-
-  htmlTxt <- case Commonmark.commonmark ("readme " <> unpack package) bodyText of
-    Left exception -> liftIO $ throwIO $ MarkdownFailed exception
-    Right (y :: Commonmark.Html ()) -> pure $ Commonmark.renderHtml y
-
-  let readmeBody :: Lucid.Html ()
-      readmeBody = Lucid.toHtmlRaw @Text $ TL.toStrict htmlTxt
-
-  void $
-    liftIO $
-      withPool pool $
-        updateFieldsBy @Release
-          [[field| readme |]]
-          ([field| release_id |], mpReleaseId)
-          (Only $ Just $ MkTextHtml readmeBody)
-  where
-    package = unPackageName mpPackage
-
-data OddJobException where
-  DecodeFailed :: HasCallStack => UnicodeException -> OddJobException
-  MarkdownFailed :: HasCallStack => Commonmark.ParseError -> OddJobException
-  deriving (Exception)
-
-instance Show OddJobException where
-  show (DecodeFailed x) = renderExceptionWithCallstack x "DecodeFailed"
-  show (MarkdownFailed x) = renderExceptionWithCallstack x "MarkdownFailed"
-
-renderExceptionWithCallstack :: (HasCallStack, Show a) => a -> String -> String
-renderExceptionWithCallstack errors valueConstructor =
-  "("
-    <> valueConstructor
-    <> " $ "
-    <> show errors
-    <> "/*"
-    <> prettyCallStack callStack
-    <> " */)"
