@@ -25,3 +25,4 @@ pgdata/
 .vscode/
 .DS_Store
 tags.lock
+cabal.project.local
