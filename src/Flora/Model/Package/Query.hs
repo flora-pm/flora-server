@@ -186,7 +186,7 @@ getRequirements relId = query Select q (Only relId)
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
-    select distinct dependency.namespace, dependency.name, dependency.synopsis, req.requirement from requirements as req
+    select distinct dependency.namespace, dependency.name, rel.synopsis, req.requirement from requirements as req
      inner join packages as dependency on dependency.package_id = req.package_id
      inner join package_components as pc ON pc.package_component_id = req.package_component_id
      inner join releases as rel on rel.release_id = pc.release_id
