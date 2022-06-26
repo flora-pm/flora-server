@@ -56,4 +56,12 @@
     background-color: #354561;
     margin-bottom: 16px;
   }
+
+  code {
+    padding: .2em .4em;
+    margin: 0;
+    font-size: 85%;
+    background-color: #354561;
+    border-radius: 6px;
+  }
 }
