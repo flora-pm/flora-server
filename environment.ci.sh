@@ -2,10 +2,10 @@ source environment.sh
 
 export FLORA_DB_DATABASE="flora_test"
 export FLORA_DB_PASSWORD="postgres"
-export FLORA_DB_POOL_CONNECTIONS=20
 export FLORA_DB_PORT=5432
 export FLORA_DB_HOST="localhost"
 export FLORA_DB_SUB_POOLS=10
+export FLORA_DB_POOL_CONNECTIONS=50
 export FLORA_DB_TIMEOUT=10
 export FLORA_DB_USER="postgres"
 export FLORA_LOGGING_DESTINATION="stdout"
