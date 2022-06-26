@@ -64,9 +64,10 @@ makeReadme pool pay@MkReadmePayload{..} = localDomain ("for-package " <> display
     Right bodyText -> do
       logInfo "got a body" bodyText
 
-      let extensions = emojiSpec
-      htmlTxt <-
-        Commonmark.commonmarkWith extensions ("readme " <> show mpPackage) bodyText
+      htmlTxt <- do
+        -- let extensions = emojiSpec
+        -- Commonmark.commonmarkWith extensions ("readme " <> show mpPackage) bodyText
+        pure (Commonmark.commonmark ("readme " <> show mpPackage) bodyText)
           >>= \case
             Left exception -> throw (MarkdownFailed exception)
             Right (y :: Commonmark.Html ()) -> pure $ Commonmark.renderHtml y
