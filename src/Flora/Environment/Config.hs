@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wno-orphans -Wno-deprecations #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config

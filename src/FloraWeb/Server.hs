@@ -39,7 +39,9 @@ import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
 import Control.Concurrent
 import qualified Control.Exception.Safe as Safe
+import qualified Database.PostgreSQL.Simple as PG
 import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import Flora.Environment.Config (FloraConfig (..))
 import qualified Flora.Environment.OddJobs as OddJobs
 import qualified Flora.OddJobs as OddJobs
 import Flora.OddJobs.Types (JobsRunnerEnv (..))
@@ -60,7 +62,7 @@ import qualified OddJobs.Types as OddJobs
 
 runFlora :: IO ()
 runFlora = bracket getFloraEnv shutdownFlora $ \env -> do
-  let baseURL = "http://localhost:" <> display (httpPort env)
+  let baseURL = "http://localhost:" <> display (env ^. #httpPort)
   blueMessage $ "🌺 Starting Flora server on " <> baseURL
   when (isJust $ env ^. (#logging % #sentryDSN)) (blueMessage "📋 Connected to Sentry endpoint")
   when (env ^. (#logging % #prometheusEnabled)) $ do
@@ -82,8 +84,16 @@ logException env logger exception =
 runServer :: Logger -> FloraEnv -> IO ()
 runServer appLogger floraEnv = do
   httpManager <- HTTP.newManager tlsManagerSettings
+  jobRunnerPool <-
+    Pool.newPool $
+      Pool.PoolConfig
+        { createResource = PG.connect (floraEnv ^. #config % #connectInfo)
+        , freeResource = PG.close
+        , poolCacheTTL = 10
+        , poolMaxResources = 10
+        }
   let runnerEnv = JobsRunnerEnv httpManager
-  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv ^. #config) appLogger $ pool floraEnv
+  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv ^. #config) appLogger jobRunnerPool
       oddJobsCfg =
         OddJobs.makeConfig
           runnerEnv
@@ -100,7 +110,7 @@ runServer appLogger floraEnv = do
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv
   let warpSettings =
-        setPort (fromIntegral $ httpPort floraEnv) $
+        setPort (fromIntegral $ floraEnv ^. #httpPort) $
           setOnException
             ( onException
                 appLogger
