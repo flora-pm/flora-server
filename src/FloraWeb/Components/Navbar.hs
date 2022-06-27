@@ -101,11 +101,9 @@ adminLink _ _ = ""
 darkModeToggle :: FloraHTML
 darkModeToggle = do
   let lightModeContent = do
-        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6 mr-2"]
-        "Dark Mode"
+        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6"]
   let darkModeContent = do
-        img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 mr-2 invert"]
-        "Light Mode"
+        img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 invert"]
   let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200 dark:bg-purple-3"
   button_
     [ xOn_ "click" "darkMode = !darkMode; menuOpen = false"

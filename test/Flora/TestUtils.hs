@@ -63,7 +63,7 @@ import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 import Data.Word
-import Database.PostgreSQL.Simple (Connection, close)
+import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
 import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Transact
 import GHC.Generics
@@ -111,7 +111,14 @@ liftDB :: DBT IO a -> TestM a
 liftDB comp = do
   env <- getTestEnv
   let pool = env ^. #pool
-  liftIO $ withPool pool comp
+  liftIO $
+    catch
+      (withPool pool comp)
+      ( \(e :: SqlError) ->
+          if sqlErrorMsg e == "connection disconnected"
+            then withPool pool comp
+            else throw e
+      )
 
 runTestM :: TestM a -> TestEnv -> IO a
 runTestM comp env =

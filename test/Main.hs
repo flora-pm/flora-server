@@ -2,6 +2,7 @@ module Main where
 
 import Data.Pool
 import Optics.Core
+import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
 import Database.PostgreSQL.Entity.DBT
@@ -15,6 +16,7 @@ import qualified Flora.UserSpec as UserSpec
 
 main :: IO ()
 main = do
+  hSetBuffering stdout LineBuffering
   env <- getFloraTestEnv
   withResource (env ^. #pool) testMigrations
   fixtures <- withPool (env ^. #pool) getFixtures
