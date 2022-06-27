@@ -1,9 +1,10 @@
 module Flora.Import.Categories.Tuning where
 
 import Control.Monad.IO.Class
+import qualified Data.ByteString.Char8 as S8
 import Data.Text (Text)
 import Data.Text.Display
-import qualified Data.Text.IO as T
+import qualified Data.Text.Encoding as T
 import qualified Data.Text.Internal.Builder as TB
 import GHC.Generics
 import qualified Language.Souffle.Interpreted as Souffle
@@ -78,7 +79,7 @@ normalise input = do
         Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
   if (not . null) (normalisationIssues result)
     then do
-      T.hPutStrLn stderr $ "[!] Could not normalise these categories: " <> display (normalisationIssues result)
+      logStdErr $ "[!] Could not normalise these categories: " <> display (normalisationIssues result)
       pure result
     else pure result
 
@@ -90,3 +91,6 @@ sourceCategories = do
     Just prog -> do
       Souffle.run prog
       Souffle.getFacts prog
+
+logStdErr :: Text -> IO ()
+logStdErr = S8.hPutStrLn stderr . T.encodeUtf8

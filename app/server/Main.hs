@@ -1,6 +1,9 @@
 module Main where
 
 import FloraWeb.Server
+import System.IO
 
 main :: IO ()
-main = runFlora
+main = do
+  hSetBuffering stdout LineBuffering
+  runFlora
