@@ -2,6 +2,7 @@ module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold)
 import Data.Text (Text, pack)
+import qualified Data.Text as Text
 import Data.Text.Display
 import Data.Time (defaultTimeLocale)
 import qualified Data.Time as Time
@@ -10,6 +11,7 @@ import qualified Data.Vector as V
 import qualified Data.Vector as Vector
 import Distribution.Pretty (pretty)
 import qualified Distribution.SPDX.License as SPDX
+import qualified Flora.Haddock as Haddock
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
@@ -17,6 +19,7 @@ import Flora.Model.Package.Types
   , PackageName
   )
 import Flora.Model.Release (Release (..), ReleaseMetadata (..), TextHtml (..))
+import FloraWeb.Components.Utils (text)
 import qualified FloraWeb.Links as Links
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
@@ -121,7 +124,7 @@ packageBody
 displayReadme :: Release -> FloraHTML
 displayReadme release =
   case readme release of
-    Nothing -> toHtml @Text "no readme available"
+    Nothing -> toHtmlRaw (Text.pack $ Haddock.renderHaddock $ Text.unpack $ release ^. #metadata ^. #description)
     Just (MkTextHtml readme) -> relaxHtmlT readme
 
 displayReleaseVersion :: Release -> FloraHTML
