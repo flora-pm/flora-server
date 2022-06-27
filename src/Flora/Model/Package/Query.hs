@@ -138,7 +138,7 @@ packageDependentsWithLatestVersionQuery =
   [sql|
   SELECT DISTINCT   p."namespace"
                   , p."name"
-                  , r."synopsis"
+                  , r.metadata ->> 'synopsis' as synopsis
                   , max(r."version")
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
@@ -147,7 +147,7 @@ packageDependentsWithLatestVersionQuery =
                 ON r."package_id" = p."package_id"
   WHERE  dep."namespace" = ?
     AND  dep."name" = ?
-  GROUP BY (p.namespace, p.name, r.synopsis)
+  GROUP BY (p.namespace, p.name, synopsis)
   |]
 
 getComponentById :: MonadIO m => ComponentId -> DBT m (Maybe PackageComponent)
@@ -186,7 +186,8 @@ getRequirements relId = query Select q (Only relId)
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
-    select distinct dependency.namespace, dependency.name, rel.synopsis, req.requirement from requirements as req
+    select distinct  dependency.namespace, dependency.name, rel.metadata ->> 'synopsis' as synopsis, req.requirement
+     from requirements as req
      inner join packages as dependency on dependency.package_id = req.package_id
      inner join package_components as pc ON pc.package_component_id = req.package_component_id
      inner join releases as rel on rel.release_id = pc.release_id
