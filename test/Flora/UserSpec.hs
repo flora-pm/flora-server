@@ -22,8 +22,8 @@ spec :: Fixtures -> TestM TestTree
 spec fixtures =
   testThese
     "users"
-    [ testThis "Fetch user by Id" $ fetchUserById fixtures
-    , testThis "Fetch user by email" $ fetchUserByEmail fixtures
+    [ --testThis "Fetch user by Id" $ fetchUserById fixtures
+    --, testThis "Fetch user by email" $ fetchUserByEmail fixtures
     -- , testThis "Authenticate an arbitrary user" authenticateUser
     ]
 
