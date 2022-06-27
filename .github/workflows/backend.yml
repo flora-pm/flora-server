@@ -68,6 +68,7 @@ jobs:
         migrate init "${FLORA_PG_CONNSTRING}" 
         migrate migrate "${FLORA_PG_CONNSTRING}" migrations
         cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
-        cabal test
+        $(cabal list-bin test-suite:flora-test) -j1
+        
       env:
         PGPASSWORD: "postgres"

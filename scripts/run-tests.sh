@@ -13,7 +13,7 @@ cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora
 
 if [ -z "$1" ] ;
 then
-  cabal test
+  ./dist-newstyle/build/x86_64-linux/ghc-8.10.7/flora-0.0.1.0/t/flora-test/build/flora-test/flora-test -j1
 else
   ghcid --command='cabal v2-repl flora-test' --test 'Main.main'
 fi
