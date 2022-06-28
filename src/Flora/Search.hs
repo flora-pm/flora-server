@@ -4,6 +4,7 @@ import Data.Text (Text)
 import Data.Vector (Vector)
 
 import Control.Monad.IO.Class
+import Data.Aeson
 import Data.Text.Display (Display (..))
 import qualified Data.Text.Lazy.Builder as Builder
 import Database.PostgreSQL.Entity.DBT (withPool)
@@ -14,9 +15,8 @@ import qualified Flora.Model.Package.Query as Query
 import FloraWeb.Server.Auth (FloraPageM)
 import FloraWeb.Session (Session (..), getSession)
 import FloraWeb.Types (fetchFloraEnv)
-import Optics.Core
 import qualified Log
-import Data.Aeson
+import Optics.Core
 
 data SearchAction
   = ListAllPackages

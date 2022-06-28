@@ -8,9 +8,11 @@ import qualified Data.Vector as Vector
 import Optics.Core
 import Test.Tasty
 
+import Control.Monad.IO.Class
 import Data.Foldable
 import Data.Function
 import qualified Data.Vector as V
+import qualified Distribution.Types.Version as Cabal
 import Flora.Environment (TestEnv (TestEnv))
 import Flora.Import.Package
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
@@ -22,8 +24,6 @@ import Flora.Model.Release
 import qualified Flora.Model.Release.Query as Query
 import Flora.Model.User
 import Flora.TestUtils
-import Control.Monad.IO.Class
-import qualified Distribution.Types.Version as Cabal
 
 spec :: Fixtures -> TestM TestTree
 spec fixtures =
@@ -118,9 +118,9 @@ testBytestringDependencies = do
 testSearchResultUnicity :: Fixtures -> TestM ()
 testSearchResultUnicity fixtures = do
   importAllPackages fixtures
-  text <-  liftDB $ fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
+  text <- liftDB $ fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
   releases <- liftDB $ Query.getNumberOfReleases (text ^. #packageId)
-  assertEqual 2 releases 
+  assertEqual 2 releases
   results <- liftDB $ Query.searchPackage 0 "text"
   assertEqual 1 (Vector.length results)
   assertEqual (Cabal.mkVersion [2, 0]) (view _4 $ Vector.head results)
