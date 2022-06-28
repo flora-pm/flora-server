@@ -99,9 +99,9 @@ testCorrectNumberInHaskellNamespace fixtures = do
 testBytestringDependents :: Fixtures -> TestM ()
 testBytestringDependents fixtures = do
   importAllPackages fixtures
-  results <- liftDB $ Query.getAllPackageDependents (Namespace "haskell") (PackageName "bytestring")
+  results <- liftDB $ Query.getPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring")
   assertEqual
-    9
+    6
     (Vector.length results)
 
 testBytestringDependencies :: TestM ()

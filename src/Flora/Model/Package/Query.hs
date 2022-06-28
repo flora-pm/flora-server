@@ -138,7 +138,7 @@ packageDependentsWithLatestVersionQuery =
   [sql|
   SELECT DISTINCT   p."namespace"
                   , p."name"
-                  , r.metadata ->> 'synopsis' as synopsis
+                  , r.metadata ->> 'synopsis' as "synopsis"
                   , max(r."version")
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
