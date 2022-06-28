@@ -1,0 +1,287 @@
+cabal-version:  2.2
+name:           text
+version:        2.0
+
+homepage:       https://github.com/haskell/text
+bug-reports:    https://github.com/haskell/text/issues
+synopsis:       An efficient packed Unicode text type.
+description:
+    .
+    An efficient packed, immutable Unicode text type (both strict and
+    lazy).
+    .
+    The 'Text' type represents Unicode character strings, in a time and
+    space-efficient manner. This package provides text processing
+    capabilities that are optimized for performance critical use, both
+    in terms of large data quantities and high speed.
+    .
+    The 'Text' type provides character-encoding, type-safe case
+    conversion via whole-string case conversion functions (see "Data.Text").
+    It also provides a range of functions for converting 'Text' values to
+    and from 'ByteStrings', using several standard encodings
+    (see "Data.Text.Encoding").
+    .
+    Efficient locale-sensitive support for text IO is also supported
+    (see "Data.Text.IO").
+    .
+    These modules are intended to be imported qualified, to avoid name
+    clashes with Prelude functions, e.g.
+    .
+    > import qualified Data.Text as T
+    .
+    == ICU Support
+    .
+    To use an extended and very rich family of functions for working
+    with Unicode text (including normalization, regular expressions,
+    non-standard encodings, text breaking, and locales), see
+    the [text-icu package](https://hackage.haskell.org/package/text-icu)
+    based on the well-respected and liberally
+    licensed [ICU library](http://site.icu-project.org/).
+
+license:        BSD-2-Clause
+license-file:   LICENSE
+author:         Bryan O'Sullivan <bos@serpentine.com>
+maintainer:     Haskell Text Team <andrew.lelechenko@gmail.com>, Core Libraries Committee
+copyright:      2009-2011 Bryan O'Sullivan, 2008-2009 Tom Harper, 2021 Andrew Lelechenko
+category:       Data, Text
+build-type:     Simple
+tested-with:
+    GHC == 8.0.2
+    GHC == 8.2.2
+    GHC == 8.4.4
+    GHC == 8.6.5
+    GHC == 8.8.4
+    GHC == 8.10.7
+    GHC == 9.0.1
+    GHC == 9.2.1
+
+extra-source-files:
+    -- scripts/CaseFolding.txt
+    -- scripts/SpecialCasing.txt
+    README.markdown
+    changelog.md
+    scripts/*.hs
+    simdutf/LICENSE-APACHE
+    simdutf/LICENSE-MIT
+    simdutf/simdutf.h
+    tests/literal-rule-test.sh
+    tests/LiteralRuleTest.hs
+
+flag developer
+  description: operate in developer mode
+  default: False
+  manual: True
+
+flag simdutf
+  description: use simdutf library
+  default: True
+  manual: True
+
+library
+  c-sources:    cbits/is_ascii.c
+                cbits/measure_off.c
+                cbits/reverse.c
+                cbits/utils.c
+  hs-source-dirs: src
+
+  if flag(simdutf)
+    include-dirs: simdutf
+    cxx-sources: simdutf/simdutf.cpp
+                 cbits/validate_utf8.cpp
+    cxx-options: -std=c++17
+    cpp-options: -DSIMDUTF
+    if os(windows)
+      if arch(x86_64)
+        extra-libraries: stdc++-6 gcc_s_seh-1
+      else
+        extra-libraries: stdc++-6 gcc_s_dw2-1
+    else
+      if os(darwin)
+        extra-libraries: c++
+      else
+        extra-libraries: stdc++
+
+  exposed-modules:
+    Data.Text
+    Data.Text.Array
+    Data.Text.Encoding
+    Data.Text.Encoding.Error
+    Data.Text.Foreign
+    Data.Text.IO
+    Data.Text.Internal
+    Data.Text.Internal.Builder
+    Data.Text.Internal.Builder.Functions
+    Data.Text.Internal.Builder.Int.Digits
+    Data.Text.Internal.Builder.RealFloat.Functions
+    Data.Text.Internal.ByteStringCompat
+    Data.Text.Internal.PrimCompat
+    Data.Text.Internal.Encoding.Fusion
+    Data.Text.Internal.Encoding.Fusion.Common
+    Data.Text.Internal.Encoding.Utf16
+    Data.Text.Internal.Encoding.Utf32
+    Data.Text.Internal.Encoding.Utf8
+    Data.Text.Internal.Fusion
+    Data.Text.Internal.Fusion.CaseMapping
+    Data.Text.Internal.Fusion.Common
+    Data.Text.Internal.Fusion.Size
+    Data.Text.Internal.Fusion.Types
+    Data.Text.Internal.IO
+    Data.Text.Internal.Lazy
+    Data.Text.Internal.Lazy.Encoding.Fusion
+    Data.Text.Internal.Lazy.Fusion
+    Data.Text.Internal.Lazy.Search
+    Data.Text.Internal.Private
+    Data.Text.Internal.Read
+    Data.Text.Internal.Search
+    Data.Text.Internal.Unsafe
+    Data.Text.Internal.Unsafe.Char
+    Data.Text.Lazy
+    Data.Text.Lazy.Builder
+    Data.Text.Lazy.Builder.Int
+    Data.Text.Lazy.Builder.RealFloat
+    Data.Text.Lazy.Encoding
+    Data.Text.Lazy.IO
+    Data.Text.Lazy.Internal
+    Data.Text.Lazy.Read
+    Data.Text.Read
+    Data.Text.Unsafe
+
+  other-modules:
+    Data.Text.Show
+
+  build-depends:
+    array            >= 0.3 && < 0.6,
+    base             >= 4.9 && < 5,
+    binary           >= 0.5 && < 0.9,
+    bytestring       >= 0.10.4 && < 0.12,
+    deepseq          >= 1.1 && < 1.5,
+    ghc-prim         >= 0.2 && < 0.9,
+    template-haskell >= 2.5 && < 2.19
+
+  ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
+  if flag(developer)
+    ghc-options: -fno-ignore-asserts
+    cpp-options: -DASSERTS
+
+  -- https://gitlab.haskell.org/ghc/ghc/-/issues/19900
+  if os(windows)
+    extra-libraries: gcc_s
+
+  default-language: Haskell2010
+  default-extensions:
+    NondecreasingIndentation
+  other-extensions:
+    BangPatterns
+    CPP
+    DeriveDataTypeable
+    ExistentialQuantification
+    ForeignFunctionInterface
+    GeneralizedNewtypeDeriving
+    MagicHash
+    OverloadedStrings
+    Rank2Types
+    RankNTypes
+    RecordWildCards
+    Safe
+    ScopedTypeVariables
+    TemplateHaskellQuotes
+    Trustworthy
+    TypeFamilies
+    UnboxedTuples
+    UnliftedFFITypes
+
+source-repository head
+  type:     git
+  location: https://github.com/haskell/text
+
+test-suite tests
+  type:           exitcode-stdio-1.0
+  ghc-options:
+    -Wall -threaded -rtsopts
+
+  hs-source-dirs: tests
+  main-is:        Tests.hs
+  other-modules:
+    Tests.Lift
+    Tests.Properties
+    Tests.Properties.Basics
+    Tests.Properties.Builder
+    Tests.Properties.Folds
+    Tests.Properties.Instances
+    Tests.Properties.LowLevel
+    Tests.Properties.Read
+    Tests.Properties.Substrings
+    Tests.Properties.Text
+    Tests.Properties.Transcoding
+    Tests.QuickCheckUtils
+    Tests.Regressions
+    Tests.SlowFunctions
+    Tests.Utils
+
+  build-depends:
+    QuickCheck >= 2.12.6 && < 2.15,
+    base <5,
+    bytestring,
+    deepseq,
+    directory,
+    ghc-prim,
+    tasty,
+    tasty-hunit,
+    tasty-quickcheck,
+    template-haskell,
+    text
+
+  -- Starting from 9.2 ghc library depends on parsec,
+  -- which causes circular dependency.
+  if impl(ghc < 9.2)
+    build-depends: tasty-inspection-testing
+
+  default-language: Haskell2010
+  default-extensions: NondecreasingIndentation
+
+benchmark text-benchmarks
+  type:           exitcode-stdio-1.0
+
+  ghc-options:    -Wall -O2 -rtsopts
+  if impl(ghc >= 8.10)
+    ghc-options:  "-with-rtsopts=-A32m --nonmoving-gc"
+  else
+    ghc-options:  "-with-rtsopts=-A32m"
+
+  build-depends:  base,
+                  bytestring >= 0.10.4,
+                  containers,
+                  deepseq,
+                  directory,
+                  filepath,
+                  tasty-bench >= 0.2,
+                  text,
+                  transformers
+
+  hs-source-dirs: benchmarks/haskell
+  main-is:        Benchmarks.hs
+  other-modules:
+    Benchmarks.Builder
+    Benchmarks.Concat
+    Benchmarks.DecodeUtf8
+    Benchmarks.EncodeUtf8
+    Benchmarks.Equality
+    Benchmarks.FileRead
+    Benchmarks.FoldLines
+    Benchmarks.Multilang
+    Benchmarks.Programs.BigTable
+    Benchmarks.Programs.Cut
+    Benchmarks.Programs.Fold
+    Benchmarks.Programs.Sort
+    Benchmarks.Programs.StripTags
+    Benchmarks.Programs.Throughput
+    Benchmarks.Pure
+    Benchmarks.ReadNumbers
+    Benchmarks.Replace
+    Benchmarks.Search
+    Benchmarks.Stream
+    Benchmarks.WordFrequencies
+
+  default-language: Haskell2010
+  default-extensions: NondecreasingIndentation
+  other-extensions: DeriveGeneric

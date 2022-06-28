@@ -4,6 +4,7 @@ import Data.Text (Text)
 import Data.Vector (Vector)
 
 import Control.Monad.IO.Class
+import Data.Aeson
 import Data.Text.Display (Display (..))
 import qualified Data.Text.Lazy.Builder as Builder
 import Database.PostgreSQL.Entity.DBT (withPool)
@@ -14,6 +15,7 @@ import qualified Flora.Model.Package.Query as Query
 import FloraWeb.Server.Auth (FloraPageM)
 import FloraWeb.Session (Session (..), getSession)
 import FloraWeb.Types (fetchFloraEnv)
+import qualified Log
 import Optics.Core
 
 data SearchAction
@@ -25,13 +27,16 @@ instance Display SearchAction where
   displayBuilder ListAllPackages = "Packages"
   displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
 
-searchPackageByName :: Word -> Text -> FloraPageM (Vector (Namespace, PackageName, Text, Version))
+searchPackageByName :: Word -> Text -> FloraPageM (Word, Vector (Namespace, PackageName, Text, Version))
 searchPackageByName pageNumber queryString = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-  results <- liftIO $ withPool pool $ Query.searchPackage pageNumber queryString
+  dbResults <- liftIO $ withPool pool $ Query.searchPackage pageNumber queryString
   let getInfo = (,,,) <$> view _1 <*> view _2 <*> view _3 <*> view _4
-  pure $ fmap getInfo results
+  count <- liftIO $ withPool pool $ Query.countPackagesByName queryString
+  let results = fmap getInfo dbResults
+  Log.logInfo "search" $ object ["query_string" .= queryString, "results_count" .= count]
+  pure (count, results)
 
 listAllPackages :: Word -> FloraPageM (Word, Vector (Namespace, PackageName, Text, Version))
 listAllPackages pageNumber = do

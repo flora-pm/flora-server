@@ -7,14 +7,15 @@ We need you to read and acknowledge our [Code of Conduct][CoC] document.
 
 The following Haskell command-line tools will have to be installed:
 
-* `postgresql-migration`: The tool used to perform schema migrations
-* `fourmolu`: The tool to style the code base
-* `hlint` & `apply-refact`: The tools to enforce certain patterns in the code base ("lint")
-* `cabal-fmt` and `nixfmt`: the tools to style the cabal and nix files
-* `ghcid`: The tool to automatically reload the Haskell code base upon source changes
+* `postgresql-migration`: To perform schema migrations
+* `fourmolu`: To style the code base
+* `hlint` & `apply-refact`: To enforce certain patterns in the code base ("lint")
+* `cabal-fmt` and `nixfmt`: To style the cabal and nix files
+* `ghcid`: To automatically reload the Haskell code base upon source changes
+* `ghc-tags`: To generate ctags or etags for the project
 
 ```bash
-$ cabal install -j postgresql-migration fourmolu hlint apply-refact cabal-fmt nixfmt ghcid
+$ cabal install -j postgresql-migration fourmolu hlint apply-refact cabal-fmt nixfmt ghcid ghc-tags
 ```
 
 * `yarn`: The tool that handles the JavaScript code bases

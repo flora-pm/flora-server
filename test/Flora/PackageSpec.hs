@@ -8,9 +8,11 @@ import qualified Data.Vector as Vector
 import Optics.Core
 import Test.Tasty
 
+import Control.Monad.IO.Class
 import Data.Foldable
 import Data.Function
 import qualified Data.Vector as V
+import qualified Distribution.Types.Version as Cabal
 import Flora.Environment (TestEnv (TestEnv))
 import Flora.Import.Package
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
@@ -33,6 +35,7 @@ spec fixtures =
     , testThis "@hackage/semigroups belongs to appropriate categories" $ testThatSemigroupsIsInMathematicsAndDataStructures fixtures
     , testThis "The \"haskell\" namespace has the correct number of packages" $ testCorrectNumberInHaskellNamespace fixtures
     , testThis "@haskell/bytestring has the correct number of dependents" $ testBytestringDependents fixtures
+    , testThis "Searching for `text` returns unique results by namespace/package name" $ testSearchResultUnicity fixtures
     ]
 
 testInsertBase :: Fixtures -> TestM ()
@@ -111,6 +114,18 @@ testBytestringDependencies = do
   let latestRelease = maximumBy (compare `on` version) releases
   latestReleasedependencies <- liftDB $ Query.getRequirements (latestRelease ^. #releaseId)
   assertEqual 4 (Vector.length latestReleasedependencies)
+
+testSearchResultUnicity :: Fixtures -> TestM ()
+testSearchResultUnicity fixtures = do
+  importAllPackages fixtures
+  text <- liftDB $ fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
+  releases <- liftDB $ Query.getNumberOfReleases (text ^. #packageId)
+  assertEqual 2 releases
+  results <- liftDB $ Query.searchPackage 0 "text"
+  assertEqual 1 (Vector.length results)
+  assertEqual (Cabal.mkVersion [2, 0]) (view _4 $ Vector.head results)
+
+----------------------------
 
 importAllPackages :: Fixtures -> TestM ()
 importAllPackages fixtures = do
