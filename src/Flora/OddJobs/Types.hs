@@ -24,7 +24,7 @@ import OddJobs.Types (FailureMode)
 import Data.Text.Display
 import Flora.Environment.Config
 import Flora.Model.Package (PackageName (..))
-import Flora.Model.Release (ReleaseId)
+import Flora.Model.Release.Types (ReleaseId (..))
 import FloraWeb.Server.Logging
 import Servant (ToHttpApiData)
 

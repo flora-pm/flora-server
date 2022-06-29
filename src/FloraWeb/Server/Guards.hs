@@ -6,8 +6,8 @@ import Distribution.Types.Version (Version)
 import Flora.Environment (FloraEnv (..))
 import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
-import Flora.Model.Release (Release)
 import qualified Flora.Model.Release.Query as Query
+import Flora.Model.Release.Types (Release)
 import FloraWeb.Session (FloraPageM, Session (..), getSession)
 import FloraWeb.Templates (defaultTemplateEnv, fromSession)
 import FloraWeb.Templates.Error (renderError)

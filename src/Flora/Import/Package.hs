@@ -46,7 +46,8 @@ import Flora.Model.Package.Component as Component
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import qualified Flora.Model.Package.Update as Update
-import Flora.Model.Release
+import Flora.Model.Release (deterministicReleaseId)
+import Flora.Model.Release.Types
 import qualified Flora.Model.Release.Update as Update
 import Flora.Model.Requirement
   ( Requirement (..)

@@ -16,7 +16,7 @@ import Flora.Model.Package.Types
   , Package (..)
   , PackageName
   )
-import Flora.Model.Release (Release (..), ReleaseMetadata (..), TextHtml (..))
+import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
 import qualified FloraWeb.Links as Links
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid

@@ -48,7 +48,7 @@ ghci: repl ## Start a cabal REPL (alias for `make repl`)
 watch: soufflé ## Load the main library and reload on file change
 	@ghcid --target flora-server -l
 
-test: soufflé ## Run the test suite
+test: build soufflé ## Run the test suite
 	./scripts/run-tests.sh
 
 watch-test: soufflé ## Load the tests in ghcid and reload them on file change

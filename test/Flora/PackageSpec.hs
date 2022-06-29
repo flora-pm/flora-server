@@ -20,8 +20,8 @@ import Flora.Model.Category (Category (..))
 import qualified Flora.Model.Category.Query as Query
 import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
-import Flora.Model.Release
 import qualified Flora.Model.Release.Query as Query
+import Flora.Model.Release.Types
 import Flora.Model.User
 import Flora.TestUtils
 

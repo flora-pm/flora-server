@@ -33,7 +33,7 @@ import Flora.Model.Package.Component
   , ComponentType
   , PackageComponent
   )
-import Flora.Model.Release (ReleaseId)
+import Flora.Model.Release.Types (ReleaseId)
 
 getAllPackages :: (MonadIO m) => DBT m (Vector Package)
 getAllPackages = query_ Select (_select @Package)

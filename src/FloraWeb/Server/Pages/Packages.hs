@@ -18,8 +18,8 @@ import Database.PostgreSQL.Entity.DBT
 import Flora.Environment
 import Flora.Model.Package
 import qualified Flora.Model.Package.Query as Query
-import Flora.Model.Release
 import qualified Flora.Model.Release.Query as Query
+import Flora.Model.Release.Types
 import qualified Flora.Search as Search
 import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth

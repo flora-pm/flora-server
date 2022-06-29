@@ -15,26 +15,19 @@ import Database.PostgreSQL.Simple.FromField
   , returnError
   )
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
+import Database.PostgreSQL.Simple.Types (PGArray (..))
 import Distribution.Parsec
 import Distribution.Pretty (prettyShow)
 import qualified Distribution.Pretty as Pretty
 import qualified Distribution.SPDX.License as SPDX
 import Distribution.Simple.Utils (fromUTF8BS)
 import Distribution.Types.Version
-import Distribution.Types.VersionRange
+import qualified Distribution.Types.Version as Cabal
 import Servant (FromHttpApiData (..), ToHttpApiData (..))
 
 instance FromField Version where
   fromField :: Field -> Maybe ByteString -> Conversion Version
-  fromField f mdata =
-    case mdata of
-      Nothing -> returnError UnexpectedNull f ""
-      Just bs ->
-        case simpleParsec (fromUTF8BS bs) of
-          Just (a :: Version) -> pure a
-          Nothing ->
-            returnError ConversionFailed f $
-              "Conversion error: Expected valid version expression, got: " <> fromUTF8BS bs
+  fromField f mdata = Cabal.mkVersion . fromPGArray <$> fromField f mdata
 
 instance ToHttpApiData Version where
   toUrlPiece = Text.pack . Pretty.prettyShow
@@ -46,22 +39,7 @@ instance FromHttpApiData Version where
       Just a -> Right a
 
 instance ToField Version where
-  toField = Escape . C8.pack . Pretty.prettyShow
-
-instance FromField VersionRange where
-  fromField :: Field -> Maybe ByteString -> Conversion VersionRange
-  fromField f mdata =
-    case mdata of
-      Nothing -> returnError UnexpectedNull f ""
-      Just bs ->
-        case simpleParsec (fromUTF8BS bs) of
-          Just (a :: VersionRange) -> pure a
-          Nothing ->
-            returnError ConversionFailed f $
-              "Conversion error: Expected valid version range, got: " <> fromUTF8BS bs
-
-instance ToField VersionRange where
-  toField = Escape . C8.pack . Pretty.prettyShow
+  toField = toField . PGArray . Cabal.versionNumbers
 
 instance Display Version where
   displayBuilder = Builder.fromString . prettyShow

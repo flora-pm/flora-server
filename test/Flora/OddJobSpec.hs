@@ -5,25 +5,25 @@ module Flora.OddJobSpec where
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader
+import Data.Aeson
 import Data.Password.Argon2 (mkPassword)
+import Data.UUID
 import Database.PostgreSQL.Entity.DBT
 import Distribution.Types.Version
-import Flora.Model.Release
 import Optics.Core
 import Servant.Server
 import Test.Tasty
+import Test.Tasty.HUnit
 
-import Data.Aeson
-import Data.UUID
 import Flora.Environment
 import Flora.Model.Package.Types
+import Flora.Model.Release.Types
 import Flora.Model.User
 import Flora.Model.User.Query
 import Flora.OddJobs
 import Flora.TestUtils
 import FloraWeb.Client as Client
 import FloraWeb.Routes.Pages.Sessions
-import Test.Tasty.HUnit
 
 -- TODO aeson roundtrip tests
 spec :: TestTree

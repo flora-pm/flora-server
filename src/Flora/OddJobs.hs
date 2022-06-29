@@ -14,7 +14,6 @@ module Flora.OddJobs
 where
 
 import qualified Commonmark
-import Commonmark.Extensions (emojiSpec)
 import Control.Exception
 import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON)
@@ -35,7 +34,7 @@ import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
 import Flora.Model.Package
-import Flora.Model.Release
+import Flora.Model.Release.Types
 import Flora.Model.Release.Update (updateReadme)
 import Flora.OddJobs.Types
 import Flora.ThirdParties.Hackage.API (VersionedPackage (..))
