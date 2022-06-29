@@ -95,6 +95,7 @@ normalise_category("Yesod", "Web development").
 normalise_category("Javascript", "Web development").
 normalise_category("OpenAPI", "Web development").
 normalise_category("Snap", "Web development").
+normalise_category("Servant", "Web development").
 
 normalise_category("Optics", "Lenses").
 normalise_category("Lens", "Lenses").
