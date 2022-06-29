@@ -2,13 +2,14 @@ module FloraWeb.Templates.Packages.Versions where
 
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
+import Lucid
+import Optics.Core
+
 import Flora.Model.Package
-import Flora.Model.Release
+import Flora.Model.Release.Types
 import qualified FloraWeb.Components.VersionListHeader as Template
 import qualified FloraWeb.Components.VersionListItem as Template
 import FloraWeb.Templates
-import Lucid
-import Optics.Core
 
 listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
 listVersions namespace packageName releases =

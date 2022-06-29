@@ -32,7 +32,7 @@ import Optics.Core
 
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe
-import Flora.Model.Release
+import Flora.Model.Release.Types
 
 newtype ComponentId = ComponentId {getComponentId :: UUID}
   deriving stock (Generic)

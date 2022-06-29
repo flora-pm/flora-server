@@ -5,8 +5,9 @@ import Data.Time (UTCTime)
 import Data.UUID
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
-import Flora.Model.Release
 import GHC.Generics
+
+import Flora.Model.Release.Types
 
 newtype DownloadId = DownloadId {getDownloadId :: UUID}
   deriving stock (Generic, Show)

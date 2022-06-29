@@ -22,7 +22,7 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact (DBT)
 import Distribution.Make (Version)
 import Flora.Model.Package.Types
-import Flora.Model.Release
+import Flora.Model.Release.Types
 
 packageReleasesQuery :: Query
 packageReleasesQuery = _selectWhere @Release [[field| package_id |]]

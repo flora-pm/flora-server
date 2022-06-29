@@ -109,6 +109,7 @@ library
     Flora.Model.Release
     Flora.Model.Release.Orphans
     Flora.Model.Release.Query
+    Flora.Model.Release.Types
     Flora.Model.Release.Update
     Flora.Model.Requirement
     Flora.Model.User

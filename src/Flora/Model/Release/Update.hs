@@ -12,7 +12,7 @@ import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Flora.Model.Release (Release, ReleaseId, TextHtml (..))
+import Flora.Model.Release.Types (Release, ReleaseId, TextHtml (..))
 
 insertRelease :: MonadIO m => Release -> DBT m ()
 insertRelease = insert @Release

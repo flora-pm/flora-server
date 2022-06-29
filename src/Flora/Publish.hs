@@ -14,8 +14,8 @@ import Flora.Model.Package
 import Flora.Model.Package.Component
 import qualified Flora.Model.Package.Query as Query
 import qualified Flora.Model.Package.Update as Update
-import Flora.Model.Release (Release (..))
 import qualified Flora.Model.Release.Query as Query
+import Flora.Model.Release.Types (Release (..))
 import qualified Flora.Model.Release.Update as Update
 import Flora.Model.Requirement (Requirement)
 
