@@ -2,6 +2,8 @@
 
 module Flora.Model.Release.Orphans where
 
+import Data.Aeson (ToJSON (..))
+import qualified Data.Aeson.Encoding as Aeson
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
@@ -31,6 +33,9 @@ instance FromField Version where
 
 instance ToHttpApiData Version where
   toUrlPiece = Text.pack . Pretty.prettyShow
+
+instance ToJSON Version where
+  toEncoding = Aeson.string . prettyShow
 
 instance FromHttpApiData Version where
   parseUrlPiece piece =
