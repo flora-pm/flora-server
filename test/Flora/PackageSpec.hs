@@ -121,7 +121,7 @@ testSearchResultUnicity fixtures = do
   text <- liftDB $ fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
   releases <- liftDB $ Query.getNumberOfReleases (text ^. #packageId)
   assertEqual 2 releases
-  results <- liftDB $ Query.searchPackage 0 "text"
+  results <- liftDB $ Query.searchPackage 1 "text"
   assertEqual 1 (Vector.length results)
   assertEqual (Cabal.mkVersion [2, 0]) (view _4 $ Vector.head results)
 
