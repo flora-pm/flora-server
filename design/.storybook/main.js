@@ -10,5 +10,8 @@ module.exports = {
     "@pbutlewski/storybook-html",
     "storybook-dark-mode"
   ],
-  "framework": "@storybook/html"
+  "framework": "@storybook/html",
+  "core": {
+    "builder": 'webpack5',
+  },
 }

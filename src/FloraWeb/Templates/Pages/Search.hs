@@ -24,5 +24,5 @@ showResults searchString count currentPage packagesInfo = do
   div_ [class_ "container dark:text-gray-100 text-black"] $ do
     presentationHeader searchString "" count
     div_ [class_ "md:col-span-3"] $ packageListing packagesInfo
-    when (count <= 30) $
+    when (count > 30) $
       paginationNav count currentPage (SearchPackages searchString)

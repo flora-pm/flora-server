@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "sb": "^6.4.22"
+    "sb": "^6.5.9"
   },
   "devDependencies": {
     "@babel/core": "^7.17.12",
@@ -9,7 +9,9 @@
     "@storybook/addon-essentials": "^6.4.22",
     "@storybook/addon-links": "^6.4.22",
     "@storybook/addon-storysource": "^6.4.22",
+    "@storybook/builder-webpack5": "^6.5.9",
     "@storybook/html": "^6.4.22",
+    "@storybook/manager-webpack5": "^6.5.9",
     "babel-loader": "^8.2.5",
     "storybook-dark-mode": "^1.1.0"
   },
