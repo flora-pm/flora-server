@@ -34,16 +34,18 @@ flora_category("ffi", "FFI", "Working with the Foreign Function Interface").
 flora_category("game-dev", "Game development", "Libraries used for game development").
 flora_category("generics", "Generics", "Working with Haskell's Generics mechanism").
 flora_category("graphics", "Graphics", "GUIs, computer vision, font rendering").
+flora_category("hardware", "Hardware", "Digital circuit description and hardware interfacing").
 flora_category("language", "Language", "Interfacing with other programming languages from Haskell").
 flora_category("lenses", "Lenses", "Functional references such as Lenses, Folds and Traversals").
-
 flora_category("maths", "Mathematics", "Numerical and Mathematical packages").
 flora_category("natural-language", "Natural Language", "Tooling to work with natural languages").
 flora_category("network", "Network Development", "Connection pools, DNS, HTTP, API clients and network protocols").
 flora_category("parser-implementations", "Parser Implementations", "Parsing data formats").
 flora_category("parsers","Parsers", "Libraries to ingest and parse data").
+flora_category("monads", "Monads", "Effectful sequential computations").
 flora_category("parsing", "Parsing", "Parser generators, combinators and tools to help with parsing").
 flora_category("prelude", "Prelude", "Libraries that provide default imports").
+flora_category("streaming", "Streaming", "Data streaming for continuous processing").
 flora_category("system", "System", "Programming and communicating with the Operating System").
 flora_category("template-haskell", "Template Haskell", "Metaprogramming with Template Haskell").
 flora_category("testing", "Testing", "Test frameworks").
@@ -99,3 +101,13 @@ normalise_category("Servant", "Web development").
 
 normalise_category("Optics", "Lenses").
 normalise_category("Lens", "Lenses").
+
+normalise_category("Conduit", "Streaming").
+normalise_category("Streamly", "Streaming").
+normalise_category("Pipes", "Streaming").
+
+normalise_category("Monad", "Monads").
+normalise_category("MonadIO", "Monads").
+normalise_category("Transformers", "Monads").
+normalise_category("Monad Transformers", "Monads").
+normalise_category("Mtl", "Monads").
