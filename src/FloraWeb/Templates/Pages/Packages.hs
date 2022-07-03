@@ -102,7 +102,7 @@ packageBody
   categories =
     div_ $ do
       div_ [class_ "package-body md:flex"] $ do
-        div_ [class_ "package-left-column grow"] $ do
+        div_ [class_ "package-left-column"] $ do
           ul_ [class_ "package-left-rows grid-rows-3"] $ do
             displayCategories categories
             displayLicense (metadata ^. #license)
