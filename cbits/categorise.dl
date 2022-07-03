@@ -21,33 +21,44 @@ normalise_issue(category) :-
 .decl flora_category(slug: symbol, name: symbol, synopsis: symbol)
 .output flora_category
 flora_category("algorithms", "Algorithms", "Algorithms implemented in Haskell, like sorting, searching").
-flora_category("bioinformatics", "Bioinformatics", "Tooling, algorithms and techniques for the domain of Bioinformatics").
+flora_category("audio", "Audio", "Process digital signal, make music").
+flora_category("bioinformatics", "Bioinformatics", "Methods and software for the analysis of biological data").
+flora_category("cloud", "Cloud Computing", "Bindings to Cloud Computing platforms").
 flora_category("command-line", "CLI & TUI tooling", "Libraries to develope command-line interfaces").
 flora_category("compilers-interpreters", "Compilers and Interpreters", "Tooling to create compilers and interpreters").
+flora_category("compression", "Data compression", "Reducing the size of things").
+flora_category("concurrency", "Concurrency", "Concurrent programming techniques and tools").
 flora_category("cryptography", "Cryptography", "Algorithms for encrypting and hashing data").
 flora_category("data-structures", "Data Structures", "Data structures, whether purely functional or mutable").
 flora_category("databases", "Databases", "Database drivers and interfaces").
 flora_category("development", "Development", "Development helpers, integration with other languages").
 flora_category("distributed", "Distributed Systems & Computation", "Tooling and techniques for writing distributed systems").
-flora_category("distribution", "Distribution", "Building, Packaging and Distributing software in Haskell").
-flora_category("ffi", "FFI", "Working with the Foreign Function Interface").
+flora_category("distribution", "Package Distribution", "Building, Packaging and Distributing software in Haskell").
+flora_category("ffi", "FFI", "Working with other languages and generating bindings").
+flora_category("frp", "FRP", "Functional Reactive Programming").
 flora_category("game-dev", "Game development", "Libraries used for game development").
 flora_category("generics", "Generics", "Working with Haskell's Generics mechanism").
-flora_category("graphics", "Graphics", "GUIs, computer vision, font rendering").
+flora_category("graphics", "Graphics", "Programming the system's rendering APIs").
+flora_category("gui", "GUI", "Creating graphical user interfaces").
+flora_category("hardware", "Hardware", "Digital circuit description and hardware interfacing").
+flora_category("json", "JSON", "Parsing, producing and manipulating JSON").
 flora_category("language", "Language", "Interfacing with other programming languages from Haskell").
 flora_category("lenses", "Lenses", "Functional references such as Lenses, Folds and Traversals").
-
 flora_category("maths", "Mathematics", "Numerical and Mathematical packages").
-flora_category("natural-language", "Natural Language", "Tooling to work with natural languages").
+flora_category("monads", "Monads", "Effectful sequential computations").
 flora_category("network", "Network Development", "Connection pools, DNS, HTTP, API clients and network protocols").
+flora_category("nlp", "Natural Language Processing", "Tooling to work with natural languages").
 flora_category("parser-implementations", "Parser Implementations", "Parsing data formats").
 flora_category("parsers","Parsers", "Libraries to ingest and parse data").
 flora_category("parsing", "Parsing", "Parser generators, combinators and tools to help with parsing").
+flora_category("physics", "Physics", "The study of matter, its consituents, motion, and behaviour").
 flora_category("prelude", "Prelude", "Libraries that provide default imports").
-flora_category("system", "System", "Programming and communicating with the Operating System").
+flora_category("streaming", "Streaming", "Data streaming for continuous processing").
+flora_category("system", "System Programming", "Programming and communicating with the Operating System").
 flora_category("template-haskell", "Template Haskell", "Metaprogramming with Template Haskell").
 flora_category("testing", "Testing", "Test frameworks").
 flora_category("text", "Text", "Working with textual data and algorithms").
+flora_category("type-system", "Type System", "Enhancing the Haskell type system").
 flora_category("web", "Web Development", "Programming for the web").
 flora_category("xml", "XML", "Libraries to consume and produce XML documents").
 
@@ -72,8 +83,11 @@ normalise_category("Arithmetic", "Mathematics").
 normalise_category("Number Theory", "Mathematics").
 normalise_category("Math", "Mathematics").
 normalise_category("Mathematics", "Mathematics").
+normalise_category("mathematics", "Mathematics").
 normalise_category("Maths", "Mathematics").
 normalise_category("Algebra", "Mathematics").
+normalise_category("Graph", "Mathematics").
+normalise_category("Graphs", "Mathematics").
 
 normalise_category("Parser Builder", "Parsers").
 normalise_category("Parser Combinators", "Parsers").
@@ -81,6 +95,7 @@ normalise_category("Parser", "Parsers").
 normalise_category("ParserCombinators", "Parsers").
 normalise_category("Parsers", "Parsers").
 normalise_category("Parsing", "Parsers").
+normalise_category("Parsing Text", "Parsers").
 
 normalise_category("Network", "Network Development").
 normalise_category("Data Network", "Network Development").
@@ -96,6 +111,76 @@ normalise_category("Javascript", "Web development").
 normalise_category("OpenAPI", "Web development").
 normalise_category("Snap", "Web development").
 normalise_category("Servant", "Web development").
+normalise_category("Servant Web", "Web development").
 
 normalise_category("Optics", "Lenses").
 normalise_category("Lens", "Lenses").
+
+normalise_category("Conduit", "Streaming").
+normalise_category("Streamly", "Streaming").
+normalise_category("Pipes", "Streaming").
+
+normalise_category("Monad", "Monads").
+normalise_category("MonadIO", "Monads").
+normalise_category("Transformers", "Monads").
+normalise_category("Monad Transformers", "Monads").
+normalise_category("Mtl", "Monads").
+
+normalise_category("User interfaces", "GUI").
+normalise_category("User interface", "GUI").
+normalise_category("UserInterface", "GUI").
+normalise_category("UI", "GUI").
+normalise_category("User Interfaces", "GUI").
+
+normalise_category("Code Generation", "FFI").
+normalise_category("Elm", "FFI").
+normalise_category("TypeScript", "FFI").
+normalise_category("Java", "FFI").
+normalise_category("JVM", "FFI").
+normalise_category("Erlang", "FFI").
+normalise_category("PHP", "FFI").
+normalise_category("Foreign", "FFI").
+
+normalise_category("Types", "Type System").
+
+normalise_category("Validity", "Testing").
+normalise_category("QuickCheck", "Testing").
+normalise_category("Test", "Testing").
+
+normalise_category("Sound", "Audio").
+normalise_category("Algorithmic Music Composition", "Audio").
+normalise_category("Automatic Music Generation", "Audio").
+normalise_category("Music", "Audio").
+
+normalise_category("Zip", "Compression").
+normalise_category("ZLib", "Compression").
+normalise_category("Tar", "Compression").
+
+normalise_category("Cloud", "Cloud Computing").
+normalise_category("Google", "Cloud Computing").
+normalise_category("AWS", "Cloud Computing").
+
+normalise_category("Compilers/Interpreters", "Compilers and Interpreters").
+normalise_category("Interpreters", "Compilers and Interpreters").
+normalise_category("Compiler", "Compilers and Interpreters").
+normalise_category("DSL", "Compilers and Interpreters").
+
+normalise_category("Database", "Databases").
+normalise_category("PostgreSQL", "Databases").
+
+normalise_category("NLP", "Natural Language Processing").
+normalise_category("Stemming", "Natural Language Processing").
+
+normalise_category("Containers", "Data Structures").
+
+normalise_category("Game", "Game Development").
+
+normalise_category("Concurrent", "Concurrency").
+
+normalise_category("Distributed Computing", "Distributed Systems & Computation").
+
+normalise_category("Filesystem", "System Programming").
+normalise_category("system", "System Programming").
+normalise_category("System", "System Programming").
+
+normalise_category("Distribution", "Package Distribution").
