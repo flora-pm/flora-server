@@ -8,9 +8,9 @@
 Session.vim
 _database/
 _data/
-deployments/prod.sh
 dist-newstyle
 environment.local.sh
+environment.prod.sh
 ghcid.text
 tags
 tags.mtime
@@ -26,3 +26,4 @@ pgdata/
 .DS_Store
 tags.lock
 cabal.project.local
+
