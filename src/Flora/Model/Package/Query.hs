@@ -253,7 +253,7 @@ searchPackage ::
   DBT IO (Vector (Namespace, PackageName, Text, Version, Float))
 searchPackage pageNumber searchString =
   let limit = 30
-      offset = pageNumber * limit
+      offset = (limit * pageNumber) - limit
    in query
         Select
         [sql|
@@ -279,7 +279,7 @@ searchPackage pageNumber searchString =
 listAllPackages :: Word -> DBT IO (Vector (Namespace, PackageName, Text, Version, Float))
 listAllPackages pageNumber =
   let limit = 30
-      offset = pageNumber * limit
+      offset = (limit * pageNumber) - limit
    in query
         Select
         [sql|
@@ -309,6 +309,7 @@ countPackages = do
       [sql|
     SELECT DISTINCT COUNT(*)
     FROM packages
+    WHERE status = 'fully-imported'
     |]
   case result of
     Just (Only n) -> pure $ fromIntegral n

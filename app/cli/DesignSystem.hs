@@ -17,9 +17,12 @@ import qualified Data.Text.Lazy as TL
 import Flora.Model.Category
 import qualified Flora.Model.Category as Category
 import Flora.Model.Package
+import Flora.Search
 import qualified FloraWeb.Components.CategoryCard as Component
 import qualified FloraWeb.Components.PackageListItem as Component
+import qualified FloraWeb.Components.PaginationNav as Component
 import FloraWeb.Templates (FloraHTML, defaultTemplateEnv, defaultsToEnv)
+import Lucid
 import PyF (fmt)
 
 newtype ComponentName = ComponentName Text
@@ -56,6 +59,7 @@ components =
       , packageListItemExample
       )
     , ("category-card", ComponentTitle "Category", ComponentName "CategoryCard", categoryCardExample)
+    , ("pagination-area", ComponentTitle "Pagination Area", ComponentName "Pagination", paginationExample)
     ]
 
 -----------------------
@@ -98,3 +102,15 @@ namespaceExample = Namespace "haskell"
 
 packageNameExample :: PackageName
 packageNameExample = PackageName "base"
+
+paginationExample :: FloraHTML
+paginationExample = div_ $ do
+  div_ $ do
+    h4_ "Two buttons"
+    Component.paginationNav 62 2 (SearchPackages "text")
+  div_ $ do
+    h4_ "Previous button"
+    Component.paginationNav 32 3 (SearchPackages "text")
+  div_ $ do
+    h4_ "Next button"
+    Component.paginationNav 32 1 (SearchPackages "text")

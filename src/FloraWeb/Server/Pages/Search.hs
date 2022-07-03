@@ -21,7 +21,7 @@ searchHandler :: Maybe Text -> Maybe Word -> FloraPageM (Html ())
 searchHandler _ (Just 0) = searchHandler (Just "") (Just 1)
 searchHandler Nothing pageParam = searchHandler (Just "") pageParam
 searchHandler (Just "") pageParam = do
-  let pageNumber = fromMaybe 0 pageParam
+  let pageNumber = fromMaybe 1 pageParam
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
   (count, results) <- Search.listAllPackages pageNumber
@@ -29,7 +29,7 @@ searchHandler (Just "") pageParam = do
         templateDefaults & #displayNavbarSearch .~ False
   render templateEnv $ Search.showAllPackages count pageNumber results
 searchHandler (Just searchString) pageParam = do
-  let pageNumber = fromMaybe 0 pageParam
+  let pageNumber = fromMaybe 1 pageParam
   session <- getSession
   templateEnv <- fromSession session defaultTemplateEnv
   (count, results) <- Search.searchPackageByName pageNumber searchString

@@ -4,7 +4,6 @@ import Control.Monad (when)
 import Data.Text (Text)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
-import Debug.Trace
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.Utils
 import qualified FloraWeb.Links as Links
@@ -23,23 +22,18 @@ paginationNav ::
   FloraHTML
 paginationNav totalResults currentPage searchAction = do
   let (totalPages :: Word) = (totalResults `div` 30) + 1
-      _pages = traceShowId $ paginate currentPage totalPages
   nav_ [class_ "pagination-area"] $
     ul_ [class_ "pagination-footer inline-flex"] $ do
-      li_ [class_ "pagination-footer__item"] $ do
-        when (currentPage /= 1) $
+      when (currentPage > 1) $
+        li_ [class_ "pagination-footer__item"] $ do
           link
             defaultLinkOptions
               { href = mkURL searchAction (currentPage - 1)
               , classes = "pagination-footer__page pagination-footer__previous"
               , childNode = "Previous"
               }
-      -- Vector.forM_ pages $ \pageNumber ->
-      --   li_ [class_ "pagination-footer__item "] $ do
-      --     let url = mkURL searchAction pageNumber
-      --     a_ [href_ url, class_ "pagination-footer__page"] (text $ display pageNumber)
-      li_ [class_ "pagination-footer__item"] $
-        when (currentPage /= totalPages) $
+      when (currentPage < totalPages) $
+        li_ [class_ "pagination-footer__item"] $
           link
             defaultLinkOptions
               { href = mkURL searchAction (currentPage + 1)
