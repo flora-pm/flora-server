@@ -23,6 +23,7 @@ COPY scripts/.zshrc /root/.zshrc
 
 # build Haskell dependencies
 COPY Makefile cabal.project flora.cabal ./
+RUN cabal update
 RUN cabal build --only-dependencies -j8
 
 # Compile Souffle source files
