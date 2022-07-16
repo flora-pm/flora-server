@@ -1,24 +1,24 @@
 module Main where
 
+import CoverageReport
+import Data.Maybe
 import Data.Password.Types
+import Data.Text (Text)
+import Effectful
+import Effectful.Dispatch.Static
+import Effectful.PostgreSQL.Transact.Effect
+import DesignSystem (generateComponents)
+import GHC.Generics (Generic)
 import Optics.Core
 import Options.Applicative
+import qualified Flora.Model.User.Query as Query
 
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
+import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Model.User
 import Flora.Model.User.Update
 
-import Control.Exception
-import CoverageReport
-import Data.Maybe
-import Data.Text (Text)
-import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Simple.Errors (ConstraintViolation (..), catchViolation)
-import DesignSystem (generateComponents)
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
-import qualified Flora.Model.User.Query as Query
-import GHC.Generics (Generic)
 
 data Options = Options
   { cliCommand :: Command
@@ -48,7 +48,12 @@ data UserCreationOptions = UserCreationOptions
   deriving stock (Generic, Show, Eq)
 
 main :: IO ()
-main = runOptions =<< execParser (parseOptions `withInfo` "CLI tool for flora-server")
+main = do
+  result <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
+  env <- runEff getFloraEnv
+  runEff
+    . runDB (env ^. #pool)
+    $ runOptions result
 
 parseOptions :: Parser Options
 parseOptions =
@@ -91,45 +96,34 @@ parseGenDesignSystem = pure GenDesignSystemComponents
 parseImportPackages :: Parser Command
 parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
 
-runOptions :: Options -> IO ()
-runOptions (Options (CoverageReport opts)) = runCoverageReport opts
-runOptions (Options (Provision Categories)) = do
-  env <- getFloraEnv
-  catchViolation catViolationCatcher $ withPool (env ^. #pool) importCategories
-runOptions (Options (Provision TestPackages)) = do
-  env <- getFloraEnv
-  importFolderOfCabalFiles env "./test/fixtures/Cabal/"
+runOptions :: ([DB, IOE] :>> es) => Options -> Eff es ()
+runOptions (Options (CoverageReport opts)) = unsafeEff_ $ runCoverageReport opts
+runOptions (Options (Provision Categories)) = importCategories
+runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
-  env <- getFloraEnv
-  withPool (env ^. #pool) $ do
-    let username = opts ^. #username
-        email = opts ^. #email
-        canLogin = opts ^. #canLogin
-    password <- hashPassword (mkPassword (opts ^. #password))
-    if opts ^. #isAdmin
-      then
-        addAdmin AdminCreationForm{..}
-          >>= \admin ->
-            if canLogin
-              then pure ()
-              else lockAccount (admin ^. #userId)
-      else do
-        templateUser <- mkUser UserCreationForm{..}
-        let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
-        insertUser user
+  let username = opts ^. #username
+      email = opts ^. #email
+      canLogin = opts ^. #canLogin
+  password <- hashPassword (mkPassword (opts ^. #password))
+  if opts ^. #isAdmin
+    then
+      addAdmin AdminCreationForm{..}
+        >>= \admin ->
+          if canLogin
+            then pure ()
+            else lockAccount (admin ^. #userId)
+    else do
+      templateUser <- mkUser UserCreationForm{..}
+      let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
+      insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path)) = do
-  env <- getFloraEnv
-  importFolderOfCabalFiles env path
+  importFolderOfCabalFiles path
 
-importFolderOfCabalFiles :: FloraEnv -> FilePath -> IO ()
-importFolderOfCabalFiles env path = do
-  user <- withPool (env ^. #pool) (fromJust <$> Query.getUserByUsername "hackage-user")
-  importAllFilesInRelativeDirectory (env ^. #pool) (user ^. #userId) path
+importFolderOfCabalFiles :: ([DB, IOE] :>> es) => FilePath -> Eff es ()
+importFolderOfCabalFiles path = do
+  user <- fromJust <$> Query.getUserByUsername "hackage-user"
+  importAllFilesInRelativeDirectory (user ^. #userId) path
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
-
-catViolationCatcher :: Exception e => e -> ConstraintViolation -> IO ()
-catViolationCatcher _ (UniqueViolation _) = pure ()
-catViolationCatcher e _ = throwIO e

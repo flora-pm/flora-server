@@ -8,25 +8,26 @@ import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
-import Database.PostgreSQL.Transact (DBT)
 
 import qualified Data.Text.IO as T
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
-getCategoryById :: (MonadIO m) => CategoryId -> DBT m (Maybe Category)
-getCategoryById categoryId = selectById (Only categoryId)
+getCategoryById :: ([DB, IOE] :>> es) => CategoryId -> Eff es (Maybe Category)
+getCategoryById categoryId = dbtToEff $ selectById (Only categoryId)
 
-getCategoryBySlug :: (MonadIO m) => Text -> DBT m (Maybe Category)
-getCategoryBySlug slug = selectOneByField [field| slug |] (Only slug)
+getCategoryBySlug :: ([DB, IOE] :>> es) => Text -> Eff es (Maybe Category)
+getCategoryBySlug slug = dbtToEff $ selectOneByField [field| slug |] (Only slug)
 
-getCategoryByName :: (MonadIO m) => Text -> DBT m (Maybe Category)
-getCategoryByName categoryName = selectOneByField [field| name |] (Only categoryName)
+getCategoryByName :: ([DB, IOE] :>> es) => Text -> Eff es (Maybe Category)
+getCategoryByName categoryName = dbtToEff $ selectOneByField [field| name |] (Only categoryName)
 
-getPackagesFromCategorySlug :: (MonadIO m) => Text -> DBT m (Vector Package)
+getPackagesFromCategorySlug :: ([DB, IOE] :>> es) => Text -> Eff es (Vector Package)
 getPackagesFromCategorySlug slug =
   do
     getCategoryBySlug slug
@@ -36,9 +37,10 @@ getPackagesFromCategorySlug slug =
         pure Vector.empty
       Just Category{categoryId} -> do
         liftIO $ T.putStrLn "Category found!"
-        query
-          Select
-          [sql|
+        dbtToEff $
+          query
+            Select
+            [sql|
         select  p.package_id
               , p.namespace
               , p.name
@@ -50,7 +52,7 @@ getPackagesFromCategorySlug slug =
         inner join package_categories as pc on (p.package_id = pc.package_id)
         where pc.category_id = ?
         |]
-          (Only categoryId)
+            (Only categoryId)
 
-getAllCategories :: (MonadIO m) => DBT m (Vector Category)
-getAllCategories = query_ Select (_select @Category)
+getAllCategories :: ([DB, IOE] :>> es) => Eff es (Vector Category)
+getAllCategories = dbtToEff $ query_ Select (_select @Category)

@@ -1,6 +1,6 @@
 packages: ./
 
-index-state: 2022-06-12T21:09:01Z
+index-state: 2022-07-15T15:03:59Z
 
 with-compiler: ghc-8.10.7
 
@@ -61,3 +61,26 @@ source-repository-package
     type: git
     location: https://github.com/jappeace/odd-jobs
     tag: a75515791f2c743614ec05d54493ef12b143002e
+
+source-repository-package
+    type: git
+    location: https://github.com/kleidukos/pg-transact-effectful
+
+source-repository-package
+    type: git
+    location: https://github.com/kleidukos/servant-effectful
+
+source-repository-package
+    type: git
+    location: https://github.com/haskell-effectful/log-effectful
+    tag: aaeb7ee
+
+source-repository-package
+    type: git
+    location: https://github.com/haskell-effectful/time-effectful
+
+source-repository-package
+    type: git
+    location: https://github.com/haskell-effectful/effectful
+    subdir: ./effectful
+            ./effectful-core

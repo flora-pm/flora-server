@@ -1,3 +1,5 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 {- |
 Module: Flora.Import.Package
 
@@ -27,7 +29,6 @@ import qualified Data.Text as T
 import Data.Text.Display
 import qualified Data.Text.IO as T
 import Data.Time
-import Database.PostgreSQL.Transact
 import Distribution.PackageDescription (allLibraries, unPackageName, unUnqualComponentName)
 import qualified Distribution.PackageDescription as Cabal hiding (PackageName)
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription)
@@ -40,6 +41,8 @@ import Optics.Core
 
 import Data.Foldable
 import Distribution.Verbosity (silent)
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect (DB)
 import qualified Flora.Import.Categories.Tuning as Tuning
 import qualified Flora.Model.Category.Update as Update
 import Flora.Model.Package.Component as Component
@@ -116,33 +119,33 @@ coreLibraries =
    * finally, inserting that data into the database
 -}
 importFile ::
-  (MonadIO m) =>
+  ([DB, IOE] :>> es) =>
   UserId ->
   -- | The absolute path to the Cabal file
   FilePath ->
-  DBT m ()
+  Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
-importRelFile :: (MonadIO m) => UserId -> FilePath -> DBT m ()
+importRelFile :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile ::
-  (MonadIO m) =>
+  ([DB, IOE] :>> es) =>
   -- | The absolute path to the Cabal file
   FilePath ->
-  m GenericPackageDescription
+  Eff es GenericPackageDescription
 loadFile path = liftIO $ readGenericPackageDescription silent path
 
-loadAndExtractCabalFile :: (MonadIO m) => UserId -> FilePath -> m ImportOutput
+loadAndExtractCabalFile :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 -}
-persistImportOutput :: MonadIO m => ImportOutput -> DBT m ()
+persistImportOutput :: [DB, IOE] :>> es => ImportOutput -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = do
   liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release ^. #version)
   persistPackage
@@ -170,7 +173,7 @@ persistImportOutput (ImportOutput package categories release components) = do
  that can later be inserted into the database. This function produces stable, deterministic ids,
  so it should be possible to extract and insert a single package many times in a row.
 -}
-extractPackageDataFromCabal :: MonadIO m => UserId -> GenericPackageDescription -> m ImportOutput
+extractPackageDataFromCabal :: [DB, IOE] :>> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc ^. #packageDescription
   let packageName = packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -224,7 +227,7 @@ extractPackageDataFromCabal userId genericDesc = do
   let components = libs <> condLibs
   pure ImportOutput{..}
 
-extractLibrary :: MonadIO m => Package -> Release -> Library -> m ImportComponent
+extractLibrary :: Package -> Release -> Library -> Eff es ImportComponent
 extractLibrary package release lib = do
   let releaseId = release ^. #releaseId
   let componentName = lib ^. #libName % to getLibName
@@ -263,7 +266,7 @@ extractLibrary package release lib = do
               }
        in ImportDependency{package = dependencyPackage, requirement}
 
-getRepoURL :: (MonadIO m) => PackageName -> [Cabal.SourceRepo] -> m [Text]
+getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Eff es [Text]
 getRepoURL _ [] = pure []
 getRepoURL _ (repo : _) = pure [display $ fromMaybe mempty (repo ^. #repoLocation)]
 

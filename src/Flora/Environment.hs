@@ -18,6 +18,7 @@ import qualified Data.Text as T
 import Data.Time (NominalDiffTime)
 import Data.Word (Word16)
 import qualified Database.PostgreSQL.Simple as PG
+import Effectful
 import Env
   ( parse
   )
@@ -47,17 +48,18 @@ mkPool ::
   Int -> -- Number of sub-pools
   NominalDiffTime -> -- Allowed timeout
   Int -> -- Number of connections
-  IO (Pool PG.Connection)
+  Eff '[IOE] (Pool PG.Connection)
 mkPool connectInfo subPools timeout' connections =
-  Pool.newPool $
-    Pool.PoolConfig
-      { createResource = PG.connect connectInfo
-      , freeResource = PG.close
-      , poolCacheTTL = realToFrac timeout'
-      , poolMaxResources = subPools * connections
-      }
+  liftIO $
+    Pool.newPool $
+      Pool.PoolConfig
+        { createResource = PG.connect connectInfo
+        , freeResource = PG.close
+        , poolCacheTTL = realToFrac timeout'
+        , poolMaxResources = subPools * connections
+        }
 
-configToEnv :: FloraConfig -> IO FloraEnv
+configToEnv :: FloraConfig -> Eff '[IOE] FloraEnv
 configToEnv x@FloraConfig{..} = do
   let PoolConfig{..} = dbConfig
   pool <- mkPool connectInfo subPools connectionTimeout connections
@@ -65,7 +67,7 @@ configToEnv x@FloraConfig{..} = do
   where
     config = x
 
-testConfigToTestEnv :: TestConfig -> IO TestEnv
+testConfigToTestEnv :: TestConfig -> Eff '[IOE] TestEnv
 testConfigToTestEnv config@TestConfig{..} = do
   let PoolConfig{..} = config ^. #dbConfig
   pool <- mkPool connectInfo subPools connectionTimeout connections
@@ -85,13 +87,13 @@ displayConnectInfo PG.ConnectInfo{..} =
       <> "/"
       <> connectDatabase
 
-getFloraEnv :: IO FloraEnv
+getFloraEnv :: Eff '[IOE] FloraEnv
 getFloraEnv = do
-  config <- Env.parse id parseConfig
-  blueMessage $ "🔌 Connecting to database at " <> displayConnectInfo (config ^. #connectInfo)
+  config <- liftIO $ Env.parse id parseConfig
+  liftIO $ blueMessage $ "🔌 Connecting to database at " <> displayConnectInfo (config ^. #connectInfo)
   configToEnv config
 
-getFloraTestEnv :: IO TestEnv
+getFloraTestEnv :: Eff '[IOE] TestEnv
 getFloraTestEnv = do
-  config <- Env.parse id parseTestConfig
+  config <- liftIO $ Env.parse id parseTestConfig
   testConfigToTestEnv config

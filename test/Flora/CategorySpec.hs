@@ -18,14 +18,14 @@ import qualified Flora.Model.Package.Query as Query
 import Flora.Model.User
 import Flora.TestUtils
 
-spec :: TestM TestTree
+spec :: TestEff TestTree
 spec =
   testThese
     "category tuning"
     [ testThis "Test that the category unification algorithm works" testUnificationAlgorithm
     ]
 
-testUnificationAlgorithm :: TestM ()
+testUnificationAlgorithm :: TestEff ()
 testUnificationAlgorithm = do
   liftIO (Tuning.normalise [UserPackageCategory "Algorithm"])
     >>= assertEqual (Results [NormalisedPackageCategory "Algorithms"] [])

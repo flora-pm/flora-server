@@ -8,15 +8,18 @@ import Lucid
 import Network.HTTP.Types.Status
 import Optics.Core
 
-import Control.Monad.Except (MonadError)
+import Data.Kind (Type)
+import Effectful
+import Effectful.Error.Static (Error, throwError)
 import FloraWeb.Templates
-import Servant
+import Servant (ServerError (..))
 
 renderError ::
-  (MonadError ServerError m) =>
+  forall (es :: [Effect]) (a :: Type).
+  (Error ServerError :> es) =>
   TemplateEnv ->
   Status ->
-  m a
+  Eff es a
 renderError env status = do
   let templateEnv = env & (#title .~ "Flora :: *** Exception")
   let body = mkErrorPage templateEnv $ showError status

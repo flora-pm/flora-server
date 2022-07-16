@@ -6,13 +6,14 @@ module Flora.ThirdParties.Hackage.Client where
 import Servant.API ()
 import Servant.Client
 
-import Control.Monad.Reader
+import Control.Monad.IO.Class
 import Data.Proxy
 import Data.Text
-import Flora.OddJobs.Types (JobsRunnerEnv (..), JobsRunnerM)
+import Effectful.Reader.Static
+import Flora.OddJobs.Types (JobsRunner, JobsRunnerEnv (..))
 import Flora.ThirdParties.Hackage.API as API
 
-request :: ClientM a -> JobsRunnerM (Either ClientError a)
+request :: ClientM a -> JobsRunner (Either ClientError a)
 request req = do
   JobsRunnerEnv{httpManager} <- ask
   let clientEnv = mkClientEnv httpManager BaseUrl{baseUrlScheme = Https, baseUrlHost = "hackage.haskell.org", baseUrlPort = 443, baseUrlPath = ""}

@@ -1,11 +1,11 @@
 module Main where
 
-import Data.Pool
 import Optics.Core
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect
 
-import Database.PostgreSQL.Entity.DBT
 import qualified Flora.CategorySpec as CategorySpec
 import Flora.Environment
 import qualified Flora.OddJobSpec as OddJobSpec
@@ -17,13 +17,14 @@ import qualified Flora.UserSpec as UserSpec
 main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
-  env <- getFloraTestEnv
-  withResource (env ^. #pool) testMigrations
-  fixtures <- withPool (env ^. #pool) getFixtures
-  spec <- traverse (`runTestM` env) (specs fixtures)
+  env <- runEff getFloraTestEnv
+  fixtures <- runEff . runDB (env ^. #pool) $ do
+    testMigrations
+    getFixtures
+  spec <- traverse (\comp -> runTestEff comp (env ^. #pool)) (specs fixtures)
   defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 
-specs :: Fixtures -> [TestM TestTree]
+specs :: Fixtures -> [TestEff TestTree]
 specs fixtures =
   [ UserSpec.spec fixtures
   , PackageSpec.spec fixtures

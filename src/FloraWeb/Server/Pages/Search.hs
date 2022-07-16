@@ -11,13 +11,13 @@ import Lucid (Html)
 import Optics.Core
 import Servant (ServerT)
 
-server :: ServerT Routes FloraPageM
+server :: ServerT Routes FloraPage
 server =
   Routes'
     { displaySearch = searchHandler
     }
 
-searchHandler :: Maybe Text -> Maybe Word -> FloraPageM (Html ())
+searchHandler :: Maybe Text -> Maybe Word -> FloraPage (Html ())
 searchHandler _ (Just 0) = searchHandler (Just "") (Just 1)
 searchHandler Nothing pageParam = searchHandler (Just "") pageParam
 searchHandler (Just "") pageParam = do

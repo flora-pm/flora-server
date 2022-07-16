@@ -1,7 +1,9 @@
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module FloraWeb.Types
-  ( FloraM
+  ( Flora
   , WebEnvStore
   , GetCookies (..)
   , WebEnv (..)
@@ -14,17 +16,26 @@ where
 
 import Control.Concurrent.MVar
 import Control.Monad.IO.Class
-import Control.Monad.Reader (ReaderT)
 import Control.Monad.Time (MonadTime (..))
+import Data.Kind (Type)
 import qualified Data.Text.Encoding as TE
+import Effectful
+import Effectful.Error.Static (Error)
+import Effectful.Log (Logging)
+import Effectful.Reader.Static (Reader)
 import Flora.Environment
+import GHC.Clock (getMonotonicTime)
 import GHC.Generics
-import Log (LogT)
 import Optics.Core
-import Servant (FromHttpApiData (..), Handler)
+import Servant (FromHttpApiData (..), Handler, ServerError)
 import Web.Cookie
 
-type FloraM = ReaderT WebEnvStore (LogT Handler)
+type Flora :: Type -> Type
+type Flora = Eff '[ Reader WebEnvStore
+                  , Logging
+                  , Error ServerError
+                  , IOE
+                  ]
 
 newtype WebEnvStore = WebEnvStore (MVar WebEnv)
 
@@ -55,3 +66,4 @@ instance FromHttpApiData GetCookies where
 
 instance MonadTime Handler where
   currentTime = liftIO currentTime
+  monotonicTime = liftIO getMonotonicTime

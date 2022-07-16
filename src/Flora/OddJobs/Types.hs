@@ -5,42 +5,46 @@ module Flora.OddJobs.Types where
 
 import qualified Commonmark
 import Control.Exception (Exception)
-import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Reader (MonadReader, ReaderT, runReaderT)
 import Data.Aeson
 import Data.Text (Text)
 import qualified Data.Text as Text
+import Data.Text.Display
 import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Distribution.Pretty
 import Distribution.Version (Version, mkVersion, versionNumbers)
+import Effectful
+import Effectful.Log
+import qualified Effectful.Log as LogEff
+import Effectful.Reader.Static (Reader, runReader)
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
-import Log hiding (LogLevel)
+import Log hiding (LogLevel (..))
+import qualified Log
 import Network.HTTP.Client
 import OddJobs.Job (Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (FailureMode)
+import Servant (ToHttpApiData)
 
-import Data.Text.Display
+import Data.Pool (Pool)
+import Database.PostgreSQL.Simple (Connection)
+import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
+import Effectful.Time (Time, runCurrentTimeIO)
 import Flora.Environment.Config
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Release.Types (ReleaseId (..))
-import FloraWeb.Server.Logging
-import Servant (ToHttpApiData)
+import qualified FloraWeb.Server.Logging as Logging
 
-newtype JobsRunnerM a = JobsRunnerM {getJobRunnerM :: ReaderT JobsRunnerEnv (LogT IO) a}
-  deriving newtype
-    ( Functor
-    , Applicative
-    , Monad
-    , MonadIO
-    , MonadLog
-    , MonadReader JobsRunnerEnv
-    )
+type JobsRunner = Eff '[DB, Reader JobsRunnerEnv, Logging, Time, IOE]
 
-runJobRunnerM :: JobsRunnerEnv -> Logger -> JobsRunnerM a -> IO a
-runJobRunnerM runnerEnv logger jobRunner =
-  Log.runLogT "flora-jobs" logger defaultLogLevel (runReaderT (getJobRunnerM jobRunner) runnerEnv)
+runJobRunner :: Pool Connection -> JobsRunnerEnv -> Logger -> JobsRunner a -> IO a
+runJobRunner pool runnerEnv logger jobRunner =
+  runEff
+    . runCurrentTimeIO
+    . LogEff.runLogging "flora-jobs" logger defaultLogLevel
+    . runReader runnerEnv
+    . runDB pool
+    $ jobRunner
 
 data JobsRunnerEnv = JobsRunnerEnv
   { httpManager :: Manager
@@ -111,11 +115,15 @@ instance ToJSON LogEvent where
     LogWebUIRequest -> toJSON ("web-ui-request" :: Text)
     LogText other -> toJSON ("other" :: Text, other)
 
-structuredLogging :: FloraConfig -> Logger -> LogEvent -> LogLevel -> IO ()
-structuredLogging FloraConfig{..} logger b =
-  runLog environment logger . localDomain "odd-jobs" . \case
-    LevelDebug -> logTrace "LevelDebug" b
-    LevelInfo -> logInfo "LevelInfo" b
-    LevelWarn -> logAttention "LevelWarn" b
-    LevelError -> logAttention "LevelError" b
-    (LevelOther x) -> logAttention ("LevelOther " <> Text.pack (show x)) b
+structuredLogging :: FloraConfig -> Logger -> LogLevel -> LogEvent -> IO ()
+structuredLogging FloraConfig{..} logger level event =
+  runEff
+    . runCurrentTimeIO
+    . Logging.runLog environment logger
+    $ localDomainEff' "odd-jobs"
+    $ case level of
+      LevelDebug -> logMessageEff' Log.LogTrace "LevelDebug" (toJSON event)
+      LevelInfo -> logMessageEff' Log.LogInfo "LevelInfo" (toJSON event)
+      LevelWarn -> logMessageEff' Log.LogAttention "LevelWarn" (toJSON event)
+      LevelError -> logMessageEff' Log.LogAttention "LevelError" (toJSON event)
+      (LevelOther x) -> logMessageEff' Log.LogAttention ("LevelOther " <> Text.pack (show x)) (toJSON event)

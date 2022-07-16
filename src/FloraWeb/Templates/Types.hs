@@ -107,7 +107,7 @@ defaultsToEnv TemplateDefaults{..} =
 
 fromSession ::
   (MonadIO m) =>
-  Session pLevel ->
+  Session ->
   TemplateDefaults ->
   m TemplateEnv
 fromSession session defaults = do
