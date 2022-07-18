@@ -48,6 +48,7 @@ flora_category("maths", "Mathematics", "Numerical and Mathematical packages").
 flora_category("monads", "Monads", "Effectful sequential computations").
 flora_category("network", "Network Development", "Connection pools, DNS, HTTP, API clients and network protocols").
 flora_category("nlp", "Natural Language Processing", "Tooling to work with natural languages").
+flora_category("parallelism", "Parallelism", "Parallel programming").
 flora_category("parser-implementations", "Parser Implementations", "Parsing data formats").
 flora_category("parsers","Parsers", "Libraries to ingest and parse data").
 flora_category("parsing", "Parsing", "Parser generators, combinators and tools to help with parsing").
@@ -176,6 +177,7 @@ normalise_category("Containers", "Data Structures").
 normalise_category("Game", "Game Development").
 
 normalise_category("Concurrent", "Concurrency").
+normalise_category("Parallel", "Parallelism").
 
 normalise_category("Distributed Computing", "Distributed Systems & Computation").
 
@@ -184,3 +186,5 @@ normalise_category("system", "System Programming").
 normalise_category("System", "System Programming").
 
 normalise_category("Distribution", "Package Distribution").
+
+normalise_category("graphics", "Graphics").
