@@ -1,54 +1,102 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RoleAnnotations #-}
 
 module FloraWeb.Server.Auth.Types where
 
-import Control.Monad.Reader (ReaderT)
-import Data.Maybe (fromJust)
+import Effectful
+import Effectful.Dispatch.Static
+import Effectful.Error.Static (Error)
+import Effectful.Log (Logging)
+import Effectful.Reader.Static (Reader)
+import Effectful.Time (Time)
 import GHC.Generics
-import Optics.Core
 import Servant.API (AuthProtect, Header, Headers)
 import Servant.Server
 import Servant.Server.Experimental.Auth (AuthServerData)
 import Web.Cookie (SetCookie)
 
+import Data.Kind (Type)
+import Effectful.PostgreSQL.Transact.Effect (DB)
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Types
-import Log (LogT)
 
-data ProtectionLevel = Visitor | Authenticated | Admin
-  deriving stock (Eq, Show, Generic)
-
-type role Session nominal
-data Session (protectionLevel :: ProtectionLevel) = Session
+data Session = Session
   { sessionId :: PersistentSessionId
   , mUser :: Maybe User
   , webEnvStore :: WebEnvStore
   }
   deriving stock (Generic)
 
+data IsAdmin :: Effect
+
+type instance DispatchOf IsAdmin = Static NoSideEffects
+newtype instance StaticRep IsAdmin = IsAdmin ()
+
+runAdminSession ::
+  forall (es :: [Effect]) (a :: Type).
+  () =>
+  Eff (IsAdmin : es) a ->
+  Eff es a
+runAdminSession computation = evalStaticRep (IsAdmin ()) computation
+
+data IsVisitor :: Effect
+
+type instance DispatchOf IsVisitor = Static NoSideEffects
+newtype instance StaticRep IsVisitor = IsVisitor ()
+
+runVisitorSession ::
+  forall (es :: [Effect]) (a :: Type).
+  () =>
+  Eff (IsVisitor : es) a ->
+  Eff es a
+runVisitorSession computation = evalStaticRep (IsVisitor ()) computation
+
+putVisitorTag ::
+  forall (es :: [Effect]) (a :: Type).
+  () =>
+  Eff es a ->
+  Eff (IsVisitor : es) a
+putVisitorTag m = raise m
+
+demoteSession ::
+  forall (es :: [Effect]) (a :: Type).
+  () =>
+  Eff (IsAdmin : es) a ->
+  Eff (IsVisitor : es) a
+demoteSession = putVisitorTag . runAdminSession
+
 -- | Datatypes used for every route that doesn't *need* an authenticated user
-type FloraPageM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor)) (LogT Handler)
+type FloraPage =
+  Eff
+    '[ IsVisitor
+     , DB
+     , Time
+     , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
+     , Logging
+     , Error ServerError
+     , IOE
+     ]
 
 -- | Datatypes used for routes that *need* an admin
-type FloraAdminM = ReaderT (Headers '[Header "Set-Cookie" SetCookie] (Session 'Admin)) (LogT Handler)
+type FloraAdmin =
+  Eff
+    '[ IsAdmin
+     , DB
+     , Time
+     , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
+     , Logging
+     , Error ServerError
+     , IOE
+     ]
 
 -- | The monad for the development websockets
-type FloraDevSocket = ReaderT () (LogT Handler)
+type FloraDevSocket = Eff [Reader (), Logging, Error ServerError, IOE]
 
 type instance
   AuthServerData (AuthProtect "optional-cookie-auth") =
-    (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
+    (Headers '[Header "Set-Cookie" SetCookie] Session)
 
-type instance
-  AuthServerData (AuthProtect "cookie-auth") =
-    (Headers '[Header "Set-Cookie" SetCookie] (Session 'Authenticated))
-
-getUnauthenticatedUser :: Session 'Visitor -> Maybe User
-getUnauthenticatedUser session = session ^. #mUser
-
-getUser :: Session 'Authenticated -> User
-getUser session = fromJust $ session ^. #mUser
-
-getAdmin :: Session 'Admin -> User
-getAdmin session = fromJust $ session ^. #mUser
+-- type instance
+--   AuthServerData (AuthProtect "cookie-auth") =
+--     (Headers '[Header "Set-Cookie" SetCookie] (Session 'Authenticated))

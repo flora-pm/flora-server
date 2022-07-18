@@ -10,6 +10,7 @@ import Data.Functor.Identity (runIdentity)
 import qualified Data.UUID as UUID
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
+import Effectful
 import Lucid.Base
 
 import Data.Text (Text)
@@ -31,7 +32,7 @@ newtype ComponentName = ComponentName Text
 newtype ComponentTitle = ComponentTitle Text
   deriving newtype (Eq, Ord, Show)
 
-generateComponents :: IO ()
+generateComponents :: (IOE :> es) => Eff es ()
 generateComponents = forM_ components $ \(filename, title, name, template) -> do
   let html = TL.replace "\"" "\\\"" $ renderHtml template
   writeComponent filename title name html
@@ -42,11 +43,12 @@ renderHtml template =
   where
     templateEnv = defaultsToEnv defaultTemplateEnv
 
-writeComponent :: FilePath -> ComponentTitle -> ComponentName -> TL.Text -> IO ()
+writeComponent :: (IOE :> es) => FilePath -> ComponentTitle -> ComponentName -> TL.Text -> Eff es ()
 writeComponent filename title name html =
-  ByteString.writeFile
-    ("./design/stories/" <> filename <> ".stories.js")
-    (storyTemplate title name html)
+  liftIO $
+    ByteString.writeFile
+      ("./design/stories/" <> filename <> ".stories.js")
+      (storyTemplate title name html)
 
 -- | A component is represented by a 4-tuple of
 components :: Vector (FilePath, ComponentTitle, ComponentName, FloraHTML)

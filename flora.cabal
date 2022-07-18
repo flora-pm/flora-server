@@ -64,6 +64,7 @@ common common-ghc-options
     -Wall -Wcompat -Widentities -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
+    -fprint-potential-instances -Wno-unticked-promoted-constructors
 
   if flag(prod)
     ghc-options: -flate-specialise -funbox-strict-fields
@@ -194,6 +195,8 @@ library
     , cryptohash                 ^>=0.11
     , data-default
     , directory                  ^>=1.3
+    , effectful
+    , effectful-core
     , envparse                   ^>=0.5
     , filepath                   ^>=1.4
     , http-api-data              ^>=0.4
@@ -202,6 +205,7 @@ library
     , http-types                 ^>=0.12
     , lens
     , log-base                   ^>=0.11
+    , log-effectful
     , lucid                      ^>=2.11
     , lucid-alpine               ^>=0.1
     , lucid-aria                 ^>=0.1
@@ -217,6 +221,7 @@ library
     , pcre2                      ^>=2.0
     , pg-entity                  ^>=0.0
     , pg-transact                ^>=0.3
+    , pg-transact-effectful
     , postgresql-simple          ^>=0.6
     , pretty                     ^>=1.1
     , pretty-simple              ^>=4.0
@@ -230,6 +235,7 @@ library
     , servant                    ^>=0.19
     , servant-client             ^>=0.19
     , servant-client-core        ^>=0.19
+    , servant-effectful
     , servant-lucid              ^>=0.9
     , servant-server             ^>=0.19
     , servant-websockets         ^>=2.0
@@ -241,6 +247,7 @@ library
     , text                       ^>=1.2
     , text-display               ^>=0.0.2
     , time                       ^>=1.9
+    , time-effectful
     , transformers               ^>=0.5
     , transformers-base          ^>=0.4
     , typed-process              ^>=0.2
@@ -283,20 +290,25 @@ executable flora-cli
     , Cabal
     , colourista
     , directory
+    , effectful
+    , effectful-core
     , flora
-    , http-client           ==0.7.10
+    , http-client            ==0.7.10
     , log-base
+    , log-effectful
     , lucid
     , monad-control
     , optics-core
-    , optparse-applicative  ^>=0.16
+    , optparse-applicative   ^>=0.16
     , password-types
     , pg-entity
     , pg-transact
+    , pg-transact-effectful
     , postgresql-simple
     , PyF
     , text
     , text-display
+    , time-effectful
     , transformers
     , typed-process
     , uuid
@@ -315,15 +327,17 @@ test-suite flora-test
     , bytestring
     , Cabal
     , containers
+    , effectful-core
     , exceptions
     , flora
     , hedgehog
-    , http-client           ==0.7.10
+    , http-client            ==0.7.10
     , network-uri
     , optics-core
     , password
     , pg-entity
     , pg-transact
+    , pg-transact-effectful
     , postgresql-migration
     , postgresql-simple
     , pretty-simple

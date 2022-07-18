@@ -5,11 +5,17 @@ module FloraWeb.Server.Auth
   )
 where
 
-import Control.Monad.Except
 import qualified Data.List as List
-import Data.Pool (Pool)
 import qualified Data.UUID as UUID
-import Database.PostgreSQL.Simple
+import Effectful
+import Effectful.Error.Static (Error, throwError)
+import Effectful.Log (Logging)
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import qualified Effectful.PostgreSQL.Transact.Effect as DB
+import Effectful.Servant (handlerToEff)
+import qualified Effectful.Servant as Servant
+import Log (Logger)
+import Network.HTTP.Types (hCookie)
 import Network.Wai
 import Optics.Core
 import Servant.API (Header, Headers)
@@ -17,7 +23,6 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
 import Web.Cookie
 
-import Database.PostgreSQL.Entity.DBT
 import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
@@ -26,21 +31,27 @@ import FloraWeb.Server.Auth.Types
 import qualified FloraWeb.Server.Logging as Logging
 import FloraWeb.Session
 import FloraWeb.Types
-import Log (LogT, Logger)
-import Network.HTTP.Types (hCookie)
 
-type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
+type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
 
 authHandler :: Logger -> FloraEnv -> FloraAuthContext
-authHandler logger floraEnv = mkAuthHandler (\request -> Logging.runLog (floraEnv ^. #environment) logger (handler request))
+authHandler logger floraEnv =
+  mkAuthHandler
+    ( \request ->
+        Servant.effToHandler
+          . runVisitorSession
+          . DB.runDB (floraEnv ^. #pool)
+          . Logging.runLog (floraEnv ^. #environment) logger
+          $ handler request
+    )
   where
-    pool = floraEnv ^. #pool
-    handler :: Request -> LogT Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
+    -- handler :: Request -> LogT Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
+    handler :: Request -> Eff '[Logging, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
     handler req = do
       let cookies = getCookies req
-      mbPersistentSessionId <- lift $ getSessionId cookies
-      mbPersistentSession <- getInTheFuckingSessionShinji pool mbPersistentSessionId
-      mUserInfo <- lift $ fetchUser pool mbPersistentSession
+      mbPersistentSessionId <- handlerToEff $ getSessionId cookies
+      mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
+      mUserInfo <- fetchUser mbPersistentSession
       (mUser, sessionId) <- do
         case mUserInfo of
           Nothing -> do
@@ -50,7 +61,7 @@ authHandler logger floraEnv = mkAuthHandler (\request -> Logging.runLog (floraEn
             pure (Just user, userSession ^. #persistentSessionId)
       webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
       let sessionCookie = craftSessionCookie sessionId False
-      lift $ pure $ addCookie sessionCookie (Session{..})
+      pure $ addCookie sessionCookie (Session{..})
 
 getCookies :: Request -> Cookies
 getCookies req =
@@ -68,29 +79,25 @@ getSessionId cookies =
         Just sessionId -> pure $ Just sessionId
 
 getInTheFuckingSessionShinji ::
-  Pool Connection ->
+  ([Logging, DB, IOE] :>> es) =>
   Maybe PersistentSessionId ->
-  LogT Handler (Maybe PersistentSession)
-getInTheFuckingSessionShinji _pool Nothing = pure Nothing
-getInTheFuckingSessionShinji pool (Just persistentSessionId) = do
-  result <- runExceptT $ liftIO $ withPool pool $ getPersistentSession persistentSessionId
+  Eff es (Maybe PersistentSession)
+getInTheFuckingSessionShinji Nothing = pure Nothing
+getInTheFuckingSessionShinji (Just persistentSessionId) = do
+  result <- getPersistentSession persistentSessionId
   case result of
-    Right Nothing -> pure Nothing
-    Right (Just userSession) -> pure $ Just userSession
-    Left _ -> do
-      Logging.alert "Database error when retrieving persistent session" []
-      throwError err500
+    Nothing -> pure Nothing
+    (Just userSession) -> pure $ Just userSession
 
-fetchUser :: Pool Connection -> Maybe PersistentSession -> Handler (Maybe (User, PersistentSession))
-fetchUser _ Nothing = pure Nothing
-fetchUser pool (Just userSession) = do
-  user <- lookupUser pool (userSession ^. #userId)
+fetchUser :: ([Error ServerError, IOE, DB] :>> es) => Maybe PersistentSession -> Eff es (Maybe (User, PersistentSession))
+fetchUser Nothing = pure Nothing
+fetchUser (Just userSession) = do
+  user <- lookupUser (userSession ^. #userId)
   pure $ Just (user, userSession)
 
-lookupUser :: Pool Connection -> UserId -> Handler User
-lookupUser pool uid = do
-  result <- runExceptT $ liftIO $ withPool pool $ getUserById uid
+lookupUser :: ([Error ServerError, IOE, DB] :>> es) => UserId -> Eff es User
+lookupUser uid = do
+  result <- getUserById uid
   case result of
-    Left _ -> throwError (err403{errBody = "Invalid Cookie"})
-    Right Nothing -> throwError (err403{errBody = "Invalid Cookie"})
-    Right (Just user) -> pure user
+    Nothing -> throwError (err403{errBody = "Invalid Cookie"})
+    (Just user) -> pure user

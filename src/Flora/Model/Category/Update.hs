@@ -2,25 +2,26 @@
 
 module Flora.Model.Category.Update where
 
+import Control.Monad (void)
 import Control.Monad.IO.Class
 import Data.Text (Text)
-import Database.PostgreSQL.Entity (insert)
-import Database.PostgreSQL.Transact (DBT)
-
-import Control.Monad (void)
 import qualified Data.Text.IO as T
+import Database.PostgreSQL.Entity (insert)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Simple.SqlQQ
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+
 import qualified Flora.Model.Category.Query as Query
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
-insertCategory :: (MonadIO m) => Category -> DBT m ()
-insertCategory category = insert @Category category
+insertCategory :: ([DB, IOE] :>> es) => Category -> Eff es ()
+insertCategory category = dbtToEff $ insert @Category category
 
 -- | Adds a package to a category. Adding a package to an already-assigned category has no effect
-addToCategory :: (MonadIO m) => PackageId -> CategoryId -> DBT m ()
-addToCategory packageId categoryId = void . execute Update q $ (packageId, categoryId)
+addToCategory :: ([DB, IOE] :>> es) => PackageId -> CategoryId -> Eff es ()
+addToCategory packageId categoryId = dbtToEff $ void . execute Update q $ (packageId, categoryId)
   where
     q =
       [sql| 
@@ -28,7 +29,7 @@ addToCategory packageId categoryId = void . execute Update q $ (packageId, categ
         on conflict do nothing
       |]
 
-addToCategoryByName :: (MonadIO m) => PackageId -> Text -> DBT m ()
+addToCategoryByName :: ([DB, IOE] :>> es) => PackageId -> Text -> Eff es ()
 addToCategoryByName packageId categoryName = do
   mCategory <- Query.getCategoryByName categoryName
   case mCategory of

@@ -25,7 +25,7 @@ import Flora.Model.Release.Types
 import Flora.Model.User
 import Flora.TestUtils
 
-spec :: Fixtures -> TestM TestTree
+spec :: Fixtures -> TestEff TestTree
 spec fixtures =
   testThese
     "packages"
@@ -38,18 +38,18 @@ spec fixtures =
     , testThis "Searching for `text` returns unique results by namespace/package name" $ testSearchResultUnicity fixtures
     ]
 
-testInsertBase :: Fixtures -> TestM ()
+testInsertBase :: Fixtures -> TestEff ()
 testInsertBase fixtures = do
   let cabalPath = "./test/fixtures/Cabal/base.cabal"
-  liftDB $ importFile (fixtures ^. #hackageUser % #userId) cabalPath
-  result <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
+  importFile (fixtures ^. #hackageUser % #userId) cabalPath
+  result <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
   assertEqual (Just (PackageName "base")) (preview (_Just % #name) result)
 
-testInsertContainers :: Fixtures -> TestM ()
+testInsertContainers :: Fixtures -> TestEff ()
 testInsertContainers fixtures = do
   let cabalPath = "./test/fixtures/Cabal/containers.cabal"
-  liftDB $ importFile (fixtures ^. #hackageUser % #userId) cabalPath
-  dependencies <- liftDB $ do
+  importFile (fixtures ^. #hackageUser % #userId) cabalPath
+  dependencies <- do
     mPackage <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "containers")
     case mPackage of
       Nothing -> do
@@ -63,9 +63,9 @@ testInsertContainers fixtures = do
     (Set.fromList [PackageName "base", PackageName "deepseq", PackageName "array"])
     (Set.fromList $ view _2 <$> Vector.toList dependencies)
 
-testFetchGHCPrimDependents :: TestM ()
+testFetchGHCPrimDependents :: TestEff ()
 testFetchGHCPrimDependents = do
-  result <- liftDB $ Query.getPackageDependents (Namespace "haskell") (PackageName "ghc-prim")
+  result <- Query.getPackageDependents (Namespace "haskell") (PackageName "ghc-prim")
   assertEqual
     ( Set.fromList
         [ PackageName "base"
@@ -78,59 +78,57 @@ testFetchGHCPrimDependents = do
     )
     (Set.fromList . fmap (view #name) $ Vector.toList result)
 
-testThatBaseisInPreludeCategory :: Fixtures -> TestM ()
+testThatBaseisInPreludeCategory :: Fixtures -> TestEff ()
 testThatBaseisInPreludeCategory fixtures = do
   let cabalPath = "./test/fixtures/Cabal/base.cabal"
-  liftDB $ importFile (fixtures ^. #hackageUser % #userId) cabalPath
-  result <- liftDB $ Query.getPackagesFromCategorySlug "prelude"
+  importFile (fixtures ^. #hackageUser % #userId) cabalPath
+  result <- Query.getPackagesFromCategorySlug "prelude"
   assertEqual (Set.fromList [PackageName "base"]) (Set.fromList $ V.toList $ fmap (view #name) result)
 
-testThatSemigroupsIsInMathematicsAndDataStructures :: Fixtures -> TestM ()
+testThatSemigroupsIsInMathematicsAndDataStructures :: Fixtures -> TestEff ()
 testThatSemigroupsIsInMathematicsAndDataStructures fixtures = do
   let cabalPath = "./test/fixtures/Cabal/semigroups.cabal"
-  liftDB $ importFile (fixtures ^. #hackageUser % #userId) cabalPath
-  Just semigroups <- liftDB $ Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
-  result <- liftDB $ Query.getPackageCategories (semigroups ^. #packageId)
+  importFile (fixtures ^. #hackageUser % #userId) cabalPath
+  semigroups <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
+  result <- Query.getPackageCategories (semigroups ^. #packageId)
   assertEqual (Set.fromList ["data-structures", "maths"]) (Set.fromList $ slug <$> V.toList result)
 
-testCorrectNumberInHaskellNamespace :: Fixtures -> TestM ()
+testCorrectNumberInHaskellNamespace :: Fixtures -> TestEff ()
 testCorrectNumberInHaskellNamespace fixtures = do
   importAllPackages fixtures
-  results <- liftDB $ Query.getPackagesByNamespace (Namespace "haskell")
+  results <- Query.getPackagesByNamespace (Namespace "haskell")
   assertEqual (Set.size coreLibraries) (Vector.length results)
 
-testBytestringDependents :: Fixtures -> TestM ()
+testBytestringDependents :: Fixtures -> TestEff ()
 testBytestringDependents fixtures = do
   importAllPackages fixtures
-  results <- liftDB $ Query.getPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring")
+  results <- Query.getPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring")
   assertEqual
     6
     (Vector.length results)
 
-testBytestringDependencies :: TestM ()
+testBytestringDependencies :: TestEff ()
 testBytestringDependencies = do
-  bytestring <- liftDB $ fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "bytestring")
-  releases <- liftDB $ Query.getReleases (bytestring ^. #packageId)
+  bytestring <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "bytestring")
+  releases <- Query.getReleases (bytestring ^. #packageId)
   let latestRelease = maximumBy (compare `on` version) releases
-  latestReleasedependencies <- liftDB $ Query.getRequirements (latestRelease ^. #releaseId)
+  latestReleasedependencies <- Query.getRequirements (latestRelease ^. #releaseId)
   assertEqual 4 (Vector.length latestReleasedependencies)
 
-testSearchResultUnicity :: Fixtures -> TestM ()
+testSearchResultUnicity :: Fixtures -> TestEff ()
 testSearchResultUnicity fixtures = do
   importAllPackages fixtures
-  text <- liftDB $ fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
-  releases <- liftDB $ Query.getNumberOfReleases (text ^. #packageId)
+  text <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
+  releases <- Query.getNumberOfReleases (text ^. #packageId)
   assertEqual 2 releases
-  results <- liftDB $ Query.searchPackage 1 "text"
+  results <- Query.searchPackage 1 "text"
   assertEqual 1 (Vector.length results)
   assertEqual (Cabal.mkVersion [2, 0]) (view _4 $ Vector.head results)
 
 ----------------------------
 
-importAllPackages :: Fixtures -> TestM ()
+importAllPackages :: Fixtures -> TestEff ()
 importAllPackages fixtures = do
-  TestEnv _ pool <- getTestEnv
   importAllFilesInRelativeDirectory
-    pool
     (fixtures ^. #hackageUser % #userId)
     "./test/fixtures/Cabal/"

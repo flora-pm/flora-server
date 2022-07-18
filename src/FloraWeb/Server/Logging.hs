@@ -8,34 +8,39 @@ where
 import Data.Aeson.Types (Pair)
 import Data.Kind (Type)
 import Data.Text (Text)
-import qualified Data.Time as Time
+import qualified Effectful.Log as Log
 import Flora.Environment.Config
-import Log (LogT, Logger, defaultLogLevel, object, (.=))
-import qualified Log
-import qualified Log.Backend.StandardOutput as Log
+import Log (LogLevel (..), Logger, defaultLogLevel, object, (.=))
 
-import Control.Monad.Base (MonadBase)
-import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Text.Display (display)
+import Effectful
+import Effectful.Log (Logging, logMessageEff')
+import qualified Effectful.Log.Backend.StandardOutput as Log
+import Effectful.Time
 
 -- | Wrapper around 'Log.runLogT' with necessary metadata
 runLog ::
-  forall (m :: Type -> Type) a.
+  forall (es :: [Effect]) (a :: Type).
+  (IOE :> es) =>
   DeploymentEnv ->
   Logger ->
-  LogT m a ->
-  m a
+  Eff (Logging : es) a ->
+  Eff es a
 runLog env logger logAction =
-  Log.runLogT ("flora-" <> suffix) logger defaultLogLevel logAction
+  Log.runLogging ("flora-" <> suffix) logger defaultLogLevel logAction
   where
     suffix = display env
 
-makeLogger :: LoggingDestination -> (Logger -> IO a) -> IO a
+makeLogger :: (IOE :> es) => LoggingDestination -> (Logger -> Eff es a) -> Eff es a
 makeLogger StdOut = Log.withStdOutLogger
 makeLogger Json = Log.withJsonStdOutLogger
 
-alert :: (MonadIO m, MonadBase IO m) => Text -> [Pair] -> LogT m ()
+alert ::
+  ([Time, Logging] :>> es) =>
+  Text ->
+  [Pair] ->
+  Eff es ()
 alert message details = do
-  timestamp <- liftIO Time.getCurrentTime
+  timestamp <- getCurrentTime
   let metadata = object $ ("timestamp" .= timestamp) : details
-  Log.logAttention message metadata
+  logMessageEff' LogAttention message metadata

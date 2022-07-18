@@ -1,48 +1,49 @@
-module Flora.Import.Package.Bulk (importAllFilesInDirectory, importAllFilesInRelativeDirectory) where
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.Foldable (traverse_)
-import Data.List (isSuffixOf)
-import qualified System.Directory as System
+module Flora.Import.Package.Bulk (importAllFilesInDirectory, importAllFilesInRelativeDirectory) where
 
 import Control.Concurrent (getNumCapabilities, modifyMVar, newMVar)
 import Control.Concurrent.Async (async, wait)
+import Data.Foldable (traverse_)
 import Data.Function
-import Data.Pool (Pool)
-import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Simple (Connection)
+import Data.List (isSuffixOf)
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
+import Streaming (chunksOf)
+import Streaming.Prelude (Of, Stream)
+import qualified Streaming.Prelude as Str
+import qualified System.Directory as System
+import System.FilePath
+
 import Flora.Import.Package (loadAndExtractCabalFile, persistImportOutput)
 import qualified Flora.Model.Package.Update as Update
 import qualified Flora.Model.Release.Update as Update
 import Flora.Model.User
-import Streaming (chunksOf)
-import Streaming.Prelude (Of, Stream)
-import qualified Streaming.Prelude as Str
-import System.FilePath
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
-importAllFilesInRelativeDirectory :: MonadIO m => Pool Connection -> UserId -> FilePath -> m ()
-importAllFilesInRelativeDirectory pool user dir = do
+importAllFilesInRelativeDirectory :: [DB, IOE] :>> es => UserId -> FilePath -> Eff es ()
+importAllFilesInRelativeDirectory user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importAllFilesInDirectory pool user workdir
+  importAllFilesInDirectory user workdir
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
-importAllFilesInDirectory :: MonadIO m => Pool Connection -> UserId -> FilePath -> m ()
-importAllFilesInDirectory pool user dir = do
+importAllFilesInDirectory :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ()
+importAllFilesInDirectory user dir = do
+  pool <- getPool
   parallelWorkers <- liftIO getNumCapabilities
   let chunkSize = 200
   countMVar <- liftIO $ newMVar @Int 0
   findAllCabalFilesInDirectory dir
-    & parMapM parallelWorkers (liftIO . loadAndExtractCabalFile user)
+    & parMapM parallelWorkers (runEff . runDB pool . loadAndExtractCabalFile user)
     & chunksOf chunkSize
     & Str.mapped Str.toList
     & Str.mapM_ (persistChunk countMVar)
-  withPool pool $ Update.refreshLatestVersions >> Update.refreshDependents
+  Update.refreshLatestVersions >> Update.refreshDependents
   where
     persistChunk countMvar chunk = do
       let size = length chunk
       newCount <- liftIO $ modifyMVar countMvar (\c -> pure (c + size, c + size))
-      withPool pool $ traverse_ persistImportOutput chunk
+      traverse_ persistImportOutput chunk
       liftIO . putStrLn $ "✅ Processed " <> show newCount <> " new cabal files"
 
 {- | Finds all cabal files in the provided directory recursively
@@ -50,9 +51,9 @@ importAllFilesInDirectory pool user dir = do
  large amounts of Cabal files efficiently
 -}
 findAllCabalFilesInDirectory ::
-  MonadIO m =>
+  IOE :> es =>
   FilePath ->
-  Stream (Of FilePath) m ()
+  Stream (Of FilePath) (Eff es) ()
 findAllCabalFilesInDirectory workdir = do
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> workdir
   liftIO $ System.createDirectoryIfMissing True workdir
@@ -68,7 +69,7 @@ findAllCabalFilesInDirectory workdir = do
         _ -> pure ()
 
 -- | Replaces each element of a stream with the result of an action, processing elements of the stream concurrently
-parMapM :: MonadIO m => Int -> (a -> IO b) -> Stream (Of a) m () -> Stream (Of b) m ()
+parMapM :: IOE :> es => Int -> (a -> IO b) -> Stream (Of a) (Eff es) () -> Stream (Of b) (Eff es) ()
 parMapM concurrentActions f str =
   Str.mapM (liftIO . async . f) str
     & chunksOf concurrentActions

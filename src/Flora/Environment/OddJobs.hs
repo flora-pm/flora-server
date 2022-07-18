@@ -18,17 +18,17 @@ makeConfig ::
   FloraConfig ->
   Logger ->
   Pool PG.Connection ->
-  (Pool PG.Connection -> Job -> JobsRunnerM ()) ->
+  (Job -> JobsRunner ()) ->
   Config
 makeConfig runnerEnv cfg logger pool runnerContinuation =
   mkConfig
-    (flip $ structuredLogging cfg logger)
+    (\level event -> structuredLogging cfg logger level event)
     jobTableName
     pool
     (MaxConcurrentJobs 1)
-    (runJobRunnerM runnerEnv logger . runnerContinuation pool)
+    (runJobRunner pool runnerEnv logger . runnerContinuation)
     (\x -> x{cfgDeleteSuccessfulJobs = False, cfgDefaultMaxAttempts = 3})
 
 makeUIConfig :: FloraConfig -> Logger -> Pool PG.Connection -> UIConfig
 makeUIConfig cfg logger pool =
-  mkUIConfig (flip $ structuredLogging cfg logger) jobTableName pool id
+  mkUIConfig (structuredLogging cfg logger) jobTableName pool id

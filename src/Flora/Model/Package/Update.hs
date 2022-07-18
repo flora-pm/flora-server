@@ -4,25 +4,25 @@
 module Flora.Model.Package.Update where
 
 import Control.Monad (unless, void)
-import Control.Monad.IO.Class
 import Database.PostgreSQL.Entity (Entity (fields), delete, insert, insertMany, upsert)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Database.PostgreSQL.Transact (DBT)
 
 import qualified Data.List as List
 import Database.PostgreSQL.Entity.Internal.QQ
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Flora.Model.Package.Component (PackageComponent)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
 import Optics.Core
 
-insertPackage :: (MonadIO m) => Package -> DBT m ()
-insertPackage package = insert @Package package
+insertPackage :: ([DB, IOE] :>> es) => Package -> Eff es ()
+insertPackage package = dbtToEff $ insert @Package package
 
-upsertPackage :: (MonadIO m) => Package -> DBT m ()
-upsertPackage package =
+upsertPackage :: ([DB, IOE] :>> es) => Package -> Eff es ()
+upsertPackage package = dbtToEff $
   case package ^. #status of
     UnknownPackage -> upsert @Package package [[field| owner_id |]]
     FullyImportedPackage ->
@@ -33,26 +33,26 @@ upsertPackage package =
         , [field| owner_id |]
         ]
 
-deletePackage :: (MonadIO m) => (Namespace, PackageName) -> DBT m ()
-deletePackage (namespace, packageName) = delete @Package (namespace, packageName)
+deletePackage :: ([DB, IOE] :>> es) => (Namespace, PackageName) -> Eff es ()
+deletePackage (namespace, packageName) = dbtToEff $ delete @Package (namespace, packageName)
 
-refreshDependents :: (MonadIO m) => DBT m ()
-refreshDependents = void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
+refreshDependents :: ([DB, IOE] :>> es) => Eff es ()
+refreshDependents = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
 
-insertPackageComponent :: (MonadIO m) => PackageComponent -> DBT m ()
-insertPackageComponent = insert @PackageComponent
+insertPackageComponent :: ([DB, IOE] :>> es) => PackageComponent -> Eff es ()
+insertPackageComponent = dbtToEff . insert @PackageComponent
 
-upsertPackageComponent :: (MonadIO m) => PackageComponent -> DBT m ()
-upsertPackageComponent packageComponent = upsert @PackageComponent packageComponent (fields @PackageComponent)
+upsertPackageComponent :: ([DB, IOE] :>> es) => PackageComponent -> Eff es ()
+upsertPackageComponent packageComponent = dbtToEff $ upsert @PackageComponent packageComponent (fields @PackageComponent)
 
-bulkInsertPackageComponents :: (MonadIO m) => [PackageComponent] -> DBT m ()
-bulkInsertPackageComponents = insertMany @PackageComponent
+bulkInsertPackageComponents :: ([DB, IOE] :>> es) => [PackageComponent] -> Eff es ()
+bulkInsertPackageComponents = dbtToEff . insertMany @PackageComponent
 
-insertRequirement :: (MonadIO m) => Requirement -> DBT m ()
-insertRequirement = insert @Requirement
+insertRequirement :: ([DB, IOE] :>> es) => Requirement -> Eff es ()
+insertRequirement = dbtToEff . insert @Requirement
 
-upsertRequirement :: (MonadIO m) => Requirement -> DBT m ()
-upsertRequirement req = upsert @Requirement req [[field| metadata |], [field| requirement |]]
+upsertRequirement :: ([DB, IOE] :>> es) => Requirement -> Eff es ()
+upsertRequirement req = dbtToEff $ upsert @Requirement req [[field| metadata |], [field| requirement |]]
 
-bulkInsertRequirements :: (MonadIO m) => [Requirement] -> DBT m ()
-bulkInsertRequirements requirements = unless (List.null requirements) $ insertMany @Requirement requirements
+bulkInsertRequirements :: ([DB, IOE] :>> es) => [Requirement] -> Eff es ()
+bulkInsertRequirements requirements = dbtToEff $ unless (List.null requirements) $ insertMany @Requirement requirements

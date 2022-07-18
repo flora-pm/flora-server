@@ -19,7 +19,7 @@ import qualified FloraWeb.Templates.Pages.Home as Home
 import qualified OddJobs.Endpoints as OddJobs
 import qualified OddJobs.Types as OddJobs
 
-server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPageM
+server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPage
 server cfg env =
   Routes'
     { home = homeHandler
@@ -31,14 +31,14 @@ server cfg env =
     , search = Search.server
     }
 
-homeHandler :: FloraPageM (Html ())
+homeHandler :: FloraPage (Html ())
 homeHandler = do
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
   let templateEnv = templateDefaults & #displayNavbarSearch .~ False
   render templateEnv Home.show
 
-aboutHandler :: FloraPageM (Html ())
+aboutHandler :: FloraPage (Html ())
 aboutHandler = do
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv

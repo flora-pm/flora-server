@@ -1,6 +1,9 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 module FloraWeb.Session
   ( module FloraWeb.Server.Auth.Types
   , getSession
+  , getEnv
   , craftSessionCookie
   , emptySessionCookie
   , addCookie
@@ -8,20 +11,27 @@ module FloraWeb.Session
   )
 where
 
-import Control.Monad.Reader
-import Data.Kind
 import qualified Data.UUID as UUID
 import Servant (Header, Headers, addHeader, getResponse)
 import Web.Cookie
 
+import Effectful (Eff, type (:>))
+import Effectful.Dispatch.Static (unsafeEff_)
+import Effectful.Reader.Static (Reader, asks)
+import Flora.Environment
 import Flora.Model.PersistentSession
 import FloraWeb.Server.Auth.Types
+import FloraWeb.Types (fetchFloraEnv)
 
 getSession ::
-  forall (pLevel :: ProtectionLevel) (hs :: [Type]) (m :: Type -> Type).
-  (MonadReader (Headers hs (Session pLevel)) m) =>
-  m (Session pLevel)
-getSession = asks getResponse
+  (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es) =>
+  Eff es Session
+getSession = asks (getResponse @'[Header "Set-Cookie" SetCookie])
+
+getEnv :: (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es) => Eff es FloraEnv
+getEnv = do
+  Session{webEnvStore} <- getSession
+  unsafeEff_ $ fetchFloraEnv webEnvStore
 
 -- | This function builds a cookie with the provided content
 craftSessionCookie ::
@@ -53,7 +63,7 @@ addCookie ::
   SetCookie ->
   a ->
   Headers '[Header "Set-Cookie" SetCookie] a
-addCookie cookies continuation = addHeader cookies continuation
+addCookie = addHeader
 
 deleteCookie :: a -> Headers '[Header "Set-Cookie" SetCookie] a
-deleteCookie continuation = addHeader emptySessionCookie continuation
+deleteCookie = addHeader emptySessionCookie

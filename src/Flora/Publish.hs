@@ -1,10 +1,10 @@
 module Flora.Publish where
 
 import Control.Monad
-import Control.Monad.IO.Class
 import Data.Text.Display
 import qualified Data.Text.IO as T
-import Database.PostgreSQL.Transact
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect
 import Optics.Core
 
 import Flora.Import.Categories.Tuning
@@ -23,13 +23,13 @@ import Flora.Model.Requirement (Requirement)
    TODO: Publish artifacts
 -}
 publishPackage ::
-  (MonadIO m) =>
+  ([DB, IOE] :>> es) =>
   [Requirement] ->
   [PackageComponent] ->
   Release ->
   [UserPackageCategory] ->
   Package ->
-  DBT m Package
+  Eff es Package
 publishPackage requirements components release userPackageCategories package = do
   liftIO $ T.putStrLn $ "[+] Package " <> display (package ^. #name) <> ": "
   result <- Query.getPackageByNamespaceAndName (package ^. #namespace) (package ^. #name)
@@ -41,7 +41,7 @@ publishPackage requirements components release userPackageCategories package = d
       liftIO $ T.putStrLn $ "[+] Package " <> display (package ^. #name) <> " does not exist."
       publishForNewPackage requirements components release userPackageCategories package
 
-publishForExistingPackage :: (MonadIO m) => [Requirement] -> [PackageComponent] -> Release -> Package -> DBT m Package
+publishForExistingPackage :: ([DB, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> Package -> Eff es Package
 publishForExistingPackage requirements components release package = do
   result <- Query.getReleaseByVersion (package ^. #packageId) (release ^. #version)
   case result of
@@ -65,7 +65,7 @@ publishForExistingPackage requirements components release package = do
       liftIO $ T.putStrLn $ "[+] I am not inserting anything for " <> display (package ^. #name) <> " v" <> display (r ^. #version)
       pure package
 
-publishForNewPackage :: (MonadIO m) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> DBT m Package
+publishForNewPackage :: ([DB, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
 publishForNewPackage requirements components release userPackageCategories package = do
   liftIO $ T.putStrLn $ "[+] Normalising user-supplied categories: " <> display userPackageCategories
   newCategories <- liftIO $ normalisedCategories <$> Tuning.normalise userPackageCategories

@@ -15,15 +15,15 @@ where
 
 import qualified Commonmark
 import Control.Exception
-import Control.Monad.IO.Class
-import Data.Aeson (Result (..), fromJSON)
+import Data.Aeson (Result (..), fromJSON, toJSON)
+import Data.Aeson.Types (emptyObject)
 import Data.Pool
 import Data.Text
 import Data.Text.Display
 import qualified Data.Text.Lazy as TL
-import Database.PostgreSQL.Entity.DBT
 import qualified Database.PostgreSQL.Simple as PG
 import Distribution.Types.Version
+import Effectful.Log (localDomainEff', logMessageEff')
 import GHC.Stack
 import Log
 import qualified Lucid
@@ -48,8 +48,8 @@ scheduleReadmeJob conn rid package version =
       jobTableName
       (MkReadme $ MkReadmePayload package rid $ MkIntAesonVersion version)
 
-makeReadme :: HasCallStack => Pool PG.Connection -> ReadmePayload -> JobsRunnerM ()
-makeReadme pool pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPackage) $ do
+makeReadme :: HasCallStack => ReadmePayload -> JobsRunner ()
+makeReadme pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPackage) $ do
   logInfo "making readme" pay
   let payload = VersionedPackage mpPackage mpVersion
   gewt <- Hackage.request $ Hackage.getPackageReadme payload
@@ -57,7 +57,7 @@ makeReadme pool pay@MkReadmePayload{..} = localDomain ("for-package " <> display
     Left e@(FailureResponse _ response) -> do
       -- If the README simply doesn't exist, we skip it by marking it as successful.
       if response ^. #responseStatusCode == notFound404
-        then liftIO $ withPool pool $ updateReadme mpReleaseId Nothing
+        then updateReadme mpReleaseId Nothing
         else throw e
     Left e -> throw e
     Right bodyText -> do
@@ -74,12 +74,12 @@ makeReadme pool pay@MkReadmePayload{..} = localDomain ("for-package " <> display
       let readmeBody :: Lucid.Html ()
           readmeBody = Lucid.toHtmlRaw @Text $ TL.toStrict htmlTxt
 
-      liftIO $ withPool pool $ updateReadme mpReleaseId (Just $ MkTextHtml readmeBody)
+      updateReadme mpReleaseId (Just $ MkTextHtml readmeBody)
 
-runner :: Pool PG.Connection -> Job -> JobsRunnerM ()
-runner pool job = localDomain "job-runner" $
+runner :: Job -> JobsRunner ()
+runner job = localDomainEff' "job-runner" $
   case fromJSON (jobPayload job) of
-    Error str -> logAttention "decode error" str
+    Error str -> logMessageEff' LogAttention "decode error" (toJSON str)
     Success val -> case val of
-      DoNothing -> logInfo "doing nothing" ()
-      MkReadme x -> makeReadme pool x
+      DoNothing -> logMessageEff' LogInfo "doing nothing" emptyObject
+      MkReadme x -> makeReadme x

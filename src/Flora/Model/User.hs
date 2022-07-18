@@ -35,6 +35,7 @@ import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
+import Effectful
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (..), TypeError)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
@@ -112,7 +113,7 @@ type CannotDisplayPassword e =
 deriving via Text instance ToField (PasswordHash a)
 deriving via Text instance FromField (PasswordHash a)
 
-mkUser :: MonadIO m => UserCreationForm -> m User
+mkUser :: IOE :> es => UserCreationForm -> Eff es User
 mkUser UserCreationForm{username, email, password} = do
   userId <- UserId <$> liftIO UUID.nextRandom
   timestamp <- liftIO Time.getCurrentTime
@@ -122,7 +123,7 @@ mkUser UserCreationForm{username, email, password} = do
   let userFlags = UserFlags{isAdmin = False, canLogin = True}
   pure User{..}
 
-mkAdmin :: MonadIO m => AdminCreationForm -> m User
+mkAdmin :: IOE :> es => AdminCreationForm -> Eff es User
 mkAdmin AdminCreationForm{username, email, password} = do
   userId <- UserId <$> liftIO UUID.nextRandom
   timestamp <- liftIO Time.getCurrentTime
@@ -132,7 +133,7 @@ mkAdmin AdminCreationForm{username, email, password} = do
   let userFlags = UserFlags{isAdmin = True, canLogin = False}
   pure User{..}
 
-hashPassword :: (MonadIO m) => Password -> m (PasswordHash Argon2)
+hashPassword :: (IOE :> es) => Password -> Eff es (PasswordHash Argon2)
 hashPassword = Argon2.hashPassword
 
 validatePassword :: Password -> PasswordHash Argon2 -> Bool

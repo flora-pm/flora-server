@@ -10,7 +10,6 @@ module Flora.Model.Release.Query
   )
 where
 
-import Control.Monad.IO.Class
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 import Data.Vector.Algorithms.Intro as MVector
@@ -19,31 +18,33 @@ import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Database.PostgreSQL.Transact (DBT)
 import Distribution.Make (Version)
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
 packageReleasesQuery :: Query
 packageReleasesQuery = _selectWhere @Release [[field| package_id |]]
 
-getReleases :: MonadIO m => PackageId -> DBT m (Vector Release)
-getReleases pid = do
+getReleases :: [DB, IOE] :>> es => PackageId -> Eff es (Vector Release)
+getReleases pid = dbtToEff $ do
   results <- query Select packageReleasesQuery (Only pid)
   if Vector.null results
     then pure results
     else pure $ Vector.take 6 $ Vector.reverse $ Vector.modify MVector.sort results
 
-getAllReleases :: MonadIO m => PackageId -> DBT m (Vector Release)
-getAllReleases pid = do
+getAllReleases :: [DB, IOE] :>> es => PackageId -> Eff es (Vector Release)
+getAllReleases pid = dbtToEff $ do
   results <- query Select packageReleasesQuery (Only pid)
   if Vector.null results
     then pure results
     else pure $ Vector.reverse $ Vector.modify MVector.sort results
 
-getPackageReleases :: MonadIO m => DBT m (Vector (ReleaseId, Version, PackageName))
+getPackageReleases :: [DB, IOE] :>> es => Eff es (Vector (ReleaseId, Version, PackageName))
 getPackageReleases =
-  query Select querySpec ()
+  dbtToEff $
+    query Select querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -51,14 +52,14 @@ getPackageReleases =
         select r.release_id, r.version, p."name"
         from releases as r
         join packages as p
-        on p.package_id = r.package_id
+        on p.package_id = dbtToEff $ r.package_id
       |]
 
-getReleaseByVersion :: MonadIO m => PackageId -> Version -> DBT m (Maybe Release)
-getReleaseByVersion packageId version = queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
+getReleaseByVersion :: [DB, IOE] :>> es => PackageId -> Version -> Eff es (Maybe Release)
+getReleaseByVersion packageId version = dbtToEff $ queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
 
-getNumberOfReleases :: MonadIO m => PackageId -> DBT m Word
-getNumberOfReleases pid = do
+getNumberOfReleases :: [DB, IOE] :>> es => PackageId -> Eff es Word
+getNumberOfReleases pid = dbtToEff $ do
   (result :: Maybe (Only Int)) <- queryOne Select numberOfReleasesQuery (Only pid)
   case result of
     Just (Only n) -> pure $ fromIntegral n

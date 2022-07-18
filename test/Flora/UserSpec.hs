@@ -18,7 +18,7 @@ import Flora.TestUtils
 import FloraWeb.Client as Client
 import FloraWeb.Routes.Pages.Sessions
 
-spec :: Fixtures -> TestM TestTree
+spec :: Fixtures -> TestEff TestTree
 spec fixtures =
   testThese
     "users"
@@ -27,20 +27,20 @@ spec fixtures =
     -- , testThis "Authenticate an arbitrary user" authenticateUser
     ]
 
-fetchUserById :: Fixtures -> TestM ()
+fetchUserById :: Fixtures -> TestEff ()
 fetchUserById Fixtures{hackageUser} = do
-  result <- liftDB $ getUserById (hackageUser ^. #userId)
+  result <- getUserById (hackageUser ^. #userId)
   assertEqual (Just hackageUser) result
 
-fetchUserByEmail :: Fixtures -> TestM ()
+fetchUserByEmail :: Fixtures -> TestEff ()
 fetchUserByEmail Fixtures{hackageUser} = do
-  result <- liftDB $ getUserByEmail (hackageUser ^. #email)
+  result <- getUserByEmail (hackageUser ^. #email)
   assertEqual (Just hackageUser) result
 
--- authenticateUser :: TestM ()
+-- authenticateUser :: TestEff ()
 -- authenticateUser = do
 --     hashedPassword <- hashPassword $ mkPassword "foobar2000"
 --     user <- randomUser $ randomUserTemplate{ password = pure hashedPassword }
---     liftDB $ insertUser user
+--     insertUser user
 --     let form = LoginForm (user ^. #email) "foobar2000" Nothing
 --     assertClientRight' "Session can be created" (testRequest $ Client.createSession form)

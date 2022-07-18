@@ -4,17 +4,17 @@ import qualified Distribution.Version as Version
 import Servant
 
 import Flora.Model.Package
-import Flora.TestUtils (TestM, TestTree, assertEqual, testThese, testThis)
+import Flora.TestUtils (TestEff, TestTree, assertEqual, testThese, testThis)
 import qualified FloraWeb.Links as Links
 
-spec :: TestM TestTree
+spec :: TestEff TestTree
 spec =
   testThese
     "templates"
     [ testThis "Generate a link to a package + version" testGenerateVersionedPackageLink
     ]
 
-testGenerateVersionedPackageLink :: TestM ()
+testGenerateVersionedPackageLink :: TestEff ()
 testGenerateVersionedPackageLink = do
   let namespace = Namespace "hackage"
   let packageName = PackageName "base"
