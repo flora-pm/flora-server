@@ -31,11 +31,13 @@ import Servant (FromHttpApiData (..), Handler, ServerError)
 import Web.Cookie
 
 type Flora :: Type -> Type
-type Flora = Eff '[ Reader WebEnvStore
-                  , Logging
-                  , Error ServerError
-                  , IOE
-                  ]
+type Flora =
+  Eff
+    '[ Reader WebEnvStore
+     , Logging
+     , Error ServerError
+     , IOE
+     ]
 
 newtype WebEnvStore = WebEnvStore (MVar WebEnv)
 

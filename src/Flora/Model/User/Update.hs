@@ -3,15 +3,15 @@
 module Flora.Model.User.Update where
 
 import Control.Monad
-import Database.PostgreSQL.Entity (insert, delete)
+import Database.PostgreSQL.Entity (delete, insert)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 
+import Effectful (Eff, IOE, type (:>), type (:>>))
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Flora.Model.User
 import Optics.Core ((^.))
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
-import Effectful (Eff, IOE, type (:>>), type (:>))
 
 addAdmin :: ([DB, IOE] :>> es) => AdminCreationForm -> Eff es User
 addAdmin form = do

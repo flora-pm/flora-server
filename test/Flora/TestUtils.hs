@@ -52,18 +52,19 @@ import Control.Monad (void)
 import Control.Monad.Catch
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Kind
+import qualified Data.List as List
 import Data.Maybe (fromJust)
 import Data.Password.Argon2 (Argon2, PasswordHash, mkPassword)
 import Data.Pool
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
+import qualified Data.UUID as UUID
 import Data.Word
 import Database.PostgreSQL.Entity.DBT ()
 import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
 import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Transact ()
-import Effectful
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
@@ -72,6 +73,8 @@ import GHC.IO (mkUserError)
 import GHC.Stack
 import GHC.TypeLits
 import Hedgehog (MonadGen (..))
+import qualified Hedgehog.Gen as H
+import qualified Hedgehog.Range as Range
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import Optics.Core
 import Servant.API ()
@@ -79,21 +82,17 @@ import Servant.API.UVerb.Union
 import Servant.Client
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Tasty (TestTree)
-import qualified Data.List as List
-import qualified Data.UUID as UUID
-import qualified Hedgehog.Gen as H
-import qualified Hedgehog.Range as Range
 import qualified Test.Tasty as Test
 import qualified Test.Tasty.HUnit as Test
 
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
 import Flora.Model.User
+import qualified Flora.Model.User.Query as Query
 import Flora.Model.User.Update
+import qualified Flora.Model.User.Update as Update
 import Flora.Publish
 import FloraWeb.Client
-import qualified Flora.Model.User.Query as Query
-import qualified Flora.Model.User.Update as Update
 
 type TestEff = Eff '[DB, IOE]
 
@@ -110,8 +109,8 @@ getFixtures = do
 runTestEff :: TestEff a -> Pool Connection -> IO a
 runTestEff comp pool =
   runEff
-  . runDB pool
-  $ comp
+    . runDB pool
+    $ comp
 
 testThis :: String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
@@ -198,7 +197,7 @@ managerSettings = defaultManagerSettings
 testMigrations :: ([DB, IOE] :>> es) => Eff es ()
 testMigrations = do
   pool <- getPool
-  liftIO $ withResource pool $ \conn -> 
+  liftIO $ withResource pool $ \conn ->
     void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
   importCategories
 

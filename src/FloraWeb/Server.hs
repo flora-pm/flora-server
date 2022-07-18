@@ -37,7 +37,7 @@ import qualified Control.Exception.Safe as Safe
 import qualified Database.PostgreSQL.Simple as PG
 import Effectful.Concurrent
 import Effectful.Log (runLogging)
-import Effectful.Reader.Static (withReader, runReader)
+import Effectful.Reader.Static (runReader, withReader)
 import Effectful.Servant (effToHandler)
 import Effectful.Time (Time, runCurrentTimeIO)
 import qualified Network.HTTP.Client as HTTP
@@ -45,7 +45,10 @@ import qualified OddJobs.Endpoints as OddJobs
 import OddJobs.Job (startJobRunner)
 import qualified OddJobs.Types as OddJobs
 
+import Data.Pool (Pool)
+import Database.PostgreSQL.Simple (Connection)
 import Effectful.Dispatch.Static
+import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
 import Flora.Environment.Config (FloraConfig (..))
 import qualified Flora.Environment.OddJobs as OddJobs
@@ -61,9 +64,6 @@ import FloraWeb.Server.Metrics
 import qualified FloraWeb.Server.Pages as Pages
 import FloraWeb.Server.Tracing
 import FloraWeb.Types
-import Effectful.PostgreSQL.Transact.Effect (runDB)
-import Data.Pool (Pool)
-import Database.PostgreSQL.Simple (Connection)
 
 runFlora :: IO ()
 runFlora = bracket (runEff getFloraEnv) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
@@ -154,11 +154,13 @@ floraServer pool cfg jobsRunnerEnv =
         hoistServerWithContext
           (Proxy @Pages.Routes)
           (Proxy @'[FloraAuthContext])
-          (\floraPage -> withReader (const sessionWithCookies)
-                          . runCurrentTimeIO
-                          . runDB pool
-                          . runVisitorSession
-                          $ floraPage)
+          ( \floraPage ->
+              withReader (const sessionWithCookies)
+                . runCurrentTimeIO
+                . runDB pool
+                . runVisitorSession
+                $ floraPage
+          )
           (Pages.server cfg jobsRunnerEnv)
     , autoreload =
         hoistServer

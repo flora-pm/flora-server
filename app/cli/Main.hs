@@ -4,21 +4,20 @@ import CoverageReport
 import Data.Maybe
 import Data.Password.Types
 import Data.Text (Text)
+import DesignSystem (generateComponents)
 import Effectful
 import Effectful.Dispatch.Static
 import Effectful.PostgreSQL.Transact.Effect
-import DesignSystem (generateComponents)
+import qualified Flora.Model.User.Query as Query
 import GHC.Generics (Generic)
 import Optics.Core
 import Options.Applicative
-import qualified Flora.Model.User.Query as Query
 
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Model.User
 import Flora.Model.User.Update
-
 
 data Options = Options
   { cliCommand :: Command

@@ -35,10 +35,10 @@ import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
+import Effectful
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (..), TypeError)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
-import Effectful
 
 newtype UserId = UserId {getUserId :: UUID}
   deriving stock (Generic, Show)

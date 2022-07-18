@@ -16,11 +16,11 @@ import Servant (Header, Headers, addHeader, getResponse)
 import Web.Cookie
 
 import Effectful (Eff, type (:>))
+import Effectful.Dispatch.Static (unsafeEff_)
 import Effectful.Reader.Static (Reader, asks)
+import Flora.Environment
 import Flora.Model.PersistentSession
 import FloraWeb.Server.Auth.Types
-import Flora.Environment
-import Effectful.Dispatch.Static (unsafeEff_)
 import FloraWeb.Types (fetchFloraEnv)
 
 getSession ::
@@ -28,11 +28,10 @@ getSession ::
   Eff es Session
 getSession = asks (getResponse @'[Header "Set-Cookie" SetCookie])
 
-getEnv :: ( Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es) => Eff es FloraEnv
+getEnv :: (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es) => Eff es FloraEnv
 getEnv = do
   Session{webEnvStore} <- getSession
   unsafeEff_ $ fetchFloraEnv webEnvStore
-
 
 -- | This function builds a cookie with the provided content
 craftSessionCookie ::

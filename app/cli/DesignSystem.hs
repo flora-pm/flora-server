@@ -44,10 +44,11 @@ renderHtml template =
     templateEnv = defaultsToEnv defaultTemplateEnv
 
 writeComponent :: (IOE :> es) => FilePath -> ComponentTitle -> ComponentName -> TL.Text -> Eff es ()
-writeComponent filename title name html = liftIO $ 
-  ByteString.writeFile
-    ("./design/stories/" <> filename <> ".stories.js")
-    (storyTemplate title name html)
+writeComponent filename title name html =
+  liftIO $
+    ByteString.writeFile
+      ("./design/stories/" <> filename <> ".stories.js")
+      (storyTemplate title name html)
 
 -- | A component is represented by a 4-tuple of
 components :: Vector (FilePath, ComponentTitle, ComponentName, FloraHTML)

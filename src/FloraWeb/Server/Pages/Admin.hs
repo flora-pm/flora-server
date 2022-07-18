@@ -9,10 +9,10 @@ import Effectful.Servant (handlerToEff)
 import Log
 import Lucid
 import Network.HTTP.Types.Status (notFound404)
-import Optics.Core
-import Servant (HasServer (..), ServerError (..), err301, hoistServer)
 import qualified OddJobs.Endpoints as OddJobs
 import qualified OddJobs.Types as OddJobs
+import Optics.Core
+import Servant (HasServer (..), ServerError (..), err301, hoistServer)
 
 import Flora.Environment (FloraEnv (..))
 import Flora.Model.Admin.Report
@@ -50,11 +50,11 @@ ensureAdmin :: ServerT Routes FloraAdmin -> ServerT Routes FloraPage
 ensureAdmin adminServer = do
   hoistServer (Proxy :: Proxy Routes) checkAdmin adminServer
   where
-        -- adminSession
-        --   . runCurrentTimeIO
-        --   . runDB 
-        --   . demoteSession
-        --   $ m
+    -- adminSession
+    --   . runCurrentTimeIO
+    --   . runDB
+    --   . demoteSession
+    --   $ m
 
     checkAdmin :: FloraAdmin a -> FloraPage a
     checkAdmin adminRoutes = do

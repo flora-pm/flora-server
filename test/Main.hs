@@ -1,10 +1,10 @@
 module Main where
 
+import Effectful
+import Effectful.PostgreSQL.Transact.Effect
 import Optics.Core
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
-import Effectful
-import Effectful.PostgreSQL.Transact.Effect
 
 import qualified Flora.CategorySpec as CategorySpec
 import Flora.Environment
