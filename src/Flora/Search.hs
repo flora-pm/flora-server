@@ -1,19 +1,19 @@
 module Flora.Search where
 
 import Data.Aeson
+import qualified Data.List as List
 import Data.Text (Text)
 import Data.Text.Display (Display (..))
-import Data.Vector (Vector)
-import Distribution.Types.Version (Version)
-import qualified Data.List as List
 import qualified Data.Text.Lazy.Builder as Builder
+import Data.Vector (Vector)
 import qualified Data.Vector as Vector
+import Distribution.Types.Version (Version)
 import qualified Log
 
 import Flora.Model.Package (Namespace (..), PackageName, formatPackage)
+import qualified Flora.Model.Package.Query as Query
 import FloraWeb.Server.Auth (FloraPage)
 import Optics.Core
-import qualified Flora.Model.Package.Query as Query
 
 data SearchAction
   = ListAllPackages
