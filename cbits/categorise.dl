@@ -55,7 +55,7 @@ flora_category("parsing", "Parsing", "Parser generators, combinators and tools t
 flora_category("physics", "Physics", "The study of matter, its consituents, motion, and behaviour").
 flora_category("prelude", "Prelude", "Libraries that provide default imports").
 flora_category("streaming", "Streaming", "Data streaming for continuous processing").
-flora_category("system", "System Programming", "Programming and communicating with the Operating System").
+flora_category("system", "Systems Programming", "Programming and communicating with the Operating System").
 flora_category("template-haskell", "Template Haskell", "Metaprogramming with Template Haskell").
 flora_category("testing", "Testing", "Test frameworks").
 flora_category("text", "Text", "Working with textual data and algorithms").
@@ -133,6 +133,8 @@ normalise_category("UserInterface", "GUI").
 normalise_category("UI", "GUI").
 normalise_category("User Interfaces", "GUI").
 
+normalise_category("graphics", "Graphics").
+
 normalise_category("Code Generation", "FFI").
 normalise_category("Elm", "FFI").
 normalise_category("TypeScript", "FFI").
@@ -187,4 +189,4 @@ normalise_category("System", "System Programming").
 
 normalise_category("Distribution", "Package Distribution").
 
-normalise_category("graphics", "Graphics").
+normalise_category("SYstem", "Systems Programming").
