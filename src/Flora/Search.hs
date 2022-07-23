@@ -1,23 +1,18 @@
 module Flora.Search where
 
-import Data.Text (Text)
-import Data.Vector (Vector)
-import qualified Data.Vector as Vector
-
-import Control.Monad.IO.Class
 import Data.Aeson
 import qualified Data.List as List
+import Data.Text (Text)
 import Data.Text.Display (Display (..))
 import qualified Data.Text.Lazy.Builder as Builder
-import Database.PostgreSQL.Entity.DBT (withPool)
+import Data.Vector (Vector)
+import qualified Data.Vector as Vector
 import Distribution.Types.Version (Version)
-import Flora.Environment (FloraEnv (..))
+import qualified Log
+
 import Flora.Model.Package (Namespace (..), PackageName, formatPackage)
 import qualified Flora.Model.Package.Query as Query
 import FloraWeb.Server.Auth (FloraPage)
-import FloraWeb.Session (Session (..), getSession)
-import FloraWeb.Types (fetchFloraEnv)
-import qualified Log
 import Optics.Core
 
 data SearchAction
