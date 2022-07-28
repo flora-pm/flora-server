@@ -29,10 +29,11 @@ import qualified Data.Text as T
 import Data.Text.Display
 import qualified Data.Text.IO as T
 import Data.Time
-import Distribution.PackageDescription (allLibraries, unPackageName, unUnqualComponentName)
+import Distribution.PackageDescription (CondTree (condTreeData), allLibraries, unPackageName, unUnqualComponentName)
 import qualified Distribution.PackageDescription as Cabal hiding (PackageName)
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription)
 import Distribution.Pretty
+import Distribution.Types.Executable
 import Distribution.Types.GenericPackageDescription (GenericPackageDescription)
 import Distribution.Types.Library
 import Distribution.Types.LibraryName
@@ -53,10 +54,10 @@ import Flora.Model.Release (deterministicReleaseId)
 import Flora.Model.Release.Types
 import qualified Flora.Model.Release.Update as Update
 import Flora.Model.Requirement
-  ( Requirement (..)
-  , RequirementMetadata (..)
-  , deterministicRequirementId
-  , flag
+  ( Requirement (..),
+    RequirementMetadata (..),
+    deterministicRequirementId,
+    flag,
   )
 import Flora.Model.User
 import GHC.Generics (Generic)
@@ -71,8 +72,8 @@ type DependentName = (Namespace, PackageName)
 type ImportComponent = (PackageComponent, [ImportDependency])
 
 data ImportDependency = ImportDependency
-  { package :: Package
-  -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
+  { -- | the package that is being depended on. Must be inserted in the DB before the requirement
+    package :: Package
   , requirement :: Requirement
   }
   deriving stock (Eq, Show, Generic)
@@ -221,10 +222,16 @@ extractPackageDataFromCabal userId genericDesc = do
           , createdAt = timestamp
           , updatedAt = timestamp
           }
+
   libs <- traverse (extractLibrary package release) (allLibraries packageDesc)
   condLibs <- traverse (extractLibrary package release) (genericDesc ^.. #condLibrary % _Just % #condTreeData)
+
+  executables <- traverse (extractExecutable package release) (packageDesc ^. #executables)
+  condExecutables <- traverse (extractExecutable package release) (genericDesc ^. #condExecutables & fmap (condTreeData . snd))
+
+
   -- TODO: import other components, currently we only import libraries
-  let components = libs <> condLibs
+  let components = libs <> condLibs <> executables <> condExecutables
   pure ImportOutput{..}
 
 extractLibrary :: Package -> Release -> Library -> Eff es ImportComponent
@@ -235,36 +242,45 @@ extractLibrary package release lib = do
   let canonicalForm = CanonicalComponent{..}
   let componentId = deterministicComponentId releaseId canonicalForm
   let component = PackageComponent{..}
-  let cabalDependencies = lib ^. #libBuildInfo % #targetBuildDepends % to filterDeps
-  let dependencies = buildDependency componentId <$> cabalDependencies
+  let cabalDependencies = lib ^. #libBuildInfo % #targetBuildDepends
+  let dependencies = buildDependency package componentId <$> cabalDependencies
   pure (component, dependencies)
   where
-    filterDeps :: [Cabal.Dependency] -> [Cabal.Dependency]
-    filterDeps = id
-
     getLibName :: LibraryName -> Text
     getLibName LMainLibName = display (package ^. #name)
     getLibName (LSubLibName lname) = T.pack $ unUnqualComponentName lname
 
-    buildDependency :: ComponentId -> Cabal.Dependency -> ImportDependency
-    buildDependency packageComponentId (Cabal.Dependency depName versionRange _) =
-      let name = depName & unPackageName & pack & PackageName
-          namespace = chooseNamespace name
-          packageId = deterministicPackageId namespace name
-          ownerId = package ^. #ownerId
-          createdAt = package ^. #createdAt
-          updatedAt = package ^. #updatedAt
-          status = UnknownPackage
-          dependencyPackage = Package{..}
-          requirement =
-            Requirement
-              { requirementId = deterministicRequirementId packageComponentId packageId
-              , packageComponentId
-              , packageId
-              , requirement = display . prettyShow $ versionRange
-              , metadata = RequirementMetadata{flag = Nothing}
-              }
-       in ImportDependency{package = dependencyPackage, requirement}
+extractExecutable :: Package -> Release -> Executable -> Eff es ImportComponent
+extractExecutable package release executable = do
+  let releaseId = release ^. #releaseId
+  let componentName = executable ^. #exeName % to unUnqualComponentName % to T.pack
+  let componentType = Component.Executable
+  let canonicalForm = CanonicalComponent{..}
+  let componentId = deterministicComponentId releaseId canonicalForm
+  let component = PackageComponent{..}
+  let targetBuildDepends = executable ^. #buildInfo % #targetBuildDepends
+  let dependencies = buildDependency package componentId <$> targetBuildDepends
+  pure (component, dependencies)
+
+buildDependency :: Package -> ComponentId -> Cabal.Dependency -> ImportDependency
+buildDependency package packageComponentId (Cabal.Dependency depName versionRange _) =
+  let name = depName & unPackageName & pack & PackageName
+      namespace = chooseNamespace name
+      packageId = deterministicPackageId namespace name
+      ownerId = package ^. #ownerId
+      createdAt = package ^. #createdAt
+      updatedAt = package ^. #updatedAt
+      status = UnknownPackage
+      dependencyPackage = Package{..}
+      requirement =
+        Requirement
+          { requirementId = deterministicRequirementId packageComponentId packageId
+          , packageComponentId
+          , packageId
+          , requirement = display . prettyShow $ versionRange
+          , metadata = RequirementMetadata{flag = Nothing}
+          }
+   in ImportDependency{package = dependencyPackage, requirement}
 
 getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Eff es [Text]
 getRepoURL _ [] = pure []
