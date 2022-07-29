@@ -1,4 +1,4 @@
-module Flora.Package.Publisher where
+module Flora.Model.Package.Publisher where
 
 import Data.UUID (UUID)
 import Database.PostgreSQL.Entity
@@ -7,7 +7,8 @@ import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Transact
-import Flora.User (UserId)
+import Flora.Model.Package
+import Flora.Model.User (UserId)
 import GHC.Generics
 
 newtype PackagePublisherId = PackagePublisherId {getPackagePublisherId :: UUID}
