@@ -29,7 +29,7 @@ import qualified Data.Text as T
 import Data.Text.Display
 import qualified Data.Text.IO as T
 import Data.Time
-import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition, ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
+import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
 import qualified Distribution.PackageDescription as Cabal hiding (PackageName)
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription)
 import Distribution.Pretty
@@ -58,10 +58,10 @@ import Flora.Model.Release (deterministicReleaseId)
 import Flora.Model.Release.Types
 import qualified Flora.Model.Release.Update as Update
 import Flora.Model.Requirement
-  ( Requirement (..),
-    RequirementMetadata (..),
-    deterministicRequirementId,
-    flag,
+  ( Requirement (..)
+  , RequirementMetadata (..)
+  , deterministicRequirementId
+  , flag
   )
 import Flora.Model.User
 import GHC.Generics (Generic)
@@ -76,8 +76,8 @@ type DependentName = (Namespace, PackageName)
 type ImportComponent = (PackageComponent, [ImportDependency])
 
 data ImportDependency = ImportDependency
-  { -- | the package that is being depended on. Must be inserted in the DB before the requirement
-    package :: Package
+  { package :: Package
+  -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
   , requirement :: Requirement
   }
   deriving stock (Eq, Show, Generic)
@@ -242,7 +242,6 @@ extractPackageDataFromCabal userId genericDesc = do
   let benchmarks = extractBenchmark package release Nothing Nothing <$> packageDesc ^. #benchmarks
   let condBenchmarks = extractCondTrees extractBenchmark package release $ genericDesc ^. #condBenchmarks
 
-  -- TODO: import other components, currently we only import libraries
   let components =
         libs
           <> condLibs
@@ -306,8 +305,8 @@ extractBenchmark =
     (^. #benchmarkName % to unUnqualComponentName % to T.pack)
     (^. #benchmarkBuildInfo % #targetBuildDepends)
 
-{- | Traverses the provided 'CondTree' and applies to given 'ComponentExtractor'
- to every node, to return a list of 'ImportComponent'
+{- | Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
+ to every node, returning a list of 'ImportComponent'
 -}
 extractCondTree ::
   ComponentExtractor component ->
@@ -322,7 +321,10 @@ extractCondTree extractor package release defaultComponentName = go Nothing
       let treeComponent = extractor package release defaultComponentName cond $ tree ^. #condTreeData
           treeSubComponents = (tree ^. #condTreeComponents) >>= extractBranch
        in treeComponent : treeSubComponents
-    extractBranch CondBranch{condBranchCondition, condBranchIfTrue} = go (Just condBranchCondition) condBranchIfTrue
+    extractBranch CondBranch{condBranchCondition, condBranchIfTrue, condBranchIfFalse} =
+      let condIfTrueComponents = go (Just condBranchCondition) condBranchIfTrue
+          condIfFalseComponents = maybe [] (go (Just . CNot $ condBranchCondition)) condBranchIfFalse
+       in condIfTrueComponents <> condIfFalseComponents
 
 {- | Cabal often models conditional components as a list of 'CondTree' associated with an 'UnqualComponentName'.
  This function builds upon 'extractCondTree' to make it easier to extract fields such as 'condExecutables', 'condTestSuites' etc.
@@ -337,9 +339,6 @@ extractCondTrees ::
 extractCondTrees extractor package release trees =
   trees >>= \case (name, tree) -> extractCondTree extractor package release (Just name) tree
 
--- To be improved: right now conditions for conditional components are lost.
--- We could figure out a way to retain that information and display it nicely
--- For inspiration: lib.rs does it well for Cargo's "features" mechanism.
 genericComponentExtractor ::
   ComponentType ->
   -- | Extract name from component
@@ -354,12 +353,13 @@ genericComponentExtractor
   package
   release
   defaultComponentName
-  _
+  condition
   rawComponent =
     let releaseId = release ^. #releaseId
         componentName = maybe (getName rawComponent) (T.pack . unUnqualComponentName) defaultComponentName
         canonicalForm = CanonicalComponent{..}
         componentId = deterministicComponentId releaseId canonicalForm
+        metadata = ComponentMetadata (buildConditionFromCabal <$> condition)
         component = PackageComponent{..}
         dependencies = buildDependency package componentId <$> getDeps rawComponent
      in (component, dependencies)
