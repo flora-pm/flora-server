@@ -33,10 +33,14 @@ import Distribution.PackageDescription (CondTree (condTreeData), allLibraries, u
 import qualified Distribution.PackageDescription as Cabal hiding (PackageName)
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription)
 import Distribution.Pretty
+import Distribution.Types.Benchmark
+import Distribution.Types.Dependency
 import Distribution.Types.Executable
+import Distribution.Types.ForeignLib
 import Distribution.Types.GenericPackageDescription (GenericPackageDescription)
 import Distribution.Types.Library
 import Distribution.Types.LibraryName
+import Distribution.Types.TestSuite
 import qualified Distribution.Utils.ShortText as Cabal
 import Optics.Core
 
@@ -183,7 +187,7 @@ extractPackageDataFromCabal userId genericDesc = do
   let packageId = deterministicPackageId namespace packageName
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- liftIO getCurrentTime
-  sourceRepos <- getRepoURL packageName $ packageDesc ^. #sourceRepos
+  let sourceRepos = getRepoURL packageName $ packageDesc ^. #sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
   categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
@@ -223,44 +227,97 @@ extractPackageDataFromCabal userId genericDesc = do
           , updatedAt = timestamp
           }
 
-  libs <- traverse (extractLibrary package release) (allLibraries packageDesc)
-  condLibs <- traverse (extractLibrary package release) (genericDesc ^.. #condLibrary % _Just % #condTreeData)
+  -- To be improved: right now conditions for conditional components are lost.
+  -- We could figure out a way to retain that information and display it nicely
+  -- For inspiration: lib.rs does it well for Cargo's "features" mechanism.
 
-  executables <- traverse (extractExecutable package release) (packageDesc ^. #executables)
-  condExecutables <- traverse (extractExecutable package release) (genericDesc ^. #condExecutables & fmap (condTreeData . snd))
+  let libs = extractLibrary package release <$> allLibraries packageDesc
+  let condLibs = extractLibrary package release <$> genericDesc ^.. #condLibrary % _Just % #condTreeData
 
+  let foreignLibs = extractForeignLib package release <$> packageDesc ^. #foreignLibs
+  let condForeignLibs = extractForeignLib package release . condTreeData . snd <$> genericDesc ^. #condForeignLibs
+
+  let executables = extractExecutable package release <$> packageDesc ^. #executables
+  let condExecutables = extractExecutable package release . condTreeData . snd <$> genericDesc ^. #condExecutables
+
+  let testSuites = extractBenchmark package release <$> packageDesc ^. #benchmarks
+  let condTestSuites = extractBenchmark package release . condTreeData . snd <$> genericDesc ^. #condBenchmarks
+
+  let benchmarks = extractBenchmark package release <$> packageDesc ^. #benchmarks
+  let condBenchmarks = extractBenchmark package release . condTreeData . snd <$> genericDesc ^. #condBenchmarks
 
   -- TODO: import other components, currently we only import libraries
-  let components = libs <> condLibs <> executables <> condExecutables
+  let components =
+        libs
+          <> condLibs
+          <> executables
+          <> condExecutables
+          <> foreignLibs
+          <> condForeignLibs
+          <> testSuites
+          <> condTestSuites
+          <> benchmarks
+          <> condBenchmarks
   pure ImportOutput{..}
 
-extractLibrary :: Package -> Release -> Library -> Eff es ImportComponent
-extractLibrary package release lib = do
-  let releaseId = release ^. #releaseId
-  let componentName = lib ^. #libName % to getLibName
-  let componentType = Component.Library
-  let canonicalForm = CanonicalComponent{..}
-  let componentId = deterministicComponentId releaseId canonicalForm
-  let component = PackageComponent{..}
-  let cabalDependencies = lib ^. #libBuildInfo % #targetBuildDepends
-  let dependencies = buildDependency package componentId <$> cabalDependencies
-  pure (component, dependencies)
+extractLibrary :: Package -> Release -> Library -> ImportComponent
+extractLibrary package =
+  extractComponent
+    Component.Library
+    (^. #libName % to getLibName)
+    (^. #libBuildInfo % #targetBuildDepends)
+    package
   where
     getLibName :: LibraryName -> Text
     getLibName LMainLibName = display (package ^. #name)
     getLibName (LSubLibName lname) = T.pack $ unUnqualComponentName lname
 
-extractExecutable :: Package -> Release -> Executable -> Eff es ImportComponent
-extractExecutable package release executable = do
+extractForeignLib :: Package -> Release -> ForeignLib -> ImportComponent
+extractForeignLib package =
+  extractComponent
+    Component.ForeignLib
+    (^. #foreignLibName % to unUnqualComponentName % to T.pack)
+    (^. #foreignLibBuildInfo % #targetBuildDepends)
+    package
+
+extractExecutable :: Package -> Release -> Executable -> ImportComponent
+extractExecutable =
+  extractComponent
+    Component.Executable
+    (^. #exeName % to unUnqualComponentName % to T.pack)
+    (^. #buildInfo % #targetBuildDepends)
+
+extractTestSuite :: Package -> Release -> TestSuite -> ImportComponent
+extractTestSuite =
+  extractComponent
+    Component.TestSuite
+    (^. #testName % to unUnqualComponentName % to T.pack)
+    (^. #testBuildInfo % #targetBuildDepends)
+
+extractBenchmark :: Package -> Release -> Benchmark -> ImportComponent
+extractBenchmark =
+  extractComponent
+    Component.TestSuite
+    (^. #benchmarkName % to unUnqualComponentName % to T.pack)
+    (^. #benchmarkBuildInfo % #targetBuildDepends)
+
+extractComponent ::
+  ComponentType ->
+  -- | Extract name
+  (component -> Text) ->
+  -- | Extract dependencies
+  (component -> [Dependency]) ->
+  Package ->
+  Release ->
+  component ->
+  ImportComponent
+extractComponent componentType getName getDeps package release rawComponent =
   let releaseId = release ^. #releaseId
-  let componentName = executable ^. #exeName % to unUnqualComponentName % to T.pack
-  let componentType = Component.Executable
-  let canonicalForm = CanonicalComponent{..}
-  let componentId = deterministicComponentId releaseId canonicalForm
-  let component = PackageComponent{..}
-  let targetBuildDepends = executable ^. #buildInfo % #targetBuildDepends
-  let dependencies = buildDependency package componentId <$> targetBuildDepends
-  pure (component, dependencies)
+      canonicalForm = CanonicalComponent (getName rawComponent) componentType
+      componentId = deterministicComponentId releaseId canonicalForm
+      component = PackageComponent{..}
+      dependencies = buildDependency package componentId <$> getDeps rawComponent
+   in (component, dependencies)
 
 buildDependency :: Package -> ComponentId -> Cabal.Dependency -> ImportDependency
 buildDependency package packageComponentId (Cabal.Dependency depName versionRange _) =
@@ -282,9 +339,9 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
           }
    in ImportDependency{package = dependencyPackage, requirement}
 
-getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Eff es [Text]
-getRepoURL _ [] = pure []
-getRepoURL _ (repo : _) = pure [display $ fromMaybe mempty (repo ^. #repoLocation)]
+getRepoURL :: PackageName -> [Cabal.SourceRepo] -> [Text]
+getRepoURL _ [] = []
+getRepoURL _ (repo : _) = [display $ fromMaybe mempty (repo ^. #repoLocation)]
 
 chooseNamespace :: PackageName -> Namespace
 chooseNamespace name | Set.member name coreLibraries = Namespace "haskell"
