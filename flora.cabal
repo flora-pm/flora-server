@@ -84,6 +84,7 @@ library
   exposed-modules:
     Data.Aeson.Orphans
     Data.Text.Display.Orphans
+    Distribution.Orphans
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.OddJobs

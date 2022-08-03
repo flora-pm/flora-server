@@ -359,7 +359,7 @@ genericComponentExtractor
         componentName = maybe (getName rawComponent) (T.pack . unUnqualComponentName) defaultComponentName
         canonicalForm = CanonicalComponent{..}
         componentId = deterministicComponentId releaseId canonicalForm
-        metadata = ComponentMetadata (buildConditionFromCabal <$> condition)
+        metadata = ComponentMetadata (ComponentCondition <$> condition)
         component = PackageComponent{..}
         dependencies = buildDependency package componentId <$> getDeps rawComponent
      in (component, dependencies)

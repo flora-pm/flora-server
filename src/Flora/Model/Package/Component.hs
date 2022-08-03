@@ -7,10 +7,8 @@ module Flora.Model.Package.Component
   , ComponentType (..)
   , CanonicalComponent (..)
   , ComponentCondition (..)
-  , ComponentConditionVar (..)
   , ComponentMetadata (..)
   , deterministicComponentId
-  , buildConditionFromCabal
   )
 where
 
@@ -37,9 +35,8 @@ import Optics.Core
 import Data.ByteString.Lazy (fromStrict)
 import Data.Data
 import Data.Maybe
-import Distribution.PackageDescription (unFlagName)
-import qualified Distribution.Types.Condition as Condition
-import qualified Distribution.Types.ConfVar as ConfVar
+import Distribution.Orphans ()
+import qualified Distribution.PackageDescription as Condition
 import Flora.Model.Release.Types
 
 newtype ComponentId = ComponentId {getComponentId :: UUID}
@@ -153,33 +150,6 @@ instance FromField ComponentMetadata where
 instance ToField ComponentMetadata where
   toField = toJSONField
 
-data ComponentCondition
-  = Var !ComponentConditionVar
-  | And !(ComponentCondition, ComponentCondition)
-  | Not !ComponentCondition
-  | Or !(ComponentCondition, ComponentCondition)
-  | Const Bool
+newtype ComponentCondition = ComponentCondition (Condition.Condition Condition.ConfVar)
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
-
-data ComponentConditionVar
-  = OS Text
-  | Arch Text
-  | PackageFlag Text
-  | Impl {compilerFlavour :: Text, versionRange :: Text}
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
-
-buildConditionFromCabal :: Condition.Condition ConfVar.ConfVar -> ComponentCondition
-buildConditionFromCabal c = case c of
-  (Condition.Var v) -> Var . fromVar $ v
-  (Condition.Lit bool) -> Const bool
-  (Condition.CNot cond) -> Not . buildConditionFromCabal $ cond
-  (Condition.COr a b) -> Or (buildConditionFromCabal a, buildConditionFromCabal b)
-  (Condition.CAnd a b) -> And (buildConditionFromCabal a, buildConditionFromCabal b)
-  where
-    fromVar :: ConfVar.ConfVar -> ComponentConditionVar
-    fromVar (ConfVar.OS os) = OS . T.pack . show $ os
-    fromVar (ConfVar.Arch arch) = Arch . T.pack . show $ arch
-    fromVar (ConfVar.PackageFlag flag) = PackageFlag . T.pack . unFlagName $ flag
-    fromVar (ConfVar.Impl compiler versionRange) = Impl (T.pack . show $ compiler) (T.pack . show $ versionRange)
