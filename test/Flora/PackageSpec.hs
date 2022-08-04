@@ -11,14 +11,21 @@ import Test.Tasty
 import Control.Monad.IO.Class
 import Data.Foldable
 import Data.Function
+import Data.Monoid (Sum (..))
 import qualified Data.Vector as V
+import Distribution.System (OS (Windows))
+import Distribution.Types.Condition
+import Distribution.Types.ConfVar
+import Distribution.Types.Version (Version)
 import qualified Distribution.Types.Version as Cabal
+import Distribution.Utils.ShortText
 import Flora.Environment (TestEnv (TestEnv))
 import Flora.Import.Package
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Model.Category (Category (..))
 import qualified Flora.Model.Category.Query as Query
 import Flora.Model.Package
+import Flora.Model.Package.Component
 import qualified Flora.Model.Package.Query as Query
 import qualified Flora.Model.Release.Query as Query
 import Flora.Model.Release.Types
@@ -36,6 +43,8 @@ spec fixtures =
     , testThis "The \"haskell\" namespace has the correct number of packages" $ testCorrectNumberInHaskellNamespace fixtures
     , testThis "@haskell/bytestring has the correct number of dependents" $ testBytestringDependents fixtures
     , testThis "Searching for `text` returns unique results by namespace/package name" $ testSearchResultUnicity fixtures
+    , testThis "@hackage/time has the correct number of components of each type" $ testTimeComponents fixtures
+    , testThis "@hackage/time components have the correct conditions in their metadata" $ testTimeConditions fixtures
     ]
 
 testInsertBase :: Fixtures -> TestEff ()
@@ -115,6 +124,30 @@ testBytestringDependencies = do
   latestReleasedependencies <- Query.getRequirements (latestRelease ^. #releaseId)
   assertEqual 4 (Vector.length latestReleasedependencies)
 
+testTimeComponents :: Fixtures -> TestEff ()
+testTimeComponents fixtures = do
+  importAllPackages fixtures
+  time <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
+  releases <- Query.getReleases (time ^. #packageId)
+  let latestRelease = maximumBy (compare `on` version) releases
+  components <- Query.getReleaseComponents $ latestRelease ^. #releaseId
+  assertEqual 1 $ countComponentsByType Library components
+  assertEqual 1 $ countComponentsByType Benchmark components
+  assertEqual 3 $ countComponentsByType TestSuite components
+
+testTimeConditions :: Fixtures -> TestEff ()
+testTimeConditions fixtures = do
+  importAllPackages fixtures
+  time <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
+  releases <- Query.getReleases (time ^. #packageId)
+  let latestRelease = maximumBy (compare `on` version) releases
+  timeLib <- fromJust <$> Query.getComponent (latestRelease ^. #releaseId) "time" Library
+  timeUnixTest <- fromJust <$> Query.getComponent (latestRelease ^. #releaseId) "test-unix" TestSuite
+  let timeLibExpectedCondition = Just (ComponentCondition (CNot (Var (OS Windows))))
+  let timeUnixTestExpectedCondition = Just (ComponentCondition (Var (OS Windows)))
+  assertEqual timeLibExpectedCondition $ timeLib ^. #metadata % #condition
+  assertEqual timeUnixTestExpectedCondition $ timeUnixTest ^. #metadata % #condition
+
 testSearchResultUnicity :: Fixtures -> TestEff ()
 testSearchResultUnicity fixtures = do
   importAllPackages fixtures
@@ -132,3 +165,9 @@ importAllPackages fixtures = do
   importAllFilesInRelativeDirectory
     (fixtures ^. #hackageUser % #userId)
     "./test/fixtures/Cabal/"
+
+countBy :: (Foldable t) => (a -> Bool) -> t a -> Int
+countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
+
+countComponentsByType :: (Foldable t) => ComponentType -> t PackageComponent -> Int
+countComponentsByType t = countBy (^. #canonicalForm % #componentType % to (== t))

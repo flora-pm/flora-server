@@ -7,6 +7,7 @@ module Flora.Model.Release.Query
   , getPackageReleases
   , getAllReleases
   , getNumberOfReleases
+  , getReleaseComponents
   )
 where
 
@@ -21,6 +22,7 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Make (Version)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Flora.Model.Package.Component
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
@@ -72,3 +74,7 @@ numberOfReleasesQuery =
   FROM releases AS rel
   WHERE rel."package_id" = ?
   |]
+
+getReleaseComponents :: ([DB, IOE] :>> es) => ReleaseId -> Eff es (Vector PackageComponent)
+getReleaseComponents releaseId =
+  dbtToEff $ query Select (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
