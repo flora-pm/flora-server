@@ -30,6 +30,20 @@
     font-size: 1.5em;
   }
 
+  h3 {
+    border-bottom: 1px solid #354561;
+    margin-bottom: 16px;
+    padding-bottom: 0.3em;
+    font-size: 1.25em;
+  }
+
+  h4 {
+    border-bottom: 1px solid #354561;
+    margin-bottom: 16px;
+    padding-bottom: 0.3em;
+    font-size: 1em;
+  }
+
   ul {
     margin-bottom: 16px;
 
