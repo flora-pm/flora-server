@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 module FloraWeb.Templates
   ( render
   , renderUVerb
@@ -8,16 +6,17 @@ module FloraWeb.Templates
   )
 where
 
+import Control.Monad (when)
 import Control.Monad.Identity (runIdentity)
-import Control.Monad.Reader
+import Control.Monad.Reader (runReaderT)
 import Data.ByteString.Lazy
-import Lucid
-
 import Data.Text (Text)
+import Lucid
+import Optics.Core
+
 import Flora.Environment (DeploymentEnv (..))
 import FloraWeb.Components.Header (header)
 import FloraWeb.Templates.Types as Types
-import Optics.Core
 
 render :: (Monad m) => TemplateEnv -> FloraHTML -> m (Html ())
 render env template =
@@ -38,6 +37,5 @@ rendered :: DeploymentEnv -> FloraHTML -> FloraHTML
 rendered deploymentEnv target = do
   header
   main_ [] target
-  if deploymentEnv == Development
-    then script_ [src_ "/static/js/autoreload.js", type_ "module"] ("" :: Text)
-    else pure ()
+  when (deploymentEnv == Development) $
+    script_ [src_ "/static/js/autoreload.js", type_ "module"] ("" :: Text)
