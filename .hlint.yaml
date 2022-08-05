@@ -3,3 +3,4 @@
 - ignore: {name: "Avoid lambda"}
 - ignore: {name: "Use newtype instead of data"}
 - ignore: {name: "Use tuple-section"}
+- ignore: {name: "Monad law, left identity"}
