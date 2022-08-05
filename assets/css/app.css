@@ -153,10 +153,6 @@ div[class="bullets"] {
 .category-card:hover {
   @apply bg-gray-7 dark:bg-blue-1;
 }
-.package-readme-column{
-  margin: 0 2em;
-  overflow: auto;
-}
 
 ul.package-list a {
   @apply py-3 pl-4;

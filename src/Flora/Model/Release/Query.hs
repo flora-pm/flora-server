@@ -52,7 +52,7 @@ getPackageReleases =
         select r.release_id, r.version, p."name"
         from releases as r
         join packages as p
-        on p.package_id = dbtToEff $ r.package_id
+        on p.package_id = r.package_id
       |]
 
 getReleaseByVersion :: [DB, IOE] :>> es => PackageId -> Version -> Eff es (Maybe Release)

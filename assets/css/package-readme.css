@@ -1,3 +1,8 @@
+.package-readme-column{
+  margin: 0 2em;
+  overflow: auto;
+}
+
 .package-readme{
   overflow-wrap: break-word;
   box-sizing: border-box;
@@ -15,6 +20,7 @@
   img {
     max-width: 100%;
     box-sizing: content-box;
+    display: inline-block;
   }
 
   h2 {
