@@ -1,0 +1,110 @@
+cabal-version:       2.4
+name:                membrain
+version:             0.0.0.2
+synopsis:            Type-safe memory units
+description:
+    @membrain@ provides @newtype@ wrapper for type-safe work with memory units
+    .
+    @
+    __newtype__ Memory (mem :: Nat) = Memory
+    \    { unMemory :: Natural
+    \    }
+    @
+    .
+    This data type stores memory unit value phantom type parameter which is
+    represented as type-level natural number.
+
+    The ideas behind this package are described in the following blog post:
+    .
+    * [Insane in the Membrain](https://kowainik.github.io/posts/membrain)
+
+homepage:            https://github.com/kowainik/membrain
+bug-reports:         https://github.com/kowainik/membrain/issues
+license:             MPL-2.0
+license-file:        LICENSE
+author:              Veronika Romashkina, Dmitrii Kovanikov
+maintainer:          Kowainik <xrom.xkov@gmail.com>
+copyright:           2018-2020 Kowainik
+category:            Memory, Safe
+build-type:          Simple
+extra-doc-files:     README.md
+                     CHANGELOG.md
+tested-with:         GHC == 8.2.2
+                     GHC == 8.4.4
+                     GHC == 8.6.5
+                     GHC == 8.8.3
+                     GHC == 8.10.1
+
+source-repository head
+  type:                git
+  location:            https://github.com/kowainik/membrain.git
+
+common common-options
+  build-depends:       base >= 4.10.1.0 && < 4.15
+
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Widentities
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wredundant-constraints
+  if impl(ghc >= 8.2)
+    ghc-options:       -fhide-source-paths
+  if impl(ghc >= 8.4)
+    ghc-options:       -Wmissing-export-lists
+                       -Wpartial-fields
+  if impl(ghc >= 8.8.1)
+    ghc-options:       -Wmissing-deriving-strategies
+                       -Werror=missing-deriving-strategies
+  if impl(ghc >= 8.10)
+    ghc-options:       -Wunused-packages
+
+  default-language:    Haskell2010
+  default-extensions:  ConstraintKinds
+                       DeriveGeneric
+                       InstanceSigs
+                       GeneralizedNewtypeDeriving
+                       LambdaCase
+                       OverloadedStrings
+                       RecordWildCards
+                       ScopedTypeVariables
+                       StandaloneDeriving
+                       TupleSections
+                       TypeApplications
+                       ViewPatterns
+
+library
+  import:              common-options
+  hs-source-dirs:      src
+  exposed-modules:     Membrain
+                         Membrain.Base
+                         Membrain.Constructors
+                         Membrain.Memory
+                         Membrain.Units
+
+test-suite membrain-test
+  import:              common-options
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  other-modules:       Test.Memory.Laws
+                       Test.Memory.TypeLevel
+                       Test.Memory.ValueLevel
+
+  build-depends:       membrain
+                     , hedgehog ^>= 1.0
+                     , hspec ^>= 2.7.1
+                     , type-spec ^>= 0.4.0.0
+
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+
+test-suite doctest
+  import:              common-options
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Doctest.hs
+
+  build-depends:       doctest ^>= 0.16
+                     , Glob
+
+  ghc-options:         -threaded
