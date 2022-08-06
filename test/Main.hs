@@ -20,7 +20,9 @@ main = do
   env <- runEff getFloraTestEnv
   fixtures <- runEff . runDB (env ^. #pool) $ do
     testMigrations
-    getFixtures
+    f' <- getFixtures
+    importAllPackages f'
+    pure f'
   spec <- traverse (\comp -> runTestEff comp (env ^. #pool)) (specs fixtures)
   defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 
