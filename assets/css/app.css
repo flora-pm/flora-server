@@ -1,3 +1,5 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
@@ -7,14 +9,14 @@
 @layer components {
   .larger-container {
     @apply max-w-7xl mx-auto px-2;
-  }  
+  }
 
   .form-input {
     @apply my-1 rounded-md p-2 text-gray-900 placeholder-gray-600 border-2 border-gray-500;
   }
 
   .btn {
-    @apply rounded-md p-2 hover:bg-purple-1
+    @apply rounded-md p-2 hover:bg-purple-1;
   }
 
   a:hover h2 {
@@ -28,7 +30,7 @@ a {
 }
 
 .brand {
-  @apply border-b-4 border-gray-7 dark:border-purple-6 pb-2
+  @apply border-b-4 border-gray-7 dark:border-purple-6 pb-2;
 }
 
 #navbar-search-package-name {
@@ -54,6 +56,12 @@ div[class="bullets"] {
   }
 }
 
+.package-install-string {
+  @apply font-mono shadow-sm text-base w-full bg-transparent;
+  @apply focus:ring-indigo-500 focus:border-indigo-500 block;
+  @apply border-gray-800 dark:border-gray-800 rounded-md;
+}
+
 .package-body {
   a {
     font-weight: 500;
@@ -66,7 +74,7 @@ div[class="bullets"] {
   .package-body-section__license {
     font-weight: 500;
   }
-  
+
   .package-install-string {
     font-weight: 500;
   }
@@ -84,43 +92,38 @@ div[class="bullets"] {
   align-items: center;
 
   .pagination-footer__page {
-    padding-bottom: .5rem;
-    padding-top: .5rem;
-    padding-left: .75rem;
-    padding-right: .75rem;
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     border-width: 1px;
     border-collapse: collapse;
     height: 40px;
   }
 
   .pagination-footer__previous {
-    border-bottom-left-radius: .5rem;
-    border-top-left-radius:    .5rem;
+    border-bottom-left-radius: 0.5rem;
+    border-top-left-radius: 0.5rem;
   }
 
   .pagination-footer__next {
-    border-bottom-right-radius: .5rem;
-    border-top-right-radius:    .5rem;
+    border-bottom-right-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
   }
 }
 
-.package-install-string {
-  @apply font-mono shadow-sm text-base w-full bg-transparent;
-  @apply focus:ring-indigo-500 focus:border-indigo-500 block;
-  @apply border-gray-800 dark:border-gray-800 rounded-md;
-}
-
 .navbar-search {
-  color: hsl(0, 0%, 100%);
+  color: hsl(0 0% 100%);
   @apply rounded-full w-full mr-3 pl-3 py-1 px-1;
   @apply leading-tight focus:outline-none border border-2;
   @apply dark:bg-blue-2 dark:border-blue-2;
-  @apply text-gray-1 dark:text-gray-100
+  @apply text-gray-1 dark:text-gray-100;
 }
 
 .navbar-element:hover {
   --tw-text-opacity: 1;
-  color: hsl(254.3, 95%, 76.7%);
+
+  color: hsl(254.3 95% 76.7%);
 }
 
 .category-card__name {
@@ -130,22 +133,25 @@ div[class="bullets"] {
 .category-card__synopsis {
   @apply dark:text-gray-100 text-gray-900;
 }
+
 /* Dark mode-specific rules */
 .dark {
   .social-button:hover {
     --tw-text-opacity: 1;
-    color: hsl(254.3, 95%, 76.7%);
+
+    color: hsl(254.3 95% 76.7%);
   }
 }
 
 .divider {
   padding-bottom: 1em;
   margin-bottom: 0.66em;
-  border-bottom: 1px solid hsl(0, 0%, 80%);
+  border-bottom: 1px solid hsl(0 0% 80%);
 }
 
 .category-card {
   @apply block py-4 px-8;
+
   width: 400px;
   height: 112px;
 }
@@ -158,15 +164,23 @@ ul.package-list a {
   @apply py-3 pl-4;
 }
 
+ul.version-list a {
+  @apply py-3 pl-4;
+}
+
+.package-link a:hover {
+  text-decoration: underline;
+}
+
+.version-link a:hover {
+  text-decoration: underline;
+}
+
 li.package-list-item a:hover {
   @apply bg-gray-7 dark:bg-blue-1;
 }
 
 li.package-list-item a:hover h4.package-list-item__name {
-  text-decoration: underline;
-}
-
-.package-link a:hover {
   text-decoration: underline;
 }
 
@@ -190,19 +204,11 @@ li.package-list-item a:hover h4.package-list-item__name {
   @apply dark:text-purple-7;
 }
 
-ul.version-list a {
-  @apply py-3 pl-4;
-}
-
 li.version-list-item a:hover {
   @apply bg-gray-7 dark:bg-blue-1;
 }
 
 li.version-list-item a:hover h4.version-list-item__name {
-  text-decoration: underline;
-}
-
-.version-link a:hover {
   text-decoration: underline;
 }
 
@@ -254,7 +260,7 @@ li.dependents a.dependent:hover {
   }
 
   .category-card {
-    --tw-shadow-color: rgb(102 51 153 / 0.25);
+    --tw-shadow-color: rgb(102 51 153 / 25%);
     --tw-shadow: var(--tw-shadow-colored);
   }
 
@@ -265,13 +271,6 @@ li.dependents a.dependent:hover {
     padding-left: 15px;
     margin-right: auto;
     margin-left: auto;
-  }
-
-  .navbar {
-    margin-bottom: 20rem;
-    font-size: 1.5rem;
-    line-height: 2rem;
-    margin-bottom: 4rem;
   }
 
   .headline {
