@@ -71,20 +71,20 @@
         display: inline;
       }
     }
+  }
 
-    ul {
-      margin-bottom: 16px;
-      padding-left: 1em;
+  ul {
+    margin-bottom: 16px;
+    padding-left: 1em;
 
-      li {
-        overflow-wrap: break-word;
-        list-style-type: disc;
-        list-style-position: outside;
-        margin-bottom: 10px;
+    li {
+      overflow-wrap: break-word;
+      list-style-type: disc;
+      list-style-position: outside;
+      margin-bottom: 10px;
 
-        p {
-          display: inline;
-        }
+      p {
+        display: inline;
       }
     }
 
