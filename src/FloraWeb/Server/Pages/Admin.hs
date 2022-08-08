@@ -1,6 +1,5 @@
 module FloraWeb.Server.Pages.Admin where
 
-import Control.Monad (forM_)
 import Control.Monad.IO.Class
 import Data.Proxy (Proxy (..))
 import Database.PostgreSQL.Entity.DBT
@@ -12,6 +11,9 @@ import qualified OddJobs.Types as OddJobs
 import Optics.Core
 import Servant (HasServer (..), hoistServer)
 
+import Control.Concurrent (forkIO)
+import qualified Control.Concurrent.Async as Async
+import Control.Monad
 import Flora.Environment (FloraEnv (..))
 import Flora.Model.Admin.Report
 import qualified Flora.Model.Package.Query as Query
@@ -80,8 +82,8 @@ makeReadmesHandler = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   releases <- Query.getPackageReleases
-  forM_ releases $ \(releaseId, version, packagename) -> do
-    liftIO $ scheduleReadmeJob pool releaseId packagename version
+  liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
+    scheduleReadmeJob pool releaseId packagename version
   pure $ redirect "/admin"
 
 fetchUploadTimesHandler :: FloraAdmin FetchUploadTimesResponse
@@ -89,8 +91,8 @@ fetchUploadTimesHandler = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   releases <- Query.getPackageReleases
-  forM_ releases $ \(releaseId, version, packagename) -> do
-    liftIO $ scheduleUploadTimeJob pool releaseId packagename version
+  liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
+    Async.async $ scheduleUploadTimeJob pool releaseId packagename version
   pure $ redirect "/admin"
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdmin
