@@ -87,8 +87,8 @@ import qualified Test.Tasty as Test
 import qualified Test.Tasty.HUnit as Test
 
 import Flora.Environment
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Import.Categories (importCategories)
+import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Model.User
 import qualified Flora.Model.User.Query as Query
 import Flora.Model.User.Update
