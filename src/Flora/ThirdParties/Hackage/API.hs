@@ -6,6 +6,7 @@ import Data.Text.Display
 import Servant.API
 import Servant.API.Generic
 
+import Data.Time (UTCTime)
 import Flora.Model.Package.Types (PackageName)
 import Flora.Model.Release.Orphans ()
 import Flora.OddJobs.Types (IntAesonVersion)
@@ -31,6 +32,7 @@ data HackageAPI' mode = HackageAPI'
 
 data HackagePackageAPI mode = HackagePackageAPI
   { getReadme :: mode :- "readme.txt" :> Get '[PlainText] Text
+  , getUploadTime :: mode :- "upload-time" :> Get '[PlainText] UTCTime
   }
   deriving stock (Generic)
 
