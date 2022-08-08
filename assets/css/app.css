@@ -12,11 +12,15 @@
   }
 
   .form-input {
-    @apply my-1 rounded-md p-2 text-gray-900 placeholder-gray-600 border-2 border-gray-500;
+    @apply my-1 p-2 text-gray-900 placeholder-gray-600 border-2 border-gray-500;
+
+    border-radius: 6px;
   }
 
   .btn {
-    @apply rounded-md p-2 hover:bg-purple-1;
+    @apply p-2 hover:bg-purple-1;
+
+    border-radius: 6px;
   }
 
   a:hover h2 {
@@ -59,7 +63,9 @@ div[class="bullets"] {
 .package-install-string {
   @apply font-mono shadow-sm text-base w-full bg-transparent;
   @apply focus:ring-indigo-500 focus:border-indigo-500 block;
-  @apply border-gray-800 dark:border-gray-800 rounded-md;
+  @apply border-gray-800 dark:border-gray-800;
+
+  border-radius: 6px;
 }
 
 .package-body {
@@ -178,6 +184,8 @@ ul.version-list a {
 
 li.package-list-item a:hover {
   @apply bg-gray-7 dark:bg-blue-1;
+
+  border-radius: 6px;
 }
 
 li.package-list-item a:hover h4.package-list-item__name {
