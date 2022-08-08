@@ -13,6 +13,7 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 
 import Flora.Model.Release.Types (Release, ReleaseId, TextHtml (..))
+import Data.Time (UTCTime)
 
 insertRelease :: ([DB, IOE] :>> es) => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
@@ -31,3 +32,13 @@ updateReadme releaseId readmeBody =
         [[field| readme |]]
         ([field| release_id |], releaseId)
         (Only readmeBody)
+
+updateUploadTime :: ([DB, IOE] :>> es) => ReleaseId -> UTCTime -> Eff es ()
+updateUploadTime releaseId timestamp =
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+      [[field| uploaded_at |]]
+      ([field| release_id |], releaseId)
+      (Only (Just timestamp))
+

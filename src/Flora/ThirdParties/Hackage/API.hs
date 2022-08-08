@@ -9,6 +9,7 @@ import Servant.API.Generic
 import Flora.Model.Package.Types (PackageName)
 import Flora.Model.Release.Orphans ()
 import Flora.OddJobs.Types (IntAesonVersion)
+import Data.Time (UTCTime)
 
 type HackageAPI = NamedRoutes HackageAPI'
 
@@ -31,6 +32,7 @@ data HackageAPI' mode = HackageAPI'
 
 data HackagePackageAPI mode = HackagePackageAPI
   { getReadme :: mode :- "readme.txt" :> Get '[PlainText] Text
+  , getUploadTime :: mode :- "upload-time" :> Get '[PlainText] UTCTime
   }
   deriving stock (Generic)
 

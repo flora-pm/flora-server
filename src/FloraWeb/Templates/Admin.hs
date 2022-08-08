@@ -42,6 +42,15 @@ dataReport adminReport = do
         form_ [action_ "/admin/readmes", method_ "POST"] $ do
           button_ [class_ "on-readmes"] "Mk readmes"
 
+    div_ [class_ cardClass] $ do
+      dt_
+        [class_ "text-sm font-medium truncate"]
+        "Fetch upload times for releases"
+
+      dd_ [class_ "mt-1 text-3xl font-semibold"] $
+        form_ [action_ "/admin/upload-times", method_ "POST"] $ do
+          button_ [class_ "on-readmes"] "Fetch timestamps"
+
     a_ [href_ "/admin/odd-jobs"] $
       div_ [class_ cardClass] $ do
         dt_
