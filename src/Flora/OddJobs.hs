@@ -32,14 +32,14 @@ import Optics.Core
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
+import qualified Data.Text.Lazy.Encoding as TL
 import Flora.Model.Package
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update (updateReadme)
+import qualified Flora.Model.Release.Update as Update
 import Flora.OddJobs.Types
 import Flora.ThirdParties.Hackage.API (VersionedPackage (..))
 import qualified Flora.ThirdParties.Hackage.Client as Hackage
-import qualified Flora.Model.Release.Update as Update
-import qualified Data.Text.Lazy.Encoding as TL
 
 scheduleReadmeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
 scheduleReadmeJob conn rid package version =
@@ -95,8 +95,11 @@ fetchUploadTime payload@FetchUploadTimePayload{packageName, packageVersion, rele
       logTrace_ $ "Got a timestamp for " <> display packageName
       Update.updateUploadTime releaseId timestamp
     Left e@(FailureResponse _ response) -> do
-      logAttention "Timestamp retrieval failed" $ object [ "status" .= statusCode (response ^. #responseStatusCode)
-                                                         , "body" .= TL.decodeUtf8 (response ^. #responseBody)]
+      logAttention "Timestamp retrieval failed" $
+        object
+          [ "status" .= statusCode (response ^. #responseStatusCode)
+          , "body" .= TL.decodeUtf8 (response ^. #responseBody)
+          ]
       throw e
     Left e -> throw e
 

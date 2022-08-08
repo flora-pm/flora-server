@@ -21,6 +21,7 @@ import qualified Flora.Model.User.Query as Query
 import Flora.OddJobs
 import FloraWeb.Routes.Pages.Admin
 import FloraWeb.Server.Auth
+import FloraWeb.Server.Utils (redirect)
 import FloraWeb.Session (getSession)
 import FloraWeb.Templates (ActiveElements (..), TemplateEnv (..), defaultTemplateEnv, fromSession, render)
 import qualified FloraWeb.Templates.Admin as Templates
@@ -28,7 +29,6 @@ import qualified FloraWeb.Templates.Admin.Packages as Templates
 import qualified FloraWeb.Templates.Admin.Users as Templates
 import FloraWeb.Templates.Error
 import FloraWeb.Types (fetchFloraEnv)
-import FloraWeb.Server.Utils (redirect)
 
 server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPage
 server cfg env =
@@ -76,7 +76,7 @@ indexHandler = do
   render templateEnv (Templates.index report)
 
 makeReadmesHandler :: FloraAdmin MakeReadmesResponse
-makeReadmesHandler =  do
+makeReadmesHandler = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   releases <- Query.getPackageReleases

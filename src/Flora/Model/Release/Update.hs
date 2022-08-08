@@ -12,8 +12,8 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 
-import Flora.Model.Release.Types (Release, ReleaseId, TextHtml (..))
 import Data.Time (UTCTime)
+import Flora.Model.Release.Types (Release, ReleaseId, TextHtml (..))
 
 insertRelease :: ([DB, IOE] :>> es) => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
@@ -38,7 +38,6 @@ updateUploadTime releaseId timestamp =
   dbtToEff $
     void $
       updateFieldsBy @Release
-      [[field| uploaded_at |]]
-      ([field| release_id |], releaseId)
-      (Only (Just timestamp))
-
+        [[field| uploaded_at |]]
+        ([field| release_id |], releaseId)
+        (Only (Just timestamp))

@@ -6,10 +6,10 @@ import Data.Text.Display
 import Servant.API
 import Servant.API.Generic
 
+import Data.Time (UTCTime)
 import Flora.Model.Package.Types (PackageName)
 import Flora.Model.Release.Orphans ()
 import Flora.OddJobs.Types (IntAesonVersion)
-import Data.Time (UTCTime)
 
 type HackageAPI = NamedRoutes HackageAPI'
 

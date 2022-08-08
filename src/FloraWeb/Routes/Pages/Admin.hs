@@ -1,25 +1,25 @@
 module FloraWeb.Routes.Pages.Admin where
 
+import Data.Text (Text)
 import Flora.Model.User
 import Lucid
 import qualified OddJobs.Endpoints as OddJobs
 import Servant
 import Servant.API.Generic
 import Servant.HTML.Lucid
-import Data.Text (Text)
 
 type Routes = NamedRoutes Routes'
 
 type MakeReadmes =
   "readmes"
-  :> Verb 'POST 301 '[HTML] MakeReadmesResponse
+    :> Verb 'POST 301 '[HTML] MakeReadmesResponse
 
 type MakeReadmesResponse =
   Headers '[Header "Location" Text] NoContent
 
 type FetchUploadTimes =
   "upload-times"
-  :> Verb 'POST 301 '[HTML] FetchUploadTimesResponse
+    :> Verb 'POST 301 '[HTML] FetchUploadTimesResponse
 
 type FetchUploadTimesResponse =
   Headers '[Header "Location" Text] NoContent

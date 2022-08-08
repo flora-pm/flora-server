@@ -71,7 +71,8 @@ renderExceptionWithCallstack errors valueConstructor =
     <> " */)"
 
 newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
-  deriving (Pretty, ToHttpApiData, Display)
+  deriving
+    (Pretty, ToHttpApiData, Display)
     via Version
 
 instance ToJSON IntAesonVersion where
