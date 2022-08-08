@@ -26,13 +26,13 @@ spec :: Fixtures -> TestEff TestTree
 spec _fixtures =
   testThese
     "packages"
-    [ testThis "Insert base and its dependencies, and fetch it" $ testInsertBase
-    , testThis "Insert containers and its dependencies" $ testInsertContainers
-    , testThis "@haskell/base belongs to the \"Prelude\" category" $ testThatBaseisInPreludeCategory
-    , testThis "@hackage/semigroups belongs to appropriate categories" $ testThatSemigroupsIsInMathematicsAndDataStructures
-    , testThis "The \"haskell\" namespace has the correct number of packages" $ testCorrectNumberInHaskellNamespace
-    , testThis "@haskell/bytestring has the correct number of dependents" $ testBytestringDependents
-    , testThis "Searching for `text` returns unique results by namespace/package name" $ testSearchResultUnicity
+    [ testThis "Insert base and its dependencies, and fetch it" testInsertBase
+    , testThis "Insert containers and its dependencies" testInsertContainers
+    , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory
+    , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
+    , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
+    , testThis "@haskell/bytestring has the correct number of dependents" testBytestringDependents
+    , testThis "Searching for `text` returns unique results by namespace/package name" testSearchResultUnicity
     ]
 
 testInsertBase :: TestEff ()
