@@ -1,0 +1,151 @@
+cabal-version:       2.2
+name:                jose
+version:             0.9
+synopsis:
+  JSON Object Signing and Encryption (JOSE) and JSON Web Token (JWT) library
+description:
+  .
+  An implementation of the Javascript Object Signing and Encryption
+  (JOSE) and JSON Web Token (JWT; RFC 7519) formats.
+  .
+  The JSON Web Signature (JWS; RFC 7515) implementation is complete.
+  .
+  EdDSA signatures (RFC 8037) are supported (Ed25519 only).
+  .
+  JWK Thumbprint (RFC 7638) is supported.
+  .
+  JSON Web Encryption (JWE; RFC 7516) is not yet implemented.
+  .
+  The __ECDSA implementation is vulnerable to timing attacks__ and
+  should only be used for verification.
+
+homepage:            https://github.com/frasertweedale/hs-jose
+bug-reports:         https://github.com/frasertweedale/hs-jose/issues
+license:             Apache-2.0
+license-file:        LICENSE
+extra-source-files:
+  README.md
+  test/data/fido.jwt
+author:              Fraser Tweedale
+maintainer:          frase@frase.id.au
+copyright:           Copyright (C) 2013-2021  Fraser Tweedale
+category:            Cryptography
+build-type:          Simple
+tested-with:
+  GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.5, GHC==8.8.4, GHC==8.10.4, GHC==9.0.1
+
+flag demos
+  description: Build demonstration programs
+  default: False
+
+common common
+  default-language: Haskell2010
+  ghc-options:    -Wall
+
+  build-depends:
+    base >= 4.9 && < 5
+    , aeson >= 2.0.1.0 && < 3
+    , bytestring >= 0.10 && < 0.12
+    , lens >= 4.16
+    , mtl >= 2
+    , text >= 1.1
+
+library
+  import: common
+
+  exposed-modules:
+    Crypto.JOSE
+    Crypto.JOSE.Compact
+    Crypto.JOSE.Error
+    Crypto.JOSE.Header
+    Crypto.JOSE.JWE
+    Crypto.JOSE.JWK
+    Crypto.JOSE.JWK.Store
+    Crypto.JOSE.JWS
+    Crypto.JOSE.Types
+    Crypto.JWT
+    Crypto.JOSE.AESKW
+    Crypto.JOSE.JWA.JWK
+    Crypto.JOSE.JWA.JWS
+    Crypto.JOSE.JWA.JWE
+    Crypto.JOSE.JWA.JWE.Alg
+
+  other-modules:
+    Crypto.JOSE.TH
+    Crypto.JOSE.Types.Internal
+    Crypto.JOSE.Types.Orphans
+
+  build-depends:
+    , base64-bytestring >= 1.2.1.0 && < 1.3
+    , concise >= 0.1
+    , containers >= 0.5
+    , cryptonite >= 0.7
+    , memory >= 0.7
+    , monad-time >= 0.3
+    , template-haskell >= 2.11
+    , time >= 1.5
+    , network-uri >= 2.6
+    , QuickCheck >= 2.9
+    , quickcheck-instances
+    , x509 >= 1.4
+
+  hs-source-dirs: src
+
+source-repository head
+  type: git
+  location: https://github.com/frasertweedale/hs-jose.git
+
+test-suite tests
+  import: common
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is:        Test.hs
+  other-modules:
+    AESKW
+    Examples
+    JWK
+    JWS
+    JWT
+    Properties
+    Types
+
+  build-depends:
+    , base64-bytestring
+    , containers
+    , cryptonite
+    , time
+    , network-uri
+    , x509
+    , pem
+
+    , concise
+    , jose
+
+    , tasty
+    , tasty-hspec >= 1.0
+    , tasty-quickcheck
+    , hspec
+    , QuickCheck >= 2.9
+    , quickcheck-instances
+
+test-suite perf
+  import: common
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is:        Perf.hs
+  build-depends:
+    jose
+
+executable jose-example
+  import: common
+  if !flag(demos)
+    buildable: False
+  hs-source-dirs: example
+  main-is:  Main.hs
+  other-modules:
+    KeyDB
+    JWS
+
+  build-depends:
+    unix
+    , jose

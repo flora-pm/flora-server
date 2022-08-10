@@ -89,10 +89,18 @@ data ReadmePayload = MkReadmePayload
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 
+data FetchUploadTimePayload = FetchUploadTimePayload
+  { packageName :: PackageName
+  , releaseId :: ReleaseId
+  , packageVersion :: IntAesonVersion
+  }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
 -- these represent the possible odd jobs we can run.
 data FloraOddJobs
   = MkReadme ReadmePayload
-  | DoNothing -- needed to keep this type tagged
+  | FetchUploadTime FetchUploadTimePayload
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 

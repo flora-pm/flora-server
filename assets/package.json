@@ -14,6 +14,10 @@
     "postcss-cli": "^9.0.2",
     "postcss-copy": "^7.1.0",
     "postcss-import": "^14.0.2",
+    "prettier": "^2.7.1",
+    "stylelint": "^14.9.1",
+    "stylelint-config-prettier": "^9.0.3",
+    "stylelint-config-standard": "^26.0.0",
     "tailwindcss": "^3.0.0"
   },
   "scripts": {
@@ -26,5 +30,8 @@
     "build-css": "NODE_BUILD=prod postcss css/app.css -o ../static/css/app.css",
     "copy-static-files": "cpx \"**/*.{svg,png,jpg}\" ../static",
     "watch-static-files": "cpx \"**/*.{svg,png,jpg}\" ../static -w"
+  },
+  "dependencies": {
+    "csslint": "^1.0.5"
   }
 }

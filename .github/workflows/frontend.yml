@@ -21,6 +21,16 @@ jobs:
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
         source ./environment.ci.sh
 
+    - uses: actionsx/prettier@v2
+      with:
+        # prettier CLI arguments.
+        args: --check ./assets/css
+
+    - name: Stylelint 
+      run: |
+        cd assets
+        yarn
+        yarn stylelint css
 
     - name: Build
       run: |

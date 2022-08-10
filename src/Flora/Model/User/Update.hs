@@ -8,7 +8,7 @@ import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 
-import Effectful (Eff, IOE, type (:>), type (:>>))
+import Effectful (Eff, IOE, type (:>>))
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Flora.Model.User
 import Optics.Core ((^.))
@@ -20,7 +20,7 @@ addAdmin form = do
   unlockAccount (adminUser ^. #userId)
   pure adminUser
 
-lockAccount :: (DB :> es, IOE :> es) => UserId -> Eff es ()
+lockAccount :: ([DB, IOE] :>> es) => UserId -> Eff es ()
 lockAccount userId = dbtToEff $ void $ execute Update q (Only userId)
   where
     q =

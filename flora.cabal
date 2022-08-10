@@ -84,6 +84,7 @@ library
   exposed-modules:
     Data.Aeson.Orphans
     Data.Text.Display.Orphans
+    Data.Time.Orphans
     Distribution.Orphans
     Flora.Environment
     Flora.Environment.Config
@@ -205,6 +206,7 @@ library
     , http-client                ==0.7.10
     , http-client-tls
     , http-types                 ^>=0.12
+    , iso8601-time               ^>=0.1
     , lens
     , log-base                   ^>=0.11
     , log-effectful

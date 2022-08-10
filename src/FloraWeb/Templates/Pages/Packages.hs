@@ -167,10 +167,11 @@ displayVersions namespace packageName versions numberOfReleases =
   where
     displayVersion :: Release -> FloraHTML
     displayVersion release =
-      li_ [class_ "package-version"] $ do
+      li_ [class_ "release"] $ do
         a_
-          [href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)))]
+          [class_ "release-version", href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)))]
           (toHtml $ display (release ^. #version))
+        " "
         case release ^. #uploadedAt of
           Nothing -> ""
           Just ts ->

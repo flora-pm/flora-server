@@ -1,19 +1,19 @@
 module FloraWeb.Server.Pages.Admin where
 
-import Control.Monad (forM_)
 import Control.Monad.IO.Class
 import Data.Proxy (Proxy (..))
 import Database.PostgreSQL.Entity.DBT
-import Effectful.Error.Static
 import Effectful.Servant (handlerToEff)
-import Log
 import Lucid
 import Network.HTTP.Types.Status (notFound404)
 import qualified OddJobs.Endpoints as OddJobs
 import qualified OddJobs.Types as OddJobs
 import Optics.Core
-import Servant (HasServer (..), ServerError (..), err301, hoistServer)
+import Servant (HasServer (..), hoistServer)
 
+import Control.Concurrent (forkIO)
+import qualified Control.Concurrent.Async as Async
+import Control.Monad
 import Flora.Environment (FloraEnv (..))
 import Flora.Model.Admin.Report
 import qualified Flora.Model.Package.Query as Query
@@ -23,6 +23,7 @@ import qualified Flora.Model.User.Query as Query
 import Flora.OddJobs
 import FloraWeb.Routes.Pages.Admin
 import FloraWeb.Server.Auth
+import FloraWeb.Server.Utils (redirect)
 import FloraWeb.Session (getSession)
 import FloraWeb.Templates (ActiveElements (..), TemplateEnv (..), defaultTemplateEnv, fromSession, render)
 import qualified FloraWeb.Templates.Admin as Templates
@@ -40,6 +41,7 @@ server cfg env =
       , packages = adminPackagesHandler
       , oddJobs = OddJobs.server cfg env handlerToEff
       , makeReadmes = makeReadmesHandler
+      , fetchUploadTimes = fetchUploadTimesHandler
       }
 
 {- | This function converts a sub-tree of routes that require 'Admin' role
@@ -75,20 +77,23 @@ indexHandler = do
   report <- liftIO $ withPool pool getReport
   render templateEnv (Templates.index report)
 
-makeReadmesHandler :: FloraAdmin (Html ())
-makeReadmesHandler = localDomain "makeReadmesHandler" $ do
-  logInfo "opening the readmes magic" ("" :: String)
+makeReadmesHandler :: FloraAdmin MakeReadmesResponse
+makeReadmesHandler = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-
-  logInfo "scheduling readme jabbb" ("" :: String)
   releases <- Query.getPackageReleases
-  logInfo "got releases! qeueing the queue" ("" :: String)
-  forM_ releases $ \(releaseId, version, packagename) -> do
-    liftIO $ scheduleReadmeJob pool releaseId packagename version
+  liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
+    scheduleReadmeJob pool releaseId packagename version
+  pure $ redirect "/admin"
 
-  logInfo "done" ("exceptional" :: String)
-  throwError $ err301{errHeaders = [("Location", "/admin")]}
+fetchUploadTimesHandler :: FloraAdmin FetchUploadTimesResponse
+fetchUploadTimesHandler = do
+  session <- getSession
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  releases <- Query.getPackageReleases
+  liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
+    Async.async $ scheduleUploadTimeJob pool releaseId packagename version
+  pure $ redirect "/admin"
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdmin
 adminUsersHandler =

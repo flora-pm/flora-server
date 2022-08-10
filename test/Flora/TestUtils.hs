@@ -41,6 +41,7 @@ module Flora.TestUtils
   , Fixtures (..)
   , runTestEff
   , getFixtures
+  , importAllPackages
 
     -- * HUnit re-exports
   , TestTree
@@ -87,6 +88,7 @@ import qualified Test.Tasty.HUnit as Test
 
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
+import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Model.User
 import qualified Flora.Model.User.Query as Query
 import Flora.Model.User.Update
@@ -105,6 +107,12 @@ getFixtures :: ([DB, IOE] :>> es) => Eff es Fixtures
 getFixtures = do
   hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
   pure Fixtures{..}
+
+importAllPackages :: Fixtures -> TestEff ()
+importAllPackages fixtures = do
+  importAllFilesInRelativeDirectory
+    (fixtures ^. #hackageUser % #userId)
+    "./test/fixtures/Cabal/"
 
 runTestEff :: TestEff a -> Pool Connection -> IO a
 runTestEff comp pool =

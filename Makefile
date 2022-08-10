@@ -60,10 +60,12 @@ watch-server: soufflé ## Start flora-server in ghcid
 lint: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
-style: ## Run the code formatters (stylish-haskell, cabal-fmt, nixfmt)
+style: ## Run the code formatters (stylish-haskell, cabal-fmt, nixfmt, prettier, stylelint)
 	@find app test src -name '*.hs' -exec fourmolu -i {} +
 	@cabal-fmt -i flora.cabal
 	@nixfmt *.nix
+	@cd assets ; yarn prettier --write css
+	@cd assets ; yarn stylelint --fix css
 
 nix-shell: ## Enter the Nix shell
 	@nix-shell
