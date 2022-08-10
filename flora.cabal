@@ -96,7 +96,6 @@ library
     Flora.Import.Types
     Flora.Model.Admin.Report
     Flora.Model.Category
-    Flora.Model.Category.Coverage
     Flora.Model.Category.Query
     Flora.Model.Category.Types
     Flora.Model.Category.Update
@@ -185,7 +184,7 @@ library
   build-depends:
     , aeson                      <=1.6
     , async                      ^>=2.2
-    , base                       ^>=4.14
+    , base                       ^>=4.16
     , blaze-builder
     , bytestring                 ^>=0.10
     , Cabal-syntax               ^>=3.8
@@ -223,7 +222,7 @@ library
     , optparse-applicative       ^>=0.16
     , password                   ^>=3.0
     , password-types             ^>=1.0
-    , pcre2                      ^>=2.0
+    , pcre2
     , pg-entity                  ^>=0.0
     , pg-transact                ^>=0.3
     , pg-transact-effectful
@@ -233,7 +232,7 @@ library
     , prometheus-client          ^>=1.1
     , prometheus-metrics-ghc     ^>=1.0
     , prometheus-proc            ^>=0.1
-    , PyF                        ^>=0.10
+    , PyF                        ^>=0.11
     , raven-haskell              ^>=0.1
     , resource-pool              >=0.3     && <0.4.0.0
     , safe-exceptions
@@ -249,8 +248,8 @@ library
     , split                      ^>=0.2
     , streaming                  ^>=0.2
     , template-haskell
-    , text                       ^>=1.2
-    , text-display               ^>=0.0.2
+    , text
+    , text-display
     , time                       ^>=1.9
     , time-effectful
     , transformers               ^>=0.5
