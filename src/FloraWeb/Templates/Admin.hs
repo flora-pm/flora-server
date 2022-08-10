@@ -36,11 +36,11 @@ dataReport adminReport = do
     div_ [class_ cardClass] $ do
       dt_
         [class_ "text-sm font-medium truncate"]
-        "Do the readmes"
+        "README fetching"
 
       dd_ [class_ "mt-1 text-3xl font-semibold"] $
         form_ [action_ "/admin/readmes", method_ "POST"] $ do
-          button_ [class_ "on-readmes"] "Mk readmes"
+          button_ [class_ ""] "Schedule"
 
     div_ [class_ cardClass] $ do
       dt_
@@ -49,7 +49,16 @@ dataReport adminReport = do
 
       dd_ [class_ "mt-1 text-3xl font-semibold"] $
         form_ [action_ "/admin/upload-times", method_ "POST"] $ do
-          button_ [class_ "on-readmes"] "Fetch timestamps"
+          button_ [class_ ""] "Schedule"
+
+    div_ [class_ cardClass] $ do
+      dt_
+        [class_ "text-sm font-medium truncate"]
+        "Index import"
+
+      dd_ [class_ "mt-1 text-3xl font-semibold"] $
+        form_ [action_ "/admin/index-import", method_ "POST"] $ do
+          button_ [class_ ""] "Schedule"
 
     a_ [href_ "/admin/odd-jobs"] $
       div_ [class_ cardClass] $ do

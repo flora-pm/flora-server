@@ -42,6 +42,7 @@ server cfg env =
       , oddJobs = OddJobs.server cfg env handlerToEff
       , makeReadmes = makeReadmesHandler
       , fetchUploadTimes = fetchUploadTimesHandler
+      , importIndex = indexImportJobHandler
       }
 
 {- | This function converts a sub-tree of routes that require 'Admin' role
@@ -93,6 +94,13 @@ fetchUploadTimesHandler = do
   releases <- Query.getPackageReleases
   liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
     Async.async $ scheduleUploadTimeJob pool releaseId packagename version
+  pure $ redirect "/admin"
+
+indexImportJobHandler :: FloraAdmin FetchUploadTimesResponse
+indexImportJobHandler = do
+  session <- getSession
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  liftIO $ scheduleIndexImportJob pool
   pure $ redirect "/admin"
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdmin

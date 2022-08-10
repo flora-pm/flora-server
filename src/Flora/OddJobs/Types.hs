@@ -35,7 +35,14 @@ import Flora.Model.Package (PackageName (..))
 import Flora.Model.Release.Types (ReleaseId (..))
 import qualified FloraWeb.Server.Logging as Logging
 
-type JobsRunner = Eff '[DB, Reader JobsRunnerEnv, Logging, Time, IOE]
+type JobsRunner =
+  Eff
+    '[ DB
+     , Reader JobsRunnerEnv
+     , Logging
+     , Time
+     , IOE
+     ]
 
 runJobRunner :: Pool Connection -> JobsRunnerEnv -> Logger -> JobsRunner a -> IO a
 runJobRunner pool runnerEnv logger jobRunner =
@@ -97,19 +104,24 @@ data FetchUploadTimePayload = FetchUploadTimePayload
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 
+data ImportHackageIndexPayload = ImportHackageIndexPayload
+  { tag :: Text
+  }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
 -- these represent the possible odd jobs we can run.
 data FloraOddJobs
   = MkReadme ReadmePayload
   | FetchUploadTime FetchUploadTimePayload
+  | ImportHackageIndex ImportHackageIndexPayload
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 
 jobTableName :: QualifiedIdentifier
 jobTableName = "oddjobs"
 
--- proly should upstream these,
--- kinda dumb the "support" structured logging without the most
--- common method being used
+-- TODO: Upstream these two ToJSON instances
 deriving instance ToJSON FailureMode
 deriving instance ToJSON Job
 
