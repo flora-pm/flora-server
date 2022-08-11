@@ -85,6 +85,7 @@ library
     Data.Aeson.Orphans
     Data.Text.Display.Orphans
     Data.Time.Orphans
+    Distribution.Orphans
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.OddJobs
@@ -104,6 +105,7 @@ library
     Flora.Model.Package
     Flora.Model.Package.Component
     Flora.Model.Package.Orphans
+    Flora.Model.Package.Publisher
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update

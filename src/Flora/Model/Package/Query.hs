@@ -163,7 +163,11 @@ getComponent releaseId name componentType =
     queryOne Select (_selectWhere @PackageComponent queryFields) (releaseId, name, componentType)
   where
     queryFields :: Vector Field
-    queryFields = [[field| release_id |], [field| name |], [field| component_type |]]
+    queryFields =
+      [ [field| release_id |]
+      , [field| component_name |]
+      , [field| component_type |]
+      ]
 
 unsafeGetComponent ::
   ([DB, IOE] :>> es) =>
