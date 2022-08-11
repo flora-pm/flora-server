@@ -165,7 +165,7 @@ getComponent releaseId name componentType =
     queryFields :: Vector Field
     queryFields =
       [ [field| release_id |]
-      , [field| name |]
+      , [field| component_name |]
       , [field| component_type |]
       ]
 
