@@ -103,7 +103,7 @@ packageBody
     div_ $ do
       div_ [class_ "package-body md:flex"] $ do
         div_ [class_ "package-left-column"] $ do
-          ul_ [class_ "package-left-rows grid-rows-3"] $ do
+          ul_ [class_ "package-left-rows grid-rows-3 md:sticky md:top-28"] $ do
             displayCategories categories
             displayLicense (metadata ^. #license)
             displayLinks packageName latestRelease metadata
@@ -112,7 +112,7 @@ packageBody
           div_ [class_ "grid-rows-3 package-readme"] $ do
             displayReadme latestRelease
         div_ [class_ "package-right-column md:max-w-xs"] $ do
-          ul_ [class_ "package-right-rows grid-rows-3"] $ do
+          ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
             displayInstructions packageName latestRelease
             displayMaintainer (metadata ^. #maintainer)
             displayDependencies (namespace, packageName) numberOfDependencies dependencies
