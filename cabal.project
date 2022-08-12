@@ -1,7 +1,5 @@
 packages: ./
 
-index-state: 2022-07-15T15:03:59Z
-
 with-compiler: ghc-8.10.7
 
 jobs: 8

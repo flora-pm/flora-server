@@ -3,12 +3,13 @@
 module Distribution.Orphans where
 
 import Data.Aeson
+import Distribution.Compiler (CompilerFlavor)
 import Distribution.PackageDescription (FlagName)
-import Distribution.Simple (CompilerFlavor, Version, VersionRange)
 import Distribution.System (Arch, OS)
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Utils.ShortText
+import Distribution.Version (Version, VersionRange)
 
 deriving anyclass instance ToJSON ConfVar
 deriving anyclass instance FromJSON ConfVar

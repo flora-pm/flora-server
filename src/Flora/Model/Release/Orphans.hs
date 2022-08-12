@@ -22,9 +22,9 @@ import Distribution.Parsec
 import Distribution.Pretty (prettyShow)
 import qualified Distribution.Pretty as Pretty
 import qualified Distribution.SPDX.License as SPDX
-import Distribution.Simple.Utils (fromUTF8BS)
 import Distribution.Types.Version
 import qualified Distribution.Types.Version as Cabal
+import Distribution.Utils.Generic (fromUTF8BS)
 import Servant (FromHttpApiData (..), ToHttpApiData (..))
 
 instance FromField Version where
