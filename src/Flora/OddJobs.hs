@@ -77,7 +77,7 @@ scheduleIndexImportJob pool = do
     scheduleJob
       conn
       jobTableName
-      (ImportHackageIndexPayload "import")
+      (ImportHackageIndex ImportHackageIndexPayload)
       runAt
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool
@@ -156,7 +156,7 @@ fetchNewIndex :: JobsRunner ()
 fetchNewIndex = localDomain "index-import" $ do
   logInfo_ "Fetching new index"
   System.runProcess_ "cabal update"
-  System.runProcess_ "~/.cabal/packages/hackage.haskell.org/01-index.tar 01-index/"
+  System.runProcess_ "cp ~/.cabal/packages/hackage.haskell.org/01-index.tar 01-index/"
   System.runProcess_ "cd 01-index && tar -xf 01-index.tar"
   System.runProcess_ "make import-from-hackage"
   pool <- getPool

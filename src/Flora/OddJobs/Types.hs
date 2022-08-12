@@ -105,8 +105,6 @@ data FetchUploadTimePayload = FetchUploadTimePayload
   deriving anyclass (ToJSON, FromJSON)
 
 data ImportHackageIndexPayload = ImportHackageIndexPayload
-  { tag :: Text
-  }
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 
