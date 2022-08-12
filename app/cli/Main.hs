@@ -1,6 +1,5 @@
 module Main where
 
-import CoverageReport
 import Data.Maybe
 import Data.Password.Types
 import Data.Text (Text)
@@ -26,7 +25,6 @@ data Options = Options
 
 data Command
   = Provision ProvisionTarget
-  | CoverageReport CoverageReportOptions
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
   | ImportPackages FilePath
@@ -62,7 +60,6 @@ parseCommand :: Parser Command
 parseCommand =
   subparser $
     command "provision" (parseProvision `withInfo` "Load the test fixtures into the database")
-      <> command "coverage-report" (parseCoverageReport `withInfo` "Run a coverage report of the category mapping")
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
       <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
       <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
@@ -72,11 +69,6 @@ parseProvision =
   subparser $
     command "categories" (pure (Provision Categories) `withInfo` "Load the canonical categories in the system")
       <> command "test-packages" (pure (Provision TestPackages) `withInfo` "Load the test packages in the database")
-
-parseCoverageReport :: Parser Command
-parseCoverageReport =
-  CoverageReport . CoverageReportOptions
-    <$> switch (long "force-download" <> help "Always download and extract the package index")
 
 parseCreateUser :: Parser Command
 parseCreateUser =
@@ -96,7 +88,6 @@ parseImportPackages :: Parser Command
 parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
 
 runOptions :: ([DB, IOE] :>> es) => Options -> Eff es ()
-runOptions (Options (CoverageReport opts)) = unsafeEff_ $ runCoverageReport opts
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
