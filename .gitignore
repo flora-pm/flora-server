@@ -26,4 +26,4 @@ pgdata/
 .DS_Store
 tags.lock
 cabal.project.local
-
+logs/*

@@ -7,7 +7,7 @@ import Data.Maybe (isJust)
 import qualified Data.Pool as Pool
 import Data.Text.Display (display)
 import Effectful
-import Log (Logger, defaultLogLevel)
+import Log (Logger)
 import qualified Log
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.Wai.Handler.Warp
@@ -36,7 +36,6 @@ import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 import qualified Control.Exception.Safe as Safe
 import qualified Database.PostgreSQL.Simple as PG
 import Effectful.Concurrent
-import Effectful.Log (runLogging)
 import Effectful.Reader.Static (runReader, withReader)
 import Effectful.Servant (effToHandler)
 import Effectful.Time (Time, runCurrentTimeIO)
@@ -59,6 +58,7 @@ import qualified FloraWeb.Autoreload as Autoreload
 import FloraWeb.Routes
 import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler, runVisitorSession)
+import FloraWeb.Server.Logging (runLog)
 import qualified FloraWeb.Server.Logging as Logging
 import FloraWeb.Server.Metrics
 import qualified FloraWeb.Server.Pages as Pages
@@ -144,7 +144,7 @@ runServer appLogger floraEnv = do
 
 mkServer :: Logger -> WebEnvStore -> FloraEnv -> OddJobs.UIConfig -> OddJobs.Env -> Application
 mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
-  genericServeTWithContext (naturalTransform logger webEnvStore) (floraServer (floraEnv ^. #pool) cfg jobsRunnerEnv) (genAuthServerContext logger floraEnv)
+  genericServeTWithContext (naturalTransform (floraEnv ^. #environment) logger webEnvStore) (floraServer (floraEnv ^. #pool) cfg jobsRunnerEnv) (genAuthServerContext logger floraEnv)
 
 floraServer :: Pool Connection -> OddJobs.UIConfig -> OddJobs.Env -> Routes (AsServerT Flora)
 floraServer pool cfg jobsRunnerEnv =
@@ -170,10 +170,10 @@ floraServer pool cfg jobsRunnerEnv =
           Autoreload.server
     }
 
-naturalTransform :: Logger -> WebEnvStore -> Flora a -> Handler a
-naturalTransform logger webEnvStore app =
+naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
+naturalTransform deploymentEnv logger webEnvStore app =
   effToHandler
-    . runLogging "flora" logger defaultLogLevel
+    . runLog deploymentEnv logger
     . runReader webEnvStore
     $ app
 

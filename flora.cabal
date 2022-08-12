@@ -179,6 +179,7 @@ library
     FloraWeb.Templates.Pages.Sessions
     FloraWeb.Templates.Types
     FloraWeb.Types
+    Log.Backend.File
     Lucid.Orphans
 
   build-depends:
@@ -282,16 +283,13 @@ executable flora-cli
   import:         common-ghc-options
   import:         common-rts-options
   main-is:        Main.hs
-  other-modules:
-    CoverageReport
-    DesignSystem
-
+  other-modules:  DesignSystem
   hs-source-dirs: app/cli
   build-depends:
     , ansi-terminal
     , base
     , bytestring
-    , Cabal
+    , Cabal-syntax
     , colourista
     , directory
     , effectful
@@ -329,7 +327,7 @@ test-suite flora-test
     , aeson
     , base
     , bytestring
-    , Cabal
+    , Cabal-syntax
     , containers
     , effectful-core
     , exceptions

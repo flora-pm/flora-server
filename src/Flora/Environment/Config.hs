@@ -53,6 +53,8 @@ data LoggingDestination
     StdOut
   | -- | Logs are printed on the standard output in JSON format
     Json
+  | -- | Logs are sent to a file as JSON
+    JSONFile
   deriving (Show, Generic)
 
 data LoggingEnv = LoggingEnv
@@ -176,4 +178,5 @@ deploymentEnv e = Left $ unread e
 loggingDestination :: Reader Error LoggingDestination
 loggingDestination "stdout" = Right StdOut
 loggingDestination "json" = Right Json
+loggingDestination "json-file" = Right JSONFile
 loggingDestination e = Left $ unread e
