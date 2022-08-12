@@ -1,4 +1,4 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 {- |
 Module: Flora.Import.Package
@@ -20,7 +20,10 @@ altering its id.
 -}
 module Flora.Import.Package where
 
+import Control.Exception
 import Control.Monad.Except
+import qualified Data.ByteString as BS
+import Data.Foldable
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -29,9 +32,10 @@ import qualified Data.Text as T
 import Data.Text.Display
 import qualified Data.Text.IO as T
 import Data.Time
+import Distribution.Fields.ParseResult
 import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
 import qualified Distribution.PackageDescription as Cabal hiding (PackageName)
-import Distribution.PackageDescription.Parsec (readGenericPackageDescription)
+import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Pretty
 import Distribution.Types.Benchmark
 import Distribution.Types.Dependency
@@ -40,15 +44,19 @@ import Distribution.Types.ForeignLib
 import Distribution.Types.GenericPackageDescription (GenericPackageDescription)
 import Distribution.Types.Library
 import Distribution.Types.LibraryName
+import Distribution.Types.PackageDescription ()
 import Distribution.Types.TestSuite
 import qualified Distribution.Utils.ShortText as Cabal
-import Optics.Core
-
-import Data.Foldable
-import Distribution.Verbosity (silent)
 import Effectful
+import Effectful.Internal.Monad (unsafeEff_)
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import GHC.Generics (Generic)
+import Optics.Core
+import qualified System.Directory as System
+import System.FilePath
+
 import qualified Flora.Import.Categories.Tuning as Tuning
+import Flora.Import.Types
 import qualified Flora.Model.Category.Update as Update
 import Flora.Model.Package.Component as Component
 import Flora.Model.Package.Orphans ()
@@ -64,9 +72,7 @@ import Flora.Model.Requirement
   , flag
   )
 import Flora.Model.User
-import GHC.Generics (Generic)
-import qualified System.Directory as System
-import System.FilePath
+import GHC.Stack (HasCallStack)
 
 {- | This tuple represents the package that depends on any associated dependency/requirement.
  It is used in the recursive loading of Cabal files
@@ -142,7 +148,29 @@ loadFile ::
   -- | The absolute path to the Cabal file
   FilePath ->
   Eff es GenericPackageDescription
-loadFile path = liftIO $ readGenericPackageDescription silent path
+loadFile path = do
+  exists <- liftIO $ System.doesFileExist path
+  unless exists $
+    unsafeEff_ $
+      throwIO $
+        CabalFileNotFound path
+  content <- liftIO $ BS.readFile path
+  parseString parseGenericPackageDescription path content
+
+parseString ::
+  HasCallStack =>
+  -- | File contents to final value parser
+  (BS.ByteString -> ParseResult a) ->
+  -- | File name
+  String ->
+  BS.ByteString ->
+  Eff es a
+parseString parser name bs = do
+  let (_warnings, result) = runParseResult (parser bs)
+  case result of
+    Right x -> pure x
+    Left _ ->
+      throw $ CabalFileCouldNotBeParsed name
 
 loadAndExtractCabalFile :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
