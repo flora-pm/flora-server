@@ -292,7 +292,7 @@ executable flora-cli
     , ansi-terminal
     , base
     , bytestring
-    , Cabal
+    , Cabal-syntax
     , colourista
     , directory
     , effectful
@@ -330,7 +330,7 @@ test-suite flora-test
     , aeson
     , base
     , bytestring
-    , Cabal
+    , Cabal-syntax
     , containers
     , effectful-core
     , exceptions
