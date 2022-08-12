@@ -1,13 +1,13 @@
 module Log.Backend.File where
 
-import qualified Data.ByteString.Lazy as BSL
-import Log (Logger)
-import qualified Effectful.Log.Logger as Log
-import GHC.Generics (Generic)
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as BS
-import Effectful
+import qualified Data.ByteString.Lazy as BSL
 import Data.Kind (Type)
+import Effectful
+import qualified Effectful.Log.Logger as Log
+import GHC.Generics (Generic)
+import Log (Logger)
 import System.IO (stdout)
 
 data FileBackendConfig = FileBackendConfig
@@ -15,8 +15,12 @@ data FileBackendConfig = FileBackendConfig
   }
   deriving stock (Eq, Ord, Show, Generic)
 
-withJSONFileBackend :: forall (es :: [Effect]) (a :: Type).
-                       IOE :> es => FileBackendConfig -> (Logger -> Eff es a) -> Eff es a
+withJSONFileBackend ::
+  forall (es :: [Effect]) (a :: Type).
+  IOE :> es =>
+  FileBackendConfig ->
+  (Logger -> Eff es a) ->
+  Eff es a
 withJSONFileBackend FileBackendConfig{destinationFile} action = do
   liftIO $ BS.hPutStrLn stdout $ BS.pack $ "Redirecting logs to " <> destinationFile
   logger <- Log.mkLogger "file-json" $ \msg -> liftIO $ do

@@ -13,7 +13,7 @@ import Data.Text.Display (display)
 import Effectful
 import Effectful.Log (Logging)
 import qualified Effectful.Log.Backend.StandardOutput as Log
-import Log.Backend.File (withJSONFileBackend, FileBackendConfig (..))
+import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
 -- | Wrapper around 'Log.runLogT' with necessary metadata
 runLog ::

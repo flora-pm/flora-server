@@ -58,12 +58,12 @@ import qualified FloraWeb.Autoreload as Autoreload
 import FloraWeb.Routes
 import qualified FloraWeb.Routes.Pages as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler, runVisitorSession)
+import FloraWeb.Server.Logging (runLog)
 import qualified FloraWeb.Server.Logging as Logging
 import FloraWeb.Server.Metrics
 import qualified FloraWeb.Server.Pages as Pages
 import FloraWeb.Server.Tracing
 import FloraWeb.Types
-import FloraWeb.Server.Logging (runLog)
 
 runFlora :: IO ()
 runFlora = bracket (runEff getFloraEnv) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
@@ -173,7 +173,7 @@ floraServer pool cfg jobsRunnerEnv =
 naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
 naturalTransform deploymentEnv logger webEnvStore app =
   effToHandler
-    . runLog deploymentEnv logger 
+    . runLog deploymentEnv logger
     . runReader webEnvStore
     $ app
 
