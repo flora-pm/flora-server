@@ -82,7 +82,7 @@ makeReadmesHandler :: FloraAdmin MakeReadmesResponse
 makeReadmesHandler = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-  releases <- Query.getPackageReleases
+  releases <- Query.getPackageReleasesWithoutReadme
   liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
     scheduleReadmeJob pool releaseId packagename version
   pure $ redirect "/admin"
@@ -91,7 +91,7 @@ fetchUploadTimesHandler :: FloraAdmin FetchUploadTimesResponse
 fetchUploadTimesHandler = do
   session <- getSession
   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-  releases <- Query.getPackageReleases
+  releases <- Query.getPackageReleasesWithoutUploadTimestamp
   liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
     Async.async $ scheduleUploadTimeJob pool releaseId packagename version
   pure $ redirect "/admin"
