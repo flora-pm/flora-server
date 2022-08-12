@@ -179,6 +179,7 @@ library
     FloraWeb.Templates.Pages.Sessions
     FloraWeb.Templates.Types
     FloraWeb.Types
+    Log.Backend.File
     Lucid.Orphans
 
   build-depends:
