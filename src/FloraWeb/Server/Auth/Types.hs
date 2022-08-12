@@ -1,6 +1,3 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RoleAnnotations #-}
-
 module FloraWeb.Server.Auth.Types where
 
 import Effectful
@@ -90,7 +87,7 @@ type FloraAdmin =
      , IOE
      ]
 
--- | The monad for the development websockets
+-- | The effect stack for the development websockets
 type FloraDevSocket = Eff [Reader (), Logging, Error ServerError, IOE]
 
 type instance

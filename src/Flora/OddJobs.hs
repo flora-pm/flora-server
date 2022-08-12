@@ -1,7 +1,11 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 -- | Represents the various jobs that can be run
 module Flora.OddJobs
   ( scheduleReadmeJob
   , scheduleUploadTimeJob
+  , scheduleIndexImportJob
+  , checkIfIndexImportJobIsNotRunning
   , jobTableName
   , runner
 
@@ -27,12 +31,19 @@ import Effectful.Log (localDomainEff', logMessageEff')
 import Log
 import qualified Lucid
 import Network.HTTP.Types (notFound404, statusCode)
-import OddJobs.Job (Job (..), createJob)
+import OddJobs.Job (Job (..), createJob, scheduleJob)
 import Optics.Core
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
+import Control.Monad
+import Control.Monad.IO.Class
 import qualified Data.Text.Lazy.Encoding as TL
+import qualified Data.Time as Time
+import Database.PostgreSQL.Entity.DBT
+import Database.PostgreSQL.Simple (Only (..))
+import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.Package
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update (updateReadme)
@@ -40,22 +51,60 @@ import qualified Flora.Model.Release.Update as Update
 import Flora.OddJobs.Types
 import Flora.ThirdParties.Hackage.API (VersionedPackage (..))
 import qualified Flora.ThirdParties.Hackage.Client as Hackage
+import qualified System.Process.Typed as System
 
 scheduleReadmeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
-scheduleReadmeJob conn rid package version =
-  withResource conn $ \res ->
+scheduleReadmeJob pool rid package version =
+  withResource pool $ \res ->
     createJob
       res
       jobTableName
       (MkReadme $ MkReadmePayload package rid $ MkIntAesonVersion version)
 
 scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
-scheduleUploadTimeJob conn releaseId packageName version = do
-  withResource conn $ \res ->
+scheduleUploadTimeJob pool releaseId packageName version = do
+  withResource pool $ \res ->
     createJob
       res
       jobTableName
       (FetchUploadTime $ FetchUploadTimePayload packageName releaseId (MkIntAesonVersion version))
+
+scheduleIndexImportJob :: Pool PG.Connection -> IO Job
+scheduleIndexImportJob pool = do
+  liftIO $ withResource pool $ \conn -> do
+    t <- Time.getCurrentTime
+    let runAt = Time.addUTCTime Time.nominalDay t
+    scheduleJob
+      conn
+      jobTableName
+      (ImportHackageIndex ImportHackageIndexPayload)
+      runAt
+
+checkIfIndexImportJobIsNotRunning :: JobsRunner Bool
+checkIfIndexImportJobIsNotRunning = do
+  Log.logTrace_ "Checking if the index import job is not running…"
+  (result :: Maybe (Only Int)) <-
+    dbtToEff $
+      queryOne_
+        Select
+        [sql|
+              select count(*)
+              from "oddjobs"
+              where payload ->> 'tag' = 'ImportHackageIndex'
+      |]
+  case result of
+    Nothing -> do
+      Log.logTrace_ "Index import job is running"
+      pure True
+    Just (Only 0) -> do
+      Log.logTrace_ "Index import job is running"
+      pure True
+    Just (Only 1) -> do
+      Log.logTrace_ "Index import job is running"
+      pure True
+    _ -> do
+      Log.logTrace_ "Index import job not running"
+      pure False
 
 makeReadme :: ReadmePayload -> JobsRunner ()
 makeReadme pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPackage) $ do
@@ -70,7 +119,7 @@ makeReadme pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPa
         else throw e
     Left e -> throw e
     Right bodyText -> do
-      logTrace "got a body" bodyText
+      logTrace ("got a body for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
 
       htmlTxt <- do
         -- let extensions = emojiSpec
@@ -103,6 +152,16 @@ fetchUploadTime payload@FetchUploadTimePayload{packageName, packageVersion, rele
       throw e
     Left e -> throw e
 
+fetchNewIndex :: JobsRunner ()
+fetchNewIndex = localDomain "index-import" $ do
+  logInfo_ "Fetching new index"
+  System.runProcess_ "cabal update"
+  System.runProcess_ "cp ~/.cabal/packages/hackage.haskell.org/01-index.tar 01-index/"
+  System.runProcess_ "cd 01-index && tar -xf 01-index.tar"
+  System.runProcess_ "make import-from-hackage"
+  pool <- getPool
+  liftIO $ void $ scheduleIndexImportJob pool
+
 runner :: Job -> JobsRunner ()
 runner job = localDomainEff' "job-runner" $
   case fromJSON (jobPayload job) of
@@ -110,3 +169,4 @@ runner job = localDomainEff' "job-runner" $
     Success val -> case val of
       MkReadme x -> makeReadme x
       FetchUploadTime x -> fetchUploadTime x
+      ImportHackageIndex _ -> fetchNewIndex
