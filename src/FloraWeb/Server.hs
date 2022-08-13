@@ -88,7 +88,6 @@ logException ::
   Logger ->
   Safe.SomeException ->
   IO ()
--- -> Eff '[IOE] ()
 logException env logger exception =
   runEff
     . runCurrentTimeIO
@@ -98,23 +97,14 @@ logException env logger exception =
 runServer :: (Time :> es, Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
-  jobRunnerPool <-
-    liftIO $
-      Pool.newPool $
-        Pool.PoolConfig
-          { createResource = PG.connect (floraEnv ^. #config % #connectInfo)
-          , freeResource = PG.close
-          , poolCacheTTL = 10
-          , poolMaxResources = 10
-          }
   let runnerEnv = JobsRunnerEnv httpManager
-  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv ^. #config) appLogger jobRunnerPool
+  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv ^. #config) appLogger (floraEnv ^. #pool)
       oddJobsCfg =
         OddJobs.makeConfig
           runnerEnv
           (floraEnv ^. #config)
           appLogger
-          (floraEnv ^. #pool)
+          (floraEnv ^. #jobsPool)
           OddJobs.runner
 
   forkIO $

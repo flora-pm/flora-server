@@ -53,12 +53,6 @@ ensureAdmin :: ServerT Routes FloraAdmin -> ServerT Routes FloraPage
 ensureAdmin adminServer = do
   hoistServer (Proxy :: Proxy Routes) checkAdmin adminServer
   where
-    -- adminSession
-    --   . runCurrentTimeIO
-    --   . runDB
-    --   . demoteSession
-    --   $ m
-
     checkAdmin :: FloraAdmin a -> FloraPage a
     checkAdmin adminRoutes = do
       session@Session{mUser} <- getSession
@@ -81,26 +75,26 @@ indexHandler = do
 makeReadmesHandler :: FloraAdmin MakeReadmesResponse
 makeReadmesHandler = do
   session <- getSession
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   releases <- Query.getPackageReleasesWithoutReadme
   liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
-    scheduleReadmeJob pool releaseId packagename version
+    scheduleReadmeJob jobsPool releaseId packagename version
   pure $ redirect "/admin"
 
 fetchUploadTimesHandler :: FloraAdmin FetchUploadTimesResponse
 fetchUploadTimesHandler = do
   session <- getSession
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
   releases <- Query.getPackageReleasesWithoutUploadTimestamp
   liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
-    Async.async $ scheduleUploadTimeJob pool releaseId packagename version
+    Async.async $ scheduleUploadTimeJob jobsPool releaseId packagename version
   pure $ redirect "/admin"
 
 indexImportJobHandler :: FloraAdmin FetchUploadTimesResponse
 indexImportJobHandler = do
   session <- getSession
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
-  liftIO $ scheduleIndexImportJob pool
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  liftIO $ scheduleIndexImportJob jobsPool
   pure $ redirect "/admin"
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdmin

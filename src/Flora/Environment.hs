@@ -29,6 +29,7 @@ import Optics.Core ((^.))
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
   { pool :: Pool PG.Connection
+  , jobsPool :: Pool PG.Connection
   , httpPort :: Word16
   , domain :: Text
   , logging :: LoggingEnv
@@ -63,6 +64,7 @@ configToEnv :: FloraConfig -> Eff '[IOE] FloraEnv
 configToEnv x@FloraConfig{..} = do
   let PoolConfig{..} = dbConfig
   pool <- mkPool connectInfo subPools connectionTimeout connections
+  jobsPool <- mkPool connectInfo subPools connectionTimeout connections
   pure FloraEnv{..}
   where
     config = x
