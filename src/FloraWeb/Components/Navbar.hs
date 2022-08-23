@@ -5,7 +5,6 @@ import Data.Text (Text)
 import Data.Text.Display (display)
 import Lucid
 import Lucid.Alpine
-import Optics.Core
 
 import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User (User (..), UserFlags (..))

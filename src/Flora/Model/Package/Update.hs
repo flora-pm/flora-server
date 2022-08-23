@@ -16,7 +16,6 @@ import Flora.Model.Package.Component (PackageComponent)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
-import Optics.Core
 
 insertPackage :: ([DB, IOE] :>> es) => Package -> Eff es ()
 insertPackage package = dbtToEff $ insert @Package package

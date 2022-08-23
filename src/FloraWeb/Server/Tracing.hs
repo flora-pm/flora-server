@@ -9,7 +9,6 @@ import Flora.Environment
 import Log (LogLevel (..), Logger, logAttention, runLogT)
 import Network.Wai
 import Network.Wai.Handler.Warp
-import Optics.Core
 import System.Log.Raven (initRaven, register, silentFallback)
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))

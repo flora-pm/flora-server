@@ -16,7 +16,6 @@ import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version
 import GHC.Generics (Generic)
-import Optics.Core
 
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()

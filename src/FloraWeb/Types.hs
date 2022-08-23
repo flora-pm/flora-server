@@ -1,5 +1,3 @@
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module FloraWeb.Types
@@ -26,7 +24,6 @@ import Effectful.Reader.Static (Reader)
 import Flora.Environment
 import GHC.Clock (getMonotonicTime)
 import GHC.Generics
-import Optics.Core
 import Servant (FromHttpApiData (..), Handler, ServerError)
 import Web.Cookie
 

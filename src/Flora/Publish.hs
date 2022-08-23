@@ -5,7 +5,6 @@ import Data.Text.Display
 import Data.Text.IO qualified as T
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
-import Optics.Core
 
 import Flora.Import.Categories.Tuning
 import Flora.Import.Categories.Tuning qualified as Tuning

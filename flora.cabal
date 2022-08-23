@@ -51,9 +51,12 @@ common common-ghc-options
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
     -fprint-potential-instances -Wno-unticked-promoted-constructors
+    -Werror=unused-imports
 
   if flag(prod)
-    ghc-options: -flate-specialise -funbox-strict-fields
+    ghc-options:
+      -flate-specialise -funbox-strict-fields
+      -finline-generics-aggressively
 
 common common-rts-options
   ghc-options: -threaded "-with-rtsopts=-N -T"

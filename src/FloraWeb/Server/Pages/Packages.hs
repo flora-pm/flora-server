@@ -29,7 +29,6 @@ import FloraWeb.Templates.Packages.Versions qualified as PackageVersions
 import FloraWeb.Templates.Pages.Packages qualified as Packages
 import FloraWeb.Templates.Pages.Search qualified as Search
 import Log qualified
-import Optics.Core
 
 server :: ServerT Routes FloraPage
 server =

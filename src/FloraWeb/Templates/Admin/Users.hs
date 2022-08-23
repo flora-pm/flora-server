@@ -1,7 +1,6 @@
 module FloraWeb.Templates.Admin.Users where
 
 import Lucid
-import Optics.Core
 
 import Data.Foldable (forM_)
 import Data.Vector (Vector)

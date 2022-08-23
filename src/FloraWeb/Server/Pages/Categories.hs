@@ -3,7 +3,6 @@ module FloraWeb.Server.Pages.Categories where
 import Data.Text (Text)
 import Lucid (Html)
 import Network.HTTP.Types (notFound404)
-import Optics.Core ((^.))
 import Servant (ServerT)
 
 import Flora.Model.Category.Query qualified as Query

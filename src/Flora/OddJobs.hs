@@ -32,7 +32,6 @@ import Log
 import Lucid qualified
 import Network.HTTP.Types (notFound404, statusCode)
 import OddJobs.Job (Job (..), createJob, scheduleJob)
-import Optics.Core
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 

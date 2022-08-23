@@ -11,7 +11,6 @@ import FloraWeb.Session (FloraPage, getSession)
 import FloraWeb.Templates (defaultTemplateEnv, fromSession)
 import FloraWeb.Templates.Error (renderError)
 import Network.HTTP.Types (notFound404)
-import Optics.Core
 
 guardThatPackageExists ::
   -- | Namespace

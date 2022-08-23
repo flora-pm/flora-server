@@ -3,7 +3,6 @@ module FloraWeb.Templates.Packages.Versions where
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Lucid
-import Optics.Core
 
 import Flora.Model.Package
 import Flora.Model.Release.Types

@@ -30,9 +30,7 @@ import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import GHC.Generics
-import Optics.Core
 
-import Data.ByteString.Lazy (fromStrict)
 import Data.Data
 import Data.Maybe
 import Distribution.Orphans ()

@@ -17,7 +17,6 @@ import Effectful.Servant qualified as Servant
 import Log (Logger)
 import Network.HTTP.Types (hCookie)
 import Network.Wai
-import Optics.Core
 import Servant.API (Header, Headers)
 import Servant.Server
 import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)

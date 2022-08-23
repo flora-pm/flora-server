@@ -2,7 +2,6 @@ module FloraWeb.Templates.Admin where
 
 import Data.Text.Display
 import Lucid
-import Optics.Core
 
 import Flora.Model.Admin.Report
 import FloraWeb.Templates.Types

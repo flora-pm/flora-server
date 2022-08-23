@@ -22,7 +22,6 @@ import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
 import Lucid.Base (relaxHtmlT)
 import Lucid.Orphans ()
-import Optics.Core
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
@@ -57,7 +56,7 @@ showPackage
   numberOfDependencies
   categories =
     div_ [class_ "larger-container"] $ do
-      presentationHeader latestRelease namespace name (latestRelease.metadatasynopsis)
+      presentationHeader latestRelease namespace name (latestRelease.metadata.synopsis)
       packageBody
         package
         latestRelease

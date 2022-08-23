@@ -18,7 +18,6 @@ import Network.Wai.Handler.Warp
   )
 import Network.Wai.Log qualified as WaiLog
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
-import Optics.Core
 import Prometheus qualified
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc (procMetrics)
@@ -34,7 +33,6 @@ import Servant
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
 import Control.Exception.Safe qualified as Safe
-import Database.PostgreSQL.Simple qualified as PG
 import Effectful.Concurrent
 import Effectful.Reader.Static (runReader, withReader)
 import Effectful.Servant (effToHandler)
@@ -49,7 +47,6 @@ import Database.PostgreSQL.Simple (Connection)
 import Effectful.Dispatch.Static
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
-import Flora.Environment.Config (FloraConfig (..))
 import Flora.Environment.OddJobs qualified as OddJobs
 import Flora.OddJobs qualified as OddJobs
 import Flora.OddJobs.Types (JobsRunnerEnv (..))
@@ -69,8 +66,8 @@ runFlora :: IO ()
 runFlora = bracket (runEff getFloraEnv) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
   let baseURL = "http://localhost:" <> display (env.httpPort)
   liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
-  liftIO $ when (isJust $ env ^. (#logging % #sentryDSN)) (blueMessage "📋 Connected to Sentry endpoint")
-  liftIO $ when (env ^. (#logging % #prometheusEnabled)) $ do
+  liftIO $ when (isJust $ env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
+  liftIO $ when env.logging.prometheusEnabled $ do
     blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
     void $ Prometheus.register ghcMetrics
     void $ Prometheus.register procMetrics

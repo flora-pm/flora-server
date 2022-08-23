@@ -12,7 +12,6 @@ import Control.Monad.Reader (runReaderT)
 import Data.ByteString.Lazy
 import Data.Text (Text)
 import Lucid
-import Optics.Core
 
 import Flora.Environment (DeploymentEnv (..))
 import FloraWeb.Components.Header (header)
