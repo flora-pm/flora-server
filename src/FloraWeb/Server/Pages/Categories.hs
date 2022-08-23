@@ -6,15 +6,15 @@ import Network.HTTP.Types (notFound404)
 import Optics.Core ((^.))
 import Servant (ServerT)
 
-import qualified Flora.Model.Category.Query as Query
+import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types (Category (..))
-import qualified Flora.Model.Package.Query as Query
+import Flora.Model.Package.Query qualified as Query
 import FloraWeb.Routes.Pages.Categories
 import FloraWeb.Server.Auth
 import FloraWeb.Session (getSession)
 import FloraWeb.Templates (defaultTemplateEnv, fromSession, render)
 import FloraWeb.Templates.Error
-import qualified FloraWeb.Templates.Pages.Categories as Template
+import FloraWeb.Templates.Pages.Categories qualified as Template
 
 server :: ServerT Routes FloraPage
 server =
@@ -38,5 +38,5 @@ showHandler categorySlug = do
   case result of
     Nothing -> renderError templateEnv notFound404
     Just cat -> do
-      packagesInfo <- Query.getPackagesFromCategoryWithLatestVersion (cat ^. #categoryId)
+      packagesInfo <- Query.getPackagesFromCategoryWithLatestVersion (cat.categoryId)
       render templateEnv $ Template.showCategory cat packagesInfo

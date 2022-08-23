@@ -1,10 +1,10 @@
 module FloraWeb.Routes.Pages where
 
-import qualified FloraWeb.Routes.Pages.Admin as Admin
-import qualified FloraWeb.Routes.Pages.Categories as Categories
-import qualified FloraWeb.Routes.Pages.Packages as Packages
-import qualified FloraWeb.Routes.Pages.Search as Search
-import qualified FloraWeb.Routes.Pages.Sessions as Sessions
+import FloraWeb.Routes.Pages.Admin qualified as Admin
+import FloraWeb.Routes.Pages.Categories qualified as Categories
+import FloraWeb.Routes.Pages.Packages qualified as Packages
+import FloraWeb.Routes.Pages.Search qualified as Search
+import FloraWeb.Routes.Pages.Sessions qualified as Sessions
 import Lucid
 import Servant
 import Servant.API.Generic

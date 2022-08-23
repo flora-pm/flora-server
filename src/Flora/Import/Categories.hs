@@ -1,7 +1,7 @@
 module Flora.Import.Categories where
 
 import Control.Monad.IO.Class
-import qualified Data.Text.IO as T
+import Data.Text.IO qualified as T
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 import Flora.Import.Categories.Tuning as Tuning

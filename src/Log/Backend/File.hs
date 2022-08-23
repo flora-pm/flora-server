@@ -1,11 +1,11 @@
 module Log.Backend.File where
 
-import qualified Data.Aeson as Aeson
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Lazy as BSL
+import Data.Aeson qualified as Aeson
+import Data.ByteString.Char8 qualified as BS
+import Data.ByteString.Lazy qualified as BSL
 import Data.Kind (Type)
 import Effectful
-import qualified Effectful.Log.Logger as Log
+import Effectful.Log.Logger qualified as Log
 import GHC.Generics (Generic)
 import Log (Logger)
 import System.IO (stdout)

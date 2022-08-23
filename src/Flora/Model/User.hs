@@ -22,13 +22,13 @@ import Data.Password.Argon2
   , PasswordCheck (PasswordCheckSuccess)
   , PasswordHash
   )
-import qualified Data.Password.Argon2 as Argon2
+import Data.Password.Argon2 qualified as Argon2
 import Data.Text (Text)
 import Data.Text.Display (Display, ShowInstance (..), displayBuilder)
 import Data.Time (UTCTime)
-import qualified Data.Time as Time
+import Data.Time qualified as Time
 import Data.UUID
-import qualified Data.UUID.V4 as UUID
+import Data.UUID.V4 qualified as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)

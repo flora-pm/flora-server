@@ -2,7 +2,7 @@ module FloraWeb.Server.Tracing where
 
 import Control.Exception (SomeException, throw)
 import Data.Aeson ((.=))
-import qualified Data.Aeson as Aeson
+import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 (unpack)
 import Data.Text.Display (display)
 import Flora.Environment
@@ -16,7 +16,7 @@ import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))
 
 onException :: Logger -> DeploymentEnv -> LoggingEnv -> Maybe Request -> SomeException -> IO ()
 onException logger environment tracingEnv mRequest exception =
-  case tracingEnv ^. #sentryDSN of
+  case tracingEnv.sentryDSN of
     Nothing -> Log.runLogT "flora" logger LogAttention $ do
       logAttention "Unhandled exception" $
         Aeson.object ["exception" .= display (show exception)]

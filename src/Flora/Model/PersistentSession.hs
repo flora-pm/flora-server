@@ -1,12 +1,12 @@
 module Flora.Model.PersistentSession where
 
 import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text
 import Data.Text.Display
 import Data.Time
 import Data.UUID
-import qualified Data.UUID.V4 as UUID
+import Data.UUID.V4 qualified as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT ()
 import Database.PostgreSQL.Entity.Types
@@ -22,7 +22,7 @@ import Optics.Core
 import Web.HttpApiData
 
 import Effectful.Time (Time)
-import qualified Effectful.Time as Time
+import Effectful.Time qualified as Time
 import Flora.Model.User (UserId)
 
 newtype PersistentSessionId = PersistentSessionId {getPersistentSessionId :: UUID}
@@ -68,7 +68,7 @@ persistSession ::
 persistSession persistentSessionId userId = do
   persistentSession <- newPersistentSession userId persistentSessionId
   insertSession persistentSession
-  pure $ persistentSession ^. #persistentSessionId
+  pure $ persistentSession.persistentSessionId
 
 insertSession :: (DB :> es, IOE :> es) => PersistentSession -> Eff es ()
 insertSession = dbtToEff . insert @PersistentSession

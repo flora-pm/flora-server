@@ -5,7 +5,7 @@ module Flora.Model.Category.Types where
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import Data.UUID
-import qualified Data.UUID.V4 as UUID
+import Data.UUID.V4 qualified as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple
@@ -13,7 +13,7 @@ import Database.PostgreSQL.Simple.FromField (FromField)
 import Database.PostgreSQL.Simple.ToField (ToField)
 import Flora.Model.Package.Types
 import GHC.Generics
-import qualified Language.Souffle.Interpreted as Souffle
+import Language.Souffle.Interpreted qualified as Souffle
 import Servant
 import Text.Slugify
 

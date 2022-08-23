@@ -8,7 +8,7 @@ import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (Only))
 
 import Data.Vector (Vector)
-import qualified Database.PostgreSQL.Entity.DBT as DBT
+import Database.PostgreSQL.Entity.DBT qualified as DBT
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.User

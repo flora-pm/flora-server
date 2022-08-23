@@ -23,7 +23,7 @@ dataReport adminReport = do
         "Total Packages"
       dd_ [class_ "mt-1 text-3xl font-semibold"] $
         toHtml $
-          display (adminReport ^. #totalPackages)
+          display (adminReport.totalPackages)
 
     div_ [class_ cardClass] $ do
       dt_
@@ -31,7 +31,7 @@ dataReport adminReport = do
         "Total Users"
       dd_ [class_ "mt-1 text-3xl font-semibold"] $
         toHtml $
-          display (adminReport ^. #totalUsers)
+          display (adminReport.totalUsers)
 
     div_ [class_ cardClass] $ do
       dt_

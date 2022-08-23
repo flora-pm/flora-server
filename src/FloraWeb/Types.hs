@@ -18,7 +18,7 @@ import Control.Concurrent.MVar
 import Control.Monad.IO.Class
 import Control.Monad.Time (MonadTime (..))
 import Data.Kind (Type)
-import qualified Data.Text.Encoding as TE
+import Data.Text.Encoding qualified as TE
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Log (Logging)
@@ -48,7 +48,7 @@ data WebEnv = WebEnv
 
 fetchFloraEnv :: WebEnvStore -> IO FloraEnv
 fetchFloraEnv (WebEnvStore mvar) =
-  readMVar mvar >>= \webEnv -> pure $ webEnv ^. #floraEnv
+  readMVar mvar >>= \webEnv -> pure $ webEnv.floraEnv
 
 getWebEnv :: WebEnvStore -> IO WebEnv
 getWebEnv (WebEnvStore mvar) = readMVar mvar

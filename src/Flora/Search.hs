@@ -1,17 +1,17 @@
 module Flora.Search where
 
 import Data.Aeson
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.Text (Text)
 import Data.Text.Display (Display (..))
-import qualified Data.Text.Lazy.Builder as Builder
+import Data.Text.Lazy.Builder qualified as Builder
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector
+import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
-import qualified Log
+import Log qualified
 
 import Flora.Model.Package (Namespace (..), PackageName, formatPackage)
-import qualified Flora.Model.Package.Query as Query
+import Flora.Model.Package.Query qualified as Query
 import FloraWeb.Server.Auth (FloraPage)
 import Optics.Core
 

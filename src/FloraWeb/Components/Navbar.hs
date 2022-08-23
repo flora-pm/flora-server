@@ -95,7 +95,7 @@ logOff (Just _) sessionId =
     button_ [type_ "submit", class_ btnClasses] "Sign out"
 
 adminLink :: Bool -> Maybe User -> FloraHTML
-adminLink active (Just user) | user ^. #userFlags ^. #isAdmin = navBarLink' "/admin" "Admin Dashboard" active
+adminLink active (Just user) | user.userFlags.isAdmin = navBarLink' "/admin" "Admin Dashboard" active
 adminLink _ _ = ""
 
 darkModeToggle :: FloraHTML

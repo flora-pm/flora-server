@@ -3,8 +3,8 @@
 module Flora.Model.Package.Orphans where
 
 import Data.Text.Display
-import qualified Distribution.Types.PackageName as Cabal
-import qualified Distribution.Utils.ShortText as Cabal
+import Distribution.Types.PackageName qualified as Cabal
+import Distribution.Utils.ShortText qualified as Cabal
 
 instance Display Cabal.PackageName where
   displayBuilder = displayBuilder . Cabal.unPackageName

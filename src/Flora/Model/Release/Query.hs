@@ -14,7 +14,7 @@ module Flora.Model.Release.Query
 where
 
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector
+import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro as MVector
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne)

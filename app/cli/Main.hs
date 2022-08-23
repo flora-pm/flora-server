@@ -6,7 +6,7 @@ import Data.Text (Text)
 import DesignSystem (generateComponents)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
-import qualified Flora.Model.User.Query as Query
+import Flora.Model.User.Query qualified as Query
 import GHC.Generics (Generic)
 import Optics.Core
 import Options.Applicative

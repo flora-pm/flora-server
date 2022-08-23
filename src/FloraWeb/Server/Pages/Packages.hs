@@ -14,21 +14,21 @@ import Servant (ServerT)
 import Data.Maybe (fromMaybe)
 import Data.Text.Display (display)
 import Flora.Model.Package
-import qualified Flora.Model.Package.Query as Query
-import qualified Flora.Model.Release.Query as Query
+import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
-import qualified Flora.Search as Search
+import Flora.Search qualified as Search
 import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Guards
 import FloraWeb.Session
 import FloraWeb.Templates
-import qualified FloraWeb.Templates.Packages.Dependencies as PackageDependencies
-import qualified FloraWeb.Templates.Packages.Dependents as PackageDependents
-import qualified FloraWeb.Templates.Packages.Versions as PackageVersions
-import qualified FloraWeb.Templates.Pages.Packages as Packages
-import qualified FloraWeb.Templates.Pages.Search as Search
-import qualified Log
+import FloraWeb.Templates.Packages.Dependencies qualified as PackageDependencies
+import FloraWeb.Templates.Packages.Dependents qualified as PackageDependents
+import FloraWeb.Templates.Packages.Versions qualified as PackageVersions
+import FloraWeb.Templates.Pages.Packages qualified as Packages
+import FloraWeb.Templates.Pages.Search qualified as Search
+import Log qualified
 import Optics.Core
 
 server :: ServerT Routes FloraPage
@@ -53,9 +53,9 @@ indexHandler pageParam = do
 showHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName
-  releases <- Query.getAllReleases (package ^. #packageId)
+  releases <- Query.getAllReleases (package.packageId)
   let latestRelease = maximumBy (compare `on` version) releases
-  showPackageVersion namespace packageName (latestRelease ^. #version)
+  showPackageVersion namespace packageName (latestRelease.version)
 
 showVersionHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
 showVersionHandler namespace packageName version =
@@ -67,13 +67,13 @@ showPackageVersion namespace packageName version = do
   templateEnv <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
   release <- guardThatReleaseExists namespace packageName version
-  releases <- Query.getReleases (package ^. #packageId)
-  numberOfReleases <- Query.getNumberOfReleases (package ^. #packageId)
+  releases <- Query.getReleases (package.packageId)
+  numberOfReleases <- Query.getNumberOfReleases (package.packageId)
   dependents <- Query.getPackageDependents namespace packageName
-  releaseDependencies <- Query.getRequirements (release ^. #releaseId)
-  categories <- Query.getPackageCategories (package ^. #packageId)
+  releaseDependencies <- Query.getRequirements (release.releaseId)
+  categories <- Query.getPackageCategories (package.packageId)
   numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName
-  numberOfDependencies <- Query.getNumberOfPackageRequirements (release ^. #releaseId)
+  numberOfDependencies <- Query.getNumberOfPackageRequirements (release.releaseId)
   render templateEnv $
     Packages.showPackage
       release
@@ -103,10 +103,10 @@ showDependenciesHandler namespace packageName = do
   session <- getSession
   templateEnv <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
-  releases <- Query.getAllReleases (package ^. #packageId)
+  releases <- Query.getAllReleases (package.packageId)
   let latestRelease = maximumBy (compare `on` version) releases
   latestReleasedependencies <-
-    Query.getAllRequirements (latestRelease ^. #releaseId)
+    Query.getAllRequirements (latestRelease.releaseId)
   render templateEnv $
     PackageDependencies.showDependencies
       ("Dependencies of " <> display namespace <> "/" <> display packageName)
@@ -117,5 +117,5 @@ listVersionsHandler namespace packageName = do
   session <- getSession
   templateEnv <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
-  releases <- Query.getAllReleases (package ^. #packageId)
+  releases <- Query.getAllReleases (package.packageId)
   render templateEnv $ PackageVersions.listVersions namespace packageName releases

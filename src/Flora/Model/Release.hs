@@ -1,6 +1,6 @@
 module Flora.Model.Release where
 
-import qualified Crypto.Hash.MD5 as MD5
+import Crypto.Hash.MD5 qualified as MD5
 import Data.ByteString.Lazy (fromStrict, toStrict)
 import Data.Maybe (fromJust)
 import Data.UUID (fromByteString, toByteString)

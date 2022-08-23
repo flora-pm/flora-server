@@ -6,7 +6,7 @@ import Servant
 import Servant.API.Generic
 
 import FloraWeb.Autoreload (AutoreloadRoute)
-import qualified FloraWeb.Routes.Pages as Pages
+import FloraWeb.Routes.Pages qualified as Pages
 
 type ServerRoutes = NamedRoutes Routes
 

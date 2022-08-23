@@ -3,14 +3,14 @@
 
 module Flora.Model.Package.Types where
 
-import qualified Crypto.Hash.MD5 as MD5
+import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Text (Text, isPrefixOf, unpack)
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
@@ -22,10 +22,10 @@ import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
 import GHC.Generics
-import qualified Language.Souffle.Interpreted as Souffle
+import Language.Souffle.Interpreted qualified as Souffle
 import Lucid
 import Servant (FromHttpApiData (..))
-import qualified Text.PrettyPrint as PP
+import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
 import Web.HttpApiData (ToHttpApiData (..))
 

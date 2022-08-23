@@ -12,15 +12,15 @@ module Flora.Model.Package.Component
   )
 where
 
-import qualified Crypto.Hash.MD5 as MD5
+import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.ByteString
 import Data.Text (Text)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Text.Display
 import Data.Text.Encoding
-import qualified Data.Text.Lazy.Builder as B
+import Data.Text.Lazy.Builder qualified as B
 import Data.UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
@@ -36,7 +36,7 @@ import Data.ByteString.Lazy (fromStrict)
 import Data.Data
 import Data.Maybe
 import Distribution.Orphans ()
-import qualified Distribution.PackageDescription as Condition
+import Distribution.PackageDescription qualified as Condition
 import Flora.Model.Release.Types
 
 newtype ComponentId = ComponentId {getComponentId :: UUID}
@@ -117,8 +117,8 @@ instance ToRow PackageComponent where
     let componentId' = componentId
         releaseId' = releaseId
         componentMetadata' = metadata
-        componentName' = canonicalForm ^. #componentName
-        componentType' = canonicalForm ^. #componentType
+        componentName' = canonicalForm.componentName
+        componentType' = canonicalForm.componentType
      in toRow PackageComponent'{..}
 
 instance FromRow PackageComponent where

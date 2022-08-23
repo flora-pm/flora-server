@@ -17,7 +17,7 @@ addAdmin :: ([DB, IOE] :>> es) => AdminCreationForm -> Eff es User
 addAdmin form = do
   adminUser <- mkAdmin form
   insertUser adminUser
-  unlockAccount (adminUser ^. #userId)
+  unlockAccount (adminUser.userId)
   pure adminUser
 
 lockAccount :: ([DB, IOE] :>> es) => UserId -> Eff es ()

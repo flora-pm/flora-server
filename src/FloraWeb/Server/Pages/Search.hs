@@ -2,11 +2,11 @@ module FloraWeb.Server.Pages.Search where
 
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
-import qualified Flora.Search as Search
+import Flora.Search qualified as Search
 import FloraWeb.Routes.Pages.Search (Routes, Routes' (..))
 import FloraWeb.Session
 import FloraWeb.Templates (TemplateEnv (..), defaultTemplateEnv, fromSession, render)
-import qualified FloraWeb.Templates.Pages.Search as Search
+import FloraWeb.Templates.Pages.Search qualified as Search
 import Lucid (Html)
 import Optics.Core
 import Servant (ServerT)

@@ -53,14 +53,14 @@ import Control.Monad (void)
 import Control.Monad.Catch
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Kind
-import qualified Data.List as List
+import Data.List qualified as List
 import Data.Maybe (fromJust)
 import Data.Password.Argon2 (Argon2, PasswordHash, mkPassword)
 import Data.Pool
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
-import qualified Data.UUID as UUID
+import Data.UUID qualified as UUID
 import Data.Word
 import Database.PostgreSQL.Entity.DBT ()
 import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
@@ -74,8 +74,8 @@ import GHC.IO (mkUserError)
 import GHC.Stack
 import GHC.TypeLits
 import Hedgehog (MonadGen (..))
-import qualified Hedgehog.Gen as H
-import qualified Hedgehog.Range as Range
+import Hedgehog.Gen qualified as H
+import Hedgehog.Range qualified as Range
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import Optics.Core
 import Servant.API ()
@@ -83,16 +83,16 @@ import Servant.API.UVerb.Union
 import Servant.Client
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Tasty (TestTree)
-import qualified Test.Tasty as Test
-import qualified Test.Tasty.HUnit as Test
+import Test.Tasty qualified as Test
+import Test.Tasty.HUnit qualified as Test
 
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Model.User
-import qualified Flora.Model.User.Query as Query
+import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
-import qualified Flora.Model.User.Update as Update
+import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
 

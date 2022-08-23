@@ -3,7 +3,7 @@ module FloraWeb.Routes.Pages.Admin where
 import Data.Text (Text)
 import Flora.Model.User
 import Lucid
-import qualified OddJobs.Endpoints as OddJobs
+import OddJobs.Endpoints qualified as OddJobs
 import Servant
 import Servant.API.Generic
 import Servant.HTML.Lucid

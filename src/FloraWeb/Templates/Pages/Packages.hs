@@ -4,12 +4,12 @@ import Data.Foldable (fold)
 import Data.Text (Text, pack)
 import Data.Text.Display
 import Data.Time (defaultTimeLocale)
-import qualified Data.Time as Time
+import Data.Time qualified as Time
 import Data.Vector (Vector, forM_)
-import qualified Data.Vector as V
-import qualified Data.Vector as Vector
+import Data.Vector qualified as V
+import Data.Vector qualified as Vector
 import Distribution.Pretty (pretty)
-import qualified Distribution.SPDX.License as SPDX
+import Distribution.SPDX.License qualified as SPDX
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
@@ -17,7 +17,7 @@ import Flora.Model.Package.Types
   , PackageName
   )
 import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
-import qualified FloraWeb.Links as Links
+import FloraWeb.Links qualified as Links
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
 import Lucid.Base (relaxHtmlT)
@@ -25,7 +25,7 @@ import Lucid.Orphans ()
 import Optics.Core
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
-import qualified Text.PrettyPrint as PP
+import Text.PrettyPrint qualified as PP
 
 data Target = Dependents | Dependencies | Versions
   deriving stock (Eq, Ord)
@@ -57,7 +57,7 @@ showPackage
   numberOfDependencies
   categories =
     div_ [class_ "larger-container"] $ do
-      presentationHeader latestRelease namespace name (latestRelease ^. #metadata % #synopsis)
+      presentationHeader latestRelease namespace name (latestRelease.metadatasynopsis)
       packageBody
         package
         latestRelease
@@ -105,7 +105,7 @@ packageBody
         div_ [class_ "package-left-column"] $ do
           ul_ [class_ "package-left-rows grid-rows-3 md:sticky md:top-28"] $ do
             displayCategories categories
-            displayLicense (metadata ^. #license)
+            displayLicense (metadata.license)
             displayLinks packageName latestRelease metadata
             displayVersions namespace packageName packageReleases numberOfReleases
         div_ [class_ "package-readme-column grow"] $ do
@@ -114,7 +114,7 @@ packageBody
         div_ [class_ "package-right-column md:max-w-xs"] $ do
           ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
             displayInstructions packageName latestRelease
-            displayMaintainer (metadata ^. #maintainer)
+            displayMaintainer (metadata.maintainer)
             displayDependencies (namespace, packageName) numberOfDependencies dependencies
             displayDependents (namespace, packageName) numberOfDependents dependents
 
@@ -169,10 +169,10 @@ displayVersions namespace packageName versions numberOfReleases =
     displayVersion release =
       li_ [class_ "release"] $ do
         a_
-          [class_ "release-version", href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release ^. #version)))]
-          (toHtml $ display (release ^. #version))
+          [class_ "release-version", href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release.version)))]
+          (toHtml $ display (release.version))
         " "
-        case release ^. #uploadedAt of
+        case release.uploadedAt of
           Nothing -> ""
           Just ts ->
             span_ [] (toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts)

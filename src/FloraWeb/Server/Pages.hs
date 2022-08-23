@@ -8,16 +8,16 @@ import Servant
 
 import FloraWeb.Routes.Pages
 import FloraWeb.Server.Auth
-import qualified FloraWeb.Server.Pages.Admin as Admin
-import qualified FloraWeb.Server.Pages.Categories as Categories
-import qualified FloraWeb.Server.Pages.Packages as Packages
-import qualified FloraWeb.Server.Pages.Search as Search
-import qualified FloraWeb.Server.Pages.Sessions as Sessions
+import FloraWeb.Server.Pages.Admin qualified as Admin
+import FloraWeb.Server.Pages.Categories qualified as Categories
+import FloraWeb.Server.Pages.Packages qualified as Packages
+import FloraWeb.Server.Pages.Search qualified as Search
+import FloraWeb.Server.Pages.Sessions qualified as Sessions
 import FloraWeb.Session
 import FloraWeb.Templates
-import qualified FloraWeb.Templates.Pages.Home as Home
-import qualified OddJobs.Endpoints as OddJobs
-import qualified OddJobs.Types as OddJobs
+import FloraWeb.Templates.Pages.Home qualified as Home
+import OddJobs.Endpoints qualified as OddJobs
+import OddJobs.Types qualified as OddJobs
 
 server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPage
 server cfg env =

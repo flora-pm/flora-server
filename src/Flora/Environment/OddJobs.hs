@@ -4,7 +4,7 @@
 module Flora.Environment.OddJobs where
 
 import Data.Pool hiding (PoolConfig)
-import qualified Database.PostgreSQL.Simple as PG
+import Database.PostgreSQL.Simple qualified as PG
 import Log hiding (LogLevel)
 import OddJobs.ConfigBuilder
 import OddJobs.Job (Config (..))

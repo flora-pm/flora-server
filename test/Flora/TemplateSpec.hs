@@ -1,11 +1,11 @@
 module Flora.TemplateSpec where
 
-import qualified Distribution.Version as Version
+import Distribution.Version qualified as Version
 import Servant
 
 import Flora.Model.Package
 import Flora.TestUtils (TestEff, TestTree, assertEqual, testThese, testThis)
-import qualified FloraWeb.Links as Links
+import FloraWeb.Links qualified as Links
 
 spec :: TestEff TestTree
 spec =

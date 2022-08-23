@@ -2,7 +2,7 @@ module FloraWeb.Templates.Packages.Dependents where
 
 import Data.Text (Text)
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector
+import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Flora.Model.Package (Namespace, PackageName)
 import FloraWeb.Components.PackageListHeader (presentationHeader)

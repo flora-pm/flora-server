@@ -1,13 +1,13 @@
 module Flora.Import.Categories.Tuning where
 
 import Control.Monad.IO.Class
-import qualified Data.ByteString.Char8 as S8
+import Data.ByteString.Char8 qualified as S8
 import Data.Text (Text)
 import Data.Text.Display
-import qualified Data.Text.Encoding as T
-import qualified Data.Text.Internal.Builder as TB
+import Data.Text.Encoding qualified as T
+import Data.Text.Internal.Builder qualified as TB
 import GHC.Generics
-import qualified Language.Souffle.Interpreted as Souffle
+import Language.Souffle.Interpreted qualified as Souffle
 import System.IO (stderr)
 
 type CName = Text
