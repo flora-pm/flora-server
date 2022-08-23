@@ -77,9 +77,9 @@ normalise input = do
         Souffle.addFacts prog input
         Souffle.run prog
         Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
-  if (not . null) (normalisationIssues result)
+  if (not . null) result.normalisationIssues
     then do
-      logStdErr $ "[!] Could not normalise these categories: " <> display (normalisationIssues result)
+      logStdErr $ "[!] Could not normalise these categories: " <> display result.normalisationIssues
       pure result
     else pure result
 

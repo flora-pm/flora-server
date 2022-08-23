@@ -24,7 +24,6 @@ import Env
   )
 import Flora.Environment.Config
 import GHC.Generics
-import Optics.Core ((^.))
 
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv

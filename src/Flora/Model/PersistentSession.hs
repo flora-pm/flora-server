@@ -18,7 +18,6 @@ import Database.PostgreSQL.Transact ()
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Env.Generic
-import Optics.Core
 import Web.HttpApiData
 
 import Effectful.Time (Time)
@@ -70,7 +69,7 @@ persistSession persistentSessionId userId = do
   insertSession persistentSession
   pure $ persistentSession.persistentSessionId
 
-insertSession :: (DB :> es, IOE :> es) => PersistentSession -> Eff es ()
+insertSession :: (DB :> es) => PersistentSession -> Eff es ()
 insertSession = dbtToEff . insert @PersistentSession
 
 deleteSession :: (DB :> es, IOE :> es) => PersistentSessionId -> Eff es ()
