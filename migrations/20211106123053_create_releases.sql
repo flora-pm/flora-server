@@ -13,5 +13,4 @@ create table if not exists releases (
 
 create index on releases(package_id);
 create index on releases(uploaded_at);
-create index on releases(readme);
 create unique index on releases(package_id, version);
