@@ -218,7 +218,7 @@ extractPackageDataFromCabal userId genericDesc = do
   let sourceRepos = getRepoURL packageName $ packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
-  categories <- liftIO $ (. normalisedCategories) <$> Tuning.normalise categoryList
+  categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
   let package =
         Package
           { packageId

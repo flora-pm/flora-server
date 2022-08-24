@@ -48,7 +48,7 @@ publishForExistingPackage requirements components release package = do
       liftIO $
         T.putStrLn $
           "[+] Inserting the following components: "
-            <> display (fmap (. canonicalForm) components)
+            <> display (fmap (.canonicalForm) components)
             <> " of "
             <> display (package.name)
             <> " v"
@@ -67,7 +67,7 @@ publishForExistingPackage requirements components release package = do
 publishForNewPackage :: ([DB, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
 publishForNewPackage requirements components release userPackageCategories package = do
   liftIO $ T.putStrLn $ "[+] Normalising user-supplied categories: " <> display userPackageCategories
-  newCategories <- liftIO $ (. normalisedCategories) <$> Tuning.normalise userPackageCategories
+  newCategories <- liftIO $ (.normalisedCategories) <$> Tuning.normalise userPackageCategories
   liftIO $ T.putStrLn $ "[+] Inserting package " <> display (package.name)
   liftIO $
     T.putStrLn $
