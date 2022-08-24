@@ -11,13 +11,12 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful (Eff, IOE, type (:>>))
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Flora.Model.User
-import Optics.Core ((^.))
 
 addAdmin :: ([DB, IOE] :>> es) => AdminCreationForm -> Eff es User
 addAdmin form = do
   adminUser <- mkAdmin form
   insertUser adminUser
-  unlockAccount (adminUser ^. #userId)
+  unlockAccount (adminUser.userId)
   pure adminUser
 
 lockAccount :: ([DB, IOE] :>> es) => UserId -> Eff es ()

@@ -5,14 +5,14 @@ module FloraWeb.Server.Logging
 where
 
 import Data.Kind (Type)
-import qualified Effectful.Log as Log
+import Effectful.Log qualified as Log
 import Flora.Environment.Config
 import Log (Logger, defaultLogLevel)
 
 import Data.Text.Display (display)
 import Effectful
 import Effectful.Log (Logging)
-import qualified Effectful.Log.Backend.StandardOutput as Log
+import Effectful.Log.Backend.StandardOutput qualified as Log
 import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
 -- | Wrapper around 'Log.runLogT' with necessary metadata

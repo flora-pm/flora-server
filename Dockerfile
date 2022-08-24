@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM gbogard/haskell-bullseye:8.10.7
+FROM gbogard/haskell-bullseye:9.2.4
 
 # generate a working directory
 WORKDIR /flora-server 

@@ -1,14 +1,13 @@
 module FloraWeb.Templates.Packages.Versions where
 
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector
+import Data.Vector qualified as Vector
 import Lucid
-import Optics.Core
 
 import Flora.Model.Package
 import Flora.Model.Release.Types
-import qualified FloraWeb.Components.VersionListHeader as Template
-import qualified FloraWeb.Components.VersionListItem as Template
+import FloraWeb.Components.VersionListHeader qualified as Template
+import FloraWeb.Components.VersionListItem qualified as Template
 import FloraWeb.Templates
 
 listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
@@ -21,4 +20,4 @@ versionListing :: Namespace -> PackageName -> Vector Release -> FloraHTML
 versionListing namespace packageName releases = do
   ul_ [class_ "package-list space-y-2"] $ do
     Vector.forM_ releases $ \release -> do
-      Template.versionListItem namespace packageName (release ^. #version)
+      Template.versionListItem namespace packageName (release.version)

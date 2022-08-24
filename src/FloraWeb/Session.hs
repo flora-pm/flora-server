@@ -11,7 +11,7 @@ module FloraWeb.Session
   )
 where
 
-import qualified Data.UUID as UUID
+import Data.UUID qualified as UUID
 import Servant (Header, Headers, addHeader, getResponse)
 import Web.Cookie
 

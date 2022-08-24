@@ -11,13 +11,13 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Streaming (chunksOf)
 import Streaming.Prelude (Of, Stream)
-import qualified Streaming.Prelude as Str
-import qualified System.Directory as System
+import Streaming.Prelude qualified as Str
+import System.Directory qualified as System
 import System.FilePath
 
 import Flora.Import.Package (loadAndExtractCabalFile, persistImportOutput)
-import qualified Flora.Model.Package.Update as Update
-import qualified Flora.Model.Release.Update as Update
+import Flora.Model.Package.Update qualified as Update
+import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory

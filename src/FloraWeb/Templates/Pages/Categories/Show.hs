@@ -2,7 +2,7 @@ module FloraWeb.Templates.Pages.Categories.Show where
 
 import Data.Text (Text)
 import Data.Vector (Vector)
-import qualified Data.Vector as V
+import Data.Vector qualified as V
 import Distribution.Types.Version (Version)
 import Lucid
 

@@ -13,14 +13,13 @@ import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Distribution.SPDX.License ()
-import qualified Distribution.SPDX.License as SPDX
+import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version
 import GHC.Generics (Generic)
-import Optics.Core
 
 import Flora.Model.Package
 import Flora.Model.Release.Orphans ()
-import qualified Lucid
+import Lucid qualified
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
@@ -71,7 +70,7 @@ data Release = Release
     via (GenericEntity '[TableName "releases"] Release)
 
 instance Ord Release where
-  compare x y = compare (x ^. #version) (y ^. #version)
+  compare x y = compare (x.version) (y.version)
 
 data ReleaseMetadata = ReleaseMetadata
   { license :: SPDX.License

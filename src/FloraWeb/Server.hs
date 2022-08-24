@@ -4,11 +4,11 @@ import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 import Control.Monad (void, when)
 import Data.Maybe (isJust)
-import qualified Data.Pool as Pool
+import Data.Pool qualified as Pool
 import Data.Text.Display (display)
 import Effectful
 import Log (Logger)
-import qualified Log
+import Log qualified
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.Wai.Handler.Warp
   ( defaultSettings
@@ -16,10 +16,9 @@ import Network.Wai.Handler.Warp
   , setOnException
   , setPort
   )
-import qualified Network.Wai.Log as WaiLog
+import Network.Wai.Log qualified as WaiLog
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
-import Optics.Core
-import qualified Prometheus
+import Prometheus qualified
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc (procMetrics)
 import Servant
@@ -33,55 +32,53 @@ import Servant
   )
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
-import qualified Control.Exception.Safe as Safe
-import qualified Database.PostgreSQL.Simple as PG
+import Control.Exception.Safe qualified as Safe
 import Effectful.Concurrent
 import Effectful.Reader.Static (runReader, withReader)
 import Effectful.Servant (effToHandler)
 import Effectful.Time (Time, runCurrentTimeIO)
-import qualified Network.HTTP.Client as HTTP
-import qualified OddJobs.Endpoints as OddJobs
+import Network.HTTP.Client qualified as HTTP
+import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Job (startJobRunner)
-import qualified OddJobs.Types as OddJobs
+import OddJobs.Types qualified as OddJobs
 
 import Data.Pool (Pool)
 import Database.PostgreSQL.Simple (Connection)
 import Effectful.Dispatch.Static
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
-import Flora.Environment.Config (FloraConfig (..))
-import qualified Flora.Environment.OddJobs as OddJobs
-import qualified Flora.OddJobs as OddJobs
+import Flora.Environment.OddJobs qualified as OddJobs
+import Flora.OddJobs qualified as OddJobs
 import Flora.OddJobs.Types (JobsRunnerEnv (..))
 import FloraWeb.Autoreload (AutoreloadRoute)
-import qualified FloraWeb.Autoreload as Autoreload
+import FloraWeb.Autoreload qualified as Autoreload
 import FloraWeb.Routes
-import qualified FloraWeb.Routes.Pages as Pages
+import FloraWeb.Routes.Pages qualified as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler, runVisitorSession)
 import FloraWeb.Server.Logging (runLog)
-import qualified FloraWeb.Server.Logging as Logging
+import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Server.Metrics
-import qualified FloraWeb.Server.Pages as Pages
+import FloraWeb.Server.Pages qualified as Pages
 import FloraWeb.Server.Tracing
 import FloraWeb.Types
 
 runFlora :: IO ()
 runFlora = bracket (runEff getFloraEnv) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
-  let baseURL = "http://localhost:" <> display (env ^. #httpPort)
+  let baseURL = "http://localhost:" <> display (env.httpPort)
   liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
-  liftIO $ when (isJust $ env ^. (#logging % #sentryDSN)) (blueMessage "📋 Connected to Sentry endpoint")
-  liftIO $ when (env ^. (#logging % #prometheusEnabled)) $ do
+  liftIO $ when (isJust $ env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
+  liftIO $ when env.logging.prometheusEnabled $ do
     blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
     void $ Prometheus.register ghcMetrics
     void $ Prometheus.register procMetrics
-  let withLogger = Logging.makeLogger (env ^. #logging ^. #logger)
+  let withLogger = Logging.makeLogger (env.logging.logger)
   withLogger $ \appLogger ->
     runServer appLogger env
 
 shutdownFlora :: FloraEnv -> Eff '[IOE] ()
 shutdownFlora env =
   liftIO $
-    Pool.destroyAllResources (env ^. #pool)
+    Pool.destroyAllResources (env.pool)
 
 logException ::
   DeploymentEnv ->
@@ -98,35 +95,35 @@ runServer :: (Time :> es, Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> 
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   let runnerEnv = JobsRunnerEnv httpManager
-  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv ^. #config) appLogger (floraEnv ^. #pool)
+  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv.config) appLogger (floraEnv.pool)
       oddJobsCfg =
         OddJobs.makeConfig
           runnerEnv
-          (floraEnv ^. #config)
+          (floraEnv.config)
           appLogger
-          (floraEnv ^. #jobsPool)
+          (floraEnv.jobsPool)
           OddJobs.runner
 
   forkIO $
     unsafeEff_ $
-      Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv ^. #environment) appLogger)
-  loggingMiddleware <- Logging.runLog (floraEnv ^. #environment) appLogger WaiLog.mkLogMiddleware
+      Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv.environment) appLogger)
+  loggingMiddleware <- Logging.runLog (floraEnv.environment) appLogger WaiLog.mkLogMiddleware
   oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv
   let warpSettings =
-        setPort (fromIntegral $ floraEnv ^. #httpPort) $
+        setPort (fromIntegral $ floraEnv.httpPort) $
           setOnException
             ( onException
                 appLogger
-                (floraEnv ^. #environment)
-                (floraEnv ^. #logging)
+                (floraEnv.environment)
+                (floraEnv.logging)
             )
             defaultSettings
   liftIO
     $ runSettings warpSettings
-    $ prometheusMiddleware (floraEnv ^. #environment) (floraEnv ^. #logging)
+    $ prometheusMiddleware (floraEnv.environment) (floraEnv.logging)
       . heartbeatMiddleware
       . loggingMiddleware
       . const
@@ -134,7 +131,7 @@ runServer appLogger floraEnv = do
 
 mkServer :: Logger -> WebEnvStore -> FloraEnv -> OddJobs.UIConfig -> OddJobs.Env -> Application
 mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
-  genericServeTWithContext (naturalTransform (floraEnv ^. #environment) logger webEnvStore) (floraServer (floraEnv ^. #pool) cfg jobsRunnerEnv) (genAuthServerContext logger floraEnv)
+  genericServeTWithContext (naturalTransform (floraEnv.environment) logger webEnvStore) (floraServer (floraEnv.pool) cfg jobsRunnerEnv) (genAuthServerContext logger floraEnv)
 
 floraServer :: Pool Connection -> OddJobs.UIConfig -> OddJobs.Env -> Routes (AsServerT Flora)
 floraServer pool cfg jobsRunnerEnv =

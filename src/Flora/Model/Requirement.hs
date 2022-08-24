@@ -1,6 +1,6 @@
 module Flora.Model.Requirement where
 
-import qualified Crypto.Hash.MD5 as MD5
+import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Data
 import Data.Text (Text)

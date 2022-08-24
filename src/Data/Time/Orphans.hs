@@ -2,8 +2,8 @@
 
 module Data.Time.Orphans where
 
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TL
+import Data.Text.Lazy qualified as TL
+import Data.Text.Lazy.Encoding qualified as TL
 import Data.Time
 import Data.Time.ISO8601
 import Servant

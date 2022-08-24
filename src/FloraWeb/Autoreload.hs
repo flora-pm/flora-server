@@ -3,10 +3,10 @@ module FloraWeb.Autoreload where
 -- import Control.Monad (void)
 import Control.Monad.IO.Class
 import Data.Text (Text)
-import qualified Data.Text.IO as T
+import Data.Text.IO qualified as T
 import FloraWeb.Server.Auth (FloraDevSocket)
 import Network.WebSockets (Connection)
-import qualified Network.WebSockets as Websocket
+import Network.WebSockets qualified as Websocket
 import Servant
 import Servant.API.Generic
 import Servant.API.WebSocket

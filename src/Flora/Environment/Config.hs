@@ -20,7 +20,7 @@ import Data.Text
 import Data.Text.Display (Display (..))
 import Data.Time (NominalDiffTime)
 import Data.Word (Word16)
-import qualified Database.PostgreSQL.Simple as PG
+import Database.PostgreSQL.Simple qualified as PG
 import Env
   ( AsUnread (unread)
   , Error (..)

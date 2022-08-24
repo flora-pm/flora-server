@@ -5,14 +5,14 @@ module Flora.Model.Category.Update where
 import Control.Monad (void)
 import Control.Monad.IO.Class
 import Data.Text (Text)
-import qualified Data.Text.IO as T
+import Data.Text.IO qualified as T
 import Database.PostgreSQL.Entity (insert)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
-import qualified Flora.Model.Category.Query as Query
+import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 

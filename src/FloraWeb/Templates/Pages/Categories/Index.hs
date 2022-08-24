@@ -1,7 +1,7 @@
 module FloraWeb.Templates.Pages.Categories.Index where
 
 import Data.Vector (Vector)
-import qualified Data.Vector as V
+import Data.Vector qualified as V
 import Flora.Model.Category (Category (..))
 import FloraWeb.Templates (FloraHTML)
 import Lucid

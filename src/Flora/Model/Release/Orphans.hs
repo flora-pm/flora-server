@@ -3,12 +3,12 @@
 module Flora.Model.Release.Orphans where
 
 import Data.Aeson (ToJSON (..))
-import qualified Data.Aeson.Encoding as Aeson
+import Data.Aeson.Encoding qualified as Aeson
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as C8
-import qualified Data.Text as Text
+import Data.ByteString.Char8 qualified as C8
+import Data.Text qualified as Text
 import Data.Text.Display
-import qualified Data.Text.Lazy.Builder as Builder
+import Data.Text.Lazy.Builder qualified as Builder
 import Database.PostgreSQL.Simple.FromField
   ( Conversion
   , Field
@@ -20,10 +20,10 @@ import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Database.PostgreSQL.Simple.Types (PGArray (..))
 import Distribution.Parsec
 import Distribution.Pretty (prettyShow)
-import qualified Distribution.Pretty as Pretty
-import qualified Distribution.SPDX.License as SPDX
+import Distribution.Pretty qualified as Pretty
+import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version
-import qualified Distribution.Types.Version as Cabal
+import Distribution.Types.Version qualified as Cabal
 import Distribution.Utils.Generic (fromUTF8BS)
 import Servant (FromHttpApiData (..), ToHttpApiData (..))
 

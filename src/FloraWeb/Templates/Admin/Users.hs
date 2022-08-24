@@ -1,7 +1,6 @@
 module FloraWeb.Templates.Admin.Users where
 
 import Lucid
-import Optics.Core
 
 import Data.Foldable (forM_)
 import Data.Vector (Vector)
@@ -32,7 +31,7 @@ displayUser User{username, email, userFlags} = do
   tr_ $ do
     td_ [class_ "px-6 py-4 whitespace-nowrap text-sm font-medium"] (text username)
     td_ [class_ "px-6 py-4 whitespace-nowrap text-sm font-medium"] (text email)
-    td_ [class_ "px-6 py-4 whitespace-nowrap text-sm font-medium"] $ if userFlags ^. #isAdmin then "Admin" else "User"
+    td_ [class_ "px-6 py-4 whitespace-nowrap text-sm font-medium"] $ if userFlags.isAdmin then "Admin" else "User"
 
 showUser :: User -> FloraHTML
 showUser _user = undefined

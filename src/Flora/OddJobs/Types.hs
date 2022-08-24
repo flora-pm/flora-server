@@ -3,11 +3,11 @@
 
 module Flora.OddJobs.Types where
 
-import qualified Commonmark
+import Commonmark qualified
 import Control.Exception (Exception)
 import Data.Aeson
 import Data.Text (Text)
-import qualified Data.Text as Text
+import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
@@ -15,12 +15,12 @@ import Distribution.Pretty
 import Distribution.Version (Version, mkVersion, versionNumbers)
 import Effectful
 import Effectful.Log
-import qualified Effectful.Log as LogEff
+import Effectful.Log qualified as LogEff
 import Effectful.Reader.Static (Reader, runReader)
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Log hiding (LogLevel (..))
-import qualified Log
+import Log qualified
 import Network.HTTP.Client
 import OddJobs.Job (Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (FailureMode)
@@ -33,7 +33,7 @@ import Effectful.Time (Time, runCurrentTimeIO)
 import Flora.Environment.Config
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Release.Types (ReleaseId (..))
-import qualified FloraWeb.Server.Logging as Logging
+import FloraWeb.Server.Logging qualified as Logging
 
 type JobsRunner =
   Eff

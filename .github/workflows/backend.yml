@@ -32,7 +32,7 @@ jobs:
       id: setup-haskell
       uses: haskell/actions/setup@v1
       with:
-        ghc-version: "8.10.7"
+        ghc-version: "9.2.4"
         cabal-version: "latest"
 
     - name: Configure environment

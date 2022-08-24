@@ -2,13 +2,13 @@ module FloraWeb.Server.Pages.Sessions where
 
 import Data.Password.Argon2
 import Data.Text.Display
-import qualified Log
+import Log qualified
 import Optics.Core
 
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Orphans ()
-import qualified Flora.Model.User.Query as Query
+import Flora.Model.User.Query qualified as Query
 import FloraWeb.Routes.Pages.Sessions
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Utils
@@ -28,7 +28,7 @@ server =
 newSessionHandler :: FloraPage (Union NewSessionResponses)
 newSessionHandler = do
   session <- getSession
-  let mUser = session ^. #mUser
+  let mUser = session.mUser
   case mUser of
     Nothing -> do
       Log.logInfo_ "[+] No user logged-in"
@@ -51,10 +51,10 @@ createSessionHandler LoginForm{email, password} = do
               & (#flashError ?~ mkError "Could not authenticate")
       respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
     Just user ->
-      if validatePassword (mkPassword password) (user ^. #password)
+      if validatePassword (mkPassword password) (user.password)
         then do
           Log.logInfo_ "[+] User connected!"
-          sessionId <- persistSession (session ^. #sessionId) (user ^. #userId)
+          sessionId <- persistSession (session.sessionId) (user.userId)
           let sessionCookie = craftSessionCookie sessionId True
           respond $ WithStatus @301 $ redirectWithCookie "/" sessionCookie
         else do

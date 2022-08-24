@@ -4,24 +4,24 @@ module DesignSystem where
 
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as ByteString
+import Data.ByteString.Lazy qualified as ByteString
 import Data.Foldable (forM_)
 import Data.Functor.Identity (runIdentity)
-import qualified Data.UUID as UUID
+import Data.UUID qualified as UUID
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector
+import Data.Vector qualified as Vector
 import Effectful
 import Lucid.Base
 
 import Data.Text (Text)
-import qualified Data.Text.Lazy as TL
+import Data.Text.Lazy qualified as TL
 import Flora.Model.Category
-import qualified Flora.Model.Category as Category
+import Flora.Model.Category qualified as Category
 import Flora.Model.Package
 import Flora.Search
-import qualified FloraWeb.Components.CategoryCard as Component
-import qualified FloraWeb.Components.PackageListItem as Component
-import qualified FloraWeb.Components.PaginationNav as Component
+import FloraWeb.Components.CategoryCard qualified as Component
+import FloraWeb.Components.PackageListItem qualified as Component
+import FloraWeb.Components.PaginationNav qualified as Component
 import FloraWeb.Templates (FloraHTML, defaultTemplateEnv, defaultsToEnv)
 import Lucid
 import PyF (fmt)

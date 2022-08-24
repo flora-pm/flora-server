@@ -3,10 +3,10 @@ module FloraWeb.Components.PaginationNav where
 import Control.Monad (when)
 import Data.Text (Text)
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector
+import Data.Vector qualified as Vector
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.Utils
-import qualified FloraWeb.Links as Links
+import FloraWeb.Links qualified as Links
 import FloraWeb.Templates (FloraHTML)
 import Lucid (class_, li_, nav_, ul_, xmlns_)
 import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, svg_, viewBox_)

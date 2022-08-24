@@ -3,10 +3,10 @@
 module Lucid.Orphans where
 
 import Blaze.ByteString.Builder (Builder)
-import qualified Blaze.ByteString.Builder.Html.Utf8 as Blaze
+import Blaze.ByteString.Builder.Html.Utf8 qualified as Blaze
 import Data.Time
-import qualified Distribution.Pretty as Pretty
-import qualified Distribution.SPDX.License as SPDX
+import Distribution.Pretty qualified as Pretty
+import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version
 import Lucid
 import Lucid.Base

@@ -1,26 +1,26 @@
 module Flora.PackageSpec where
 
 import Data.Maybe
-import qualified Data.Set as Set
-import qualified Data.Vector as Vector
+import Data.Set qualified as Set
+import Data.Vector qualified as Vector
 import Optics.Core
 import Test.Tasty
 
 import Data.Foldable
 import Data.Function
 import Data.Monoid (Sum (..))
-import qualified Data.Vector as V
+import Data.Vector qualified as V
 import Distribution.System (OS (Windows))
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
-import qualified Distribution.Types.Version as Cabal
+import Distribution.Types.Version qualified as Cabal
 import Flora.Import.Package
 import Flora.Model.Category (Category (..))
-import qualified Flora.Model.Category.Query as Query
+import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Package
 import Flora.Model.Package.Component
-import qualified Flora.Model.Package.Query as Query
-import qualified Flora.Model.Release.Query as Query
+import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.TestUtils
 

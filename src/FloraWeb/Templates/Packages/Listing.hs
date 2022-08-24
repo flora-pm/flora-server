@@ -9,7 +9,7 @@ where
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector
+import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Lucid
 

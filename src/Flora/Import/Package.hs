@@ -22,19 +22,19 @@ module Flora.Import.Package where
 
 import Control.Exception
 import Control.Monad.Except
-import qualified Data.ByteString as BS
+import Data.ByteString qualified as BS
 import Data.Foldable
 import Data.Maybe
 import Data.Set (Set)
-import qualified Data.Set as Set
+import Data.Set qualified as Set
 import Data.Text (Text, pack)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Text.Display
-import qualified Data.Text.IO as T
+import Data.Text.IO qualified as T
 import Data.Time
 import Distribution.Fields.ParseResult
 import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
-import qualified Distribution.PackageDescription as Cabal hiding (PackageName)
+import Distribution.PackageDescription qualified as Cabal hiding (PackageName)
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Pretty
 import Distribution.Types.Benchmark
@@ -46,25 +46,25 @@ import Distribution.Types.Library
 import Distribution.Types.LibraryName
 import Distribution.Types.PackageDescription ()
 import Distribution.Types.TestSuite
-import qualified Distribution.Utils.ShortText as Cabal
+import Distribution.Utils.ShortText qualified as Cabal
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import GHC.Generics (Generic)
 import Optics.Core
-import qualified System.Directory as System
+import System.Directory qualified as System
 import System.FilePath
 
-import qualified Flora.Import.Categories.Tuning as Tuning
+import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Types
-import qualified Flora.Model.Category.Update as Update
+import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Package.Component as Component
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
-import qualified Flora.Model.Package.Update as Update
+import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release (deterministicReleaseId)
 import Flora.Model.Release.Types
-import qualified Flora.Model.Release.Update as Update
+import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
   ( Requirement (..)
   , RequirementMetadata (..)
@@ -180,27 +180,27 @@ loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDa
 -}
 persistImportOutput :: [DB, IOE] :>> es => ImportOutput -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = do
-  liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release ^. #version)
+  liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release.version)
   persistPackage
   Update.upsertRelease release
   traverse_ persistComponent components
   liftIO $ putStr "\n"
   where
-    packageName = display (package ^. #namespace) <> "/" <> display (package ^. #name)
+    packageName = display (package.namespace) <> "/" <> display (package.name)
     persistPackage = do
-      let packageId = package ^. #packageId
+      let packageId = package.packageId
       Update.upsertPackage package
       forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
 
     persistComponent (packageComponent, deps) = do
       liftIO . T.putStrLn $
-        "🧩  Persisting component: " <> display (packageComponent ^. #canonicalForm) <> " with " <> display (length deps) <> " 🔗 dependencies."
+        "🧩  Persisting component: " <> display (packageComponent.canonicalForm) <> " with " <> display (length deps) <> " 🔗 dependencies."
       Update.upsertPackageComponent packageComponent
       traverse_ persistImportDependency deps
 
     persistImportDependency dep = do
-      Update.upsertPackage (dep ^. #package)
-      Update.upsertRequirement (dep ^. #requirement)
+      Update.upsertPackage (dep.package)
+      Update.upsertRequirement (dep.requirement)
 
 {- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
  that can later be inserted into the database. This function produces stable, deterministic ids,
@@ -208,14 +208,14 @@ persistImportOutput (ImportOutput package categories release components) = do
 -}
 extractPackageDataFromCabal :: [DB, IOE] :>> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
-  let packageDesc = genericDesc ^. #packageDescription
+  let packageDesc = genericDesc.packageDescription
   let packageName = packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
-  let packageVersion = packageDesc ^. #package % #pkgVersion
+  let packageVersion = packageDesc.package.pkgVersion
   let namespace = chooseNamespace packageName
   let packageId = deterministicPackageId namespace packageName
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- liftIO getCurrentTime
-  let sourceRepos = getRepoURL packageName $ packageDesc ^. #sourceRepos
+  let sourceRepos = getRepoURL packageName $ packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
   categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
@@ -234,12 +234,12 @@ extractPackageDataFromCabal userId genericDesc = do
         ReleaseMetadata
           { license = Cabal.license packageDesc
           , sourceRepos
-          , homepage = packageDesc ^. #homepage % to display % to Just
+          , homepage = Just $ display packageDesc.homepage
           , documentation = ""
-          , bugTracker = packageDesc ^. #bugReports % to display % to Just
-          , maintainer = packageDesc ^. #maintainer % to display
-          , synopsis = packageDesc ^. #synopsis % to display
-          , description = packageDesc ^. #description % to display
+          , bugTracker = Just $ display packageDesc.bugReports
+          , maintainer = display packageDesc.maintainer
+          , synopsis = display packageDesc.synopsis
+          , description = display packageDesc.description
           }
 
   let release =
@@ -256,19 +256,19 @@ extractPackageDataFromCabal userId genericDesc = do
           }
 
   let libs = extractLibrary package release Nothing Nothing <$> allLibraries packageDesc
-  let condLibs = maybe [] (extractCondTree extractLibrary package release Nothing) (genericDesc ^. #condLibrary)
+  let condLibs = maybe [] (extractCondTree extractLibrary package release Nothing) (genericDesc.condLibrary)
 
-  let foreignLibs = extractForeignLib package release Nothing Nothing <$> packageDesc ^. #foreignLibs
-  let condForeignLibs = extractCondTrees extractForeignLib package release $ genericDesc ^. #condForeignLibs
+  let foreignLibs = extractForeignLib package release Nothing Nothing <$> packageDesc.foreignLibs
+  let condForeignLibs = extractCondTrees extractForeignLib package release $ genericDesc.condForeignLibs
 
-  let executables = extractExecutable package release Nothing Nothing <$> packageDesc ^. #executables
-  let condExecutables = extractCondTrees extractExecutable package release $ genericDesc ^. #condExecutables
+  let executables = extractExecutable package release Nothing Nothing <$> packageDesc.executables
+  let condExecutables = extractCondTrees extractExecutable package release $ genericDesc.condExecutables
 
-  let testSuites = extractTestSuite package release Nothing Nothing <$> packageDesc ^. #testSuites
-  let condTestSuites = extractCondTrees extractTestSuite package release $ genericDesc ^. #condTestSuites
+  let testSuites = extractTestSuite package release Nothing Nothing <$> packageDesc.testSuites
+  let condTestSuites = extractCondTrees extractTestSuite package release $ genericDesc.condTestSuites
 
-  let benchmarks = extractBenchmark package release Nothing Nothing <$> packageDesc ^. #benchmarks
-  let condBenchmarks = extractCondTrees extractBenchmark package release $ genericDesc ^. #condBenchmarks
+  let benchmarks = extractBenchmark package release Nothing Nothing <$> packageDesc.benchmarks
+  let condBenchmarks = extractCondTrees extractBenchmark package release $ genericDesc.condBenchmarks
 
   let components =
         libs
@@ -301,7 +301,7 @@ extractLibrary package =
     package
   where
     getLibName :: LibraryName -> Text
-    getLibName LMainLibName = display (package ^. #name)
+    getLibName LMainLibName = display (package.name)
     getLibName (LSubLibName lname) = T.pack $ unUnqualComponentName lname
 
 extractForeignLib :: ComponentExtractor ForeignLib
@@ -346,8 +346,8 @@ extractCondTree ::
 extractCondTree extractor package release defaultComponentName = go Nothing
   where
     go cond tree =
-      let treeComponent = extractor package release defaultComponentName cond $ tree ^. #condTreeData
-          treeSubComponents = (tree ^. #condTreeComponents) >>= extractBranch
+      let treeComponent = extractor package release defaultComponentName cond $ tree.condTreeData
+          treeSubComponents = (tree.condTreeComponents) >>= extractBranch
        in treeComponent : treeSubComponents
     extractBranch CondBranch{condBranchCondition, condBranchIfTrue, condBranchIfFalse} =
       let condIfTrueComponents = go (Just condBranchCondition) condBranchIfTrue
@@ -383,7 +383,7 @@ genericComponentExtractor
   defaultComponentName
   condition
   rawComponent =
-    let releaseId = release ^. #releaseId
+    let releaseId = release.releaseId
         componentName = maybe (getName rawComponent) (T.pack . unUnqualComponentName) defaultComponentName
         canonicalForm = CanonicalComponent{..}
         componentId = deterministicComponentId releaseId canonicalForm
@@ -397,9 +397,9 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
   let name = depName & unPackageName & pack & PackageName
       namespace = chooseNamespace name
       packageId = deterministicPackageId namespace name
-      ownerId = package ^. #ownerId
-      createdAt = package ^. #createdAt
-      updatedAt = package ^. #updatedAt
+      ownerId = package.ownerId
+      createdAt = package.createdAt
+      updatedAt = package.updatedAt
       status = UnknownPackage
       dependencyPackage = Package{..}
       requirement =
@@ -414,7 +414,7 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
 
 getRepoURL :: PackageName -> [Cabal.SourceRepo] -> [Text]
 getRepoURL _ [] = []
-getRepoURL _ (repo : _) = [display $ fromMaybe mempty (repo ^. #repoLocation)]
+getRepoURL _ (repo : _) = [display $ fromMaybe mempty (repo.repoLocation)]
 
 chooseNamespace :: PackageName -> Namespace
 chooseNamespace name | Set.member name coreLibraries = Namespace "haskell"

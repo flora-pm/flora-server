@@ -12,19 +12,18 @@ where
 
 import Colourista.IO (blueMessage)
 import Data.Pool (Pool)
-import qualified Data.Pool as Pool
+import Data.Pool qualified as Pool
 import Data.Text
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Time (NominalDiffTime)
 import Data.Word (Word16)
-import qualified Database.PostgreSQL.Simple as PG
+import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Env
   ( parse
   )
 import Flora.Environment.Config
 import GHC.Generics
-import Optics.Core ((^.))
 
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
@@ -71,7 +70,7 @@ configToEnv x@FloraConfig{..} = do
 
 testConfigToTestEnv :: TestConfig -> Eff '[IOE] TestEnv
 testConfigToTestEnv config@TestConfig{..} = do
-  let PoolConfig{..} = config ^. #dbConfig
+  let PoolConfig{..} = config.dbConfig
   pool <- mkPool connectInfo subPools connectionTimeout connections
   pure TestEnv{..}
 
@@ -92,7 +91,7 @@ displayConnectInfo PG.ConnectInfo{..} =
 getFloraEnv :: Eff '[IOE] FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
-  liftIO $ blueMessage $ "🔌 Connecting to database at " <> displayConnectInfo (config ^. #connectInfo)
+  liftIO $ blueMessage $ "🔌 Connecting to database at " <> displayConnectInfo (config.connectInfo)
   configToEnv config
 
 getFloraTestEnv :: Eff '[IOE] TestEnv

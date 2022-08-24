@@ -6,29 +6,29 @@ import Database.PostgreSQL.Entity.DBT
 import Effectful.Servant (handlerToEff)
 import Lucid
 import Network.HTTP.Types.Status (notFound404)
-import qualified OddJobs.Endpoints as OddJobs
-import qualified OddJobs.Types as OddJobs
+import OddJobs.Endpoints qualified as OddJobs
+import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import Servant (HasServer (..), hoistServer)
 
 import Control.Concurrent (forkIO)
-import qualified Control.Concurrent.Async as Async
+import Control.Concurrent.Async qualified as Async
 import Control.Monad
 import Flora.Environment (FloraEnv (..))
 import Flora.Model.Admin.Report
-import qualified Flora.Model.Package.Query as Query
-import qualified Flora.Model.Release.Query as Query
+import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User
-import qualified Flora.Model.User.Query as Query
+import Flora.Model.User.Query qualified as Query
 import Flora.OddJobs
 import FloraWeb.Routes.Pages.Admin
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Utils (redirect)
 import FloraWeb.Session (getSession)
 import FloraWeb.Templates (ActiveElements (..), TemplateEnv (..), defaultTemplateEnv, fromSession, render)
-import qualified FloraWeb.Templates.Admin as Templates
-import qualified FloraWeb.Templates.Admin.Packages as Templates
-import qualified FloraWeb.Templates.Admin.Users as Templates
+import FloraWeb.Templates.Admin qualified as Templates
+import FloraWeb.Templates.Admin.Packages qualified as Templates
+import FloraWeb.Templates.Admin.Users qualified as Templates
 import FloraWeb.Templates.Error
 import FloraWeb.Types (fetchFloraEnv)
 
@@ -68,14 +68,14 @@ indexHandler = do
   templateEnv <-
     fromSession session defaultTemplateEnv
       >>= \te -> pure $ set (#activeElements % #adminDashboard) True te
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
   report <- liftIO $ withPool pool getReport
   render templateEnv (Templates.index report)
 
 makeReadmesHandler :: FloraAdmin MakeReadmesResponse
 makeReadmesHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
   releases <- Query.getPackageReleasesWithoutReadme
   liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
     scheduleReadmeJob jobsPool releaseId packagename version
@@ -84,7 +84,7 @@ makeReadmesHandler = do
 fetchUploadTimesHandler :: FloraAdmin FetchUploadTimesResponse
 fetchUploadTimesHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
   releases <- Query.getPackageReleasesWithoutUploadTimestamp
   liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
     Async.async $ scheduleUploadTimeJob jobsPool releaseId packagename version
@@ -93,7 +93,7 @@ fetchUploadTimesHandler = do
 indexImportJobHandler :: FloraAdmin FetchUploadTimesResponse
 indexImportJobHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
   liftIO $ scheduleIndexImportJob jobsPool
   pure $ redirect "/admin"
 
@@ -149,7 +149,7 @@ packageIndexHandler = do
 -- showPackageHandler :: PackageId -> FloraAdmin (Html ())
 -- showPackageHandler packageId = do
 --   session <- getSession
---   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session ^. #webEnvStore)
+--   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
 --   result <- liftIO $ withPool pool $ Query.getPackageById packageId
 --   templateEnv <- fromSession session defaultTemplateEnv
 --   case result of

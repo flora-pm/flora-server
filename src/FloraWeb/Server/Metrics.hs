@@ -4,15 +4,15 @@ module FloraWeb.Server.Metrics
 where
 
 import Data.Text (Text)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Data.Text.Display
 import Data.Text.Encoding
 import Flora.Environment
-import qualified Network.HTTP.Types as HTTP
+import Network.HTTP.Types qualified as HTTP
 import Network.Wai (Application, Request)
-import qualified Network.Wai as Wai
+import Network.Wai qualified as Wai
 import Network.Wai.Middleware.Prometheus (PrometheusSettings (..))
-import qualified Network.Wai.Middleware.Prometheus as P
+import Network.Wai.Middleware.Prometheus qualified as P
 import Prometheus as P
 import System.Clock (Clock (..), getTime)
 

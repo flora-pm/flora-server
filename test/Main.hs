@@ -6,13 +6,13 @@ import Optics.Core
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
-import qualified Flora.CategorySpec as CategorySpec
+import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
-import qualified Flora.OddJobSpec as OddJobSpec
-import qualified Flora.PackageSpec as PackageSpec
-import qualified Flora.TemplateSpec as TemplateSpec
+import Flora.OddJobSpec qualified as OddJobSpec
+import Flora.PackageSpec qualified as PackageSpec
+import Flora.TemplateSpec qualified as TemplateSpec
 import Flora.TestUtils
-import qualified Flora.UserSpec as UserSpec
+import Flora.UserSpec qualified as UserSpec
 
 main :: IO ()
 main = do

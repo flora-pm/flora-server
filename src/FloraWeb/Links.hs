@@ -4,13 +4,13 @@ import Data.Text (Text)
 import Distribution.Version (Version)
 import Flora.Model.Package (Namespace (..), PackageName (..))
 import Flora.Model.Release.Orphans ()
-import qualified FloraWeb.Routes.Pages as Pages
-import qualified FloraWeb.Routes.Pages as Web
-import qualified FloraWeb.Routes.Pages.Packages as Web
-import qualified FloraWeb.Routes.Pages.Search as Search
+import FloraWeb.Routes.Pages qualified as Pages
+import FloraWeb.Routes.Pages qualified as Web
+import FloraWeb.Routes.Pages.Packages qualified as Web
+import FloraWeb.Routes.Pages.Search qualified as Search
 import Servant.API
 import Servant.Client
-import qualified Servant.Links as Links
+import Servant.Links qualified as Links
 
 links :: Pages.Routes' (Links.AsLink Link)
 links = Links.allFieldLinks

@@ -19,7 +19,7 @@ import GHC.Generics
 import Lucid
 import Optics.Core
 
-import qualified Data.UUID as UUID
+import Data.UUID qualified as UUID
 import Flora.Environment
 import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User
@@ -111,12 +111,12 @@ fromSession ::
   TemplateDefaults ->
   m TemplateEnv
 fromSession session defaults = do
-  let sessionId = session ^. #sessionId
-  let muser = session ^. #mUser
-  let webEnvStore = session ^. #webEnvStore
+  let sessionId = session.sessionId
+  let muser = session.mUser
+  let webEnvStore = session.webEnvStore
   floraEnv <- liftIO $ fetchFloraEnv webEnvStore
   let TemplateDefaults{..} =
         defaults
           & (#mUser .~ muser)
-          & (#environment .~ (floraEnv ^. #environment))
+          & (#environment .~ (floraEnv.environment))
   pure TemplateEnv{..}

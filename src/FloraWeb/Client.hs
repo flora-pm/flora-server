@@ -1,5 +1,3 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
 module FloraWeb.Client where
@@ -13,12 +11,12 @@ import Servant.Client.Generic
 import Flora.Model.PersistentSession
 import Flora.Model.User.Orphans ()
 import FloraWeb.Routes as Web
-import qualified FloraWeb.Routes.Pages as Pages
-import qualified FloraWeb.Routes.Pages as Web
-import qualified FloraWeb.Routes.Pages.Sessions as Web
+import FloraWeb.Routes.Pages qualified as Pages
+import FloraWeb.Routes.Pages qualified as Web
+import FloraWeb.Routes.Pages.Sessions qualified as Web
 import FloraWeb.Server.Auth
 import Lucid.Orphans ()
-import qualified Servant.Client.Core as Client
+import Servant.Client.Core qualified as Client
 
 -- type instance AuthClientData (AuthProtect "optional-cookie-auth") = Session 'Visitor
 
@@ -36,7 +34,7 @@ import qualified Servant.Client.Core as Client
 -- anonymousRequest = mkAuthenticatedRequest fakeSession addSessionCookie
 
 -- addSessionCookie :: Session p -> Client.Request -> Client.Request
--- addSessionCookie session req = Client.addHeader "cookie" (session ^. #sessionId) req
+-- addSessionCookie session req = Client.addHeader "cookie" (session.sessionId) req
 
 -- createSession :: Web.LoginForm -> ClientM (Union Web.CreateSessionResponses)
 -- createSession loginForm =
