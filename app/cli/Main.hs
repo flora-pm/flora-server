@@ -5,6 +5,7 @@ import Data.Password.Types
 import Data.Text (Text)
 import DesignSystem (generateComponents)
 import Effectful
+import Effectful.Log.Backend.StandardOutput qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.User.Query qualified as Query
 import GHC.Generics (Generic)
@@ -106,13 +107,12 @@ runOptions (Options (CreateUser opts)) = do
       let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
       insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
-runOptions (Options (ImportPackages path)) = do
-  importFolderOfCabalFiles path
+runOptions (Options (ImportPackages path)) = importFolderOfCabalFiles path
 
 importFolderOfCabalFiles :: ([DB, IOE] :>> es) => FilePath -> Eff es ()
-importFolderOfCabalFiles path = do
+importFolderOfCabalFiles path = Log.withStdOutLogger $ \appLogger -> do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  importAllFilesInRelativeDirectory (user ^. #userId) path
+  importAllFilesInRelativeDirectory appLogger (user ^. #userId) path
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

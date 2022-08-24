@@ -49,8 +49,11 @@ import Distribution.Types.TestSuite
 import Distribution.Utils.ShortText qualified as Cabal
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
+import Effectful.Log (Logging)
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Time (Time)
 import GHC.Generics (Generic)
+import Log qualified
 import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
@@ -130,21 +133,21 @@ coreLibraries =
    * finally, inserting that data into the database
 -}
 importFile ::
-  ([DB, IOE] :>> es) =>
+  ([DB, IOE, Logging, Time] :>> es) =>
   UserId ->
   -- | The absolute path to the Cabal file
   FilePath ->
   Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
-importRelFile :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ()
+importRelFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile ::
-  ([DB, IOE] :>> es) =>
+  ([DB, IOE, Logging, Time] :>> es) =>
   -- | The absolute path to the Cabal file
   FilePath ->
   Eff es GenericPackageDescription
@@ -158,7 +161,7 @@ loadFile path = do
   parseString parseGenericPackageDescription path content
 
 parseString ::
-  HasCallStack =>
+  (HasCallStack, [Logging, Time] :>> es) =>
   -- | File contents to final value parser
   (BS.ByteString -> ParseResult a) ->
   -- | File name
@@ -169,10 +172,11 @@ parseString parser name bs = do
   let (_warnings, result) = runParseResult (parser bs)
   case result of
     Right x -> pure x
-    Left _ ->
+    Left err -> do
+      Log.logAttention_ (display $ show err)
       throw $ CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
@@ -384,7 +388,7 @@ genericComponentExtractor
   condition
   rawComponent =
     let releaseId = release.releaseId
-        componentName = maybe (getName rawComponent) (T.pack . unUnqualComponentName) defaultComponentName
+        componentName = maybe (getName rawComponent) display defaultComponentName
         canonicalForm = CanonicalComponent{..}
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
