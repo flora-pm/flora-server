@@ -8,7 +8,10 @@ import Data.Foldable (traverse_)
 import Data.Function
 import Data.List (isSuffixOf)
 import Effectful
+import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
+import Effectful.Time
+import Log (Logger, defaultLogLevel)
 import Streaming (chunksOf)
 import Streaming.Prelude (Of, Stream)
 import Streaming.Prelude qualified as Str
@@ -21,20 +24,20 @@ import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
-importAllFilesInRelativeDirectory :: [DB, IOE] :>> es => UserId -> FilePath -> Eff es ()
-importAllFilesInRelativeDirectory user dir = do
+importAllFilesInRelativeDirectory :: [DB, IOE] :>> es => Logger -> UserId -> FilePath -> Eff es ()
+importAllFilesInRelativeDirectory appLogger user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importAllFilesInDirectory user workdir
+  importAllFilesInDirectory appLogger user workdir
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
-importAllFilesInDirectory :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ()
-importAllFilesInDirectory user dir = do
+importAllFilesInDirectory :: ([DB, IOE] :>> es) => Logger -> UserId -> FilePath -> Eff es ()
+importAllFilesInDirectory appLogger user dir = do
   pool <- getPool
   parallelWorkers <- liftIO getNumCapabilities
   let chunkSize = 200
   countMVar <- liftIO $ newMVar @Int 0
   findAllCabalFilesInDirectory dir
-    & parMapM parallelWorkers (runEff . runDB pool . loadAndExtractCabalFile user)
+    & parMapM parallelWorkers (runEff . runDB pool . runCurrentTimeIO . Log.runLogging "flora-jobs" appLogger defaultLogLevel . loadAndExtractCabalFile user)
     & chunksOf chunkSize
     & Str.mapped Str.toList
     & Str.mapM_ (persistChunk countMVar)

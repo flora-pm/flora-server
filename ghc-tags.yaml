@@ -1,0 +1,25 @@
+source_paths:
+- .
+exclude_paths:
+- .stack-work
+- dist
+- dist-newstyle
+language: Haskell2010
+extensions:
+- BangPatterns
+- BlockArguments
+- CApiFFI
+- ExplicitForAll
+- ExplicitNamespaces
+- GADTSyntax
+- LambdaCase
+- MultiWayIf
+- NumericUnderscores
+- OverloadedLabels
+- PatternSynonyms
+- TypeApplications
+- UnicodeSyntax
+- ImportQualifiedPost
+cpp_includes: []
+cpp_options: []
+

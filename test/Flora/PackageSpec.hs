@@ -27,7 +27,7 @@ import Flora.TestUtils
 spec :: Fixtures -> TestEff TestTree
 spec _fixtures =
   testThese
-    "packages"
+    "package tests"
     [ testThis "Insert base and its dependencies, and fetch it" testInsertBase
     , testThis "Insert containers and its dependencies" testInsertContainers
     , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory

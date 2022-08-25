@@ -49,8 +49,11 @@ import Distribution.Types.TestSuite
 import Distribution.Utils.ShortText qualified as Cabal
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
+import Effectful.Log (Logging)
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Time (Time)
 import GHC.Generics (Generic)
+import Log qualified
 import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
@@ -130,21 +133,21 @@ coreLibraries =
    * finally, inserting that data into the database
 -}
 importFile ::
-  ([DB, IOE] :>> es) =>
+  ([DB, IOE, Logging, Time] :>> es) =>
   UserId ->
   -- | The absolute path to the Cabal file
   FilePath ->
   Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
-importRelFile :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ()
+importRelFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile ::
-  ([DB, IOE] :>> es) =>
+  ([DB, IOE, Logging, Time] :>> es) =>
   -- | The absolute path to the Cabal file
   FilePath ->
   Eff es GenericPackageDescription
@@ -158,7 +161,7 @@ loadFile path = do
   parseString parseGenericPackageDescription path content
 
 parseString ::
-  HasCallStack =>
+  (HasCallStack, [Logging, Time] :>> es) =>
   -- | File contents to final value parser
   (BS.ByteString -> ParseResult a) ->
   -- | File name
@@ -169,10 +172,11 @@ parseString parser name bs = do
   let (_warnings, result) = runParseResult (parser bs)
   case result of
     Right x -> pure x
-    Left _ ->
+    Left err -> do
+      Log.logAttention_ (display $ show err)
       throw $ CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: ([DB, IOE] :>> es) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
@@ -194,7 +198,7 @@ persistImportOutput (ImportOutput package categories release components) = do
 
     persistComponent (packageComponent, deps) = do
       liftIO . T.putStrLn $
-        "🧩  Persisting component: " <> display (packageComponent.canonicalForm) <> " with " <> display (length deps) <> " 🔗 dependencies."
+        "🧩  Persisting component: " <> display (packageComponent.canonicalForm) <> " with " <> display (length deps) <> " dependencies."
       Update.upsertPackageComponent packageComponent
       traverse_ persistImportDependency deps
 
@@ -255,24 +259,26 @@ extractPackageDataFromCabal userId genericDesc = do
           , updatedAt = timestamp
           }
 
-  let libs = extractLibrary package release Nothing Nothing <$> allLibraries packageDesc
-  let condLibs = maybe [] (extractCondTree extractLibrary package release Nothing) (genericDesc.condLibrary)
+  let lib = extractLibrary package release Nothing Nothing <$> allLibraries packageDesc
+  let condLib = maybe [] (extractCondTree extractLibrary package release Nothing) (genericDesc.condLibrary)
+  let condSubLibs = extractCondTrees extractLibrary package release genericDesc.condSubLibraries
 
   let foreignLibs = extractForeignLib package release Nothing Nothing <$> packageDesc.foreignLibs
-  let condForeignLibs = extractCondTrees extractForeignLib package release $ genericDesc.condForeignLibs
+  let condForeignLibs = extractCondTrees extractForeignLib package release genericDesc.condForeignLibs
 
   let executables = extractExecutable package release Nothing Nothing <$> packageDesc.executables
-  let condExecutables = extractCondTrees extractExecutable package release $ genericDesc.condExecutables
+  let condExecutables = extractCondTrees extractExecutable package release genericDesc.condExecutables
 
   let testSuites = extractTestSuite package release Nothing Nothing <$> packageDesc.testSuites
-  let condTestSuites = extractCondTrees extractTestSuite package release $ genericDesc.condTestSuites
+  let condTestSuites = extractCondTrees extractTestSuite package release genericDesc.condTestSuites
 
   let benchmarks = extractBenchmark package release Nothing Nothing <$> packageDesc.benchmarks
-  let condBenchmarks = extractCondTrees extractBenchmark package release $ genericDesc.condBenchmarks
+  let condBenchmarks = extractCondTrees extractBenchmark package release genericDesc.condBenchmarks
 
   let components =
-        libs
-          <> condLibs
+        lib
+          <> condLib
+          <> condSubLibs
           <> executables
           <> condExecutables
           <> foreignLibs
@@ -283,16 +289,7 @@ extractPackageDataFromCabal userId genericDesc = do
           <> condBenchmarks
   pure ImportOutput{..}
 
-type ComponentExtractor component =
-  Package ->
-  Release ->
-  Maybe UnqualComponentName ->
-  -- | An optional component condition (not used at the moment)
-  Maybe (Condition ConfVar) ->
-  component ->
-  ImportComponent
-
-extractLibrary :: ComponentExtractor Library
+extractLibrary :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> Library -> ImportComponent
 extractLibrary package =
   genericComponentExtractor
     Component.Library
@@ -304,7 +301,7 @@ extractLibrary package =
     getLibName LMainLibName = display (package.name)
     getLibName (LSubLibName lname) = T.pack $ unUnqualComponentName lname
 
-extractForeignLib :: ComponentExtractor ForeignLib
+extractForeignLib :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> ForeignLib -> ImportComponent
 extractForeignLib package =
   genericComponentExtractor
     Component.ForeignLib
@@ -312,21 +309,21 @@ extractForeignLib package =
     (^. #foreignLibBuildInfo % #targetBuildDepends)
     package
 
-extractExecutable :: ComponentExtractor Executable
+extractExecutable :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> Executable -> ImportComponent
 extractExecutable =
   genericComponentExtractor
     Component.Executable
     (^. #exeName % to unUnqualComponentName % to T.pack)
     (^. #buildInfo % #targetBuildDepends)
 
-extractTestSuite :: ComponentExtractor TestSuite
+extractTestSuite :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> TestSuite -> ImportComponent
 extractTestSuite =
   genericComponentExtractor
     Component.TestSuite
     (^. #testName % to unUnqualComponentName % to T.pack)
     (^. #testBuildInfo % #targetBuildDepends)
 
-extractBenchmark :: ComponentExtractor Benchmark
+extractBenchmark :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> Benchmark -> ImportComponent
 extractBenchmark =
   genericComponentExtractor
     Component.Benchmark
@@ -337,7 +334,7 @@ extractBenchmark =
  to every node, returning a list of 'ImportComponent'
 -}
 extractCondTree ::
-  ComponentExtractor component ->
+  (Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> component -> ImportComponent) ->
   Package ->
   Release ->
   Maybe UnqualComponentName ->
@@ -359,7 +356,7 @@ extractCondTree extractor package release defaultComponentName = go Nothing
  from a 'GenericPackageDescription'
 -}
 extractCondTrees ::
-  ComponentExtractor component ->
+  (Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> component -> ImportComponent) ->
   Package ->
   Release ->
   [(UnqualComponentName, CondTree ConfVar [Dependency] component)] ->
@@ -368,12 +365,19 @@ extractCondTrees extractor package release trees =
   trees >>= \case (name, tree) -> extractCondTree extractor package release (Just name) tree
 
 genericComponentExtractor ::
+  forall component.
+  () =>
   ComponentType ->
   -- | Extract name from component
   (component -> Text) ->
   -- | Extract dependencies
   (component -> [Dependency]) ->
-  ComponentExtractor component
+  Package ->
+  Release ->
+  Maybe UnqualComponentName ->
+  Maybe (Condition ConfVar) ->
+  component ->
+  (PackageComponent, [ImportDependency])
 genericComponentExtractor
   componentType
   getName
@@ -384,7 +388,7 @@ genericComponentExtractor
   condition
   rawComponent =
     let releaseId = release.releaseId
-        componentName = maybe (getName rawComponent) (T.pack . unUnqualComponentName) defaultComponentName
+        componentName = maybe (getName rawComponent) display defaultComponentName
         canonicalForm = CanonicalComponent{..}
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)

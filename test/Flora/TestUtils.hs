@@ -67,6 +67,7 @@ import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
 import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Transact ()
 import Effectful
+import Effectful.Log.Backend.StandardOutput qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
 import GHC.Generics
@@ -109,8 +110,9 @@ getFixtures = do
   pure Fixtures{..}
 
 importAllPackages :: Fixtures -> TestEff ()
-importAllPackages fixtures = do
+importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
   importAllFilesInRelativeDirectory
+    appLogger
     (fixtures ^. #hackageUser % #userId)
     "./test/fixtures/Cabal/"
 
