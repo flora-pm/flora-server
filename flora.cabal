@@ -190,6 +190,7 @@ library
     , effectful
     , effectful-core
     , envparse                   ^>=0.5
+    , http-media
     , filepath                   ^>=1.4
     , http-api-data              ^>=0.4
     , http-client                ==0.7.10
