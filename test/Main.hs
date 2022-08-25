@@ -6,6 +6,7 @@ import Optics.Core
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
+import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
 import Flora.OddJobSpec qualified as OddJobSpec
@@ -32,4 +33,5 @@ specs fixtures =
   , PackageSpec.spec fixtures
   , CategorySpec.spec
   , TemplateSpec.spec
+  , CabalSpec.spec
   ]

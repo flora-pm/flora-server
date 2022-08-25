@@ -56,7 +56,7 @@ data ComponentType
   | TestSuite
   | Benchmark
   | ForeignLib
-  deriving stock (Eq, Show, Generic, Bounded, Enum)
+  deriving stock (Eq, Ord, Show, Generic, Bounded, Enum)
 
 instance Display ComponentType where
   displayBuilder Library = "library"
@@ -85,7 +85,7 @@ data CanonicalComponent = CanonicalComponent
   { componentName :: Text
   , componentType :: ComponentType
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 instance Display CanonicalComponent where
   displayBuilder CanonicalComponent{componentName, componentType} = displayBuilder componentType <> ":" <> B.fromText componentName

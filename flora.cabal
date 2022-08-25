@@ -322,6 +322,7 @@ test-suite flora-test
     , flora
     , hedgehog
     , http-client            ==0.7.10
+    , log-effectful
     , network-uri
     , optics-core
     , password

@@ -22,6 +22,7 @@ import Distribution.Parsec
 import Distribution.Pretty (prettyShow)
 import Distribution.Pretty qualified as Pretty
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.UnqualComponentName (UnqualComponentName, unUnqualComponentName)
 import Distribution.Types.Version
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Utils.Generic (fromUTF8BS)
@@ -63,3 +64,6 @@ instance FromField SPDX.License where
 
 instance ToField SPDX.License where
   toField = Escape . C8.pack . Pretty.prettyShow
+
+instance Display UnqualComponentName where
+  displayBuilder = Builder.fromString . unUnqualComponentName
