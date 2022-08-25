@@ -194,6 +194,7 @@ library
     , http-api-data              ^>=0.4
     , http-client                ==0.7.10
     , http-client-tls
+    , http-media
     , http-types                 ^>=0.12
     , iso8601-time               ^>=0.1
     , lens

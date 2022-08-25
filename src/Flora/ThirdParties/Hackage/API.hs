@@ -1,17 +1,32 @@
 module Flora.ThirdParties.Hackage.API where
 
 import Data.Aeson
+import Data.Bifunctor qualified as Bifunctor
+import Data.ByteString.Lazy as ByteString
+import Data.List.NonEmpty
 import Data.Text
 import Data.Text.Display
+import Data.Text.Encoding qualified as Text
+import Data.Time (UTCTime)
+import Data.Typeable
+import Network.HTTP.Media ((//), (/:))
 import Servant.API
 import Servant.API.Generic
 
-import Data.Time (UTCTime)
 import Flora.Model.Package.Types (PackageName)
 import Flora.Model.Release.Orphans ()
 import Flora.OddJobs.Types (IntAesonVersion)
 
 type HackageAPI = NamedRoutes HackageAPI'
+
+data PlainerText
+  deriving (Typeable)
+
+instance Accept PlainerText where
+  contentTypes _ = "plain" // "text" :| ["plain" // "text" /: ("charset", "utf-8")]
+
+instance MimeUnrender PlainerText Text where
+  mimeUnrender _ = Bifunctor.first show . Text.decodeUtf8' . ByteString.toStrict
 
 data VersionedPackage = VersionedPackage
   { package :: PackageName
@@ -31,7 +46,7 @@ data HackageAPI' mode = HackageAPI'
   deriving stock (Generic)
 
 data HackagePackageAPI mode = HackagePackageAPI
-  { getReadme :: mode :- "readme.txt" :> Get '[PlainText] Text
+  { getReadme :: mode :- "readme.txt" :> Get '[PlainerText] Text
   , getUploadTime :: mode :- "upload-time" :> Get '[PlainText] UTCTime
   }
   deriving stock (Generic)
