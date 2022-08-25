@@ -1,6 +1,7 @@
 module Flora.CabalSpec where
 
 import Data.Maybe
+import Data.Set qualified as Set
 import Data.Vector qualified as Vector
 import Test.Tasty
 
@@ -28,8 +29,8 @@ testImportSimplePackage = do
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
   componentsA <- Query.getReleaseComponents (releaseA.releaseId)
   assertEqual
-    (fmap (. canonicalForm) componentsA)
-    ( Vector.fromList
+    (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
+    ( Set.fromList
         [ CanonicalComponent{componentName = "a", componentType = Library}
         , CanonicalComponent{componentName = "e", componentType = Executable}
         ]
@@ -41,8 +42,8 @@ testImportMultiplePublicLibraries = do
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
   componentsA <- Query.getReleaseComponents (releaseA.releaseId)
   assertEqual
-    (fmap (. canonicalForm) componentsA)
-    ( Vector.fromList
+    (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
+    ( Set.fromList
         [ CanonicalComponent{componentName = "b", componentType = Library}
         , CanonicalComponent{componentName = "sublib", componentType = Library}
         , CanonicalComponent{componentName = "anothersublib", componentType = Library}

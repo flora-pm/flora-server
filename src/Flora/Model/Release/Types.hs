@@ -23,7 +23,7 @@ import Lucid qualified
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
-    (Eq, Show, FromField, ToField, FromJSON, ToJSON)
+    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON)
     via UUID
   deriving
     (Display)

@@ -13,7 +13,7 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.User
 
-getUserById :: (DB :> es, IOE :> es) => UserId -> Eff es (Maybe User)
+getUserById :: (DB :> es) => UserId -> Eff es (Maybe User)
 getUserById userId = dbtToEff $ selectById (Only userId)
 
 getUserByUsername :: ([DB, IOE] :>> es) => Text -> Eff es (Maybe User)
