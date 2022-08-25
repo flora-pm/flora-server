@@ -38,11 +38,11 @@ getPackageReadme versionedPackage =
   hackageClient
     // API.withPackage
     /: versionedPackage
-      // API.getReadme
+    // API.getReadme
 
 getPackageUploadTime :: VersionedPackage -> ClientM UTCTime
 getPackageUploadTime packageName =
   hackageClient
     // API.withPackage
     /: packageName
-      // API.getUploadTime
+    // API.getUploadTime

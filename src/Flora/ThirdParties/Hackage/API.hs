@@ -1,13 +1,13 @@
 module Flora.ThirdParties.Hackage.API where
 
 import Data.Aeson
-import Data.Text
-import Data.Text.Encoding qualified as Text
-import Data.Text.Display
 import Data.Bifunctor qualified as Bifunctor
 import Data.ByteString.Lazy as ByteString
-import Data.Time (UTCTime)
 import Data.List.NonEmpty
+import Data.Text
+import Data.Text.Display
+import Data.Text.Encoding qualified as Text
+import Data.Time (UTCTime)
 import Data.Typeable
 import Network.HTTP.Media ((//), (/:))
 import Servant.API
@@ -20,13 +20,13 @@ import Flora.OddJobs.Types (IntAesonVersion)
 type HackageAPI = NamedRoutes HackageAPI'
 
 data PlainerText
-  deriving Typeable
+  deriving (Typeable)
 
 instance Accept PlainerText where
   contentTypes _ = "plain" // "text" :| ["plain" // "text" /: ("charset", "utf-8")]
 
 instance MimeUnrender PlainerText Text where
-      mimeUnrender _ = Bifunctor.first show . Text.decodeUtf8' . ByteString.toStrict
+  mimeUnrender _ = Bifunctor.first show . Text.decodeUtf8' . ByteString.toStrict
 
 data VersionedPackage = VersionedPackage
   { package :: PackageName
