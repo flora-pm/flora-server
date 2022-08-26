@@ -184,8 +184,8 @@ getAllRequirements ::
   ([DB, IOE] :>> es) =>
   -- | Id of the release for which we want the dependencies
   ReleaseId ->
-  -- | Returns a vector of (Namespace, Name, Version requirement)
-  Eff es (Vector (Namespace, PackageName, Text, Text))
+  -- | Returns a vector of (Namespace, Name, dependency requirement, version of latest of release of dependency, synopsis of dependency)
+  Eff es (Vector (Namespace, PackageName, Text, Version, Text))
 getAllRequirements relId = dbtToEff $ query Select getAllRequirementsQuery (Only relId)
 
 getRequirements :: ([DB, IOE] :>> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
@@ -193,25 +193,44 @@ getRequirements relId = dbtToEff $ query Select q (Only relId)
   where
     q = getRequirementsQuery <> " LIMIT 6"
 
+{- | This query finds all the dependencies of a release,
+ and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
+ HACK: This query is terrifying, must be optimised by someone who knows their shit.
+-}
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
-    select distinct  dependency.namespace, dependency.name, rel.metadata ->> 'synopsis' as synopsis, req.requirement
-     from requirements as req
-     inner join packages as dependency on dependency.package_id = req.package_id
-     inner join package_components as pc ON pc.package_component_id = req.package_component_id
-     inner join releases as rel on rel.release_id = pc.release_id
-    where rel."release_id" = ?
+    with requirements as (
+        select distinct p0.namespace, p0.name, r0.requirement
+        from requirements as r0
+        inner join packages as p0 on p0.package_id = r0.package_id
+        inner join package_components as p1 on p1.package_component_id = r0.package_component_id and p1.component_type = 'library' or p1.component_type = 'executable'
+        inner join releases as r1 on r1.release_id = p1.release_id
+        where r1.release_id = ?
+    )
+    select req.namespace
+         , req.name
+         , req.requirement
+         , r3.version as "dependency_latest_version"
+         , r3.metadata ->> 'synopsis' as "dependency_latest_synopsis"
+      -- , r3.metadata ->> 'license' as "dependency_latest_license"
+    from requirements as req
+    inner join packages as p2 on p2.namespace = req.namespace and p2.name = req.name
+    inner join releases as r3 on r3.package_id = p2.package_id
+    where r3.version = (select max(version) from releases where package_id = p2.package_id)
+    group by req.namespace, req.name, req.requirement, r3.version, r3.metadata
+    order by req.namespace desc
   |]
 
 getRequirementsQuery :: Query
 getRequirementsQuery =
   [sql|
     select distinct dependency.namespace, dependency.name, req.requirement from requirements as req
-     inner join packages as dependency on dependency.package_id = req.package_id
-     inner join package_components as pc ON pc.package_component_id = req.package_component_id
-     inner join releases as rel on rel.release_id = pc.release_id
+    inner join packages as dependency on dependency.package_id = req.package_id
+    inner join package_components as pc ON pc.package_component_id = req.package_component_id and pc.component_type = 'library' or pc.component_type = 'executable'
+    inner join releases as rel on rel.release_id = pc.release_id
     where rel."release_id" = ?
+    order by dependency.namespace desc
   |]
 
 getNumberOfPackageRequirements :: ([DB, IOE] :>> es) => ReleaseId -> Eff es Word
@@ -227,7 +246,7 @@ numberOfPackageRequirementsQuery =
     select distinct count(rel."release_id")
      from requirements as req
      inner join packages as dependency on dependency.package_id = req.package_id
-     inner join package_components as pc ON pc.package_component_id = req.package_component_id
+     inner join package_components as pc ON pc.package_component_id = req.package_component_id and pc.component_type = 'library' or pc.component_type = 'executable'
      inner join releases as rel on rel.release_id = pc.release_id
     where rel."release_id" = ?
   |]
