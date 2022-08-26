@@ -25,7 +25,7 @@ packageListing packages = do
     Vector.forM_ packages $ \pInfo -> do
       showPackageWithVersion pInfo
 
-packageListingWithRange :: Vector (Namespace, PackageName, Text, Text) -> FloraHTML
+packageListingWithRange :: Vector (Namespace, PackageName, Text, Version, Text) -> FloraHTML
 packageListingWithRange packages = do
   ul_ [class_ "package-list space-y-2"] $ do
     Vector.forM_ packages $ \pInfo -> do
@@ -35,8 +35,8 @@ showPackageWithVersion :: (Namespace, PackageName, Text, Version) -> FloraHTML
 showPackageWithVersion (namespace, name, synopsis, version) =
   packageListItem (namespace, name, synopsis, display version)
 
-showPackageWithRange :: (Namespace, PackageName, Text, Text) -> FloraHTML
-showPackageWithRange (namespace, name, synopsis, versionRange) =
+showPackageWithRange :: (Namespace, PackageName, Text, Version, Text) -> FloraHTML
+showPackageWithRange (namespace, name, versionRange, _latestVersionOfDependency, synopsis) =
   packageListItem (namespace, name, synopsis, range)
   where
     range =

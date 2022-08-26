@@ -181,7 +181,7 @@ displayDependencies ::
   (Namespace, PackageName) ->
   -- | Number of dependencies
   Word ->
-  -- | (Namespace, Name, Version requirement)
+  -- | (Namespace, Name, Version requirement, Synopsis of the dependency)
   Vector (Namespace, PackageName, Text) ->
   FloraHTML
 displayDependencies (namespace, packageName) numberOfDependencies dependencies = do
