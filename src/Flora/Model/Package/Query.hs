@@ -204,7 +204,8 @@ getAllRequirementsQuery =
         select distinct p0.namespace, p0.name, r0.requirement
         from requirements as r0
         inner join packages as p0 on p0.package_id = r0.package_id
-        inner join package_components as p1 on p1.package_component_id = r0.package_component_id and p1.component_type = 'library' or p1.component_type = 'executable'
+        inner join package_components as p1 on p1.package_component_id = r0.package_component_id
+              and (p1.component_type = 'library' or p1.component_type = 'executable')
         inner join releases as r1 on r1.release_id = p1.release_id
         where r1.release_id = ?
     )
@@ -227,7 +228,8 @@ getRequirementsQuery =
   [sql|
     select distinct dependency.namespace, dependency.name, req.requirement from requirements as req
     inner join packages as dependency on dependency.package_id = req.package_id
-    inner join package_components as pc ON pc.package_component_id = req.package_component_id and pc.component_type = 'library' or pc.component_type = 'executable'
+    inner join package_components as pc ON pc.package_component_id = req.package_component_id
+          and (pc.component_type = 'library' or pc.component_type = 'executable')
     inner join releases as rel on rel.release_id = pc.release_id
     where rel."release_id" = ?
     order by dependency.namespace desc
