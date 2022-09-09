@@ -4,9 +4,9 @@ module FloraWeb.Components.VersionListItem
 where
 
 import Data.Text.Display (display)
+import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
 import Flora.Model.Package
-import Flora.Model.Release.Orphans ()
 import FloraWeb.Components.Utils (text)
 import FloraWeb.Templates
 import Lucid

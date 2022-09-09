@@ -1,9 +1,9 @@
 module FloraWeb.Links where
 
 import Data.Text (Text)
+import Distribution.Orphans ()
 import Distribution.Version (Version)
 import Flora.Model.Package (Namespace (..), PackageName (..))
-import Flora.Model.Release.Orphans ()
 import FloraWeb.Routes.Pages qualified as Pages
 import FloraWeb.Routes.Pages qualified as Web
 import FloraWeb.Routes.Pages.Packages qualified as Web

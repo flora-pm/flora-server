@@ -72,10 +72,10 @@ persistSession persistentSessionId userId = do
 insertSession :: (DB :> es) => PersistentSession -> Eff es ()
 insertSession = dbtToEff . insert @PersistentSession
 
-deleteSession :: (DB :> es, IOE :> es) => PersistentSessionId -> Eff es ()
+deleteSession :: (DB :> es) => PersistentSessionId -> Eff es ()
 deleteSession sessionId = dbtToEff $ delete @PersistentSession (Only sessionId)
 
-getPersistentSession :: (DB :> es, IOE :> es) => PersistentSessionId -> Eff es (Maybe PersistentSession)
+getPersistentSession :: (DB :> es) => PersistentSessionId -> Eff es (Maybe PersistentSession)
 getPersistentSession sessionId = dbtToEff $ selectById @PersistentSession (Only sessionId)
 
 lookup :: Text -> SessionData -> Maybe Text

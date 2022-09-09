@@ -2,8 +2,8 @@ module FloraWeb.Components.VersionListHeader where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
+import Distribution.Orphans ()
 import Flora.Model.Package (Namespace, PackageName, formatPackage)
-import Flora.Model.Release.Orphans ()
 import FloraWeb.Components.Utils (text)
 import FloraWeb.Templates.Types
 import Lucid

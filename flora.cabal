@@ -99,7 +99,6 @@ library
     Flora.Model.Package.Update
     Flora.Model.PersistentSession
     Flora.Model.Release
-    Flora.Model.Release.Orphans
     Flora.Model.Release.Query
     Flora.Model.Release.Types
     Flora.Model.Release.Update
@@ -323,6 +322,7 @@ test-suite flora-test
     , flora
     , hedgehog
     , http-client            ==0.7.10
+    , log-base
     , log-effectful
     , network-uri
     , optics-core
@@ -342,6 +342,7 @@ test-suite flora-test
     , tasty-hunit
     , text
     , time
+    , time-effectful
     , transformers
     , uuid
     , vector

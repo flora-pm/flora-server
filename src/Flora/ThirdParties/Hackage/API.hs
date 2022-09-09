@@ -13,8 +13,8 @@ import Network.HTTP.Media ((//), (/:))
 import Servant.API
 import Servant.API.Generic
 
+import Distribution.Orphans ()
 import Flora.Model.Package.Types (PackageName)
-import Flora.Model.Release.Orphans ()
 import Flora.OddJobs.Types (IntAesonVersion)
 
 type HackageAPI = NamedRoutes HackageAPI'

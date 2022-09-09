@@ -6,13 +6,17 @@ where
 
 import Data.Foldable
 import Data.Function
+import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
+import Log (object, (.=))
+import Log qualified
 import Lucid
 import Lucid.Orphans ()
 import Servant (ServerT)
 
 import Data.Maybe (fromMaybe)
 import Data.Text.Display (display)
+import Distribution.Orphans ()
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
@@ -21,6 +25,7 @@ import Flora.Search qualified as Search
 import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Guards
+import FloraWeb.Server.Logging
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Packages.Dependencies qualified as PackageDependencies
@@ -28,7 +33,6 @@ import FloraWeb.Templates.Packages.Dependents qualified as PackageDependents
 import FloraWeb.Templates.Packages.Versions qualified as PackageVersions
 import FloraWeb.Templates.Pages.Packages qualified as Packages
 import FloraWeb.Templates.Pages.Search qualified as Search
-import Log qualified
 
 server :: ServerT Routes FloraPage
 server =
@@ -67,12 +71,31 @@ showPackageVersion namespace packageName version = do
   package <- guardThatPackageExists namespace packageName
   release <- guardThatReleaseExists namespace packageName version
   releases <- Query.getReleases (package.packageId)
-  numberOfReleases <- Query.getNumberOfReleases (package.packageId)
+  numberOfReleases <- Query.getNumberOfReleases package.packageId
   dependents <- Query.getPackageDependents namespace packageName
-  releaseDependencies <- Query.getRequirements (release.releaseId)
+  releaseDependencies <- Query.getRequirements release.releaseId
   categories <- Query.getPackageCategories (package.packageId)
   numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName
-  numberOfDependencies <- Query.getNumberOfPackageRequirements (release.releaseId)
+  numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+
+  Log.logInfo "displaying a package" $
+    object
+      [ "release"
+          .= object
+            [ "id" .= release.releaseId
+            , "version" .= display release.version
+            ]
+      , "dependencies"
+          .= object
+            [ "count" .= numberOfDependencies
+            ]
+      , "dependents"
+          .= object
+            [ "count" .= numberOfDependents
+            ]
+      , "package" .= (display namespace <> "/" <> display packageName)
+      ]
+
   render templateEnv $
     Packages.showPackage
       release
@@ -104,8 +127,18 @@ showDependenciesHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName
   releases <- Query.getAllReleases (package.packageId)
   let latestRelease = maximumBy (compare `on` version) releases
-  latestReleasedependencies <-
-    Query.getAllRequirements (latestRelease.releaseId)
+  (latestReleasedependencies, duration) <-
+    timeAction $
+      Query.getAllRequirements (latestRelease.releaseId)
+
+  Log.logInfo "Retrieving all dependencies of the latest release of a package" $
+    object
+      [ "duration" .= duration
+      , "package" .= (display namespace <> "/" <> display packageName)
+      , "release_id" .= latestRelease.releaseId
+      , "dependencies_count" .= Vector.length latestReleasedependencies
+      ]
+
   render templateEnv $
     PackageDependencies.showDependencies
       ("Dependencies of " <> display namespace <> "/" <> display packageName)

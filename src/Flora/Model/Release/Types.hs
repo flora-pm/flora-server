@@ -1,4 +1,10 @@
-module Flora.Model.Release.Types where
+module Flora.Model.Release.Types
+  ( ReleaseId (..)
+  , TextHtml (..)
+  , Release (..)
+  , ReleaseMetadata (..)
+  )
+where
 
 import Data.Aeson
 import Data.Aeson.Orphans ()
@@ -17,8 +23,8 @@ import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version
 import GHC.Generics (Generic)
 
+import Distribution.Orphans ()
 import Flora.Model.Package
-import Flora.Model.Release.Orphans ()
 import Lucid qualified
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}

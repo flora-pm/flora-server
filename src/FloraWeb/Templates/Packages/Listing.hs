@@ -13,8 +13,8 @@ import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Lucid
 
+import Distribution.Orphans ()
 import Flora.Model.Package
-import Flora.Model.Release.Orphans ()
 import FloraWeb.Components.PackageListItem (packageListItem)
 import FloraWeb.Templates (FloraHTML)
 
