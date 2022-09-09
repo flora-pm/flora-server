@@ -111,6 +111,7 @@ parseNamespace txt =
 
 data PackageStatus = UnknownPackage | FullyImportedPackage
   deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
+  deriving anyclass (ToJSON)
 
 parsePackageStatus :: ByteString -> Maybe PackageStatus
 parsePackageStatus "unknown" = pure UnknownPackage
@@ -139,7 +140,7 @@ data Package = Package
   , status :: PackageStatus
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (FromRow, ToRow)
+  deriving anyclass (FromRow, ToRow, ToJSON)
 
 instance Entity Package where
   tableName = "packages"

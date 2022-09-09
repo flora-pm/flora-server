@@ -13,6 +13,7 @@ import Log qualified
 import Flora.Model.Package (Namespace (..), PackageName, formatPackage)
 import Flora.Model.Package.Query qualified as Query
 import FloraWeb.Server.Auth (FloraPage)
+import FloraWeb.Server.Logging
 import Optics.Core
 
 data SearchAction
@@ -26,11 +27,13 @@ instance Display SearchAction where
 
 searchPackageByName :: Word -> Text -> FloraPage (Word, Vector (Namespace, PackageName, Text, Version))
 searchPackageByName pageNumber queryString = do
-  dbResults <- Query.searchPackage pageNumber queryString
+  (dbResults, duration) <- timeAction $ Query.searchPackage pageNumber queryString
 
   Log.logInfo "search-results" $
     object
       [ "search_string" .= queryString
+      , "duration" .= duration
+      , "results_count" .= Vector.length dbResults
       , "results"
           .= List.map
             ( \(namespace, packageName, _, _, score :: Float) ->
@@ -45,7 +48,6 @@ searchPackageByName pageNumber queryString = do
   let getInfo = (,,,) <$> view _1 <*> view _2 <*> view _3 <*> view _4
   count <- Query.countPackagesByName queryString
   let results = fmap getInfo dbResults
-  Log.logInfo "search" $ object ["query_string" .= queryString, "results_count" .= count]
   pure (count, results)
 
 listAllPackages :: Word -> FloraPage (Word, Vector (Namespace, PackageName, Text, Version))

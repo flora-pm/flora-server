@@ -81,7 +81,7 @@ scheduleIndexImportJob pool = do
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool
 checkIfIndexImportJobIsNotRunning = do
-  Log.logTrace_ "Checking if the index import job is not running…"
+  Log.logInfo_ "Checking if the index import job is not running…"
   (result :: Maybe (Only Int)) <-
     dbtToEff $
       queryOne_
@@ -93,21 +93,21 @@ checkIfIndexImportJobIsNotRunning = do
       |]
   case result of
     Nothing -> do
-      Log.logTrace_ "Index import job is running"
+      Log.logInfo_ "Index import job is running"
       pure True
     Just (Only 0) -> do
-      Log.logTrace_ "Index import job is running"
+      Log.logInfo_ "Index import job is running"
       pure True
     Just (Only 1) -> do
-      Log.logTrace_ "Index import job is running"
+      Log.logInfo_ "Index import job is running"
       pure True
     _ -> do
-      Log.logTrace_ "Index import job not running"
+      Log.logInfo_ "Index import job not running"
       pure False
 
 makeReadme :: ReadmePayload -> JobsRunner ()
 makeReadme pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPackage) $ do
-  logTrace "Fetching README" pay
+  logInfo "Fetching README" pay
   let payload = VersionedPackage mpPackage mpVersion
   gewt <- Hackage.request $ Hackage.getPackageReadme payload
   case gewt of
@@ -118,7 +118,7 @@ makeReadme pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPa
         else throw e
     Left e -> throw e
     Right bodyText -> do
-      logTrace ("got a body for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
+      logInfo ("got a body for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
 
       htmlTxt <- do
         -- let extensions = emojiSpec
@@ -135,12 +135,12 @@ makeReadme pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPa
 
 fetchUploadTime :: FetchUploadTimePayload -> JobsRunner ()
 fetchUploadTime payload@FetchUploadTimePayload{packageName, packageVersion, releaseId} = localDomain "fetch-upload-time" $ do
-  logTrace "Fetching upload time" payload
+  logInfo "Fetching upload time" payload
   let requestPayload = VersionedPackage packageName packageVersion
   result <- Hackage.request $ Hackage.getPackageUploadTime requestPayload
   case result of
     Right timestamp -> do
-      logTrace_ $ "Got a timestamp for " <> display packageName
+      logInfo_ $ "Got a timestamp for " <> display packageName
       Update.updateUploadTime releaseId timestamp
     Left e@(FailureResponse _ response) -> do
       logAttention "Timestamp retrieval failed" $

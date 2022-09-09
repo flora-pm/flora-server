@@ -1,7 +1,10 @@
 module Main where
 
 import Effectful
+import Effectful.Log.Backend.StandardOutput qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Time
+import Log.Data
 import Optics.Core
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
@@ -19,11 +22,15 @@ main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
   env <- runEff getFloraTestEnv
-  fixtures <- runEff . runDB (env ^. #pool) $ do
-    testMigrations
-    f' <- getFixtures
-    importAllPackages f'
-    pure f'
+  fixtures <- runEff
+    . runCurrentTimeIO
+    . Log.runSimpleStdOutLogging "flora-test" LogAttention
+    . runDB (env ^. #pool)
+    $ do
+      testMigrations
+      f' <- getFixtures
+      importAllPackages f'
+      pure f'
   spec <- traverse (\comp -> runTestEff comp (env ^. #pool)) (specs fixtures)
   defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 

@@ -4,7 +4,9 @@ import Control.Monad
 import Data.Text.Display
 import Data.Text.IO qualified as T
 import Effectful
+import Effectful.Log
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Time
 
 import Flora.Import.Categories.Tuning
 import Flora.Import.Categories.Tuning qualified as Tuning
@@ -22,7 +24,7 @@ import Flora.Model.Requirement (Requirement)
    TODO: Publish artifacts
 -}
 publishPackage ::
-  ([DB, IOE] :>> es) =>
+  ([DB, Logging, Time, IOE] :>> es) =>
   [Requirement] ->
   [PackageComponent] ->
   Release ->
@@ -40,7 +42,7 @@ publishPackage requirements components release userPackageCategories package = d
       liftIO $ T.putStrLn $ "[+] Package " <> display (package.name) <> " does not exist."
       publishForNewPackage requirements components release userPackageCategories package
 
-publishForExistingPackage :: ([DB, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> Package -> Eff es Package
+publishForExistingPackage :: ([DB, Logging, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> Package -> Eff es Package
 publishForExistingPackage requirements components release package = do
   result <- Query.getReleaseByVersion (package.packageId) (release.version)
   case result of
@@ -64,7 +66,7 @@ publishForExistingPackage requirements components release package = do
       liftIO $ T.putStrLn $ "[+] I am not inserting anything for " <> display (package.name) <> " v" <> display (r.version)
       pure package
 
-publishForNewPackage :: ([DB, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
+publishForNewPackage :: ([DB, Logging, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
 publishForNewPackage requirements components release userPackageCategories package = do
   liftIO $ T.putStrLn $ "[+] Normalising user-supplied categories: " <> display userPackageCategories
   newCategories <- liftIO $ (.normalisedCategories) <$> Tuning.normalise userPackageCategories
