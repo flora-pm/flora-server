@@ -68,6 +68,19 @@ div[class="bullets"] {
   border-radius: 6px;
 }
 
+.package-title {
+  .headline {
+    font-size: xx-large;
+    line-height: 1;
+  }
+
+  .version {
+    font-size: medium;
+    line-height: 1.3rem;
+    padding-left: 4px;
+  }
+}
+
 .package-body {
   a {
     font-weight: 500;
@@ -283,12 +296,6 @@ li.dependents a.dependent:hover {
 
   .headline {
     margin-bottom: 5px;
-  }
-
-  .version {
-    font-size: 1.3rem;
-    line-height: 1.3rem;
-    padding-left: 4px;
   }
 
   .dependency {
