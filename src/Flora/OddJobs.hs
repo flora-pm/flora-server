@@ -160,6 +160,7 @@ fetchNewIndex = localDomain "index-import" $ do
   System.runProcess_ "make import-from-hackage"
   logInfo_ "New index processed"
   pool <- getPool
+  liftIO $ void $ scheduleReadmeJob pool
   liftIO $ void $ scheduleIndexImportJob pool
 
 runner :: Job -> JobsRunner ()
