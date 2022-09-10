@@ -12,12 +12,12 @@ import FloraWeb.Templates (defaultTemplateEnv, fromSession)
 import FloraWeb.Templates.Error (renderError)
 import Network.HTTP.Types (notFound404)
 
-guardThatPackageExists ::
-  -- | Namespace
-  Namespace ->
-  -- | Package name
-  PackageName ->
-  FloraPage Package
+guardThatPackageExists
+  :: Namespace
+  -- ^ Namespace
+  -> PackageName
+  -- ^ Package name
+  -> FloraPage Package
 guardThatPackageExists namespace packageName = do
   session <- getSession
   templateEnv <- fromSession session defaultTemplateEnv

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
-{- |
+{-|
 Module: Flora.Import.Package
 
 This module contains all the code to import Cabal packages into Flora. The import process
@@ -77,7 +77,7 @@ import Flora.Model.Requirement
 import Flora.Model.User
 import GHC.Stack (HasCallStack)
 
-{- | This tuple represents the package that depends on any associated dependency/requirement.
+{-| This tuple represents the package that depends on any associated dependency/requirement.
  It is used in the recursive loading of Cabal files
 -}
 type DependentName = (Namespace, PackageName)
@@ -127,17 +127,17 @@ coreLibraries =
     , PackageName "unix"
     ]
 
-{- | Imports a Cabal file into the database by:
+{-| Imports a Cabal file into the database by:
    * first, reading and parsing the file using 'loadFile'
    * then, extracting relevant information using 'extractPackageDataFromCabal'
    * finally, inserting that data into the database
 -}
-importFile ::
-  ([DB, IOE, Logging, Time] :>> es) =>
-  UserId ->
-  -- | The absolute path to the Cabal file
-  FilePath ->
-  Eff es ()
+importFile
+  :: ([DB, IOE, Logging, Time] :>> es)
+  => UserId
+  -> FilePath
+  -- ^ The absolute path to the Cabal file
+  -> Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
 importRelFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ()
@@ -146,11 +146,11 @@ importRelFile user dir = do
   importFile user workdir
 
 -- | Loads and parses a Cabal file
-loadFile ::
-  ([DB, IOE, Logging, Time] :>> es) =>
-  -- | The absolute path to the Cabal file
-  FilePath ->
-  Eff es GenericPackageDescription
+loadFile
+  :: ([DB, IOE, Logging, Time] :>> es)
+  => FilePath
+  -- ^ The absolute path to the Cabal file
+  -> Eff es GenericPackageDescription
 loadFile path = do
   exists <- liftIO $ System.doesFileExist path
   unless exists $
@@ -160,14 +160,14 @@ loadFile path = do
   content <- liftIO $ BS.readFile path
   parseString parseGenericPackageDescription path content
 
-parseString ::
-  (HasCallStack, [Logging, Time] :>> es) =>
-  -- | File contents to final value parser
-  (BS.ByteString -> ParseResult a) ->
-  -- | File name
-  String ->
-  BS.ByteString ->
-  Eff es a
+parseString
+  :: (HasCallStack, [Logging, Time] :>> es)
+  => (BS.ByteString -> ParseResult a)
+  -- ^ File contents to final value parser
+  -> String
+  -- ^ File name
+  -> BS.ByteString
+  -> Eff es a
 parseString parser name bs = do
   let (_warnings, result) = runParseResult (parser bs)
   case result of
@@ -179,7 +179,7 @@ parseString parser name bs = do
 loadAndExtractCabalFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
-{- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
+{-| Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 -}
 persistImportOutput :: [DB, IOE] :>> es => ImportOutput -> Eff es ()
@@ -206,7 +206,7 @@ persistImportOutput (ImportOutput package categories release components) = do
       Update.upsertPackage (dep.package)
       Update.upsertRequirement (dep.requirement)
 
-{- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
+{-| Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
  that can later be inserted into the database. This function produces stable, deterministic ids,
  so it should be possible to extract and insert a single package many times in a row.
 -}
@@ -330,16 +330,16 @@ extractBenchmark =
     (^. #benchmarkName % to unUnqualComponentName % to T.pack)
     (^. #benchmarkBuildInfo % #targetBuildDepends)
 
-{- | Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
+{-| Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
  to every node, returning a list of 'ImportComponent'
 -}
-extractCondTree ::
-  (Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> component -> ImportComponent) ->
-  Package ->
-  Release ->
-  Maybe UnqualComponentName ->
-  CondTree ConfVar [Dependency] component ->
-  [ImportComponent]
+extractCondTree
+  :: (Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> component -> ImportComponent)
+  -> Package
+  -> Release
+  -> Maybe UnqualComponentName
+  -> CondTree ConfVar [Dependency] component
+  -> [ImportComponent]
 extractCondTree extractor package release defaultComponentName = go Nothing
   where
     go cond tree =
@@ -351,33 +351,33 @@ extractCondTree extractor package release defaultComponentName = go Nothing
           condIfFalseComponents = maybe [] (go (Just . CNot $ condBranchCondition)) condBranchIfFalse
        in condIfTrueComponents <> condIfFalseComponents
 
-{- | Cabal often models conditional components as a list of 'CondTree' associated with an 'UnqualComponentName'.
+{-| Cabal often models conditional components as a list of 'CondTree' associated with an 'UnqualComponentName'.
  This function builds upon 'extractCondTree' to make it easier to extract fields such as 'condExecutables', 'condTestSuites' etc.
  from a 'GenericPackageDescription'
 -}
-extractCondTrees ::
-  (Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> component -> ImportComponent) ->
-  Package ->
-  Release ->
-  [(UnqualComponentName, CondTree ConfVar [Dependency] component)] ->
-  [ImportComponent]
+extractCondTrees
+  :: (Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> component -> ImportComponent)
+  -> Package
+  -> Release
+  -> [(UnqualComponentName, CondTree ConfVar [Dependency] component)]
+  -> [ImportComponent]
 extractCondTrees extractor package release trees =
   trees >>= \case (name, tree) -> extractCondTree extractor package release (Just name) tree
 
-genericComponentExtractor ::
-  forall component.
-  () =>
-  ComponentType ->
-  -- | Extract name from component
-  (component -> Text) ->
-  -- | Extract dependencies
-  (component -> [Dependency]) ->
-  Package ->
-  Release ->
-  Maybe UnqualComponentName ->
-  Maybe (Condition ConfVar) ->
-  component ->
-  (PackageComponent, [ImportDependency])
+genericComponentExtractor
+  :: forall component
+   . ()
+  => ComponentType
+  -> (component -> Text)
+  -- ^ Extract name from component
+  -> (component -> [Dependency])
+  -- ^ Extract dependencies
+  -> Package
+  -> Release
+  -> Maybe UnqualComponentName
+  -> Maybe (Condition ConfVar)
+  -> component
+  -> (PackageComponent, [ImportDependency])
 genericComponentExtractor
   componentType
   getName

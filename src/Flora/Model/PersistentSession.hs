@@ -59,11 +59,11 @@ newPersistentSession userId persistentSessionId = do
   let sessionData = SessionData Map.empty
   pure PersistentSession{..}
 
-persistSession ::
-  ([IOE, DB, Time] :>> es) =>
-  PersistentSessionId ->
-  UserId ->
-  Eff es PersistentSessionId
+persistSession
+  :: ([IOE, DB, Time] :>> es)
+  => PersistentSessionId
+  -> UserId
+  -> Eff es PersistentSessionId
 persistSession persistentSessionId userId = do
   persistentSession <- newPersistentSession userId persistentSessionId
   insertSession persistentSession

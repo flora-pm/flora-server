@@ -23,9 +23,9 @@ import Flora.Model.PersistentSession
 import FloraWeb.Server.Auth.Types
 import FloraWeb.Types (fetchFloraEnv)
 
-getSession ::
-  (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es) =>
-  Eff es Session
+getSession
+  :: (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es)
+  => Eff es Session
 getSession = asks (getResponse @'[Header "Set-Cookie" SetCookie])
 
 getEnv :: (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es) => Eff es FloraEnv
@@ -34,12 +34,12 @@ getEnv = do
   unsafeEff_ $ fetchFloraEnv webEnvStore
 
 -- | This function builds a cookie with the provided content
-craftSessionCookie ::
-  -- | Cookie content
-  PersistentSessionId ->
-  -- | Remember the cookie for 1 week
-  Bool ->
-  SetCookie
+craftSessionCookie
+  :: PersistentSessionId
+  -- ^ Cookie content
+  -> Bool
+  -- ^ Remember the cookie for 1 week
+  -> SetCookie
 craftSessionCookie (PersistentSessionId content) rememberSession =
   defaultSetCookie
     { setCookieValue = UUID.toASCIIBytes content
@@ -59,10 +59,10 @@ emptySessionCookie =
     , setCookieMaxAge = Just 0
     }
 
-addCookie ::
-  SetCookie ->
-  a ->
-  Headers '[Header "Set-Cookie" SetCookie] a
+addCookie
+  :: SetCookie
+  -> a
+  -> Headers '[Header "Set-Cookie" SetCookie] a
 addCookie = addHeader
 
 deleteCookie :: a -> Headers '[Header "Set-Cookie" SetCookie] a

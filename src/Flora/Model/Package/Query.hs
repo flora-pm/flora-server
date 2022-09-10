@@ -89,11 +89,11 @@ getHaskellOrHackagePackage packageName =
       (Only packageName)
 
 -- | TODO: Remove the manual fields and use pg-entity
-getAllPackageDependents ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  Namespace ->
-  PackageName ->
-  Eff es (Vector Package)
+getAllPackageDependents
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => Namespace
+  -> PackageName
+  -> Eff es (Vector Package)
 getAllPackageDependents namespace packageName = dbtToEff $ query Select packageDependentsQuery (namespace, packageName)
 
 -- | This function gets the first 6 dependents of a package
@@ -137,20 +137,20 @@ packageDependentsQuery =
     AND  dep."name" = ?
   |]
 
-getAllPackageDependentsWithLatestVersion ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  Namespace ->
-  PackageName ->
-  Eff es (Vector (Namespace, PackageName, Text, Version))
+getAllPackageDependentsWithLatestVersion
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => Namespace
+  -> PackageName
+  -> Eff es (Vector (Namespace, PackageName, Text, Version))
 getAllPackageDependentsWithLatestVersion namespace packageName =
   dbtToEff $
     query Select packageDependentsWithLatestVersionQuery (namespace, packageName)
 
-getPackageDependentsWithLatestVersion ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  Namespace ->
-  PackageName ->
-  Eff es (Vector (Namespace, PackageName, Text, Version))
+getPackageDependentsWithLatestVersion
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => Namespace
+  -> PackageName
+  -> Eff es (Vector (Namespace, PackageName, Text, Version))
 getPackageDependentsWithLatestVersion namespace packageName = do
   (result, duration) <-
     timeAction $
@@ -195,10 +195,10 @@ getComponent releaseId name componentType =
       , [field| component_type |]
       ]
 
-unsafeGetComponent ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  ReleaseId ->
-  Eff es (Maybe PackageComponent)
+unsafeGetComponent
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => ReleaseId
+  -> Eff es (Maybe PackageComponent)
 unsafeGetComponent releaseId =
   dbtToEff $
     queryOne Select (_selectWhere @PackageComponent queryFields) (Only releaseId)
@@ -206,12 +206,12 @@ unsafeGetComponent releaseId =
     queryFields :: Vector Field
     queryFields = [[field| release_id |]]
 
-getAllRequirements ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  -- | Id of the release for which we want the dependencies
-  ReleaseId ->
-  -- | Returns a vector of (Namespace, Name, dependency requirement, version of latest of release of dependency, synopsis of dependency)
-  Eff es (Vector (Namespace, PackageName, Text, Version, Text))
+getAllRequirements
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => ReleaseId
+  -- ^ Id of the release for which we want the dependencies
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, Text))
+  -- ^ Returns a vector of (Namespace, Name, dependency requirement, version of latest of release of dependency, synopsis of dependency)
 getAllRequirements releaseId = dbtToEff $ query Select getAllRequirementsQuery (Only releaseId)
 
 getRequirements :: ([DB, Logging, Time, IOE] :>> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
@@ -224,7 +224,7 @@ getRequirements releaseId = do
       ]
   pure result
 
-{- | This query finds all the dependencies of a release,
+{-| This query finds all the dependencies of a release,
  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
  HACK: This query is terrifying, must be optimised by someone who knows their shit.
 -}
@@ -285,10 +285,10 @@ numberOfPackageRequirementsQuery =
     where rel."release_id" = ?
   |]
 
-getPackageCategories ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  PackageId ->
-  Eff es (Vector Category)
+getPackageCategories
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => PackageId
+  -> Eff es (Vector Category)
 getPackageCategories packageId =
   dbtToEff $
     joinSelectOneByField @Category
@@ -297,10 +297,10 @@ getPackageCategories packageId =
       [field| package_id |]
       packageId
 
-getPackagesFromCategoryWithLatestVersion ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  CategoryId ->
-  Eff es (Vector (Namespace, PackageName, Text, Version))
+getPackagesFromCategoryWithLatestVersion
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => CategoryId
+  -> Eff es (Vector (Namespace, PackageName, Text, Version))
 getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q (Only categoryId)
   where
     q =
@@ -311,11 +311,11 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q 
       where c.category_id = ?
       |]
 
-searchPackage ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  Word ->
-  Text ->
-  Eff es (Vector (Namespace, PackageName, Text, Version, Float))
+searchPackage
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => Word
+  -> Text
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, Float))
 searchPackage pageNumber searchString =
   dbtToEff $
     let limit = 30
@@ -342,10 +342,10 @@ searchPackage pageNumber searchString =
         |]
           (searchString, searchString, offset)
 
-listAllPackages ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  Word ->
-  Eff es (Vector (Namespace, PackageName, Text, Version, Float))
+listAllPackages
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => Word
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, Float))
 listAllPackages pageNumber =
   dbtToEff $
     let limit = 30

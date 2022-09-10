@@ -34,17 +34,17 @@ instance Display Target where
   displayBuilder Dependencies = "dependencies"
   displayBuilder Versions = "versions"
 
-showPackage ::
-  Release ->
-  Vector Release ->
-  Word ->
-  Package ->
-  Vector Package ->
-  Word ->
-  Vector (Namespace, PackageName, Text) ->
-  Word ->
-  Vector Category ->
-  FloraHTML
+showPackage
+  :: Release
+  -> Vector Release
+  -> Word
+  -> Package
+  -> Vector Package
+  -> Word
+  -> Vector (Namespace, PackageName, Text)
+  -> Word
+  -> Vector Category
+  -> FloraHTML
 showPackage
   latestRelease
   packageReleases
@@ -78,17 +78,17 @@ presentationHeader release namespace name synopsis = do
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
-packageBody ::
-  Package ->
-  Release ->
-  Vector Release ->
-  Word ->
-  Vector (Namespace, PackageName, Text) ->
-  Word ->
-  Vector Package ->
-  Word ->
-  Vector Category ->
-  FloraHTML
+packageBody
+  :: Package
+  -> Release
+  -> Vector Release
+  -> Word
+  -> Vector (Namespace, PackageName, Text)
+  -> Word
+  -> Vector Package
+  -> Word
+  -> Vector Category
+  -> FloraHTML
 packageBody
   Package{namespace, name = packageName}
   latestRelease@Release{metadata}
@@ -176,14 +176,14 @@ displayVersions namespace packageName versions numberOfReleases =
           Just ts ->
             span_ [] (toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts)
 
-displayDependencies ::
-  -- | The package namespace and name
-  (Namespace, PackageName) ->
-  -- | Number of dependencies
-  Word ->
-  -- | (Namespace, Name, Version requirement, Synopsis of the dependency)
-  Vector (Namespace, PackageName, Text) ->
-  FloraHTML
+displayDependencies
+  :: (Namespace, PackageName)
+  -- ^ The package namespace and name
+  -> Word
+  -- ^ Number of dependencies
+  -> Vector (Namespace, PackageName, Text)
+  -- ^ (Namespace, Name, Version requirement, Synopsis of the dependency)
+  -> FloraHTML
 displayDependencies (namespace, packageName) numberOfDependencies dependencies = do
   li_ [class_ "mb-5"] $ do
     h3_ [class_ "lg:text-2xl package-body-section mb-3"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
@@ -221,11 +221,11 @@ displayMaintainer maintainerInfo = do
     h3_ [class_ "lg:text-2xl package-body-section mb-3"] "Maintainer"
     p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
 
-displayDependents ::
-  (Namespace, PackageName) ->
-  Word ->
-  Vector Package ->
-  FloraHTML
+displayDependents
+  :: (Namespace, PackageName)
+  -> Word
+  -> Vector Package
+  -> FloraHTML
 displayDependents (namespace, packageName) numberOfDependents dependents = do
   li_ [class_ "mb-5 dependents"] $ do
     h3_ [class_ "lg:text-2xl package-body-section dependents mb-3"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")

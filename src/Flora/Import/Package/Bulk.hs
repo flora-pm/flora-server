@@ -49,14 +49,14 @@ importAllFilesInDirectory appLogger user dir = do
       traverse_ persistImportOutput chunk
       liftIO . putStrLn $ "✅ Processed " <> show newCount <> " new cabal files"
 
-{- | Finds all cabal files in the provided directory recursively
+{-| Finds all cabal files in the provided directory recursively
  Hits are written to the output channel as they are found, so it should be possible to process
  large amounts of Cabal files efficiently
 -}
-findAllCabalFilesInDirectory ::
-  IOE :> es =>
-  FilePath ->
-  Stream (Of FilePath) (Eff es) ()
+findAllCabalFilesInDirectory
+  :: IOE :> es
+  => FilePath
+  -> Stream (Of FilePath) (Eff es) ()
 findAllCabalFilesInDirectory workdir = do
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> workdir
   liftIO $ System.createDirectoryIfMissing True workdir

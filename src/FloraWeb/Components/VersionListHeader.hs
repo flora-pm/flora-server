@@ -8,11 +8,11 @@ import FloraWeb.Components.Utils (text)
 import FloraWeb.Templates.Types
 import Lucid
 
-presentationHeader ::
-  Namespace ->
-  PackageName ->
-  Word ->
-  FloraHTML
+presentationHeader
+  :: Namespace
+  -> PackageName
+  -> Word
+  -> FloraHTML
 presentationHeader namespace packageName numberOfReleases = do
   div_ [class_ "divider"] $ do
     div_ [class_ "px-4 py-5 sm:px-6 sm:py-24 lg:py-4 lg:px-8"] $

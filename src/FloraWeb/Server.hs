@@ -81,11 +81,11 @@ shutdownFlora env =
   liftIO $
     Pool.destroyAllResources (env.pool)
 
-logException ::
-  DeploymentEnv ->
-  Logger ->
-  Safe.SomeException ->
-  IO ()
+logException
+  :: DeploymentEnv
+  -> Logger
+  -> Safe.SomeException
+  -> IO ()
 logException env logger exception =
   runEff
     . runCurrentTimeIO

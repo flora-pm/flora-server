@@ -14,35 +14,35 @@ import Servant.HTML.Lucid
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { index ::
-      mode
+  { index
+      :: mode
         :- QueryParam "page" Word
           :> Get '[HTML] (Html ())
-  , show ::
-      mode
+  , show
+      :: mode
         :- Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> Get '[HTML] (Html ())
-  , showDependents ::
-      mode
+  , showDependents
+      :: mode
         :- Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> "dependents"
           :> Get '[HTML] (Html ())
-  , showDependencies ::
-      mode
+  , showDependencies
+      :: mode
         :- Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> "dependencies"
           :> Get '[HTML] (Html ())
-  , showVersion ::
-      mode
+  , showVersion
+      :: mode
         :- Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> Capture "version" Version
           :> Get '[HTML] (Html ())
-  , listVersions ::
-      mode
+  , listVersions
+      :: mode
         :- Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> "versions"

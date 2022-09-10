@@ -35,7 +35,7 @@ newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
     (Display)
     via ShowInstance UUID
 
-{- | a wrapper that attaches from and tofield instances
+{-| a wrapper that attaches from and tofield instances
  for a text db row for LucidHtml
 -}
 newtype TextHtml = MkTextHtml (Lucid.Html ())
