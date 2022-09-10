@@ -106,7 +106,7 @@ checkIfIndexImportJobIsNotRunning = do
       pure False
 
 makeReadme :: ReadmePayload -> JobsRunner ()
-makeReadme pay@MkReadmePayload{..} = localDomain ("for-package " <> display mpPackage) $ do
+makeReadme pay@MkReadmePayload{..} = localDomain "fetch-readme" $ do
   logInfo "Fetching README" pay
   let payload = VersionedPackage mpPackage mpVersion
   gewt <- Hackage.request $ Hackage.getPackageReadme payload
@@ -158,6 +158,7 @@ fetchNewIndex = localDomain "index-import" $ do
   System.runProcess_ "cp ~/.cabal/packages/hackage.haskell.org/01-index.tar 01-index/"
   System.runProcess_ "cd 01-index && tar -xf 01-index.tar"
   System.runProcess_ "make import-from-hackage"
+  logInfo_ "New index processed"
   pool <- getPool
   liftIO $ void $ scheduleIndexImportJob pool
 
