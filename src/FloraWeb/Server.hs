@@ -58,9 +58,9 @@ import FloraWeb.Server.Auth (FloraAuthContext, authHandler, runVisitorSession)
 import FloraWeb.Server.Logging (runLog)
 import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Server.Metrics
+import FloraWeb.Server.OpenSearch
 import FloraWeb.Server.Pages qualified as Pages
 import FloraWeb.Server.Tracing
-import FloraWeb.Server.OpenSearch
 import FloraWeb.Types
 
 runFlora :: IO ()

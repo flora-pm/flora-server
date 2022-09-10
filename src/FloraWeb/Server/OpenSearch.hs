@@ -1,11 +1,11 @@
 module FloraWeb.Server.OpenSearch where
 
+import Data.Default (def)
+import Data.Map qualified as Map
 import Network.HTTP.Media qualified as M
+import Servant.API
 import Text.XML qualified as XML
 import Text.XML.Writer as XML
-import Servant.API
-import Data.Map qualified as Map
-import Data.Default (def)
 
 data OpenSearchXML
 
@@ -26,7 +26,8 @@ openSearchHandler = pure $
 
 openSearchDocument :: XML.Name -> XML.XML -> XML.Document
 openSearchDocument name children =
-  XML.Document { documentPrologue = XML.Prologue def def def
-           , documentRoot = XML.Element name (Map.fromList [("xmlns", "http://a9.com/-/spec/opensearch/1.1/"), ("xmlns:moz", "http://www.mozilla.org/2006/browser/search/")]) (render children)
-           , documentEpilogue = def
-           }
+  XML.Document
+    { documentPrologue = XML.Prologue def def def
+    , documentRoot = XML.Element name (Map.fromList [("xmlns", "http://a9.com/-/spec/opensearch/1.1/"), ("xmlns:moz", "http://www.mozilla.org/2006/browser/search/")]) (render children)
+    , documentEpilogue = def
+    }
