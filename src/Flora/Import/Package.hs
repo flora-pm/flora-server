@@ -250,13 +250,14 @@ extractPackageDataFromCabal userId genericDesc = do
         Release
           { releaseId
           , packageId
-          , readme = Nothing
           , version = packageVersion
           , archiveChecksum = mempty
           , metadata = metadata
           , uploadedAt = Nothing
           , createdAt = timestamp
           , updatedAt = timestamp
+          , readme = Nothing
+          , readmeStatus = NotImported
           }
 
   let lib = extractLibrary package release Nothing Nothing <$> allLibraries packageDesc

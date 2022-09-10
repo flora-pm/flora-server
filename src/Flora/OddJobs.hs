@@ -19,38 +19,39 @@ module Flora.OddJobs
 where
 
 import Commonmark qualified
+import Control.Concurrent (forkIO)
 import Control.Exception
+import Control.Monad
+import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Pool
 import Data.Text
 import Data.Text.Display
 import Data.Text.Lazy qualified as TL
+import Data.Text.Lazy.Encoding qualified as TL
+import Data.Time qualified as Time
+import Database.PostgreSQL.Entity.DBT
+import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple qualified as PG
+import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
 import Effectful.Log (localDomainEff', logMessageEff')
+import Effectful.PostgreSQL.Transact.Effect
 import Log
 import Lucid qualified
 import Network.HTTP.Types (notFound404, statusCode)
 import OddJobs.Job (Job (..), createJob, scheduleJob)
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
+import System.Process.Typed qualified as System
 
-import Control.Monad
-import Control.Monad.IO.Class
-import Data.Text.Lazy.Encoding qualified as TL
-import Data.Time qualified as Time
-import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Simple (Only (..))
-import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.Package
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
-import Flora.Model.Release.Update (updateReadme)
 import Flora.Model.Release.Update qualified as Update
 import Flora.OddJobs.Types
 import Flora.ThirdParties.Hackage.API (VersionedPackage (..))
 import Flora.ThirdParties.Hackage.Client qualified as Hackage
-import System.Process.Typed qualified as System
 
 scheduleReadmeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
 scheduleReadmeJob pool rid package version =
@@ -114,7 +115,7 @@ makeReadme pay@MkReadmePayload{..} = localDomain "fetch-readme" $ do
     Left e@(FailureResponse _ response) -> do
       -- If the README simply doesn't exist, we skip it by marking it as successful.
       if response.responseStatusCode == notFound404
-        then updateReadme mpReleaseId Nothing
+        then Update.updateReadme mpReleaseId Nothing Inexistent
         else throw e
     Left e -> throw e
     Right bodyText -> do
@@ -131,7 +132,7 @@ makeReadme pay@MkReadmePayload{..} = localDomain "fetch-readme" $ do
       let readmeBody :: Lucid.Html ()
           readmeBody = Lucid.toHtmlRaw @Text $ TL.toStrict htmlTxt
 
-      Update.updateReadme mpReleaseId (Just $ MkTextHtml readmeBody)
+      Update.updateReadme mpReleaseId (Just $ MkTextHtml readmeBody) Imported
 
 fetchUploadTime :: FetchUploadTimePayload -> JobsRunner ()
 fetchUploadTime payload@FetchUploadTimePayload{packageName, packageVersion, releaseId} = localDomain "fetch-upload-time" $ do
@@ -159,7 +160,10 @@ fetchNewIndex = localDomain "index-import" $ do
   System.runProcess_ "cd 01-index && tar -xf 01-index.tar"
   System.runProcess_ "make import-from-hackage"
   logInfo_ "New index processed"
+  releases <- Query.getPackageReleasesWithoutReadme
   pool <- getPool
+  liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
+    scheduleReadmeJob pool releaseId packagename version
   liftIO $ void $ scheduleIndexImportJob pool
 
 runner :: Job -> JobsRunner ()
