@@ -3,21 +3,24 @@ module Flora.Model.Release.Types
   , TextHtml (..)
   , Release (..)
   , ReleaseMetadata (..)
+  , ReadmeStatus (..)
   )
 where
 
 import Data.Aeson
 import Data.Aeson.Orphans ()
-import Data.Text (Text)
+import Data.ByteString (ByteString)
+import Data.Text (Text, unpack)
 import Data.Text.Display
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
 import Data.Typeable (Typeable)
 import Data.UUID (UUID)
 import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
 import Database.PostgreSQL.Simple (FromRow, ToRow)
-import Database.PostgreSQL.Simple.FromField (FromField (..))
+import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), returnError)
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
-import Database.PostgreSQL.Simple.ToField (ToField (..))
+import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version
@@ -68,6 +71,8 @@ data Release = Release
   , updatedAt :: UTCTime
   -- ^ Last update timestamp for this release
   , readme :: Maybe TextHtml
+  -- ^ Content of the release's README
+  , readmeStatus :: ReadmeStatus
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
@@ -77,6 +82,31 @@ data Release = Release
 
 instance Ord Release where
   compare x y = compare (x.version) (y.version)
+
+data ReadmeStatus
+  = Imported
+  | Inexistent
+  | NotImported
+  deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
+
+parseReadmeStatus :: ByteString -> Maybe ReadmeStatus
+parseReadmeStatus "imported" = pure Imported
+parseReadmeStatus "inexistent" = pure Inexistent
+parseReadmeStatus "not-imported" = pure NotImported
+parseReadmeStatus _ = Nothing
+
+instance Display ReadmeStatus where
+  displayBuilder Imported = "imported"
+  displayBuilder Inexistent = "inexistent"
+  displayBuilder NotImported = "not-imported"
+
+instance FromField ReadmeStatus where
+  fromField f Nothing = returnError UnexpectedNull f ""
+  fromField _ (Just bs) | Just status <- parseReadmeStatus bs = pure status
+  fromField f (Just bs) = returnError ConversionFailed f $ unpack $ "Conversion error: Expected component to be one of " <> display @[ReadmeStatus] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
+
+instance ToField ReadmeStatus where
+  toField = Escape . encodeUtf8 . display
 
 data ReleaseMetadata = ReleaseMetadata
   { license :: SPDX.License

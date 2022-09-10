@@ -13,7 +13,7 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 
 import Data.Time (UTCTime)
-import Flora.Model.Release.Types (Release, ReleaseId, TextHtml (..))
+import Flora.Model.Release.Types (ReadmeStatus (..), Release, ReleaseId, TextHtml (..))
 
 insertRelease :: ([DB, IOE] :>> es) => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
@@ -24,14 +24,16 @@ upsertRelease release = dbtToEff $ upsert @Release release [[field| updated_at |
 refreshLatestVersions :: ([DB, IOE] :>> es) => Eff es ()
 refreshLatestVersions = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
 
-updateReadme :: ([DB, IOE] :>> es) => ReleaseId -> Maybe TextHtml -> Eff es ()
-updateReadme releaseId readmeBody =
+updateReadme :: ([DB, IOE] :>> es) => ReleaseId -> Maybe TextHtml -> ReadmeStatus -> Eff es ()
+updateReadme releaseId readmeBody status =
   dbtToEff $
     void $
       updateFieldsBy @Release
-        [[field| readme |]]
+        [ [field| readme |]
+        , [field| readme_status |]
+        ]
         ([field| release_id |], releaseId)
-        (Only readmeBody)
+        (readmeBody, status)
 
 updateUploadTime :: ([DB, IOE] :>> es) => ReleaseId -> UTCTime -> Eff es ()
 updateUploadTime releaseId timestamp =
