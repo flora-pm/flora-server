@@ -25,18 +25,8 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/guibou/PyF
-    tag: v0.11.0.0
-
-source-repository-package
-    type: git
     location: https://github.com/supki/envparse
     tag: 503a699
-
-source-repository-package
-    type: git
-    location: https://github.com/tchoutri/pg-entity.git
-    tag: 7125eac8bf83f9cc919b724b72c6b1cdf497e528
 
 source-repository-package
     type: git

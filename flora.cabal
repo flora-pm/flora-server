@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            0.0.1.0
+version:            1.0.0
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -241,7 +241,7 @@ library
     , template-haskell
     , text
     , text-display
-    , time                       ^>=1.9
+    , time
     , time-effectful
     , transformers               ^>=0.5
     , transformers-base          ^>=0.4

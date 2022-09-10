@@ -1,4 +1,5 @@
 # CHANGELOG
 
-## v0.0.1.0 –
-* Release
+## v1.0.0 - 2022-09-10
+
+First release!🥳
