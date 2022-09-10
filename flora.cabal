@@ -139,6 +139,7 @@ library
     FloraWeb.Server.Guards
     FloraWeb.Server.Logging
     FloraWeb.Server.Metrics
+    FloraWeb.Server.OpenSearch
     FloraWeb.Server.Pages
     FloraWeb.Server.Pages.Admin
     FloraWeb.Server.Pages.Categories
@@ -185,6 +186,7 @@ library
     , cookie                     ^>=0.4
     , cryptohash                 ^>=0.11
     , data-default
+    , data-default-class
     , directory                  ^>=1.3
     , effectful
     , effectful-core
@@ -255,6 +257,8 @@ library
     , warp                       ^>=3.3
     , websockets                 ^>=0.12
     , wreq                       >=0.5.3.3
+    , xml-conduit
+    , xml-conduit-writer
 
 executable flora-server
   import:         common-extensions

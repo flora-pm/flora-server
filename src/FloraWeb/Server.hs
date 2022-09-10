@@ -58,6 +58,7 @@ import FloraWeb.Server.Auth (FloraAuthContext, authHandler, runVisitorSession)
 import FloraWeb.Server.Logging (runLog)
 import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Server.Metrics
+import FloraWeb.Server.OpenSearch
 import FloraWeb.Server.Pages qualified as Pages
 import FloraWeb.Server.Tracing
 import FloraWeb.Types
@@ -137,6 +138,7 @@ floraServer :: Pool Connection -> OddJobs.UIConfig -> OddJobs.Env -> Routes (AsS
 floraServer pool cfg jobsRunnerEnv =
   Routes
     { assets = serveDirectoryWebApp "./static"
+    , openSearch = openSearchHandler
     , pages = \sessionWithCookies ->
         hoistServerWithContext
           (Proxy @Pages.Routes)
