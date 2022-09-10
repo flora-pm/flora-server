@@ -44,16 +44,16 @@ brand = do
   div_ [class_ $ containerBaseClasses <> " md:hidden", xOn_ "click.prevent" "menuOpen = !menuOpen"] $
     link defaultLinkOptions{href = "/", classes = "font-bold text-white dark:text-gray-100", childNode = text mobileTitle}
 
-navBarLink ::
-  -- | Additional classes
-  Text ->
-  -- | href attribute
-  Text ->
-  -- | label
-  Text ->
-  -- | is the element active
-  Bool ->
-  FloraHTML
+navBarLink
+  :: Text
+  -- ^ Additional classes
+  -> Text
+  -- ^ href attribute
+  -> Text
+  -- ^ label
+  -> Bool
+  -- ^ is the element active
+  -> FloraHTML
 navBarLink additionalClasses href label isActive' =
   let baseClasses = "font-bold inline-flex items-center py-3 mx-4 text-white dark:text-gray-100 "
    in a_ [href_ href, class_ (baseClasses <> additionalClasses <> " " <> isActive isActive')] (text label)

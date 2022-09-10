@@ -45,7 +45,7 @@ server cfg env =
       , importIndex = indexImportJobHandler
       }
 
-{- | This function converts a sub-tree of routes that require 'Admin' role
+{-| This function converts a sub-tree of routes that require 'Admin' role
  to a sub-tree of Flora pages.
  It acts as the safeguard that rejects non-admins from protected routes.
 -}

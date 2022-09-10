@@ -20,13 +20,13 @@ import Effectful.Log.Backend.StandardOutput qualified as Log
 import Effectful.Time
 
 -- | Wrapper around 'Log.runLogT' with necessary metadata
-runLog ::
-  forall (es :: [Effect]) (a :: Type).
-  (IOE :> es) =>
-  DeploymentEnv ->
-  Logger ->
-  Eff (Logging : es) a ->
-  Eff es a
+runLog
+  :: forall (es :: [Effect]) (a :: Type)
+   . (IOE :> es)
+  => DeploymentEnv
+  -> Logger
+  -> Eff (Logging : es) a
+  -> Eff es a
 runLog env logger logAction =
   Log.runLogging ("flora-" <> suffix) logger defaultLogLevel logAction
   where
@@ -37,11 +37,11 @@ makeLogger StdOut = Log.withStdOutLogger
 makeLogger Json = Log.withJsonStdOutLogger
 makeLogger JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = "logs/flora.json"}
 
-timeAction ::
-  forall (es :: [Effect]) (a :: Type).
-  (Time :> es) =>
-  Eff es a ->
-  Eff es (a, NominalDiffTime)
+timeAction
+  :: forall (es :: [Effect]) (a :: Type)
+   . (Time :> es)
+  => Eff es a
+  -> Eff es (a, NominalDiffTime)
 timeAction action = do
   start <- Time.getCurrentTime
   result <- action

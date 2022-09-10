@@ -55,16 +55,16 @@ data PackageCategory = PackageCategory
 mkCategoryId :: IO CategoryId
 mkCategoryId = CategoryId <$> UUID.nextRandom
 
-mkCategory ::
-  -- | Id of the category in the database
-  CategoryId ->
-  -- | Name
-  Text ->
-  -- | Optional slug, can be inferred from the name
-  Maybe Text ->
-  -- | Synopsis
-  Text ->
-  Category
+mkCategory
+  :: CategoryId
+  -- ^ Id of the category in the database
+  -> Text
+  -- ^ Name
+  -> Maybe Text
+  -- ^ Optional slug, can be inferred from the name
+  -> Text
+  -- ^ Synopsis
+  -> Category
 mkCategory categoryId name Nothing synopsis =
   mkCategory categoryId name (Just $ slugify name) synopsis
 mkCategory categoryId name (Just slug) synopsis =

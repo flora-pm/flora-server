@@ -33,16 +33,16 @@ normalizeWaiRequestRoute req = pathInfo
     pathInfo :: Text
     pathInfo = "/" <> T.intercalate "/" (Wai.pathInfo req)
 
-countRoute ::
-  -- | handler
-  Text ->
-  -- | method
-  Text ->
-  -- | status
-  Text ->
-  -- | environment
-  Text ->
-  IO ()
+countRoute
+  :: Text
+  -- ^ handler
+  -> Text
+  -- ^ method
+  -> Text
+  -- ^ status
+  -> Text
+  -- ^ environment
+  -> IO ()
 countRoute handler method status_code environment =
   P.withLabel routeCounter (handler, method, status_code, environment) P.incCounter
 
@@ -55,16 +55,16 @@ routeCounter =
     info = P.Info "route_counter" "How many times was this route accessed"
 {-# NOINLINE routeCounter #-}
 
-instrumentHandlerValueWithFilter ::
-  DeploymentEnv ->
-  -- | Response filter
-  (Wai.Response -> Maybe Wai.Response) ->
-  -- | The function used to derive the "handler" value in Prometheus
-  (Wai.Request -> Text) ->
-  -- | The app to instrument
-  Wai.Application ->
-  -- | The instrumented app
-  Wai.Application
+instrumentHandlerValueWithFilter
+  :: DeploymentEnv
+  -> (Wai.Response -> Maybe Wai.Response)
+  -- ^ Response filter
+  -> (Wai.Request -> Text)
+  -- ^ The function used to derive the "handler" value in Prometheus
+  -> Wai.Application
+  -- ^ The app to instrument
+  -> Wai.Application
+  -- ^ The instrumented app
 instrumentHandlerValueWithFilter environment resFilter f app req respond = do
   start <- getTime Monotonic
   app req $ \res -> do

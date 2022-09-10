@@ -43,12 +43,12 @@ data TestEnv = TestEnv
   }
   deriving stock (Generic)
 
-mkPool ::
-  PG.ConnectInfo -> -- Database access information
-  Int -> -- Number of sub-pools
-  NominalDiffTime -> -- Allowed timeout
-  Int -> -- Number of connections
-  Eff '[IOE] (Pool PG.Connection)
+mkPool
+  :: PG.ConnectInfo -- Database access information
+  -> Int -- Number of sub-pools
+  -> NominalDiffTime -- Allowed timeout
+  -> Int -- Number of connections
+  -> Eff '[IOE] (Pool PG.Connection)
 mkPool connectInfo subPools timeout' connections =
   liftIO $
     Pool.newPool $

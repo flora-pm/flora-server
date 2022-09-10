@@ -12,14 +12,14 @@ import Lucid (class_, li_, nav_, ul_, xmlns_)
 import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, svg_, viewBox_)
 import Servant.API (toUrlPiece)
 
-paginationNav ::
-  -- | Total results
-  Word ->
-  -- | Current page
-  Word ->
-  -- | Search term
-  SearchAction ->
-  FloraHTML
+paginationNav
+  :: Word
+  -- ^ Total results
+  -> Word
+  -- ^ Current page
+  -> SearchAction
+  -- ^ Search term
+  -> FloraHTML
 paginationNav totalResults currentPage searchAction = do
   let (totalPages :: Word) = (totalResults `div` 30) + 1
   nav_ [class_ "pagination-area"] $
@@ -46,12 +46,12 @@ mkURL ListAllPackages pageNumber = "/" <> toUrlPiece (Links.packageIndexLink pag
 mkURL (SearchPackages searchTerm) pageNumber =
   "/" <> toUrlPiece (Links.packageSearchLink searchTerm pageNumber)
 
-paginate ::
-  -- | Current page
-  Word ->
-  -- | Total pages
-  Word ->
-  Vector Word
+paginate
+  :: Word
+  -- ^ Current page
+  -> Word
+  -- ^ Total pages
+  -> Vector Word
 paginate currentPage totalPages
   | currentPage <= 2 = Vector.fromList [1 .. 5]
   | (currentPage + 2) >= totalPages = Vector.fromList [(currentPage - 2) .. totalPages]

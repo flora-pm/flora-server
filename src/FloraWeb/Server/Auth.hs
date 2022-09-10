@@ -77,10 +77,10 @@ getSessionId cookies =
         Nothing -> pure Nothing
         Just sessionId -> pure $ Just sessionId
 
-getInTheFuckingSessionShinji ::
-  ([Logging, DB, IOE] :>> es) =>
-  Maybe PersistentSessionId ->
-  Eff es (Maybe PersistentSession)
+getInTheFuckingSessionShinji
+  :: ([Logging, DB, IOE] :>> es)
+  => Maybe PersistentSessionId
+  -> Eff es (Maybe PersistentSession)
 getInTheFuckingSessionShinji Nothing = pure Nothing
 getInTheFuckingSessionShinji (Just persistentSessionId) = do
   result <- getPersistentSession persistentSessionId

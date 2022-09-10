@@ -11,8 +11,8 @@ import Servant.HTML.Lucid (HTML)
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { displaySearch ::
-      mode
+  { displaySearch
+      :: mode
         :- QueryParam "q" Text
           :> QueryParam "page" Word
           :> Get '[HTML] (Html ())

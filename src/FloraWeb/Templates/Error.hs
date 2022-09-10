@@ -14,12 +14,12 @@ import Effectful.Error.Static (Error, throwError)
 import FloraWeb.Templates
 import Servant (ServerError (..))
 
-renderError ::
-  forall (es :: [Effect]) (a :: Type).
-  (Error ServerError :> es) =>
-  TemplateEnv ->
-  Status ->
-  Eff es a
+renderError
+  :: forall (es :: [Effect]) (a :: Type)
+   . (Error ServerError :> es)
+  => TemplateEnv
+  -> Status
+  -> Eff es a
 renderError env status = do
   let templateEnv = env & (#title .~ "Flora :: *** Exception")
   let body = mkErrorPage templateEnv $ showError status

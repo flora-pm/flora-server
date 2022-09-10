@@ -30,11 +30,11 @@ data IsAdmin :: Effect
 type instance DispatchOf IsAdmin = Static NoSideEffects
 newtype instance StaticRep IsAdmin = IsAdmin ()
 
-runAdminSession ::
-  forall (es :: [Effect]) (a :: Type).
-  () =>
-  Eff (IsAdmin : es) a ->
-  Eff es a
+runAdminSession
+  :: forall (es :: [Effect]) (a :: Type)
+   . ()
+  => Eff (IsAdmin : es) a
+  -> Eff es a
 runAdminSession computation = evalStaticRep (IsAdmin ()) computation
 
 data IsVisitor :: Effect
@@ -42,25 +42,25 @@ data IsVisitor :: Effect
 type instance DispatchOf IsVisitor = Static NoSideEffects
 newtype instance StaticRep IsVisitor = IsVisitor ()
 
-runVisitorSession ::
-  forall (es :: [Effect]) (a :: Type).
-  () =>
-  Eff (IsVisitor : es) a ->
-  Eff es a
+runVisitorSession
+  :: forall (es :: [Effect]) (a :: Type)
+   . ()
+  => Eff (IsVisitor : es) a
+  -> Eff es a
 runVisitorSession computation = evalStaticRep (IsVisitor ()) computation
 
-putVisitorTag ::
-  forall (es :: [Effect]) (a :: Type).
-  () =>
-  Eff es a ->
-  Eff (IsVisitor : es) a
+putVisitorTag
+  :: forall (es :: [Effect]) (a :: Type)
+   . ()
+  => Eff es a
+  -> Eff (IsVisitor : es) a
 putVisitorTag m = raise m
 
-demoteSession ::
-  forall (es :: [Effect]) (a :: Type).
-  () =>
-  Eff (IsAdmin : es) a ->
-  Eff (IsVisitor : es) a
+demoteSession
+  :: forall (es :: [Effect]) (a :: Type)
+   . ()
+  => Eff (IsAdmin : es) a
+  -> Eff (IsVisitor : es) a
 demoteSession = putVisitorTag . runAdminSession
 
 -- | Datatypes used for every route that doesn't *need* an authenticated user

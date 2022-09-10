@@ -105,11 +105,11 @@ defaultsToEnv TemplateDefaults{..} =
   let sessionId = PersistentSessionId UUID.nil
    in TemplateEnv{..}
 
-fromSession ::
-  (MonadIO m) =>
-  Session ->
-  TemplateDefaults ->
-  m TemplateEnv
+fromSession
+  :: (MonadIO m)
+  => Session
+  -> TemplateDefaults
+  -> m TemplateEnv
 fromSession session defaults = do
   let sessionId = session.sessionId
   let muser = session.mUser

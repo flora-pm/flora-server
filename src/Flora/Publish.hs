@@ -23,14 +23,14 @@ import Flora.Model.Requirement (Requirement)
 {- TODO: Audit log of the published package
    TODO: Publish artifacts
 -}
-publishPackage ::
-  ([DB, Logging, Time, IOE] :>> es) =>
-  [Requirement] ->
-  [PackageComponent] ->
-  Release ->
-  [UserPackageCategory] ->
-  Package ->
-  Eff es Package
+publishPackage
+  :: ([DB, Logging, Time, IOE] :>> es)
+  => [Requirement]
+  -> [PackageComponent]
+  -> Release
+  -> [UserPackageCategory]
+  -> Package
+  -> Eff es Package
 publishPackage requirements components release userPackageCategories package = do
   liftIO $ T.putStrLn $ "[+] Package " <> display (package.name) <> ": "
   result <- Query.getPackageByNamespaceAndName (package.namespace) (package.name)

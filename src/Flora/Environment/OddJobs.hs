@@ -13,13 +13,13 @@ import OddJobs.Types (ConcurrencyControl (..), Job, UIConfig (..))
 import Flora.Environment.Config
 import Flora.OddJobs.Types
 
-makeConfig ::
-  JobsRunnerEnv ->
-  FloraConfig ->
-  Logger ->
-  Pool PG.Connection ->
-  (Job -> JobsRunner ()) ->
-  Config
+makeConfig
+  :: JobsRunnerEnv
+  -> FloraConfig
+  -> Logger
+  -> Pool PG.Connection
+  -> (Job -> JobsRunner ())
+  -> Config
 makeConfig runnerEnv cfg logger pool runnerContinuation =
   mkConfig
     (\level event -> structuredLogging cfg logger level event)
