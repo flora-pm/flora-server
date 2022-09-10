@@ -38,6 +38,7 @@ header = do
         script_ [src_ "/static/js/app.js", type_ "module", defer_ ""] ("" :: Text)
 
         link_ [rel_ "stylesheet", href_ "/static/css/app.css"]
+        link_ [rel_ "search", type_ "application/opensearchdescription+xml", title_ "Search on Flora", href_ "/opensearch.xml"]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
         theme
