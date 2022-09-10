@@ -100,7 +100,7 @@
     border-radius: 6px;
     overflow: auto;
     font-size: 90%;
-    background-color: #354561;
+    background-color: #dbdde3;
     margin-bottom: 16px;
   }
 
@@ -108,7 +108,17 @@
     padding: 0.2em 0.4em;
     margin: 0;
     font-size: 85%;
-    background-color: #354561;
+    background-color: #dbdde3;
     border-radius: 6px;
+  }
+
+  .dark {
+    pre {
+      background-color: #354561;
+    }
+
+    code {
+      background-color: #354561;
+    }
   }
 }

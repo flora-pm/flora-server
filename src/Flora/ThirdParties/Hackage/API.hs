@@ -23,7 +23,7 @@ data PlainerText
   deriving (Typeable)
 
 instance Accept PlainerText where
-  contentTypes _ = "plain" // "text" :| ["plain" // "text" /: ("charset", "utf-8")]
+  contentTypes _ = "text" // "plain" /: ("charset", "utf-8") :| ["text" // "plain"]
 
 instance MimeUnrender PlainerText Text where
   mimeUnrender _ = Bifunctor.first show . Text.decodeUtf8' . ByteString.toStrict
