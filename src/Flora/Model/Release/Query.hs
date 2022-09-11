@@ -71,7 +71,7 @@ getPackageReleasesWithoutReadme =
         from releases as r
         join packages as p
         on p.package_id = r.package_id
-        where r.readme_status is 'not-imported'
+        where r.readme_status = 'not-imported'
       |]
 
 getPackageReleasesWithoutUploadTimestamp :: [DB, IOE] :>> es => Eff es (Vector (ReleaseId, Version, PackageName))
