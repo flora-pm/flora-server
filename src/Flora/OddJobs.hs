@@ -39,7 +39,7 @@ import Effectful.Log (localDomainEff', logMessageEff')
 import Effectful.PostgreSQL.Transact.Effect
 import Log
 import Lucid qualified
-import Network.HTTP.Types (notFound404, statusCode)
+import Network.HTTP.Types (gone410, notFound404, statusCode)
 import OddJobs.Job (Job (..), createJob, scheduleJob)
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
@@ -112,11 +112,11 @@ makeReadme pay@MkReadmePayload{..} = localDomain "fetch-readme" $ do
   let payload = VersionedPackage mpPackage mpVersion
   gewt <- Hackage.request $ Hackage.getPackageReadme payload
   case gewt of
-    Left e@(FailureResponse _ response) -> do
+    Left e@(FailureResponse _ response)
       -- If the README simply doesn't exist, we skip it by marking it as successful.
-      if response.responseStatusCode == notFound404
-        then Update.updateReadme mpReleaseId Nothing Inexistent
-        else throw e
+      | response.responseStatusCode == notFound404 -> Update.updateReadme mpReleaseId Nothing Inexistent
+      | response.responseStatusCode == gone410 -> Update.updateReadme mpReleaseId Nothing Inexistent
+      | otherwise -> throw e
     Left e -> throw e
     Right bodyText -> do
       logInfo ("got a body for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
