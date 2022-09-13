@@ -10,6 +10,7 @@ import Data.Vector qualified as V
 import Data.Vector qualified as Vector
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Version
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
@@ -74,7 +75,7 @@ presentationHeader release namespace name synopsis = do
     div_ [class_ "page-title"] $
       h1_ [class_ "package-title text-center tracking-tight"] $ do
         span_ [class_ "headline"] $ toHtml namespace <> "/" <> toHtml name
-        span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release
+        span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release.version
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
@@ -123,8 +124,8 @@ displayReadme release =
     Nothing -> toHtml @Text "no readme available"
     Just (MkTextHtml readme) -> relaxHtmlT readme
 
-displayReleaseVersion :: Release -> FloraHTML
-displayReleaseVersion Release{version} = toHtml version
+displayReleaseVersion :: Version -> FloraHTML
+displayReleaseVersion version = toHtml version
 
 displayLicense :: SPDX.License -> FloraHTML
 displayLicense license = do

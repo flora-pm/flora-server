@@ -15,7 +15,6 @@ versionListItem :: Namespace -> PackageName -> Version -> FloraHTML
 versionListItem namespace packageName version = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName <> "/" <> display version)
   li_ [class_ "version-list-item"] $
-    a_ [href, class_ "block md:my-4"] $ do
+    a_ [href, class_ ""] $ do
       h4_ [class_ "version-list-item__name"] $
-        strong_ [class_ ""] $
-          text ("v" <> display version)
+        text ("v" <> display version)

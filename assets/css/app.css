@@ -95,7 +95,7 @@ nav {
 
 a {
   text-decoration: none;
-  color: var(--link-color); /* @apply dark:text-purple-7 text-blue-6; */
+  color: var(--link-color);
 }
 
 .brand {
@@ -122,6 +122,27 @@ div[class="bullets"] {
       list-style-type: disc;
       list-style-position: inside;
     }
+  }
+}
+
+.version-list-item {
+  a {
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  a:hover h4.version-list-item__name {
+    text-decoration: underline;
+  }
+
+  .version-list-item__name {
+    margin-right: 0.5rem;
+    display: inline;
+    color: var(--link-color);
+    font-weight: bolder;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
   }
 }
 
@@ -307,26 +328,6 @@ div[class="bullets"] {
   li.category a:hover {
     text-decoration: underline;
   }
-}
-
-li.version-list-item a:hover h4.version-list-item__name {
-  text-decoration: underline;
-}
-
-.version-list-item {
-  @apply xl:text-xl;
-}
-
-.version-list-item__name {
-  @apply inline mr-2 text-gray-1 dark:text-purple-7;
-}
-
-.version-list-item__version {
-  @apply text-sm mt-2 text-gray-2 dark:text-gray-7;
-}
-
-.version-list-item__synopsis {
-  @apply inline text-black dark:text-gray-7;
 }
 
 li.dependents a.dependent:hover {
