@@ -14,7 +14,7 @@ packageListItem :: (Namespace, PackageName, Text, Text) -> FloraHTML
 packageListItem (namespace, packageName, synopsis, version) = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
-    a_ [href, class_ "block md:my-6"] $ do
+    a_ [href, class_ ""] $ do
       h4_ [class_ "package-list-item__name"] $
         strong_ [class_ ""] . toHtml $
           display namespace <> "/" <> display packageName

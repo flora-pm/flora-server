@@ -100,7 +100,7 @@
     border-radius: 6px;
     overflow: auto;
     font-size: 90%;
-    background-color: #dbdde3;
+    background-color: var(--readme-pre-background-color);
     margin-bottom: 16px;
   }
 
@@ -108,17 +108,7 @@
     padding: 0.2em 0.4em;
     margin: 0;
     font-size: 85%;
-    background-color: #dbdde3;
+    background-color: var(--readme-code-background-color);
     border-radius: 6px;
-  }
-
-  .dark {
-    pre {
-      background-color: #354561;
-    }
-
-    code {
-      background-color: #354561;
-    }
   }
 }

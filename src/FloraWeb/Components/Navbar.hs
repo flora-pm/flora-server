@@ -17,9 +17,9 @@ navbar = do
   TemplateEnv{title} <- ask
   let menuClasses =
         "md:flex flex md:items-center "
-          <> "bg-purple-1 md:bg-purple-1 dark:bg-blue-1 md:dark:bg-navbar-dark "
           <> "flex flex-col md:flex-row absolute md:relative top-[100%] left-0 w-full md:w-auto md:top-0"
-  nav_ [class_ "sticky top-0 left-0 border-b dark:border-transparent bg-purple-1 dark:bg-blue-1 mb-3 z-10", xData_ "{menuOpen: false}"] $ do
+
+  nav_ [class_ "sticky top-0 left-0 mb-3 z-10", xData_ "{menuOpen: false}"] $ do
     div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "md:flex md:justify-between h-16 "] $ do
         div_ [id_ "navbar-left", class_ "flex flex-shrink-0"] $ do
@@ -32,7 +32,7 @@ navbar = do
           navBarLink' "/categories" "Categories" packagesNav
           navBarLink' "/packages" "Packages" packagesNav
           -- userMenu
-          darkModeToggle
+          themeToggle
 
 brand :: FloraHTML
 brand = do
@@ -94,27 +94,33 @@ logOff (Just _) sessionId =
     button_ [type_ "submit", class_ btnClasses] "Sign out"
 
 adminLink :: Bool -> Maybe User -> FloraHTML
-adminLink active (Just user) | user.userFlags.isAdmin = navBarLink' "/admin" "Admin Dashboard" active
+adminLink active (Just user)
+  | user.userFlags.isAdmin = navBarLink' "/admin" "Admin Dashboard" active
 adminLink _ _ = ""
 
-darkModeToggle :: FloraHTML
-darkModeToggle = do
-  let lightModeContent = do
-        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6"]
-  let darkModeContent = do
+themeToggle :: FloraHTML
+themeToggle = do
+  let sunIcon = do
         img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 invert"]
-  let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200 dark:bg-purple-3"
+
+  let moonIcon = do
+        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6"]
+
+  let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
+
   button_
-    [ xOn_ "click" "darkMode = !darkMode; menuOpen = false"
-    , class_ $ "hidden dark:inline-flex " <> buttonBaseClasses
+    [ xOn_ "click" "theme = ''; menuOpen = false"
+    , class_ $ "theme-button--light " <> buttonBaseClasses
     ]
-    darkModeContent
+    sunIcon
+
   button_
-    [ xOn_ "click" "darkMode = !darkMode; menuOpen = false"
-    , class_ $ "dark:hidden " <> buttonBaseClasses
+    [ xOn_ "click" "theme = 'dark'; menuOpen = false"
+    , class_ $ "theme-button--dark " <> buttonBaseClasses
     ]
-    lightModeContent
-  input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "darkMode"]
+    moonIcon
+
+  input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "theme"]
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
 getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login/Signup" False

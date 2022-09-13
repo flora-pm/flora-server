@@ -10,6 +10,7 @@ import Data.Vector qualified as V
 import Data.Vector qualified as Vector
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Version
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
@@ -71,10 +72,10 @@ showPackage
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = do
   div_ [class_ "divider"] $ do
-    div_ [class_ "px-4 py-5 sm:px-6 sm:py-24 lg:py-4 lg:px-8"] $
-      h2_ [class_ "package-title text-center tracking-tight"] $ do
+    div_ [class_ "page-title"] $
+      h1_ [class_ "package-title text-center tracking-tight"] $ do
         span_ [class_ "headline"] $ toHtml namespace <> "/" <> toHtml name
-        span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release
+        span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release.version
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
 
@@ -123,8 +124,8 @@ displayReadme release =
     Nothing -> toHtml @Text "no readme available"
     Just (MkTextHtml readme) -> relaxHtmlT readme
 
-displayReleaseVersion :: Release -> FloraHTML
-displayReleaseVersion Release{version} = toHtml version
+displayReleaseVersion :: Version -> FloraHTML
+displayReleaseVersion version = toHtml version
 
 displayLicense :: SPDX.License -> FloraHTML
 displayLicense license = do
@@ -209,7 +210,6 @@ displayInstructions packageName latestRelease = do
         input_
           [ class_ "package-install-string"
           , type_ "text"
-          , id_ "install-string"
           , onfocus_ "this.select();"
           , value_ (formatInstallString packageName latestRelease)
           , readonly_ "readonly"

@@ -14,6 +14,6 @@ import FloraWeb.Templates.Packages.Listing (packageListing)
 
 showCategory :: Category -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 showCategory Category{name, synopsis} packagesInfo = do
-  div_ [class_ "container dark:text-gray-100 text-black"] $ do
+  div_ [class_ "container"] $ do
     presentationHeader name synopsis (fromIntegral $ V.length packagesInfo)
     packageListing packagesInfo

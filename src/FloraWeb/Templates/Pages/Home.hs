@@ -76,8 +76,8 @@ banner :: FloraHTML
 banner = do
   div_ [class_ "relative"] $
     div_ [class_ "px-4 py-16 sm:px-6 sm:py-24 lg:py-16 lg:px-8"] $
-      h1_ [class_ "text-center text-2xl font-extrabold tracking-tight sm:text-5xl lg:text-4xl"] $
-        span_ [class_ "dark:text-gray-100 text-black headline"] "Search Haskell packages on Flora"
+      h1_ [class_ "main-title"] $
+        span_ [class_ "main-title"] "Search Haskell packages on Flora"
 
 searchBar :: FloraHTML
 searchBar =
@@ -86,9 +86,9 @@ searchBar =
       label_ [for_ "search"] ""
       input_
         [ class_
-            "search-bar text-2xl text-gray-800 dark:bg-dark dark:focus-within:bg-blue-3 \
-            \ dark:text-gray-300 block rounded-md border-0 focus:outline-none focus:ring-0 \
-            \ focus:brand-purple flex-grow p-2 ml-2 dark:bg-blue-2"
+            "search-bar \
+            \ focus:outline-none focus:ring-0 \
+            \ focus:brand-purple"
         , type_ "search"
         , id_ "search"
         , name_ "q"

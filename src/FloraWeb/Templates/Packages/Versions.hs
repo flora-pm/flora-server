@@ -12,7 +12,7 @@ import FloraWeb.Templates
 
 listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
 listVersions namespace packageName releases =
-  div_ [class_ "container dark:text-gray-100 text-black"] $ do
+  div_ [class_ "container"] $ do
     Template.presentationHeader namespace packageName (fromIntegral $ Vector.length releases)
     div_ [class_ "md:col-span-3"] $ versionListing namespace packageName releases
 

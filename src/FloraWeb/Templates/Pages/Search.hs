@@ -14,14 +14,14 @@ import Lucid
 
 showAllPackages :: Word -> Word -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 showAllPackages count currentPage packagesInfo = do
-  div_ [class_ "container dark:text-gray-100 text-black"] $ do
+  div_ [class_ "container"] $ do
     presentationHeader "Packages" "" count
     div_ [class_ "md:col-span-3"] $ packageListing packagesInfo
     paginationNav count currentPage ListAllPackages
 
 showResults :: Text -> Word -> Word -> Vector (Namespace, PackageName, Text, Version) -> FloraHTML
 showResults searchString count currentPage packagesInfo = do
-  div_ [class_ "container dark:text-gray-100 text-black"] $ do
+  div_ [class_ "container"] $ do
     presentationHeader searchString "" count
     div_ [class_ "md:col-span-3"] $ packageListing packagesInfo
     when (count > 30) $

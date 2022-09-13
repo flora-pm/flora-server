@@ -12,6 +12,6 @@ import Lucid
 
 showDependencies :: Text -> Vector (Namespace, PackageName, Text, Version, Text) -> FloraHTML
 showDependencies searchString packagesInfo = do
-  div_ [class_ "container dark:text-gray-100 text-black"] $ do
+  div_ [class_ "container"] $ do
     presentationHeader searchString "" (fromIntegral $ Vector.length packagesInfo)
     div_ [class_ "md:col-span-3"] $ packageListingWithRange packagesInfo
