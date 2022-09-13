@@ -19,9 +19,14 @@ header = do
   html_
     [ lang_ "en"
     , class_ "no-js"
-    , xBind_ "class" "darkMode ? 'dark' : ''"
-    , xData_ "{ darkMode: localStorage.getItem('darkMode') !== 'false' }"
-    , xInit_ "$watch('darkMode', val => localStorage.setItem('darkMode', val))"
+    , xData_
+        "{ theme: \
+        \ localStorage.getItem('theme') \
+        \   || (window.matchMedia('(prefers-color-scheme: dark)').matches \
+        \   ? 'dark' : 'light') \
+        \ }"
+    , xBind_ "data-theme" "(theme === 'dark') ? 'dark' : ''"
+    , xInit_ "$watch('theme', val => localStorage.setItem('theme', val))"
     ]
     $ do
       head_ $ do
@@ -38,7 +43,12 @@ header = do
         script_ [src_ "/static/js/app.js", type_ "module", defer_ ""] ("" :: Text)
 
         link_ [rel_ "stylesheet", href_ "/static/css/app.css"]
-        link_ [rel_ "search", type_ "application/opensearchdescription+xml", title_ "Search on Flora", href_ "/opensearch.xml"]
+        link_
+          [ rel_ "search"
+          , type_ "application/opensearchdescription+xml"
+          , title_ "Search on Flora"
+          , href_ "/opensearch.xml"
+          ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
         theme
@@ -46,7 +56,7 @@ header = do
         -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
         meta_ [name_ "twitter:dnt", content_ "on"]
 
-      body_ [class_ "bg-background dark:bg-blue-2 dark:text-gray-100"] $ do
+      body_ [] $ do
         navbar
 
 ogTags :: FloraHTML
