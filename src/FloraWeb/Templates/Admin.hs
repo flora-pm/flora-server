@@ -8,7 +8,7 @@ import FloraWeb.Templates.Types
 
 index :: AdminReport -> FloraHTML
 index adminReport = do
-  div_ [class_ "container dark:text-white text-black py-5"] $ do
+  div_ [class_ "container py-5"] $ do
     h1_ [class_ "text-center text-2xl tracking-tight sm:text-2xl lg:text-5xl"] "Overview"
     dataReport adminReport
 
