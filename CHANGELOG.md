@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.3 -- XXXX-XX-XX
+
+* Remove padding from README code paragraphs (#203)
+
 ## v1.0.2 -- 2022-09-13
 
 * Use CSS variables to split dark and light themes (#199)
