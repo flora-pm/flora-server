@@ -45,25 +45,24 @@ data TestEnv = TestEnv
 
 mkPool
   :: PG.ConnectInfo -- Database access information
-  -> Int -- Number of sub-pools
   -> NominalDiffTime -- Allowed timeout
   -> Int -- Number of connections
   -> Eff '[IOE] (Pool PG.Connection)
-mkPool connectInfo subPools timeout' connections =
+mkPool connectInfo timeout' connections =
   liftIO $
     Pool.newPool $
       Pool.PoolConfig
         { createResource = PG.connect connectInfo
         , freeResource = PG.close
         , poolCacheTTL = realToFrac timeout'
-        , poolMaxResources = subPools * connections
+        , poolMaxResources = connections
         }
 
 configToEnv :: FloraConfig -> Eff '[IOE] FloraEnv
 configToEnv x@FloraConfig{..} = do
   let PoolConfig{..} = dbConfig
-  pool <- mkPool connectInfo subPools connectionTimeout connections
-  jobsPool <- mkPool connectInfo subPools connectionTimeout connections
+  pool <- mkPool connectInfo connectionTimeout connections
+  jobsPool <- mkPool connectInfo connectionTimeout connections
   pure FloraEnv{..}
   where
     config = x
@@ -71,7 +70,7 @@ configToEnv x@FloraConfig{..} = do
 testConfigToTestEnv :: TestConfig -> Eff '[IOE] TestEnv
 testConfigToTestEnv config@TestConfig{..} = do
   let PoolConfig{..} = config.dbConfig
-  pool <- mkPool connectInfo subPools connectionTimeout connections
+  pool <- mkPool connectInfo connectionTimeout connections
   pure TestEnv{..}
 
 displayConnectInfo :: PG.ConnectInfo -> Text
