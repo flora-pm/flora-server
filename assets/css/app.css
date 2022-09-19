@@ -40,10 +40,12 @@ body {
 }
 
 .main-title {
-  margin-bottom: 5px;
   color: var(--text-color);
-  letter-spacing: -0.025em;
+  font-size: 2.25rem;
   font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 2.5rem;
+  margin-bottom: 5px;
   text-align: center;
 }
 
@@ -396,10 +398,5 @@ li.dependents a.dependent:hover {
 
   .dependency {
     white-space: nowrap;
-  }
-
-  .main-title {
-    font-size: 2.25rem;
-    line-height: 2.5rem;
   }
 }
