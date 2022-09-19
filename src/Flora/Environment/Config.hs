@@ -76,8 +76,7 @@ data FloraConfig = FloraConfig
   deriving stock (Show, Generic)
 
 data PoolConfig = PoolConfig
-  { subPools :: Int
-  , connectionTimeout :: NominalDiffTime
+  { connectionTimeout :: NominalDiffTime
   , connections :: Int
   }
   deriving stock (Show)
@@ -107,8 +106,7 @@ parseConnectInfo =
 parsePoolConfig :: Parser Error PoolConfig
 parsePoolConfig =
   PoolConfig
-    <$> var (int >=> nonNegative) "FLORA_DB_SUB_POOLS" (help "Number of sub-pools")
-    <*> var timeout "FLORA_DB_TIMEOUT" (help "Timeout for each connection")
+    <$> var timeout "FLORA_DB_TIMEOUT" (help "Timeout for each connection")
     <*> var
       (int >=> nonNegative)
       "FLORA_DB_POOL_CONNECTIONS"
