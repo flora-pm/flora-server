@@ -63,10 +63,11 @@ jobs:
         cabal install postgresql-migration
     - name: Test
       run: |
-        source environment.ci.sh
+        set -x
+        source ./environment.ci.sh
         createdb -h "${FLORA_DB_HOST}" -p "${FLORA_DB_PORT}" -U "${FLORA_DB_USER}" -w "${FLORA_DB_DATABASE}"
-        migrate init "${FLORA_PG_CONNSTRING}" 
-        migrate migrate "${FLORA_PG_CONNSTRING}" migrations
+        migrate init "${FLORA_DB_CONNSTRING}" 
+        migrate migrate "${FLORA_DB_CONNSTRING}" migrations
         cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         cabal test
       env:
