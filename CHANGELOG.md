@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v1.0.3 -- XXXX-XX-XX
+## v1.0.3 -- 2022-09-22
 
 * Remove padding from README code paragraphs (#203)
 * Simplify the database pool settings (#210)
