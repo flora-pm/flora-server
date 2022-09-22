@@ -1,9 +1,8 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
-
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
   ( FloraConfig (..)
   , LoggingEnv (..)
+  , ConnectionInfo (..)
   , TestConfig (..)
   , PoolConfig (..)
   , DeploymentEnv (..)
@@ -15,10 +14,12 @@ where
 
 import Control.Monad ((>=>))
 import Data.Bifunctor
+import Data.ByteString (ByteString)
 import Data.Pool (Pool)
-import Data.Text
+import Data.Text (Text)
 import Data.Text.Display (Display (..))
 import Data.Time (NominalDiffTime)
+import Data.Typeable
 import Data.Word (Word16)
 import Database.PostgreSQL.Simple qualified as PG
 import Env
@@ -36,6 +37,16 @@ import Env
   )
 import GHC.Generics
 import Text.Read (readMaybe)
+
+data ConnectionInfo = ConnectionInfo
+  { connectHost :: Text
+  , connectPort :: Word16
+  , connectUser :: Text
+  , connectPassword :: Text
+  , connectDatabase :: Text
+  , sslMode :: Text
+  }
+  deriving (Generic, Eq, Read, Show, Typeable)
 
 data DeploymentEnv
   = Production
@@ -67,7 +78,7 @@ data LoggingEnv = LoggingEnv
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
   { dbConfig :: PoolConfig
-  , connectInfo :: PG.ConnectInfo
+  , connectionInfo :: ByteString
   , domain :: Text
   , httpPort :: Word16
   , logging :: LoggingEnv
@@ -84,7 +95,7 @@ data PoolConfig = PoolConfig
 data TestConfig = TestConfig
   { httpPort :: Word16
   , dbConfig :: PoolConfig
-  , connectInfo :: PG.ConnectInfo
+  , connectionInfo :: ByteString
   }
   deriving stock (Generic)
 
@@ -94,14 +105,9 @@ data TestEnv = TestEnv
   }
   deriving stock (Generic)
 
-parseConnectInfo :: Parser Error PG.ConnectInfo
-parseConnectInfo =
-  PG.ConnectInfo
-    <$> var str "FLORA_DB_HOST" (help "PostgreSQL host")
-    <*> var port "FLORA_DB_PORT" (help "PostgreSQL port")
-    <*> var str "FLORA_DB_USER" (help "PostgreSQL user")
-    <*> var str "FLORA_DB_PASSWORD" (help "PostgreSQL password")
-    <*> var str "FLORA_DB_DATABASE" (help "Control-Plane database")
+parseConnectionInfo :: Parser Error ByteString
+parseConnectionInfo =
+  var str "FLORA_DB_CONNSTRING" (help "libpq-compatible connection string")
 
 parsePoolConfig :: Parser Error PoolConfig
 parsePoolConfig =
@@ -127,13 +133,13 @@ parseDomain = var str "FLORA_DOMAIN" (help "URL domain for Flora")
 
 parseDeploymentEnv :: Parser Error DeploymentEnv
 parseDeploymentEnv =
-  var deploymentEnv "FLORA_ENVIRONMENT" (help "Name of the current environment (production, development)")
+  var deploymentEnv "FLORA_ENVIRONMENT" (help "Name of the current environment (production, development, test)")
 
 parseConfig :: Parser Error FloraConfig
 parseConfig =
   FloraConfig
     <$> parsePoolConfig
-    <*> parseConnectInfo
+    <*> parseConnectionInfo
     <*> parseDomain
     <*> parsePort
     <*> parseLoggingEnv
@@ -144,7 +150,7 @@ parseTestConfig =
   TestConfig
     <$> parsePort
     <*> parsePoolConfig
-    <*> parseConnectInfo
+    <*> parseConnectionInfo
 
 -- Env parser helpers
 

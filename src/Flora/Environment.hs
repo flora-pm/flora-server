@@ -11,10 +11,11 @@ module Flora.Environment
 where
 
 import Colourista.IO (blueMessage)
+import Data.ByteString (ByteString)
 import Data.Pool (Pool)
 import Data.Pool qualified as Pool
 import Data.Text
-import Data.Text qualified as T
+import Data.Text.Encoding qualified as Text
 import Data.Time (NominalDiffTime)
 import Data.Word (Word16)
 import Database.PostgreSQL.Simple qualified as PG
@@ -44,15 +45,15 @@ data TestEnv = TestEnv
   deriving stock (Generic)
 
 mkPool
-  :: PG.ConnectInfo -- Database access information
+  :: ByteString -- Database access information
   -> NominalDiffTime -- Allowed timeout
   -> Int -- Number of connections
   -> Eff '[IOE] (Pool PG.Connection)
-mkPool connectInfo timeout' connections =
+mkPool connectionInfo timeout' connections =
   liftIO $
     Pool.newPool $
       Pool.PoolConfig
-        { createResource = PG.connect connectInfo
+        { createResource = PG.connectPostgreSQL connectionInfo
         , freeResource = PG.close
         , poolCacheTTL = realToFrac timeout'
         , poolMaxResources = connections
@@ -61,8 +62,8 @@ mkPool connectInfo timeout' connections =
 configToEnv :: FloraConfig -> Eff '[IOE] FloraEnv
 configToEnv x@FloraConfig{..} = do
   let PoolConfig{..} = dbConfig
-  pool <- mkPool connectInfo connectionTimeout connections
-  jobsPool <- mkPool connectInfo connectionTimeout connections
+  pool <- mkPool connectionInfo connectionTimeout connections
+  jobsPool <- mkPool connectionInfo connectionTimeout connections
   pure FloraEnv{..}
   where
     config = x
@@ -70,27 +71,13 @@ configToEnv x@FloraConfig{..} = do
 testConfigToTestEnv :: TestConfig -> Eff '[IOE] TestEnv
 testConfigToTestEnv config@TestConfig{..} = do
   let PoolConfig{..} = config.dbConfig
-  pool <- mkPool connectInfo connectionTimeout connections
+  pool <- mkPool connectionInfo connectionTimeout connections
   pure TestEnv{..}
-
-displayConnectInfo :: PG.ConnectInfo -> Text
-displayConnectInfo PG.ConnectInfo{..} =
-  T.pack $
-    "postgresql://"
-      <> connectUser
-      <> ":"
-      <> connectPassword
-      <> "@"
-      <> connectHost
-      <> ":"
-      <> show connectPort
-      <> "/"
-      <> connectDatabase
 
 getFloraEnv :: Eff '[IOE] FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
-  liftIO $ blueMessage $ "🔌 Connecting to database at " <> displayConnectInfo (config.connectInfo)
+  liftIO $ blueMessage $ "🔌 Connecting to database at " <> Text.decodeUtf8 config.connectionInfo
   configToEnv config
 
 getFloraTestEnv :: Eff '[IOE] TestEnv

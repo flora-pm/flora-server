@@ -27,8 +27,8 @@ db-drop: ## Drop the database
 	@dropdb -f --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
 db-setup: db-create ## Setup the dev database
-	@migrate init "$(FLORA_PG_CONNSTRING)" 
-	@migrate migrate "$(FLORA_PG_CONNSTRING)" migrations
+	@migrate init "$(FLORA_DB_CONNSTRING)" 
+	@migrate migrate "$(FLORA_DB_CONNSTRING)" migrations
 
 db-reset: db-drop db-setup db-provision ## Reset the dev database (uses Cabal)
 
