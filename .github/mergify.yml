@@ -10,6 +10,7 @@ pull_request_rules:
     name: Put pull requests in the rebase+merge queue
     conditions:
       - label=merge me
+      - check-success=build: tests
       # - '#approved-reviews-by>=1'
   # merge+squash strategy
   - actions:
@@ -22,6 +23,7 @@ pull_request_rules:
     name: Put pull requests in the squash+merge queue
     conditions:
       - label=squash+merge me
+      - check-success=build: tests
       # - '#approved-reviews-by>=1'
 
 queue_rules:
