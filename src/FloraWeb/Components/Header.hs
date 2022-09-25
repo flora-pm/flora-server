@@ -14,7 +14,6 @@ import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
 
 header :: FloraHTML
 header = do
-  TemplateEnv{title} <- ask
   doctype_
   html_
     [ lang_ "en"
@@ -32,7 +31,7 @@ header = do
       head_ $ do
         meta_ [charset_ "UTF-8"]
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
-        title_ (text title)
+        title_ (text "Flora :: [Package]")
 
         script_ [type_ "module"] $ do
           toHtmlRaw @Text
