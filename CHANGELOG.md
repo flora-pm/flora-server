@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.4 -- XXXX-XX-XX
+
+* Colourise the search bars on focus (#215)
+
 ## v1.0.3 -- 2022-09-22
 
 * Remove padding from README code paragraphs (#203)

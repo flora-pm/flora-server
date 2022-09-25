@@ -29,6 +29,7 @@
   --search-bar-background-color: white;
   --search-bar-background-hover-color: white;
   --search-bar-background-focus-color: white;
+  --search-bar-focus-border-color: hsl(294 40% 30%);
   --readme-pre-background-color: hsl(225 13% 87%);
   --readme-code-background-color: hsl(225 13% 87%);
   --install-string-border: hsl(215 28% 17%);
@@ -36,7 +37,7 @@
 
 html[data-theme="dark"] {
   --background-color: hsl(218 30% 20%);
-  --brand-border: hsl(294 40% 55%);
+  --brand-border: hsl(294 40% 30%);
   --button-hover-background: hsl(294 40% 20%);
   --category-card-name-color: hsl(294 40% 60%);
   --category-card-synopsis-color: hsl(216 12% 84%);
@@ -62,6 +63,7 @@ html[data-theme="dark"] {
   --search-bar-background-color: hsl(218 30% 25%);
   --search-bar-background-hover-color: hsl(218 30% 25%);
   --search-bar-background-focus-color: hsl(218 30% 25%);
+  --search-bar-focus-border-color: hsl(294 40% 30%);
   --readme-pre-background-color: hsl(218 29% 30%);
   --readme-code-background-color: hsl(218 29% 30%);
   --install-string-border: hsl(215 28% 17%);
