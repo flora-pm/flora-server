@@ -248,6 +248,14 @@ div[class="bullets"] {
   }
 }
 
+.dependents a.dependent:hover {
+  text-decoration: underline;
+}
+
+.category a:hover {
+  text-decoration: underline;
+}
+
 .package-link a:hover {
   text-decoration: underline;
 }
@@ -330,14 +338,6 @@ div[class="bullets"] {
   .category-card:hover {
     background-color: var(--category-card-background-hover);
   }
-
-  li.category a:hover {
-    text-decoration: underline;
-  }
-}
-
-li.dependents a.dependent:hover {
-  text-decoration: underline;
 }
 
 .main-search {
@@ -394,11 +394,6 @@ li.dependents a.dependent:hover {
     padding-left: 15px;
     margin-right: auto;
     margin-left: auto;
-  }
-
-  .category-card {
-    --tw-shadow-color: rgb(102 51 153 / 25%);
-    --tw-shadow: var(--tw-shadow-colored);
   }
 
   .about-page {
