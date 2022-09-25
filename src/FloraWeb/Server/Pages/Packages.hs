@@ -67,7 +67,7 @@ showVersionHandler namespace packageName version =
 showPackageVersion :: Namespace -> PackageName -> Version -> FloraPage (Html ())
 showPackageVersion namespace packageName version = do
   session <- getSession
-  templateEnv <- fromSession session defaultTemplateEnv
+  templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
   release <- guardThatReleaseExists namespace packageName version
   releases <- Query.getReleases (package.packageId)
@@ -77,6 +77,12 @@ showPackageVersion namespace packageName version = do
   categories <- Query.getPackageCategories (package.packageId)
   numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName
   numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+
+  let templateEnv =
+        templateEnv'
+          { title = display namespace <> "/" <> display packageName <> " on Flora"
+          , description = release.metadata.synopsis
+          }
 
   Log.logInfo "displaying a package" $
     object

@@ -3,6 +3,7 @@
 ## v1.0.4 -- XXXX-XX-XX
 
 * Colourise the search bars on focus (#215)
+* Add OpenGraph metadata in package pages (#217)
 
 ## v1.0.3 -- 2022-09-22
 
