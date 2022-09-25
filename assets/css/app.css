@@ -49,7 +49,7 @@ body {
   text-align: center;
 }
 
-nav {
+.top-navbar {
   background-color: var(--navbar-background-color);
   border-bottom-width: 1px;
   border-color: var(--navbar-border-color);

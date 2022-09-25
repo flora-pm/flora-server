@@ -19,7 +19,7 @@ navbar = do
         "md:flex flex md:items-center "
           <> "flex flex-col md:flex-row absolute md:relative top-[100%] left-0 w-full md:w-auto md:top-0"
 
-  nav_ [class_ "sticky top-0 left-0 mb-3 z-10", xData_ "{menuOpen: false}"] $ do
+  nav_ [class_ "top-navbar sticky top-0 left-0 mb-3 z-10", xData_ "{menuOpen: false}"] $ do
     div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
       div_ [class_ "md:flex md:justify-between h-16 "] $ do
         div_ [id_ "navbar-left", class_ "flex flex-shrink-0"] $ do
