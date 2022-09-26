@@ -106,13 +106,13 @@ normalise_category("NetworkAPI", "Network Development").
 normalise_category("NetworkAPIs", "Network Development").
 normalise_category("Networking", "Network Development").
 
-normalise_category("Web", "Web development").
-normalise_category("Yesod", "Web development").
-normalise_category("Javascript", "Web development").
-normalise_category("OpenAPI", "Web development").
-normalise_category("Snap", "Web development").
-normalise_category("Servant", "Web development").
-normalise_category("Servant Web", "Web development").
+normalise_category("Web", "Web Development").
+normalise_category("Yesod", "Web Development").
+normalise_category("Javascript", "Web Development").
+normalise_category("OpenAPI", "Web Development").
+normalise_category("Snap", "Web Development").
+normalise_category("Servant", "Web Development").
+normalise_category("Servant Web", "Web Development").
 
 normalise_category("Optics", "Lenses").
 normalise_category("Lens", "Lenses").
