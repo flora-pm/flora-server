@@ -5,7 +5,9 @@ module FloraWeb.Server.Auth
   )
 where
 
+import Data.Function ((&))
 import Data.List qualified as List
+import Data.Text (Text)
 import Data.UUID qualified as UUID
 import Effectful
 import Effectful.Error.Static (Error, throwError)
@@ -22,6 +24,8 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
 import Web.Cookie
 
+import Data.Text.Encoding qualified as Text
+import Data.UUID.V4 qualified as UUID
 import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
@@ -30,7 +34,6 @@ import FloraWeb.Server.Auth.Types
 import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Session
 import FloraWeb.Types
-import Data.Function ((&))
 
 type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
 
@@ -38,11 +41,11 @@ authHandler :: Logger -> FloraEnv -> FloraAuthContext
 authHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
-      handler request
-        & Logging.runLog (floraEnv.environment) logger
-        & DB.runDB (floraEnv.pool)
-        & runVisitorSession
-        & Servant.effToHandler
+        handler request
+          & Logging.runLog (floraEnv.environment) logger
+          & DB.runDB (floraEnv.pool)
+          & runVisitorSession
+          & Servant.effToHandler
     )
   where
     handler :: Request -> Eff '[Logging, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
@@ -51,6 +54,7 @@ authHandler logger floraEnv =
       mbPersistentSessionId <- handlerToEff $ getSessionId cookies
       mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
       mUserInfo <- fetchUser mbPersistentSession
+      requestID <- liftIO $ getRequestID req
       (mUser, sessionId) <- do
         case mUserInfo of
           Nothing -> do
@@ -67,6 +71,13 @@ getCookies req =
   maybe [] parseCookies (List.lookup hCookie headers)
   where
     headers = requestHeaders req
+
+getRequestID :: Request -> IO Text
+getRequestID req = do
+  let headers = requestHeaders req
+  case List.lookup "X-Request-ID" headers of
+    Nothing -> fmap UUID.toText UUID.nextRandom
+    Just requestID -> pure $ Text.decodeUtf8 requestID
 
 getSessionId :: Cookies -> Handler (Maybe PersistentSessionId)
 getSessionId cookies =

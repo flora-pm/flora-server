@@ -42,6 +42,7 @@ import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Job (startJobRunner)
 import OddJobs.Types qualified as OddJobs
 
+import Data.Aeson qualified as Aeson
 import Data.Function ((&))
 import Data.Pool (Pool)
 import Database.PostgreSQL.Simple (Connection)
@@ -55,7 +56,7 @@ import FloraWeb.Autoreload (AutoreloadRoute)
 import FloraWeb.Autoreload qualified as Autoreload
 import FloraWeb.Routes
 import FloraWeb.Routes.Pages qualified as Pages
-import FloraWeb.Server.Auth (FloraAuthContext, authHandler, runVisitorSession)
+import FloraWeb.Server.Auth (FloraAuthContext, authHandler, requestID, runVisitorSession)
 import FloraWeb.Server.Logging (runLog)
 import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Server.Metrics
@@ -63,6 +64,7 @@ import FloraWeb.Server.OpenSearch
 import FloraWeb.Server.Pages qualified as Pages
 import FloraWeb.Server.Tracing
 import FloraWeb.Types
+import Servant.API (getResponse)
 
 runFlora :: IO ()
 runFlora = bracket (runEff getFloraEnv) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
@@ -148,6 +150,7 @@ floraServer pool cfg jobsRunnerEnv =
               floraPage
                 & runVisitorSession
                 & runDB pool
+                & Log.localData [("request_id", Aeson.String $ requestID . getResponse $ sessionWithCookies)]
                 & runCurrentTimeIO
                 & withReader (const sessionWithCookies)
           )
@@ -155,7 +158,7 @@ floraServer pool cfg jobsRunnerEnv =
     , autoreload =
         hoistServer
           (Proxy @AutoreloadRoute)
-          (\handler ->
+          ( \handler ->
               withReader (const ()) handler
           )
           Autoreload.server
@@ -163,8 +166,8 @@ floraServer pool cfg jobsRunnerEnv =
 
 naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
 naturalTransform deploymentEnv logger webEnvStore app =
-    app
-    & runReader webEnvStore 
+  app
+    & runReader webEnvStore
     & runLog deploymentEnv logger
     & effToHandler
 
