@@ -4,7 +4,8 @@ exclude_paths:
 - .stack-work
 - dist
 - dist-newstyle
-language: Haskell2010
+- assets
+language: GHC2021
 extensions:
 - BangPatterns
 - BlockArguments
