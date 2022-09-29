@@ -14,10 +14,10 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthServerData)
 import Web.Cookie (SetCookie)
 
+import Data.Text (Text)
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Types
-import Data.Text (Text)
 
 data Session = Session
   { sessionId :: PersistentSessionId

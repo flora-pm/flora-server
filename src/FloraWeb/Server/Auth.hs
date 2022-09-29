@@ -24,6 +24,8 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
 import Web.Cookie
 
+import Data.Text.Encoding qualified as Text
+import Data.UUID.V4 qualified as UUID
 import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
@@ -32,8 +34,6 @@ import FloraWeb.Server.Auth.Types
 import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Session
 import FloraWeb.Types
-import qualified Data.Text.Encoding as Text
-import qualified Data.UUID.V4 as UUID
 
 type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
 
@@ -41,11 +41,11 @@ authHandler :: Logger -> FloraEnv -> FloraAuthContext
 authHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
-      handler request
-        & Logging.runLog (floraEnv.environment) logger
-        & DB.runDB (floraEnv.pool)
-        & runVisitorSession
-        & Servant.effToHandler
+        handler request
+          & Logging.runLog (floraEnv.environment) logger
+          & DB.runDB (floraEnv.pool)
+          & runVisitorSession
+          & Servant.effToHandler
     )
   where
     handler :: Request -> Eff '[Logging, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
