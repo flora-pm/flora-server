@@ -55,7 +55,7 @@ import FloraWeb.Autoreload (AutoreloadRoute)
 import FloraWeb.Autoreload qualified as Autoreload
 import FloraWeb.Routes
 import FloraWeb.Routes.Pages qualified as Pages
-import FloraWeb.Server.Auth (FloraAuthContext, authHandler, runVisitorSession)
+import FloraWeb.Server.Auth (FloraAuthContext, authHandler, runVisitorSession, requestID)
 import FloraWeb.Server.Logging (runLog)
 import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Server.Metrics
@@ -63,6 +63,8 @@ import FloraWeb.Server.OpenSearch
 import FloraWeb.Server.Pages qualified as Pages
 import FloraWeb.Server.Tracing
 import FloraWeb.Types
+import Servant.API (getResponse)
+import qualified Data.Aeson as Aeson
 
 runFlora :: IO ()
 runFlora = bracket (runEff getFloraEnv) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
@@ -148,6 +150,7 @@ floraServer pool cfg jobsRunnerEnv =
               floraPage
                 & runVisitorSession
                 & runDB pool
+                & Log.localData [("request_id", Aeson.String $ requestID . getResponse $ sessionWithCookies)]
                 & runCurrentTimeIO
                 & withReader (const sessionWithCookies)
           )

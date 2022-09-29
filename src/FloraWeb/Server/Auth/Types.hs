@@ -1,9 +1,11 @@
 module FloraWeb.Server.Auth.Types where
 
+import Data.Kind (Type)
 import Effectful
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (Error)
 import Effectful.Log (Logging)
+import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
 import GHC.Generics
@@ -12,16 +14,16 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthServerData)
 import Web.Cookie (SetCookie)
 
-import Data.Kind (Type)
-import Effectful.PostgreSQL.Transact.Effect (DB)
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Types
+import Data.Text (Text)
 
 data Session = Session
   { sessionId :: PersistentSessionId
   , mUser :: Maybe User
   , webEnvStore :: WebEnvStore
+  , requestID :: Text
   }
   deriving stock (Generic)
 
