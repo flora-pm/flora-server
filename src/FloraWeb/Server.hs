@@ -42,6 +42,7 @@ import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Job (startJobRunner)
 import OddJobs.Types qualified as OddJobs
 
+import Data.Function ((&))
 import Data.Pool (Pool)
 import Database.PostgreSQL.Simple (Connection)
 import Effectful.Dispatch.Static
@@ -144,27 +145,28 @@ floraServer pool cfg jobsRunnerEnv =
           (Proxy @Pages.Routes)
           (Proxy @'[FloraAuthContext])
           ( \floraPage ->
-              withReader (const sessionWithCookies)
-                . runCurrentTimeIO
-                . runDB pool
-                . runVisitorSession
-                $ floraPage
+              floraPage
+                & runVisitorSession
+                & runDB pool
+                & runCurrentTimeIO
+                & withReader (const sessionWithCookies)
           )
           (Pages.server cfg jobsRunnerEnv)
     , autoreload =
         hoistServer
           (Proxy @AutoreloadRoute)
-          ( \handler -> withReader (const ()) handler
+          (\handler ->
+              withReader (const ()) handler
           )
           Autoreload.server
     }
 
 naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
 naturalTransform deploymentEnv logger webEnvStore app =
-  effToHandler
-    . runLog deploymentEnv logger
-    . runReader webEnvStore
-    $ app
+    app
+    & runReader webEnvStore 
+    & runLog deploymentEnv logger
+    & effToHandler
 
 genAuthServerContext :: Logger -> FloraEnv -> Context '[FloraAuthContext]
 genAuthServerContext logger floraEnv = authHandler logger floraEnv :. EmptyContext

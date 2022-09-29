@@ -30,6 +30,7 @@ import FloraWeb.Server.Auth.Types
 import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Session
 import FloraWeb.Types
+import Data.Function ((&))
 
 type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
 
@@ -37,14 +38,13 @@ authHandler :: Logger -> FloraEnv -> FloraAuthContext
 authHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
-        Servant.effToHandler
-          . runVisitorSession
-          . DB.runDB (floraEnv.pool)
-          . Logging.runLog (floraEnv.environment) logger
-          $ handler request
+      handler request
+        & Logging.runLog (floraEnv.environment) logger
+        & DB.runDB (floraEnv.pool)
+        & runVisitorSession
+        & Servant.effToHandler
     )
   where
-    -- handler :: Request -> LogT Handler (Headers '[Header "Set-Cookie" SetCookie] (Session 'Visitor))
     handler :: Request -> Eff '[Logging, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
     handler req = do
       let cookies = getCookies req
