@@ -39,14 +39,10 @@
 ## Installation and Configuration
 
 For ease of development, a `shell.nix` file is provided. It brings with it system dependency and tooling.
-
 To jump into the development environment, use `make nix-shell`. It is impure by default, so your editor and development
 tools will still be accessible.
 
-### System dependencies
-
-* libpq
-* [Soufflé Datalog](https://github.com/souffle-lang/souffle/releases) >=v2.2 
+Otherwise, read the Contribution Guide file to see what you will need.
 
 ### Flora server
 
@@ -67,10 +63,10 @@ This will get all the variables from `environment.sh` and allow you to override 
 You can then build the server with 
 
 ```bash
-# To build the binaries
-$ make build
-# To load the main library in a REPL
-$ make repl
+# To start a tmux session with code reloading for frontend and backend:
+$ make start-tmux
+# To explore the other possible `make` rules:
+$ make help
 ```
 
 ### Database
