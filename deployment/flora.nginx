@@ -24,16 +24,12 @@ server {
     add_header X-Frame-Options DENY;
     add_header X-Content-Type-Options nosniff;
 
+
     access_log /var/log/nginx/flora_access.log;
     error_log /var/log/nginx/flora_error.log;
 
     # favicon
-    location = /favicon.ico {
-        log_not_found off;
-        access_log off;
-    }
-
-    location = /favicon.svg {
+    location ~ /favicon.(ico|svg) {
         log_not_found off;
         access_log off;
     }
@@ -62,12 +58,13 @@ server {
     }
 
     location / {
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Connection "upgrade";
         proxy_set_header Host $http_host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Request-ID $request_id;
         proxy_redirect off;
         proxy_pass http://localhost:8083;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
     }
 }
