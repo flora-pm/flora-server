@@ -36,7 +36,7 @@ flora_category("distributed", "Distributed Systems & Computation", "Tooling and 
 flora_category("distribution", "Package Distribution", "Building, Packaging and Distributing software in Haskell").
 flora_category("ffi", "FFI", "Working with other languages and generating bindings").
 flora_category("frp", "FRP", "Functional Reactive Programming").
-flora_category("game-dev", "Game development", "Libraries used for game development").
+flora_category("game-dev", "Game Development", "Libraries used for game development").
 flora_category("generics", "Generics", "Working with Haskell's Generics mechanism").
 flora_category("graphics", "Graphics", "Programming the system's rendering APIs").
 flora_category("gui", "GUI", "Creating graphical user interfaces").
@@ -89,6 +89,8 @@ normalise_category("Maths", "Mathematics").
 normalise_category("Algebra", "Mathematics").
 normalise_category("Graph", "Mathematics").
 normalise_category("Graphs", "Mathematics").
+normalise_category("Geometry", "Mathematics").
+normalise_category("Tropical Geometry", "Mathematics").
 
 normalise_category("Parser Builder", "Parsers").
 normalise_category("Parser Combinators", "Parsers").
@@ -113,6 +115,7 @@ normalise_category("OpenAPI", "Web Development").
 normalise_category("Snap", "Web Development").
 normalise_category("Servant", "Web Development").
 normalise_category("Servant Web", "Web Development").
+normalise_category("Web development", "Web Development").
 
 normalise_category("Optics", "Lenses").
 normalise_category("Lens", "Lenses").
@@ -183,9 +186,9 @@ normalise_category("Parallel", "Parallelism").
 
 normalise_category("Distributed Computing", "Distributed Systems & Computation").
 
-normalise_category("Filesystem", "System Programming").
-normalise_category("system", "System Programming").
-normalise_category("System", "System Programming").
+normalise_category("Filesystem", "Systems Programming").
+normalise_category("system", "Systems Programming").
+normalise_category("System", "Systems Programming").
 
 normalise_category("Distribution", "Package Distribution").
 
