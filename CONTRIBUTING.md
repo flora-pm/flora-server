@@ -8,7 +8,7 @@ We need you to read and acknowledge our [Code of Conduct][CoC] document.
 The following Haskell command-line tools will have to be installed:
 
 * `postgresql-migration`: To perform schema migrations
-* `fourmolu`: To style the code base
+* `fourmolu`: To style the code base. Minimum version is 0.8.2.0
 * `hlint` & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-fmt` and `nixfmt`: To style the cabal and nix files
 * `ghcid`: To automatically reload the Haskell code base upon source changes

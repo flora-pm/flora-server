@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.0.4 -- 2022-10-02
+
+* Colourise the search bars on focus (#215)
+* Add OpenGraph metadata in package pages (#217)
+* Request ID in logging and traces (#224)
+
 ## v1.0.3 -- 2022-09-22
 
 * Remove padding from README code paragraphs (#203)

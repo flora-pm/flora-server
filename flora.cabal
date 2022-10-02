@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.0
+version:            1.0.4
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -56,7 +56,7 @@ common common-ghc-options
   if flag(prod)
     ghc-options:
       -flate-specialise -funbox-strict-fields
-      -finline-generics-aggressively
+      -finline-generics-aggressively -fexpose-all-unfoldings
 
 common common-rts-options
   ghc-options: -threaded "-with-rtsopts=-N -T"
