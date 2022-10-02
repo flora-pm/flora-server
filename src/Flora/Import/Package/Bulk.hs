@@ -34,7 +34,7 @@ importAllFilesInDirectory :: ([DB, IOE] :>> es) => Logger -> UserId -> FilePath 
 importAllFilesInDirectory appLogger user dir = do
   pool <- getPool
   parallelWorkers <- liftIO getNumCapabilities
-  let chunkSize = 200
+  let chunkSize = 400
   countMVar <- liftIO $ newMVar @Int 0
   findAllCabalFilesInDirectory dir
     & parMapM parallelWorkers (runEff . runDB pool . runCurrentTimeIO . Log.runLogging "flora-jobs" appLogger defaultLogLevel . loadAndExtractCabalFile user)
