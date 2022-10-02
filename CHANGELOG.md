@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v1.0.4 -- XXXX-XX-XX
+## v1.0.4 -- 2022-10-02
 
 * Colourise the search bars on focus (#215)
 * Add OpenGraph metadata in package pages (#217)
