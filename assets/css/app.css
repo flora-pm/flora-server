@@ -270,6 +270,10 @@ div[class="bullets"] {
   text-decoration: underline;
 }
 
+.release a:hover {
+  text-decoration: underline;
+}
+
 .package-list {
   .package-list-item {
     font-size: 1.25rem;
@@ -418,7 +422,7 @@ div[class="bullets"] {
 
 /* smaller display rules*/
 
-@media (max-width: 1023px) {
+@media (max-width: px) {
   .package-left-column {
     order: 1;
   }
