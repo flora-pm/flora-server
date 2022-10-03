@@ -80,7 +80,7 @@ showPackageVersion namespace packageName version = do
 
   let templateEnv =
         templateEnv'
-          { title = display namespace <> "/" <> display packageName <> " on Flora"
+          { title = display namespace <> "/" <> display packageName
           , description = release.metadata.synopsis
           }
 
@@ -121,7 +121,7 @@ showDependentsHandler namespace packageName = do
   _ <- guardThatPackageExists namespace packageName
   let templateEnv =
         templateEnv'
-          { title = display namespace <> "/" <> display packageName <> " on Flora"
+          { title = display namespace <> "/" <> display packageName
           , description = "Dependents of " <> display namespace <> display packageName
           }
   results <- Query.getAllPackageDependentsWithLatestVersion namespace packageName
@@ -138,7 +138,7 @@ showDependenciesHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName
   let templateEnv =
         templateEnv'
-          { title = display namespace <> "/" <> display packageName <> " on Flora"
+          { title = display namespace <> "/" <> display packageName
           , description = "Dependencies of " <> display namespace <> display packageName
           }
   releases <- Query.getAllReleases (package.packageId)
@@ -167,7 +167,7 @@ listVersionsHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName
   let templateEnv =
         templateEnv'
-          { title = display namespace <> "/" <> display packageName <> " on Flora"
+          { title = display namespace <> "/" <> display packageName
           , description = "Releases of " <> display namespace <> display packageName
           }
   releases <- Query.getAllReleases (package.packageId)
