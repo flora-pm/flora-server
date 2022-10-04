@@ -111,14 +111,21 @@ a {
 }
 
 .error-code {
-  --tw-bg-opacity: 1;
+  color: var(--error-code);
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 800;
+}
 
+.error-message {
+  letter-spacing: -0.025em;
+  font-weight: 800;
+  font-size: 3rem;
+  line-height: 1;
   color: var(--error-code);
 }
 
 .error-page-button {
-  --tw-bg-opacity: 1;
-
   background-color: var(--error-button);
 }
 
@@ -174,6 +181,9 @@ div[class="bullets"] {
 }
 
 .package-body {
+  display: flex;
+  flex-direction: column;
+
   a {
     font-weight: 500;
   }
@@ -265,6 +275,10 @@ div[class="bullets"] {
 }
 
 .dependency a:hover {
+  text-decoration: underline;
+}
+
+.release a:hover {
   text-decoration: underline;
 }
 
@@ -407,5 +421,25 @@ div[class="bullets"] {
 
   .dependency {
     white-space: nowrap;
+  }
+
+  .package-body {
+    flex-direction: row;
+  }
+}
+
+/* smaller display rules */
+
+@media (max-width: px) {
+  .package-left-column {
+    order: 1;
+  }
+
+  .package-right-column {
+    order: 2;
+  }
+
+  .package-readme-column {
+    order: 3;
   }
 }
