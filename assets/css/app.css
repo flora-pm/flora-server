@@ -111,14 +111,21 @@ a {
 }
 
 .error-code {
-  --tw-bg-opacity: 1;
+  color: var(--error-code);
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 800;
+}
 
+.error-message {
+  letter-spacing: -0.025em;
+  font-weight: 800;
+  font-size: 3rem;
+  line-height: 1;
   color: var(--error-code);
 }
 
 .error-page-button {
-  --tw-bg-opacity: 1;
-
   background-color: var(--error-button);
 }
 
@@ -390,6 +397,7 @@ div[class="bullets"] {
   /* offset-x | offset-y | blur-radius | spread-radius | color */
   box-shadow: 5px 5px 5px 2px var(--search-bar-focus-border-color);
 }
+
 
 /* Large display rules */
 @media (min-width: 1024px) {

@@ -28,8 +28,9 @@ import Servant
   , HasServer (hoistServerWithContext)
   , Proxy (Proxy)
   , hoistServer
-  , serveDirectoryWebApp
+  , serveDirectoryWebApp, err404, ErrorFormatters, notFoundErrorFormatter, NotFoundErrorFormatter, defaultErrorFormatters
   )
+import Servant.API (getResponse)
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
 import Control.Exception.Safe qualified as Safe
@@ -47,6 +48,7 @@ import Data.Function ((&))
 import Data.Pool (Pool)
 import Database.PostgreSQL.Simple (Connection)
 import Effectful.Dispatch.Static
+import Effectful.Error.Static (runErrorNoCallStack)
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
 import Flora.Environment.OddJobs qualified as OddJobs
@@ -63,8 +65,10 @@ import FloraWeb.Server.Metrics
 import FloraWeb.Server.OpenSearch
 import FloraWeb.Server.Pages qualified as Pages
 import FloraWeb.Server.Tracing
+import FloraWeb.Templates (defaultTemplateEnv, defaultsToEnv)
+import FloraWeb.Templates.Error (renderError)
 import FloraWeb.Types
-import Servant.API (getResponse)
+import Network.HTTP.Types (notFound404)
 
 runFlora :: IO ()
 runFlora = bracket (runEff getFloraEnv) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
@@ -171,5 +175,16 @@ naturalTransform deploymentEnv logger webEnvStore app =
     & runLog deploymentEnv logger
     & effToHandler
 
-genAuthServerContext :: Logger -> FloraEnv -> Context '[FloraAuthContext]
-genAuthServerContext logger floraEnv = authHandler logger floraEnv :. EmptyContext
+genAuthServerContext :: Logger -> FloraEnv -> Context '[FloraAuthContext, ErrorFormatters]
+genAuthServerContext logger floraEnv = authHandler logger floraEnv :. errorFormatters :. EmptyContext
+
+errorFormatters :: ErrorFormatters
+errorFormatters =
+  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage } 
+
+notFoundPage :: NotFoundErrorFormatter
+notFoundPage _req = 
+  let result = runPureEff $ runErrorNoCallStack $ renderError (defaultsToEnv defaultTemplateEnv) notFound404
+   in case result of
+        Left err -> err
+        Right _ -> err404
