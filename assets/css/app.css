@@ -183,6 +183,7 @@ div[class="bullets"] {
 .package-body {
   display: flex;
   flex-direction: column;
+
   a {
     font-weight: 500;
   }
@@ -398,7 +399,6 @@ div[class="bullets"] {
   box-shadow: 5px 5px 5px 2px var(--search-bar-focus-border-color);
 }
 
-
 /* Large display rules */
 @media (min-width: 1024px) {
   .container {
@@ -428,15 +428,17 @@ div[class="bullets"] {
   }
 }
 
-/* smaller display rules*/
+/* smaller display rules */
 
 @media (max-width: px) {
   .package-left-column {
     order: 1;
   }
+
   .package-right-column {
     order: 2;
   }
+
   .package-readme-column {
     order: 3;
   }

@@ -24,11 +24,16 @@ import Prometheus.Metric.Proc (procMetrics)
 import Servant
   ( Application
   , Context (..)
+  , ErrorFormatters
   , Handler
   , HasServer (hoistServerWithContext)
+  , NotFoundErrorFormatter
   , Proxy (Proxy)
+  , defaultErrorFormatters
+  , err404
   , hoistServer
-  , serveDirectoryWebApp, err404, ErrorFormatters, notFoundErrorFormatter, NotFoundErrorFormatter, defaultErrorFormatters
+  , notFoundErrorFormatter
+  , serveDirectoryWebApp
   )
 import Servant.API (getResponse)
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
@@ -180,10 +185,10 @@ genAuthServerContext logger floraEnv = authHandler logger floraEnv :. errorForma
 
 errorFormatters :: ErrorFormatters
 errorFormatters =
-  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage } 
+  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage}
 
 notFoundPage :: NotFoundErrorFormatter
-notFoundPage _req = 
+notFoundPage _req =
   let result = runPureEff $ runErrorNoCallStack $ renderError (defaultsToEnv defaultTemplateEnv) notFound404
    in case result of
         Left err -> err
