@@ -123,21 +123,22 @@ makeReadme pay@MkReadmePayload{..} = localDomain "fetch-readme" $ do
       logInfo ("got a body for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
 
       htmlTxt <- do
-        let extensions = mconcat
-              [ Commonmark.Extensions.mathSpec
-              -- all gfm extensions apart from pipeTable
-              , Commonmark.Extensions.emojiSpec
-              , Commonmark.Extensions.strikethroughSpec
-              , Commonmark.Extensions.autolinkSpec
-              , Commonmark.Extensions.autoIdentifiersSpec
-              , Commonmark.Extensions.taskListSpec
-              , Commonmark.Extensions.footnoteSpec
-              -- default syntax
-              , Commonmark.defaultSyntaxSpec
-              -- pipe table spec. This has to be after default syntax due to
-              -- https://github.com/jgm/commonmark-hs/issues/95
-              , Commonmark.Extensions.pipeTableSpec
-              ]
+        let extensions =
+              mconcat
+                [ Commonmark.Extensions.mathSpec
+                -- all gfm extensions apart from pipeTable
+                , Commonmark.Extensions.emojiSpec
+                , Commonmark.Extensions.strikethroughSpec
+                , Commonmark.Extensions.autolinkSpec
+                , Commonmark.Extensions.autoIdentifiersSpec
+                , Commonmark.Extensions.taskListSpec
+                , Commonmark.Extensions.footnoteSpec
+                -- default syntax
+                , Commonmark.defaultSyntaxSpec
+                -- pipe table spec. This has to be after default syntax due to
+                -- https://github.com/jgm/commonmark-hs/issues/95
+                , Commonmark.Extensions.pipeTableSpec
+                ]
         Commonmark.commonmarkWith extensions ("readme " <> show mpPackage) bodyText
           >>= \case
             Left exception -> throw (MarkdownFailed exception)
