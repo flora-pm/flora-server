@@ -3,6 +3,7 @@
 ## v1.0.5 -- XXXX-XX-XX
 
 * Reorder the package page columns in mobile view (#233)
+* Autofocus the search field on the home page (#235)
 
 ## v1.0.4 -- 2022-10-02
 
