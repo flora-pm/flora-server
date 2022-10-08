@@ -19,6 +19,7 @@ module Flora.OddJobs
 where
 
 import Commonmark qualified
+import Commonmark.Extensions qualified
 import Control.Concurrent (forkIO)
 import Control.Exception
 import Control.Monad
@@ -122,9 +123,24 @@ makeReadme pay@MkReadmePayload{..} = localDomain "fetch-readme" $ do
       logInfo ("got a body for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
 
       htmlTxt <- do
-        -- let extensions = emojiSpec
-        -- Commonmark.commonmarkWith extensions ("readme " <> show mpPackage) bodyText
-        pure (Commonmark.commonmark ("readme " <> show mpPackage) bodyText)
+        let
+          extensions = mconcat
+            [ Commonmark.Extensions.mathSpec
+            -- all gfm extensions apart from pipeTable
+            , Commonmark.Extensions.emojiSpec
+            , Commonmark.Extensions.strikethroughSpec
+            , Commonmark.Extensions.autolinkSpec
+            , Commonmark.Extensions.autoIdentifiersSpec
+            , Commonmark.Extensions.taskListSpec
+            , Commonmark.Extensions.footnoteSpec
+            -- default syntax
+            , Commonmark.defaultSyntaxSpec
+            -- pipe table spec. This has to be after default syntax due to
+            -- https://github.com/jgm/commonmark-hs/issues/95
+            , Commonmark.Extensions.pipeTableSpec
+            ]
+        Commonmark.commonmarkWith extensions ("readme " <> show mpPackage) bodyText
+        -- pure (Commonmark.commonmark ("readme " <> show mpPackage) bodyText)
           >>= \case
             Left exception -> throw (MarkdownFailed exception)
             Right (y :: Commonmark.Html ()) -> pure $ Commonmark.renderHtml y
