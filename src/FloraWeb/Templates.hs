@@ -18,9 +18,7 @@ import FloraWeb.Components.Header (header)
 import FloraWeb.Templates.Types as Types
 
 render :: (Monad m) => TemplateEnv -> FloraHTML -> m (Html ())
-render env template =
-  let deploymentEnv = env.environment
-   in pure $ toHtmlRaw $ runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
+render env template = pure (renderUVerb env template)
 
 renderUVerb :: TemplateEnv -> FloraHTML -> Html ()
 renderUVerb env template =
