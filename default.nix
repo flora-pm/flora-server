@@ -4,4 +4,4 @@
     sha256 = "1qc703yg0babixi6wshn5wm2kgl5y1drcswgszh4xxzbrwkk9sv7"; }
 ) {
   src =  ./.;
-}).shellNix
+}).defaultNix

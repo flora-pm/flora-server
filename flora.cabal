@@ -171,11 +171,11 @@ library
     Lucid.Orphans
 
   build-depends:
-    , aeson                      <=1.6
+    , aeson                      <=2.1
     , async                      ^>=2.2
     , base                       ^>=4.16
     , blaze-builder
-    , bytestring                 ^>=0.10
+    , bytestring                 >=0.10 && <0.12
     , Cabal-syntax               ^>=3.8
     , clock                      ^>=0.8
     , cmark-gfm                  ^>=0.2
@@ -193,13 +193,13 @@ library
     , envparse                   ^>=0.5
     , filepath                   ^>=1.4
     , http-api-data              ^>=0.4
-    , http-client                ==0.7.10
+    , http-client                >=0.7.10 && <0.8
     , http-client-tls
     , http-media
     , http-types                 ^>=0.12
     , iso8601-time               ^>=0.1
     , lens
-    , log-base                   ^>=0.11
+    , log-base                   >=0.11 && <0.13
     , log-effectful
     , lucid                      ^>=2.11
     , lucid-alpine               ^>=0.1
@@ -235,7 +235,7 @@ library
     , servant-server             ^>=0.19
     , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
-    , souffle-haskell            ^>=3.4
+    , souffle-haskell            >=3.4 && <3.6
     , split                      ^>=0.2
     , streaming                  ^>=0.2
     , template-haskell
@@ -287,7 +287,7 @@ executable flora-cli
     , effectful
     , effectful-core
     , flora
-    , http-client            ==0.7.10
+    , http-client
     , log-base
     , log-effectful
     , lucid
@@ -325,7 +325,7 @@ test-suite flora-test
     , exceptions
     , flora
     , hedgehog
-    , http-client            ==0.7.10
+    , http-client
     , log-base
     , log-effectful
     , network-uri
