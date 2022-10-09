@@ -4,6 +4,7 @@
 
 * Reorder the package page columns in mobile view (#233)
 * Enable the use of markdown extensions in package READMEs (#236)
+* Autofocus the search field on the home page (#235)
 
 ## v1.0.4 -- 2022-10-02
 

@@ -95,6 +95,7 @@ searchBar =
         , placeholder_ "Find a package"
         , value_ ""
         , tabindex_ "1"
+        , autofocus_
         ]
       button_ [type_ "submit", class_ "items-center right-0 top-0 mt-5 mr-4 mb-5"] $
         svg_ [xmlns_ "http://www.w3.org/2000/svg", class_ "h-6 w-6 my-auto m-2", style_ "color: gray", fill_ "none", viewBox_ "0 0 24 24", stroke_ "currentColor"] $
