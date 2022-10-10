@@ -11,7 +11,7 @@ import Data.Text (Text)
 import Data.UUID qualified as UUID
 import Effectful
 import Effectful.Error.Static (Error, throwError)
-import Effectful.Log (Logging)
+import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.PostgreSQL.Transact.Effect qualified as DB
 import Effectful.Servant (handlerToEff)
@@ -48,7 +48,7 @@ authHandler logger floraEnv =
           & Servant.effToHandler
     )
   where
-    handler :: Request -> Eff '[Logging, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
+    handler :: Request -> Eff '[Log, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
     handler req = do
       let cookies = getCookies req
       mbPersistentSessionId <- handlerToEff $ getSessionId cookies
@@ -89,7 +89,7 @@ getSessionId cookies =
         Just sessionId -> pure $ Just sessionId
 
 getInTheFuckingSessionShinji
-  :: ([Logging, DB, IOE] :>> es)
+  :: ([Log, DB, IOE] :>> es)
   => Maybe PersistentSessionId
   -> Eff es (Maybe PersistentSession)
 getInTheFuckingSessionShinji Nothing = pure Nothing

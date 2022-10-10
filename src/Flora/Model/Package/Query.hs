@@ -28,7 +28,6 @@ import Effectful (Eff, IOE, type (:>>))
 import Effectful.Log
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time
-import Log (object, (.=))
 import Log qualified
 
 import Flora.Model.Category (Category, CategoryId)
@@ -42,7 +41,7 @@ import Flora.Model.Package.Component
 import Flora.Model.Release.Types (ReleaseId)
 import FloraWeb.Server.Logging (timeAction)
 
-getAllPackages :: ([DB, Logging, Time, IOE] :>> es) => Eff es (Vector Package)
+getAllPackages :: ([DB, Log, Time, IOE] :>> es) => Eff es (Vector Package)
 getAllPackages = do
   (result, duration) <- timeAction $ dbtToEff $ query_ Select (_select @Package)
   Log.logInfo "Retrieving all packages" $
@@ -50,10 +49,10 @@ getAllPackages = do
       ["duration" .= duration]
   pure result
 
-getPackagesByNamespace :: ([DB, Logging, Time, IOE] :>> es) => Namespace -> Eff es (Vector Package)
+getPackagesByNamespace :: ([DB, Log, Time, IOE] :>> es) => Namespace -> Eff es (Vector Package)
 getPackagesByNamespace namespace = dbtToEff $ selectManyByField @Package [field| namespace |] (Only namespace)
 
-getPackageByNamespaceAndName :: ([DB, Logging, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es (Maybe Package)
+getPackageByNamespaceAndName :: ([DB, Log, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es (Maybe Package)
 getPackageByNamespaceAndName namespace name = do
   (result, duration) <-
     timeAction $
@@ -70,7 +69,7 @@ getPackageByNamespaceAndName namespace name = do
   pure result
 
 -- | This function is to be used when in Hackage Compatibility Mode.
-getHaskellOrHackagePackage :: ([DB, Logging, Time, IOE] :>> es) => PackageName -> Eff es (Maybe Package)
+getHaskellOrHackagePackage :: ([DB, Log, Time, IOE] :>> es) => PackageName -> Eff es (Maybe Package)
 getHaskellOrHackagePackage packageName =
   dbtToEff $
     queryOne
@@ -90,19 +89,19 @@ getHaskellOrHackagePackage packageName =
 
 -- | TODO: Remove the manual fields and use pg-entity
 getAllPackageDependents
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => Namespace
   -> PackageName
   -> Eff es (Vector Package)
 getAllPackageDependents namespace packageName = dbtToEff $ query Select packageDependentsQuery (namespace, packageName)
 
 -- | This function gets the first 6 dependents of a package
-getPackageDependents :: ([DB, Logging, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es (Vector Package)
+getPackageDependents :: ([DB, Log, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es (Vector Package)
 getPackageDependents namespace packageName = dbtToEff $ query Select q (namespace, packageName)
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
-getNumberOfPackageDependents :: ([DB, Logging, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es Word
+getNumberOfPackageDependents :: ([DB, Log, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es Word
 getNumberOfPackageDependents namespace packageName = dbtToEff $ do
   (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
   case result of
@@ -138,7 +137,7 @@ packageDependentsQuery =
   |]
 
 getAllPackageDependentsWithLatestVersion
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => Namespace
   -> PackageName
   -> Eff es (Vector (Namespace, PackageName, Text, Version))
@@ -147,7 +146,7 @@ getAllPackageDependentsWithLatestVersion namespace packageName =
     query Select packageDependentsWithLatestVersionQuery (namespace, packageName)
 
 getPackageDependentsWithLatestVersion
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => Namespace
   -> PackageName
   -> Eff es (Vector (Namespace, PackageName, Text, Version))
@@ -180,10 +179,10 @@ packageDependentsWithLatestVersionQuery =
   GROUP BY (p.namespace, p.name, synopsis)
   |]
 
-getComponentById :: ([DB, Logging, Time, IOE] :>> es) => ComponentId -> Eff es (Maybe PackageComponent)
+getComponentById :: ([DB, Log, Time, IOE] :>> es) => ComponentId -> Eff es (Maybe PackageComponent)
 getComponentById componentId = dbtToEff $ selectById @PackageComponent (Only componentId)
 
-getComponent :: ([DB, Logging, Time, IOE] :>> es) => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
+getComponent :: ([DB, Log, Time, IOE] :>> es) => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
 getComponent releaseId name componentType =
   dbtToEff $
     queryOne Select (_selectWhere @PackageComponent queryFields) (releaseId, name, componentType)
@@ -196,7 +195,7 @@ getComponent releaseId name componentType =
       ]
 
 unsafeGetComponent
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => ReleaseId
   -> Eff es (Maybe PackageComponent)
 unsafeGetComponent releaseId =
@@ -207,14 +206,14 @@ unsafeGetComponent releaseId =
     queryFields = [[field| release_id |]]
 
 getAllRequirements
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => ReleaseId
   -- ^ Id of the release for which we want the dependencies
   -> Eff es (Vector (Namespace, PackageName, Text, Version, Text))
   -- ^ Returns a vector of (Namespace, Name, dependency requirement, version of latest of release of dependency, synopsis of dependency)
 getAllRequirements releaseId = dbtToEff $ query Select getAllRequirementsQuery (Only releaseId)
 
-getRequirements :: ([DB, Logging, Time, IOE] :>> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
+getRequirements :: ([DB, Log, Time, IOE] :>> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
 getRequirements releaseId = do
   (result, duration) <- timeAction $ dbtToEff $ query Select (getRequirementsQuery <> " LIMIT 6") (Only releaseId)
   Log.logInfo "Retrieving limited dependencies of a release" $
@@ -267,7 +266,7 @@ getRequirementsQuery =
     order by dependency.namespace desc
   |]
 
-getNumberOfPackageRequirements :: ([DB, Logging, Time, IOE] :>> es) => ReleaseId -> Eff es Word
+getNumberOfPackageRequirements :: ([DB, Log, Time, IOE] :>> es) => ReleaseId -> Eff es Word
 getNumberOfPackageRequirements releaseId = dbtToEff $ do
   (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageRequirementsQuery (Only releaseId)
   case result of
@@ -286,7 +285,7 @@ numberOfPackageRequirementsQuery =
   |]
 
 getPackageCategories
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => PackageId
   -> Eff es (Vector Category)
 getPackageCategories packageId =
@@ -298,7 +297,7 @@ getPackageCategories packageId =
       packageId
 
 getPackagesFromCategoryWithLatestVersion
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => CategoryId
   -> Eff es (Vector (Namespace, PackageName, Text, Version))
 getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q (Only categoryId)
@@ -312,7 +311,7 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q 
       |]
 
 searchPackage
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => Word
   -> Text
   -> Eff es (Vector (Namespace, PackageName, Text, Version, Float))
@@ -343,7 +342,7 @@ searchPackage pageNumber searchString =
           (searchString, searchString, offset)
 
 listAllPackages
-  :: ([DB, Logging, Time, IOE] :>> es)
+  :: ([DB, Log, Time, IOE] :>> es)
   => Word
   -> Eff es (Vector (Namespace, PackageName, Text, Version, Float))
 listAllPackages pageNumber =
@@ -371,7 +370,7 @@ listAllPackages pageNumber =
     |]
           (Only offset)
 
-countPackages :: ([DB, Logging, Time, IOE] :>> es) => Eff es Word
+countPackages :: ([DB, Log, Time, IOE] :>> es) => Eff es Word
 countPackages = dbtToEff $ do
   (result :: Maybe (Only Int)) <-
     queryOne_
@@ -385,7 +384,7 @@ countPackages = dbtToEff $ do
     Just (Only n) -> pure $ fromIntegral n
     Nothing -> pure 0
 
-countPackagesByName :: ([DB, Logging, Time, IOE] :>> es) => Text -> Eff es Word
+countPackagesByName :: ([DB, Log, Time, IOE] :>> es) => Text -> Eff es Word
 countPackagesByName searchString = dbtToEff $ do
   (result :: Maybe (Only Int)) <-
     queryOne

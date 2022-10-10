@@ -4,7 +4,7 @@ import Data.Kind (Type)
 import Effectful
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (Error)
-import Effectful.Log (Logging)
+import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
@@ -72,7 +72,7 @@ type FloraPage =
      , DB
      , Time
      , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
-     , Logging
+     , Log
      , Error ServerError
      , IOE
      ]
@@ -84,13 +84,13 @@ type FloraAdmin =
      , DB
      , Time
      , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
-     , Logging
+     , Log
      , Error ServerError
      , IOE
      ]
 
 -- | The effect stack for the development websockets
-type FloraDevSocket = Eff [Reader (), Logging, Error ServerError, IOE]
+type FloraDevSocket = Eff [Reader (), Log, Error ServerError, IOE]
 
 type instance
   AuthServerData (AuthProtect "optional-cookie-auth") =

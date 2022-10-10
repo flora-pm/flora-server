@@ -67,8 +67,7 @@ import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
 import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Transact ()
 import Effectful
-import Effectful.Log
-import Effectful.Log.Backend.StandardOutput qualified as Log
+import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
 import Effectful.Time
@@ -90,6 +89,7 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
+import Effectful.Log (Log, Logger)
 import Flora.Environment
 import Flora.Environment.Config (LoggingDestination (..))
 import Flora.Import.Categories (importCategories)
@@ -101,8 +101,9 @@ import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
 import FloraWeb.Server.Logging qualified as Logging
+import Log.Backend.StandardOutput qualified as Log
 
-type TestEff = Eff '[DB, Logging, Time, IOE]
+type TestEff = Eff '[DB, Log, Time, IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
@@ -122,12 +123,13 @@ importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
     "./test/fixtures/Cabal/"
 
 runTestEff :: TestEff a -> Pool Connection -> IO a
-runTestEff comp pool =
-  runEff
-    . runCurrentTimeIO
-    . Log.runSimpleStdOutLogging "flora-test" LogAttention
-    . runDB pool
-    $ comp
+runTestEff comp pool = runEff $
+  Log.withStdOutLogger $ \stdOutLogger ->
+    do
+      runCurrentTimeIO
+      . Log.runLog "flora-test" stdOutLogger LogAttention
+      . runDB pool
+      $ comp
 
 testThis :: String -> TestEff () -> TestEff TestTree
 testThis name assertion = do

@@ -49,7 +49,6 @@ import Distribution.Types.TestSuite
 import Distribution.Utils.ShortText qualified as Cabal
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
-import Effectful.Log (Logging)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import GHC.Generics (Generic)
@@ -58,6 +57,7 @@ import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
 
+import Effectful.Log (Log)
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
@@ -133,21 +133,21 @@ coreLibraries =
    * finally, inserting that data into the database
 -}
 importFile
-  :: ([DB, IOE, Logging, Time] :>> es)
+  :: ([DB, IOE, Log, Time] :>> es)
   => UserId
   -> FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
-importRelFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ()
+importRelFile :: ([DB, IOE, Log, Time] :>> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile
-  :: ([DB, IOE, Logging, Time] :>> es)
+  :: ([DB, IOE, Log, Time] :>> es)
   => FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es GenericPackageDescription
@@ -161,7 +161,7 @@ loadFile path = do
   parseString parseGenericPackageDescription path content
 
 parseString
-  :: (HasCallStack, [Logging, Time] :>> es)
+  :: (HasCallStack, [Log, Time] :>> es)
   => (BS.ByteString -> ParseResult a)
   -- ^ File contents to final value parser
   -> String
@@ -176,7 +176,7 @@ parseString parser name bs = do
       Log.logAttention_ (display $ show err)
       throw $ CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile :: ([DB, IOE, Log, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {-| Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained

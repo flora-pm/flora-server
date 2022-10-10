@@ -36,7 +36,6 @@ import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
-import Effectful.Log (localDomainEff', logMessageEff')
 import Effectful.PostgreSQL.Transact.Effect
 import Log
 import Lucid qualified
@@ -182,9 +181,9 @@ fetchNewIndex = localDomain "index-import" $ do
   liftIO $ void $ scheduleIndexImportJob pool
 
 runner :: Job -> JobsRunner ()
-runner job = localDomainEff' "job-runner" $
+runner job = localDomain "job-runner" $
   case fromJSON (jobPayload job) of
-    Error str -> logMessageEff' LogAttention "decode error" (toJSON str)
+    Error str -> logMessage LogAttention "decode error" (toJSON str)
     Success val -> case val of
       MkReadme x -> makeReadme x
       FetchUploadTime x -> fetchUploadTime x

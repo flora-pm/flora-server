@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
+
 module FloraWeb.Server.Logging
   ( makeLogger
   , runLog
@@ -8,16 +10,16 @@ where
 import Data.Kind (Type)
 import Data.Text.Display (display)
 import Data.Time.Clock as Time (NominalDiffTime, diffUTCTime)
-import Effectful.Log qualified as Log
-import Effectful.Time qualified as Time
-import Flora.Environment.Config
-import Log (Logger, defaultLogLevel)
-import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
-
 import Effectful
-import Effectful.Log (Logging)
-import Effectful.Log.Backend.StandardOutput qualified as Log
-import Effectful.Time
+import Effectful.Log (Log)
+import Effectful.Log qualified as Log
+import Effectful.Time (Time)
+import Effectful.Time qualified as Time
+import Log (Logger)
+import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
+import Log.Backend.StandardOutput qualified as Log
+
+import Flora.Environment.Config
 
 -- | Wrapper around 'Log.runLogT' with necessary metadata
 runLog
@@ -25,10 +27,10 @@ runLog
    . (IOE :> es)
   => DeploymentEnv
   -> Logger
-  -> Eff (Logging : es) a
+  -> Eff (Log : es) a
   -> Eff es a
 runLog env logger logAction =
-  Log.runLogging ("flora-" <> suffix) logger defaultLogLevel logAction
+  Log.runLog ("flora-" <> suffix) logger Log.defaultLogLevel logAction
   where
     suffix = display env
 

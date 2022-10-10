@@ -37,7 +37,7 @@ importAllFilesInDirectory appLogger user dir = do
   let chunkSize = 400
   countMVar <- liftIO $ newMVar @Int 0
   findAllCabalFilesInDirectory dir
-    & parMapM parallelWorkers (runEff . runDB pool . runCurrentTimeIO . Log.runLogging "flora-jobs" appLogger defaultLogLevel . loadAndExtractCabalFile user)
+    & parMapM parallelWorkers (runEff . runDB pool . runCurrentTimeIO . Log.runLog "flora-jobs" appLogger defaultLogLevel . loadAndExtractCabalFile user)
     & chunksOf chunkSize
     & Str.mapped Str.toList
     & Str.mapM_ (persistChunk countMVar)
