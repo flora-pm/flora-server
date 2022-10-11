@@ -40,8 +40,7 @@ server cfg env =
       , users = adminUsersHandler
       , packages = adminPackagesHandler
       , oddJobs = OddJobs.server cfg env handlerToEff
-      , makeReadmes = makeReadmesHandler
-      , fetchUploadTimes = fetchUploadTimesHandler
+      , fetchMetadata = fetchMetadataHandler
       , importIndex = indexImportJobHandler
       }
 
@@ -72,25 +71,26 @@ indexHandler = do
   report <- liftIO $ withPool pool getReport
   render templateEnv (Templates.index report)
 
-makeReadmesHandler :: FloraAdmin MakeReadmesResponse
-makeReadmesHandler = do
+fetchMetadataHandler :: FloraAdmin FetchMetadataResponse
+fetchMetadataHandler = do
   session <- getSession
   FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
-  releases <- Query.getPackageReleasesWithoutReadme
-  liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
-    scheduleReadmeJob jobsPool releaseId packagename version
-  pure $ redirect "/admin"
 
-fetchUploadTimesHandler :: FloraAdmin FetchUploadTimesResponse
-fetchUploadTimesHandler = do
-  session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
-  releases <- Query.getPackageReleasesWithoutUploadTimestamp
-  liftIO $ forkIO $ forM_ releases $ \(releaseId, version, packagename) -> do
+  releasesWithoutReadme <- Query.getPackageReleasesWithoutReadme
+  liftIO $ forkIO $ forM_ releasesWithoutReadme $ \(releaseId, version, packagename) -> do
+    Async.async $ scheduleReadmeJob jobsPool releaseId packagename version
+
+  releasesWithoutUploadTime <- Query.getPackageReleasesWithoutUploadTimestamp
+  liftIO $ forkIO $ forM_ releasesWithoutUploadTime $ \(releaseId, version, packagename) -> do
     Async.async $ scheduleUploadTimeJob jobsPool releaseId packagename version
+
+  releasesWithoutChangelog <- Query.getPackageReleasesWithoutChangelog
+  liftIO $ forkIO $ forM_ releasesWithoutChangelog $ \(releaseId, version, packagename) -> do
+    Async.async $ scheduleChangelogJob jobsPool releaseId packagename version
+
   pure $ redirect "/admin"
 
-indexImportJobHandler :: FloraAdmin FetchUploadTimesResponse
+indexImportJobHandler :: FloraAdmin ImportIndexResponse
 indexImportJobHandler = do
   session <- getSession
   FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)

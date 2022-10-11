@@ -35,20 +35,11 @@ dataReport adminReport = do
     div_ [class_ cardClass] $ do
       dt_
         [class_ "text-sm font-medium truncate"]
-        "README fetching"
+        "README, CHANGELOG, Upload time…"
 
       dd_ [class_ "mt-1 text-3xl font-semibold"] $
-        form_ [action_ "/admin/readmes", method_ "POST"] $ do
-          button_ [class_ ""] "Schedule"
-
-    div_ [class_ cardClass] $ do
-      dt_
-        [class_ "text-sm font-medium truncate"]
-        "Fetch upload times for releases"
-
-      dd_ [class_ "mt-1 text-3xl font-semibold"] $
-        form_ [action_ "/admin/upload-times", method_ "POST"] $ do
-          button_ [class_ ""] "Schedule"
+        form_ [action_ "/admin/metadata", method_ "POST"] $ do
+          button_ [class_ ""] "Fetch release metadata"
 
     div_ [class_ cardClass] $ do
       dt_

@@ -3,7 +3,7 @@ module Flora.Model.Release.Types
   , TextHtml (..)
   , Release (..)
   , ReleaseMetadata (..)
-  , ReadmeStatus (..)
+  , ImportStatus (..)
   )
 where
 
@@ -72,7 +72,11 @@ data Release = Release
   -- ^ Last update timestamp for this release
   , readme :: Maybe TextHtml
   -- ^ Content of the release's README
-  , readmeStatus :: ReadmeStatus
+  , readmeStatus :: ImportStatus
+  -- ^ Import status of the README
+  , changelog :: Maybe TextHtml
+  -- ^ Content of the release's Changelog
+  , changelogStatus :: ImportStatus
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow)
@@ -83,29 +87,29 @@ data Release = Release
 instance Ord Release where
   compare x y = compare (x.version) (y.version)
 
-data ReadmeStatus
+data ImportStatus
   = Imported
   | Inexistent
   | NotImported
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
 
-parseReadmeStatus :: ByteString -> Maybe ReadmeStatus
-parseReadmeStatus "imported" = pure Imported
-parseReadmeStatus "inexistent" = pure Inexistent
-parseReadmeStatus "not-imported" = pure NotImported
-parseReadmeStatus _ = Nothing
+parseImportStatus :: ByteString -> Maybe ImportStatus
+parseImportStatus "imported" = pure Imported
+parseImportStatus "inexistent" = pure Inexistent
+parseImportStatus "not-imported" = pure NotImported
+parseImportStatus _ = Nothing
 
-instance Display ReadmeStatus where
+instance Display ImportStatus where
   displayBuilder Imported = "imported"
   displayBuilder Inexistent = "inexistent"
   displayBuilder NotImported = "not-imported"
 
-instance FromField ReadmeStatus where
+instance FromField ImportStatus where
   fromField f Nothing = returnError UnexpectedNull f ""
-  fromField _ (Just bs) | Just status <- parseReadmeStatus bs = pure status
-  fromField f (Just bs) = returnError ConversionFailed f $ unpack $ "Conversion error: Expected component to be one of " <> display @[ReadmeStatus] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
+  fromField _ (Just bs) | Just status <- parseImportStatus bs = pure status
+  fromField f (Just bs) = returnError ConversionFailed f $ unpack $ "Conversion error: Expected component to be one of " <> display @[ImportStatus] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
 
-instance ToField ReadmeStatus where
+instance ToField ImportStatus where
   toField = Escape . encodeUtf8 . display
 
 data ReleaseMetadata = ReleaseMetadata

@@ -42,7 +42,7 @@ import Control.Exception.Safe qualified as Safe
 import Effectful.Concurrent
 import Effectful.Reader.Static (runReader, withReader)
 import Effectful.Servant (effToHandler)
-import Effectful.Time (Time, runCurrentTimeIO)
+import Effectful.Time (runCurrentTimeIO)
 import Network.HTTP.Client qualified as HTTP
 import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Job (startJobRunner)
@@ -104,7 +104,7 @@ logException env logger exception =
     . Logging.runLog env logger
     $ Log.logAttention "odd-jobs runner crashed " (show exception)
 
-runServer :: (Time :> es, Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
+runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   let runnerEnv = JobsRunnerEnv httpManager

@@ -46,3 +46,10 @@ getPackageUploadTime packageName =
     // API.withPackage
     /: packageName
     // API.getUploadTime
+
+getPackageChangelog :: VersionedPackage -> ClientM Text
+getPackageChangelog versionedPackage =
+  hackageClient
+    // API.withPackage
+    /: versionedPackage
+    // API.getChangelog

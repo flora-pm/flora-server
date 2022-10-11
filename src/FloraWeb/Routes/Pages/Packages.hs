@@ -35,6 +35,19 @@ data Routes' mode = Routes'
           :> Capture "package" PackageName
           :> "dependencies"
           :> Get '[HTML] (Html ())
+  , showChangelog
+      :: mode
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
+          :> "changelog"
+          :> Get '[HTML] (Html ())
+  , showVersionChangelog
+      :: mode
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
+          :> Capture "version" Version
+          :> "changelog"
+          :> Get '[HTML] (Html ())
   , showVersion
       :: mode
         :- Capture "namespace" Namespace

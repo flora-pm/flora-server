@@ -1,9 +1,4 @@
-.package-readme-column {
-  margin: 0 2em;
-  overflow: auto;
-}
-
-.package-readme {
+.release-changelog {
   overflow-wrap: break-word;
   box-sizing: border-box;
 
@@ -100,14 +95,14 @@
     border-radius: 6px;
     overflow: auto;
     font-size: 90%;
-    background-color: var(--readme-pre-background-color);
+    background-color: var(--changelog-pre-background-color);
     margin-bottom: 16px;
   }
 
   code {
     margin: 0;
     font-size: 85%;
-    background-color: var(--readme-code-background-color);
+    background-color: var(--changelog-code-background-color);
     border-radius: 6px;
   }
 }

@@ -32,6 +32,23 @@ packageVersionLink namespace packageName version =
     /: packageName
     /: version
 
+packageVersionChangelog :: Namespace -> PackageName -> Version -> Link
+packageVersionChangelog namespace packageName version =
+  links
+    // Web.packages
+    // Web.showVersionChangelog
+    /: namespace
+    /: packageName
+    /: version
+
+packageChangelog :: Namespace -> PackageName -> Link
+packageChangelog namespace packageName =
+  links
+    // Web.packages
+    // Web.showChangelog
+    /: namespace
+    /: packageName
+
 packageIndexLink :: Word -> Link
 packageIndexLink pageNumber =
   links

@@ -258,6 +258,8 @@ extractPackageDataFromCabal userId genericDesc = do
           , updatedAt = timestamp
           , readme = Nothing
           , readmeStatus = NotImported
+          , changelog = Nothing
+          , changelogStatus = NotImported
           }
 
   let lib = extractLibrary package release Nothing Nothing <$> allLibraries packageDesc
