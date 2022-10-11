@@ -87,7 +87,7 @@ instance ToJSON IntAesonVersion where
 instance FromJSON IntAesonVersion where
   parseJSON val = MkIntAesonVersion . mkVersion <$> parseJSON val
 
-data ReadmePayload = MkReadmePayload
+data ReadmeJobPayload = ReadmeJobPayload
   { mpPackage :: PackageName
   , mpReleaseId :: ReleaseId -- needed to write the readme in db
   , mpVersion :: IntAesonVersion
@@ -95,7 +95,15 @@ data ReadmePayload = MkReadmePayload
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 
-data FetchUploadTimePayload = FetchUploadTimePayload
+data UploadTimeJobPayload = UploadTimeJobPayload
+  { packageName :: PackageName
+  , releaseId :: ReleaseId
+  , packageVersion :: IntAesonVersion
+  }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+data ChangelogJobPayload = ChangelogJobPayload
   { packageName :: PackageName
   , releaseId :: ReleaseId
   , packageVersion :: IntAesonVersion
@@ -109,8 +117,9 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
 
 -- these represent the possible odd jobs we can run.
 data FloraOddJobs
-  = MkReadme ReadmePayload
-  | FetchUploadTime FetchUploadTimePayload
+  = FetchReadme ReadmeJobPayload
+  | FetchUploadTime UploadTimeJobPayload
+  | FetchChangelog ChangelogJobPayload
   | ImportHackageIndex ImportHackageIndexPayload
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)

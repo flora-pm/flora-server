@@ -6,6 +6,7 @@ module Flora.Model.Release.Query
   , getReleaseByVersion
   , getPackageReleases
   , getPackageReleasesWithoutReadme
+  , getPackageReleasesWithoutChangelog
   , getPackageReleasesWithoutUploadTimestamp
   , getAllReleases
   , getNumberOfReleases
@@ -87,6 +88,21 @@ getPackageReleasesWithoutUploadTimestamp =
         join packages as p
         on p.package_id = r.package_id
         where r.uploaded_at is null
+      |]
+
+getPackageReleasesWithoutChangelog :: [DB, IOE] :>> es => Eff es (Vector (ReleaseId, Version, PackageName))
+getPackageReleasesWithoutChangelog =
+  dbtToEff $
+    query Select querySpec ()
+  where
+    querySpec :: Query
+    querySpec =
+      [sql|
+        select r.release_id, r.version, p."name"
+        from releases as r
+        join packages as p
+        on p.package_id = r.package_id
+        where r.changelog_status = 'not-imported'
       |]
 
 getReleaseByVersion :: [DB, IOE] :>> es => PackageId -> Version -> Eff es (Maybe Release)

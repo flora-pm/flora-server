@@ -14,6 +14,7 @@ import Lucid
 import Lucid.Orphans ()
 import Servant (ServerT)
 
+import Control.Monad (void)
 import Data.Maybe (fromMaybe)
 import Data.Text.Display (display)
 import Distribution.Orphans ()
@@ -28,6 +29,7 @@ import FloraWeb.Server.Guards
 import FloraWeb.Server.Logging
 import FloraWeb.Session
 import FloraWeb.Templates
+import FloraWeb.Templates.Packages.Changelog qualified as PackageChangelog
 import FloraWeb.Templates.Packages.Dependencies qualified as PackageDependencies
 import FloraWeb.Templates.Packages.Dependents qualified as PackageDependents
 import FloraWeb.Templates.Packages.Versions qualified as PackageVersions
@@ -42,6 +44,8 @@ server =
     , showVersion = showVersionHandler
     , showDependents = showDependentsHandler
     , showDependencies = showDependenciesHandler
+    , showChangelog = showChangelogHandler
+    , showVersionChangelog = showVersionChangelogHandler
     , listVersions = listVersionsHandler
     }
 
@@ -132,7 +136,7 @@ showDependentsHandler namespace packageName = do
 
 showDependenciesHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showDependenciesHandler namespace packageName = do
-  Log.logInfo_ $ display $ Prelude.show namespace
+  Log.logInfo_ $ display namespace
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
@@ -159,6 +163,28 @@ showDependenciesHandler namespace packageName = do
     PackageDependencies.showDependencies
       ("Dependencies of " <> display namespace <> "/" <> display packageName)
       latestReleasedependencies
+
+showChangelogHandler :: Namespace -> PackageName -> FloraPage (Html ())
+showChangelogHandler namespace packageName = do
+  package <- guardThatPackageExists namespace packageName
+  releases <- Query.getAllReleases (package.packageId)
+  let latestRelease = maximumBy (compare `on` version) releases
+  showVersionChangelogHandler namespace packageName (latestRelease.version)
+
+showVersionChangelogHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
+showVersionChangelogHandler namespace packageName version = do
+  Log.logInfo_ $ display namespace
+  session <- getSession
+  templateEnv' <- fromSession session defaultTemplateEnv
+  void $ guardThatPackageExists namespace packageName
+  release <- guardThatReleaseExists namespace packageName version
+  let templateEnv =
+        templateEnv'
+          { title = display namespace <> "/" <> display packageName
+          , description = "Changelog of @" <> display namespace <> display packageName
+          }
+
+  render templateEnv $ PackageChangelog.showChangelog namespace packageName version (release.changelog)
 
 listVersionsHandler :: Namespace -> PackageName -> FloraPage (Html ())
 listVersionsHandler namespace packageName = do

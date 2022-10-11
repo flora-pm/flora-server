@@ -33,7 +33,6 @@ common common-extensions
     DuplicateRecordFields
     LambdaCase
     OverloadedLabels
-    OverloadedRecordDot
     OverloadedStrings
     PolyKinds
     QuasiQuotes
@@ -42,6 +41,7 @@ common common-extensions
     TypeFamilies
     UndecidableInstances
     ViewPatterns
+    OverloadedRecordDot
 
   default-language:   GHC2021
 
@@ -108,6 +108,7 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.OddJobs
+    Flora.OddJobs.Render
     Flora.OddJobs.Types
     Flora.Publish
     Flora.Search
@@ -154,6 +155,7 @@ library
     FloraWeb.Templates.Admin.Packages
     FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
+    FloraWeb.Templates.Packages.Changelog
     FloraWeb.Templates.Packages.Dependencies
     FloraWeb.Templates.Packages.Dependents
     FloraWeb.Templates.Packages.Listing
@@ -193,13 +195,13 @@ library
     , envparse                   ^>=0.5
     , filepath                   ^>=1.4
     , http-api-data              ^>=0.4
-    , http-client                >=0.7.10  && <0.8
+    , http-client                ^>=0.7.10
     , http-client-tls
     , http-media
     , http-types                 ^>=0.12
     , iso8601-time               ^>=0.1
     , lens
-    , log-base                   >=0.12    && <0.13
+    , log-base                   ^>=0.12
     , log-effectful              ^>=1.0
     , lucid                      ^>=2.11
     , lucid-alpine               ^>=0.1

@@ -74,7 +74,7 @@ presentationHeader release namespace name synopsis = do
   div_ [class_ "divider"] $ do
     div_ [class_ "page-title"] $
       h1_ [class_ "package-title text-center tracking-tight"] $ do
-        span_ [class_ "headline"] $ toHtml namespace <> "/" <> toHtml name
+        span_ [class_ "headline"] $ toHtml (display namespace) <> "/" <> toHtml name
         span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release.version
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml synopsis)
@@ -106,10 +106,10 @@ packageBody
           ul_ [class_ "package-left-rows grid-rows-3 md:sticky md:top-28"] $ do
             displayCategories categories
             displayLicense (metadata.license)
-            displayLinks packageName latestRelease metadata
+            displayLinks namespace packageName latestRelease metadata
             displayVersions namespace packageName packageReleases numberOfReleases
-        div_ [class_ "package-readme-column grow"] $ do
-          div_ [class_ "grid-rows-3 package-readme"] $ do
+        div_ [class_ "release-readme-column grow"] $ do
+          div_ [class_ "grid-rows-3 release-readme"] $ do
             displayReadme latestRelease
         div_ [class_ "package-right-column md:max-w-xs"] $ do
           ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
@@ -142,18 +142,23 @@ displayCategories categories = do
     ul_ [class_ "categories"] $ do
       foldMap renderCategory categories
 
-displayLinks :: PackageName -> Release -> ReleaseMetadata -> FloraHTML
-displayLinks packageName _release meta@ReleaseMetadata{..} = do
+displayLinks :: Namespace -> PackageName -> Release -> ReleaseMetadata -> FloraHTML
+displayLinks namespace packageName release meta@ReleaseMetadata{..} = do
   li_ [class_ "mb-5"] $ do
     h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Links"
     ul_ [class_ "links"] $ do
       li_ [class_ "package-link"] $ a_ [href_ (getHomepage meta)] "Homepage"
       li_ [class_ "package-link"] $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
       li_ [class_ "package-link"] $ displaySourceRepos sourceRepos
+      li_ [class_ "package-link"] $ displayChangelog namespace packageName release.version release.changelog
 
 displaySourceRepos :: [Text] -> FloraHTML
 displaySourceRepos [] = toHtml @Text "No source repository"
 displaySourceRepos x = a_ [href_ (head x)] "Source repository"
+
+displayChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
+displayChangelog _ _ _ Nothing = toHtml @Text ""
+displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> toUrlPiece (Links.packageVersionChangelog namespace packageName version))] "Changelog"
 
 displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
 displayVersions namespace packageName versions numberOfReleases =

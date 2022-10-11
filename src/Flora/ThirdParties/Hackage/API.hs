@@ -48,6 +48,7 @@ data HackageAPI' mode = HackageAPI'
 data HackagePackageAPI mode = HackagePackageAPI
   { getReadme :: mode :- "readme.txt" :> Get '[PlainerText] Text
   , getUploadTime :: mode :- "upload-time" :> Get '[PlainText] UTCTime
+  , getChangelog :: mode :- "changelog.txt" :> Get '[PlainerText] Text
   }
   deriving stock (Generic)
 

@@ -10,18 +10,11 @@ import Servant.HTML.Lucid
 
 type Routes = NamedRoutes Routes'
 
-type MakeReadmes =
-  "readmes"
-    :> Verb 'POST 301 '[HTML] MakeReadmesResponse
+type FetchMetadata =
+  "metadata"
+    :> Verb 'POST 301 '[HTML] FetchMetadataResponse
 
-type MakeReadmesResponse =
-  Headers '[Header "Location" Text] NoContent
-
-type FetchUploadTimes =
-  "upload-times"
-    :> Verb 'POST 301 '[HTML] FetchUploadTimesResponse
-
-type FetchUploadTimesResponse =
+type FetchMetadataResponse =
   Headers '[Header "Location" Text] NoContent
 
 type ImportIndex =
@@ -33,8 +26,7 @@ type ImportIndexResponse =
 
 data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
-  , makeReadmes :: mode :- MakeReadmes
-  , fetchUploadTimes :: mode :- FetchUploadTimes
+  , fetchMetadata :: mode :- FetchMetadata
   , importIndex :: mode :- ImportIndex
   , oddJobs :: mode :- "odd-jobs" :> OddJobs.FinalAPI -- they compose :o
   , users :: mode :- "users" :> AdminUsersRoutes

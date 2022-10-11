@@ -5,7 +5,8 @@
 @import "tailwindcss/utilities";
 
 @import "variables.css";
-@import "package-readme.css";
+@import "release-readme.css";
+@import "release-changelog.css";
 
 @layer components {
   .larger-container {
@@ -439,7 +440,7 @@ div[class="bullets"] {
     order: 2;
   }
 
-  .package-readme-column {
+  .release-readme-column {
     order: 3;
   }
 }
