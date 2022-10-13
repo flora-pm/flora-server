@@ -7,6 +7,7 @@
 * Autofocus the search field on the home page (#235)
 * Support release changelogs (#241)
 * Packages are no longer kept as their own dependent (#242)
+* Show library dependencies only (#244)
 
 ## v1.0.4 -- 2022-10-02
 
