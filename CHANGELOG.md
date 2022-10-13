@@ -9,6 +9,7 @@
 * Packages are no longer kept as their own dependent (#242)
 * Show library dependencies only (#244)
 * Show licenses in package listings (#245)
+* Show package flags (#246)
 
 ## v1.0.4 -- 2022-10-02
 
