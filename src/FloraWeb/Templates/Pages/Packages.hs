@@ -10,6 +10,8 @@ import Data.Vector qualified as V
 import Data.Vector qualified as Vector
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.Flag (PackageFlag (..))
+import Distribution.Types.Flag qualified as Flag
 import Distribution.Version
 import Flora.Model.Category (Category (..))
 import Flora.Model.Package.Types
@@ -26,8 +28,6 @@ import Lucid.Orphans ()
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
-import Distribution.Types.Flag (PackageFlag(..))
-import qualified Distribution.Types.Flag as Flag
 
 data Target = Dependents | Dependencies | Versions
   deriving stock (Eq, Ord)
@@ -156,8 +156,9 @@ displayLinks namespace packageName release meta@ReleaseMetadata{..} = do
       li_ [class_ "package-link"] $ displayChangelog namespace packageName release.version release.changelog
 
 displaySourceRepos :: Vector Text -> FloraHTML
-displaySourceRepos x | Vector.null x = toHtml @Text "No source repository"
-                     | otherwise = a_ [href_ (Vector.head x)] "Source repository"
+displaySourceRepos x
+  | Vector.null x = toHtml @Text "No source repository"
+  | otherwise = a_ [href_ (Vector.head x)] "Source repository"
 
 displayChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 displayChangelog _ _ _ Nothing = toHtml @Text ""
@@ -274,24 +275,23 @@ getHomepage ReleaseMetadata{..} =
     Just page -> page
     Nothing ->
       if Vector.null sourceRepos
-      then "⚠  No homepage provided"
-      else Vector.head sourceRepos
+        then "⚠  No homepage provided"
+        else Vector.head sourceRepos
 
 displayPackageFlags :: Vector PackageFlag -> FloraHTML
 displayPackageFlags packageFlags =
   if Vector.null packageFlags
-  then do
-    mempty
-  else do
-    h3_ [class_ "package-body-section"] "Package Flags"
-    dl_ [class_ "package-flags"] $
-      forM_ packageFlags displayPackageFlag
+    then do
+      mempty
+    else do
+      h3_ [class_ "package-body-section"] "Package Flags"
+      dl_ [class_ "package-flags"] $
+        forM_ packageFlags displayPackageFlag
 
 displayPackageFlag :: PackageFlag -> FloraHTML
 displayPackageFlag MkPackageFlag{flagName, flagDescription} = do
   dt_ [class_ "package-flag-name"] $ pre_ (toHtml $ Flag.unFlagName flagName)
   dd_ [class_ "package-flag-description"] $ em_ (toHtml flagDescription)
-
 
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =
