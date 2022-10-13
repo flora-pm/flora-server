@@ -31,6 +31,8 @@ import Distribution.Orphans ()
 import Distribution.Types.Flag (PackageFlag)
 import Flora.Model.Package
 import Lucid qualified
+import Data.Vector (Vector)
+import Distribution.Types.Flag (PackageFlag)
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving

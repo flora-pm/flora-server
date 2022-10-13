@@ -14,7 +14,7 @@ import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Version
-import Flora.Model.Category (Category (..))
+import Flora.Model.Category.Types ( Category(..) )
 import Flora.Model.Package.Types
   ( Namespace
   , Package (..)

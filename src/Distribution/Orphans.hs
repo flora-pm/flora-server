@@ -33,7 +33,9 @@ import Distribution.Types.Version qualified as Cabal
 import Distribution.Utils.Generic (fromUTF8BS)
 import Distribution.Utils.ShortText
 import Distribution.Version (Version, VersionRange)
+import Distribution.Types.Flag (PackageFlag(..))
 import Servant (FromHttpApiData (..), ToHttpApiData (..))
+import Data.Function (on)
 
 deriving anyclass instance ToJSON ConfVar
 deriving anyclass instance FromJSON ConfVar
