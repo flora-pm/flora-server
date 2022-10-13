@@ -29,6 +29,8 @@ import GHC.Generics (Generic)
 import Distribution.Orphans ()
 import Flora.Model.Package
 import Lucid qualified
+import Data.Vector (Vector)
+import Distribution.Types.Flag (PackageFlag)
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
@@ -107,20 +109,24 @@ instance Display ImportStatus where
 instance FromField ImportStatus where
   fromField f Nothing = returnError UnexpectedNull f ""
   fromField _ (Just bs) | Just status <- parseImportStatus bs = pure status
-  fromField f (Just bs) = returnError ConversionFailed f $ unpack $ "Conversion error: Expected component to be one of " <> display @[ImportStatus] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
+  fromField f (Just bs) = returnError ConversionFailed f $
+    unpack $ "Conversion error: Expected component to be one of "
+    <> display @[ImportStatus] [minBound .. maxBound]
+    <> ", but instead got " <> decodeUtf8 bs
 
 instance ToField ImportStatus where
   toField = Escape . encodeUtf8 . display
 
 data ReleaseMetadata = ReleaseMetadata
   { license :: SPDX.License
-  , sourceRepos :: [Text]
+  , sourceRepos :: Vector Text
   , homepage :: Maybe Text
   , documentation :: Text
   , bugTracker :: Maybe Text
   , maintainer :: Text
   , synopsis :: Text
   , description :: Text
+  , flags :: Vector PackageFlag
   }
   deriving stock (Eq, Ord, Show, Generic, Typeable)
   deriving anyclass (ToJSON, FromJSON)

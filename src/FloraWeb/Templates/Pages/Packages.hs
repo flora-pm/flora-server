@@ -26,6 +26,8 @@ import Lucid.Orphans ()
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
+import Distribution.Types.Flag (PackageFlag(..))
+import qualified Distribution.Types.Flag as Flag
 
 data Target = Dependents | Dependencies | Versions
   deriving stock (Eq, Ord)
@@ -117,6 +119,7 @@ packageBody
             displayMaintainer (metadata.maintainer)
             displayDependencies (namespace, packageName) numberOfDependencies dependencies
             displayDependents (namespace, packageName) numberOfDependents dependents
+            displayPackageFlags metadata.flags
 
 displayReadme :: Release -> FloraHTML
 displayReadme release =
@@ -152,9 +155,9 @@ displayLinks namespace packageName release meta@ReleaseMetadata{..} = do
       li_ [class_ "package-link"] $ displaySourceRepos sourceRepos
       li_ [class_ "package-link"] $ displayChangelog namespace packageName release.version release.changelog
 
-displaySourceRepos :: [Text] -> FloraHTML
-displaySourceRepos [] = toHtml @Text "No source repository"
-displaySourceRepos x = a_ [href_ (head x)] "Source repository"
+displaySourceRepos :: Vector Text -> FloraHTML
+displaySourceRepos x | Vector.null x = toHtml @Text "No source repository"
+                     | otherwise = a_ [href_ (Vector.head x)] "Source repository"
 
 displayChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 displayChangelog _ _ _ Nothing = toHtml @Text ""
@@ -192,7 +195,7 @@ displayDependencies
   -> FloraHTML
 displayDependencies (namespace, packageName) numberOfDependencies dependencies = do
   li_ [class_ "mb-5"] $ do
-    h3_ [class_ "lg:text-2xl package-body-section mb-3"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
+    h3_ [class_ "package-body-section"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
     ul_ [class_ "dependencies grid-cols-3"] $ do
       let deps = foldMap renderDependency dependencies
       let numberOfShownDependencies = fromIntegral @Int @Word (Vector.length dependencies)
@@ -208,7 +211,7 @@ showAll (namespace, packageName, target) = do
 displayInstructions :: PackageName -> Release -> FloraHTML
 displayInstructions packageName latestRelease = do
   li_ [class_ "mb-5"] $ do
-    h3_ [class_ "lg:text-2xl package-body-section mb-3"] "Installation"
+    h3_ [class_ "package-body-section"] "Installation"
     div_ [class_ "items-top"] $ do
       div_ [class_ "space-y-2"] $ do
         label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
@@ -223,7 +226,7 @@ displayInstructions packageName latestRelease = do
 displayMaintainer :: Text -> FloraHTML
 displayMaintainer maintainerInfo = do
   li_ [class_ "mb-5"] $ do
-    h3_ [class_ "lg:text-2xl package-body-section mb-3"] "Maintainer"
+    h3_ [class_ "package-body-section"] "Maintainer"
     p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
 
 displayDependents
@@ -233,7 +236,7 @@ displayDependents
   -> FloraHTML
 displayDependents (namespace, packageName) numberOfDependents dependents = do
   li_ [class_ "mb-5 dependents"] $ do
-    h3_ [class_ "lg:text-2xl package-body-section dependents mb-3"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")
+    h3_ [class_ "package-body-section"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")
     if Vector.null dependents
       then ""
       else
@@ -270,9 +273,25 @@ getHomepage ReleaseMetadata{..} =
   case homepage of
     Just page -> page
     Nothing ->
-      case sourceRepos of
-        [] -> "⚠  No homepage provided"
-        x -> head x
+      if Vector.null sourceRepos
+      then "⚠  No homepage provided"
+      else Vector.head sourceRepos
+
+displayPackageFlags :: Vector PackageFlag -> FloraHTML
+displayPackageFlags packageFlags =
+  if Vector.null packageFlags
+  then do
+    mempty
+  else do
+    h3_ [class_ "package-body-section"] "Package Flags"
+    dl_ [class_ "package-flags"] $
+      forM_ packageFlags displayPackageFlag
+
+displayPackageFlag :: PackageFlag -> FloraHTML
+displayPackageFlag MkPackageFlag{flagName, flagDescription} = do
+  dt_ [class_ "package-flag-name"] $ pre_ (toHtml $ Flag.unFlagName flagName)
+  dd_ [class_ "package-flag-description"] $ em_ (toHtml flagDescription)
+
 
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =

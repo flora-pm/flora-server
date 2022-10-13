@@ -193,6 +193,20 @@ div[class="bullets"] {
     font-weight: 500;
   }
 
+  .package-body-section {
+      font-size: 1.5rem;
+      line-height: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .package-flags {
+      .package-flag-name {
+      }
+      .package-flag-description {
+        padding-left: 0.5rem;
+      }
+    }
+
   .package-body-section__license {
     font-weight: 500;
   }

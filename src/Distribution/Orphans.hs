@@ -31,7 +31,9 @@ import Distribution.Types.Version qualified as Cabal
 import Distribution.Utils.Generic (fromUTF8BS)
 import Distribution.Utils.ShortText
 import Distribution.Version (Version, VersionRange)
+import Distribution.Types.Flag (PackageFlag(..))
 import Servant (FromHttpApiData (..), ToHttpApiData (..))
+import Data.Function (on)
 
 deriving anyclass instance ToJSON ConfVar
 deriving anyclass instance FromJSON ConfVar
@@ -103,3 +105,9 @@ instance ToField SPDX.License where
 
 instance Display UnqualComponentName where
   displayBuilder = Builder.fromString . unUnqualComponentName
+
+instance Ord PackageFlag where
+  compare = compare `on` flagName
+
+deriving instance ToJSON PackageFlag
+deriving instance FromJSON PackageFlag

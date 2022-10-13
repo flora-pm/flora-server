@@ -76,6 +76,8 @@ import Flora.Model.Requirement
   )
 import Flora.Model.User
 import GHC.Stack (HasCallStack)
+import qualified Data.Vector as Vector
+import Data.Vector (Vector)
 
 {-| This tuple represents the package that depends on any associated dependency/requirement.
  It is used in the recursive loading of Cabal files
@@ -213,6 +215,7 @@ persistImportOutput (ImportOutput package categories release components) = do
 extractPackageDataFromCabal :: [DB, IOE] :>> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
+  let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
   let packageVersion = packageDesc.package.pkgVersion
   let namespace = chooseNamespace packageName
@@ -244,6 +247,7 @@ extractPackageDataFromCabal userId genericDesc = do
           , maintainer = display packageDesc.maintainer
           , synopsis = display packageDesc.synopsis
           , description = display packageDesc.description
+          , flags = flags
           }
 
   let release =
@@ -419,9 +423,9 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
           }
    in ImportDependency{package = dependencyPackage, requirement}
 
-getRepoURL :: PackageName -> [Cabal.SourceRepo] -> [Text]
-getRepoURL _ [] = []
-getRepoURL _ (repo : _) = [display $ fromMaybe mempty (repo.repoLocation)]
+getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
+getRepoURL _ [] = Vector.empty
+getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty (repo.repoLocation)
 
 chooseNamespace :: PackageName -> Namespace
 chooseNamespace name | Set.member name coreLibraries = Namespace "haskell"
