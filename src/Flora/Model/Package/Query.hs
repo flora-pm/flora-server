@@ -30,6 +30,7 @@ import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time
 import Log qualified
 
+import Distribution.SPDX.License qualified as SPDX
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Package (Namespace (..), Package, PackageId, PackageName)
@@ -140,7 +141,7 @@ getAllPackageDependentsWithLatestVersion
   :: ([DB, Log, Time, IOE] :>> es)
   => Namespace
   -> PackageName
-  -> Eff es (Vector (Namespace, PackageName, Text, Version))
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License))
 getAllPackageDependentsWithLatestVersion namespace packageName =
   dbtToEff $
     query Select packageDependentsWithLatestVersionQuery (namespace, packageName)
@@ -149,7 +150,7 @@ getPackageDependentsWithLatestVersion
   :: ([DB, Log, Time, IOE] :>> es)
   => Namespace
   -> PackageName
-  -> Eff es (Vector (Namespace, PackageName, Text, Version))
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License))
 getPackageDependentsWithLatestVersion namespace packageName = do
   (result, duration) <-
     timeAction $
@@ -169,6 +170,7 @@ packageDependentsWithLatestVersionQuery =
                   , p."name"
                   , r.metadata ->> 'synopsis' as "synopsis"
                   , max(r."version")
+                  , r.metadata ->> 'license' as  "license"
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
                 ON p."package_id" = dep."dependent_id"
@@ -176,7 +178,7 @@ packageDependentsWithLatestVersionQuery =
                 ON r."package_id" = p."package_id"
   WHERE  dep."namespace" = ?
     AND  dep."name" = ?
-  GROUP BY (p.namespace, p.name, synopsis)
+  GROUP BY (p.namespace, p.name, synopsis, license)
   |]
 
 getComponentById :: ([DB, Log, Time, IOE] :>> es) => ComponentId -> Eff es (Maybe PackageComponent)
@@ -209,7 +211,7 @@ getAllRequirements
   :: ([DB, Log, Time, IOE] :>> es)
   => ReleaseId
   -- ^ Id of the release for which we want the dependencies
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, Text))
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, Text, SPDX.License))
   -- ^ Returns a vector of (Namespace, Name, dependency requirement, version of latest of release of dependency, synopsis of dependency)
 getAllRequirements releaseId = dbtToEff $ query Select getAllRequirementsQuery (Only releaseId)
 
@@ -244,7 +246,7 @@ getAllRequirementsQuery =
          , req.requirement
          , r3.version as "dependency_latest_version"
          , r3.metadata ->> 'synopsis' as "dependency_latest_synopsis"
-      -- , r3.metadata ->> 'license' as "dependency_latest_license"
+         , r3.metadata ->> 'license' as "dependency_latest_license"
     from requirements as req
     inner join packages as p2 on p2.namespace = req.namespace and p2.name = req.name
     inner join releases as r3 on r3.package_id = p2.package_id
@@ -303,12 +305,12 @@ getPackageCategories packageId =
 getPackagesFromCategoryWithLatestVersion
   :: ([DB, Log, Time, IOE] :>> es)
   => CategoryId
-  -> Eff es (Vector (Namespace, PackageName, Text, Version))
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License))
 getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q (Only categoryId)
   where
     q =
       [sql|
-      select distinct lv.namespace, lv.name, lv.synopsis, lv.version from latest_versions as lv
+      select distinct lv.namespace, lv.name, lv.synopsis, lv.version, lv.license from latest_versions as lv
         inner join package_categories as pc on pc.package_id = lv.package_id
         inner join categories as c on c.category_id = pc.category_id
       where c.category_id = ?
@@ -318,7 +320,7 @@ searchPackage
   :: ([DB, Log, Time, IOE] :>> es)
   => Word
   -> Text
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, Float))
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License, Float))
 searchPackage pageNumber searchString =
   dbtToEff $
     let limit = 30
@@ -330,6 +332,7 @@ searchPackage pageNumber searchString =
               , lv."name"
               , lv."synopsis"
               , lv."version"
+              , lv."license"
               , word_similarity(lv.name, ?) as rating
         FROM latest_versions as lv
         WHERE ? <% lv.name
@@ -338,6 +341,7 @@ searchPackage pageNumber searchString =
           , lv."name"
           , lv."synopsis"
           , lv."version"
+          , lv."license"
         ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
         LIMIT 30
         OFFSET ?
@@ -348,7 +352,7 @@ searchPackage pageNumber searchString =
 listAllPackages
   :: ([DB, Log, Time, IOE] :>> es)
   => Word
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, Float))
+  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License, Float))
 listAllPackages pageNumber =
   dbtToEff $
     let limit = 30
@@ -360,6 +364,7 @@ listAllPackages pageNumber =
           , lv."name"
           , lv."synopsis"
           , lv."version"
+          , lv."license"
           , (1.0::real) as rating
     FROM latest_versions as lv
     GROUP BY
@@ -367,6 +372,7 @@ listAllPackages pageNumber =
       , lv."name"
       , lv."synopsis"
       , lv."version"
+      , lv."license"
     ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
     LIMIT 30
     OFFSET ?

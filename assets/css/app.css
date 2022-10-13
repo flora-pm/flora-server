@@ -314,19 +314,35 @@ div[class="bullets"] {
       color: var(--package-list-item-name-color);
     }
 
-    .package-list-item__version {
-      margin-top: 0.5rem;
-      font-size: 0.875rem;
-      line-height: 1.25rem;
-
-      --tw-text-opacity: 1;
-
-      color: var(--package-list-item-version-color);
-    }
-
     .package-list-item__synopsis {
       display: inline;
       color: var(--package-list-item-synopsis-color);
+    }
+
+    .package-list-item__metadata {
+      color: var(--package-list-item-metadata-color);
+
+      .package-list-item__license {
+        color: var(--package-list-item-metadata-color);
+      }
+
+      .package-list-item__version {
+        color: var(--package-list-item-version-color);
+      }
+
+      .license-icon {
+        height: 1.25rem;
+        width: 1.25rem;
+        display: inline;
+        margin-top: -0.25rem;
+      }
+    }
+
+    .package-list-item__metadata > * {
+      margin-top: 0.5rem;
+      margin-right: 10px;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
     }
   }
 }
