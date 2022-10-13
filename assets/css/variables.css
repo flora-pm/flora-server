@@ -24,7 +24,8 @@
   --package-list-item-background-hover-color: hsl(220 13% 91%);
   --package-list-item-name-color: hsl(221 39% 11%);
   --package-list-item-synopsis-color: black;
-  --package-list-item-version-color: black;
+  --package-list-item-metadata-color: black;
+  --package-list-item-version-color: #0a6;
   --search-bar-color: hsl(221 39% 11%);
   --search-bar-background-color: white;
   --search-bar-background-hover-color: white;
@@ -59,8 +60,9 @@ html[data-theme="dark"] {
   --text-color: hsl(216 12% 84%);
   --package-list-item-background-hover-color: hsl(218 30% 15%);
   --package-list-item-name-color: hsl(294 40% 60%);
+  --package-list-item-metadata-color: hsl(220 13% 91%);
   --package-list-item-synopsis-color: hsl(220 13% 91%);
-  --package-list-item-version-color: hsl(220 13% 91%);
+  --package-list-item-version-color: hsl(120 80% 50%);
   --search-bar-color: hsl(216 12% 84%);
   --search-bar-background-color: hsl(218 30% 25%);
   --search-bar-background-hover-color: hsl(218 30% 25%);
