@@ -371,7 +371,8 @@ listAllPackages pageNumber =
     LIMIT 30
     OFFSET ?
     ;
-    |] (Only offset)
+    |]
+          (Only offset)
 
 countPackages :: ([DB, Log, Time, IOE] :>> es) => Eff es Word
 countPackages = dbtToEff $ do
