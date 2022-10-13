@@ -34,6 +34,7 @@ spec _fixtures =
     , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
     , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
     , testThis "@haskell/bytestring has the correct number of dependents" testBytestringDependents
+    , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns unique results by namespace/package name" testSearchResultUnicity
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
     , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
@@ -97,6 +98,21 @@ testBytestringDependents = do
   assertEqual
     6
     (Vector.length results)
+
+testNoSelfDependent :: TestEff ()
+testNoSelfDependent = do
+  results <- Query.getPackageDependents (Namespace "haskell") (PackageName "text")
+  let resultSet = Set.fromList . fmap (view #name) $ Vector.toList results
+  assertEqual
+    resultSet
+    ( Set.fromList
+        [ PackageName "flora"
+        , PackageName "hashable"
+        , PackageName "jose"
+        , PackageName "semigroups"
+        , PackageName "xml"
+        ]
+    )
 
 testBytestringDependencies :: TestEff ()
 testBytestringDependencies = do
