@@ -24,8 +24,9 @@ import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (
 import FloraWeb.Links qualified as Links
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
-import Lucid.Base (relaxHtmlT)
+import Lucid.Base (makeAttribute, relaxHtmlT)
 import Lucid.Orphans ()
+import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
@@ -285,7 +286,13 @@ displayPackageFlags packageFlags =
     then do
       mempty
     else do
-      h3_ [class_ "package-body-section"] "Package Flags"
+      h3_ [class_ "package-body-section package-flags-section"] $ do
+        "Package Flags"
+      span_
+        [ dataText_ "Use the -f option with cabal commands to enable flags"
+        , class_ "instruction-tooltip"
+        ]
+        usageInstructionTooltip
       ul_ [class_ "package-flags"] $
         forM_ packageFlags displayPackageFlag
 
@@ -303,6 +310,23 @@ defaultMarker True = em_ "(on by default)"
 defaultMarker False = em_ "(off by default)"
 
 ---
+
+usageInstructionTooltip :: FloraHTML
+usageInstructionTooltip = do
+  svg_ [xmlns_ "http://www.w3.org/2000/svg", viewBox_ "0 0 20 20", fill_ "currentColor", class_ "w-5 h-5 tooltip"] $
+    path_
+      [ fill_rule_ "evenodd"
+      , d_
+          "M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061\
+          \ 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10\
+          \ 15a1 1 0 100-2 1 1 0 000 2z"
+      , clip_rule_ "evenodd"
+      ]
+
+-- | @datalist@ element
+dataText_ :: Text -> Attribute
+dataText_ = makeAttribute "data-text"
+
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =
   if V.null vector

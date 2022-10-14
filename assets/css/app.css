@@ -203,6 +203,10 @@ div[class="bullets"] {
     width: 17em;
   }
 
+  .package-flags-section {
+    display: inline;
+  }
+
   .package-flags {
     .package-flag-description {
       padding-left: 0.5rem;
@@ -218,6 +222,44 @@ div[class="bullets"] {
   .package-body-section__license {
     font-weight: 500;
   }
+}
+
+.instruction-tooltip {
+  svg {
+    display: inline;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  position: relative; /* making the .tooltip span a container for the tooltip text */
+  border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
+}
+
+.instruction-tooltip::before {
+  content: attr(data-text); /* here's the magic */
+  position: absolute;
+
+  /* vertically center */
+  top: 50%;
+  transform: translateY(-50%);
+
+  /* move to right */
+  left: 100%;
+  margin-left: 15px; /* and add a small left margin */
+
+  /* basic styles */
+  background: #000;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+  width: 250px;
+  display: none; /* hide by default */
+}
+
+.instruction-tooltip:hover::before {
+  display: block;
 }
 
 .pagination-area {
