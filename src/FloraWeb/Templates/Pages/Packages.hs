@@ -2,6 +2,7 @@ module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold)
 import Data.Text (Text, pack)
+import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Time (defaultTimeLocale)
 import Data.Time qualified as Time
@@ -113,7 +114,7 @@ packageBody
         div_ [class_ "release-readme-column grow"] $ do
           div_ [class_ "grid-rows-3 release-readme"] $ do
             displayReadme latestRelease
-        div_ [class_ "package-right-column md:max-w-xs"] $ do
+        div_ [class_ "package-right-column"] $ do
           ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
             displayInstructions packageName latestRelease
             displayMaintainer (metadata.maintainer)
@@ -285,14 +286,23 @@ displayPackageFlags packageFlags =
       mempty
     else do
       h3_ [class_ "package-body-section"] "Package Flags"
-      dl_ [class_ "package-flags"] $
+      ul_ [class_ "package-flags"] $
         forM_ packageFlags displayPackageFlag
 
 displayPackageFlag :: PackageFlag -> FloraHTML
-displayPackageFlag MkPackageFlag{flagName, flagDescription} = do
-  dt_ [class_ "package-flag-name"] $ pre_ (toHtml $ Flag.unFlagName flagName)
-  dd_ [class_ "package-flag-description"] $ em_ (toHtml flagDescription)
+displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = do
+  details_ [] $ do
+    summary_ [] $ do
+      pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+      toHtmlRaw @Text "&nbsp;"
+      defaultMarker flagDefault
+    p_ [class_ "package-flag-description"] $ toHtml flagDescription
 
+defaultMarker :: Bool -> FloraHTML
+defaultMarker True = em_ "(on by default)"
+defaultMarker False = em_ "(off by default)"
+
+---
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =
   if V.null vector
