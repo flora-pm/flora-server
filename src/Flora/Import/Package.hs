@@ -78,8 +78,6 @@ import Flora.Model.Requirement
   )
 import Flora.Model.User
 import GHC.Stack (HasCallStack)
-import qualified Data.Vector as Vector
-import Data.Vector (Vector)
 
 {-| This tuple represents the package that depends on any associated dependency/requirement.
  It is used in the recursive loading of Cabal files
