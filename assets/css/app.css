@@ -203,6 +203,10 @@ div[class="bullets"] {
     width: 17em;
   }
 
+  .package-left-column {
+    min-width: 11rem;
+  }
+
   .package-flags-section {
     display: inline;
   }
@@ -511,7 +515,7 @@ div[class="bullets"] {
 
 /* smaller display rules */
 
-@media (max-width: 640px) {
+@media (max-width: 1023px) {
   .package-left-column {
     order: 1;
   }
