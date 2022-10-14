@@ -193,6 +193,28 @@ div[class="bullets"] {
     font-weight: 500;
   }
 
+  .package-body-section {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .package-right-column {
+    width: 17em;
+  }
+
+  .package-flags {
+    .package-flag-description {
+      padding-left: 0.5rem;
+      margin-bottom: 0.5em;
+    }
+
+    .package-flag-name {
+      display: inline;
+      background-color: var(--readme-code-background-color);
+    }
+  }
+
   .package-body-section__license {
     font-weight: 500;
   }
@@ -447,7 +469,7 @@ div[class="bullets"] {
 
 /* smaller display rules */
 
-@media (max-width: px) {
+@media (max-width: 640px) {
   .package-left-column {
     order: 1;
   }

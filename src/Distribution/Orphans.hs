@@ -6,6 +6,7 @@ import Data.Aeson
 import Data.Aeson.Encoding qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as C8
+import Data.Function (on)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Lazy.Builder qualified as Builder
@@ -26,6 +27,7 @@ import Distribution.SPDX.License qualified as SPDX
 import Distribution.System (Arch, OS)
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
+import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.UnqualComponentName (UnqualComponentName, unUnqualComponentName)
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Utils.Generic (fromUTF8BS)
@@ -103,3 +105,9 @@ instance ToField SPDX.License where
 
 instance Display UnqualComponentName where
   displayBuilder = Builder.fromString . unUnqualComponentName
+
+instance Ord PackageFlag where
+  compare = compare `on` flagName
+
+deriving instance ToJSON PackageFlag
+deriving instance FromJSON PackageFlag
