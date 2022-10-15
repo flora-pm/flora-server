@@ -200,7 +200,8 @@ div[class="bullets"] {
   }
 
   .package-right-column {
-    width: 17em;
+    min-width: 13em;
+    max-width: 13em;
   }
 
   .package-left-column {
