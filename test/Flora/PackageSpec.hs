@@ -79,7 +79,7 @@ testFetchGHCPrimDependents = do
 testThatBaseisInPreludeCategory :: TestEff ()
 testThatBaseisInPreludeCategory = do
   result <- Query.getPackagesFromCategorySlug "prelude"
-  assertEqual (Set.fromList [PackageName "base"]) (Set.fromList $ V.toList $ fmap (view #name) result)
+  assertBool $ Set.member (PackageName "base") (Set.fromList $ V.toList $ fmap (view #name) result)
 
 testThatSemigroupsIsInMathematicsAndDataStructures :: TestEff ()
 testThatSemigroupsIsInMathematicsAndDataStructures = do
@@ -109,6 +109,7 @@ testNoSelfDependent = do
         [ PackageName "flora"
         , PackageName "hashable"
         , PackageName "jose"
+        , PackageName "relude"
         , PackageName "semigroups"
         , PackageName "xml"
         ]

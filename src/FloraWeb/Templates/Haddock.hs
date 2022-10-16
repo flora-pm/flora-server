@@ -4,6 +4,7 @@ import Control.Monad (forM_)
 import Data.Maybe
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Display (display)
 import Distribution.ModuleName (ModuleName)
 import Distribution.Text (simpleParse)
 import Documentation.Haddock.Markup qualified as Haddock
@@ -13,7 +14,6 @@ import Flora.Model.Package (PackageName (..))
 import FloraWeb.Templates (FloraHTML)
 import Lucid
 import Network.URI
-import Data.Text.Display (display)
 
 renderHaddock :: PackageName -> Text -> FloraHTML
 renderHaddock (PackageName package) input = do
@@ -98,15 +98,15 @@ htmlMarkup modResolv =
 
     makeHeaderCell :: TableCell FloraHTML -> FloraHTML
     makeHeaderCell (TableCell colSpan rowSpan content) =
-      th_ attrs content 
-        where
-          attrs = i <> j
-          i = [colspan_ (display colSpan) | colSpan /= 1]
-          j = [rowspan_ (display rowSpan) | rowSpan /= 1]
+      th_ attrs content
+      where
+        attrs = i <> j
+        i = [colspan_ (display colSpan) | colSpan /= 1]
+        j = [rowspan_ (display rowSpan) | rowSpan /= 1]
 
     makeDataCell :: TableCell FloraHTML -> FloraHTML
     makeDataCell (TableCell colSpan rowSpan content) =
-      td_ [colspan_ (display colSpan), rowspan_ (display rowSpan)]  content 
+      td_ [colspan_ (display colSpan), rowspan_ (display rowSpan)] content
 
 namedAnchor :: String -> FloraHTML -> FloraHTML
 namedAnchor n = a_ [name_ (Text.pack $ escapeStr n)]

@@ -8,6 +8,7 @@ module Flora.TestUtils
   , testThese
 
     -- * Assertion functions
+  , assertBool
   , assertEqual
   , assertFailure
   , assertRight
@@ -142,6 +143,9 @@ testThese groupName tests = fmap (Test.testGroup groupName) newTests
   where
     newTests :: TestEff [TestTree]
     newTests = sequenceA tests
+
+assertBool :: Bool -> TestEff ()
+assertBool boolean = liftIO $ Test.assertBool "" boolean
 
 -- | 'assertEqual' @expected@ @actual@
 assertEqual :: (Eq a, Show a) => a -> a -> TestEff ()
