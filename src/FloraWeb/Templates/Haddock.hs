@@ -8,11 +8,12 @@ import Distribution.ModuleName (ModuleName)
 import Distribution.Text (simpleParse)
 import Documentation.Haddock.Markup qualified as Haddock
 import Documentation.Haddock.Parser qualified as Haddock
-import Documentation.Haddock.Types (DocMarkupH (..), Example (..), Header (..), Hyperlink (..), MetaDoc (..), ModLink (..), Picture (..), Table (..))
+import Documentation.Haddock.Types (DocMarkupH (..), Example (..), Header (..), Hyperlink (..), MetaDoc (..), ModLink (..), Picture (..), Table (..), TableCell (..), TableRow (..))
 import Flora.Model.Package (PackageName (..))
 import FloraWeb.Templates (FloraHTML)
 import Lucid
 import Network.URI
+import Data.Text.Display (display)
 
 renderHaddock :: PackageName -> Text -> FloraHTML
 renderHaddock (PackageName package) input = do
@@ -55,7 +56,7 @@ htmlMarkup modResolv =
     , markupProperty = pre_ . toHtml
     , markupExample = examplesToHtml
     , markupHeader = \(Header l t) -> makeHeader l t
-    , markupTable = \(Table h r) -> mempty -- makeTable h r
+    , markupTable = \(Table h r) -> makeTable h r
     }
   where
     makeHeader :: Int -> FloraHTML -> FloraHTML
@@ -89,32 +90,23 @@ htmlMarkup modResolv =
         span_ [class_ "module"] $
           a_ [href_ modUrl] (toHtml name)
 
--- makeTable :: [TableRow FloraHTML] -> [TableRow FloraHTML] -> FloraHTML
--- makeTable headers body = table_ $ do
---   th_ [] $ do
---       makeHeader headers
---       makeCells body
+    makeTable :: [TableRow FloraHTML] -> [TableRow FloraHTML] -> FloraHTML
+    makeTable headers cells = table_ $ do
+      thead_ $ do
+        forM_ headers $ \(TableRow cs) -> tr_ [] $ forM_ cs $ \cell -> makeHeaderCell cell
+        forM_ cells $ \(TableRow cs) -> tr_ [] $ forM_ cs $ \cell -> makeDataCell cell
 
--- makeHeader :: [TableRow FloraHTML] -> FloraHTML
--- makeHeader headers | null header = mempty
---                    | otherwise =
---                       let header = head headers
---                        in thead_ [] $
--- makeTable hs bs = table_ (concatHtml (hs' ++ bs'))
---   where
---     hs' | null hs   = []
---         | otherwise = [thead (concatHtml (map (makeTableRow th) hs))]
+    makeHeaderCell :: TableCell FloraHTML -> FloraHTML
+    makeHeaderCell (TableCell colSpan rowSpan content) =
+      th_ attrs content 
+        where
+          attrs = i <> j
+          i = [colspan_ (display colSpan) | colSpan /= 1]
+          j = [rowspan_ (display rowSpan) | rowSpan /= 1]
 
---     bs' = [tbody (concatHtml (map (makeTableRow td) bs))]
-
--- makeTableRow :: (FloraHTML -> FloraHTML) -> TableRow FloraHTML -> FloraHTML
--- makeTableRow tableRow (TableRow cs) = tr_ (concatHtml (map (makeTableCell thr) cs))
-
--- makeTableCell :: (FloraHTML -> FloraHTML) -> TableCell FloraHTML -> FloraHTML
--- makeTableCell thr (TableCell i j c) = th_ c (i' <> j')
---   where
---     i' = [colspan_ (display i) | i /= 1]
---     j' = [rowspan_ (display j) | j /= 1]
+    makeDataCell :: TableCell FloraHTML -> FloraHTML
+    makeDataCell (TableCell colSpan rowSpan content) =
+      td_ [colspan_ (display colSpan), rowspan_ (display rowSpan)]  content 
 
 namedAnchor :: String -> FloraHTML -> FloraHTML
 namedAnchor n = a_ [name_ (Text.pack $ escapeStr n)]
