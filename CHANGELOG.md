@@ -10,6 +10,7 @@
 * Show library dependencies only (#244)
 * Show licenses in package listings (#245)
 * Show package flags (#246)
+* Renders release descriptions when no README is present (#248)
 
 ## v1.0.4 -- 2022-10-02
 
