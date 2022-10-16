@@ -33,6 +33,7 @@ common common-extensions
     DuplicateRecordFields
     LambdaCase
     OverloadedLabels
+    OverloadedRecordDot
     OverloadedStrings
     PolyKinds
     QuasiQuotes
@@ -41,7 +42,6 @@ common common-extensions
     TypeFamilies
     UndecidableInstances
     ViewPatterns
-    OverloadedRecordDot
 
   default-language:   GHC2021
 
@@ -155,6 +155,7 @@ library
     FloraWeb.Templates.Admin.Packages
     FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
+    FloraWeb.Templates.Haddock
     FloraWeb.Templates.Packages.Changelog
     FloraWeb.Templates.Packages.Dependencies
     FloraWeb.Templates.Packages.Dependents
@@ -193,7 +194,9 @@ library
     , effectful
     , effectful-core
     , envparse                   ^>=0.5
+    , extra
     , filepath                   ^>=1.4
+    , haddock-library            ^>=1.11
     , http-api-data              ^>=0.4
     , http-client                ^>=0.7.10
     , http-client-tls
@@ -210,6 +213,7 @@ library
     , monad-control              ^>=1.0
     , monad-time                 ^>=0.4
     , mtl                        ^>=2.2
+    , network-uri
     , odd-jobs
     , optics-core                ^>=0.4
     , optparse-applicative       ^>=0.16

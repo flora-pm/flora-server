@@ -18,10 +18,11 @@ import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
   , Package (..)
-  , PackageName
+  , PackageName (..)
   )
 import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
 import FloraWeb.Links qualified as Links
+import FloraWeb.Templates.Haddock (renderHaddock)
 import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
 import Lucid.Base (makeAttribute, relaxHtmlT)
@@ -114,7 +115,7 @@ packageBody
             displayVersions namespace packageName packageReleases numberOfReleases
         div_ [class_ "release-readme-column grow"] $ do
           div_ [class_ "grid-rows-3 release-readme"] $ do
-            displayReadme latestRelease
+            displayReadme packageName latestRelease
         div_ [class_ "package-right-column"] $ do
           ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
             displayInstructions packageName latestRelease
@@ -123,11 +124,14 @@ packageBody
             displayDependents (namespace, packageName) numberOfDependents dependents
             displayPackageFlags metadata.flags
 
-displayReadme :: Release -> FloraHTML
-displayReadme release =
+displayReadme :: PackageName -> Release -> FloraHTML
+displayReadme packageName release =
   case readme release of
-    Nothing -> toHtml @Text "no readme available"
+    Nothing -> renderDescription packageName release.metadata.description
     Just (MkTextHtml readme) -> relaxHtmlT readme
+
+renderDescription :: PackageName -> Text -> FloraHTML
+renderDescription packageName input = renderHaddock packageName input
 
 displayReleaseVersion :: Version -> FloraHTML
 displayReleaseVersion version = toHtml version
