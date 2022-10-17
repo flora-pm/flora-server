@@ -31,7 +31,7 @@ import Servant
   , Proxy (Proxy)
   , defaultErrorFormatters
   , err404
-  , hoistServer
+  -- , hoistServer
   , notFoundErrorFormatter
   , serveDirectoryWebApp
   )
@@ -63,8 +63,6 @@ import Flora.Environment.Config (Assets)
 import Flora.Environment.OddJobs qualified as OddJobs
 import Flora.OddJobs qualified as OddJobs
 import Flora.OddJobs.Types (JobsRunnerEnv (..))
-import FloraWeb.Autoreload (AutoreloadRoute)
-import FloraWeb.Autoreload qualified as Autoreload
 import FloraWeb.Routes
 import FloraWeb.Routes.Pages qualified as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler, requestID, runVisitorSession)
@@ -167,13 +165,13 @@ floraServer pool cfg jobsRunnerEnv =
                 & withReader (const sessionWithCookies)
           )
           (Pages.server cfg jobsRunnerEnv)
-    , autoreload =
-        hoistServer
-          (Proxy @AutoreloadRoute)
-          ( \handler ->
-              withReader (const ()) handler
-          )
-          Autoreload.server
+          -- , autoreload =
+          --     hoistServer
+          --       (Proxy @AutoreloadRoute)
+          --       ( \handler ->
+          --           withReader (const ()) handler
+          --       )
+          --       Autoreload.server
     }
 
 naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a

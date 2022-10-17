@@ -7,6 +7,7 @@
 @import "variables.css";
 @import "release-readme.css";
 @import "release-changelog.css";
+@import "compiler-badge.css";
 
 @layer components {
   .larger-container {
@@ -191,6 +192,7 @@ div[class="bullets"] {
 
   .maintainer-info {
     font-weight: 500;
+    flex-wrap: wrap;
   }
 
   .package-body-section {
@@ -204,8 +206,20 @@ div[class="bullets"] {
     max-width: 13em;
   }
 
+  .package-right-rows > * {
+    margin-bottom: 1.25rem;
+  }
+
   .package-left-column {
     min-width: 11rem;
+  }
+
+  .package-left-row {
+    position: sticky;
+  }
+
+  .package-left-rows > * {
+    margin-bottom: 1.25rem;
   }
 
   .package-flags-section {
@@ -538,7 +552,6 @@ div[class="bullets"] {
 }
 
 /* smaller display rules */
-
 @media (max-width: 1023px) {
   .package-left-column {
     order: 1;

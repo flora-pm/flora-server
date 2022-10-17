@@ -60,7 +60,7 @@ newPersistentSession userId persistentSessionId = do
   pure PersistentSession{..}
 
 persistSession
-  :: ([IOE, DB, Time] :>> es)
+  :: (DB :> es, Time :> es)
   => PersistentSessionId
   -> UserId
   -> Eff es PersistentSessionId

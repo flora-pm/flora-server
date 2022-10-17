@@ -89,7 +89,7 @@ getSessionId cookies =
         Just sessionId -> pure $ Just sessionId
 
 getInTheFuckingSessionShinji
-  :: ([Log, DB, IOE] :>> es)
+  :: (DB :> es)
   => Maybe PersistentSessionId
   -> Eff es (Maybe PersistentSession)
 getInTheFuckingSessionShinji Nothing = pure Nothing
@@ -99,13 +99,13 @@ getInTheFuckingSessionShinji (Just persistentSessionId) = do
     Nothing -> pure Nothing
     (Just userSession) -> pure $ Just userSession
 
-fetchUser :: ([Error ServerError, IOE, DB] :>> es) => Maybe PersistentSession -> Eff es (Maybe (User, PersistentSession))
+fetchUser :: (Error ServerError :> es, DB :> es) => Maybe PersistentSession -> Eff es (Maybe (User, PersistentSession))
 fetchUser Nothing = pure Nothing
 fetchUser (Just userSession) = do
   user <- lookupUser (userSession.userId)
   pure $ Just (user, userSession)
 
-lookupUser :: ([Error ServerError, IOE, DB] :>> es) => UserId -> Eff es User
+lookupUser :: (Error ServerError :> es, DB :> es) => UserId -> Eff es User
 lookupUser uid = do
   result <- getUserById uid
   case result of

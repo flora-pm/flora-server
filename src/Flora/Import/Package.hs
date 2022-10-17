@@ -59,6 +59,10 @@ import System.FilePath
 
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Distribution.Compiler (CompilerFlavor (..))
+import Distribution.Types.Version (Version)
+import Distribution.Types.VersionRange (VersionRange, withinRange)
+import Distribution.Version qualified as Version
 import Effectful.Log (Log)
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Types
@@ -129,27 +133,62 @@ coreLibraries =
     , PackageName "unix"
     ]
 
+versionList :: Set Version
+versionList =
+  Set.fromList
+    [ Version.mkVersion [9, 4, 1]
+    , Version.mkVersion [9, 2, 4]
+    , Version.mkVersion [9, 2, 3]
+    , Version.mkVersion [9, 2, 2]
+    , Version.mkVersion [9, 2, 1]
+    , Version.mkVersion [9, 0, 2]
+    , Version.mkVersion [9, 0, 1]
+    , Version.mkVersion [8, 10, 7]
+    , Version.mkVersion [8, 10, 6]
+    , Version.mkVersion [8, 10, 5]
+    , Version.mkVersion [8, 10, 4]
+    , Version.mkVersion [8, 10, 3]
+    , Version.mkVersion [8, 10, 2]
+    , Version.mkVersion [8, 10, 1]
+    , Version.mkVersion [8, 8, 4]
+    , Version.mkVersion [8, 8, 3]
+    , Version.mkVersion [8, 8, 2]
+    , Version.mkVersion [8, 8, 1]
+    , Version.mkVersion [8, 6, 5]
+    , Version.mkVersion [8, 6, 4]
+    , Version.mkVersion [8, 6, 3]
+    , Version.mkVersion [8, 6, 2]
+    , Version.mkVersion [8, 6, 1]
+    , Version.mkVersion [8, 4, 4]
+    , Version.mkVersion [8, 4, 3]
+    , Version.mkVersion [8, 4, 2]
+    , Version.mkVersion [8, 4, 1]
+    , Version.mkVersion [8, 2, 2]
+    , Version.mkVersion [8, 0, 2]
+    , Version.mkVersion [7, 10, 3]
+    ]
+
 {-| Imports a Cabal file into the database by:
    * first, reading and parsing the file using 'loadFile'
    * then, extracting relevant information using 'extractPackageDataFromCabal'
    * finally, inserting that data into the database
 -}
 importFile
-  :: ([DB, IOE, Log, Time] :>> es)
+  :: (DB :> es, IOE :> es, Log :> es, Time :> es)
   => UserId
   -> FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
-importRelFile :: ([DB, IOE, Log, Time] :>> es) => UserId -> FilePath -> Eff es ()
+importRelFile :: (DB :> es, IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile
-  :: ([DB, IOE, Log, Time] :>> es)
+  :: (DB :> es, IOE :> es, Log :> es, Time :> es)
   => FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es GenericPackageDescription
@@ -163,7 +202,7 @@ loadFile path = do
   parseString parseGenericPackageDescription path content
 
 parseString
-  :: (HasCallStack, [Log, Time] :>> es)
+  :: (HasCallStack, Log :> es, Time :> es)
   => (BS.ByteString -> ParseResult a)
   -- ^ File contents to final value parser
   -> String
@@ -178,13 +217,13 @@ parseString parser name bs = do
       Log.logAttention_ (display $ show err)
       throw $ CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: ([DB, IOE, Log, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile :: (DB :> es, IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {-| Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 -}
-persistImportOutput :: [DB, IOE] :>> es => ImportOutput -> Eff es ()
+persistImportOutput :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = do
   liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release.version)
   persistPackage
@@ -212,7 +251,7 @@ persistImportOutput (ImportOutput package categories release components) = do
  that can later be inserted into the database. This function produces stable, deterministic ids,
  so it should be possible to extract and insert a single package many times in a row.
 -}
-extractPackageDataFromCabal :: [DB, IOE] :>> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
+extractPackageDataFromCabal :: (DB :> es, IOE :> es) => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
@@ -248,6 +287,7 @@ extractPackageDataFromCabal userId genericDesc = do
           , synopsis = display packageDesc.synopsis
           , description = display packageDesc.description
           , flags = flags
+          , testedWith = getVersions . extractTestedWith . Vector.fromList $ packageDesc.testedWith
           }
 
   let release =
@@ -430,3 +470,22 @@ getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty (repo.re
 chooseNamespace :: PackageName -> Namespace
 chooseNamespace name | Set.member name coreLibraries = Namespace "haskell"
 chooseNamespace _ = Namespace "hackage"
+
+extractTestedWith :: Vector (CompilerFlavor, VersionRange) -> Vector VersionRange
+extractTestedWith testedWithVector =
+  testedWithVector
+    & Vector.filter (\(flavour, _) -> flavour == GHC)
+    & Vector.filter (\(_, versionRange) -> any (`withinRange` versionRange) versionList)
+    & Vector.map snd
+
+getVersions :: Vector VersionRange -> Vector Version
+getVersions supportedCompilers =
+  foldMap
+    (\version -> Vector.foldMap (\versionRange -> checkVersion version versionRange) supportedCompilers)
+    versionList
+
+checkVersion :: Version -> VersionRange -> Vector Version
+checkVersion version versionRange =
+  if version `withinRange` versionRange
+    then Vector.singleton version
+    else Vector.empty
