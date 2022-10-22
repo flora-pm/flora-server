@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v1.0.5 -- XXXX-XX-XX
+## v1.0.5 -- 2022-10-22
 
 * Reorder the package page columns in mobile view (#233)
 * Enable the use of markdown extensions in package READMEs (#236)
