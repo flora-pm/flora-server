@@ -5,9 +5,10 @@ import Data.ByteString.Char8 qualified as BS
 import Data.ByteString.Lazy qualified as BSL
 import Data.Kind (Type)
 import Effectful
-import Effectful.Log.Logger qualified as Log
+import Effectful.Log qualified as Log
 import GHC.Generics (Generic)
 import Log (Logger)
+import Log.Internal.Logger (withLogger)
 import System.IO (stdout)
 
 data FileBackendConfig = FileBackendConfig
@@ -21,8 +22,8 @@ withJSONFileBackend
   => FileBackendConfig
   -> (Logger -> Eff es a)
   -> Eff es a
-withJSONFileBackend FileBackendConfig{destinationFile} action = do
+withJSONFileBackend FileBackendConfig{destinationFile} action = withRunInIO $ \unlift -> do
   liftIO $ BS.hPutStrLn stdout $ BS.pack $ "Redirecting logs to " <> destinationFile
-  logger <- Log.mkLogger "file-json" $ \msg -> liftIO $ do
+  logger <- liftIO $ Log.mkLogger "file-json" $ \msg -> liftIO $ do
     BS.appendFile destinationFile (BSL.toStrict $ Aeson.encode msg <> "\n")
-  Log.withLogger logger action
+  withLogger logger (unlift . action)

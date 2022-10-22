@@ -14,12 +14,11 @@ import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Distribution.Pretty
 import Distribution.Version (Version, mkVersion, versionNumbers)
 import Effectful
-import Effectful.Log
-import Effectful.Log qualified as LogEff
+import Effectful.Log hiding (LogLevel)
+import Effectful.Log qualified as LogEff hiding (LogLevel)
 import Effectful.Reader.Static (Reader, runReader)
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
-import Log hiding (LogLevel (..))
 import Log qualified
 import Network.HTTP.Client
 import OddJobs.Job (Job, LogEvent (..), LogLevel (..))
@@ -39,7 +38,7 @@ type JobsRunner =
   Eff
     '[ DB
      , Reader JobsRunnerEnv
-     , Logging
+     , Log
      , Time
      , IOE
      ]
@@ -48,7 +47,7 @@ runJobRunner :: Pool Connection -> JobsRunnerEnv -> Logger -> JobsRunner a -> IO
 runJobRunner pool runnerEnv logger jobRunner =
   runEff
     . runCurrentTimeIO
-    . LogEff.runLogging "flora-jobs" logger defaultLogLevel
+    . LogEff.runLog "flora-jobs" logger defaultLogLevel
     . runReader runnerEnv
     . runDB pool
     $ jobRunner
@@ -88,7 +87,7 @@ instance ToJSON IntAesonVersion where
 instance FromJSON IntAesonVersion where
   parseJSON val = MkIntAesonVersion . mkVersion <$> parseJSON val
 
-data ReadmePayload = MkReadmePayload
+data ReadmeJobPayload = ReadmeJobPayload
   { mpPackage :: PackageName
   , mpReleaseId :: ReleaseId -- needed to write the readme in db
   , mpVersion :: IntAesonVersion
@@ -96,7 +95,15 @@ data ReadmePayload = MkReadmePayload
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 
-data FetchUploadTimePayload = FetchUploadTimePayload
+data UploadTimeJobPayload = UploadTimeJobPayload
+  { packageName :: PackageName
+  , releaseId :: ReleaseId
+  , packageVersion :: IntAesonVersion
+  }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+data ChangelogJobPayload = ChangelogJobPayload
   { packageName :: PackageName
   , releaseId :: ReleaseId
   , packageVersion :: IntAesonVersion
@@ -110,8 +117,9 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
 
 -- these represent the possible odd jobs we can run.
 data FloraOddJobs
-  = MkReadme ReadmePayload
-  | FetchUploadTime FetchUploadTimePayload
+  = FetchReadme ReadmeJobPayload
+  | FetchUploadTime UploadTimeJobPayload
+  | FetchChangelog ChangelogJobPayload
   | ImportHackageIndex ImportHackageIndexPayload
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
@@ -138,10 +146,10 @@ structuredLogging FloraConfig{..} logger level event =
   runEff
     . runCurrentTimeIO
     . Logging.runLog environment logger
-    $ localDomainEff' "odd-jobs"
+    $ localDomain "odd-jobs"
     $ case level of
-      LevelDebug -> logMessageEff' Log.LogTrace "LevelDebug" (toJSON event)
-      LevelInfo -> logMessageEff' Log.LogInfo "LevelInfo" (toJSON event)
-      LevelWarn -> logMessageEff' Log.LogAttention "LevelWarn" (toJSON event)
-      LevelError -> logMessageEff' Log.LogAttention "LevelError" (toJSON event)
-      (LevelOther x) -> logMessageEff' Log.LogAttention ("LevelOther " <> Text.pack (show x)) (toJSON event)
+      LevelDebug -> logMessage Log.LogTrace "LevelDebug" (toJSON event)
+      LevelInfo -> logMessage Log.LogInfo "LevelInfo" (toJSON event)
+      LevelWarn -> logMessage Log.LogAttention "LevelWarn" (toJSON event)
+      LevelError -> logMessage Log.LogAttention "LevelError" (toJSON event)
+      (LevelOther x) -> logMessage Log.LogAttention ("LevelOther " <> Text.pack (show x)) (toJSON event)

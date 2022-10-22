@@ -5,10 +5,10 @@ import Data.Password.Types
 import Data.Text (Text)
 import DesignSystem (generateComponents)
 import Effectful
-import Effectful.Log.Backend.StandardOutput qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.User.Query qualified as Query
 import GHC.Generics (Generic)
+import Log.Backend.StandardOutput qualified as Log
 import Optics.Core
 import Options.Applicative
 

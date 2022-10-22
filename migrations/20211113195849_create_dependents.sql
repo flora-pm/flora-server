@@ -22,7 +22,8 @@ create materialized view dependents (
     inner join "releases" as r1 on r1."package_id" = p0."package_id"
     inner join "package_components" as pc2 on pc2."release_id" = r1."release_id"
     inner join "requirements" as r3 on r3."package_component_id" = pc2."package_component_id"
-    inner join "packages" as p4 on p4."package_id" = r3."package_id";
+    inner join "packages" as p4 on p4."package_id" = r3."package_id"
+  where (p4.name != p0.name) and (p4.namespace != p0.namespace);
 
 create index on dependents (name, dependent_id);
 create unique index on dependents (name, namespace, dependent_id);

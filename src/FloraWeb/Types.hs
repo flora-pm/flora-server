@@ -19,7 +19,7 @@ import Data.Kind (Type)
 import Data.Text.Encoding qualified as TE
 import Effectful
 import Effectful.Error.Static (Error)
-import Effectful.Log (Logging)
+import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Flora.Environment
 import GHC.Clock (getMonotonicTime)
@@ -31,7 +31,7 @@ type Flora :: Type -> Type
 type Flora =
   Eff
     '[ Reader WebEnvStore
-     , Logging
+     , Log
      , Error ServerError
      , IOE
      ]

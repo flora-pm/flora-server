@@ -88,7 +88,8 @@ packageListItemExample =
     ( namespaceExample
     , packageNameExample
     , "Basic libraries"
-    , "4.16.0.0"
+    , read "4.16.0.0"
+    , read "BSD-3-Clause"
     )
 
 categoryCardExample :: FloraHTML

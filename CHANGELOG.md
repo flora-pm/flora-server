@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v1.0.5 -- 2022-10-22
+
+* Reorder the package page columns in mobile view (#233)
+* Enable the use of markdown extensions in package READMEs (#236)
+* Autofocus the search field on the home page (#235)
+* Support release changelogs (#241)
+* Packages are no longer kept as their own dependent (#242)
+* Show library dependencies only (#244)
+* Show licenses in package listings (#245)
+* Show package flags (#246)
+* Renders release descriptions when no README is present (#248)
+
 ## v1.0.4 -- 2022-10-02
 
 * Colourise the search bars on focus (#215)

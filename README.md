@@ -38,11 +38,10 @@
 
 ## Installation and Configuration
 
-For ease of development, a `shell.nix` file is provided. It brings with it system dependency and tooling.
-To jump into the development environment, use `make nix-shell`. It is impure by default, so your editor and development
-tools will still be accessible.
+Read the Contribution Guide file to see what you will need.
 
-Otherwise, read the Contribution Guide file to see what you will need.
+For Nix users, a build system based on flakes is maintained on a “best-effort” basis. Improvements are very welcome.
+
 
 ### Flora server
 
@@ -95,7 +94,7 @@ $ make docker-start
 $ make docker-enter
 # You'll be in the docker container. Environment variables are automatically set 
 # so you should be able to start Flora
-(docker)$ make nix-tmux
+(docker)$ make start-tmux
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.
 
@@ -104,7 +103,7 @@ $ make docker-enter
 (docker)$ source environment.docker.sh
 (docker)$ make db-drop  # password is 'postgres' by default
 (docker)$ make db-setup # password is 'postgres' by default
-(docker)$ make nix-provision
+(docker)$ make db-provision
 # And you should be good!
 ```
 

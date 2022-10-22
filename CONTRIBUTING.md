@@ -14,9 +14,7 @@ The following Haskell command-line tools will have to be installed:
 * `ghcid`: To automatically reload the Haskell code base upon source changes
 * `ghc-tags`: To generate ctags or etags for the project
 
-```bash
-$ cabal install -j postgresql-migration fourmolu hlint apply-refact cabal-fmt nixfmt ghcid ghc-tags
-```
+(Some of those packages have incompatible dependencies, so don't try to install them all at once with cabal)
 
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
@@ -28,6 +26,12 @@ You need to
 * Read this document
 * Have a ticket that you can relate the PR to, so that we can have some context for your change
 * Provide screenshots of before/after if you change the UI.
+* Put `[FLORA-XXXX]` where XXXX is the ticket this PR is related to, or [NO-ISSUE] if no tickets are related, in the
+PR title and commit message:
+
+```
+[NO-ISSUE] Update dependencies for Storybook.js
+```
 
 ### Feature request
 

@@ -49,7 +49,6 @@ import Distribution.Types.TestSuite
 import Distribution.Utils.ShortText qualified as Cabal
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
-import Effectful.Log (Logging)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import GHC.Generics (Generic)
@@ -58,6 +57,9 @@ import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
 
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
+import Effectful.Log (Log)
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
@@ -133,21 +135,21 @@ coreLibraries =
    * finally, inserting that data into the database
 -}
 importFile
-  :: ([DB, IOE, Logging, Time] :>> es)
+  :: ([DB, IOE, Log, Time] :>> es)
   => UserId
   -> FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
-importRelFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ()
+importRelFile :: ([DB, IOE, Log, Time] :>> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile
-  :: ([DB, IOE, Logging, Time] :>> es)
+  :: ([DB, IOE, Log, Time] :>> es)
   => FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es GenericPackageDescription
@@ -161,7 +163,7 @@ loadFile path = do
   parseString parseGenericPackageDescription path content
 
 parseString
-  :: (HasCallStack, [Logging, Time] :>> es)
+  :: (HasCallStack, [Log, Time] :>> es)
   => (BS.ByteString -> ParseResult a)
   -- ^ File contents to final value parser
   -> String
@@ -176,7 +178,7 @@ parseString parser name bs = do
       Log.logAttention_ (display $ show err)
       throw $ CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: ([DB, IOE, Logging, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile :: ([DB, IOE, Log, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {-| Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
@@ -213,6 +215,7 @@ persistImportOutput (ImportOutput package categories release components) = do
 extractPackageDataFromCabal :: [DB, IOE] :>> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
+  let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
   let packageVersion = packageDesc.package.pkgVersion
   let namespace = chooseNamespace packageName
@@ -244,6 +247,7 @@ extractPackageDataFromCabal userId genericDesc = do
           , maintainer = display packageDesc.maintainer
           , synopsis = display packageDesc.synopsis
           , description = display packageDesc.description
+          , flags = flags
           }
 
   let release =
@@ -258,6 +262,8 @@ extractPackageDataFromCabal userId genericDesc = do
           , updatedAt = timestamp
           , readme = Nothing
           , readmeStatus = NotImported
+          , changelog = Nothing
+          , changelogStatus = NotImported
           }
 
   let lib = extractLibrary package release Nothing Nothing <$> allLibraries packageDesc
@@ -417,9 +423,9 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
           }
    in ImportDependency{package = dependencyPackage, requirement}
 
-getRepoURL :: PackageName -> [Cabal.SourceRepo] -> [Text]
-getRepoURL _ [] = []
-getRepoURL _ (repo : _) = [display $ fromMaybe mempty (repo.repoLocation)]
+getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
+getRepoURL _ [] = Vector.empty
+getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty (repo.repoLocation)
 
 chooseNamespace :: PackageName -> Namespace
 chooseNamespace name | Set.member name coreLibraries = Namespace "haskell"

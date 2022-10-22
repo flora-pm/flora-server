@@ -3,6 +3,7 @@
 -- | Represents the various jobs that can be run
 module Flora.OddJobs
   ( scheduleReadmeJob
+  , scheduleChangelogJob
   , scheduleUploadTimeJob
   , scheduleIndexImportJob
   , checkIfIndexImportJobIsNotRunning
@@ -12,22 +13,19 @@ module Flora.OddJobs
     -- * exposed for testing
 
   --   prefer using smart constructors.
-  , ReadmePayload (..)
+  , ReadmeJobPayload (..)
   , FloraOddJobs (..)
   , IntAesonVersion (..)
   )
 where
 
-import Commonmark qualified
 import Control.Concurrent (forkIO)
 import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Pool
-import Data.Text
 import Data.Text.Display
-import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.Encoding qualified as TL
 import Data.Time qualified as Time
 import Database.PostgreSQL.Entity.DBT
@@ -35,10 +33,8 @@ import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
-import Effectful.Log (localDomainEff', logMessageEff')
 import Effectful.PostgreSQL.Transact.Effect
 import Log
-import Lucid qualified
 import Network.HTTP.Types (gone410, notFound404, statusCode)
 import OddJobs.Job (Job (..), createJob, scheduleJob)
 import Servant.Client (ClientError (..))
@@ -49,6 +45,7 @@ import Flora.Model.Package
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
+import Flora.OddJobs.Render (renderMarkdown)
 import Flora.OddJobs.Types
 import Flora.ThirdParties.Hackage.API (VersionedPackage (..))
 import Flora.ThirdParties.Hackage.Client qualified as Hackage
@@ -59,7 +56,15 @@ scheduleReadmeJob pool rid package version =
     createJob
       res
       jobTableName
-      (MkReadme $ MkReadmePayload package rid $ MkIntAesonVersion version)
+      (FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version)
+
+scheduleChangelogJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
+scheduleChangelogJob pool rid package version =
+  withResource pool $ \res ->
+    createJob
+      res
+      jobTableName
+      (FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version)
 
 scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
 scheduleUploadTimeJob pool releaseId packageName version = do
@@ -67,7 +72,7 @@ scheduleUploadTimeJob pool releaseId packageName version = do
     createJob
       res
       jobTableName
-      (FetchUploadTime $ FetchUploadTimePayload packageName releaseId (MkIntAesonVersion version))
+      (FetchUploadTime $ UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version))
 
 scheduleIndexImportJob :: Pool PG.Connection -> IO Job
 scheduleIndexImportJob pool = do
@@ -106,36 +111,42 @@ checkIfIndexImportJobIsNotRunning = do
       Log.logInfo_ "Index import job not running"
       pure False
 
-makeReadme :: ReadmePayload -> JobsRunner ()
-makeReadme pay@MkReadmePayload{..} = localDomain "fetch-readme" $ do
+fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
+fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} = localDomain "fetch-changelog" $ do
+  Log.logInfo "Fetching CHANGELOG" payload
+  let requestPayload = VersionedPackage packageName packageVersion
+  result <- Hackage.request $ Hackage.getPackageChangelog requestPayload
+  case result of
+    Left e@(FailureResponse _ response)
+      -- If the CHANGELOG simply doesn't exist, we skip it by marking the job as successful.
+      | response.responseStatusCode == notFound404 -> Update.updateChangelog releaseId Nothing Inexistent
+      | response.responseStatusCode == gone410 -> Update.updateChangelog releaseId Nothing Inexistent
+      | otherwise -> throw e
+    Left e -> throw e
+    Right bodyText -> do
+      logInfo ("got a changelog for package " <> display packageName) (object ["release_id" .= releaseId])
+      let readmeBody = renderMarkdown ("CHANGELOG" <> show packageName) bodyText
+      Update.updateChangelog releaseId (Just $ MkTextHtml readmeBody) Imported
+
+makeReadme :: ReadmeJobPayload -> JobsRunner ()
+makeReadme pay@ReadmeJobPayload{..} = localDomain "fetch-readme" $ do
   logInfo "Fetching README" pay
   let payload = VersionedPackage mpPackage mpVersion
   gewt <- Hackage.request $ Hackage.getPackageReadme payload
   case gewt of
     Left e@(FailureResponse _ response)
-      -- If the README simply doesn't exist, we skip it by marking it as successful.
+      -- If the README simply doesn't exist, we skip it by marking the job as successful.
       | response.responseStatusCode == notFound404 -> Update.updateReadme mpReleaseId Nothing Inexistent
       | response.responseStatusCode == gone410 -> Update.updateReadme mpReleaseId Nothing Inexistent
       | otherwise -> throw e
     Left e -> throw e
     Right bodyText -> do
-      logInfo ("got a body for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
-
-      htmlTxt <- do
-        -- let extensions = emojiSpec
-        -- Commonmark.commonmarkWith extensions ("readme " <> show mpPackage) bodyText
-        pure (Commonmark.commonmark ("readme " <> show mpPackage) bodyText)
-          >>= \case
-            Left exception -> throw (MarkdownFailed exception)
-            Right (y :: Commonmark.Html ()) -> pure $ Commonmark.renderHtml y
-
-      let readmeBody :: Lucid.Html ()
-          readmeBody = Lucid.toHtmlRaw @Text $ TL.toStrict htmlTxt
-
+      logInfo ("got a readme for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
+      let readmeBody = renderMarkdown ("README" <> show mpPackage) bodyText
       Update.updateReadme mpReleaseId (Just $ MkTextHtml readmeBody) Imported
 
-fetchUploadTime :: FetchUploadTimePayload -> JobsRunner ()
-fetchUploadTime payload@FetchUploadTimePayload{packageName, packageVersion, releaseId} = localDomain "fetch-upload-time" $ do
+fetchUploadTime :: UploadTimeJobPayload -> JobsRunner ()
+fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} = localDomain "fetch-upload-time" $ do
   logInfo "Fetching upload time" payload
   let requestPayload = VersionedPackage packageName packageVersion
   result <- Hackage.request $ Hackage.getPackageUploadTime requestPayload
@@ -167,10 +178,11 @@ fetchNewIndex = localDomain "index-import" $ do
   liftIO $ void $ scheduleIndexImportJob pool
 
 runner :: Job -> JobsRunner ()
-runner job = localDomainEff' "job-runner" $
+runner job = localDomain "job-runner" $
   case fromJSON (jobPayload job) of
-    Error str -> logMessageEff' LogAttention "decode error" (toJSON str)
+    Error str -> logMessage LogAttention "decode error" (toJSON str)
     Success val -> case val of
-      MkReadme x -> makeReadme x
+      FetchReadme x -> makeReadme x
       FetchUploadTime x -> fetchUploadTime x
+      FetchChangelog x -> fetchChangeLog x
       ImportHackageIndex _ -> fetchNewIndex

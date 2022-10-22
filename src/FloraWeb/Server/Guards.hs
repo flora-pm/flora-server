@@ -24,7 +24,10 @@ guardThatPackageExists namespace packageName = do
   result <- Query.getPackageByNamespaceAndName namespace packageName
   case result of
     Nothing -> renderError templateEnv notFound404
-    Just package -> pure package
+    Just package ->
+      case package.status of
+        FullyImportedPackage -> pure package
+        UnknownPackage -> renderError templateEnv notFound404
 
 guardThatReleaseExists :: Namespace -> PackageName -> Version -> FloraPage Release
 guardThatReleaseExists namespace packageName version = do

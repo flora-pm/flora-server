@@ -24,7 +24,8 @@
   --package-list-item-background-hover-color: hsl(220 13% 91%);
   --package-list-item-name-color: hsl(221 39% 11%);
   --package-list-item-synopsis-color: black;
-  --package-list-item-version-color: black;
+  --package-list-item-metadata-color: black;
+  --package-list-item-version-color: #0a6;
   --search-bar-color: hsl(221 39% 11%);
   --search-bar-background-color: white;
   --search-bar-background-hover-color: white;
@@ -32,6 +33,8 @@
   --search-bar-focus-border-color: hsl(294 40% 30%);
   --readme-pre-background-color: hsl(225 13% 87%);
   --readme-code-background-color: hsl(225 13% 87%);
+  --changelog-pre-background-color: hsl(225 13% 87%);
+  --changelog-code-background-color: hsl(225 13% 87%);
   --install-string-border: hsl(215 28% 17%);
 }
 
@@ -57,8 +60,9 @@ html[data-theme="dark"] {
   --text-color: hsl(216 12% 84%);
   --package-list-item-background-hover-color: hsl(218 30% 15%);
   --package-list-item-name-color: hsl(294 40% 60%);
+  --package-list-item-metadata-color: hsl(220 13% 91%);
   --package-list-item-synopsis-color: hsl(220 13% 91%);
-  --package-list-item-version-color: hsl(220 13% 91%);
+  --package-list-item-version-color: hsl(140 60% 35%);
   --search-bar-color: hsl(216 12% 84%);
   --search-bar-background-color: hsl(218 30% 25%);
   --search-bar-background-hover-color: hsl(218 30% 25%);
@@ -66,5 +70,7 @@ html[data-theme="dark"] {
   --search-bar-focus-border-color: hsl(294 40% 30%);
   --readme-pre-background-color: hsl(218 29% 30%);
   --readme-code-background-color: hsl(218 29% 30%);
+  --changelog-pre-background-color: hsl(218 29% 30%);
+  --changelog-code-background-color: hsl(218 29% 30%);
   --install-string-border: hsl(215 28% 17%);
 }
