@@ -1,8 +1,8 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-
     utils.url = "github:numtide/flake-utils";
+
   };
 
   outputs = { nixpkgs, utils, ... }:
@@ -33,15 +33,22 @@
                   overrides = pkgsNew.lib.fold pkgsNew.lib.composeExtensions
                     (old.overrides or (_: _: { })) [
                       (pkgsNew.haskell.lib.packageSourceOverrides {
-                        flora = ./.;
-
                         text-display = "0.0.2.0";
                       })
                       (pkgsNew.haskell.lib.packagesFromDirectory {
                         directory = ./nix;
                       })
                       (haskellPackagesNew: haskellPackagesOld: {
+                        flora = (haskellPackagesOld.callCabal2nix "flora" ./. { }).overrideAttrs (_: {
+                          preBuild = ''
+                            cd cbits ; ${pkgsNew.souffle}/bin/souffle -g categorise.{cpp,dl}
+                          '';
+                        });
+
                         Cabal-syntax = haskellPackagesNew.Cabal_3_8_1_0;
+
+                        haddock-library = pkgsNew.haskell.lib.doJailbreak
+                          haskellPackagesOld.haddock-library;
 
                         lens-aeson = haskellPackagesNew.lens-aeson_1_2_2;
 
