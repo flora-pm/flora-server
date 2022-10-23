@@ -1,11 +1,12 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgsOld.url = "github:NixOS/nixpkgs/nixos-22.05"; # for souffle 2.2
     utils.url = "github:numtide/flake-utils";
 
   };
 
-  outputs = { nixpkgs, utils, ... }:
+  outputs = { nixpkgs, utils, nixpkgsOld, ... }:
     utils.lib.eachSystem [ "x86_64-linux" "x86_64-darwin" ] (system:
       let
         compiler = "ghc92";
@@ -15,7 +16,11 @@
           allowUnsupportedSystem = true;
         };
 
-        overlay = pkgsNew: pkgsOld: {
+        souffleOverlay = pkgsNew: pkgsOld: {
+          souffle = nixpkgsOld.legacyPackages.${system}.souffle;
+        };
+
+        haskellOverlay = pkgsNew: pkgsOld: {
           flora = pkgsNew.haskell.lib.justStaticExecutables
             (pkgsNew.overrideCabal pkgsNew.haskellPackages.flora (old: {
               nativeBuildInputs = (old.nativeBuildInputs or [ ])
@@ -41,7 +46,7 @@
                       (haskellPackagesNew: haskellPackagesOld: {
                         flora = (haskellPackagesOld.callCabal2nix "flora" ./. { }).overrideAttrs (_: {
                           preBuild = ''
-                            cd cbits ; ${pkgsNew.souffle}/bin/souffle -g categorise.{cpp,dl}
+                            cd cbits ; ${pkgsNew.souffle}/bin/souffle -g categorise.cpp categorise.dl
                           '';
                         });
 
@@ -131,7 +136,7 @@
 
         pkgs = import nixpkgs {
           inherit config system;
-          overlays = [ overlay ];
+          overlays = [ souffleOverlay haskellOverlay ];
         };
 
       in rec {
@@ -153,7 +158,15 @@
           };
         };
 
-        devShells.default = pkgs.haskell.packages."${compiler}".flora.env;
+        devShells.default = 
+          pkgs.mkShell {
+            buildInputs = with pkgs; [
+              souffle
+            ];
+            inputsFrom = [
+              pkgs.haskell.packages."${compiler}".flora.env
+            ];
+          };
       });
 }
 

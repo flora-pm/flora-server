@@ -4,7 +4,7 @@
 }:
 let haddockSrc = fetchgit {
     url = "https://github.com/haskell/haddock";
-    sha256 = "WveRv+rougeBHb5R8yiNgeN1xeXtJMUst/Ea1XydH9k=";
+    sha256 = "ccYSQh8A/RhllAaRkvKc8QwtxVlSe7D1n0wRDUwHpoo=";
     rev = "7f2892b571c7b072c86edbf21b7c7469e21f6303";
   };
 in mkDerivation {

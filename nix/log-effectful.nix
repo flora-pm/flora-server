@@ -4,11 +4,11 @@
 }:
 mkDerivation {
   pname = "log-effectful";
-  version = "0.0.1.0";
+  version = "1.0.0.0";
   src = fetchgit {
     url = "https://github.com/haskell-effectful/log-effectful";
-    sha256 = "0nwq1i9bm29d6nh5j8sjc7m3rbs3fjf56hwph7yrgc478x645vhi";
-    rev = "aaeb7eef5717e9ed26dfbf85016f277134883520";
+    sha256 = "WveRv+rouGEBHb5R8yiNgeN1xeXtJMUst/Ea1XydH9k=";
+    rev = "v1.0.0.0";
     fetchSubmodules = true;
   };
   libraryHaskellDepends = [
