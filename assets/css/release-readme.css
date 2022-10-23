@@ -63,6 +63,7 @@
     padding-left: 1em;
 
     li {
+      margin-top: 1rem;
       overflow-wrap: break-word;
       list-style-type: decimal;
       list-style-position: outside;
@@ -78,6 +79,7 @@
     padding-left: 1em;
 
     li {
+      margin-top: 1rem;
       overflow-wrap: break-word;
       list-style-type: disc;
       list-style-position: outside;

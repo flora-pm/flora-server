@@ -16,15 +16,14 @@ create table if not exists releases (
   changelog_status import_status,
   constraint consistent_readme_status
     check (
-         ((readme_status = 'imported' or readme_status = 'inexistent')
-            and readme is not null)
-      or (readme_status = 'not-imported' and readme is null)
+         (readme_status = 'imported' and readme is not null)
+      or ((readme_status = 'not-imported' or readme_status = 'inexistent') and readme is null)
     ),
   constraint consistent_changelog_status
     check (
-         ((changelog_status = 'imported' or changelog_status = 'inexistent')
+         ((changelog_status = 'imported')
             and changelog is not null)
-      or (changelog_status = 'not-imported' and changelog is null)
+      or ((changelog_status = 'not-imported'  or changelog_status = 'inexistent') and changelog is null)
     )
 );
 
