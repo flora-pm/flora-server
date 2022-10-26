@@ -115,7 +115,7 @@ packageBody
             displayVersions namespace packageName packageReleases numberOfReleases
         div_ [class_ "release-readme-column grow"] $ do
           div_ [class_ "grid-rows-3 release-readme"] $ do
-            displayReadme packageName latestRelease
+            displayReadme latestRelease
         div_ [class_ "package-right-column"] $ do
           ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
             displayInstructions packageName latestRelease
@@ -124,14 +124,14 @@ packageBody
             displayDependents (namespace, packageName) numberOfDependents dependents
             displayPackageFlags metadata.flags
 
-displayReadme :: PackageName -> Release -> FloraHTML
-displayReadme packageName release =
+displayReadme :: Release -> FloraHTML
+displayReadme release =
   case readme release of
-    Nothing -> renderDescription packageName release.metadata.description
+    Nothing -> renderDescription release.metadata.description
     Just (MkTextHtml readme) -> relaxHtmlT readme
 
-renderDescription :: PackageName -> Text -> FloraHTML
-renderDescription packageName input = renderHaddock packageName input
+renderDescription :: Text -> FloraHTML
+renderDescription input = renderHaddock input
 
 displayReleaseVersion :: Version -> FloraHTML
 displayReleaseVersion version = toHtml version
@@ -307,7 +307,8 @@ displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = do
       pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
       toHtmlRaw @Text "&nbsp;"
       defaultMarker flagDefault
-    p_ [class_ "package-flag-description"] $ toHtml flagDescription
+    div_ [class_ "package-flag-description"] $ do
+      renderHaddock $ Text.pack flagDescription
 
 defaultMarker :: Bool -> FloraHTML
 defaultMarker True = em_ "(on by default)"

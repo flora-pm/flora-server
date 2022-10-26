@@ -220,7 +220,30 @@ div[class="bullets"] {
 
     .package-flag-name {
       display: inline;
+    }
+  }
+
+  .package-flags > * {
+    pre {
+      margin: 0;
+      font-size: 85%;
       background-color: var(--readme-code-background-color);
+      border-radius: 6px;
+      padding-top: 0.2em;
+      padding-right: 0.4em;
+      padding-bottom: 0.2em;
+      padding-left: 0.4em;
+    }
+
+    code {
+      margin: 0;
+      font-size: 85%;
+      background-color: var(--readme-code-background-color);
+      border-radius: 6px;
+      padding-top: 0.2em;
+      padding-right: 0.4em;
+      padding-bottom: 0.2em;
+      padding-left: 0.4em;
     }
   }
 
