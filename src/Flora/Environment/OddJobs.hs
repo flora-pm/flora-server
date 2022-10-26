@@ -25,7 +25,7 @@ makeConfig runnerEnv cfg logger pool runnerContinuation =
     (\level event -> structuredLogging cfg logger level event)
     jobTableName
     pool
-    (MaxConcurrentJobs 4)
+    (MaxConcurrentJobs 40)
     (runJobRunner pool runnerEnv logger . runnerContinuation)
     (\x -> x{cfgDeleteSuccessfulJobs = False, cfgDefaultMaxAttempts = 3})
 
