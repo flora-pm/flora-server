@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## 1.0.6 -- XXXX-XX-XX
+## 1.0.6 -- 2022-10-27
 
-* Fix the `dependents` materialized view (#256)
+* Fix the `dependents` materialized view to include other namespaces (#256)
 
 ## v1.0.5 -- 2022-10-22
 
