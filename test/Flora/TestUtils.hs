@@ -90,6 +90,7 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
+import Effectful.Fail (Fail, runFailIO)
 import Effectful.Log (Log, Logger)
 import Flora.Environment
 import Flora.Environment.Config (LoggingDestination (..))
@@ -104,16 +105,16 @@ import FloraWeb.Client
 import FloraWeb.Server.Logging qualified as Logging
 import Log.Backend.StandardOutput qualified as Log
 
-type TestEff = Eff '[DB, Log, Time, IOE]
+type TestEff = Eff '[Fail, DB, Log, Time, IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
   }
   deriving stock (Generic, Show, Eq)
 
-getFixtures :: ([DB, IOE] :>> es) => Eff es Fixtures
+getFixtures :: ([Fail, DB, IOE] :>> es) => Eff es Fixtures
 getFixtures = do
-  hackageUser <- fromJust <$> Query.getUserByUsername "hackage-user"
+  Just hackageUser <- Query.getUserByUsername "hackage-user"
   pure Fixtures{..}
 
 importAllPackages :: Fixtures -> TestEff ()
@@ -130,6 +131,7 @@ runTestEff comp pool = runEff $
       runCurrentTimeIO
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
+      . runFailIO
       $ comp
 
 testThis :: String -> TestEff () -> TestEff TestTree
@@ -147,7 +149,12 @@ testThese groupName tests = fmap (Test.testGroup groupName) newTests
 assertBool :: Bool -> TestEff ()
 assertBool boolean = liftIO $ Test.assertBool "" boolean
 
--- | 'assertEqual' @expected@ @actual@
+{-| Make sure an expected value is the same as the actual one.
+
+ Usage:
+
+ >>> assertEqual expected actual
+-}
 assertEqual :: (Eq a, Show a) => a -> a -> TestEff ()
 assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 

@@ -28,7 +28,7 @@ spec :: Fixtures -> TestEff TestTree
 spec _fixtures =
   testThese
     "package tests"
-    [ testThis "Insert base and its dependencies, and fetch it" testInsertBase
+    [ testThis "Check Cabal dependencies" testCabalDeps
     , testThis "Insert containers and its dependencies" testInsertContainers
     , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory
     , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
@@ -40,10 +40,39 @@ spec _fixtures =
     , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
 
-testInsertBase :: TestEff ()
-testInsertBase = do
-  result <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
-  assertEqual (Just (PackageName "base")) (preview (_Just % #name) result)
+testCabalDeps :: TestEff ()
+testCabalDeps = do
+  dependencies <- do
+    Just cabalPackage <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "Cabal")
+    releases <- Query.getReleases (cabalPackage ^. #packageId)
+    let latestRelease = maximumBy (compare `on` version) releases
+    Query.getAllRequirements (latestRelease ^. #releaseId)
+  assertEqual
+    ( Set.fromList
+        [ PackageName "Win32"
+        , PackageName "array"
+        , PackageName "base"
+        , PackageName "binary"
+        , PackageName "bytestring"
+        , PackageName "containers"
+        , PackageName "deepseq"
+        , PackageName "directory"
+        , PackageName "fail"
+        , PackageName "filepath"
+        , PackageName "mtl"
+        , PackageName "parsec"
+        , PackageName "pretty"
+        , PackageName "process"
+        , PackageName "semigroups"
+        , PackageName "tagged"
+        , PackageName "text"
+        , PackageName "time"
+        , PackageName "transformers"
+        , PackageName "unix"
+        , PackageName "void"
+        ]
+    )
+    (Set.fromList $ view _2 <$> Vector.toList dependencies)
 
 testInsertContainers :: TestEff ()
 testInsertContainers = do
@@ -94,26 +123,28 @@ testCorrectNumberInHaskellNamespace = do
 
 testBytestringDependents :: TestEff ()
 testBytestringDependents = do
-  results <- Query.getPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring")
+  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring")
   assertEqual
-    6
+    17
     (Vector.length results)
 
 testNoSelfDependent :: TestEff ()
 testNoSelfDependent = do
-  results <- Query.getPackageDependents (Namespace "haskell") (PackageName "text")
+  results <- Query.getAllPackageDependents (Namespace "haskell") (PackageName "text")
   let resultSet = Set.fromList . fmap (view #name) $ Vector.toList results
   assertEqual
-    resultSet
     ( Set.fromList
-        [ PackageName "flora"
+        [ PackageName "Cabal"
+        , PackageName "flora"
         , PackageName "hashable"
         , PackageName "jose"
+        , PackageName "parsec"
         , PackageName "relude"
         , PackageName "semigroups"
         , PackageName "xml"
         ]
     )
+    resultSet
 
 testBytestringDependencies :: TestEff ()
 testBytestringDependencies = do

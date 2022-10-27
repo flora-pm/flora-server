@@ -9,6 +9,7 @@ import Optics.Core
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
+import Effectful.Fail (runFailIO)
 import Effectful.Log qualified as Log
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
@@ -27,6 +28,7 @@ main = do
     runCurrentTimeIO
     . Log.runLog "flora-test" stdOutLogger LogAttention
     . runDB (env ^. #pool)
+    . runFailIO
     $ do
       testMigrations
       f' <- getFixtures
