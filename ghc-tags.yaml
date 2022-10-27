@@ -5,7 +5,6 @@ exclude_paths:
 - dist
 - dist-newstyle
 - assets
-language: GHC2021
 extensions:
 - BangPatterns
 - BlockArguments

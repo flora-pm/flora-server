@@ -10,14 +10,13 @@ import Distribution.Text (simpleParse)
 import Documentation.Haddock.Markup qualified as Haddock
 import Documentation.Haddock.Parser qualified as Haddock
 import Documentation.Haddock.Types (DocMarkupH (..), Example (..), Header (..), Hyperlink (..), MetaDoc (..), ModLink (..), Picture (..), Table (..), TableCell (..), TableRow (..))
-import Flora.Model.Package (PackageName (..))
 import FloraWeb.Templates (FloraHTML)
 import Lucid
 import Network.URI
 
-renderHaddock :: PackageName -> Text -> FloraHTML
-renderHaddock (PackageName package) input = do
-  let metaDoc = Haddock.parseParas (Just (Text.unpack package)) (Text.unpack input)
+renderHaddock :: Text -> FloraHTML
+renderHaddock input = do
+  let metaDoc = Haddock.parseParas Nothing (Text.unpack input)
   let normalisedDoc = Haddock.toRegular metaDoc._doc
   Haddock.markup (htmlMarkup (const Nothing)) normalisedDoc
 

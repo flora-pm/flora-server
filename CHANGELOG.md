@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.0.6 -- 2022-10-27
+
+* Fix the `dependents` materialized view to include other namespaces (#256)
+
 ## v1.0.5 -- 2022-10-22
 
 * Reorder the package page columns in mobile view (#233)

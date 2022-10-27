@@ -111,6 +111,7 @@
     font-size: 85%;
     background-color: var(--readme-code-background-color);
     border-radius: 6px;
+    padding: 0.2em 0.4em;
   }
 
   tr {
