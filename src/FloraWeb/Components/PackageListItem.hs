@@ -1,6 +1,7 @@
 module FloraWeb.Components.PackageListItem
   ( packageListItem
   , packageListItemWithVersionRange
+  , licenseIcon
   )
 where
 

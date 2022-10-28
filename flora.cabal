@@ -125,7 +125,6 @@ library
     FloraWeb.Components.PaginationNav
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
-    FloraWeb.Components.VersionListItem
     FloraWeb.Links
     FloraWeb.Routes
     FloraWeb.Routes.Pages
