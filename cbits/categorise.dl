@@ -192,7 +192,11 @@ normalise_category("Distributed Computing", "Distributed Systems & Computation")
 normalise_category("Filesystem", "Systems Programming").
 normalise_category("system", "Systems Programming").
 normalise_category("System", "Systems Programming").
+normalise_category("SYstem", "Systems Programming").
 
 normalise_category("Distribution", "Package Distribution").
 
-normalise_category("SYstem", "Systems Programming").
+normalise_category("Trace", "Debugging").
+
+normalise_category("OpenTelemetry", "Telemetry").
+normalise_category("Metrics", "Telemetry").
