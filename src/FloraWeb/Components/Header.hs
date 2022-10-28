@@ -1,4 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module FloraWeb.Components.Header where
 
@@ -11,6 +12,7 @@ import PyF
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.Utils (property_, text)
 import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
+import FloraWeb.Assets (cssHash, jsHash)
 
 header :: FloraHTML
 header = do
@@ -40,9 +42,9 @@ header = do
           document.documentElement.classList.remove('no-js');
           document.documentElement.classList.add('js');
           |]
-        script_ [src_ "/static/js/app.js", type_ "module", defer_ ""] ("" :: Text)
+        script_ [src_ "/static/js/app.js", type_ "module", defer_ "", integrity_ ("sha256-" <> $(jsHash))] ("" :: Text)
 
-        link_ [rel_ "stylesheet", href_ "/static/css/app.css"]
+        link_ [rel_ "stylesheet", href_ "/static/css/app.css", integrity_ ("sha256-" <> $(cssHash))]
         link_
           [ rel_ "search"
           , type_ "application/opensearchdescription+xml"
