@@ -125,7 +125,13 @@ instance Display PackageStatus where
 instance FromField PackageStatus where
   fromField f Nothing = returnError UnexpectedNull f ""
   fromField _ (Just bs) | Just status <- parsePackageStatus bs = pure status
-  fromField f (Just bs) = returnError ConversionFailed f $ unpack $ "Conversion error: Expected component to be one of " <> display @[PackageStatus] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
+  fromField f (Just bs) =
+    returnError ConversionFailed f $
+      unpack $
+        "Conversion error: Expected component to be one of "
+          <> display @[PackageStatus] [minBound .. maxBound]
+          <> ", but instead got "
+          <> decodeUtf8 bs
 
 instance ToField PackageStatus where
   toField = Escape . encodeUtf8 . display
