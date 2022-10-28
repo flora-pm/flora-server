@@ -9,10 +9,10 @@ import Lucid
 import Lucid.Alpine
 import PyF
 
+import FloraWeb.Assets (cssHash, jsHash)
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.Utils (property_, text)
 import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
-import FloraWeb.Assets (cssHash, jsHash)
 
 header :: FloraHTML
 header = do

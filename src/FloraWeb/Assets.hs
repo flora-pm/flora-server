@@ -2,13 +2,13 @@ module FloraWeb.Assets where
 
 import Crypto.Hash
 import Crypto.Hash.Conduit (hashFile)
-import Data.Text.Display (display)
+import Data.ByteArray qualified as BA
+import Data.ByteString.Base64 qualified as B64
 import Data.Text (Text)
+import Data.Text qualified as Text
+import Data.Text.Display (display)
 import Language.Haskell.TH (runIO, stringE)
-import Language.Haskell.TH.Syntax (qAddDependentFile, Q, Exp)
-import qualified Data.Text as Text
-import qualified Data.ByteArray as BA
-import qualified Data.ByteString.Base64 as B64
+import Language.Haskell.TH.Syntax (Exp, Q, qAddDependentFile)
 
 -- | Returns a base64-encoded sha256 hash of the file
 hashBundle :: FilePath -> IO Text
@@ -29,4 +29,3 @@ cssHash = do
   qAddDependentFile path
   result <- runIO $ hashBundle path
   stringE (Text.unpack result)
-
