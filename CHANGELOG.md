@@ -4,6 +4,7 @@
 
 * Added Profiling, Debugging and Telemetry to `categories.dl` (#259)
 * Improve the package versions listing (#260)
+* Implement assets cache invalidation with SRI (#262)
 
 ## 1.0.6 -- 2022-10-27
 
