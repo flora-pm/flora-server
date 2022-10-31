@@ -1,5 +1,4 @@
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module FloraWeb.Components.Header where
 
@@ -9,7 +8,7 @@ import Lucid
 import Lucid.Alpine
 import PyF
 
-import FloraWeb.Assets (cssHash, jsHash)
+import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.Utils (property_, text)
 import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
@@ -42,9 +41,9 @@ header = do
           document.documentElement.classList.remove('no-js');
           document.documentElement.classList.add('js');
           |]
-        script_ [src_ "/static/js/app.js", type_ "module", defer_ "", integrity_ ("sha256-" <> $(jsHash))] ("" :: Text)
 
-        link_ [rel_ "stylesheet", href_ "/static/css/app.css", integrity_ ("sha256-" <> $(cssHash))]
+        jsLink
+        cssLink
         link_
           [ rel_ "search"
           , type_ "application/opensearchdescription+xml"
@@ -60,6 +59,26 @@ header = do
 
       body_ [] $ do
         navbar
+
+jsLink :: FloraHTML
+jsLink = do
+  TemplateEnv{assets, environment} <- ask
+  let jsURL = "/static/" <> assets.jsBundle.name
+  case environment of
+    Production ->
+      script_ [src_ jsURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsBundle.hash)] ("" :: Text)
+    _ ->
+      script_ [src_ jsURL, type_ "module", defer_ ""] ("" :: Text)
+
+cssLink :: FloraHTML
+cssLink = do
+  TemplateEnv{assets, environment} <- ask
+  let cssURL = "/static/" <> assets.cssBundle.name
+  case environment of
+    Production ->
+      link_ [rel_ "stylesheet", href_ cssURL, integrity_ ("sha256-" <> assets.cssBundle.hash)]
+    _ ->
+      link_ [rel_ "stylesheet", href_ cssURL]
 
 ogTags :: FloraHTML
 ogTags = do
