@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 
 module Flora.Environment
   ( FloraEnv (..)
@@ -20,6 +20,7 @@ import Data.Time (NominalDiffTime)
 import Data.Word (Word16)
 import Database.PostgreSQL.Simple qualified as PG
 import Effectful
+import Effectful.Fail (Fail)
 import Env
   ( parse
   )
@@ -35,6 +36,7 @@ data FloraEnv = FloraEnv
   , logging :: LoggingEnv
   , environment :: DeploymentEnv
   , config :: FloraConfig
+  , assets :: Assets
   }
   deriving stock (Generic)
 
@@ -45,10 +47,11 @@ data TestEnv = TestEnv
   deriving stock (Generic)
 
 mkPool
-  :: ByteString -- Database access information
+  :: (IOE :> es)
+  => ByteString -- Database access information
   -> NominalDiffTime -- Allowed timeout
   -> Int -- Number of connections
-  -> Eff '[IOE] (Pool PG.Connection)
+  -> Eff es (Pool PG.Connection)
 mkPool connectionInfo timeout' connections =
   liftIO $
     Pool.newPool $
@@ -59,11 +62,13 @@ mkPool connectionInfo timeout' connections =
         , poolMaxResources = connections
         }
 
-configToEnv :: FloraConfig -> Eff '[IOE] FloraEnv
+configToEnv :: (Fail :> es, IOE :> es) => FloraConfig -> Eff es FloraEnv
 configToEnv x@FloraConfig{..} = do
   let PoolConfig{..} = dbConfig
   pool <- mkPool connectionInfo connectionTimeout connections
   jobsPool <- mkPool connectionInfo connectionTimeout connections
+  assets <- getAssets environment
+  liftIO $ print assets
   pure FloraEnv{..}
   where
     config = x
@@ -74,7 +79,7 @@ testConfigToTestEnv config@TestConfig{..} = do
   pool <- mkPool connectionInfo connectionTimeout connections
   pure TestEnv{..}
 
-getFloraEnv :: Eff '[IOE] FloraEnv
+getFloraEnv :: Eff '[Fail, IOE] FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
   liftIO $ blueMessage $ "🔌 Connecting to database at " <> Text.decodeUtf8 config.connectionInfo

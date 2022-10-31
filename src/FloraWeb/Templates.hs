@@ -6,11 +6,9 @@ module FloraWeb.Templates
   )
 where
 
-import Control.Monad (when)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.Reader (runReaderT)
 import Data.ByteString.Lazy
-import Data.Text (Text)
 import Lucid
 
 import Flora.Environment (DeploymentEnv (..))
@@ -31,8 +29,9 @@ mkErrorPage env template =
    in runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
 
 rendered :: DeploymentEnv -> FloraHTML -> FloraHTML
-rendered deploymentEnv target = do
+rendered _deploymentEnv target = do
   header
   main_ [] target
-  when (deploymentEnv == Development) $
-    script_ [src_ "/static/js/autoreload.js", type_ "module"] ("" :: Text)
+
+-- when (deploymentEnv == Development) $
+--   script_ [src_ "/static/js/autoreload.js", type_ "module"] ("" :: Text)

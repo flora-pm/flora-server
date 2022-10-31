@@ -115,7 +115,6 @@ library
     Flora.Search
     Flora.ThirdParties.Hackage.API
     Flora.ThirdParties.Hackage.Client
-    FloraWeb.Assets
     FloraWeb.Autoreload
     FloraWeb.Client
     FloraWeb.Components.CategoryCard
@@ -299,6 +298,7 @@ executable flora-cli
     , directory
     , effectful
     , effectful-core
+    , envparse
     , flora
     , http-client
     , log-base

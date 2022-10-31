@@ -7,21 +7,36 @@ module Flora.Environment.Config
   , PoolConfig (..)
   , DeploymentEnv (..)
   , LoggingDestination (..)
+  , Assets (..)
+  , AssetBundle (..)
   , parseConfig
   , parseTestConfig
+  , parseDeploymentEnv
+  , getAssets
+  , getAssetHash
   )
 where
 
 import Control.Monad ((>=>))
-import Data.Bifunctor
+import Crypto.Hash (Digest, SHA256)
+import Crypto.Hash.Conduit (hashFile)
+import Data.Aeson qualified as Aeson
+import Data.Bifunctor (Bifunctor (second))
+import Data.ByteArray qualified as BA
 import Data.ByteString (ByteString)
+import Data.ByteString.Base64 qualified as B64
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Pool (Pool)
 import Data.Text (Text)
-import Data.Text.Display (Display (..))
+import Data.Text qualified as Text
+import Data.Text.Display (Display (..), display)
 import Data.Time (NominalDiffTime)
-import Data.Typeable
+import Data.Typeable (Typeable)
 import Data.Word (Word16)
 import Database.PostgreSQL.Simple qualified as PG
+import Effectful (Eff, IOE, MonadIO (liftIO), type (:>))
+import Effectful.Fail (Fail)
 import Env
   ( AsUnread (unread)
   , Error (..)
@@ -35,7 +50,7 @@ import Env
   , var
   , (<=<)
   )
-import GHC.Generics
+import GHC.Generics (Generic)
 import Text.Read (readMaybe)
 
 data ConnectionInfo = ConnectionInfo
@@ -67,6 +82,18 @@ data LoggingDestination
   | -- | Logs are sent to a file as JSON
     JSONFile
   deriving (Show, Generic)
+
+data Assets = Assets
+  { jsBundle :: AssetBundle
+  , cssBundle :: AssetBundle
+  }
+  deriving stock (Show, Generic)
+
+data AssetBundle = AssetBundle
+  { name :: Text
+  , hash :: Text
+  }
+  deriving stock (Show, Generic)
 
 data LoggingEnv = LoggingEnv
   { sentryDSN :: Maybe String
@@ -184,3 +211,48 @@ loggingDestination "stdout" = Right StdOut
 loggingDestination "json" = Right Json
 loggingDestination "json-file" = Right JSONFile
 loggingDestination e = Left $ unread e
+
+getAssets :: (Fail :> es, IOE :> es) => DeploymentEnv -> Eff es Assets
+getAssets environment =
+  case environment of
+    Production -> do
+      Assets
+        <$> getAsset "app.js"
+        <*> getAsset "styles.css"
+    _ -> do
+      Assets
+        <$> getStaticAsset "app.js"
+        <*> getStaticAsset "styles.css"
+
+getStaticAsset :: Text -> Eff es AssetBundle
+getStaticAsset key =
+  pure $
+    AssetBundle key ""
+
+{-| Get the asset name with its hash
+
+ >>> $(getAsset "app.js")
+ "app-U6EOZTZG.js"
+-}
+getAsset :: (Fail :> es, IOE :> es) => Text -> Eff es AssetBundle
+getAsset key = do
+  let path = "./static/manifest.json"
+  Just (json :: Map Text Text) <- liftIO $ Aeson.decodeFileStrict path
+  case Map.lookup key json of
+    Nothing -> error $ "Could not find an entry for " <> Text.unpack key
+    Just fullPath -> do
+      let name = last $ Text.splitOn "/" fullPath
+      hash <- getAssetHash ("./static/" <> name)
+      pure $ AssetBundle{name, hash}
+
+-- Get the SHA256 hash of an asset bundle.
+getAssetHash :: IOE :> es => Text -> Eff es Text
+getAssetHash hashedAssetPath = do
+  let path = hashedAssetPath
+  hashBundle path
+
+-- | Returns a base64-encoded sha256 hash of the file
+hashBundle :: IOE :> es => Text -> Eff es Text
+hashBundle path = do
+  digest :: Digest SHA256 <- hashFile (Text.unpack path)
+  pure . display . B64.encodeBase64 . BA.convert $ digest

@@ -21,6 +21,7 @@ import Optics.Core
 
 import Data.UUID qualified as UUID
 import Flora.Environment
+import Flora.Environment.Config (Assets)
 import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User
 import FloraWeb.Server.Auth
@@ -51,6 +52,7 @@ data TemplateEnv = TemplateEnv
   , sessionId :: PersistentSessionId
   , environment :: DeploymentEnv
   , activeElements :: ActiveElements
+  , assets :: Assets
   }
   deriving stock (Show, Generic)
 
@@ -100,8 +102,8 @@ defaultTemplateEnv =
     }
 
 -- | ⚠  DO NOT USE THIS FUNCTION IF YOU DON'T KNOW WHAT YOU'RE DOING
-defaultsToEnv :: TemplateDefaults -> TemplateEnv
-defaultsToEnv TemplateDefaults{..} =
+defaultsToEnv :: Assets -> TemplateDefaults -> TemplateEnv
+defaultsToEnv assets TemplateDefaults{..} =
   let sessionId = PersistentSessionId UUID.nil
    in TemplateEnv{..}
 
@@ -115,6 +117,7 @@ fromSession session defaults = do
   let muser = session.mUser
   let webEnvStore = session.webEnvStore
   floraEnv <- liftIO $ fetchFloraEnv webEnvStore
+  let assets = floraEnv.assets
   let TemplateDefaults{..} =
         defaults
           & (#mUser .~ muser)

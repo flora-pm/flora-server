@@ -5,6 +5,7 @@ import Data.Password.Types
 import Data.Text (Text)
 import DesignSystem (generateComponents)
 import Effectful
+import Effectful.Fail
 import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.User.Query qualified as Query
 import GHC.Generics (Generic)
@@ -47,9 +48,10 @@ data UserCreationOptions = UserCreationOptions
 main :: IO ()
 main = do
   result <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
-  env <- runEff getFloraEnv
+  env <- getFloraEnv & runFailIO & runEff
   runEff
     . runDB (env ^. #pool)
+    . runFailIO
     $ runOptions result
 
 parseOptions :: Parser Options
@@ -87,7 +89,7 @@ parseGenDesignSystem = pure GenDesignSystemComponents
 parseImportPackages :: Parser Command
 parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
 
-runOptions :: ([DB, IOE] :>> es) => Options -> Eff es ()
+runOptions :: ([DB, Fail, IOE] :>> es) => Options -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
