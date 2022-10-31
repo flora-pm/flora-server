@@ -7,14 +7,18 @@ import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy qualified as ByteString
 import Data.Foldable (forM_)
 import Data.Functor.Identity (runIdentity)
+import Data.Text (Text)
+import Data.Text.Lazy qualified as TL
 import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful
-import Lucid.Base
+import Effectful.Fail
+import Env
+import Lucid
+import PyF (fmt)
 
-import Data.Text (Text)
-import Data.Text.Lazy qualified as TL
+import Flora.Environment.Config
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category
 import Flora.Model.Package
@@ -23,8 +27,6 @@ import FloraWeb.Components.CategoryCard qualified as Component
 import FloraWeb.Components.PackageListItem qualified as Component
 import FloraWeb.Components.PaginationNav qualified as Component
 import FloraWeb.Templates (FloraHTML, defaultTemplateEnv, defaultsToEnv)
-import Lucid
-import PyF (fmt)
 
 newtype ComponentName = ComponentName Text
   deriving newtype (Eq, Ord, Show)
@@ -32,16 +34,19 @@ newtype ComponentName = ComponentName Text
 newtype ComponentTitle = ComponentTitle Text
   deriving newtype (Eq, Ord, Show)
 
-generateComponents :: (IOE :> es) => Eff es ()
-generateComponents = forM_ components $ \(filename, title, name, template) -> do
-  let html = TL.replace "\"" "\\\"" $ renderHtml template
-  writeComponent filename title name html
+generateComponents :: (Fail :> es, IOE :> es) => Eff es ()
+generateComponents = do
+  environment <- liftIO $ Env.parse id parseDeploymentEnv
+  assets <- getAssets environment
+  forM_ components $ \(filename, title, name, template) -> do
+    let html = TL.replace "\"" "\\\"" $ renderHtml assets template
+    writeComponent filename title name html
 
-renderHtml :: FloraHTML -> TL.Text
-renderHtml template =
+renderHtml :: Assets -> FloraHTML -> TL.Text
+renderHtml assets template =
   runIdentity $ runReaderT (renderTextT template) templateEnv
   where
-    templateEnv = defaultsToEnv defaultTemplateEnv
+    templateEnv = defaultsToEnv assets defaultTemplateEnv
 
 writeComponent :: (IOE :> es) => FilePath -> ComponentTitle -> ComponentName -> TL.Text -> Eff es ()
 writeComponent filename title name html =

@@ -54,8 +54,12 @@ import Data.Pool (Pool)
 import Database.PostgreSQL.Simple (Connection)
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (runErrorNoCallStack)
+import Effectful.Fail (runFailIO)
 import Effectful.PostgreSQL.Transact.Effect (runDB)
+import Network.HTTP.Types (notFound404)
+
 import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import Flora.Environment.Config (Assets)
 import Flora.Environment.OddJobs qualified as OddJobs
 import Flora.OddJobs qualified as OddJobs
 import Flora.OddJobs.Types (JobsRunnerEnv (..))
@@ -73,10 +77,9 @@ import FloraWeb.Server.Tracing
 import FloraWeb.Templates (defaultTemplateEnv, defaultsToEnv)
 import FloraWeb.Templates.Error (renderError)
 import FloraWeb.Types
-import Network.HTTP.Types (notFound404)
 
 runFlora :: IO ()
-runFlora = bracket (runEff getFloraEnv) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
+runFlora = bracket (getFloraEnv & runFailIO & runEff) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
   let baseURL = "http://localhost:" <> display (env.httpPort)
   liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
   liftIO $ when (isJust $ env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
@@ -181,15 +184,15 @@ naturalTransform deploymentEnv logger webEnvStore app =
     & effToHandler
 
 genAuthServerContext :: Logger -> FloraEnv -> Context '[FloraAuthContext, ErrorFormatters]
-genAuthServerContext logger floraEnv = authHandler logger floraEnv :. errorFormatters :. EmptyContext
+genAuthServerContext logger floraEnv = authHandler logger floraEnv :. errorFormatters floraEnv.assets :. EmptyContext
 
-errorFormatters :: ErrorFormatters
-errorFormatters =
-  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage}
+errorFormatters :: Assets -> ErrorFormatters
+errorFormatters assets =
+  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage assets}
 
-notFoundPage :: NotFoundErrorFormatter
-notFoundPage _req =
-  let result = runPureEff $ runErrorNoCallStack $ renderError (defaultsToEnv defaultTemplateEnv) notFound404
+notFoundPage :: Assets -> NotFoundErrorFormatter
+notFoundPage assets _req =
+  let result = runPureEff $ runErrorNoCallStack $ renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
    in case result of
         Left err -> err
         Right _ -> err404

@@ -11,7 +11,7 @@ allow-newer: all
 test-show-details: direct
 
 package *
-  ghc-options: "-L /usr/pgsql-14/lib"
+  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS
   flags: -prod
 
 package warp
