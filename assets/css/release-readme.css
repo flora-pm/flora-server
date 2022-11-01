@@ -95,6 +95,14 @@
     }
   }
 
+  code {
+    margin: 0;
+    font-size: 85%;
+    background-color: var(--readme-code-background-color);
+    border-radius: 6px;
+    padding: 0.2em 0.4em;
+  }
+
   pre {
     line-height: 1.45;
     padding: 16px;
@@ -104,14 +112,12 @@
     font-size: 90%;
     background-color: var(--readme-pre-background-color);
     margin-bottom: 16px;
-  }
 
-  code {
-    margin: 0;
-    font-size: 85%;
-    background-color: var(--readme-code-background-color);
-    border-radius: 6px;
-    padding: 0.2em 0.4em;
+    code {
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
+    }
   }
 
   tr {
