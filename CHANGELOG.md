@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.0.7 -- XXXX-XX-XX
+## 1.0.7 -- 2022-11-01
 
 * Added Profiling, Debugging and Telemetry to `categories.dl` (#259)
 * Improve the package versions listing (#260)
