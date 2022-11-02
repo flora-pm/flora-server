@@ -1,3 +1,4 @@
+-- migrate:up
 create materialized view latest_versions (
   namespace,
   name,

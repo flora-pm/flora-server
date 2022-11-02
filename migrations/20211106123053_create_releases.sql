@@ -1,3 +1,4 @@
+-- migrate:up
 create type import_status as enum ('imported', 'inexistent', 'not-imported');
 
 -- A release belongs to a package, and contains multiple components.

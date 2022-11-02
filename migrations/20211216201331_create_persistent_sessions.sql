@@ -1,3 +1,4 @@
+-- migrate:up
 create table if not exists persistent_sessions (
   persistent_session_id uuid primary key,
   user_id uuid references users,
