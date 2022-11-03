@@ -20,7 +20,7 @@ import Flora.Model.Package.Types
   , Package (..)
   , PackageName (..)
   )
-import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
+import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..), Repo(..))
 import FloraWeb.Links qualified as Links
 import FloraWeb.Templates.Haddock (renderHaddock)
 import FloraWeb.Templates.Types (FloraHTML)
@@ -31,6 +31,7 @@ import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
+import Data.Maybe (fromMaybe)
 
 data Target = Dependents | Dependencies | Versions
   deriving stock (Eq, Ord)
@@ -158,13 +159,15 @@ displayLinks namespace packageName release meta@ReleaseMetadata{..} = do
     ul_ [class_ "links"] $ do
       li_ [class_ "package-link"] $ a_ [href_ (getHomepage meta)] "Homepage"
       li_ [class_ "package-link"] $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
-      li_ [class_ "package-link"] $ displaySourceRepos sourceRepos
+      li_ [class_ "package-link"] $ displaySourceRepo repo
       li_ [class_ "package-link"] $ displayChangelog namespace packageName release.version release.changelog
 
-displaySourceRepos :: Vector Text -> FloraHTML
-displaySourceRepos x
-  | Vector.null x = toHtml @Text "No source repository"
-  | otherwise = a_ [href_ (Vector.head x)] "Source repository"
+displaySourceRepo :: Maybe Repo -> FloraHTML
+displaySourceRepo mRepo = case mRepo of
+  Nothing -> toHtml @Text "No source repository"
+  Just repo -> case repo.url of
+    Nothing -> toHtml @Text "No source repository"
+    Just url -> a_ [href_ url] "Source repository"
 
 displayChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 displayChangelog _ _ _ Nothing = toHtml @Text ""
@@ -276,13 +279,14 @@ renderCategory Category{name, slug} = do
     a_ [href_ resource] (toHtml name)
 
 getHomepage :: ReleaseMetadata -> Text
-getHomepage ReleaseMetadata{..} =
+getHomepage ReleaseMetadata{homepage, repo} =
   case homepage of
     Just page -> page
     Nothing ->
-      if Vector.null sourceRepos
-        then "⚠  No homepage provided"
-        else Vector.head sourceRepos
+      case repo of
+        Nothing ->  "⚠  No homepage provided"
+        Just sourceRepo ->
+          fromMaybe "⚠  No homepage provided" (sourceRepo.url)
 
 displayPackageFlags :: Vector PackageFlag -> FloraHTML
 displayPackageFlags packageFlags =

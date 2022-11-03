@@ -112,12 +112,18 @@ instance Ord PackageFlag where
 deriving instance ToJSON PackageFlag
 deriving instance FromJSON PackageFlag
 
-instance ToJSON KnownRepoType
-instance FromJSON KnownRepoType
+instance ToJSON KnownRepoType where
+  toJSON = String . Text.pack . Pretty.prettyShow  
+  toEncoding = Aeson.text . Text.pack . Pretty.prettyShow
+
+instance FromJSON KnownRepoType where
+  parseJSON = withText "KnownRepoType" $ \s ->
+    maybe (fail "Invalid KnownRepoType") pure (simpleParsec $ Text.unpack s)
 
 instance ToJSON RepoType where
-  toEncoding = Aeson.string . Pretty.prettyShow
+  toJSON = String . Text.pack . Pretty.prettyShow  
+  toEncoding = Aeson.text . Text.pack . Pretty.prettyShow
 
 instance FromJSON RepoType where
-  parseJSON = withText "RepoType" $ \s ->
-    maybe (fail "Invalid RepoType") pure (simpleParsec $ Text.unpack s)
+  parseJSON = withText "RepoType" $ \s -> do
+    maybe (fail "Invalid KnownRepoType") pure (simpleParsec $ Text.unpack s)

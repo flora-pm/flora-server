@@ -135,21 +135,21 @@ coreLibraries =
    * finally, inserting that data into the database
 -}
 importFile
-  :: ([DB, IOE, Log, Time] :>> es)
+  :: ((DB :> es, IOE :> es, Log :> es, Time :> es))
   => UserId
   -> FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
-importRelFile :: ([DB, IOE, Log, Time] :>> es) => UserId -> FilePath -> Eff es ()
+importRelFile :: ((DB :> es, IOE :> es, Log :> es, Time :> es)) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile
-  :: ([DB, IOE, Log, Time] :>> es)
+  :: ((DB :> es, IOE :> es, Log :> es, Time :> es))
   => FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es GenericPackageDescription
@@ -163,7 +163,7 @@ loadFile path = do
   parseString parseGenericPackageDescription path content
 
 parseString
-  :: (HasCallStack, [Log, Time] :>> es)
+  :: (HasCallStack, Log :> es, Time :> es)
   => (BS.ByteString -> ParseResult a)
   -- ^ File contents to final value parser
   -> String
@@ -178,13 +178,13 @@ parseString parser name bs = do
       Log.logAttention_ (display $ show err)
       throw $ CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: ([DB, IOE, Log, Time] :>> es) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile :: ((DB :> es, IOE :> es, Log :> es, Time :> es)) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {-| Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 -}
-persistImportOutput :: [DB, IOE] :>> es => ImportOutput -> Eff es ()
+persistImportOutput :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = do
   liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release.version)
   persistPackage
@@ -212,7 +212,7 @@ persistImportOutput (ImportOutput package categories release components) = do
  that can later be inserted into the database. This function produces stable, deterministic ids,
  so it should be possible to extract and insert a single package many times in a row.
 -}
-extractPackageDataFromCabal :: [DB, IOE] :>> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
+extractPackageDataFromCabal :: (DB :> es, IOE :> es) => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
@@ -222,7 +222,7 @@ extractPackageDataFromCabal userId genericDesc = do
   let packageId = deterministicPackageId namespace packageName
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- liftIO getCurrentTime
-  let sourceRepos = getRepoURL packageName $ packageDesc.sourceRepos
+  let repo = fmap fromSourceRepo (listToMaybe packageDesc.sourceRepos)
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
   categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
@@ -240,7 +240,7 @@ extractPackageDataFromCabal userId genericDesc = do
   let metadata =
         ReleaseMetadata
           { license = Cabal.license packageDesc
-          , sourceRepos
+          , repo
           , homepage = Just $ display packageDesc.homepage
           , documentation = ""
           , bugTracker = Just $ display packageDesc.bugReports
