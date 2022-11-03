@@ -20,7 +20,7 @@ import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Database.PostgreSQL.Simple.Types (PGArray (..))
 import Distribution.Compiler (CompilerFlavor)
-import Distribution.PackageDescription (FlagName)
+import Distribution.PackageDescription (FlagName, KnownRepoType, RepoType (..))
 import Distribution.Parsec
 import Distribution.Pretty qualified as Pretty
 import Distribution.SPDX.License qualified as SPDX
@@ -111,3 +111,13 @@ instance Ord PackageFlag where
 
 deriving instance ToJSON PackageFlag
 deriving instance FromJSON PackageFlag
+
+instance ToJSON KnownRepoType
+instance FromJSON KnownRepoType
+
+instance ToJSON RepoType where
+  toEncoding = Aeson.string . Pretty.prettyShow
+
+instance FromJSON RepoType where
+  parseJSON = withText "RepoType" $ \s ->
+    maybe (fail "Invalid RepoType") pure (simpleParsec $ Text.unpack s)

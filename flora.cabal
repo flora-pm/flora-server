@@ -235,6 +235,7 @@ library
     , prometheus-metrics-ghc     ^>=1.0
     , prometheus-proc            ^>=0.1
     , PyF                        ^>=0.11
+    , rake
     , raven-haskell              ^>=0.1
     , resource-pool              >=0.3     && <0.4.0.0
     , safe-exceptions
@@ -259,6 +260,7 @@ library
     , typed-process              ^>=0.2
     , unliftio-core
     , unordered-containers       ^>=0.2
+    , url
     , uuid                       ^>=1.3
     , vector                     ^>=0.13
     , vector-algorithms          ^>=0.9
@@ -350,6 +352,7 @@ test-suite flora-test
     , postgresql-migration
     , postgresql-simple
     , pretty-simple
+    , rake
     , resource-pool
     , servant
     , servant-client
@@ -369,6 +372,7 @@ test-suite flora-test
     Flora.CategorySpec
     Flora.OddJobSpec
     Flora.PackageSpec
+    Flora.TagsSpec
     Flora.TemplateSpec
     Flora.TestUtils
     Flora.UserSpec

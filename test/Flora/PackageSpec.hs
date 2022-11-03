@@ -24,8 +24,8 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.TestUtils
 
-spec :: Fixtures -> TestEff TestTree
-spec _fixtures =
+spec :: TestEff TestTree
+spec =
   testThese
     "package tests"
     [ testThis "Check Cabal dependencies" testCabalDeps

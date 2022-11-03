@@ -423,9 +423,9 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
           }
    in ImportDependency{package = dependencyPackage, requirement}
 
-getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
-getRepoURL _ [] = Vector.empty
-getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty (repo.repoLocation)
+getRepoURL :: [Cabal.SourceRepo] -> Vector Text
+getRepoURL [] = Vector.empty
+getRepoURL (repo : _) = Vector.singleton $ display $ fromMaybe mempty (repo.repoLocation)
 
 chooseNamespace :: PackageName -> Namespace
 chooseNamespace name | Set.member name coreLibraries = Namespace "haskell"

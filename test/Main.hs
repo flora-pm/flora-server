@@ -16,6 +16,7 @@ import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
 import Flora.OddJobSpec qualified as OddJobSpec
 import Flora.PackageSpec qualified as PackageSpec
+import Flora.TagsSpec qualified as TagsSpec
 import Flora.TemplateSpec qualified as TemplateSpec
 import Flora.TestUtils
 import Flora.UserSpec qualified as UserSpec
@@ -40,8 +41,9 @@ main = do
 specs :: Fixtures -> [TestEff TestTree]
 specs fixtures =
   [ UserSpec.spec fixtures
-  , PackageSpec.spec fixtures
+  , PackageSpec.spec
   , CategorySpec.spec
   , TemplateSpec.spec
   , CabalSpec.spec
+  , TagsSpec.spec
   ]

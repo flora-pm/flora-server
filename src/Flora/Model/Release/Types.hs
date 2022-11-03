@@ -4,6 +4,9 @@ module Flora.Model.Release.Types
   , Release (..)
   , ReleaseMetadata (..)
   , ImportStatus (..)
+  , Repo (..)
+  , RepoService (..)
+  , fromSourceRepo
   )
 where
 
@@ -23,14 +26,18 @@ import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.SourceRepo (RepoType (..), SourceRepo (..))
 import Distribution.Types.Version
 import GHC.Generics (Generic)
+import Network.URL qualified as URL
 
+import Data.Text qualified as Text
 import Data.Vector (Vector)
 import Distribution.Orphans ()
 import Distribution.Types.Flag (PackageFlag)
 import Flora.Model.Package
 import Lucid qualified
+import Network.URL (URLType (..))
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
@@ -120,9 +127,53 @@ instance FromField ImportStatus where
 instance ToField ImportStatus where
   toField = Escape . encodeUtf8 . display
 
+data RepoService
+  = GitHub
+  | GitLab
+  | Bitbucket
+  | DarcsDen
+  | SourceHut
+  | PijulNest
+  deriving stock (Eq, Ord, Show, Generic, Typeable)
+  deriving anyclass (ToJSON, FromJSON)
+  deriving (ToField, FromField) via Aeson RepoService
+
+data Repo = Repo
+  { url :: Maybe Text
+  , provider :: Maybe RepoService
+  , repoType :: Maybe RepoType
+  }
+  deriving stock (Eq, Ord, Show, Generic, Typeable)
+  deriving anyclass (ToJSON, FromJSON)
+  deriving (ToField, FromField) via Aeson Repo
+
+fromSourceRepo :: SourceRepo -> Repo
+fromSourceRepo sourceRepo = Repo{..}
+  where
+    url = fmap display sourceRepo.repoLocation
+    repoType = sourceRepo.repoType
+    provider = url >>= inferProvider
+
+inferProvider :: Text -> Maybe RepoService
+inferProvider urlString =
+  URL.importURL (Text.unpack urlString)
+    >>= \url -> case url.url_type of
+      Absolute hostStruct ->
+        case hostStruct.host of
+          "www.github.com" -> Just GitHub
+          "github.com" -> Just GitHub
+          "www.gitlab.com" -> Just GitLab
+          "gitlab.com" -> Just GitLab
+          "bitbucket.org" -> Just Bitbucket
+          "hub.darcs.net" -> Just DarcsDen
+          "sr.ht" -> Just SourceHut
+          "nest.pijul.com" -> Just PijulNest
+          _ -> Nothing
+      _ -> Nothing
+
 data ReleaseMetadata = ReleaseMetadata
   { license :: SPDX.License
-  , sourceRepos :: Vector Text
+  , repo :: Maybe Repo
   , homepage :: Maybe Text
   , documentation :: Text
   , bugTracker :: Maybe Text

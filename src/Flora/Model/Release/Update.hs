@@ -15,16 +15,16 @@ import Effectful.PostgreSQL.Transact.Effect
 import Data.Time (UTCTime)
 import Flora.Model.Release.Types (ImportStatus (..), Release, ReleaseId, TextHtml (..))
 
-insertRelease :: (DB :> es, IOE :> es) => Release -> Eff es ()
+insertRelease :: (DB :> es) => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
 
-upsertRelease :: (DB :> es, IOE :> es) => Release -> Eff es ()
+upsertRelease :: (DB :> es) => Release -> Eff es ()
 upsertRelease release = dbtToEff $ upsert @Release release [[field| updated_at |]]
 
-refreshLatestVersions :: (DB :> es, IOE :> es) => Eff es ()
+refreshLatestVersions :: (DB :> es) => Eff es ()
 refreshLatestVersions = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
 
-updateReadme :: (DB :> es, IOE :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> Eff es ()
+updateReadme :: (DB :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> Eff es ()
 updateReadme releaseId readmeBody status =
   dbtToEff $
     void $
@@ -35,7 +35,7 @@ updateReadme releaseId readmeBody status =
         ([field| release_id |], releaseId)
         (readmeBody, status)
 
-updateUploadTime :: (DB :> es, IOE :> es) => ReleaseId -> UTCTime -> Eff es ()
+updateUploadTime :: (DB :> es) => ReleaseId -> UTCTime -> Eff es ()
 updateUploadTime releaseId timestamp =
   dbtToEff $
     void $
@@ -44,7 +44,7 @@ updateUploadTime releaseId timestamp =
         ([field| release_id |], releaseId)
         (Only (Just timestamp))
 
-updateChangelog :: (DB :> es, IOE :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> Eff es ()
+updateChangelog :: (DB :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> Eff es ()
 updateChangelog releaseId changelogBody status =
   dbtToEff $
     void $
