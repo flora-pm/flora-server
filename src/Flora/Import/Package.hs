@@ -135,21 +135,21 @@ coreLibraries =
    * finally, inserting that data into the database
 -}
 importFile
-  :: ((DB :> es, IOE :> es, Log :> es, Time :> es))
+  :: (DB :> es, IOE :> es, Log :> es, Time :> es)
   => UserId
   -> FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es ()
 importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
 
-importRelFile :: ((DB :> es, IOE :> es, Log :> es, Time :> es)) => UserId -> FilePath -> Eff es ()
+importRelFile :: (DB :> es, IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile
-  :: ((DB :> es, IOE :> es, Log :> es, Time :> es))
+  :: (DB :> es, IOE :> es, Log :> es, Time :> es)
   => FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es GenericPackageDescription
@@ -178,7 +178,7 @@ parseString parser name bs = do
       Log.logAttention_ (display $ show err)
       throw $ CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: ((DB :> es, IOE :> es, Log :> es, Time :> es)) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile :: (DB :> es, IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {-| Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained

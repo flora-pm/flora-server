@@ -26,7 +26,7 @@ import Env
   )
 import Flora.Environment.Config
 import GHC.Generics
-import GitHub.REST (GitHubSettings(..))
+import GitHub.REST (GitHubSettings (..))
 
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
@@ -71,11 +71,12 @@ configToEnv x@FloraConfig{..} = do
   jobsPool <- mkPool connectionInfo connectionTimeout connections
   assets <- getAssets environment
   liftIO $ print assets
-  let githubEnv = GitHubSettings
-        { token = Just githubToken
-        , userAgent = "flora-server"
-        , apiVersion = "v3"
-        }
+  let githubEnv =
+        GitHubSettings
+          { token = Just githubToken
+          , userAgent = "flora-server"
+          , apiVersion = "v3"
+          }
   pure FloraEnv{..}
   where
     config = x

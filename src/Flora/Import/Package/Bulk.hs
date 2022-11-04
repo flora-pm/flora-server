@@ -30,7 +30,7 @@ importAllFilesInRelativeDirectory appLogger user dir = do
   importAllFilesInDirectory appLogger user workdir
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
-importAllFilesInDirectory :: ((DB :> es, IOE :> es)) => Logger -> UserId -> FilePath -> Eff es ()
+importAllFilesInDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Eff es ()
 importAllFilesInDirectory appLogger user dir = do
   pool <- getPool
   parallelWorkers <- liftIO getNumCapabilities

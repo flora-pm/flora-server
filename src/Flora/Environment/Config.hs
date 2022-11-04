@@ -17,7 +17,6 @@ module Flora.Environment.Config
   )
 where
 
-import GitHub.REST
 import Control.Monad ((>=>))
 import Crypto.Hash (Digest, SHA256)
 import Crypto.Hash.Conduit (hashFile)
@@ -26,6 +25,7 @@ import Data.Bifunctor (Bifunctor (second))
 import Data.ByteArray qualified as BA
 import Data.ByteString (ByteString)
 import Data.ByteString.Base64 qualified as B64
+import Data.ByteString.Char8 qualified as ByteString
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Pool (Pool)
@@ -52,9 +52,9 @@ import Env
   , (<=<)
   )
 import GHC.Generics (Generic)
+import GitHub.REST
+import GitHub.REST qualified as GitHub
 import Text.Read (readMaybe)
-import qualified Data.ByteString.Char8 as ByteString
-import qualified GitHub.REST as GitHub
 
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig

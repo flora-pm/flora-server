@@ -201,6 +201,7 @@ library
     , envparse                   ^>=0.5
     , extra
     , filepath                   ^>=1.4
+    , github-rest
     , haddock-library            ^>=1.11
     , http-api-data              ^>=0.4
     , http-client                ^>=0.7.10
@@ -211,7 +212,6 @@ library
     , lens
     , log-base                   ^>=0.12
     , log-effectful              ^>=1.0
-    , github-rest
     , lucid                      ^>=2.11
     , lucid-alpine               ^>=0.1
     , lucid-aria                 ^>=0.1

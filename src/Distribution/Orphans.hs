@@ -113,7 +113,7 @@ deriving instance ToJSON PackageFlag
 deriving instance FromJSON PackageFlag
 
 instance ToJSON KnownRepoType where
-  toJSON = String . Text.pack . Pretty.prettyShow  
+  toJSON = String . Text.pack . Pretty.prettyShow
   toEncoding = Aeson.text . Text.pack . Pretty.prettyShow
 
 instance FromJSON KnownRepoType where
@@ -121,7 +121,7 @@ instance FromJSON KnownRepoType where
     maybe (fail "Invalid KnownRepoType") pure (simpleParsec $ Text.unpack s)
 
 instance ToJSON RepoType where
-  toJSON = String . Text.pack . Pretty.prettyShow  
+  toJSON = String . Text.pack . Pretty.prettyShow
   toEncoding = Aeson.text . Text.pack . Pretty.prettyShow
 
 instance FromJSON RepoType where

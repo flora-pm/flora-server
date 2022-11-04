@@ -1,6 +1,7 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -20,7 +21,7 @@ import Flora.Model.Package.Types
   , Package (..)
   , PackageName (..)
   )
-import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..), Repo(..))
+import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), Repo (..), TextHtml (..))
 import FloraWeb.Links qualified as Links
 import FloraWeb.Templates.Haddock (renderHaddock)
 import FloraWeb.Templates.Types (FloraHTML)
@@ -31,7 +32,6 @@ import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
-import Data.Maybe (fromMaybe)
 
 data Target = Dependents | Dependencies | Versions
   deriving stock (Eq, Ord)
@@ -284,7 +284,7 @@ getHomepage ReleaseMetadata{homepage, repo} =
     Just page -> page
     Nothing ->
       case repo of
-        Nothing ->  "⚠  No homepage provided"
+        Nothing -> "⚠  No homepage provided"
         Just sourceRepo ->
           fromMaybe "⚠  No homepage provided" (sourceRepo.url)
 
