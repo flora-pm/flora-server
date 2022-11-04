@@ -18,6 +18,7 @@ export FLORA_DB_CONNSTRING="host=${FLORA_DB_HOST} dbname=${FLORA_DB_DATABASE} \
 export FLORA_HTTP_PORT=8083
 export FLORA_ENVIRONMENT="development"
 export FLORA_DOMAIN="localhost"
+export FLORA_GITHUB_TOKEN=""
 
 # Either "stdout" or "json"
 export FLORA_LOGGING_DESTINATION="stdout"

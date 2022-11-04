@@ -113,6 +113,7 @@ library
     Flora.OddJobs.Types
     Flora.Publish
     Flora.Search
+    Flora.ThirdParties.Github
     Flora.ThirdParties.Hackage.API
     Flora.ThirdParties.Hackage.Client
     FloraWeb.Autoreload
@@ -210,6 +211,7 @@ library
     , lens
     , log-base                   ^>=0.12
     , log-effectful              ^>=1.0
+    , github-rest
     , lucid                      ^>=2.11
     , lucid-alpine               ^>=0.1
     , lucid-aria                 ^>=0.1

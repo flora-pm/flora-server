@@ -17,6 +17,7 @@ module Flora.Environment.Config
   )
 where
 
+import GitHub.REST
 import Control.Monad ((>=>))
 import Crypto.Hash (Digest, SHA256)
 import Crypto.Hash.Conduit (hashFile)
@@ -52,6 +53,20 @@ import Env
   )
 import GHC.Generics (Generic)
 import Text.Read (readMaybe)
+import qualified Data.ByteString.Char8 as ByteString
+import qualified GitHub.REST as GitHub
+
+-- | The datatype that is used to model the external configuration
+data FloraConfig = FloraConfig
+  { dbConfig :: PoolConfig
+  , connectionInfo :: ByteString
+  , domain :: Text
+  , httpPort :: Word16
+  , logging :: LoggingEnv
+  , environment :: DeploymentEnv
+  , githubToken :: GitHub.Token
+  }
+  deriving stock (Generic)
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
@@ -99,17 +114,6 @@ data LoggingEnv = LoggingEnv
   { sentryDSN :: Maybe String
   , prometheusEnabled :: Bool
   , logger :: LoggingDestination
-  }
-  deriving stock (Show, Generic)
-
--- | The datatype that is used to model the external configuration
-data FloraConfig = FloraConfig
-  { dbConfig :: PoolConfig
-  , connectionInfo :: ByteString
-  , domain :: Text
-  , httpPort :: Word16
-  , logging :: LoggingEnv
-  , environment :: DeploymentEnv
   }
   deriving stock (Show, Generic)
 
@@ -162,6 +166,10 @@ parseDeploymentEnv :: Parser Error DeploymentEnv
 parseDeploymentEnv =
   var deploymentEnv "FLORA_ENVIRONMENT" (help "Name of the current environment (production, development, test)")
 
+parseGitHubToken :: Parser Error Token
+parseGitHubToken =
+  var githubAccessToken "FLORA_GITHUB_TOKEN" (help "Github Access Token")
+
 parseConfig :: Parser Error FloraConfig
 parseConfig =
   FloraConfig
@@ -171,6 +179,7 @@ parseConfig =
     <*> parsePort
     <*> parseLoggingEnv
     <*> parseDeploymentEnv
+    <*> parseGitHubToken
 
 parseTestConfig :: Parser Error TestConfig
 parseTestConfig =
@@ -205,6 +214,9 @@ deploymentEnv "production" = Right Production
 deploymentEnv "development" = Right Development
 deploymentEnv "test" = Right Test
 deploymentEnv e = Left $ unread e
+
+githubAccessToken :: Reader Error Token
+githubAccessToken = Right . AccessToken . ByteString.pack
 
 loggingDestination :: Reader Error LoggingDestination
 loggingDestination "stdout" = Right StdOut
