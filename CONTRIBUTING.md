@@ -19,6 +19,18 @@ The following Haskell command-line tools will have to be installed:
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
 
+### Nix Setup
+
+Nix Flakes are used to build the application. It is recommended your version of the `nix` tool
+is at least 2.11. Please do not forget to add the appropriate configuration line in order to use flakes, as
+described in the [NixOS Wiki][nix-flakes] page.
+
+After that, it should be straightforward to run:
+
+```
+$ make nix-shell
+```
+
 ### Pull Requests
 
 You need to
@@ -60,3 +72,4 @@ Open a [Ticket][Ticket] and tell us what you can about your problem.
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions
 [Ticket]: https://github.com/flora-pm/flora-server/issues/new
+[nix-flakes]: https://nixos.wiki/wiki/Flakes
