@@ -246,7 +246,7 @@ library
     , servant-server             ^>=0.19
     , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
-    , souffle-haskell            >=3.4     && <3.6
+    , souffle-haskell            >=3.4     && <3.5
     , split                      ^>=0.2
     , streaming                  ^>=0.2
     , template-haskell
