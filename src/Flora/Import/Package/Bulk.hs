@@ -2,7 +2,6 @@
 
 module Flora.Import.Package.Bulk (importAllFilesInDirectory, importAllFilesInRelativeDirectory) where
 
-import Control.Concurrent (modifyMVar, newMVar, readMVar)
 import Control.Monad ((>=>), when)
 import Data.List (isSuffixOf)
 import Effectful
@@ -11,6 +10,7 @@ import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Time
 import Log (Logger, defaultLogLevel)
 import qualified Streamly.Prelude as S
+import qualified Streamly.Data.Fold as SFold
 import System.Directory qualified as System
 import System.FilePath
 
@@ -29,25 +29,28 @@ importAllFilesInRelativeDirectory appLogger user dir = do
 importAllFilesInDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Eff es ()
 importAllFilesInDirectory appLogger user dir = do
   pool <- getPool
-  countMVar <- liftIO $ newMVar @Int 0
   liftIO $ System.createDirectoryIfMissing True dir
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
-  liftIO $ S.drain $ S.fromParallel $ S.mapM (processFile pool countMVar) $ findAllCabalFilesInDirectory dir
+  let displayCount =
+        flip SFold.foldlM' (return 0) $
+          \previousCount _ ->
+            let currentCount = previousCount + 1
+              in do
+                when (currentCount `mod` 400 == 0) $
+                  displayStats currentCount
+                return currentCount
+  processedPackageCount <- liftIO $ S.fold displayCount $ S.fromParallel $ S.mapM (processFile pool) $ findAllCabalFilesInDirectory dir
+  displayStats processedPackageCount
   Update.refreshLatestVersions >> Update.refreshDependents
   where
-    processFile' pool =
+    processFile pool =
         runEff
       . runDB pool
       . runCurrentTimeIO
       . Log.runLog "flora-jobs" appLogger defaultLogLevel
       . (loadAndExtractCabalFile user >=> persistImportOutput)
-    processFile pool countMVar p = do
-      processFile' pool p
-      newCount <- modifyMVar countMVar (\c -> pure (c + 1, c + 1))
-      when (newCount `mod` 400 == 0)$
-        displayStats countMVar
-    displayStats countMVar = do
-      currentCount <- readMVar countMVar
+    displayStats :: MonadIO m => Int -> m ()
+    displayStats currentCount =
       liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
 findAllCabalFilesInDirectory :: FilePath -> S.ParallelT IO FilePath

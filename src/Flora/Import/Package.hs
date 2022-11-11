@@ -23,8 +23,8 @@ module Flora.Import.Package where
 import Control.Exception
 import Control.Monad.Except
 import Data.ByteString qualified as BS
-import Data.Foldable
 import Data.Maybe
+import Data.Pool (Pool)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -32,6 +32,7 @@ import Data.Text qualified as T
 import Data.Text.Display
 import Data.Text.IO qualified as T
 import Data.Time
+import Database.PostgreSQL.Simple (Connection)
 import Distribution.Fields.ParseResult
 import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
 import Distribution.PackageDescription qualified as Cabal hiding (PackageName)
@@ -49,11 +50,12 @@ import Distribution.Types.TestSuite
 import Distribution.Utils.ShortText qualified as Cabal
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
-import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Time (Time)
 import GHC.Generics (Generic)
 import Log qualified
 import Optics.Core
+import qualified Streamly.Prelude as S
 import System.Directory qualified as System
 import System.FilePath
 
@@ -231,23 +233,26 @@ loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDa
 -}
 persistImportOutput :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = do
+  pool <- getPool
   liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release.version)
   persistPackage
   Update.upsertRelease release
-  traverse_ persistComponent components
+  parallelRun pool (persistComponent pool) components
   liftIO $ putStr "\n"
   where
+    parallelRun :: (MonadIO m, Foldable t) => Pool Connection -> (a -> Eff [DB, IOE] b) -> t a -> m ()
+    parallelRun pool f = liftIO . S.drain . S.fromParallel . S.mapM (runEff . runDB pool . f) . S.fromFoldable
     packageName = display (package.namespace) <> "/" <> display (package.name)
     persistPackage = do
       let packageId = package.packageId
       Update.upsertPackage package
       forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
 
-    persistComponent (packageComponent, deps) = do
+    persistComponent pool (packageComponent, deps) = do
       liftIO . T.putStrLn $
         "🧩  Persisting component: " <> display (packageComponent.canonicalForm) <> " with " <> display (length deps) <> " dependencies."
       Update.upsertPackageComponent packageComponent
-      traverse_ persistImportDependency deps
+      parallelRun pool persistImportDependency deps
 
     persistImportDependency dep = do
       Update.upsertPackage (dep.package)
