@@ -30,7 +30,7 @@ jobs:
 
     - name: Set up Haskell
       id: setup-haskell
-      uses: haskell/actions/setup@v1
+      uses: haskell/actions/setup@v2
       with:
         ghc-version: "9.2.4"
         cabal-version: "latest"
