@@ -41,7 +41,6 @@ import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 import Control.Exception.Safe qualified as Safe
 import Effectful.Concurrent
 import Effectful.Reader.Static (runReader, withReader)
-import Effectful.Servant (effToHandler)
 import Effectful.Time (runCurrentTimeIO)
 import Network.HTTP.Client qualified as HTTP
 import OddJobs.Endpoints qualified as OddJobs
@@ -72,6 +71,7 @@ import FloraWeb.Server.Metrics
 import FloraWeb.Server.OpenSearch
 import FloraWeb.Server.Pages qualified as Pages
 import FloraWeb.Server.Tracing
+import FloraWeb.Server.Utils
 import FloraWeb.Templates (defaultTemplateEnv, defaultsToEnv)
 import FloraWeb.Templates.Error (renderError)
 import FloraWeb.Types
@@ -145,7 +145,10 @@ runServer appLogger floraEnv = do
 
 mkServer :: Logger -> WebEnvStore -> FloraEnv -> OddJobs.UIConfig -> OddJobs.Env -> Application
 mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
-  genericServeTWithContext (naturalTransform (floraEnv.environment) logger webEnvStore) (floraServer (floraEnv.pool) cfg jobsRunnerEnv) (genAuthServerContext logger floraEnv)
+  genericServeTWithContext
+    (naturalTransform (floraEnv.environment) logger webEnvStore)
+    (floraServer (floraEnv.pool) cfg jobsRunnerEnv)
+    (genAuthServerContext logger floraEnv)
 
 floraServer :: Pool Connection -> OddJobs.UIConfig -> OddJobs.Env -> Routes (AsServerT Flora)
 floraServer pool cfg jobsRunnerEnv =
