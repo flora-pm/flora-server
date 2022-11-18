@@ -24,13 +24,13 @@ import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
-importAllFilesInRelativeDirectory :: [DB, IOE] :>> es => Logger -> UserId -> FilePath -> Eff es ()
+importAllFilesInRelativeDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Eff es ()
 importAllFilesInRelativeDirectory appLogger user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importAllFilesInDirectory appLogger user workdir
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
-importAllFilesInDirectory :: ([DB, IOE] :>> es) => Logger -> UserId -> FilePath -> Eff es ()
+importAllFilesInDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Eff es ()
 importAllFilesInDirectory appLogger user dir = do
   pool <- getPool
   parallelWorkers <- liftIO getNumCapabilities

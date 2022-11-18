@@ -1,18 +1,25 @@
+{-# LANGUAGE LambdaCase #-}
+
 module FloraWeb.Templates.Pages.Packages where
 
-import Data.Foldable (fold)
+import Data.Foldable (fold, forM_)
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
+import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Time (defaultTimeLocale)
 import Data.Time qualified as Time
-import Data.Vector (Vector, forM_)
-import Data.Vector qualified as V
+import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Debug.Trace
+import Distribution.Compiler (CompilerFlavor)
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
+import Distribution.Types.VersionRange.Internal (VersionRange (..))
 import Distribution.Version
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
@@ -32,7 +39,10 @@ import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
-data Target = Dependents | Dependencies | Versions
+data Target
+  = Dependents
+  | Dependencies
+  | Versions
   deriving stock (Eq, Ord)
 
 instance Display Target where
@@ -75,14 +85,13 @@ showPackage
         categories
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
-presentationHeader release namespace name synopsis = do
-  div_ [class_ "divider"] $ do
-    div_ [class_ "page-title"] $
-      h1_ [class_ "package-title text-center tracking-tight"] $ do
-        span_ [class_ "headline"] $ toHtml (display namespace) <> "/" <> toHtml name
-        span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release.version
-    div_ [class_ "synopsis lg:text-xl text-center"] $
-      p_ [class_ ""] (toHtml synopsis)
+presentationHeader release namespace name synopsis = div_ [class_ "divider"] $ do
+  div_ [class_ "page-title"] $
+    h1_ [class_ "package-title text-center tracking-tight"] $ do
+      span_ [class_ "headline"] $ toHtml (display namespace) <> "/" <> toHtml name
+      span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release.version
+  div_ [class_ "synopsis lg:text-xl text-center"] $
+    p_ [class_ ""] (toHtml synopsis)
 
 packageBody
   :: Package
@@ -97,7 +106,7 @@ packageBody
   -> FloraHTML
 packageBody
   Package{namespace, name = packageName}
-  latestRelease@Release{metadata}
+  latestRelease@Release{metadata, version}
   packageReleases
   numberOfReleases
   dependencies
@@ -105,24 +114,20 @@ packageBody
   dependents
   numberOfDependents
   categories =
-    div_ $ do
-      div_ [class_ "package-body md:flex"] $ do
-        div_ [class_ "package-left-column"] $ do
-          ul_ [class_ "package-left-rows grid-rows-3 md:sticky md:top-28"] $ do
-            displayCategories categories
-            displayLicense (metadata.license)
-            displayLinks namespace packageName latestRelease metadata
-            displayVersions namespace packageName packageReleases numberOfReleases
-        div_ [class_ "release-readme-column grow"] $ do
-          div_ [class_ "grid-rows-3 release-readme"] $ do
-            displayReadme latestRelease
-        div_ [class_ "package-right-column"] $ do
-          ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
-            displayInstructions packageName latestRelease
-            displayMaintainer (metadata.maintainer)
-            displayDependencies (namespace, packageName) numberOfDependencies dependencies
-            displayDependents (namespace, packageName) numberOfDependents dependents
-            displayPackageFlags metadata.flags
+    div_ $ div_ [class_ "package-body md:flex"] $ do
+      div_ [class_ "package-left-column"] $ ul_ [class_ "package-left-rows grid-rows-3 md:sticky md:top-28"] $ do
+        displayCategories categories
+        displayLicense (metadata.license)
+        displayMaintainer (metadata.maintainer)
+        displayLinks namespace packageName latestRelease metadata
+        displayVersions namespace packageName packageReleases numberOfReleases
+      div_ [class_ "release-readme-column grow"] $ div_ [class_ "grid-rows-3 release-readme"] $ displayReadme latestRelease
+      div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
+        displayInstructions packageName latestRelease
+        displayTestedWith latestRelease.metadata.testedWith
+        displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
+        displayDependents (namespace, packageName) numberOfDependents dependents
+        displayPackageFlags metadata.flags
 
 displayReadme :: Release -> FloraHTML
 displayReadme release =
@@ -134,32 +139,26 @@ renderDescription :: Text -> FloraHTML
 renderDescription input = renderHaddock input
 
 displayReleaseVersion :: Version -> FloraHTML
-displayReleaseVersion version = toHtml version
+displayReleaseVersion = toHtml
 
 displayLicense :: SPDX.License -> FloraHTML
-displayLicense license = do
-  li_ [class_ "mb-5"] $ do
-    div_ [class_ "license mb-3"] $ do
-      h3_ [class_ "lg:text-2xl package-body-section"] "License"
-    p_ [class_ "package-body-section__license"] $ toHtml license
+displayLicense license = li_ [class_ ""] $ do
+  div_ [class_ "license"] $ h3_ [class_ "lg:text-2xl package-body-section"] "License"
+  p_ [class_ "package-body-section__license"] $ toHtml license
 
 displayCategories :: Vector Category -> FloraHTML
-displayCategories categories = do
-  li_ [class_ "mb-5"] $ do
-    div_ [class_ "license mb-3"] $ do
-      h3_ [class_ "lg:text-2xl package-body-section"] "Categories"
-    ul_ [class_ "categories"] $ do
-      foldMap renderCategory categories
+displayCategories categories = li_ [class_ ""] $ do
+  div_ [class_ "license "] $ h3_ [class_ "lg:text-2xl package-body-section"] "Categories"
+  ul_ [class_ "categories"] $ foldMap renderCategory categories
 
 displayLinks :: Namespace -> PackageName -> Release -> ReleaseMetadata -> FloraHTML
-displayLinks namespace packageName release meta@ReleaseMetadata{..} = do
-  li_ [class_ "mb-5"] $ do
-    h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Links"
-    ul_ [class_ "links"] $ do
-      li_ [class_ "package-link"] $ a_ [href_ (getHomepage meta)] "Homepage"
-      li_ [class_ "package-link"] $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
-      li_ [class_ "package-link"] $ displaySourceRepos sourceRepos
-      li_ [class_ "package-link"] $ displayChangelog namespace packageName release.version release.changelog
+displayLinks namespace packageName release meta@ReleaseMetadata{..} = li_ [class_ ""] $ do
+  h3_ [class_ "lg:text-2xl package-body-section links"] "Links"
+  ul_ [class_ "links"] $ do
+    li_ [class_ "package-link"] $ a_ [href_ (getHomepage meta)] "Homepage"
+    li_ [class_ "package-link"] $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
+    li_ [class_ "package-link"] $ displaySourceRepos sourceRepos
+    li_ [class_ "package-link"] $ displayChangelog namespace packageName release.version release.changelog
 
 displaySourceRepos :: Vector Text -> FloraHTML
 displaySourceRepos x
@@ -172,13 +171,13 @@ displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> toUr
 
 displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
 displayVersions namespace packageName versions numberOfReleases =
-  li_ [class_ "mb-5"] $ do
-    h3_ [class_ "lg:text-2xl package-body-section links mb-3"] "Versions"
+  li_ [class_ ""] $ do
+    h3_ [class_ "lg:text-2xl package-body-section versions"] "Versions"
     ul_ [class_ "package-versions"] $ do
-      forM_ versions displayVersion
+      Vector.forM_ versions displayVersion
       if fromIntegral (Vector.length versions) >= numberOfReleases
         then ""
-        else showAll (namespace, packageName, Versions)
+        else showAll Versions Nothing namespace packageName
   where
     displayVersion :: Release -> FloraHTML
     displayVersion release =
@@ -193,64 +192,76 @@ displayVersions namespace packageName versions numberOfReleases =
             span_ [] (toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts)
 
 displayDependencies
-  :: (Namespace, PackageName)
+  :: (Namespace, PackageName, Version)
   -- ^ The package namespace and name
   -> Word
-  -- ^ Number of dependencies
+  -- ^ Number of dependenciesc
   -> Vector (Namespace, PackageName, Text)
   -- ^ (Namespace, Name, Version requirement, Synopsis of the dependency)
   -> FloraHTML
-displayDependencies (namespace, packageName) numberOfDependencies dependencies = do
-  li_ [class_ "mb-5"] $ do
-    h3_ [class_ "package-body-section"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
-    ul_ [class_ "dependencies grid-cols-3"] $ do
-      let deps = foldMap renderDependency dependencies
-      let numberOfShownDependencies = fromIntegral @Int @Word (Vector.length dependencies)
-      if numberOfShownDependencies >= numberOfDependencies
-        then deps
-        else deps <> showAll (namespace, packageName, Dependencies)
+displayDependencies (namespace, packageName, version) numberOfDependencies dependencies = li_ [class_ ""] $ do
+  h3_ [class_ "package-body-section"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
+  ul_ [class_ "dependencies grid-cols-3"] $ do
+    let deps = foldMap renderDependency dependencies
+    let numberOfShownDependencies = fromIntegral @Int @Word (Vector.length dependencies)
+    if numberOfShownDependencies >= numberOfDependencies
+      then deps
+      else deps <> showAll Dependencies (Just version) namespace packageName
 
-showAll :: (Namespace, PackageName, Target) -> FloraHTML
-showAll (namespace, packageName, target) = do
-  let resource = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> display target
-  a_ [class_ "dependency", href_ resource] "Show all…"
+showAll :: Target -> Maybe Version -> Namespace -> PackageName -> FloraHTML
+showAll target mVersion namespace packageName = do
+  let resource = case target of
+        Dependents -> Links.packageDependents namespace packageName
+        Dependencies -> Links.packageDependencies namespace packageName (fromJust mVersion)
+        Versions -> Links.packageVersions namespace packageName
+  a_ [class_ "dependency", href_ ("/" <> toUrlPiece resource)] "Show all…"
 
 displayInstructions :: PackageName -> Release -> FloraHTML
-displayInstructions packageName latestRelease = do
-  li_ [class_ "mb-5"] $ do
-    h3_ [class_ "package-body-section"] "Installation"
-    div_ [class_ "items-top"] $ do
-      div_ [class_ "space-y-2"] $ do
-        label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
-        input_
-          [ class_ "package-install-string"
-          , type_ "text"
-          , onfocus_ "this.select();"
-          , value_ (formatInstallString packageName latestRelease)
-          , readonly_ "readonly"
-          ]
+displayInstructions packageName latestRelease = li_ [class_ ""] $ do
+  h3_ [class_ "package-body-section"] "Installation"
+  div_ [class_ "items-top"] $ div_ [class_ "space-y-2"] $ do
+    label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
+    input_
+      [ class_ "package-install-string"
+      , type_ "text"
+      , onfocus_ "this.select();"
+      , value_ (formatInstallString packageName latestRelease)
+      , readonly_ "readonly"
+      ]
+
+displayTestedWith :: Vector Version -> FloraHTML
+displayTestedWith compilersVersions
+  | Vector.null compilersVersions = mempty
+  | otherwise = do
+      li_ [class_ ""] $ do
+        h3_ [class_ "package-body-section"] "Tested Compilers"
+        ul_ [class_ "compiler-badges"] $
+          forM_ compilersVersions $ \version -> do
+            li_ [] $
+              a_ [class_ "compiler-badge"] $
+                span_
+                  []
+                  (toHtml @Text (display version))
 
 displayMaintainer :: Text -> FloraHTML
-displayMaintainer maintainerInfo = do
-  li_ [class_ "mb-5"] $ do
-    h3_ [class_ "package-body-section"] "Maintainer"
-    p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
+displayMaintainer maintainerInfo = li_ [class_ ""] $ do
+  h3_ [class_ "package-body-section"] "Maintainer"
+  p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
 
 displayDependents
   :: (Namespace, PackageName)
   -> Word
   -> Vector Package
   -> FloraHTML
-displayDependents (namespace, packageName) numberOfDependents dependents = do
-  li_ [class_ "mb-5 dependents"] $ do
-    h3_ [class_ "package-body-section"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")
-    if Vector.null dependents
-      then ""
-      else
-        let deps = fold $ intercalateVec ", " $ fmap renderDependent dependents
-         in if fromIntegral (Vector.length dependents) >= numberOfDependents
-              then deps
-              else deps <> ", " <> showAll (namespace, packageName, Dependents)
+displayDependents (namespace, packageName) numberOfDependents dependents = li_ [class_ " dependents"] $ do
+  h3_ [class_ "package-body-section"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")
+  if Vector.null dependents
+    then ""
+    else
+      let deps = fold $ intercalateVec ", " $ fmap renderDependent dependents
+       in if fromIntegral (Vector.length dependents) >= numberOfDependents
+            then deps
+            else deps <> ", " <> showAll Dependents Nothing namespace packageName
 
 renderDependent :: Package -> FloraHTML
 renderDependent Package{name, namespace} = do
@@ -272,8 +283,7 @@ renderDependency (namespace, name, version) = do
 renderCategory :: Category -> FloraHTML
 renderCategory Category{name, slug} = do
   let resource = "/categories/" <> slug
-  li_ [class_ "category"] $ do
-    a_ [href_ resource] (toHtml name)
+  li_ [class_ "category"] $ a_ [href_ resource] (toHtml name)
 
 getHomepage :: ReleaseMetadata -> Text
 getHomepage ReleaseMetadata{..} =
@@ -287,18 +297,16 @@ getHomepage ReleaseMetadata{..} =
 displayPackageFlags :: Vector PackageFlag -> FloraHTML
 displayPackageFlags packageFlags =
   if Vector.null packageFlags
-    then do
-      mempty
+    then mempty
     else do
-      h3_ [class_ "package-body-section package-flags-section"] $ do
-        "Package Flags"
+      h3_ [class_ "package-body-section package-flags-section"] "Package Flags"
       span_
         [ dataText_ "Use the -f option with cabal commands to enable flags"
         , class_ "instruction-tooltip"
         ]
         usageInstructionTooltip
       ul_ [class_ "package-flags"] $
-        forM_ packageFlags displayPackageFlag
+        Vector.forM_ packageFlags displayPackageFlag
 
 displayPackageFlag :: PackageFlag -> FloraHTML
 displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = do
@@ -317,7 +325,7 @@ defaultMarker False = em_ "(off by default)"
 ---
 
 usageInstructionTooltip :: FloraHTML
-usageInstructionTooltip = do
+usageInstructionTooltip =
   svg_ [xmlns_ "http://www.w3.org/2000/svg", viewBox_ "0 0 20 20", fill_ "currentColor", class_ "w-5 h-5 tooltip"] $
     path_
       [ fill_rule_ "evenodd"
@@ -334,9 +342,9 @@ dataText_ = makeAttribute "data-text"
 
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =
-  if V.null vector
+  if Vector.null vector
     then vector
-    else V.tail $ V.concatMap (\word -> V.fromList [sep, word]) vector
+    else Vector.tail $ Vector.concatMap (\word -> Vector.fromList [sep, word]) vector
 
 formatInstallString :: PackageName -> Release -> Text
 formatInstallString packageName Release{version} =
@@ -345,3 +353,39 @@ formatInstallString packageName Release{version} =
   where
     rangedVersion :: Doc
     rangedVersion = "^>=" <> pretty version
+
+areVersionRangesAllStrictEq :: Vector VersionRange -> Bool
+areVersionRangesAllStrictEq = Vector.all $
+  \case
+    ThisVersion _ -> True
+    _ -> False
+
+transformStrictversions :: Vector Version -> (Version, Version)
+transformStrictversions vec = (minimum vec, maximum vec)
+
+groupByCompiler :: Vector (CompilerFlavor, VersionRange) -> Vector (CompilerFlavor, Vector VersionRange)
+groupByCompiler vec = Vector.fromList $ Map.toList (traceShowId result)
+  where
+    result = go Map.empty vec
+    go :: Map CompilerFlavor (Vector VersionRange) -> Vector (CompilerFlavor, VersionRange) -> Map CompilerFlavor (Vector VersionRange)
+    go acc vec' =
+      case Vector.uncons vec' of
+        Nothing -> acc
+        Just ((compiler, versionRange), rest) ->
+          let newAcc =
+                Map.alter
+                  ( \case
+                      Nothing -> Just $ Vector.singleton versionRange
+                      Just vector -> Just $ Vector.cons versionRange vector
+                  )
+                  compiler
+                  acc
+           in go newAcc rest
+
+unsafeExtractVersions :: Vector VersionRange -> Vector Version
+unsafeExtractVersions =
+  Vector.map
+    ( \case
+        ThisVersion v -> v
+        _ -> error "Not a strict ThisVersion"
+    )

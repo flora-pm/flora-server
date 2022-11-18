@@ -51,8 +51,7 @@ common common-ghc-options
     -Wall -Wcompat -Widentities -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
-    -fprint-potential-instances -Wno-unticked-promoted-constructors
-    -Werror=unused-imports
+    -Wno-unticked-promoted-constructors -Werror=unused-imports
 
   if flag(prod)
     ghc-options:

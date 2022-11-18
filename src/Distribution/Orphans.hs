@@ -3,7 +3,7 @@
 module Distribution.Orphans where
 
 import Data.Aeson
-import Data.Aeson.Encoding qualified as Aeson
+import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as C8
 import Data.Function (on)
@@ -35,6 +35,26 @@ import Distribution.Utils.ShortText
 import Distribution.Version (Version, VersionRange)
 import Servant (FromHttpApiData (..), ToHttpApiData (..))
 
+instance ToJSON CompilerFlavor where
+  toJSON = toJSON . Pretty.prettyShow
+
+instance FromJSON CompilerFlavor where
+  parseJSON = withText "Compiler Flavor" $ \s ->
+    maybe (fail "Invalid compiler flavor") pure (simpleParsec $ Text.unpack s)
+
+instance Display CompilerFlavor where
+  displayBuilder = Builder.fromString . Pretty.prettyShow
+
+instance Display VersionRange where
+  displayBuilder = Builder.fromString . Pretty.prettyShow
+
+instance ToJSON VersionRange where
+  toJSON = toJSON . Pretty.prettyShow
+
+instance FromJSON VersionRange where
+  parseJSON = withText "Version Range" $ \s ->
+    maybe (fail "Invalid version range") pure (simpleParsec $ Text.unpack s)
+
 deriving anyclass instance ToJSON ConfVar
 deriving anyclass instance FromJSON ConfVar
 
@@ -48,7 +68,7 @@ deriving anyclass instance ToJSON Arch
 deriving anyclass instance FromJSON Arch
 
 instance ToJSON Version where
-  toEncoding = Aeson.string . Pretty.prettyShow
+  toJSON = Aeson.String . display . Pretty.prettyShow
 
 instance FromJSON Version where
   parseJSON = withText "Version" $ \s ->
@@ -72,12 +92,6 @@ instance FromHttpApiData Version where
     case simpleParsec $ Text.unpack piece of
       Nothing -> Left $ "Could not parse version string: " <> piece
       Just a -> Right a
-
-deriving anyclass instance ToJSON VersionRange
-deriving anyclass instance FromJSON VersionRange
-
-deriving anyclass instance ToJSON CompilerFlavor
-deriving anyclass instance FromJSON CompilerFlavor
 
 deriving anyclass instance ToJSON FlagName
 deriving anyclass instance FromJSON FlagName
