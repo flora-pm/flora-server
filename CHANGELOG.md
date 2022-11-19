@@ -1,7 +1,6 @@
 # CHANGELOG
 
-## 1.0.8 -- 2022-11-18
-
+## 1.0.8 -- XXXX-XX-X
 * Display compiler version with which the package declares having been tested (#249)
 
 ## 1.0.7 -- 2022-11-01
