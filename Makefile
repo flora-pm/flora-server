@@ -1,3 +1,6 @@
+init: ## Set up git hooks properly - needs calling once when cloning the repo
+	@git config core.hooksPath .githooks
+
 start: ## Start flora-server
 	@cabal run exe:flora-server
 

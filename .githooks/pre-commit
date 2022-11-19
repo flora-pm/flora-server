@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if which fourmolu > /dev/null ; then
+  find app test src -name '*.hs' -exec fourmolu --mode check {} +
+else
+  echo "Fourmolu not found, aborting."
+  exit 1
+fi
+
+if which hlint > /dev/null ; then
+  hlint app test src
+else
+  echo "HLint not found, aborting."
+  exit 1
+fi
