@@ -13,6 +13,7 @@ import Data.Time (defaultTimeLocale)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Data.Vector.Algorithms.Intro qualified as MVector
 import Debug.Trace
 import Distribution.Compiler (CompilerFlavor)
 import Distribution.Pretty (pretty)
@@ -38,7 +39,6 @@ import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
-import qualified Data.Vector.Algorithms.Intro as MVector
 
 data Target
   = Dependents
