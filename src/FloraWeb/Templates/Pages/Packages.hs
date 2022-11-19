@@ -38,6 +38,7 @@ import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
+import qualified Data.Vector.Algorithms.Intro as MVector
 
 data Target
   = Dependents
@@ -230,9 +231,10 @@ displayInstructions packageName latestRelease = li_ [class_ ""] $ do
       ]
 
 displayTestedWith :: Vector Version -> FloraHTML
-displayTestedWith compilersVersions
-  | Vector.null compilersVersions = mempty
+displayTestedWith compilersVersions'
+  | Vector.null compilersVersions' = mempty
   | otherwise = do
+      let compilersVersions = Vector.reverse $ Vector.modify MVector.sort compilersVersions'
       li_ [class_ ""] $ do
         h3_ [class_ "package-body-section"] "Tested Compilers"
         ul_ [class_ "compiler-badges"] $
