@@ -112,7 +112,7 @@ data Fixtures = Fixtures
   }
   deriving stock (Generic, Show, Eq)
 
-getFixtures :: (DB :> es, Fail :> es, IOE :> es) => Eff es Fixtures
+getFixtures :: (DB :> es, Fail :> es) => Eff es Fixtures
 getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
   pure Fixtures{..}

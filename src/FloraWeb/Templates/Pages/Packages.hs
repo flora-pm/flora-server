@@ -1,10 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
-
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold, forM_)
-import Data.Map.Strict (Map)
-import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
@@ -14,13 +10,10 @@ import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
-import Debug.Trace
-import Distribution.Compiler (CompilerFlavor)
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
-import Distribution.Types.VersionRange.Internal (VersionRange (..))
 import Distribution.Version
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
@@ -355,39 +348,3 @@ formatInstallString packageName Release{version} =
   where
     rangedVersion :: Doc
     rangedVersion = "^>=" <> pretty version
-
-areVersionRangesAllStrictEq :: Vector VersionRange -> Bool
-areVersionRangesAllStrictEq = Vector.all $
-  \case
-    ThisVersion _ -> True
-    _ -> False
-
-transformStrictversions :: Vector Version -> (Version, Version)
-transformStrictversions vec = (minimum vec, maximum vec)
-
-groupByCompiler :: Vector (CompilerFlavor, VersionRange) -> Vector (CompilerFlavor, Vector VersionRange)
-groupByCompiler vec = Vector.fromList $ Map.toList (traceShowId result)
-  where
-    result = go Map.empty vec
-    go :: Map CompilerFlavor (Vector VersionRange) -> Vector (CompilerFlavor, VersionRange) -> Map CompilerFlavor (Vector VersionRange)
-    go acc vec' =
-      case Vector.uncons vec' of
-        Nothing -> acc
-        Just ((compiler, versionRange), rest) ->
-          let newAcc =
-                Map.alter
-                  ( \case
-                      Nothing -> Just $ Vector.singleton versionRange
-                      Just vector -> Just $ Vector.cons versionRange vector
-                  )
-                  compiler
-                  acc
-           in go newAcc rest
-
-unsafeExtractVersions :: Vector VersionRange -> Vector Version
-unsafeExtractVersions =
-  Vector.map
-    ( \case
-        ThisVersion v -> v
-        _ -> error "Not a strict ThisVersion"
-    )
