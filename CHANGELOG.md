@@ -1,7 +1,8 @@
 # CHANGELOG
 
 ## 1.0.8 -- XXXX-XX-X
-* Display compiler version with which the package declares having been tested (#249)
+* Display compiler version with which the package declares having been tested ([#249](https://github.com/flora-pm/flora-server/pull/249))
+* Promote exact matches when searching packages ([#284](https://github.com/flora-pm/flora-server/pull/284))
 
 ## 1.0.7 -- 2022-11-01
 

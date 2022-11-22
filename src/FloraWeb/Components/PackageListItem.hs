@@ -1,6 +1,6 @@
 module FloraWeb.Components.PackageListItem
   ( packageListItem
-  , packageListItemWithVersionRange
+  , requirementListItem
   , licenseIcon
   )
 where
@@ -13,6 +13,7 @@ import Lucid
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
 import Flora.Model.Package (Namespace, PackageName)
+import Flora.Model.Requirement (DependencyInfo (..))
 import Lucid.Orphans ()
 import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 
@@ -31,20 +32,20 @@ packageListItem (namespace, packageName, synopsis, version, license) = do
           toHtml license
         span_ [class_ "package-list-item__version"] $ "v" <> toHtml version
 
-packageListItemWithVersionRange :: (Namespace, PackageName, Text, Text, SPDX.License) -> FloraHTML
-packageListItemWithVersionRange (namespace, packageName, synopsis, versionRange, license) = do
+requirementListItem :: DependencyInfo -> FloraHTML
+requirementListItem DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
     a_ [href, class_ ""] $ do
       h4_ [class_ "package-list-item__name"] $
         strong_ [class_ ""] . toHtml $
           display namespace <> "/" <> display packageName
-      p_ [class_ "package-list-item__synopsis"] $ toHtml synopsis
+      p_ [class_ "package-list-item__synopsis"] $ toHtml latestSynopsis
       div_ [class_ "package-list-item__metadata"] $ do
         span_ [class_ "package-list-item__license"] $ do
           licenseIcon
-          toHtml license
-        displayVersionRange versionRange
+          toHtml latestLicense
+        displayVersionRange requirement
 
 displayVersionRange :: Text -> FloraHTML
 displayVersionRange versionRange =
