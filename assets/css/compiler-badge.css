@@ -9,7 +9,7 @@ ul.compiler-badges {
     margin-bottom: 7px;
     border-radius: 50rem;
     max-width: 100%;
-    background-color: hsl(218 30% 30%);
+    background-color: var(--compiler-badge-background);
   }
 }
 
