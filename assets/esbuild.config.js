@@ -73,4 +73,6 @@ esbuild.build({
   entryNames: entryNames,
   watch: watch_fs,
   plugins: pluginsList(),
+}).then(result => {
+  console.log('watching...')
 });

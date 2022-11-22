@@ -3,7 +3,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: "actions/checkout@v2"
+        uses: "actions/checkout@v3"
         with:
           ref: "${{ github.head_ref }}"
       - name: Make sure there is one proper commit or PR title
