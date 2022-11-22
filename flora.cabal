@@ -155,11 +155,7 @@ library
     FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
     FloraWeb.Templates.Haddock
-    FloraWeb.Templates.Packages.Changelog
-    FloraWeb.Templates.Packages.Dependencies
-    FloraWeb.Templates.Packages.Dependents
-    FloraWeb.Templates.Packages.Listing
-    FloraWeb.Templates.Packages.Versions
+    FloraWeb.Templates.Packages
     FloraWeb.Templates.Pages.Categories
     FloraWeb.Templates.Pages.Categories.Index
     FloraWeb.Templates.Pages.Categories.Show

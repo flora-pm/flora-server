@@ -369,6 +369,73 @@ div[class="bullets"] {
   text-decoration: underline;
 }
 
+.exact-match {
+  box-shadow: 0 5px 10px 0 rgb(0 0 0 / 50%);
+}
+
+.package-list-item {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  list-style: none;
+
+  a {
+    display: block;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-left: 1rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  a:hover {
+    background-color: var(--package-list-item-background-hover-color);
+    border-radius: 6px;
+  }
+
+  a:hover h4.package-list-item__name {
+    text-decoration: underline;
+  }
+
+  .package-list-item__name {
+    display: inline;
+    margin-right: 0.5rem;
+    color: var(--package-list-item-name-color);
+  }
+
+  .package-list-item__synopsis {
+    display: inline;
+    color: var(--package-list-item-synopsis-color);
+  }
+
+  .package-list-item__metadata {
+    color: var(--package-list-item-metadata-color);
+
+    .package-list-item__license {
+      color: var(--package-list-item-metadata-color);
+    }
+
+    .package-list-item__version {
+      color: var(--package-list-item-version-color);
+    }
+
+    .license-icon {
+      height: 1.25rem;
+      width: 1.25rem;
+      display: inline;
+      margin-top: -0.25rem;
+    }
+  }
+
+  .package-list-item__metadata > * {
+    margin-top: 0.5rem;
+    margin-right: 10px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
 .category a:hover {
   text-decoration: underline;
 }
@@ -387,70 +454,6 @@ div[class="bullets"] {
 
 .release a:hover {
   text-decoration: underline;
-}
-
-.package-list {
-  .package-list-item {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-
-    a {
-      display: block;
-      margin-top: 1.5rem;
-      margin-bottom: 1.5rem;
-      padding-left: 1rem;
-      padding-top: 0.75rem;
-      padding-bottom: 0.75rem;
-      font-size: 1.25rem;
-      line-height: 1.75rem;
-    }
-
-    a:hover {
-      background-color: var(--package-list-item-background-hover-color);
-      border-radius: 6px;
-    }
-
-    a:hover h4.package-list-item__name {
-      text-decoration: underline;
-    }
-
-    .package-list-item__name {
-      display: inline;
-      margin-right: 0.5rem;
-      color: var(--package-list-item-name-color);
-    }
-
-    .package-list-item__synopsis {
-      display: inline;
-      color: var(--package-list-item-synopsis-color);
-    }
-
-    .package-list-item__metadata {
-      color: var(--package-list-item-metadata-color);
-
-      .package-list-item__license {
-        color: var(--package-list-item-metadata-color);
-      }
-
-      .package-list-item__version {
-        color: var(--package-list-item-version-color);
-      }
-
-      .license-icon {
-        height: 1.25rem;
-        width: 1.25rem;
-        display: inline;
-        margin-top: -0.25rem;
-      }
-    }
-
-    .package-list-item__metadata > * {
-      margin-top: 0.5rem;
-      margin-right: 10px;
-      font-size: 0.875rem;
-      line-height: 1.25rem;
-    }
-  }
 }
 
 .categories-body {

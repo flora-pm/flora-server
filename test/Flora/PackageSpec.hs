@@ -14,6 +14,7 @@ import Distribution.System (OS (Windows))
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
+
 import Flora.Import.Package
 import Flora.Model.Category (Category (..))
 import Flora.Model.Category.Query qualified as Query
@@ -22,6 +23,7 @@ import Flora.Model.Package.Component
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Model.Requirement
 import Flora.TestUtils
 
 spec :: Fixtures -> TestEff TestTree
@@ -45,7 +47,7 @@ testCabalDeps = do
   dependencies <- do
     Just cabalPackage <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "Cabal")
     releases <- Query.getReleases (cabalPackage ^. #packageId)
-    let latestRelease = maximumBy (compare `on` version) releases
+    let latestRelease = maximumBy (compare `on` (.version)) releases
     Query.getAllRequirements (latestRelease ^. #releaseId)
   assertEqual
     ( Set.fromList
@@ -72,7 +74,7 @@ testCabalDeps = do
         , PackageName "void"
         ]
     )
-    (Set.fromList $ view _2 <$> Vector.toList dependencies)
+    (Set.fromList $ (.name) <$> Vector.toList dependencies)
 
 testInsertContainers :: TestEff ()
 testInsertContainers = do
@@ -84,7 +86,7 @@ testInsertContainers = do
         undefined
       Just package -> do
         releases <- Query.getReleases (package ^. #packageId)
-        let latestRelease = maximumBy (compare `on` version) releases
+        let latestRelease = maximumBy (compare `on` (.version)) releases
         Query.getRequirements (latestRelease ^. #releaseId)
   assertEqual
     (Set.fromList [PackageName "base", PackageName "deepseq", PackageName "array"])
@@ -150,7 +152,7 @@ testBytestringDependencies :: TestEff ()
 testBytestringDependencies = do
   bytestring <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "bytestring")
   releases <- Query.getReleases (bytestring ^. #packageId)
-  let latestRelease = maximumBy (compare `on` version) releases
+  let latestRelease = maximumBy (compare `on` (.version)) releases
   latestReleasedependencies <- Query.getRequirements (latestRelease ^. #releaseId)
   assertEqual 4 (Vector.length latestReleasedependencies)
 
@@ -158,7 +160,7 @@ testTimeComponents :: TestEff ()
 testTimeComponents = do
   time <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
   releases <- Query.getReleases (time ^. #packageId)
-  let latestRelease = maximumBy (compare `on` version) releases
+  let latestRelease = maximumBy (compare `on` (.version)) releases
   components <- Query.getReleaseComponents $ latestRelease ^. #releaseId
   assertEqual 1 $ countComponentsByType Library components
   assertEqual 1 $ countComponentsByType Benchmark components
@@ -168,7 +170,7 @@ testTimeConditions :: TestEff ()
 testTimeConditions = do
   time <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
   releases <- Query.getReleases (time ^. #packageId)
-  let latestRelease = maximumBy (compare `on` version) releases
+  let latestRelease = maximumBy (compare `on` (.version)) releases
   timeLib <- fromJust <$> Query.getComponent (latestRelease ^. #releaseId) "time" Library
   timeUnixTest <- fromJust <$> Query.getComponent (latestRelease ^. #releaseId) "test-unix" TestSuite
   let timeLibExpectedCondition = Just (ComponentCondition (CNot (Var (OS Windows))))
@@ -183,7 +185,7 @@ testSearchResultUnicity = do
   assertEqual 2 releases
   results <- Query.searchPackage 1 "text"
   assertEqual 1 (Vector.length results)
-  assertEqual (Cabal.mkVersion [2, 0]) (view _4 $ Vector.head results)
+  assertEqual (Cabal.mkVersion [2, 0]) ((.version) $ Vector.head results)
 
 countBy :: (Foldable t) => (a -> Bool) -> t a -> Int
 countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
