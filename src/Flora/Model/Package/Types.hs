@@ -29,6 +29,9 @@ import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
 import Web.HttpApiData (ToHttpApiData (..))
 
+import Distribution.Orphans ()
+import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.Version (Version)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 
@@ -171,3 +174,17 @@ data Dependent = Dependent
   deriving
     (Entity)
     via (GenericEntity '[TableName "dependents"] Dependent)
+
+{-| A record specifically crafted for
+ templates usage.
+-}
+data PackageInfo = PackageInfo
+  { namespace :: Namespace
+  , name :: PackageName
+  , synopsis :: Text
+  , version :: Version
+  , license :: SPDX.License
+  , rating :: Maybe Double
+  }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromRow)

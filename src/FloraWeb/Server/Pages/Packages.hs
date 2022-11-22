@@ -29,10 +29,7 @@ import FloraWeb.Server.Guards
 import FloraWeb.Server.Logging
 import FloraWeb.Session
 import FloraWeb.Templates
-import FloraWeb.Templates.Packages.Changelog qualified as PackageChangelog
-import FloraWeb.Templates.Packages.Dependencies qualified as PackageDependencies
-import FloraWeb.Templates.Packages.Dependents qualified as PackageDependents
-import FloraWeb.Templates.Packages.Versions qualified as PackageVersions
+import FloraWeb.Templates.Packages qualified as Package
 import FloraWeb.Templates.Pages.Packages qualified as Packages
 import FloraWeb.Templates.Pages.Search qualified as Search
 
@@ -62,7 +59,7 @@ showHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName
   releases <- Query.getAllReleases (package.packageId)
-  let latestRelease = maximumBy (compare `on` version) releases
+  let latestRelease = maximumBy (compare `on` (.version)) releases
   showPackageVersion namespace packageName (latestRelease.version)
 
 showVersionHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
@@ -131,7 +128,7 @@ showDependentsHandler namespace packageName = do
           }
   results <- Query.getAllPackageDependentsWithLatestVersion namespace packageName
   render templateEnv $
-    PackageDependents.showDependents
+    Package.showDependents
       ("Dependents of " <> display namespace <> "/" <> display packageName)
       results
 
@@ -139,7 +136,7 @@ showDependenciesHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showDependenciesHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName
   releases <- Query.getAllReleases (package.packageId)
-  let latestRelease = maximumBy (compare `on` version) releases
+  let latestRelease = maximumBy (compare `on` (.version)) releases
   showVersionDependenciesHandler namespace packageName latestRelease.version
 
 showVersionDependenciesHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
@@ -165,7 +162,7 @@ showVersionDependenciesHandler namespace packageName version = do
       ]
 
   render templateEnv $
-    PackageDependencies.showDependencies
+    Package.showDependencies
       ("Dependencies of " <> display namespace <> "/" <> display packageName)
       releaseDependencies
 
@@ -173,7 +170,7 @@ showChangelogHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showChangelogHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName
   releases <- Query.getAllReleases (package.packageId)
-  let latestRelease = maximumBy (compare `on` version) releases
+  let latestRelease = maximumBy (compare `on` (.version)) releases
   showVersionChangelogHandler namespace packageName (latestRelease.version)
 
 showVersionChangelogHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
@@ -189,7 +186,7 @@ showVersionChangelogHandler namespace packageName version = do
           , description = "Changelog of @" <> display namespace <> display packageName
           }
 
-  render templateEnv $ PackageChangelog.showChangelog namespace packageName version (release.changelog)
+  render templateEnv $ Package.showChangelog namespace packageName version (release.changelog)
 
 listVersionsHandler :: Namespace -> PackageName -> FloraPage (Html ())
 listVersionsHandler namespace packageName = do
@@ -202,4 +199,4 @@ listVersionsHandler namespace packageName = do
           , description = "Releases of " <> display namespace <> display packageName
           }
   releases <- Query.getAllReleases (package.packageId)
-  render templateEnv $ PackageVersions.listVersions namespace packageName releases
+  render templateEnv $ Package.listVersions namespace packageName releases
