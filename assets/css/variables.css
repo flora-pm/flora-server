@@ -36,7 +36,7 @@
   --changelog-pre-background-color: hsl(225 13% 87%);
   --changelog-code-background-color: hsl(225 13% 87%);
   --install-string-border: hsl(215 28% 17%);
-  --compiler-badge-background: hsl(218, 12%, 84%);
+  --compiler-badge-background: hsl(218 12% 84%);
 }
 
 html[data-theme="dark"] {
