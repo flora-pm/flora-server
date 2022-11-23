@@ -1,6 +1,8 @@
 .release-readme-column {
   margin: 0 2em;
   overflow: auto;
+  flex-basis: 40rem;
+  order: 2;
 }
 
 .release-readme {

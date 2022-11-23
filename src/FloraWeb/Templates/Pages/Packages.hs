@@ -108,15 +108,15 @@ packageBody
   dependents
   numberOfDependents
   categories =
-    div_ $ div_ [class_ "package-body md:flex"] $ do
-      div_ [class_ "package-left-column"] $ ul_ [class_ "package-left-rows grid-rows-3 md:sticky md:top-28"] $ do
+    div_ [class_ "package-body"] $ do
+      div_ [class_ "package-left-column"] $ ul_ [class_ "package-left-rows"] $ do
         displayCategories categories
         displayLicense (metadata.license)
         displayMaintainer (metadata.maintainer)
         displayLinks namespace packageName latestRelease metadata
         displayVersions namespace packageName packageReleases numberOfReleases
-      div_ [class_ "release-readme-column grow"] $ div_ [class_ "grid-rows-3 release-readme"] $ displayReadme latestRelease
-      div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows grid-rows-3 md:sticky md:top-28"] $ do
+      div_ [class_ "release-readme-column"] $ div_ [class_ "release-readme"] $ displayReadme latestRelease
+      div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows"] $ do
         displayInstructions packageName latestRelease
         displayTestedWith latestRelease.metadata.testedWith
         displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
@@ -195,7 +195,7 @@ displayDependencies
   -> FloraHTML
 displayDependencies (namespace, packageName, version) numberOfDependencies dependencies = li_ [class_ ""] $ do
   h3_ [class_ "package-body-section"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
-  ul_ [class_ "dependencies grid-cols-3"] $ do
+  ul_ [class_ "dependencies"] $ do
     let deps = foldMap renderDependency dependencies
     let numberOfShownDependencies = fromIntegral @Int @Word (Vector.length dependencies)
     if numberOfShownDependencies >= numberOfDependencies
