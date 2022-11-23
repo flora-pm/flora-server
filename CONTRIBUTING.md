@@ -68,6 +68,17 @@ Open a thread in the [Questions][Questions board] discussion board. You'll get h
 
 Open a [Ticket][Ticket] and tell us what you can about your problem.
 
+### Profiling
+
+If you are about to run `flora-cli` or `flora-server` with profiling, please first read
+https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/.
+
+Here are the steps:
+
+1. `$ cabal build flora-server -f prof` (or `flora-cli`)
+2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
+3. `$ eventlog2html flora-server.eventlog`
+
 [CoC]: https://github.com/flora-pm/flora-server/blob/master/CODE_OF_CONDUCT.md
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions

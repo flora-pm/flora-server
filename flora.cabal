@@ -23,6 +23,12 @@ flag prod
   default:     False
   manual:      True
 
+flag prof
+  description:
+    Compile the project with profiling options
+  default: False
+  manual: True
+
 common common-extensions
   default-extensions:
     NoStarIsType
@@ -52,6 +58,8 @@ common common-ghc-options
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
     -Wno-unticked-promoted-constructors -Werror=unused-imports
+  if flag(prof)
+    ghc-options: -eventlog -finfo-table-map -fdistinct-constructor-tables
 
   if flag(prod)
     ghc-options:
@@ -59,7 +67,7 @@ common common-ghc-options
       -finline-generics-aggressively -fexpose-all-unfoldings
 
 common common-rts-options
-  ghc-options: -threaded "-with-rtsopts=-N -T"
+  ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
 
 library
   import:          common-extensions

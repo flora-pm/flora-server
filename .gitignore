@@ -27,3 +27,5 @@ pgdata/
 tags.lock
 cabal.project.local
 logs/*
+*.eventlog*
+*.hp
