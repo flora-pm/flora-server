@@ -173,10 +173,10 @@ testTimeConditions = do
   let latestRelease = maximumBy (compare `on` (.version)) releases
   timeLib <- fromJust <$> Query.getComponent (latestRelease ^. #releaseId) "time" Library
   timeUnixTest <- fromJust <$> Query.getComponent (latestRelease ^. #releaseId) "test-unix" TestSuite
-  let timeLibExpectedCondition = Just (ComponentCondition (CNot (Var (OS Windows))))
-  let timeUnixTestExpectedCondition = Just (ComponentCondition (Var (OS Windows)))
-  assertEqual timeLibExpectedCondition $ timeLib ^. #metadata % #condition
-  assertEqual timeUnixTestExpectedCondition $ timeUnixTest ^. #metadata % #condition
+  let timeLibExpectedCondition = [ComponentCondition (CNot (Var (OS Windows)))]
+  let timeUnixTestExpectedCondition = [ComponentCondition (Var (OS Windows))]
+  assertEqual timeLibExpectedCondition timeLib.metadata.conditions
+  assertEqual timeUnixTestExpectedCondition timeUnixTest.metadata.conditions
 
 testSearchResultUnicity :: TestEff ()
 testSearchResultUnicity = do
