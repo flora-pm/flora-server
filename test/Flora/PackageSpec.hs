@@ -39,7 +39,8 @@ spec _fixtures =
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns unique results by namespace/package name" testSearchResultUnicity
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
-    , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
+    -- Disable until conditions are properly supported everywhere
+    -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
 
 testCabalDeps :: TestEff ()
