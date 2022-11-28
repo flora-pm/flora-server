@@ -243,7 +243,7 @@ library
     , slugify                    ^>=0.1
     , souffle-haskell            >=3.4     && <3.5
     , split                      ^>=0.2
-    , streaming                  ^>=0.2
+    , streamly                   ^>=0.8.0
     , template-haskell
     , text
     , text-display

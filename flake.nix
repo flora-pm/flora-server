@@ -3,7 +3,7 @@
   inputs = {
     flake-utils = { url = "github:numtide/flake-utils"; };
     horizon-platform = {
-      url = "git+https://gitlab.homotopic.tech/horizon/horizon-platform";
+      url = "github:blackheaven/horizon-platform-forked";
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   };
@@ -15,9 +15,10 @@
           overrides = hfinal: hprev:
             with pkgs.haskell.lib;
             horizon-platform.packages.${system} // {
-              flora = overrideCabal (dontHaddock (dontCheck
-                (disableLibraryProfiling
-                  (doJailbreak (hfinal.callCabal2nix "flora" ./. { })))))
+              flora = overrideCabal
+                (dontHaddock (dontCheck
+                  (disableLibraryProfiling
+                    (doJailbreak (hfinal.callCabal2nix "flora" ./. { })))))
                 (drv: {
                   preConfigure = ''
                     cd cbits; ${pkgs.souffle}/bin/souffle -g categorise.{cpp,dl}
@@ -26,7 +27,8 @@
                 });
             };
         };
-      in {
+      in
+      {
         apps = rec {
           default = server;
 
