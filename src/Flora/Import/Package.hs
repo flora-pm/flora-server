@@ -55,7 +55,7 @@ import Effectful.Time (Time)
 import GHC.Generics (Generic)
 import Log qualified
 import Optics.Core
-import qualified Streamly.Prelude as S
+import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath
 
