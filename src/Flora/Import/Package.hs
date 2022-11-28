@@ -312,20 +312,20 @@ extractPackageDataFromCabal userId genericDesc = do
           , changelogStatus = NotImported
           }
 
-  let lib = extractLibrary package release Nothing Nothing <$> allLibraries packageDesc
+  let lib = extractLibrary package release Nothing [] <$> allLibraries packageDesc
   let condLib = maybe [] (extractCondTree extractLibrary package release Nothing) (genericDesc.condLibrary)
   let condSubLibs = extractCondTrees extractLibrary package release genericDesc.condSubLibraries
 
-  let foreignLibs = extractForeignLib package release Nothing Nothing <$> packageDesc.foreignLibs
+  let foreignLibs = extractForeignLib package release Nothing [] <$> packageDesc.foreignLibs
   let condForeignLibs = extractCondTrees extractForeignLib package release genericDesc.condForeignLibs
 
-  let executables = extractExecutable package release Nothing Nothing <$> packageDesc.executables
+  let executables = extractExecutable package release Nothing [] <$> packageDesc.executables
   let condExecutables = extractCondTrees extractExecutable package release genericDesc.condExecutables
 
-  let testSuites = extractTestSuite package release Nothing Nothing <$> packageDesc.testSuites
+  let testSuites = extractTestSuite package release Nothing [] <$> packageDesc.testSuites
   let condTestSuites = extractCondTrees extractTestSuite package release genericDesc.condTestSuites
 
-  let benchmarks = extractBenchmark package release Nothing Nothing <$> packageDesc.benchmarks
+  let benchmarks = extractBenchmark package release Nothing [] <$> packageDesc.benchmarks
   let condBenchmarks = extractCondTrees extractBenchmark package release genericDesc.condBenchmarks
 
   let components =
@@ -342,7 +342,7 @@ extractPackageDataFromCabal userId genericDesc = do
           <> condBenchmarks
   pure ImportOutput{..}
 
-extractLibrary :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> Library -> ImportComponent
+extractLibrary :: Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> Library -> ImportComponent
 extractLibrary package =
   genericComponentExtractor
     Component.Library
@@ -354,7 +354,7 @@ extractLibrary package =
     getLibName LMainLibName = display (package.name)
     getLibName (LSubLibName lname) = T.pack $ unUnqualComponentName lname
 
-extractForeignLib :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> ForeignLib -> ImportComponent
+extractForeignLib :: Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> ForeignLib -> ImportComponent
 extractForeignLib package =
   genericComponentExtractor
     Component.ForeignLib
@@ -362,21 +362,21 @@ extractForeignLib package =
     (^. #foreignLibBuildInfo % #targetBuildDepends)
     package
 
-extractExecutable :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> Executable -> ImportComponent
+extractExecutable :: Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> Executable -> ImportComponent
 extractExecutable =
   genericComponentExtractor
     Component.Executable
     (^. #exeName % to unUnqualComponentName % to T.pack)
     (^. #buildInfo % #targetBuildDepends)
 
-extractTestSuite :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> TestSuite -> ImportComponent
+extractTestSuite :: Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> TestSuite -> ImportComponent
 extractTestSuite =
   genericComponentExtractor
     Component.TestSuite
     (^. #testName % to unUnqualComponentName % to T.pack)
     (^. #testBuildInfo % #targetBuildDepends)
 
-extractBenchmark :: Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> Benchmark -> ImportComponent
+extractBenchmark :: Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> Benchmark -> ImportComponent
 extractBenchmark =
   genericComponentExtractor
     Component.Benchmark
@@ -387,21 +387,21 @@ extractBenchmark =
  to every node, returning a list of 'ImportComponent'
 -}
 extractCondTree
-  :: (Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> component -> ImportComponent)
+  :: (Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> component -> ImportComponent)
   -> Package
   -> Release
   -> Maybe UnqualComponentName
   -> CondTree ConfVar [Dependency] component
   -> [ImportComponent]
-extractCondTree extractor package release defaultComponentName = go Nothing
+extractCondTree extractor package release defaultComponentName = go []
   where
     go cond tree =
       let treeComponent = extractor package release defaultComponentName cond $ tree.condTreeData
           treeSubComponents = (tree.condTreeComponents) >>= extractBranch
        in treeComponent : treeSubComponents
     extractBranch CondBranch{condBranchCondition, condBranchIfTrue, condBranchIfFalse} =
-      let condIfTrueComponents = go (Just condBranchCondition) condBranchIfTrue
-          condIfFalseComponents = maybe [] (go (Just . CNot $ condBranchCondition)) condBranchIfFalse
+      let condIfTrueComponents = go [condBranchCondition] condBranchIfTrue
+          condIfFalseComponents = maybe [] (go [CNot condBranchCondition]) condBranchIfFalse
        in condIfTrueComponents <> condIfFalseComponents
 
 {-| Cabal often models conditional components as a list of 'CondTree' associated with an 'UnqualComponentName'.
@@ -409,7 +409,7 @@ extractCondTree extractor package release defaultComponentName = go Nothing
  from a 'GenericPackageDescription'
 -}
 extractCondTrees
-  :: (Package -> Release -> Maybe UnqualComponentName -> Maybe (Condition ConfVar) -> component -> ImportComponent)
+  :: (Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> component -> ImportComponent)
   -> Package
   -> Release
   -> [(UnqualComponentName, CondTree ConfVar [Dependency] component)]
@@ -428,7 +428,7 @@ genericComponentExtractor
   -> Package
   -> Release
   -> Maybe UnqualComponentName
-  -> Maybe (Condition ConfVar)
+  -> [Condition ConfVar]
   -> component
   -> (PackageComponent, [ImportDependency])
 genericComponentExtractor

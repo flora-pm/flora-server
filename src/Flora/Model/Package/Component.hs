@@ -137,7 +137,7 @@ data PackageComponent' = PackageComponent'
   deriving anyclass (ToRow, FromRow)
 
 data ComponentMetadata = ComponentMetadata
-  { condition :: Maybe ComponentCondition
+  { conditions :: [ComponentCondition]
   }
   deriving stock (Eq, Show, Generic, Typeable)
   deriving anyclass (ToJSON, FromJSON)
