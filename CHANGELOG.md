@@ -1,8 +1,9 @@
 # CHANGELOG
 
-## 1.0.8 -- XXXX-XX-X
+## 1.0.8 -- 2022-11-30
 * Display compiler version with which the package declares having been tested ([#249](https://github.com/flora-pm/flora-server/pull/249))
 * Promote exact matches when searching packages ([#284](https://github.com/flora-pm/flora-server/pull/284))
+* Unify "Debugging" and "Profiling" categories
 
 ## 1.0.7 -- 2022-11-01
 
