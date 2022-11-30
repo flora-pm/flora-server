@@ -7,6 +7,8 @@
 @import "variables.css";
 @import "release-readme.css";
 @import "release-changelog.css";
+@import "compiler-badge.css";
+@import "package.css";
 
 @layer components {
   .larger-container {
@@ -160,168 +162,6 @@ div[class="bullets"] {
   }
 }
 
-.package-install-string {
-  background-color: transparent;
-  border-color: var(--install-string-border);
-  border-radius: 6px;
-  display: block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1.5rem;
-  width: 100%;
-}
-
-.package-title {
-  .version {
-    font-size: medium;
-    line-height: 1.3rem;
-    padding-left: 4px;
-  }
-}
-
-.package-body {
-  display: flex;
-  flex-direction: column;
-
-  a {
-    font-weight: 500;
-  }
-
-  .maintainer-info {
-    font-weight: 500;
-  }
-
-  .package-body-section {
-    font-size: 1.5rem;
-    line-height: 2rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .package-right-column {
-    min-width: 13em;
-    max-width: 13em;
-  }
-
-  .package-left-column {
-    min-width: 11rem;
-  }
-
-  .package-flags-section {
-    display: inline;
-  }
-
-  .package-flags {
-    .package-flag-description {
-      padding-left: 0.5rem;
-      margin-bottom: 0.5em;
-    }
-
-    .package-flag-name {
-      display: inline;
-    }
-  }
-
-  .package-flags > * {
-    pre {
-      margin: 0;
-      font-size: 85%;
-      background-color: var(--readme-code-background-color);
-      border-radius: 6px;
-      padding-top: 0.2em;
-      padding-right: 0.4em;
-      padding-bottom: 0.2em;
-      padding-left: 0.4em;
-    }
-
-    code {
-      margin: 0;
-      font-size: 85%;
-      background-color: var(--readme-code-background-color);
-      border-radius: 6px;
-      padding-top: 0.2em;
-      padding-right: 0.4em;
-      padding-bottom: 0.2em;
-      padding-left: 0.4em;
-    }
-  }
-
-  .package-body-section__license {
-    font-weight: 500;
-  }
-}
-
-.instruction-tooltip {
-  svg {
-    display: inline;
-    width: 1rem;
-    height: 1rem;
-  }
-
-  position: relative; /* making the .tooltip span a container for the tooltip text */
-  border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
-}
-
-.instruction-tooltip::before {
-  content: attr(data-text); /* here's the magic */
-  position: absolute;
-
-  /* vertically center */
-  top: 50%;
-  transform: translateY(-50%);
-
-  /* move to right */
-  left: 100%;
-  margin-left: 15px; /* and add a small left margin */
-
-  /* basic styles */
-  background: #000;
-  border-radius: 10px;
-  box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
-  color: #fff;
-  padding: 10px;
-  text-align: center;
-  width: 250px;
-  display: none; /* hide by default */
-}
-
-.instruction-tooltip:hover::before {
-  display: block;
-}
-
-.pagination-area {
-  display: flex;
-  padding-bottom: 40px;
-}
-
-.pagination-footer {
-  margin-left: auto;
-  margin-right: auto;
-  display: flex;
-  align-items: center;
-
-  .pagination-footer__page {
-    padding-bottom: 0.5rem;
-    padding-top: 0.5rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    border-width: 1px;
-    border-collapse: collapse;
-    height: 40px;
-  }
-
-  .pagination-footer__previous {
-    border-bottom-left-radius: 0.5rem;
-    border-top-left-radius: 0.5rem;
-  }
-
-  .pagination-footer__next {
-    border-bottom-right-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
-  }
-}
-
 /* Dark mode-specific rules */
 .dark {
   .social-button:hover {
@@ -355,6 +195,73 @@ div[class="bullets"] {
   text-decoration: underline;
 }
 
+.exact-match {
+  box-shadow: 0 5px 10px 0 rgb(0 0 0 / 50%);
+}
+
+.package-list-item {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  list-style: none;
+
+  a {
+    display: block;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-left: 1rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  a:hover {
+    background-color: var(--package-list-item-background-hover-color);
+    border-radius: 6px;
+  }
+
+  a:hover h4.package-list-item__name {
+    text-decoration: underline;
+  }
+
+  .package-list-item__name {
+    display: inline;
+    margin-right: 0.5rem;
+    color: var(--package-list-item-name-color);
+  }
+
+  .package-list-item__synopsis {
+    display: inline;
+    color: var(--package-list-item-synopsis-color);
+  }
+
+  .package-list-item__metadata {
+    color: var(--package-list-item-metadata-color);
+
+    .package-list-item__license {
+      color: var(--package-list-item-metadata-color);
+    }
+
+    .package-list-item__version {
+      color: var(--package-list-item-version-color);
+    }
+
+    .license-icon {
+      height: 1.25rem;
+      width: 1.25rem;
+      display: inline;
+      margin-top: -0.25rem;
+    }
+  }
+
+  .package-list-item__metadata > * {
+    margin-top: 0.5rem;
+    margin-right: 10px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
 .category a:hover {
   text-decoration: underline;
 }
@@ -373,70 +280,6 @@ div[class="bullets"] {
 
 .release a:hover {
   text-decoration: underline;
-}
-
-.package-list {
-  .package-list-item {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-
-    a {
-      display: block;
-      margin-top: 1.5rem;
-      margin-bottom: 1.5rem;
-      padding-left: 1rem;
-      padding-top: 0.75rem;
-      padding-bottom: 0.75rem;
-      font-size: 1.25rem;
-      line-height: 1.75rem;
-    }
-
-    a:hover {
-      background-color: var(--package-list-item-background-hover-color);
-      border-radius: 6px;
-    }
-
-    a:hover h4.package-list-item__name {
-      text-decoration: underline;
-    }
-
-    .package-list-item__name {
-      display: inline;
-      margin-right: 0.5rem;
-      color: var(--package-list-item-name-color);
-    }
-
-    .package-list-item__synopsis {
-      display: inline;
-      color: var(--package-list-item-synopsis-color);
-    }
-
-    .package-list-item__metadata {
-      color: var(--package-list-item-metadata-color);
-
-      .package-list-item__license {
-        color: var(--package-list-item-metadata-color);
-      }
-
-      .package-list-item__version {
-        color: var(--package-list-item-version-color);
-      }
-
-      .license-icon {
-        height: 1.25rem;
-        width: 1.25rem;
-        display: inline;
-        margin-top: -0.25rem;
-      }
-    }
-
-    .package-list-item__metadata > * {
-      margin-top: 0.5rem;
-      margin-right: 10px;
-      font-size: 0.875rem;
-      line-height: 1.25rem;
-    }
-  }
 }
 
 .categories-body {
@@ -534,21 +377,7 @@ div[class="bullets"] {
 
   .package-body {
     flex-direction: row;
-  }
-}
-
-/* smaller display rules */
-
-@media (max-width: 1023px) {
-  .package-left-column {
-    order: 1;
-  }
-
-  .package-right-column {
-    order: 2;
-  }
-
-  .release-readme-column {
-    order: 3;
+    justify-content: center;
+    align-items: flex-start;
   }
 }

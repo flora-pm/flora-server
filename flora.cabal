@@ -51,8 +51,7 @@ common common-ghc-options
     -Wall -Wcompat -Widentities -Wincomplete-record-updates
     -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
-    -fprint-potential-instances -Wno-unticked-promoted-constructors
-    -Werror=unused-imports
+    -Wno-unticked-promoted-constructors -Werror=unused-imports
 
   if flag(prod)
     ghc-options:
@@ -60,7 +59,7 @@ common common-ghc-options
       -finline-generics-aggressively -fexpose-all-unfoldings
 
 common common-rts-options
-  ghc-options: -threaded "-with-rtsopts=-N -T"
+  ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
 
 library
   import:          common-extensions
@@ -156,11 +155,7 @@ library
     FloraWeb.Templates.Admin.Users
     FloraWeb.Templates.Error
     FloraWeb.Templates.Haddock
-    FloraWeb.Templates.Packages.Changelog
-    FloraWeb.Templates.Packages.Dependencies
-    FloraWeb.Templates.Packages.Dependents
-    FloraWeb.Templates.Packages.Listing
-    FloraWeb.Templates.Packages.Versions
+    FloraWeb.Templates.Packages
     FloraWeb.Templates.Pages.Categories
     FloraWeb.Templates.Pages.Categories.Index
     FloraWeb.Templates.Pages.Categories.Show
@@ -246,9 +241,9 @@ library
     , servant-server             ^>=0.19
     , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
-    , souffle-haskell            >=3.4     && <3.6
+    , souffle-haskell            >=3.4     && <3.5
     , split                      ^>=0.2
-    , streaming                  ^>=0.2
+    , streamly                   ^>=0.8.0
     , template-haskell
     , text
     , text-display

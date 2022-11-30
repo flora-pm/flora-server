@@ -1,3 +1,4 @@
+-- migrate:up
 -- A package component is the smallest unit of a Hackage package.
 -- Each package may contain a default, top-level library, as well as
 -- sub-libraries, executables, test suites & benchmark.

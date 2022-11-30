@@ -112,7 +112,7 @@ data Fixtures = Fixtures
   }
   deriving stock (Generic, Show, Eq)
 
-getFixtures :: ([Fail, DB, IOE] :>> es) => Eff es Fixtures
+getFixtures :: (DB :> es, Fail :> es) => Eff es Fixtures
 getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
   pure Fixtures{..}
@@ -224,7 +224,7 @@ getEnv mgrSettings = do
 managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
 
-testMigrations :: ([DB, IOE] :>> es) => Eff es ()
+testMigrations :: (DB :> es, IOE :> es) => Eff es ()
 testMigrations = do
   pool <- getPool
   liftIO $ withResource pool $ \conn ->

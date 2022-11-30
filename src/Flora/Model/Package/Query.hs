@@ -4,7 +4,7 @@
 module Flora.Model.Package.Query where
 
 import Data.Text (Text)
-import Data.Text.Display
+import Data.Text.Display (display)
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
   ( joinSelectOneByField
@@ -23,26 +23,25 @@ import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Entity.Types (Field, field)
 import Database.PostgreSQL.Simple (Only (Only), Query)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Distribution.Types.Version (Version)
-import Effectful (Eff, IOE, type (:>>))
-import Effectful.Log
-import Effectful.PostgreSQL.Transact.Effect
-import Effectful.Time
+import Effectful (Eff, type (:>))
+import Effectful.Log (Log, object, (.=))
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Time (Time)
 import Log qualified
 
-import Distribution.SPDX.License qualified as SPDX
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
-import Flora.Model.Package (Namespace (..), Package, PackageId, PackageName)
+import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName)
 import Flora.Model.Package.Component
   ( ComponentId
   , ComponentType
   , PackageComponent
   )
 import Flora.Model.Release.Types (ReleaseId)
+import Flora.Model.Requirement (DependencyInfo)
 import FloraWeb.Server.Logging (timeAction)
 
-getAllPackages :: ([DB, Log, Time, IOE] :>> es) => Eff es (Vector Package)
+getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do
   (result, duration) <- timeAction $ dbtToEff $ query_ Select (_select @Package)
   Log.logInfo "Retrieving all packages" $
@@ -50,10 +49,10 @@ getAllPackages = do
       ["duration" .= duration]
   pure result
 
-getPackagesByNamespace :: ([DB, Log, Time, IOE] :>> es) => Namespace -> Eff es (Vector Package)
+getPackagesByNamespace :: (DB :> es) => Namespace -> Eff es (Vector Package)
 getPackagesByNamespace namespace = dbtToEff $ selectManyByField @Package [field| namespace |] (Only namespace)
 
-getPackageByNamespaceAndName :: ([DB, Log, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es (Maybe Package)
+getPackageByNamespaceAndName :: (DB :> es, Log :> es, Time :> es) => Namespace -> PackageName -> Eff es (Maybe Package)
 getPackageByNamespaceAndName namespace name = do
   (result, duration) <-
     timeAction $
@@ -70,7 +69,7 @@ getPackageByNamespaceAndName namespace name = do
   pure result
 
 -- | This function is to be used when in Hackage Compatibility Mode.
-getHaskellOrHackagePackage :: ([DB, Log, Time, IOE] :>> es) => PackageName -> Eff es (Maybe Package)
+getHaskellOrHackagePackage :: (DB :> es) => PackageName -> Eff es (Maybe Package)
 getHaskellOrHackagePackage packageName =
   dbtToEff $
     queryOne
@@ -90,19 +89,19 @@ getHaskellOrHackagePackage packageName =
 
 -- | TODO: Remove the manual fields and use pg-entity
 getAllPackageDependents
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es)
   => Namespace
   -> PackageName
   -> Eff es (Vector Package)
 getAllPackageDependents namespace packageName = dbtToEff $ query Select packageDependentsQuery (namespace, packageName)
 
 -- | This function gets the first 6 dependents of a package
-getPackageDependents :: ([DB, Log, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es (Vector Package)
+getPackageDependents :: (DB :> es) => Namespace -> PackageName -> Eff es (Vector Package)
 getPackageDependents namespace packageName = dbtToEff $ query Select q (namespace, packageName)
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
-getNumberOfPackageDependents :: ([DB, Log, Time, IOE] :>> es) => Namespace -> PackageName -> Eff es Word
+getNumberOfPackageDependents :: (DB :> es) => Namespace -> PackageName -> Eff es Word
 getNumberOfPackageDependents namespace packageName = dbtToEff $ do
   (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
   case result of
@@ -138,19 +137,19 @@ packageDependentsQuery =
   |]
 
 getAllPackageDependentsWithLatestVersion
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es)
   => Namespace
   -> PackageName
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License))
+  -> Eff es (Vector DependencyInfo)
 getAllPackageDependentsWithLatestVersion namespace packageName =
   dbtToEff $
     query Select packageDependentsWithLatestVersionQuery (namespace, packageName)
 
 getPackageDependentsWithLatestVersion
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es, Log :> es, Time :> es)
   => Namespace
   -> PackageName
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License))
+  -> Eff es (Vector PackageInfo)
 getPackageDependentsWithLatestVersion namespace packageName = do
   (result, duration) <-
     timeAction $
@@ -168,8 +167,9 @@ packageDependentsWithLatestVersionQuery =
   [sql|
   SELECT DISTINCT   p."namespace"
                   , p."name"
-                  , r.metadata ->> 'synopsis' as "synopsis"
+                  , ''
                   , max(r."version")
+                  , r.metadata ->> 'synopsis' as "synopsis"
                   , r.metadata ->> 'license' as  "license"
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
@@ -181,10 +181,10 @@ packageDependentsWithLatestVersionQuery =
   GROUP BY (p.namespace, p.name, synopsis, license)
   |]
 
-getComponentById :: ([DB, Log, Time, IOE] :>> es) => ComponentId -> Eff es (Maybe PackageComponent)
+getComponentById :: (DB :> es) => ComponentId -> Eff es (Maybe PackageComponent)
 getComponentById componentId = dbtToEff $ selectById @PackageComponent (Only componentId)
 
-getComponent :: ([DB, Log, Time, IOE] :>> es) => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
+getComponent :: (DB :> es) => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
 getComponent releaseId name componentType =
   dbtToEff $
     queryOne Select (_selectWhere @PackageComponent queryFields) (releaseId, name, componentType)
@@ -197,7 +197,7 @@ getComponent releaseId name componentType =
       ]
 
 unsafeGetComponent
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es)
   => ReleaseId
   -> Eff es (Maybe PackageComponent)
 unsafeGetComponent releaseId =
@@ -208,14 +208,12 @@ unsafeGetComponent releaseId =
     queryFields = [[field| release_id |]]
 
 getAllRequirements
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es)
   => ReleaseId
-  -- ^ Id of the release for which we want the dependencies
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, Text, SPDX.License))
-  -- ^ Returns a vector of (Namespace, Name, dependency requirement, version of latest of release of dependency, synopsis of dependency)
+  -> Eff es (Vector DependencyInfo)
 getAllRequirements releaseId = dbtToEff $ query Select getAllRequirementsQuery (Only releaseId)
 
-getRequirements :: ([DB, Log, Time, IOE] :>> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
+getRequirements :: (DB :> es, Log :> es, Time :> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
 getRequirements releaseId = do
   (result, duration) <- timeAction $ dbtToEff $ query Select (getRequirementsQuery <> " LIMIT 6") (Only releaseId)
   Log.logInfo "Retrieving limited dependencies of a release" $
@@ -268,7 +266,7 @@ getRequirementsQuery =
     order by dependency.namespace desc
   |]
 
-getNumberOfPackageRequirements :: ([DB, Log, Time, IOE] :>> es) => ReleaseId -> Eff es Word
+getNumberOfPackageRequirements :: (DB :> es) => ReleaseId -> Eff es Word
 getNumberOfPackageRequirements releaseId = dbtToEff $ do
   (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageRequirementsQuery (Only releaseId)
   case result of
@@ -291,7 +289,7 @@ numberOfPackageRequirementsQuery =
   |]
 
 getPackageCategories
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es)
   => PackageId
   -> Eff es (Vector Category)
 getPackageCategories packageId =
@@ -303,24 +301,30 @@ getPackageCategories packageId =
       packageId
 
 getPackagesFromCategoryWithLatestVersion
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es)
   => CategoryId
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License))
+  -> Eff es (Vector PackageInfo)
 getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q (Only categoryId)
   where
     q =
       [sql|
-      select distinct lv.namespace, lv.name, lv.synopsis, lv.version, lv.license from latest_versions as lv
-        inner join package_categories as pc on pc.package_id = lv.package_id
-        inner join categories as c on c.category_id = pc.category_id
-      where c.category_id = ?
+      select distinct l0.namespace
+                    , l0.name
+                    , l0.synopsis
+                    , l0.version
+                    , l0.license
+                    , 1
+      from latest_versions as l0
+        inner join package_categories as p1 on p1.package_id = l0.package_id
+        inner join categories as c2 on c2.category_id = p1.category_id
+      where c2.category_id = ?
       |]
 
 searchPackage
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es)
   => Word
   -> Text
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License, Float))
+  -> Eff es (Vector PackageInfo)
 searchPackage pageNumber searchString =
   dbtToEff $
     let limit = 30
@@ -350,9 +354,9 @@ searchPackage pageNumber searchString =
           (searchString, searchString, offset)
 
 listAllPackages
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es)
   => Word
-  -> Eff es (Vector (Namespace, PackageName, Text, Version, SPDX.License, Float))
+  -> Eff es (Vector PackageInfo)
 listAllPackages pageNumber =
   dbtToEff $
     let limit = 30
@@ -380,7 +384,7 @@ listAllPackages pageNumber =
     |]
           (Only offset)
 
-countPackages :: ([DB, Log, Time, IOE] :>> es) => Eff es Word
+countPackages :: (DB :> es) => Eff es Word
 countPackages = dbtToEff $ do
   (result :: Maybe (Only Int)) <-
     queryOne_
@@ -394,7 +398,7 @@ countPackages = dbtToEff $ do
     Just (Only n) -> pure $ fromIntegral n
     Nothing -> pure 0
 
-countPackagesByName :: ([DB, Log, Time, IOE] :>> es) => Text -> Eff es Word
+countPackagesByName :: (DB :> es) => Text -> Eff es Word
 countPackagesByName searchString = dbtToEff $ do
   (result :: Maybe (Only Int)) <-
     queryOne

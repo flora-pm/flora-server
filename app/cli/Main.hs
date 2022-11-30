@@ -89,7 +89,7 @@ parseGenDesignSystem = pure GenDesignSystemComponents
 parseImportPackages :: Parser Command
 parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
 
-runOptions :: ([DB, Fail, IOE] :>> es) => Options -> Eff es ()
+runOptions :: (DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
@@ -111,7 +111,7 @@ runOptions (Options (CreateUser opts)) = do
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path)) = importFolderOfCabalFiles path
 
-importFolderOfCabalFiles :: ([DB, IOE] :>> es) => FilePath -> Eff es ()
+importFolderOfCabalFiles :: (DB :> es, IOE :> es) => FilePath -> Eff es ()
 importFolderOfCabalFiles path = Log.withStdOutLogger $ \appLogger -> do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
   importAllFilesInRelativeDirectory appLogger (user ^. #userId) path

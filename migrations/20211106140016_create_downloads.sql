@@ -1,3 +1,4 @@
+-- migrate:up
 create table if not exists downloads (
   download_id serial primary key,
   release_id uuid references releases,

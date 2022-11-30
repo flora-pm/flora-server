@@ -38,10 +38,7 @@
 
 ## Installation and Configuration
 
-Read the Contribution Guide file to see what you will need.
-
-For Nix users, a build system based on flakes is maintained on a “best-effort” basis. Improvements are very welcome.
-
+Read the [Contribution Guide](./CONTRIBUTING.md) file to see what you will need.
 
 ### Flora server
 

@@ -4,6 +4,7 @@ module Flora.Model.Release.Types
   , Release (..)
   , ReleaseMetadata (..)
   , ImportStatus (..)
+  , SupportedCompilers (..)
   )
 where
 
@@ -16,21 +17,23 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
 import Data.Typeable (Typeable)
 import Data.UUID (UUID)
+import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
 import Database.PostgreSQL.Simple (FromRow, ToRow)
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), returnError)
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
+import Distribution.Compiler (CompilerFlavor)
+import Distribution.Orphans ()
 import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
-import Distribution.Types.Version
-import GHC.Generics (Generic)
-
-import Data.Vector (Vector)
-import Distribution.Orphans ()
 import Distribution.Types.Flag (PackageFlag)
-import Flora.Model.Package
+import Distribution.Types.Version
+import Distribution.Types.VersionRange (VersionRange)
+import GHC.Generics (Generic)
 import Lucid qualified
+
+import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
@@ -120,6 +123,10 @@ instance FromField ImportStatus where
 instance ToField ImportStatus where
   toField = Escape . encodeUtf8 . display
 
+newtype SupportedCompilers = Vector (CompilerFlavor, VersionRange)
+  deriving stock (Eq, Show, Generic, Typeable)
+  deriving anyclass (ToJSON, FromJSON)
+
 data ReleaseMetadata = ReleaseMetadata
   { license :: SPDX.License
   , sourceRepos :: Vector Text
@@ -130,7 +137,8 @@ data ReleaseMetadata = ReleaseMetadata
   , synopsis :: Text
   , description :: Text
   , flags :: Vector PackageFlag
+  , testedWith :: Vector Version
   }
-  deriving stock (Eq, Ord, Show, Generic, Typeable)
+  deriving stock (Eq, Show, Generic, Typeable)
   deriving anyclass (ToJSON, FromJSON)
   deriving (ToField, FromField) via Aeson ReleaseMetadata

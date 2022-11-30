@@ -24,7 +24,7 @@ import Flora.Model.Requirement (Requirement)
    TODO: Publish artifacts
 -}
 publishPackage
-  :: ([DB, Log, Time, IOE] :>> es)
+  :: (DB :> es, Log :> es, Time :> es, IOE :> es)
   => [Requirement]
   -> [PackageComponent]
   -> Release
@@ -42,7 +42,7 @@ publishPackage requirements components release userPackageCategories package = d
       liftIO $ T.putStrLn $ "[+] Package " <> display (package.name) <> " does not exist."
       publishForNewPackage requirements components release userPackageCategories package
 
-publishForExistingPackage :: ([DB, Log, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> Package -> Eff es Package
+publishForExistingPackage :: (DB :> es, IOE :> es) => [Requirement] -> [PackageComponent] -> Release -> Package -> Eff es Package
 publishForExistingPackage requirements components release package = do
   result <- Query.getReleaseByVersion (package.packageId) (release.version)
   case result of
@@ -66,7 +66,7 @@ publishForExistingPackage requirements components release package = do
       liftIO $ T.putStrLn $ "[+] I am not inserting anything for " <> display (package.name) <> " v" <> display (r.version)
       pure package
 
-publishForNewPackage :: ([DB, Log, IOE] :>> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
+publishForNewPackage :: (DB :> es, IOE :> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
 publishForNewPackage requirements components release userPackageCategories package = do
   liftIO $ T.putStrLn $ "[+] Normalising user-supplied categories: " <> display userPackageCategories
   newCategories <- liftIO $ (.normalisedCategories) <$> Tuning.normalise userPackageCategories

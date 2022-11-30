@@ -16,11 +16,11 @@ import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
-insertCategory :: ([DB, IOE] :>> es) => Category -> Eff es ()
+insertCategory :: (DB :> es) => Category -> Eff es ()
 insertCategory category = dbtToEff $ insert @Category category
 
 -- | Adds a package to a category. Adding a package to an already-assigned category has no effect
-addToCategory :: ([DB, IOE] :>> es) => PackageId -> CategoryId -> Eff es ()
+addToCategory :: (DB :> es) => PackageId -> CategoryId -> Eff es ()
 addToCategory packageId categoryId = dbtToEff $ void . execute Update q $ (packageId, categoryId)
   where
     q =
@@ -29,7 +29,7 @@ addToCategory packageId categoryId = dbtToEff $ void . execute Update q $ (packa
         on conflict do nothing
       |]
 
-addToCategoryByName :: ([DB, IOE] :>> es) => PackageId -> Text -> Eff es ()
+addToCategoryByName :: (DB :> es, IOE :> es) => PackageId -> Text -> Eff es ()
 addToCategoryByName packageId categoryName = do
   mCategory <- Query.getCategoryByName categoryName
   case mCategory of

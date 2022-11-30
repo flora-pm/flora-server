@@ -1,0 +1,28 @@
+ul.compiler-badges {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+
+  li {
+    margin-left: 4px;
+    margin-right: 4px;
+    margin-bottom: 7px;
+    border-radius: 50rem;
+    max-width: 100%;
+    background-color: var(--compiler-badge-background);
+  }
+}
+
+a.compiler-badge {
+  padding-right: 4px;
+  padding-left: 4px;
+  box-sizing: border-box;
+
+  span {
+    text-decoration: none;
+    display: inline-flex;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    padding: 0.3em 0.6em;
+  }
+}

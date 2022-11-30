@@ -1,3 +1,4 @@
+-- migrate:up
 create extension if not exists pg_trgm;
 create type package_state as enum ('unknown', 'fully-imported');
 

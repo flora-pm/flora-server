@@ -2,9 +2,7 @@
   description = "flora";
   inputs = {
     flake-utils = { url = "github:numtide/flake-utils"; };
-    horizon-platform = {
-      url = "git+https://gitlab.homotopic.tech/horizon/horizon-platform";
-    };
+    horizon-platform = { url = "github:blackheaven/horizon-platform-forked"; };
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   };
   outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, ... }:

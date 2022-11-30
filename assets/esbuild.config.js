@@ -73,4 +73,5 @@ esbuild.build({
   entryNames: entryNames,
   watch: watch_fs,
   plugins: pluginsList(),
-});
+}).then(() => watch_fs ? console.log("👁️ Watching…") : console.log("⚡ Done"))
+  .catch(() => process.exit(1));

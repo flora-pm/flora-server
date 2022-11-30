@@ -10,12 +10,10 @@ import Data.List qualified as List
 import Data.Text (Text)
 import Data.UUID qualified as UUID
 import Effectful
-import Effectful.Error.Static (Error, throwError)
+import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.PostgreSQL.Transact.Effect qualified as DB
-import Effectful.Servant (handlerToEff)
-import Effectful.Servant qualified as Servant
 import Log (Logger)
 import Network.HTTP.Types (hCookie)
 import Network.Wai
@@ -24,8 +22,11 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
 import Web.Cookie
 
+import Control.Monad.Except qualified as T
+import Data.Kind (Type)
 import Data.Text.Encoding qualified as Text
 import Data.UUID.V4 qualified as UUID
+import Effectful.Dispatch.Static
 import Flora.Environment
 import Flora.Model.PersistentSession
 import Flora.Model.User
@@ -34,6 +35,7 @@ import FloraWeb.Server.Auth.Types
 import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Session
 import FloraWeb.Types
+import Servant qualified
 
 type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
 
@@ -45,7 +47,7 @@ authHandler logger floraEnv =
           & Logging.runLog (floraEnv.environment) logger
           & DB.runDB (floraEnv.pool)
           & runVisitorSession
-          & Servant.effToHandler
+          & effToHandler
     )
   where
     handler :: Request -> Eff '[Log, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
@@ -89,7 +91,7 @@ getSessionId cookies =
         Just sessionId -> pure $ Just sessionId
 
 getInTheFuckingSessionShinji
-  :: ([Log, DB, IOE] :>> es)
+  :: (DB :> es)
   => Maybe PersistentSessionId
   -> Eff es (Maybe PersistentSession)
 getInTheFuckingSessionShinji Nothing = pure Nothing
@@ -99,15 +101,33 @@ getInTheFuckingSessionShinji (Just persistentSessionId) = do
     Nothing -> pure Nothing
     (Just userSession) -> pure $ Just userSession
 
-fetchUser :: ([Error ServerError, IOE, DB] :>> es) => Maybe PersistentSession -> Eff es (Maybe (User, PersistentSession))
+fetchUser :: (Error ServerError :> es, DB :> es) => Maybe PersistentSession -> Eff es (Maybe (User, PersistentSession))
 fetchUser Nothing = pure Nothing
 fetchUser (Just userSession) = do
   user <- lookupUser (userSession.userId)
   pure $ Just (user, userSession)
 
-lookupUser :: ([Error ServerError, IOE, DB] :>> es) => UserId -> Eff es User
+lookupUser :: (Error ServerError :> es, DB :> es) => UserId -> Eff es User
 lookupUser uid = do
   result <- getUserById uid
   case result of
     Nothing -> throwError (err403{errBody = "Invalid Cookie"})
     (Just user) -> pure user
+
+handlerToEff
+  :: forall (es :: [Effect]) (a :: Type)
+   . (Error ServerError :> es)
+  => Handler a
+  -> Eff es a
+handlerToEff handler = do
+  v <- unsafeEff_ $ Servant.runHandler handler
+  either throwError pure v
+
+effToHandler
+  :: forall (a :: Type)
+   . ()
+  => Eff '[Error ServerError, IOE] a
+  -> Handler a
+effToHandler computation = do
+  v <- liftIO . runEff . runErrorNoCallStack @ServerError $ computation
+  either T.throwError pure v

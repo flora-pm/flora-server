@@ -20,6 +20,8 @@ import GHC.Generics (Generic)
 import Data.ByteString.Lazy
 import Data.Maybe (fromJust)
 import Data.Text.Encoding (encodeUtf8)
+import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.Version (Version)
 import Flora.Model.Package.Component
 import Flora.Model.Package.Types
 
@@ -67,3 +69,15 @@ instance FromField RequirementMetadata where
 
 instance ToField RequirementMetadata where
   toField = toJSONField
+
+-- | This datatype holds information about the latest version of a dependency
+data DependencyInfo = DependencyInfo
+  { namespace :: Namespace
+  , name :: PackageName
+  , requirement :: Text
+  , latestVersion :: Version
+  , latestSynopsis :: Text
+  , latestLicense :: SPDX.License
+  }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromRow)

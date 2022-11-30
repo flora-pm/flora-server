@@ -7,15 +7,12 @@ import Data.Text.Display (Display (..))
 import Data.Text.Lazy.Builder qualified as Builder
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Distribution.Types.Version (Version)
 import Log qualified
 
-import Distribution.SPDX.License qualified as SPDX
-import Flora.Model.Package (Namespace (..), PackageName, formatPackage)
+import Flora.Model.Package (PackageInfo (..), formatPackage)
 import Flora.Model.Package.Query qualified as Query
-import FloraWeb.Server.Auth (FloraPage)
+import FloraWeb.Server.Auth.Types (FloraPage)
 import FloraWeb.Server.Logging
-import Optics.Core
 
 data SearchAction
   = ListAllPackages
@@ -26,35 +23,31 @@ instance Display SearchAction where
   displayBuilder ListAllPackages = "Packages"
   displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
 
-searchPackageByName :: Word -> Text -> FloraPage (Word, Vector (Namespace, PackageName, Text, Version, SPDX.License))
+searchPackageByName :: Word -> Text -> FloraPage (Word, Vector PackageInfo)
 searchPackageByName pageNumber queryString = do
-  (dbResults, duration) <- timeAction $ Query.searchPackage pageNumber queryString
+  (results, duration) <- timeAction $ Query.searchPackage pageNumber queryString
 
   Log.logInfo "search-results" $
     object
       [ "search_string" .= queryString
       , "duration" .= duration
-      , "results_count" .= Vector.length dbResults
+      , "results_count" .= Vector.length results
       , "results"
           .= List.map
-            ( \(namespace, packageName, _, _, _, score :: Float) ->
+            ( \PackageInfo{namespace, name, rating} ->
                 object
-                  [ "package" .= formatPackage namespace packageName
-                  , "score" .= score
+                  [ "package" .= formatPackage namespace name
+                  , "score" .= rating
                   ]
             )
-            (Vector.toList dbResults)
+            (Vector.toList results)
       ]
 
-  let getInfo = (,,,,) <$> view _1 <*> view _2 <*> view _3 <*> view _4 <*> view _5
   count <- Query.countPackagesByName queryString
-  let results = fmap getInfo dbResults
   pure (count, results)
 
-listAllPackages :: Word -> FloraPage (Word, Vector (Namespace, PackageName, Text, Version, SPDX.License))
+listAllPackages :: Word -> FloraPage (Word, Vector PackageInfo)
 listAllPackages pageNumber = do
   results <- Query.listAllPackages pageNumber
   count <- Query.countPackages
-  let getInfo = (,,,,) <$> view _1 <*> view _2 <*> view _3 <*> view _4 <*> view _5
-  let resultVector = fmap getInfo results
-  pure (count, resultVector)
+  pure (count, results)

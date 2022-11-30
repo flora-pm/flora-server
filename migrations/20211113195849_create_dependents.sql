@@ -1,3 +1,4 @@
+-- migrate:up
 -- Copyright 2015 Six Colors AB
 -- Copyright 2021 Flora.pm development team
 --

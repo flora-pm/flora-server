@@ -5,7 +5,6 @@ import Control.Concurrent.Async qualified as Async
 import Control.Monad.IO.Class
 import Data.Proxy (Proxy (..))
 import Database.PostgreSQL.Entity.DBT
-import Effectful.Servant (handlerToEff)
 import Lucid
 import Network.HTTP.Types.Status (notFound404)
 import OddJobs.Endpoints qualified as OddJobs
@@ -22,7 +21,7 @@ import Flora.Model.User.Query qualified as Query
 import Flora.OddJobs
 import FloraWeb.Routes.Pages.Admin
 import FloraWeb.Server.Auth
-import FloraWeb.Server.Utils (redirect)
+import FloraWeb.Server.Utils (handlerToEff, redirect)
 import FloraWeb.Session (getSession)
 import FloraWeb.Templates (ActiveElements (..), TemplateEnv (..), defaultTemplateEnv, fromSession, render)
 import FloraWeb.Templates.Admin qualified as Templates

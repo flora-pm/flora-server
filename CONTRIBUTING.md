@@ -19,6 +19,18 @@ The following Haskell command-line tools will have to be installed:
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
 
+### Nix Setup
+
+Nix Flakes are used to build the application. It is recommended your version of the `nix` tool
+is at least 2.11. Please do not forget to add the appropriate configuration line in order to use flakes, as
+described in the [NixOS Wiki][nix-flakes] page.
+
+After that, it should be straightforward to run:
+
+```
+$ make nix-shell
+```
+
 ### Pull Requests
 
 You need to
@@ -56,7 +68,19 @@ Open a thread in the [Questions][Questions board] discussion board. You'll get h
 
 Open a [Ticket][Ticket] and tell us what you can about your problem.
 
+### Profiling
+
+If you are about to run `flora-cli` or `flora-server` with profiling, please first read
+https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/.
+
+Here are the steps:
+
+1. `$ cabal build flora-server -f prof` (or `flora-cli`)
+2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
+3. `$ eventlog2html flora-server.eventlog`
+
 [CoC]: https://github.com/flora-pm/flora-server/blob/master/CODE_OF_CONDUCT.md
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions
 [Ticket]: https://github.com/flora-pm/flora-server/issues/new
+[nix-flakes]: https://nixos.wiki/wiki/Flakes

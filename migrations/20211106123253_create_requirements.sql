@@ -1,3 +1,4 @@
+-- migrate:up
 create table if not exists requirements (
   requirement_id uuid primary key,
   package_component_id uuid references package_components not null, -- Points to the dependent

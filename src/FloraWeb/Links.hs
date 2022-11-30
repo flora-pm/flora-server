@@ -63,3 +63,28 @@ packageSearchLink search pageNumber =
     // Search.displaySearch
     /: Just search
     /: Just pageNumber
+
+packageDependencies :: Namespace -> PackageName -> Version -> Link
+packageDependencies namespace packageName version =
+  links
+    // Web.packages
+    // Web.showVersionDependencies
+    /: namespace
+    /: packageName
+    /: version
+
+packageDependents :: Namespace -> PackageName -> Link
+packageDependents namespace packageName =
+  links
+    // Web.packages
+    // Web.showDependents
+    /: namespace
+    /: packageName
+
+packageVersions :: Namespace -> PackageName -> Link
+packageVersions namespace packageName =
+  links
+    // Web.packages
+    // Web.listVersions
+    /: namespace
+    /: packageName

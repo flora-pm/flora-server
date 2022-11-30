@@ -1,0 +1,168 @@
+diff --git a/Makefile b/Makefile
+index 58cd233..7a9de8a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -21,10 +21,10 @@ clean-assets: ## Remove JS artifacts
+ 	@cd assets/ && rm -R node_modules
+ 
+ db-create: ## Create the database
+-	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
++	@createdb --maintenance-db=template1 -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
+ 
+ db-drop: ## Drop the database
+-	@dropdb -f --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
++	@dropdb --maintenance-db=template1 -f --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
+ 
+ db-setup: db-create ## Setup the dev database
+ 	@migrate init "$(FLORA_DB_CONNSTRING)" 
+diff --git a/cabal.project b/cabal.project
+index adb1841..ecdcdda 100644
+--- a/cabal.project
++++ b/cabal.project
+@@ -11,7 +11,7 @@ allow-newer: all
+ test-show-details: direct
+ 
+ package *
+-  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS
++  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
+   flags: -prod
+ 
+ package warp
+diff --git a/cabal.project.freeze b/cabal.project.freeze
+index 68afd71..69fb9e5 100644
+--- a/cabal.project.freeze
++++ b/cabal.project.freeze
+@@ -130,7 +130,6 @@ constraints: any.Cabal ==3.6.3.0,
+              any.filepath ==1.4.2.2,
+              any.filtrable ==0.1.6.0,
+              filtrable +containers,
+-             flora -prod,
+              any.foreign-store ==0.2,
+              any.free ==5.1.9,
+              any.friendly-time ==0.4.1,
+diff --git a/migrations/20211105225100_create_users.sql b/migrations/20211105225100_create_users.sql
+index eef0a45..d2901e4 100644
+--- a/migrations/20211105225100_create_users.sql
++++ b/migrations/20211105225100_create_users.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create table if not exists users (
+   user_id uuid primary key,
+   username text unique not null,
+diff --git a/migrations/20211105230339_create_organisations.sql b/migrations/20211105230339_create_organisations.sql
+index 4944160..eab4041 100644
+--- a/migrations/20211105230339_create_organisations.sql
++++ b/migrations/20211105230339_create_organisations.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ CREATE TABLE IF NOT EXISTS organisations (
+     organisation_id uuid PRIMARY KEY,
+     organisation_name TEXT NOT NULL,
+diff --git a/migrations/20211106003401_create_packages.sql b/migrations/20211106003401_create_packages.sql
+index 59328c4..9758108 100644
+--- a/migrations/20211106003401_create_packages.sql
++++ b/migrations/20211106003401_create_packages.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create extension if not exists pg_trgm;
+ create type package_state as enum ('unknown', 'fully-imported');
+ 
+diff --git a/migrations/20211106120712_create_package_publishers.sql b/migrations/20211106120712_create_package_publishers.sql
+index c22cdba..bcee7f4 100644
+--- a/migrations/20211106120712_create_package_publishers.sql
++++ b/migrations/20211106120712_create_package_publishers.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create table if not exists package_publishers (
+   package_publisher_id uuid primary key,
+   package_id uuid references packages not null,
+diff --git a/migrations/20211106123053_create_releases.sql b/migrations/20211106123053_create_releases.sql
+index c6cca2d..677a429 100644
+--- a/migrations/20211106123053_create_releases.sql
++++ b/migrations/20211106123053_create_releases.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create type import_status as enum ('imported', 'inexistent', 'not-imported');
+ 
+ -- A release belongs to a package, and contains multiple components.
+diff --git a/migrations/20211106123100_create_package_components.sql b/migrations/20211106123100_create_package_components.sql
+index 28a5eb7..2fac00d 100644
+--- a/migrations/20211106123100_create_package_components.sql
++++ b/migrations/20211106123100_create_package_components.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ -- A package component is the smallest unit of a Hackage package.
+ -- Each package may contain a default, top-level library, as well as
+ -- sub-libraries, executables, test suites & benchmark.
+diff --git a/migrations/20211106123253_create_requirements.sql b/migrations/20211106123253_create_requirements.sql
+index dbdeb91..424e809 100644
+--- a/migrations/20211106123253_create_requirements.sql
++++ b/migrations/20211106123253_create_requirements.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create table if not exists requirements (
+   requirement_id uuid primary key,
+   package_component_id uuid references package_components not null, -- Points to the dependent
+diff --git a/migrations/20211106140016_create_downloads.sql b/migrations/20211106140016_create_downloads.sql
+index 295cd62..6d743a4 100644
+--- a/migrations/20211106140016_create_downloads.sql
++++ b/migrations/20211106140016_create_downloads.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create table if not exists downloads (
+   download_id serial primary key,
+   release_id uuid references releases,
+diff --git a/migrations/20211113195849_create_dependents.sql b/migrations/20211113195849_create_dependents.sql
+index edc40f8..ef03715 100644
+--- a/migrations/20211113195849_create_dependents.sql
++++ b/migrations/20211113195849_create_dependents.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ -- Copyright 2015 Six Colors AB
+ -- Copyright 2021 Flora.pm development team
+ --
+diff --git a/migrations/20211216201331_create_persistent_sessions.sql b/migrations/20211216201331_create_persistent_sessions.sql
+index 73df290..cd82034 100644
+--- a/migrations/20211216201331_create_persistent_sessions.sql
++++ b/migrations/20211216201331_create_persistent_sessions.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create table if not exists persistent_sessions (
+   persistent_session_id uuid primary key,
+   user_id uuid references users,
+diff --git a/migrations/20220211183303_create_categories.sql b/migrations/20220211183303_create_categories.sql
+index 072af90..aa70159 100644
+--- a/migrations/20220211183303_create_categories.sql
++++ b/migrations/20220211183303_create_categories.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create table if not exists categories (
+   category_id uuid primary key,
+   name text not null,
+diff --git a/migrations/20220211183605_create_package_categories.sql b/migrations/20220211183605_create_package_categories.sql
+index 9841487..a4c43ef 100644
+--- a/migrations/20220211183605_create_package_categories.sql
++++ b/migrations/20220211183605_create_package_categories.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create table if not exists package_categories (
+   package_id uuid references packages,
+   category_id uuid references categories,
+diff --git a/migrations/20220326182257_create_latest_versions.sql b/migrations/20220326182257_create_latest_versions.sql
+index f15d33d..d505c9d 100644
+--- a/migrations/20220326182257_create_latest_versions.sql
++++ b/migrations/20220326182257_create_latest_versions.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ create materialized view latest_versions (
+   namespace,
+   name,
+diff --git a/migrations/20220531232510_create_oddjobs.sql b/migrations/20220531232510_create_oddjobs.sql
+index 190d26e..f3c14c3 100644
+--- a/migrations/20220531232510_create_oddjobs.sql
++++ b/migrations/20220531232510_create_oddjobs.sql
+@@ -1,3 +1,4 @@
++-- migrate:up
+ CREATE FUNCTION notify_job_monitor_for_oddjobs ()
+     RETURNS TRIGGER
+     LANGUAGE plpgsql

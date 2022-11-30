@@ -1,3 +1,4 @@
+-- migrate:up
 create table if not exists categories (
   category_id uuid primary key,
   name text not null,

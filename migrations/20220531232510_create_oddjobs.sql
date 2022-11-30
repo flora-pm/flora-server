@@ -1,3 +1,4 @@
+-- migrate:up
 CREATE FUNCTION notify_job_monitor_for_oddjobs ()
     RETURNS TRIGGER
     LANGUAGE plpgsql
