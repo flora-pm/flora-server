@@ -14,6 +14,7 @@ import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath
 
+import Control.Concurrent qualified as Concurrent
 import Flora.Import.Package (loadAndExtractCabalFile, persistImportOutput)
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Update qualified as Update
@@ -39,7 +40,8 @@ importAllFilesInDirectory appLogger user dir = do
                   when (currentCount `mod` 400 == 0) $
                     displayStats currentCount
                   return currentCount
-  processedPackageCount <- liftIO $ S.fold displayCount $ S.fromParallel $ S.mapM (processFile pool) $ findAllCabalFilesInDirectory dir
+  threadCount <- liftIO Concurrent.getNumCapabilities
+  processedPackageCount <- liftIO $ S.fold displayCount $ S.fromParallel $ S.mapM (processFile pool) $ S.maxThreads (threadCount - 1) $ findAllCabalFilesInDirectory dir
   displayStats processedPackageCount
   Update.refreshLatestVersions >> Update.refreshDependents
   where
