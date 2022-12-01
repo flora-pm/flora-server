@@ -453,29 +453,28 @@ genericComponentExtractor
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
         component = PackageComponent{..}
-        dependencies = buildDependency package componentId <$> getDeps rawComponent
+        dependencies = force $ buildDependency package componentId <$> getDeps rawComponent
      in force (component, dependencies)
 
 buildDependency :: Package -> ComponentId -> Cabal.Dependency -> ImportDependency
 buildDependency package packageComponentId (Cabal.Dependency depName versionRange _) =
-  force $
-    let name = depName & unPackageName & pack & PackageName
-        namespace = chooseNamespace name
-        packageId = deterministicPackageId namespace name
-        ownerId = package.ownerId
-        createdAt = package.createdAt
-        updatedAt = package.updatedAt
-        status = UnknownPackage
-        dependencyPackage = Package{..}
-        requirement =
-          Requirement
-            { requirementId = deterministicRequirementId packageComponentId packageId
-            , packageComponentId
-            , packageId
-            , requirement = display . prettyShow $ versionRange
-            , metadata = RequirementMetadata{flag = Nothing}
-            }
-     in ImportDependency{package = dependencyPackage, requirement}
+  let name = depName & unPackageName & pack & PackageName
+      namespace = chooseNamespace name
+      packageId = deterministicPackageId namespace name
+      ownerId = package.ownerId
+      createdAt = package.createdAt
+      updatedAt = package.updatedAt
+      status = UnknownPackage
+      dependencyPackage = Package{..}
+      requirement =
+        Requirement
+          { requirementId = deterministicRequirementId packageComponentId packageId
+          , packageComponentId
+          , packageId
+          , requirement = display . prettyShow $ versionRange
+          , metadata = RequirementMetadata{flag = Nothing}
+          }
+   in force $ ImportDependency{package = dependencyPackage, requirement}
 
 getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
 getRepoURL _ [] = Vector.empty
