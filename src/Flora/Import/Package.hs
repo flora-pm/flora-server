@@ -268,9 +268,9 @@ extractPackageDataFromCabal :: (DB :> es, IOE :> es) => UserId -> GenericPackage
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
-  let packageName = packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
-  let packageVersion = packageDesc.package.pkgVersion
-  let namespace = chooseNamespace packageName
+  let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
+  let packageVersion = force $ packageDesc.package.pkgVersion
+  let namespace = force $ chooseNamespace packageName
   let packageId = deterministicPackageId namespace packageName
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- liftIO getCurrentTime
@@ -454,7 +454,7 @@ genericComponentExtractor
         metadata = ComponentMetadata (ComponentCondition <$> condition)
         component = PackageComponent{..}
         dependencies = buildDependency package componentId <$> getDeps rawComponent
-     in (component, dependencies)
+     in force (component, dependencies)
 
 buildDependency :: Package -> ComponentId -> Cabal.Dependency -> ImportDependency
 buildDependency package packageComponentId (Cabal.Dependency depName versionRange _) =
