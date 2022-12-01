@@ -213,6 +213,7 @@ library
     , lucid-aria                 ^>=0.1
     , lucid-svg                  ^>=0.7
     , memory                     ^>=0.18
+    , deepseq
     , monad-control              ^>=1.0
     , monad-time                 ^>=0.4
     , mtl                        ^>=2.2

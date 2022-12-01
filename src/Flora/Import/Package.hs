@@ -255,8 +255,8 @@ persistImportOutput (ImportOutput package categories release components) = do
       parallelRun pool persistImportDependency deps
 
     persistImportDependency dep = do
-      Update.upsertPackage (dep.package)
-      Update.upsertRequirement (dep.requirement)
+      evaluate . force $ Update.upsertPackage (dep.package)
+      evaluate . force $ Update.upsertRequirement (dep.requirement)
 
 {-| Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
  that can later be inserted into the database. This function produces stable, deterministic ids,
