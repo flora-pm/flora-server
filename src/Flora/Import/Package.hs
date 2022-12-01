@@ -59,6 +59,7 @@ import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath
 
+import Control.DeepSeq (NFData, force)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Compiler (CompilerFlavor (..))
@@ -98,6 +99,7 @@ data ImportDependency = ImportDependency
   , requirement :: Requirement
   }
   deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
 
 data ImportOutput = ImportOutput
   { package :: Package
@@ -241,7 +243,7 @@ persistImportOutput (ImportOutput package categories release components) = do
   liftIO $ putStr "\n"
   where
     parallelRun :: (MonadIO m, Foldable t) => Pool Connection -> (a -> Eff [DB, IOE] b) -> t a -> m ()
-    parallelRun pool f = liftIO . S.drain . S.fromParallel . S.mapM (runEff . runDB pool . f) . S.fromFoldable
+    parallelRun pool f = force $ liftIO . S.drain . S.fromParallel . S.mapM (runEff . runDB pool . f) . S.fromFoldable
     packageName = display (package.namespace) <> "/" <> display (package.name)
     persistPackage = do
       let packageId = package.packageId
@@ -255,8 +257,8 @@ persistImportOutput (ImportOutput package categories release components) = do
       parallelRun pool persistImportDependency deps
 
     persistImportDependency dep = do
-      evaluate . force $ Update.upsertPackage (dep.package)
-      evaluate . force $ Update.upsertRequirement (dep.requirement)
+      Update.upsertPackage (dep.package)
+      Update.upsertRequirement (dep.requirement)
 
 {-| Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
  that can later be inserted into the database. This function produces stable, deterministic ids,
@@ -456,23 +458,24 @@ genericComponentExtractor
 
 buildDependency :: Package -> ComponentId -> Cabal.Dependency -> ImportDependency
 buildDependency package packageComponentId (Cabal.Dependency depName versionRange _) =
-  let name = depName & unPackageName & pack & PackageName
-      namespace = chooseNamespace name
-      packageId = deterministicPackageId namespace name
-      ownerId = package.ownerId
-      createdAt = package.createdAt
-      updatedAt = package.updatedAt
-      status = UnknownPackage
-      dependencyPackage = Package{..}
-      requirement =
-        Requirement
-          { requirementId = deterministicRequirementId packageComponentId packageId
-          , packageComponentId
-          , packageId
-          , requirement = display . prettyShow $ versionRange
-          , metadata = RequirementMetadata{flag = Nothing}
-          }
-   in ImportDependency{package = dependencyPackage, requirement}
+  force $
+    let name = depName & unPackageName & pack & PackageName
+        namespace = chooseNamespace name
+        packageId = deterministicPackageId namespace name
+        ownerId = package.ownerId
+        createdAt = package.createdAt
+        updatedAt = package.updatedAt
+        status = UnknownPackage
+        dependencyPackage = Package{..}
+        requirement =
+          Requirement
+            { requirementId = deterministicRequirementId packageComponentId packageId
+            , packageComponentId
+            , packageId
+            , requirement = display . prettyShow $ versionRange
+            , metadata = RequirementMetadata{flag = Nothing}
+            }
+     in ImportDependency{package = dependencyPackage, requirement}
 
 getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
 getRepoURL _ [] = Vector.empty

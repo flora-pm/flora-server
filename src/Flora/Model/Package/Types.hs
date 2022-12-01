@@ -3,6 +3,7 @@
 
 module Flora.Model.Package.Types where
 
+import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
@@ -38,7 +39,7 @@ import Flora.Model.User
 newtype PackageId = PackageId {getPackageId :: UUID}
   deriving stock (Generic)
   deriving
-    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, NFData)
     via UUID
   deriving
     (Display)
@@ -53,7 +54,7 @@ newtype PackageName = PackageName Text
   deriving stock (Show, Generic)
   deriving anyclass (Souffle.Marshal)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, ToHttpApiData)
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, ToHttpApiData, NFData)
     via Text
 
 instance Pretty PackageName where
@@ -77,7 +78,7 @@ parsePackageName txt =
 newtype Namespace = Namespace Text
   deriving stock (Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, ToHtml)
+    (Eq, Ord, FromJSON, ToJSON, ToHtml, NFData)
     via Text
 
 instance ToField Namespace where
@@ -114,7 +115,7 @@ parseNamespace txt =
 
 data PackageStatus = UnknownPackage | FullyImportedPackage
   deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
-  deriving anyclass (ToJSON)
+  deriving anyclass (ToJSON, NFData)
 
 parsePackageStatus :: ByteString -> Maybe PackageStatus
 parsePackageStatus "unknown" = pure UnknownPackage
@@ -149,7 +150,7 @@ data Package = Package
   , status :: PackageStatus
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (FromRow, ToRow, ToJSON)
+  deriving anyclass (FromRow, ToRow, ToJSON, NFData)
 
 instance Entity Package where
   tableName = "packages"
@@ -170,7 +171,7 @@ data Dependent = Dependent
   , dependentId :: PackageId
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow)
+  deriving anyclass (FromRow, ToRow, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "dependents"] Dependent)
@@ -187,4 +188,4 @@ data PackageInfo = PackageInfo
   , rating :: Maybe Double
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow)
+  deriving anyclass (FromRow, NFData)
