@@ -271,8 +271,8 @@ extractPackageDataFromCabal userId genericDesc = do
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
   let packageVersion = force $ packageDesc.package.pkgVersion
   let namespace = force $ chooseNamespace packageName
-  let packageId = deterministicPackageId namespace packageName
-  let releaseId = deterministicReleaseId packageId packageVersion
+  let packageId = force $ deterministicPackageId namespace packageName
+  let releaseId = force $ deterministicReleaseId packageId packageVersion
   timestamp <- liftIO getCurrentTime
   let sourceRepos = getRepoURL packageName $ packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
