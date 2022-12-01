@@ -16,6 +16,11 @@ allow-newer: type-errors-pretty:base
            , lucid-alpine:text
            , servant-server:resourcet
            , log-base:mmorph
+           , streamly:unicode-data
+           , hedgehog:resourcet
+           , time-locale-compat:time
+
+allow-older: pg-entity:time
 
 test-show-details: direct
 
