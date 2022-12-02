@@ -17,6 +17,7 @@ import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField (ToField, toField, toJSONField)
 import GHC.Generics (Generic)
 
+import Control.DeepSeq
 import Data.ByteString.Lazy
 import Data.Maybe (fromJust)
 import Data.Text.Encoding (encodeUtf8)
@@ -27,7 +28,7 @@ import Flora.Model.Package.Types
 
 newtype RequirementId = RequirementId {getRequirementId :: UUID}
   deriving
-    (Eq, Show, FromField, ToField, FromJSON, ToJSON)
+    (Eq, Show, FromField, ToField, FromJSON, ToJSON, NFData)
     via UUID
   deriving (Display) via ShowInstance UUID
 
@@ -50,7 +51,7 @@ data Requirement = Requirement
   -- ^ Additional metadata, like flags
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow)
+  deriving anyclass (FromRow, ToRow, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "requirements"] Requirement)
@@ -62,7 +63,7 @@ data RequirementMetadata = RequirementMetadata
   { flag :: Maybe Text
   }
   deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving anyclass (ToJSON, FromJSON, NFData)
 
 instance FromField RequirementMetadata where
   fromField = fromJSONField
@@ -80,4 +81,4 @@ data DependencyInfo = DependencyInfo
   , latestLicense :: SPDX.License
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow)
+  deriving anyclass (FromRow, NFData)

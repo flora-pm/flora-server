@@ -2,6 +2,7 @@
 
 module Flora.Model.Category.Types where
 
+import Control.DeepSeq
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Text (Text)
 import Data.UUID
@@ -20,14 +21,14 @@ import Text.Slugify
 newtype CategoryId = CategoryId {getCategoryId :: UUID}
   deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData, NFData)
     via UUID
 
 newtype CategoryName = CategoryName {getCategoryName :: Text}
   deriving stock (Show, Generic)
   deriving anyclass (Souffle.Marshal)
   deriving
-    (Eq, Ord)
+    (Eq, Ord, NFData)
     via Text
 
 data Category = Category
@@ -37,7 +38,7 @@ data Category = Category
   , synopsis :: Text
   }
   deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromRow, ToRow)
+  deriving anyclass (FromRow, ToRow, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "categories"] Category)
@@ -47,7 +48,7 @@ data PackageCategory = PackageCategory
   , categoryId :: CategoryId
   }
   deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromRow, ToRow)
+  deriving anyclass (FromRow, ToRow, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "package_categories"] PackageCategory)

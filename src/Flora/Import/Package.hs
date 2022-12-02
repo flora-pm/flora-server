@@ -59,6 +59,7 @@ import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath
 
+import Control.DeepSeq (NFData, force)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Compiler (CompilerFlavor (..))
@@ -98,6 +99,7 @@ data ImportDependency = ImportDependency
   , requirement :: Requirement
   }
   deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
 
 data ImportOutput = ImportOutput
   { package :: Package
@@ -241,7 +243,7 @@ persistImportOutput (ImportOutput package categories release components) = do
   liftIO $ putStr "\n"
   where
     parallelRun :: (MonadIO m, Foldable t) => Pool Connection -> (a -> Eff [DB, IOE] b) -> t a -> m ()
-    parallelRun pool f = liftIO . S.drain . S.fromParallel . S.mapM (runEff . runDB pool . f) . S.fromFoldable
+    parallelRun pool f = force $ liftIO . S.drain . S.fromParallel . S.mapM (runEff . runDB pool . f) . S.fromFoldable
     packageName = display (package.namespace) <> "/" <> display (package.name)
     persistPackage = do
       let packageId = package.packageId
@@ -266,11 +268,11 @@ extractPackageDataFromCabal :: (DB :> es, IOE :> es) => UserId -> GenericPackage
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
-  let packageName = packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
-  let packageVersion = packageDesc.package.pkgVersion
-  let namespace = chooseNamespace packageName
-  let packageId = deterministicPackageId namespace packageName
-  let releaseId = deterministicReleaseId packageId packageVersion
+  let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
+  let packageVersion = force $ packageDesc.package.pkgVersion
+  let namespace = force $ chooseNamespace packageName
+  let packageId = force $ deterministicPackageId namespace packageName
+  let releaseId = force $ deterministicReleaseId packageId packageVersion
   timestamp <- liftIO getCurrentTime
   let sourceRepos = getRepoURL packageName $ packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
@@ -451,8 +453,8 @@ genericComponentExtractor
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
         component = PackageComponent{..}
-        dependencies = buildDependency package componentId <$> getDeps rawComponent
-     in (component, dependencies)
+        dependencies = force $ buildDependency package componentId <$> getDeps rawComponent
+     in force (component, dependencies)
 
 buildDependency :: Package -> ComponentId -> Cabal.Dependency -> ImportDependency
 buildDependency package packageComponentId (Cabal.Dependency depName versionRange _) =
@@ -472,7 +474,7 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
           , requirement = display . prettyShow $ versionRange
           , metadata = RequirementMetadata{flag = Nothing}
           }
-   in ImportDependency{package = dependencyPackage, requirement}
+   in force $ ImportDependency{package = dependencyPackage, requirement}
 
 getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
 getRepoURL _ [] = Vector.empty

@@ -14,6 +14,7 @@ module Flora.Model.User
   )
 where
 
+import Control.DeepSeq (NFData)
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Password.Argon2
@@ -23,6 +24,7 @@ import Data.Password.Argon2
   , PasswordHash
   )
 import Data.Password.Argon2 qualified as Argon2
+import Data.Password.Orphans ()
 import Data.Text (Text)
 import Data.Text.Display (Display, ShowInstance (..), displayBuilder)
 import Data.Time (UTCTime)
@@ -43,7 +45,7 @@ import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 newtype UserId = UserId {getUserId :: UUID}
   deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData)
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData, NFData)
     via UUID
   deriving
     (Display)
@@ -60,7 +62,7 @@ data User = User
   , updatedAt :: UTCTime
   }
   deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromRow, ToRow)
+  deriving anyclass (FromRow, ToRow, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "users"] User)
@@ -73,7 +75,7 @@ data UserFlags = UserFlags
   , canLogin :: Bool
   }
   deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (FromJSON, ToJSON, NFData)
 
 instance FromField UserFlags where
   fromField = fromJSONField
@@ -87,6 +89,7 @@ data UserCreationForm = UserCreationForm
   , password :: PasswordHash Argon2
   }
   deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
 
 data AdminCreationForm = AdminCreationForm
   { username :: Text
@@ -94,6 +97,7 @@ data AdminCreationForm = AdminCreationForm
   , password :: PasswordHash Argon2
   }
   deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData)
 
 -- | Type error! Do not use 'toJSON' on a 'Password'!
 instance TypeError (CannotDisplayPassword "JSON") => ToJSON Password where

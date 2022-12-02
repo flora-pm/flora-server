@@ -66,7 +66,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/kleidukos/pg-transact-effectful
-    tag: 590dd6c
+    tag: 98ee27b
 
 source-repository-package
     type: git
