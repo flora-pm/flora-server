@@ -53,7 +53,6 @@ common common-ghc-options
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
     -Wno-unticked-promoted-constructors -Werror=unused-imports
     -fdicts-strict -fmax-worker-args=16 -fspec-constr-recursive=16
-    -fplugin Fusion.Plugin
 
   if flag(prod)
     ghc-options:
