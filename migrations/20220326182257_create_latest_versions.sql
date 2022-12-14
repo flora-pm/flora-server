@@ -19,5 +19,6 @@ create materialized view latest_versions (
     group by p.namespace, p.name, synopsis, p.package_id, r.version, license
     order by p.package_id, version desc;
 
+create index on latest_versions (name);
 create index on latest_versions (namespace, name);
 create unique index on latest_versions (name, namespace, version);
