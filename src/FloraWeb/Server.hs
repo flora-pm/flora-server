@@ -109,7 +109,7 @@ runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   let runnerEnv = JobsRunnerEnv httpManager
-  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv.config) appLogger (floraEnv.pool)
+  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv.config) appLogger (floraEnv.jobsPool)
       oddJobsCfg =
         OddJobs.makeConfig
           runnerEnv

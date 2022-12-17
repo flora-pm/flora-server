@@ -84,6 +84,7 @@ library
     Flora.Import.Categories.Tuning
     Flora.Import.Package
     Flora.Import.Package.Bulk
+    Flora.Import.Package.Types
     Flora.Import.Types
     Flora.Model.Admin.Report
     Flora.Model.Category

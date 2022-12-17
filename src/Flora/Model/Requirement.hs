@@ -51,7 +51,7 @@ data Requirement = Requirement
   -- ^ Additional metadata, like flags
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving anyclass (FromRow, ToRow, NFData, FromJSON, ToJSON)
   deriving
     (Entity)
     via (GenericEntity '[TableName "requirements"] Requirement)

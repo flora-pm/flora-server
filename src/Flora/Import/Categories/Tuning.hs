@@ -1,6 +1,7 @@
 module Flora.Import.Categories.Tuning where
 
 import Control.Monad.IO.Class
+import Data.Aeson
 import Data.ByteString.Char8 qualified as S8
 import Data.Text (Text)
 import Data.Text.Display
@@ -31,7 +32,7 @@ instance Display UserPackageCategory where
 
 -- | A normalised pair of package name and category. Output to our program.
 data NormalisedPackageCategory = NormalisedPackageCategory CName
-  deriving anyclass (Souffle.Marshal)
+  deriving anyclass (Souffle.Marshal, FromJSON, ToJSON)
   deriving stock (Generic, Eq, Show)
   deriving
     (Souffle.Fact)
