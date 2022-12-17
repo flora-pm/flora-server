@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Flora.Import.Package.Bulk (importAllFilesInDirectory, importAllFilesInRelativeDirectory) where
 
@@ -14,21 +15,20 @@ import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath
 
-import Control.Concurrent qualified as Concurrent
-import Flora.Import.Package (loadAndExtractCabalFile, persistImportOutput)
+import Flora.Import.Package (enqueueImportJob, loadAndExtractCabalFile, persistImportOutput)
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
-importAllFilesInRelativeDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Eff es ()
-importAllFilesInRelativeDirectory appLogger user dir = do
+importAllFilesInRelativeDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
+importAllFilesInRelativeDirectory appLogger user dir directImport = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importAllFilesInDirectory appLogger user workdir
+  importAllFilesInDirectory appLogger user workdir directImport
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
-importAllFilesInDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Eff es ()
-importAllFilesInDirectory appLogger user dir = do
+importAllFilesInDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
+importAllFilesInDirectory appLogger user dir directImport = do
   pool <- getPool
   liftIO $ System.createDirectoryIfMissing True dir
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
@@ -40,8 +40,7 @@ importAllFilesInDirectory appLogger user dir = do
                   when (currentCount `mod` 400 == 0) $
                     displayStats currentCount
                   return currentCount
-  threadCount <- liftIO Concurrent.getNumCapabilities
-  processedPackageCount <- liftIO $ S.fold displayCount $ S.fromParallel $ S.mapM (processFile pool) $ S.maxThreads (threadCount - 1) $ findAllCabalFilesInDirectory dir
+  processedPackageCount <- liftIO $ S.fold displayCount $ S.fromAsync $ S.mapM (processFile pool) $ findAllCabalFilesInDirectory dir
   displayStats processedPackageCount
   Update.refreshLatestVersions >> Update.refreshDependents
   where
@@ -50,12 +49,16 @@ importAllFilesInDirectory appLogger user dir = do
         . runDB pool
         . runCurrentTimeIO
         . Log.runLog "flora-jobs" appLogger defaultLogLevel
-        . (loadAndExtractCabalFile user >=> persistImportOutput)
+        . ( loadAndExtractCabalFile user >=> \importedPackage ->
+              if directImport
+                then persistImportOutput importedPackage
+                else enqueueImportJob importedPackage
+          )
     displayStats :: MonadIO m => Int -> m ()
     displayStats currentCount =
       liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
-findAllCabalFilesInDirectory :: FilePath -> S.ParallelT IO FilePath
+findAllCabalFilesInDirectory :: FilePath -> S.AsyncT IO FilePath
 findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $ S.fromList [workdir]
   where
     traversePath p = do

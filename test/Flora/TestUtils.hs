@@ -123,6 +123,7 @@ importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
     appLogger
     (fixtures ^. #hackageUser % #userId)
     "./test/fixtures/Cabal/"
+    True
 
 runTestEff :: TestEff a -> Pool Connection -> IO a
 runTestEff comp pool = runEff $

@@ -33,11 +33,13 @@ import Distribution.Types.VersionRange (VersionRange)
 import GHC.Generics (Generic)
 import Lucid qualified
 
+import Control.DeepSeq
+import Data.Text.Lazy qualified as Text
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
-    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON)
+    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, NFData)
     via UUID
   deriving
     (Display)
@@ -49,12 +51,22 @@ newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
 newtype TextHtml = MkTextHtml (Lucid.Html ())
   deriving stock (Show, Generic)
 
+instance ToJSON TextHtml where
+  toJSON (MkTextHtml a) = String $ Text.toStrict $ Lucid.renderText a
+
+instance FromJSON TextHtml where
+  parseJSON = withText "TextHtml" $ \text -> pure $ MkTextHtml $ Lucid.toHtmlRaw @Text text
+
+instance NFData TextHtml where
+  rnf a = seq a ()
+
 instance Eq TextHtml where
   (==) (MkTextHtml a) (MkTextHtml b) = Lucid.renderText a == Lucid.renderText b
 
 --
 instance FromField TextHtml where
   fromField field bs = MkTextHtml . Lucid.toHtmlRaw @Text <$> fromField field bs
+
 instance ToField TextHtml where
   toField (MkTextHtml x) = toField $ Lucid.renderText x
 
@@ -84,7 +96,7 @@ data Release = Release
   , changelogStatus :: ImportStatus
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow)
+  deriving anyclass (FromRow, ToRow, NFData, FromJSON, ToJSON)
   deriving
     (Entity)
     via (GenericEntity '[TableName "releases"] Release)
@@ -97,6 +109,7 @@ data ImportStatus
   | Inexistent
   | NotImported
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
+  deriving anyclass (NFData, ToJSON, FromJSON)
 
 parseImportStatus :: ByteString -> Maybe ImportStatus
 parseImportStatus "imported" = pure Imported
@@ -125,7 +138,7 @@ instance ToField ImportStatus where
 
 newtype SupportedCompilers = Vector (CompilerFlavor, VersionRange)
   deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving anyclass (ToJSON, FromJSON, NFData)
 
 data ReleaseMetadata = ReleaseMetadata
   { license :: SPDX.License
@@ -140,5 +153,5 @@ data ReleaseMetadata = ReleaseMetadata
   , testedWith :: Vector Version
   }
   deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving anyclass (ToJSON, FromJSON, NFData)
   deriving (ToField, FromField) via Aeson ReleaseMetadata

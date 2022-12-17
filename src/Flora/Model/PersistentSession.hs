@@ -20,13 +20,14 @@ import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Env.Generic
 import Web.HttpApiData
 
+import Control.DeepSeq
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Flora.Model.User (UserId)
 
 newtype PersistentSessionId = PersistentSessionId {getPersistentSessionId :: UUID}
   deriving
-    (Show, Eq, FromField, ToField, FromHttpApiData, ToHttpApiData)
+    (Show, Eq, FromField, ToField, FromHttpApiData, ToHttpApiData, NFData)
     via UUID
   deriving
     (Display)
@@ -39,13 +40,14 @@ data PersistentSession = PersistentSession
   , createdAt :: UTCTime
   }
   deriving stock (Show, Eq, Generic)
-  deriving anyclass (FromRow, ToRow)
+  deriving anyclass (FromRow, ToRow, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "persistent_sessions"] PersistentSession)
 
 newtype SessionData = SessionData {getSessionData :: Map Text Text}
   deriving stock (Show, Eq, Generic)
+  deriving newtype (NFData)
   deriving
     (FromField, ToField)
     via Aeson (Map Text Text)

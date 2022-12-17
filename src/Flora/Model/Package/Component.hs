@@ -31,6 +31,7 @@ import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSON
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import GHC.Generics
 
+import Control.DeepSeq
 import Data.Data
 import Data.Maybe
 import Distribution.Orphans ()
@@ -40,7 +41,7 @@ import Flora.Model.Release.Types
 newtype ComponentId = ComponentId {getComponentId :: UUID}
   deriving stock (Generic)
   deriving
-    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON)
+    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, NFData)
     via UUID
   deriving (Display) via ShowInstance UUID
 
@@ -57,6 +58,7 @@ data ComponentType
   | Benchmark
   | ForeignLib
   deriving stock (Eq, Ord, Show, Generic, Bounded, Enum)
+  deriving anyclass (NFData, FromJSON, ToJSON)
 
 instance Display ComponentType where
   displayBuilder Library = "library"
@@ -86,6 +88,7 @@ data CanonicalComponent = CanonicalComponent
   , componentType :: ComponentType
   }
   deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData, FromJSON, ToJSON)
 
 instance Display CanonicalComponent where
   displayBuilder CanonicalComponent{componentName, componentType} = displayBuilder componentType <> ":" <> B.fromText componentName
@@ -97,6 +100,7 @@ data PackageComponent = PackageComponent
   , metadata :: ComponentMetadata
   }
   deriving stock (Eq, Show, Generic)
+  deriving anyclass (NFData, FromJSON, ToJSON)
   deriving (Display) via ShowInstance PackageComponent
 
 instance Entity PackageComponent where
@@ -140,7 +144,7 @@ data ComponentMetadata = ComponentMetadata
   { conditions :: [ComponentCondition]
   }
   deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving anyclass (ToJSON, FromJSON, NFData)
 
 instance FromField ComponentMetadata where
   fromField = fromJSONField
@@ -150,4 +154,4 @@ instance ToField ComponentMetadata where
 
 newtype ComponentCondition = ComponentCondition (Condition.Condition Condition.ConfVar)
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (FromJSON, ToJSON, NFData)

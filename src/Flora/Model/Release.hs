@@ -7,13 +7,16 @@ import Data.UUID (fromByteString, toByteString)
 import Distribution.Types.Version
 import Distribution.Utils.Structured (structuredEncode)
 
+import Control.DeepSeq
 import Flora.Model.Package
 import Flora.Model.Release.Types
 
 -- | Generates a release id deterministically by hashing the package id and a version
 deterministicReleaseId :: PackageId -> Version -> ReleaseId
 deterministicReleaseId (PackageId packageId) version =
-  ReleaseId . fromJust . fromByteString . fromStrict . MD5.hash . toStrict $ concatenatedBs
+  force $
+    ReleaseId . fromJust . fromByteString . fromStrict . MD5.hash . toStrict $
+      concatenatedBs
   where
     concatenatedBs = packageIdBs <> versionBs
     versionBs = structuredEncode version
