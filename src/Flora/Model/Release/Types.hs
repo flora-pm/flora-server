@@ -34,6 +34,7 @@ import GHC.Generics (Generic)
 import Lucid qualified
 
 import Control.DeepSeq
+import Data.Text.Lazy qualified as Text
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
@@ -49,6 +50,12 @@ newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
 -}
 newtype TextHtml = MkTextHtml (Lucid.Html ())
   deriving stock (Show, Generic)
+
+instance ToJSON TextHtml where
+  toJSON (MkTextHtml a) = String $ Text.toStrict $ Lucid.renderText a
+
+instance FromJSON TextHtml where
+  parseJSON = withText "TextHtml" $ \text -> pure $ MkTextHtml $ Lucid.toHtmlRaw @Text text
 
 instance NFData TextHtml where
   rnf a = seq a ()
@@ -89,7 +96,7 @@ data Release = Release
   , changelogStatus :: ImportStatus
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving anyclass (FromRow, ToRow, NFData, FromJSON, ToJSON)
   deriving
     (Entity)
     via (GenericEntity '[TableName "releases"] Release)
@@ -102,7 +109,7 @@ data ImportStatus
   | Inexistent
   | NotImported
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
-  deriving anyclass (NFData)
+  deriving anyclass (NFData, ToJSON, FromJSON)
 
 parseImportStatus :: ByteString -> Maybe ImportStatus
 parseImportStatus "imported" = pure Imported

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 {-|
@@ -20,11 +21,12 @@ altering its id.
 -}
 module Flora.Import.Package where
 
+import Control.DeepSeq (force)
 import Control.Exception
 import Control.Monad.Except
 import Data.ByteString qualified as BS
 import Data.Maybe
-import Data.Pool (Pool)
+import Data.Pool (Pool, withResource)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -32,7 +34,10 @@ import Data.Text qualified as T
 import Data.Text.Display
 import Data.Text.IO qualified as T
 import Data.Time
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (Connection)
+import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
 import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
 import Distribution.PackageDescription qualified as Cabal hiding (PackageName)
@@ -47,27 +52,25 @@ import Distribution.Types.Library
 import Distribution.Types.LibraryName
 import Distribution.Types.PackageDescription ()
 import Distribution.Types.TestSuite
+import Distribution.Types.Version (Version)
+import Distribution.Types.VersionRange (VersionRange, withinRange)
 import Distribution.Utils.ShortText qualified as Cabal
+import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
+import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Time (Time)
-import GHC.Generics (Generic)
+import GHC.Stack (HasCallStack)
 import Log qualified
+import OddJobs.Job (createJob)
 import Optics.Core
 import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath
 
-import Control.DeepSeq (NFData, force)
-import Data.Vector (Vector)
-import Data.Vector qualified as Vector
-import Distribution.Compiler (CompilerFlavor (..))
-import Distribution.Types.Version (Version)
-import Distribution.Types.VersionRange (VersionRange, withinRange)
-import Distribution.Version qualified as Version
-import Effectful.Log (Log)
 import Flora.Import.Categories.Tuning qualified as Tuning
+import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Package.Component as Component
@@ -84,30 +87,7 @@ import Flora.Model.Requirement
   , flag
   )
 import Flora.Model.User
-import GHC.Stack (HasCallStack)
-
-{-| This tuple represents the package that depends on any associated dependency/requirement.
- It is used in the recursive loading of Cabal files
--}
-type DependentName = (Namespace, PackageName)
-
-type ImportComponent = (PackageComponent, [ImportDependency])
-
-data ImportDependency = ImportDependency
-  { package :: Package
-  -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
-  , requirement :: Requirement
-  }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (NFData)
-
-data ImportOutput = ImportOutput
-  { package :: Package
-  , categories :: [Tuning.NormalisedPackageCategory]
-  , release :: Release
-  , components :: [ImportComponent]
-  }
-  deriving stock (Eq, Show, Generic)
+import Flora.OddJobs.Types
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -189,7 +169,19 @@ importFile
   -> FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es ()
-importFile userId path = loadFile path >>= extractPackageDataFromCabal userId >>= persistImportOutput
+importFile userId path =
+  loadFile path
+    >>= extractPackageDataFromCabal userId -- >>= persistImportOutput
+    >>= enqueueImportJob
+
+enqueueImportJob :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
+enqueueImportJob importOutput = do
+  pool <- getPool
+  void $ liftIO $ withResource pool $ \conn ->
+    createJob
+      conn
+      "oddjobs"
+      (ImportPackage importOutput)
 
 importRelFile :: (DB :> es, IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
@@ -252,7 +244,11 @@ persistImportOutput (ImportOutput package categories release components) = do
 
     persistComponent pool (packageComponent, deps) = do
       liftIO . T.putStrLn $
-        "🧩  Persisting component: " <> display (packageComponent.canonicalForm) <> " with " <> display (length deps) <> " dependencies."
+        "🧩  Persisting component: "
+          <> display (packageComponent.canonicalForm)
+          <> " with "
+          <> display (length deps)
+          <> " dependencies."
       Update.upsertPackageComponent packageComponent
       parallelRun pool persistImportDependency deps
 

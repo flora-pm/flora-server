@@ -41,6 +41,7 @@ import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 import System.Process.Typed qualified as System
 
+import Flora.Import.Package
 import Flora.Model.Package
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
@@ -76,7 +77,7 @@ scheduleUploadTimeJob pool releaseId packageName version = do
 
 scheduleIndexImportJob :: Pool PG.Connection -> IO Job
 scheduleIndexImportJob pool = do
-  liftIO $ withResource pool $ \conn -> do
+  withResource pool $ \conn -> do
     t <- Time.getCurrentTime
     let runAt = Time.addUTCTime Time.nominalDay t
     scheduleJob
@@ -125,8 +126,8 @@ fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseI
     Left e -> throw e
     Right bodyText -> do
       logInfo ("got a changelog for package " <> display packageName) (object ["release_id" .= releaseId])
-      let readmeBody = renderMarkdown ("CHANGELOG" <> show packageName) bodyText
-      Update.updateChangelog releaseId (Just $ MkTextHtml readmeBody) Imported
+      let changelogBody = renderMarkdown ("CHANGELOG" <> show packageName) bodyText
+      Update.updateChangelog releaseId (Just $ MkTextHtml changelogBody) Imported
 
 makeReadme :: ReadmeJobPayload -> JobsRunner ()
 makeReadme pay@ReadmeJobPayload{..} = localDomain "fetch-readme" $ do
@@ -186,3 +187,4 @@ runner job = localDomain "job-runner" $
       FetchUploadTime x -> fetchUploadTime x
       FetchChangelog x -> fetchChangeLog x
       ImportHackageIndex _ -> fetchNewIndex
+      ImportPackage x -> persistImportOutput x

@@ -6,17 +6,21 @@ module Flora.OddJobs.Types where
 import Commonmark qualified
 import Control.Exception (Exception)
 import Data.Aeson
+import Data.Pool (Pool)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding.Error (UnicodeException)
+import Database.PostgreSQL.Simple (Connection)
 import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Distribution.Pretty
 import Distribution.Version (Version, mkVersion, versionNumbers)
 import Effectful
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
+import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Reader.Static (Reader, runReader)
+import Effectful.Time (Time, runCurrentTimeIO)
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Log qualified
@@ -25,11 +29,8 @@ import OddJobs.Job (Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (FailureMode)
 import Servant (ToHttpApiData)
 
-import Data.Pool (Pool)
-import Database.PostgreSQL.Simple (Connection)
-import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
-import Effectful.Time (Time, runCurrentTimeIO)
 import Flora.Environment.Config
+import Flora.Import.Package.Types (ImportOutput)
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Release.Types (ReleaseId (..))
 import FloraWeb.Server.Logging qualified as Logging
@@ -121,6 +122,7 @@ data FloraOddJobs
   | FetchUploadTime UploadTimeJobPayload
   | FetchChangelog ChangelogJobPayload
   | ImportHackageIndex ImportHackageIndexPayload
+  | ImportPackage ImportOutput
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 

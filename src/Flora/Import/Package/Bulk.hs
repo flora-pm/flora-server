@@ -15,7 +15,7 @@ import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath
 
-import Flora.Import.Package (loadAndExtractCabalFile, persistImportOutput)
+import Flora.Import.Package (enqueueImportJob, loadAndExtractCabalFile)
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
@@ -49,7 +49,7 @@ importAllFilesInDirectory appLogger user dir = do
         . runDB pool
         . runCurrentTimeIO
         . Log.runLog "flora-jobs" appLogger defaultLogLevel
-        . (loadAndExtractCabalFile user >=> persistImportOutput)
+        . (loadAndExtractCabalFile user >=> enqueueImportJob)
     displayStats :: MonadIO m => Int -> m ()
     displayStats currentCount =
       liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"

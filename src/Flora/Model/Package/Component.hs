@@ -58,7 +58,7 @@ data ComponentType
   | Benchmark
   | ForeignLib
   deriving stock (Eq, Ord, Show, Generic, Bounded, Enum)
-  deriving anyclass (NFData)
+  deriving anyclass (NFData, FromJSON, ToJSON)
 
 instance Display ComponentType where
   displayBuilder Library = "library"
@@ -88,7 +88,7 @@ data CanonicalComponent = CanonicalComponent
   , componentType :: ComponentType
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (NFData)
+  deriving anyclass (NFData, FromJSON, ToJSON)
 
 instance Display CanonicalComponent where
   displayBuilder CanonicalComponent{componentName, componentType} = displayBuilder componentType <> ":" <> B.fromText componentName
@@ -100,7 +100,7 @@ data PackageComponent = PackageComponent
   , metadata :: ComponentMetadata
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (NFData)
+  deriving anyclass (NFData, FromJSON, ToJSON)
   deriving (Display) via ShowInstance PackageComponent
 
 instance Entity PackageComponent where
