@@ -1,6 +1,7 @@
 {
   "license": "BSD-3-Clause",
   "devDependencies": {
+    "@deanc/esbuild-plugin-postcss": "^1.0.2",
     "@fullhuman/postcss-purgecss": "^4.0.3",
     "@ryangjchandler/alpine-clipboard": "^2.1.0",
     "@tailwindcss/nesting": "^0.0.0-insiders.565cd3e",
