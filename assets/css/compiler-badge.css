@@ -1,7 +1,7 @@
 ul.compiler-badges {
   list-style: none;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
 
   li {
     margin-left: 4px;
@@ -10,19 +10,15 @@ ul.compiler-badges {
     border-radius: 50rem;
     max-width: 100%;
     background-color: var(--compiler-badge-background);
+    text-align: center;
   }
 }
 
 a.compiler-badge {
-  padding-right: 4px;
-  padding-left: 4px;
   box-sizing: border-box;
-
-  span {
-    text-decoration: none;
-    display: inline-flex;
-    font-size: 0.9rem;
-    color: var(--text-color);
-    padding: 0.3em 0.6em;
-  }
+  color: var(--text-color);
+  display: inline-block;
+  font-size: 0.9rem;
+  padding: 0.3em 0.6em;
+  text-decoration: none;
 }

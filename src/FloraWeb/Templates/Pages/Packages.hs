@@ -81,7 +81,7 @@ showPackage
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis = div_ [class_ "divider"] $ do
   div_ [class_ "page-title"] $
-    h1_ [class_ "package-title text-center tracking-tight"] $ do
+    h1_ [class_ "package-title"] $ do
       span_ [class_ "headline"] $ toHtml (display namespace) <> "/" <> toHtml name
       span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release.version
   div_ [class_ "synopsis lg:text-xl text-center"] $
@@ -234,9 +234,7 @@ displayTestedWith compilersVersions'
           forM_ compilersVersions $ \version -> do
             li_ [] $
               a_ [class_ "compiler-badge"] $
-                span_
-                  []
-                  (toHtml @Text (display version))
+                toHtml @Text (display version)
 
 displayMaintainer :: Text -> FloraHTML
 displayMaintainer maintainerInfo = li_ [class_ ""] $ do

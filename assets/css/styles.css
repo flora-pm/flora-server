@@ -165,8 +165,6 @@ div[class="bullets"] {
 /* Dark mode-specific rules */
 .dark {
   .social-button:hover {
-    --tw-text-opacity: 1;
-
     color: hsl(254.3 95% 76.7%);
   }
 }
@@ -188,6 +186,7 @@ div[class="bullets"] {
     line-height: 1;
     letter-spacing: -0.025em;
     text-align: center;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -379,5 +378,15 @@ div[class="bullets"] {
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
+  }
+}
+
+/* Smol display rulz */
+
+@media (max-width: 1024px) {
+  .page-title {
+    h1 {
+      font-size: 2rem;
+    }
   }
 }
