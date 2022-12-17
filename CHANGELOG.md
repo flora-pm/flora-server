@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.0.9 -- XXXX-XX-XX
+* Fix package title size in smaller screens ([#297](https://github.com/flora-pm/flora-server/pull/297))
+
 ## 1.0.8 -- 2022-11-30
 * Display compiler version with which the package declares having been tested ([#249](https://github.com/flora-pm/flora-server/pull/249))
 * Promote exact matches when searching packages ([#284](https://github.com/flora-pm/flora-server/pull/284))
