@@ -40,7 +40,7 @@ importAllFilesInDirectory appLogger user dir = do
                   when (currentCount `mod` 400 == 0) $
                     displayStats currentCount
                   return currentCount
-  processedPackageCount <- liftIO $ S.fold displayCount $ S.fromParallel $ S.mapM (processFile pool) $ findAllCabalFilesInDirectory dir
+  processedPackageCount <- liftIO $ S.fold displayCount $ S.fromAsync $ S.mapM (processFile pool) $ findAllCabalFilesInDirectory dir
   displayStats processedPackageCount
   Update.refreshLatestVersions >> Update.refreshDependents
   where
@@ -54,7 +54,7 @@ importAllFilesInDirectory appLogger user dir = do
     displayStats currentCount =
       liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
-findAllCabalFilesInDirectory :: FilePath -> S.ParallelT IO FilePath
+findAllCabalFilesInDirectory :: FilePath -> S.AsyncT IO FilePath
 findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $ S.fromList [workdir]
   where
     traversePath p = do
