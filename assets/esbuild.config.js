@@ -1,6 +1,6 @@
 const esbuild = require("esbuild");
 const assetsManifestPlugin = require("esbuild-plugin-assets-manifest");
-const postcssPlugin = require("@deanc/esbuild-plugin-postcss");
+const postcssPlugin = require("@baurine/esbuild-plugin-postcss3");
 const fs = require("fs");
 const chokidar = require('chokidar');
 const path = require("path");
@@ -10,9 +10,6 @@ const postcssImport = require("postcss-import");
 const tailwindNesting = require("@tailwindcss/nesting");
 const tailwind = require("tailwindcss");      
 const autoprefixer = require("autoprefixer");     
-const postcssCopy = require("postcss-copy")({      
-    dest: "../assets/fonts",      
-});
 
 let minify = false;
 let sourcemap = true;
@@ -37,13 +34,12 @@ const mkProdPlugins = () => {
 
 const pluginsList = () => {
   let plugins = [
-    postcssPlugin({
+    postcssPlugin.default({
       plugins: [
         postcssImport,
         tailwindNesting,
         tailwind,
         autoprefixer,
-        postcssCopy,
       ],
     })];
   let prodPlugins = process.env.NODE_ENV === "prod" ? mkProdPlugins() : [];
@@ -64,7 +60,7 @@ const config = {
   },
   outdir: "../static",
   bundle: true,
-  logLevel: "info",
+  logLevel: "verbose",
   sourcemap: sourcemap,
   minify: minify,
   target: "es2018",
