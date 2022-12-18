@@ -114,7 +114,7 @@ runOptions (Options (ImportPackages path)) = importFolderOfCabalFiles path
 importFolderOfCabalFiles :: (DB :> es, IOE :> es) => FilePath -> Eff es ()
 importFolderOfCabalFiles path = Log.withStdOutLogger $ \appLogger -> do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  importAllFilesInRelativeDirectory appLogger (user ^. #userId) path False
+  importAllFilesInRelativeDirectory appLogger (user ^. #userId) path True
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

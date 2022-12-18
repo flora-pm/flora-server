@@ -137,12 +137,12 @@ displayReleaseVersion = toHtml
 
 displayLicense :: SPDX.License -> FloraHTML
 displayLicense license = li_ [class_ ""] $ do
-  div_ [class_ "license"] $ h3_ [class_ "lg:text-2xl package-body-section"] "License"
+  div_ [class_ "license"] $ h3_ [class_ "package-body-section"] "License"
   p_ [class_ "package-body-section__license"] $ toHtml license
 
 displayCategories :: Vector Category -> FloraHTML
 displayCategories categories = li_ [class_ ""] $ do
-  div_ [class_ "license "] $ h3_ [class_ "lg:text-2xl package-body-section"] "Categories"
+  div_ [class_ "license "] $ h3_ [class_ "package-body-section"] "Categories"
   ul_ [class_ "categories"] $ foldMap renderCategory categories
 
 displayLinks :: Namespace -> PackageName -> Release -> ReleaseMetadata -> FloraHTML
@@ -166,7 +166,7 @@ displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> toUr
 displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
 displayVersions namespace packageName versions numberOfReleases =
   li_ [class_ ""] $ do
-    h3_ [class_ "lg:text-2xl package-body-section versions"] "Versions"
+    h3_ [class_ "package-body-section versions"] "Versions"
     ul_ [class_ "package-versions"] $ do
       Vector.forM_ versions displayVersion
       if fromIntegral (Vector.length versions) >= numberOfReleases
@@ -213,7 +213,7 @@ showAll target mVersion namespace packageName = do
 displayInstructions :: PackageName -> Release -> FloraHTML
 displayInstructions packageName latestRelease = li_ [class_ ""] $ do
   h3_ [class_ "package-body-section"] "Installation"
-  div_ [class_ "items-top"] $ div_ [class_ "space-y-2"] $ do
+  div_ [class_ "items-top"] $ div_ [class_ ""] $ do
     label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
     input_
       [ class_ "package-install-string"

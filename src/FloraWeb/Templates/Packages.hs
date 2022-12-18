@@ -49,7 +49,7 @@ listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
 listVersions namespace packageName releases =
   div_ [class_ "container"] $ do
     Template.presentationHeader namespace packageName (fromIntegral $ Vector.length releases)
-    div_ [class_ ""] $ ul_ [class_ "package-list space-y-2"] $ Vector.forM_ releases $ \release -> do
+    div_ [class_ ""] $ ul_ [class_ "package-list"] $ Vector.forM_ releases $ \release -> do
       versionListItem namespace packageName release
 
 versionListItem :: Namespace -> PackageName -> Release -> FloraHTML
@@ -71,15 +71,15 @@ versionListItem namespace packageName release = do
 
 -- | Render a list of package informations
 packageListing :: Vector PackageInfo -> FloraHTML
-packageListing packages = ul_ [class_ "package-list space-y-2"] $ Vector.forM_ packages $ \PackageInfo{..} -> do
+packageListing packages = ul_ [class_ "package-list"] $ Vector.forM_ packages $ \PackageInfo{..} -> do
   packageListItem (namespace, name, synopsis, version, license)
 
 dependencyListing :: Vector DependencyInfo -> FloraHTML
-dependencyListing dependencies = ul_ [class_ "package-list space-y-2"] $ Vector.forM_ dependencies $ \dep ->
+dependencyListing dependencies = ul_ [class_ "package-list"] $ Vector.forM_ dependencies $ \dep ->
   packageListItem (dep.namespace, dep.name, dep.latestSynopsis, dep.latestVersion, dep.latestLicense)
 
 requirementListing :: Vector DependencyInfo -> FloraHTML
-requirementListing requirements = ul_ [class_ "package-list space-y-2"] $ Vector.forM_ requirements requirementListItem
+requirementListing requirements = ul_ [class_ "package-list"] $ Vector.forM_ requirements requirementListItem
 
 showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 showChangelog namespace packageName version mChangelog = do
@@ -89,7 +89,7 @@ showChangelog namespace packageName version mChangelog = do
         h1_ [class_ ""] $ do
           span_ [class_ "headline"] $ toHtml ("Changelog of " <> display namespace <> "/" <> display packageName)
           toHtmlRaw @Text "&nbsp;"
-          span_ [class_ "dark:text-gray-200 version"] $ toHtml $ display version
+          span_ [class_ "version"] $ toHtml $ display version
       section_ [class_ "release-changelog"] $ do
         case mChangelog of
           Nothing -> toHtml @Text "This release does not have a Changelog"
