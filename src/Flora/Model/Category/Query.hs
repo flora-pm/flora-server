@@ -27,6 +27,9 @@ getCategoryBySlug slug = dbtToEff $ selectOneByField [field| slug |] (Only slug)
 getCategoryByName :: (DB :> es) => Text -> Eff es (Maybe Category)
 getCategoryByName categoryName = dbtToEff $ selectOneByField [field| name |] (Only categoryName)
 
+getCategoriesByNames :: (DB :> es) => Vector Text -> Eff es (Vector Category)
+getCategoriesByNames categoryNames = dbtToEff $ query_ Select (_selectWhereIn @Category [field| name |] categoryNames)
+
 getPackagesFromCategorySlug :: (DB :> es, IOE :> es) => Text -> Eff es (Vector Package)
 getPackagesFromCategorySlug slug =
   do

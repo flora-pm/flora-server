@@ -240,7 +240,10 @@ persistImportOutput (ImportOutput package categories release components) = do
     persistPackage = do
       let packageId = package.packageId
       Update.upsertPackage package
-      forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
+      let normalisedCategories = Vector.fromList $ fmap (\(Tuning.NormalisedPackageCategory cat) -> cat) categories 
+      if Vector.null normalisedCategories
+      then pure ()
+      else Update.addToCategoryByName packageId normalisedCategories
 
     persistComponent pool (packageComponent, deps) = do
       liftIO . T.putStrLn $

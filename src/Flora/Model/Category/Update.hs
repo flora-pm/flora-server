@@ -3,25 +3,25 @@
 module Flora.Model.Category.Update where
 
 import Control.Monad (void)
-import Control.Monad.IO.Class
 import Data.Text (Text)
-import Data.Text.IO qualified as T
 import Database.PostgreSQL.Entity (insert)
-import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
+import Database.PostgreSQL.Entity.DBT (QueryNature (Update), executeMany)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
 import Flora.Model.Category.Query qualified as Query
-import Flora.Model.Category.Types
+import Flora.Model.Category.Types (Category(..), CategoryId)
 import Flora.Model.Package.Types
+import Data.Vector (Vector)
+import qualified Data.Vector as Vector
 
 insertCategory :: (DB :> es) => Category -> Eff es ()
 insertCategory category = dbtToEff $ insert @Category category
 
 -- | Adds a package to a category. Adding a package to an already-assigned category has no effect
-addToCategory :: (DB :> es) => PackageId -> CategoryId -> Eff es ()
-addToCategory packageId categoryId = dbtToEff $ void . execute Update q $ (packageId, categoryId)
+addManyToCategory :: (DB :> es) => Vector (PackageId, CategoryId) -> Eff es ()
+addManyToCategory parameters = dbtToEff $ void $ executeMany Update q (Vector.toList parameters)
   where
     q =
       [sql| 
@@ -29,11 +29,11 @@ addToCategory packageId categoryId = dbtToEff $ void . execute Update q $ (packa
         on conflict do nothing
       |]
 
-addToCategoryByName :: (DB :> es, IOE :> es) => PackageId -> Text -> Eff es ()
-addToCategoryByName packageId categoryName = do
-  mCategory <- Query.getCategoryByName categoryName
-  case mCategory of
-    Nothing -> do
-      liftIO $ T.putStrLn ("Could not find category " <> categoryName)
-    Just Category{categoryId} -> do
-      addToCategory packageId categoryId
+addToCategoryByName :: (DB :> es, IOE :> es) => PackageId -> Vector Text -> Eff es ()
+addToCategoryByName packageId categoryNames = do
+  liftIO $ print categoryNames
+  liftIO $ putStrLn "================================================================"
+  categoryIds <- Query.getCategoriesByNames categoryNames >>= (\cats -> pure $ fmap (.categoryId) cats)
+  if Vector.null categoryIds
+  then pure ()
+  else addManyToCategory $ (,) <$> Vector.singleton packageId <*> categoryIds

@@ -11,8 +11,6 @@ import GHC.Generics
 import Language.Souffle.Interpreted qualified as Souffle
 import System.IO (stderr)
 
-type CName = Text
-
 -- | This is a tag for our datalog program
 data Categoriser = Categoriser
   deriving
@@ -31,7 +29,7 @@ instance Display UserPackageCategory where
   displayBuilder (UserPackageCategory txt) = TB.fromText txt
 
 -- | A normalised pair of package name and category. Output to our program.
-data NormalisedPackageCategory = NormalisedPackageCategory CName
+data NormalisedPackageCategory = NormalisedPackageCategory Text
   deriving anyclass (Souffle.Marshal, FromJSON, ToJSON)
   deriving stock (Generic, Eq, Show)
   deriving
@@ -39,7 +37,7 @@ data NormalisedPackageCategory = NormalisedPackageCategory CName
     via Souffle.FactOptions NormalisedPackageCategory "normalised_package_category" 'Souffle.Output
 
 -- | A report that arises if no normalisation could be done.
-data NormaliseIssue = NormaliseIssue CName
+data NormaliseIssue = NormaliseIssue Text
   deriving anyclass (Souffle.Marshal)
   deriving stock (Generic, Eq, Show)
   deriving

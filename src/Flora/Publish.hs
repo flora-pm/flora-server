@@ -1,6 +1,5 @@
 module Flora.Publish where
 
-import Control.Monad
 import Data.Text.Display
 import Data.Text.IO qualified as T
 import Effectful
@@ -19,6 +18,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types (Release (..))
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement (Requirement)
+import qualified Data.Vector as Vector
 
 {- TODO: Audit log of the published package
    TODO: Publish artifacts
@@ -85,6 +85,6 @@ publishForNewPackage requirements components release userPackageCategories packa
   Update.bulkInsertRequirements requirements
   Update.refreshDependents
   Update.refreshLatestVersions
-  forM_ newCategories $
-    \(NormalisedPackageCategory categoryName) -> Update.addToCategoryByName (package.packageId) categoryName
+  let normalisedCategories = fmap (\(Tuning.NormalisedPackageCategory cat) -> cat) newCategories 
+  Update.addToCategoryByName package.packageId (Vector.fromList normalisedCategories)
   pure package

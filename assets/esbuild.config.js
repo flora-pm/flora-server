@@ -58,7 +58,6 @@ if (process.env.NODE_ENV === "prod") {
   entryNames = "[name]-[hash]";
 }
 
-
 const config = {
   color: true,
   entryPoints: {
