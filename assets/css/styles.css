@@ -46,16 +46,27 @@ body {
   color: var(--text-color);
   font-size: 2.25rem;
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.025rem;
   line-height: 2.5rem;
   margin-bottom: 5px;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
   text-align: center;
+}
+
+.font-light {
+  font-weight: 300;
 }
 
 .top-navbar {
   background-color: var(--navbar-background-color);
   border-bottom-width: 1px;
   border-color: var(--navbar-border-color);
+  margin-bottom: 0.75rem;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  position: sticky;
 
   #navbar-right {
     background-color: var(--navbar-background-color);
@@ -121,7 +132,7 @@ a {
 }
 
 .error-message {
-  letter-spacing: -0.025em;
+  letter-spacing: -0.025rem;
   font-weight: 800;
   font-size: 3rem;
   line-height: 1;
@@ -130,15 +141,6 @@ a {
 
 .error-page-button {
   background-color: var(--error-button);
-}
-
-div[class="bullets"] {
-  ul {
-    li {
-      list-style-type: disc;
-      list-style-position: inside;
-    }
-  }
 }
 
 .version-list-item {
@@ -169,22 +171,28 @@ div[class="bullets"] {
   }
 }
 
+.divider-with-margin {
+  padding-bottom: 1rem;
+  margin-bottom: 4rem;
+  border-bottom: 1px solid hsl(0 0% 80%);
+}
+
 .divider {
-  padding-bottom: 1em;
-  margin-bottom: 1em;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
   border-bottom: 1px solid hsl(0 0% 80%);
 }
 
 .page-title {
-  padding-top: 1em;
-  padding-bottom: 1em;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
   padding-left: 2rem;
   padding-right: 2rem;
 
   h1 {
     font-size: 3rem;
     line-height: 1;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.025rem;
     text-align: center;
     overflow-wrap: anywhere;
   }
@@ -281,7 +289,32 @@ div[class="bullets"] {
   text-decoration: underline;
 }
 
+.categories-title {
+  padding-top: 1rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+
+  h1 {
+    font-size: 3rem;
+    line-height: 1;
+    letter-spacing: -0.025rem;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+}
+
 .categories-body {
+  display: grid;
+  margin-bottom: 3rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 3rem;
+  max-width: 80rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+
   .category-card__name {
     color: var(--category-card-name-color);
   }
@@ -337,6 +370,8 @@ div[class="bullets"] {
 
   .search-bar:focus {
     background-color: var(--search-bar-background-focus-color);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
   }
 }
 
@@ -350,20 +385,74 @@ div[class="bullets"] {
   box-shadow: 5px 5px 5px 2px var(--search-bar-focus-border-color);
 }
 
+.main-search button {
+  margin-bottom: 1.25rem;
+  margin-right: 1rem;
+  margin-top: 1.25rem;
+
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+.about-page {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1000px;
+  padding-bottom: 4rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-top: 6rem;
+  width: auto;
+
+  h3 {
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    margin-top: 2.5rem;
+  }
+
+  div h3 {
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    margin-bottom: 2.5rem;
+  }
+
+  ul {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+.about-page__banner {
+  margin-top: 0.25rem;
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.about-page__title {
+  letter-spacing: -0.025rem;
+  font-weight: 800;
+}
+
+.about-page__subtitle {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  max-width: 36rem;
+  margin-top: 1.25rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Large display rules */
 @media (min-width: 1024px) {
   .container {
     width: auto;
     max-width: 1300px;
-    padding-right: 15px;
-    padding-left: 15px;
-    margin-right: auto;
-    margin-left: auto;
-  }
-
-  .about-page {
-    width: auto;
-    max-width: 1000px;
     padding-right: 15px;
     padding-left: 15px;
     margin-right: auto;
@@ -379,6 +468,11 @@ div[class="bullets"] {
     justify-content: center;
     align-items: flex-start;
   }
+
+  .about-page__title {
+    font-size: 3.75rem;
+    line-height: 1;
+  }
 }
 
 /* Smol display rulz */
@@ -388,5 +482,23 @@ div[class="bullets"] {
     h1 {
       font-size: 2rem;
     }
+  }
+
+  .about-page {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1000px;
+    padding-bottom: 4rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 4rem;
+    width: auto;
+  }
+
+  .about-page__subtitle {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    max-width: 36rem;
+    margin-top: 1.25rem;
   }
 }
