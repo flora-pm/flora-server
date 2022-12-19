@@ -213,7 +213,7 @@
   dependencies:
     "@parcel/plugin" "2.8.2"
 
-"@parcel/config-default@2.8.2":
+"@parcel/config-default@2.8.2", "@parcel/config-default@^2.8.2":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@parcel/config-default/-/config-default-2.8.2.tgz#2f96207f84bdd155cf4bfd02f10519b2ec33449a"
   integrity sha512-1ELJAHx37fKSZZkYKWy6UdcuLRv5vrZJc89tVS6eRvvMt+udbIoSgIUzPXu7XemkcchF7Tryw3u2pRyxyLyL3w==
@@ -249,7 +249,7 @@
     "@parcel/transformer-react-refresh-wrap" "2.8.2"
     "@parcel/transformer-svg" "2.8.2"
 
-"@parcel/core@2.8.2":
+"@parcel/core@2.8.2", "@parcel/core@^2.8.2":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@parcel/core/-/core-2.8.2.tgz#9ee5a0b18337885dc0893958f9e4190cb599200a"
   integrity sha512-ZGuq6p+Lzx6fgufaVsuOBwgpU3hgskTvIDIMdIDi9gOZyhGPK7U2srXdX+VYUL5ZSGbX04/P6QlB9FMAXK+nEg==
@@ -480,14 +480,14 @@
     "@parcel/utils" "2.8.2"
     posthtml "^0.16.4"
 
-"@parcel/plugin@2.8.2":
+"@parcel/plugin@2.8.2", "@parcel/plugin@^2.0.0":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@parcel/plugin/-/plugin-2.8.2.tgz#f8d147cf32e52f7feff245d64d640890a18a6fd9"
   integrity sha512-YG7TWfKsoNm72jbz3b3TLec0qJHVkuAWSzGzowdIhX37cP1kRfp6BU2VcH+qYPP/KYJLzhcZa9n3by147mGcxw==
   dependencies:
     "@parcel/types" "2.8.2"
 
-"@parcel/reporter-cli@2.8.2":
+"@parcel/reporter-cli@2.8.2", "@parcel/reporter-cli@^2.8.2":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@parcel/reporter-cli/-/reporter-cli-2.8.2.tgz#bfd63b8bfb0bd72e483f4de496af6dc8e819a97e"
   integrity sha512-OIRlBqpKqPpMWRHATT8az8fUAqfceLWlWqgX/CW5cG1i6gefbBWFq2qYxDVBEk1bPDLIUCtqNLhfO8hLyweMjA==
@@ -633,7 +633,7 @@
     "@parcel/plugin" "2.8.2"
     json5 "^2.2.0"
 
-"@parcel/transformer-postcss@2.8.2":
+"@parcel/transformer-postcss@2.8.2", "@parcel/transformer-postcss@^2.8.2":
   version "2.8.2"
   resolved "https://registry.yarnpkg.com/@parcel/transformer-postcss/-/transformer-postcss-2.8.2.tgz#ca1db56e639a6fcef134128cf8c172999c21bc10"
   integrity sha512-0Vb4T2e0QinNDps1/PxYsZwEzWieVxoW++AAUD3gzg0MfSyRc72MPc27CLOnziiRDyOUl+62gqpnNzq9xaKExA==
@@ -2633,6 +2633,13 @@ p-try@^2.0.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/p-try/-/p-try-2.2.0.tgz#cb2868540e313d61de58fafbe35ce9004d5540e6"
   integrity sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==
+
+parcel-reporter-bundle-manifest@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/parcel-reporter-bundle-manifest/-/parcel-reporter-bundle-manifest-1.0.0.tgz#ff4164082ee2c5d70742e2273507171f328f1dbc"
+  integrity sha512-/fQDwYWT9LsXRddNikci9Jox6bJdKnfGKpnVd4++1TRUYRLXvFVGQjyGZg8Gsu/JQN6psST8ilRmpg61yN37pQ==
+  dependencies:
+    "@parcel/plugin" "^2.0.0"
 
 parcel@^2.8.2:
   version "2.8.2"
