@@ -53,6 +53,7 @@ common common-ghc-options
     -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
     -Wno-unticked-promoted-constructors -Werror=unused-imports
     -fdicts-strict -fmax-worker-args=16 -fspec-constr-recursive=16
+    -Wunused-packages
 
   if flag(prod)
     ghc-options:
@@ -175,7 +176,6 @@ library
     , aeson                      ^>=2.1
     , async                      ^>=2.2
     , base                       ^>=4.16
-    , base16-bytestring          ^>=1.0
     , base64
     , blaze-builder
     , bytestring                 >=0.10    && <0.12
@@ -197,9 +197,7 @@ library
     , effectful                  ^>=2.2
     , effectful-core             ^>=2.2
     , envparse                   ^>=0.5
-    , extra
     , filepath                   ^>=1.4
-    , fusion-plugin
     , haddock-library            ^>=1.11
     , http-api-data              ^>=0.5
     , http-client                ^>=0.7.10
@@ -207,21 +205,17 @@ library
     , http-media
     , http-types                 ^>=0.12
     , iso8601-time               ^>=0.1
-    , lens
     , log-base                   ^>=0.12
     , log-effectful              ^>=1.0
     , lucid                      ^>=2.11
     , lucid-alpine               ^>=0.1
-    , lucid-aria                 ^>=0.1
     , lucid-svg                  ^>=0.7
     , memory                     ^>=0.18
-    , monad-control              ^>=1.0
     , monad-time                 ^>=0.4
     , mtl                        ^>=2.2
     , network-uri
     , odd-jobs
     , optics-core                ^>=0.4
-    , optparse-applicative
     , password                   ^>=3.0
     , password-types             ^>=1.0
     , pcre2
@@ -230,7 +224,6 @@ library
     , pg-transact-effectful
     , postgresql-simple          ^>=0.6
     , pretty                     ^>=1.1
-    , pretty-simple              ^>=4.1
     , prometheus-client          ^>=1.1
     , prometheus-metrics-ghc     ^>=1.0
     , prometheus-proc            ^>=0.1
@@ -241,24 +234,17 @@ library
     , servant                    ^>=0.19
     , servant-client             ^>=0.19
     , servant-client-core        ^>=0.19
-    , servant-effectful
     , servant-lucid              ^>=0.9
     , servant-server             ^>=0.19
     , servant-websockets         ^>=2.0
     , slugify                    ^>=0.1
     , souffle-haskell            ==3.4.0
-    , split                      ^>=0.2
     , streamly                   ^>=0.8.0
-    , template-haskell
     , text                       ^>=2.0
     , text-display
     , time
     , time-effectful
-    , transformers               ^>=0.5
-    , transformers-base          ^>=0.4
     , typed-process              ^>=0.2
-    , unliftio-core
-    , unordered-containers       ^>=0.2
     , uuid                       ^>=1.3
     , vector                     ^>=0.13
     , vector-algorithms          ^>=0.9
@@ -268,7 +254,6 @@ library
     , wai-middleware-prometheus  ^>=1.0
     , warp                       ^>=3.3
     , websockets                 ^>=0.12
-    , wreq                       >=0.5.3.3
     , xml-conduit
     , xml-conduit-writer
 
@@ -281,7 +266,6 @@ executable flora-server
   build-depends:
     , base
     , flora
-    , fusion-plugin
 
 executable flora-cli
   import:         common-extensions
@@ -291,35 +275,20 @@ executable flora-cli
   other-modules:  DesignSystem
   hs-source-dirs: app/cli
   build-depends:
-    , ansi-terminal
     , base
     , bytestring
-    , Cabal-syntax
-    , colourista
-    , directory
-    , effectful
     , effectful-core
     , envparse
     , flora
-    , fusion-plugin
-    , http-client
     , log-base
-    , log-effectful
     , lucid
-    , monad-control
     , optics-core
     , optparse-applicative
     , password-types
-    , pg-entity
-    , pg-transact
     , pg-transact-effectful
-    , postgresql-simple
     , PyF
     , text
-    , text-display
-    , time-effectful
     , transformers
-    , typed-process
     , uuid
     , vector
 
@@ -333,18 +302,15 @@ test-suite flora-test
   build-depends:
     , aeson
     , base
-    , bytestring
     , Cabal-syntax
     , containers
     , effectful-core
     , exceptions
     , flora
-    , fusion-plugin
     , hedgehog
     , http-client
     , log-base
     , log-effectful
-    , network-uri
     , optics-core
     , password
     , pg-entity
@@ -356,7 +322,6 @@ test-suite flora-test
     , resource-pool
     , servant
     , servant-client
-    , servant-client-core
     , servant-server
     , tasty
     , tasty-hunit

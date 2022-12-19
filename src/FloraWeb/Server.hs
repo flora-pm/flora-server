@@ -168,13 +168,6 @@ floraServer pool cfg jobsRunnerEnv =
                 & withReader (const sessionWithCookies)
           )
           (Pages.server cfg jobsRunnerEnv)
-          -- , autoreload =
-          --     hoistServer
-          --       (Proxy @AutoreloadRoute)
-          --       ( \handler ->
-          --           withReader (const ()) handler
-          --       )
-          --       Autoreload.server
     }
 
 naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
