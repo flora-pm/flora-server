@@ -18,29 +18,27 @@ navbar = do
         "md:flex flex md:items-center "
           <> "flex flex-col md:flex-row absolute md:relative top-[100%] left-0 w-full md:w-auto md:top-0"
 
-  nav_ [class_ "top-navbar sticky", xData_ "{menuOpen: false}"] $ do
-    div_ [id_ "navbar-content", class_ "max-w-9xl mx-auto px-4 sm:px-6 lg:px-8"] $ do
-      div_ [class_ "md:flex md:justify-between h-16 "] $ do
-        div_ [id_ "navbar-left", class_ "flex flex-shrink-0"] $ do
-          brand
-          navbarSearch
+  nav_ [class_ "top-navbar", xData_ "{menuOpen: false}"] $ do
+    div_ [class_ "navbar-content"] $ do
+      div_ [class_ "navbar-left"] $ do
+        brand
+        navbarSearch
 
-        div_ [id_ "navbar-right", class_ menuClasses, xBind_ "class" "!menuOpen ? 'hidden' : ''"] $ do
-          navBarLink "md:hidden " "/" "Flora :: [Package]" False
-          navBarLink' "/about" "About" aboutNav
-          navBarLink' "/categories" "Categories" packagesNav
-          navBarLink' "/packages" "Packages" packagesNav
-          -- userMenu
-          themeToggle
+      div_ [class_ (menuClasses <> " navbar-right"), xBind_ "class" "!menuOpen ? 'hidden' : ''"] $ do
+        navBarLink " main-page-button" "/" "Search on Flora" False
+        navBarLink' "/about" "About" aboutNav
+        navBarLink' "/categories" "Categories" packagesNav
+        navBarLink' "/packages" "Packages" packagesNav
+        -- userMenu
+        themeToggle
 
 brand :: FloraHTML
 brand = do
-  let containerBaseClasses = "flex items-center flex-shrink-0 h-16"
-  div_ [class_ $ containerBaseClasses <> " hidden md:flex"] $
-    div_ [class_ "brand"] $
-      link defaultLinkOptions{href = "/", classes = "font-bold text-white dark:text-gray-100", childNode = text "Flora :: [Package]"}
-  div_ [class_ $ containerBaseClasses <> " md:hidden", xOn_ "click.prevent" "menuOpen = !menuOpen"] $
-    link defaultLinkOptions{href = "/", classes = "font-bold text-white dark:text-gray-100", childNode = text "☰ Flora"}
+  -- Don't touch the .hidden
+  div_ [class_ "hidden brand"] $
+    link defaultLinkOptions{href = "/", classes = "", childNode = text "Flora :: [Package]"}
+  div_ [class_ "brand-menu", xOn_ "click.prevent" "menuOpen = !menuOpen"] $
+    link defaultLinkOptions{href = "/", classes = "", childNode = text "☰ Flora"}
 
 navBarLink
   :: Text
@@ -53,7 +51,7 @@ navBarLink
   -- ^ is the element active
   -> FloraHTML
 navBarLink additionalClasses href label isActive' =
-  let baseClasses = "font-bold inline-flex items-center py-3 mx-4 text-white dark:text-gray-100 "
+  let baseClasses = "navbar-link "
    in a_ [href_ href, class_ (baseClasses <> additionalClasses <> " " <> isActive isActive')] (text label)
 
 navBarLink' :: Text -> Text -> Bool -> FloraHTML

@@ -21,6 +21,12 @@
   }
 }
 
+.synopsis {
+  text-align: center;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
 .package-body {
   display: flex;
   flex-wrap: wrap;

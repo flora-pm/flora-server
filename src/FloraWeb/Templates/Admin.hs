@@ -8,52 +8,51 @@ import FloraWeb.Templates.Types
 
 index :: AdminReport -> FloraHTML
 index adminReport = do
-  div_ [class_ "container py-5"] $ do
-    h1_ [class_ "text-center text-2xl tracking-tight sm:text-2xl lg:text-5xl"] "Overview"
+  div_ [class_ "container admin-page"] $ do
+    h1_ [class_ "admin-title"] "Overview"
     dataReport adminReport
 
 dataReport :: AdminReport -> FloraHTML
 dataReport adminReport = do
-  let cardClass = "dark:bg-admin-card shadow rounded-lg overflow-hidden sm:p-6 hover:border-gray-400 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-  dl_ [class_ "mt-5 grid col-space-1 col-end-2 end gap-5 sm:grid-cols-3 py-10"] $ do
-    div_ [class_ cardClass] $ do
+  dl_ [class_ "admin-cards"] $ do
+    div_ [class_ "admin-card"] $ do
       dt_
-        [class_ "text-sm font-medium truncate"]
+        [class_ ""]
         "Total Packages"
-      dd_ [class_ "mt-1 text-3xl font-semibold"] $
+      dd_ [class_ ""] $
         toHtml $
           display (adminReport.totalPackages)
 
-    div_ [class_ cardClass] $ do
+    div_ [class_ "admin-card"] $ do
       dt_
-        [class_ "text-sm font-medium truncate"]
+        [class_ ""]
         "Total Users"
-      dd_ [class_ "mt-1 text-3xl font-semibold"] $
+      dd_ [class_ ""] $
         toHtml $
           display (adminReport.totalUsers)
 
-    div_ [class_ cardClass] $ do
+    div_ [class_ "admin-card"] $ do
       dt_
-        [class_ "text-sm font-medium truncate"]
+        [class_ ""]
         "README, CHANGELOG, Upload time…"
 
-      dd_ [class_ "mt-1 text-3xl font-semibold"] $
+      dd_ [class_ ""] $
         form_ [action_ "/admin/metadata", method_ "POST"] $ do
           button_ [class_ ""] "Fetch release metadata"
 
-    div_ [class_ cardClass] $ do
+    div_ [class_ "admin-card"] $ do
       dt_
-        [class_ "text-sm font-medium truncate"]
+        [class_ ""]
         "Index import"
 
-      dd_ [class_ "mt-1 text-3xl font-semibold"] $
+      dd_ [class_ ""] $
         form_ [action_ "/admin/index-import", method_ "POST"] $ do
           button_ [class_ ""] "Schedule"
 
     a_ [href_ "/admin/odd-jobs"] $
-      div_ [class_ cardClass] $ do
+      div_ [class_ "admin-card"] $ do
         dt_
-          [class_ "text-sm font-medium truncate"]
+          [class_ ""]
           "Odd jobs ui"
-        dd_ [class_ "mt-1 text-3xl font-semibold"] $
+        dd_ [class_ ""] $
           button_ [class_ "on-readmes"] "odd jobs ui"
