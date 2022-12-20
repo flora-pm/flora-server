@@ -83,8 +83,8 @@ presentationHeader release namespace name synopsis = div_ [class_ "divider"] $ d
   div_ [class_ "page-title"] $
     h1_ [class_ "package-title"] $ do
       span_ [class_ "headline"] $ toHtml (display namespace) <> "/" <> toHtml name
-      span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release.version
-  div_ [class_ "synopsis lg:text-xl text-center"] $
+      span_ [class_ "version"] $ displayReleaseVersion release.version
+  div_ [class_ "synopsis"] $
     p_ [class_ ""] (toHtml synopsis)
 
 packageBody
@@ -147,7 +147,7 @@ displayCategories categories = li_ [class_ ""] $ do
 
 displayLinks :: Namespace -> PackageName -> Release -> ReleaseMetadata -> FloraHTML
 displayLinks namespace packageName release meta@ReleaseMetadata{..} = li_ [class_ ""] $ do
-  h3_ [class_ "lg:text-2xl package-body-section links"] "Links"
+  h3_ [class_ "package-body-section links"] "Links"
   ul_ [class_ "links"] $ do
     li_ [class_ "package-link"] $ a_ [href_ (getHomepage meta)] "Homepage"
     li_ [class_ "package-link"] $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
