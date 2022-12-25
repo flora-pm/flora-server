@@ -18,6 +18,8 @@ let minify = false;
 let sourcemap = true;
 let entryNames = "[name]";
 
+const watchDirectories = [  "./css", "./js"];
+
 const mkProdPlugins = () => {
   return [
     assetsManifestPlugin({
@@ -58,6 +60,7 @@ if (process.env.NODE_ENV === "prod") {
 
 
 const config = {
+  color: true,
   entryPoints: {
     "app": "./js/app.js",
     "styles": "./css/styles.css",
@@ -72,27 +75,21 @@ const config = {
   plugins: pluginsList(),
   metafile: true,
   incremental: process.argv.includes("--watch"),
+  watch: process.argv.includes("--watch"),
 }
+
+console.log(config.outdir);
+console.log(__dirname);
 
 if (process.argv.includes("--watch")) {
   (async () => {
     const result = await esbuild.build(config);
-    chokidar.watch(["./js", "./css"]).on("all", async (event, path) => {
-      if (event === "change") {
-        console.log(`[esbuild] Rebuilding ${path}`);
-        console.time("[esbuild] Done");
-        await result.rebuild();
-        console.timeEnd("[esbuild] Done");
-      }
-    });
+    chokidar.watch(watchDirectories).on('all', (event, path) => {
+      console.log(`rebuilding ${path}`)
+      result.rebuild()
+    })
   })();
+
 } else {
-  (async () => {
-    const result = await esbuild.build(config);
-    console.log({ result });
-    fs.writeFileSync(
-      path.join(__dirname, "metafile.json"),
-      JSON.stringify(result.metafile)
-    );
-  })
+  esbuild.build(config).catch(() => process.exit(1))
 }
