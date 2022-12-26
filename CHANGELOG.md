@@ -3,6 +3,8 @@
 ## 1.0.9 -- XXXX-XX-XX
 * Fix package title size in smaller screens ([#297](https://github.com/flora-pm/flora-server/pull/297))
 * Enqueue package import jobs ([#300](https://github.com/flora-pm/flora-server/pull/300))
+* Make the categories page more responsive on smaller screens ([#310](https://github.com/flora-pm/flora-server/pull/310))
+* Only keep MAJ.Min numbers of a version in the package page "installation" section ([#310](https://github.com/flora-pm/flora-server/pull/310))
 
 ## 1.0.8 -- 2022-11-30
 * Display compiler version with which the package declares having been tested ([#249](https://github.com/flora-pm/flora-server/pull/249))
