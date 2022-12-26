@@ -70,7 +70,7 @@ navbarSearch = do
   flag <- asks displayNavbarSearch
   if flag
     then do
-      form_ [class_ "w-full max-w-sm ml-5 inline-flex", action_ "/search", method_ "GET"] $ do
+      form_ [action_ "/search", method_ "GET"] $ do
         div_ [class_ "flex items-center py-2"] $ do
           label_ [for_ "search"] ""
           input_

@@ -304,13 +304,21 @@ displayPackageFlags packageFlags =
 
 displayPackageFlag :: PackageFlag -> FloraHTML
 displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = do
-  details_ [] $ do
-    summary_ [] $ do
-      pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
-      toHtmlRaw @Text "&nbsp;"
-      defaultMarker flagDefault
-    div_ [class_ "package-flag-description"] $ do
-      renderHaddock $ Text.pack flagDescription
+  case flagDescription of
+    "" ->
+      div_ [] $ do
+        -- Import for the ".package-flags > *" CSS rule to fire
+        pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+        toHtmlRaw @Text "&nbsp;"
+        defaultMarker flagDefault
+    _ -> do
+      details_ [] $ do
+        summary_ [] $ do
+          pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+          toHtmlRaw @Text "&nbsp;"
+          defaultMarker flagDefault
+        div_ [class_ "package-flag-description"] $ do
+          renderHaddock $ Text.pack flagDescription
 
 defaultMarker :: Bool -> FloraHTML
 defaultMarker True = em_ "(on by default)"

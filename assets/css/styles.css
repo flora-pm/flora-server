@@ -11,6 +11,10 @@
 @import "package.css";
 @import "categories.css";
 
+.hidden {
+  display: none;
+}
+
 body {
   background-color: var(--background-color);
   color: var(--text-color);
@@ -203,6 +207,13 @@ a {
       display: flex;
       align-items: center;
       height: 4rem;
+
+      form {
+        max-width: 24rem;
+        width: 100%;
+        display: inline-flex;
+        margin-left: 1.25rem;
+      }
     }
 
     .brand {
