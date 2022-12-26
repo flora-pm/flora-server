@@ -11,15 +11,12 @@ import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
-import Effectful.Log
-import Effectful.Log qualified as Log
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
-insertCategory :: (Log :> es, DB :> es) => Category -> Eff es ()
+insertCategory :: (DB :> es) => Category -> Eff es ()
 insertCategory category = do
-  Log.logInfo_ "Inserting Category"
   dbtToEff $ void $ execute Insert q category
   where
     q =
