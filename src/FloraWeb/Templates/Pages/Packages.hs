@@ -1,6 +1,7 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold, forM_)
+import Data.List qualified as List
 import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
@@ -345,4 +346,6 @@ formatInstallString packageName Release{version} =
     hcat [pretty packageName, PP.space, rangedVersion, ","]
   where
     rangedVersion :: Doc
-    rangedVersion = "^>=" <> pretty version
+    rangedVersion = "^>=" <> majMin
+    majMin :: Doc
+    majMin = pretty $ mkVersion $ List.take 2 $ versionNumbers version
