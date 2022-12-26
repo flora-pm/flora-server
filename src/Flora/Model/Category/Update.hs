@@ -6,8 +6,7 @@ import Control.Monad (void)
 import Control.Monad.IO.Class
 import Data.Text (Text)
 import Data.Text.IO qualified as T
-import Database.PostgreSQL.Entity (insert)
-import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
+import Database.PostgreSQL.Entity.DBT (QueryNature (..), execute)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
@@ -17,7 +16,15 @@ import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
 insertCategory :: (DB :> es) => Category -> Eff es ()
-insertCategory category = dbtToEff $ insert @Category category
+insertCategory category = do
+  dbtToEff $ void $ execute Insert q category
+  where
+    q =
+      [sql|
+          insert into categories (category_id, name, slug, synopsis)
+            values (?, ?, ?, ?)
+          on conflict do nothing
+        |]
 
 -- | Adds a package to a category. Adding a package to an already-assigned category has no effect
 addToCategory :: (DB :> es) => PackageId -> CategoryId -> Eff es ()
