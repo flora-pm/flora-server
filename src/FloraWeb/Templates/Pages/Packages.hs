@@ -1,6 +1,7 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold, forM_)
+import Data.List qualified as List
 import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
@@ -303,13 +304,21 @@ displayPackageFlags packageFlags =
 
 displayPackageFlag :: PackageFlag -> FloraHTML
 displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = do
-  details_ [] $ do
-    summary_ [] $ do
-      pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
-      toHtmlRaw @Text "&nbsp;"
-      defaultMarker flagDefault
-    div_ [class_ "package-flag-description"] $ do
-      renderHaddock $ Text.pack flagDescription
+  case flagDescription of
+    "" ->
+      div_ [] $ do
+        -- Import for the ".package-flags > *" CSS rule to fire
+        pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+        toHtmlRaw @Text "&nbsp;"
+        defaultMarker flagDefault
+    _ -> do
+      details_ [] $ do
+        summary_ [] $ do
+          pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+          toHtmlRaw @Text "&nbsp;"
+          defaultMarker flagDefault
+        div_ [class_ "package-flag-description"] $ do
+          renderHaddock $ Text.pack flagDescription
 
 defaultMarker :: Bool -> FloraHTML
 defaultMarker True = em_ "(on by default)"
@@ -345,4 +354,6 @@ formatInstallString packageName Release{version} =
     hcat [pretty packageName, PP.space, rangedVersion, ","]
   where
     rangedVersion :: Doc
-    rangedVersion = "^>=" <> pretty version
+    rangedVersion = "^>=" <> majMin
+    majMin :: Doc
+    majMin = pretty $ mkVersion $ List.take 2 $ versionNumbers version
