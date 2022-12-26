@@ -54,6 +54,7 @@ jobs:
         chmod 0600 ~/.pgpass
         echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
         cat ~/.pgpass
+        cabal update
         cabal freeze
 
 
