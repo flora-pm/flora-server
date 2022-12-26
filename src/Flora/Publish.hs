@@ -7,6 +7,7 @@ import Effectful.Log
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time
 
+import Data.Vector qualified as Vector
 import Flora.Import.Categories.Tuning
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Model.Category.Update qualified as Update
@@ -18,7 +19,6 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types (Release (..))
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement (Requirement)
-import qualified Data.Vector as Vector
 
 {- TODO: Audit log of the published package
    TODO: Publish artifacts
@@ -85,6 +85,6 @@ publishForNewPackage requirements components release userPackageCategories packa
   Update.bulkInsertRequirements requirements
   Update.refreshDependents
   Update.refreshLatestVersions
-  let normalisedCategories = fmap (\(Tuning.NormalisedPackageCategory cat) -> cat) newCategories 
+  let normalisedCategories = fmap (\(Tuning.NormalisedPackageCategory cat) -> cat) newCategories
   Update.addToCategoryByName package.packageId (Vector.fromList normalisedCategories)
   pure package

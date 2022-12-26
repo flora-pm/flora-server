@@ -1,6 +1,5 @@
 module Main where
 
-import Data.Maybe
 import Data.Password.Types
 import Data.Text (Text)
 import DesignSystem (generateComponents)
@@ -28,12 +27,12 @@ data Command
   = Provision ProvisionTarget
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
-  | ImportPackages FilePath
+  | ImportPackages FilePath Bool
   deriving stock (Show, Eq)
 
 data ProvisionTarget
   = Categories
-  | TestPackages
+  | TestPackages Bool
   deriving stock (Show, Eq)
 
 data UserCreationOptions = UserCreationOptions
@@ -70,7 +69,7 @@ parseProvision :: Parser Command
 parseProvision =
   subparser $
     command "categories" (pure (Provision Categories) `withInfo` "Load the canonical categories in the system")
-      <> command "test-packages" (pure (Provision TestPackages) `withInfo` "Load the test packages in the database")
+      <> command "test-packages" (parseImportTestPackages `withInfo` "Load the test packages in the database")
 
 parseCreateUser :: Parser Command
 parseCreateUser =
@@ -87,11 +86,19 @@ parseGenDesignSystem :: Parser Command
 parseGenDesignSystem = pure GenDesignSystemComponents
 
 parseImportPackages :: Parser Command
-parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
+parseImportPackages =
+  ImportPackages
+    <$> argument str (metavar "PATH")
+    <*> switch (long "direct-insert" <> short 'd' <> help "Directly insert the packages in the database instead of queuing the import jobs")
+
+parseImportTestPackages :: Parser Command
+parseImportTestPackages =
+  Provision . TestPackages
+    <$> switch (long "direct-insert" <> short 'd' <> help "Directly insert the packages in the database instead of queuing the import jobs")
 
 runOptions :: (DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
-runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
+runOptions (Options (Provision (TestPackages directImport))) = importFolderOfCabalFiles "./test/fixtures/Cabal/" directImport
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
@@ -109,12 +116,14 @@ runOptions (Options (CreateUser opts)) = do
       let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
       insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
-runOptions (Options (ImportPackages path)) = importFolderOfCabalFiles path
+runOptions (Options (ImportPackages path directImport)) = importFolderOfCabalFiles path directImport
 
-importFolderOfCabalFiles :: (DB :> es, IOE :> es) => FilePath -> Eff es ()
-importFolderOfCabalFiles path = Log.withStdOutLogger $ \appLogger -> do
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  importAllFilesInRelativeDirectory appLogger (user ^. #userId) path True
+importFolderOfCabalFiles :: (DB :> es, IOE :> es) => FilePath -> Bool -> Eff es ()
+importFolderOfCabalFiles path directImport = Log.withStdOutLogger $ \appLogger -> do
+  mUser <- Query.getUserByUsername "hackage-user"
+  case mUser of
+    Nothing -> error "You forgot to create the account 'hackage-user'!"
+    Just user -> importAllFilesInRelativeDirectory appLogger (user ^. #userId) path directImport
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

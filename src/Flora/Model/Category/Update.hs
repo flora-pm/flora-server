@@ -10,11 +10,11 @@ import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
-import Flora.Model.Category.Query qualified as Query
-import Flora.Model.Category.Types (Category(..), CategoryId)
-import Flora.Model.Package.Types
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector
+import Data.Vector qualified as Vector
+import Flora.Model.Category.Query qualified as Query
+import Flora.Model.Category.Types (Category (..), CategoryId)
+import Flora.Model.Package.Types
 
 insertCategory :: (DB :> es) => Category -> Eff es ()
 insertCategory category = dbtToEff $ insert @Category category
@@ -35,5 +35,5 @@ addToCategoryByName packageId categoryNames = do
   liftIO $ putStrLn "================================================================"
   categoryIds <- Query.getCategoriesByNames categoryNames >>= (\cats -> pure $ fmap (.categoryId) cats)
   if Vector.null categoryIds
-  then pure ()
-  else addManyToCategory $ (,) <$> Vector.singleton packageId <*> categoryIds
+    then pure ()
+    else addManyToCategory $ (,) <$> Vector.singleton packageId <*> categoryIds

@@ -32,12 +32,12 @@ db-drop: ## Drop the database
 db-setup: db-create ## Setup the dev database
 	@migrate init "$(FLORA_DB_CONNSTRING)" 
 	@migrate migrate "$(FLORA_DB_CONNSTRING)" migrations
+	@cabal run -- flora-cli provision categories
+	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
 
 db-reset: db-drop db-setup db-provision ## Reset the dev database (uses Cabal)
 
 db-provision: build ## Load the development data in the database
-	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
-	@cabal run -- flora-cli provision categories
 	@cabal run -- flora-cli provision test-packages
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
