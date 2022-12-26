@@ -280,6 +280,7 @@ executable flora-cli
     , envparse
     , flora
     , log-base
+    , log-effectful
     , lucid
     , optics-core
     , optparse-applicative

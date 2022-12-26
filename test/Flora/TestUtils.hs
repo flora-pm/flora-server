@@ -225,7 +225,7 @@ getEnv mgrSettings = do
 managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
 
-testMigrations :: (DB :> es, IOE :> es) => Eff es ()
+testMigrations :: (Log :> es, DB :> es, IOE :> es) => Eff es ()
 testMigrations = do
   pool <- getPool
   liftIO $ withResource pool $ \conn ->

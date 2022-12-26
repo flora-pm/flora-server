@@ -6,6 +6,7 @@ import Data.Text (Text)
 import DesignSystem (generateComponents)
 import Effectful
 import Effectful.Fail
+import Effectful.Log
 import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.User.Query qualified as Query
 import GHC.Generics (Generic)
@@ -49,10 +50,12 @@ main :: IO ()
 main = do
   result <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv & runFailIO & runEff
-  runEff
-    . runDB (env ^. #pool)
-    . runFailIO
-    $ runOptions result
+  runEff $ Log.withStdOutLogger $ \stdOutLogger ->
+    do
+      runDB (env ^. #pool)
+      . runFailIO
+      . runLog "flora-cli" stdOutLogger LogInfo
+      $ runOptions result
 
 parseOptions :: Parser Options
 parseOptions =
@@ -89,7 +92,7 @@ parseGenDesignSystem = pure GenDesignSystemComponents
 parseImportPackages :: Parser Command
 parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
 
-runOptions :: (DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
+runOptions :: (Log :> es, DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do

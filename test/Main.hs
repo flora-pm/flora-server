@@ -26,7 +26,7 @@ main = do
   env <- runEff getFloraTestEnv
   fixtures <- runEff $ Log.withStdOutLogger $ \stdOutLogger -> do
     runCurrentTimeIO
-    . Log.runLog "flora-test" stdOutLogger LogAttention
+    . Log.runLog "flora-test" stdOutLogger LogInfo
     . runDB (env ^. #pool)
     . runFailIO
     $ do
