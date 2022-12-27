@@ -155,13 +155,17 @@ fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releas
     Right timestamp -> do
       logInfo_ $ "Got a timestamp for " <> display packageName
       Update.updateUploadTime releaseId timestamp
-    Left e@(FailureResponse _ response) -> do
-      logAttention "Timestamp retrieval failed" $
-        object
-          [ "status" .= statusCode (response.responseStatusCode)
-          , "body" .= TL.decodeUtf8 (response.responseBody)
-          ]
-      throw e
+    Left e@(FailureResponse _ response)
+      -- If the upload time simply doesn't exist, we skip it by marking the job as successful.
+      | response.responseStatusCode == notFound404 -> pure ()
+      | response.responseStatusCode == gone410 -> pure ()
+      | otherwise -> do
+          logAttention "Timestamp retrieval failed" $
+            object
+              [ "status" .= statusCode (response.responseStatusCode)
+              , "body" .= TL.decodeUtf8 (response.responseBody)
+              ]
+          throw e
     Left e -> throw e
 
 fetchNewIndex :: JobsRunner ()
