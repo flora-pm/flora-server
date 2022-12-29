@@ -29,7 +29,6 @@
 
 .package-body {
   display: flex;
-  flex-wrap: wrap;
 
   a {
     font-weight: 500;

@@ -1,0 +1,139 @@
+cabal-version:      3.0
+name:               pg-entity
+synopsis:           A pleasant PostgreSQL layer
+description:
+  A PostgreSQL layer to safely expand your SQL queries with a lightweight eDSL.
+  Read the tutorial at https://tchoutri.github.io/pg-entity/Tutorial
+
+version:            0.0.4.0
+homepage:           https://tchoutri.github.io/pg-entity
+bug-reports:        https://github.com/tchoutri/pg-entity/issues
+author:             Théophile Choutri
+maintainer:         Théophile Choutri
+category:           Database
+license:            MIT
+build-type:         Simple
+tested-with:        GHC ==8.8.4 || ==8.10.7 || ==9.0.2 || ==9.2.4
+extra-source-files:
+  CHANGELOG.md
+  LICENSE.md
+  README.md
+
+flag prod
+  description:
+    This flag enables features for production usage, namely:
+    * Disable logging output
+
+  default:     False
+  manual:      True
+
+source-repository head
+  type:     git
+  location: https://github.com/tchoutri/pg-entity
+
+common common-extensions
+  default-extensions:
+    AllowAmbiguousTypes
+    ConstraintKinds
+    DataKinds
+    DeriveAnyClass
+    DeriveGeneric
+    DerivingStrategies
+    DerivingVia
+    DisambiguateRecordFields
+    DuplicateRecordFields
+    FlexibleContexts
+    FlexibleInstances
+    GeneralizedNewtypeDeriving
+    InstanceSigs
+    KindSignatures
+    MultiParamTypeClasses
+    NamedFieldPuns
+    OverloadedLabels
+    OverloadedStrings
+    RankNTypes
+    RecordWildCards
+    ScopedTypeVariables
+    StandaloneDeriving
+    TypeApplications
+    TypeOperators
+
+  default-language:   Haskell2010
+
+common common-ghc-options
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wno-unused-do-bind -Wno-deprecations
+    -Wpartial-fields -Wredundant-constraints -fhide-source-paths
+    -funbox-strict-fields -fwrite-ide-info -hiedir=.hie -haddock
+
+common common-rts-options
+  ghc-options: -rtsopts -threaded -with-rtsopts=-N
+
+library
+  import:          common-extensions
+  import:          common-ghc-options
+  exposed-modules:
+    Database.PostgreSQL.Entity
+    Database.PostgreSQL.Entity.DBT
+    Database.PostgreSQL.Entity.Internal
+    Database.PostgreSQL.Entity.Internal.BlogPost
+    Database.PostgreSQL.Entity.Internal.QQ
+    Database.PostgreSQL.Entity.Internal.Unsafe
+    Database.PostgreSQL.Entity.Types
+
+  hs-source-dirs:  src
+  build-depends:
+    , base               >=4.12     && <4.18.0
+    , bytestring         ^>=0.11
+    , colourista         ^>=0.1
+    , exceptions         ^>=0.10
+    , monad-control      ^>=1.0
+    , parsec             ^>=3.1
+    , pg-transact        ^>=0.3
+    , postgresql-simple  ^>=0.6
+    , resource-pool      ^>=0.3
+    , safe-exceptions    ^>=0.1
+    , template-haskell   >=2.15.0.0 && <2.18.0.0.0
+    , text               ^>=2.0
+    , text-display       ^>=0.0
+    , text-manipulate    ^>=0.3
+    , time               ^>=1.12
+    , uuid               ^>=1.3
+    , vector             ^>=0.13
+
+  if flag(prod)
+    cpp-options: -DPROD
+
+test-suite entity-test
+  import:         common-extensions
+  import:         common-ghc-options
+  import:         common-rts-options
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  other-modules:
+    EntitySpec
+    GenericsSpec
+    Utils
+
+  hs-source-dirs: test
+  build-depends:
+    , aeson
+    , base
+    , containers
+    , hedgehog
+    , mtl
+    , optics-core
+    , pg-entity
+    , pg-transact
+    , postgresql-simple
+    , postgresql-simple-migration  ^>=0.1
+    , resource-pool
+    , safe-exceptions
+    , tasty
+    , tasty-hunit
+    , text
+    , time
+    , tmp-postgres
+    , uuid
+    , vector
