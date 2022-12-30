@@ -192,7 +192,6 @@
     justify-content: center;
     align-items: flex-start;
   }
-
 }
 
 @media (max-width: 768px) {
@@ -217,5 +216,4 @@
       overflow: auto;
     }
   }
-
 }
