@@ -3,7 +3,7 @@
 ## 1.0.9 -- XXXX-XX-XX
 * Fix package title size in smaller screens ([#297](https://github.com/flora-pm/flora-server/pull/297))
 * Enqueue package import jobs ([#300](https://github.com/flora-pm/flora-server/pull/300))
-* Make the categories page more responsive on smaller screens ([#310](https://github.com/flora-pm/flora-server/pull/310))
+* Make the categories page more responsive on smaller screens ([#310](https://github.com/flora-pm/flora-server/pull/310)), ([#314](https://github.com/flora-pm/flora-server/pull/310))
 * Only keep MAJ.Min numbers of a version in the package page "installation" section ([#310](https://github.com/flora-pm/flora-server/pull/310))
 * Add a GIN index on the payload jsonb for oddjobs ([#312](https://github.com/flora-pm/flora-server/pull/312))
 * Don't fail the upload time job when the package doesn't exist ([#313](https://github.com/flora-pm/flora-server/pull/310))
