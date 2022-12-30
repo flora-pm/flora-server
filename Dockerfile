@@ -9,7 +9,7 @@ RUN apt install -y build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 l
 RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 RUN echo 'export PATH="$PATH:/root/.ghcup/bin"' >> /etc/profile
 ENV PATH="$PATH:/root/.ghcup/bin"
-RUN ghcup install ghc 9.2.4 && ghcup set ghc 9.2.4 && ghcup install cabal
+RUN ghcup install ghc 9.2.5 && ghcup set ghc 9.2.5 && ghcup install cabal
 
 # install dependencies (pg_config, postgresql-client, postrgresql-migrations & yarn)
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
