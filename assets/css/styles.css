@@ -525,12 +525,6 @@ a {
     white-space: nowrap;
   }
 
-  .package-body {
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-  }
-
   .about-page__title {
     font-size: 3.75rem;
     line-height: 1;

@@ -2,6 +2,7 @@
   margin: 0 2em;
   flex-basis: 40rem;
   order: 2;
+  min-width: 75%;
 }
 
 .release-readme {
