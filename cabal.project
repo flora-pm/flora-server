@@ -80,8 +80,3 @@ source-repository-package
     type: git
     location: https://github.com/haskell-effectful/time-effectful
     tag: 7bf8c48
-
-source-repository-package
-    type: git
-    location: https://github.com/tchoutri/pg-entity
-    tag: fee8f59254c5e83b233d765e237587f72d27dee6
