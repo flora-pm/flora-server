@@ -105,7 +105,7 @@ themeToggle = do
   let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
 
   button_
-    [ xOn_ "click" "theme = ''; menuOpen = false"
+    [ xOn_ "click" "theme = 'light'; menuOpen = false"
     , class_ $ "theme-button--light " <> buttonBaseClasses
     ]
     sunIcon
