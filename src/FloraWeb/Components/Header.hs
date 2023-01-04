@@ -26,7 +26,7 @@ header = do
         \   || (window.matchMedia('(prefers-color-scheme: dark)').matches \
         \   ? 'dark' : 'light') \
         \ }"
-    , xBind_ "data-theme" "(theme === 'dark') ? 'dark' : ''"
+    , xBind_ "data-theme" "(theme === 'dark') ? 'dark' : 'light'"
     , xInit_ "$watch('theme', val => localStorage.setItem('theme', val))"
     ]
     $ do
