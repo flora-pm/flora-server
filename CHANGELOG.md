@@ -8,6 +8,7 @@
 * Add a GIN index on the payload jsonb for oddjobs ([#312](https://github.com/flora-pm/flora-server/pull/312))
 * Don't fail the upload time job when the package doesn't exist ([#313](https://github.com/flora-pm/flora-server/pull/310))
 * Respect manual override of system theme ([#321](https://github.com/flora-pm/flora-server/pull/321))
+* Paginate reverse dependencies page ([#322](https://github.com/flora-pm/flora-server/pull/323))
 
 ## 1.0.8 -- 2022-11-30
 * Display compiler version with which the package declares having been tested ([#249](https://github.com/flora-pm/flora-server/pull/249))

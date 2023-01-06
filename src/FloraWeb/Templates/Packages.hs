@@ -15,30 +15,37 @@ module FloraWeb.Templates.Packages
   , showChangelog
   ) where
 
+import Control.Monad (when)
 import Data.Text (Text)
+import Data.Text.Display
 import Data.Time (defaultTimeLocale)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Lucid
-
-import Data.Text.Display
 import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
+import Lucid
+import Lucid.Base
+
 import Flora.Model.Package
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
+import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requirementListItem)
+import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Components.VersionListHeader qualified as Template
 import FloraWeb.Templates
-import Lucid.Base
 
-showDependents :: Text -> Vector DependencyInfo -> FloraHTML
-showDependents searchString packagesInfo =
+showDependents :: Namespace -> PackageName -> Text -> Word -> Vector DependencyInfo -> Word -> FloraHTML
+showDependents namespace packageName title count packagesInfo currentPage =
   div_ [class_ "container"] $ do
-    presentationHeader searchString "" (fromIntegral $ Vector.length packagesInfo)
-    div_ [class_ ""] $ dependencyListing packagesInfo
+    presentationHeader title "" count
+    div_ [class_ ""] $ do
+      ul_ [class_ "package-list"] $ Vector.forM_ packagesInfo $ \dep ->
+        packageListItem (dep.namespace, dep.name, dep.latestSynopsis, dep.latestVersion, dep.latestLicense)
+      when (count > 30) $
+        paginationNav count currentPage (DependentsOf namespace packageName)
 
 showDependencies :: Text -> Vector DependencyInfo -> FloraHTML
 showDependencies searchString requirementsInfo = div_ [class_ "container"] $ do
@@ -73,10 +80,6 @@ versionListItem namespace packageName release = do
 packageListing :: Vector PackageInfo -> FloraHTML
 packageListing packages = ul_ [class_ "package-list"] $ Vector.forM_ packages $ \PackageInfo{..} -> do
   packageListItem (namespace, name, synopsis, version, license)
-
-dependencyListing :: Vector DependencyInfo -> FloraHTML
-dependencyListing dependencies = ul_ [class_ "package-list"] $ Vector.forM_ dependencies $ \dep ->
-  packageListItem (dep.namespace, dep.name, dep.latestSynopsis, dep.latestVersion, dep.latestLicense)
 
 requirementListing :: Vector DependencyInfo -> FloraHTML
 requirementListing requirements = ul_ [class_ "package-list"] $ Vector.forM_ requirements requirementListItem

@@ -84,10 +84,10 @@ getHaskellOrHackagePackage packageName =
   FROM "packages" AS p
   WHERE p."namespace" IN ('haskell', 'hackage')
     AND p."name" = ?
+    AND p."status" = 'fully-imported'
   |]
       (Only packageName)
 
--- | TODO: Remove the manual fields and use pg-entity
 getAllPackageDependents
   :: (DB :> es)
   => Namespace
@@ -115,8 +115,8 @@ numberOfPackageDependentsQuery =
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
                 ON p."package_id" = dep."dependent_id"
-  WHERE  dep."namespace" = ?
-    AND  dep."name" = ?
+  WHERE dep."namespace" = ?
+    AND dep."name" = ?
   |]
 
 packageDependentsQuery :: Query
@@ -132,18 +132,22 @@ packageDependentsQuery =
   FROM "packages" AS p
   INNER JOIN "dependents" AS dep
         ON p."package_id" = dep."dependent_id"
-  WHERE  dep."namespace" = ?
-    AND  dep."name" = ?
+  WHERE dep."namespace" = ?
+    AND dep."name" = ?
   |]
 
 getAllPackageDependentsWithLatestVersion
   :: (DB :> es)
   => Namespace
   -> PackageName
+  -> Word
   -> Eff es (Vector DependencyInfo)
-getAllPackageDependentsWithLatestVersion namespace packageName =
-  dbtToEff $
-    query Select packageDependentsWithLatestVersionQuery (namespace, packageName)
+getAllPackageDependentsWithLatestVersion namespace packageName pageNumber =
+  dbtToEff $ query Select q (namespace, packageName, offset)
+  where
+    limit = 30
+    offset = (limit * pageNumber) - limit
+    q = packageDependentsWithLatestVersionQuery <> " LIMIT 30 OFFSET ?"
 
 getPackageDependentsWithLatestVersion
   :: (DB :> es, Log :> es, Time :> es)
@@ -176,8 +180,8 @@ packageDependentsWithLatestVersionQuery =
                 ON p."package_id" = dep."dependent_id"
         INNER JOIN "releases" AS r 
                 ON r."package_id" = p."package_id"
-  WHERE  dep."namespace" = ?
-    AND  dep."name" = ?
+  WHERE dep."namespace" = ?
+    AND dep."name" = ?
   GROUP BY (p.namespace, p.name, synopsis, license)
   |]
 

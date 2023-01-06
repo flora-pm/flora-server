@@ -126,7 +126,7 @@ testCorrectNumberInHaskellNamespace = do
 
 testBytestringDependents :: TestEff ()
 testBytestringDependents = do
-  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring")
+  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") 1
   assertEqual
     19
     (Vector.length results)

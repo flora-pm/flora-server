@@ -116,8 +116,10 @@ showPackageVersion namespace packageName version = do
       numberOfDependencies
       categories
 
-showDependentsHandler :: Namespace -> PackageName -> FloraPage (Html ())
-showDependentsHandler namespace packageName = do
+showDependentsHandler :: Namespace -> PackageName -> Maybe Word -> FloraPage (Html ())
+showDependentsHandler namespace packageName Nothing = showDependentsHandler namespace packageName (Just 1)
+showDependentsHandler namespace packageName (Just 0) = showDependentsHandler namespace packageName (Just 1)
+showDependentsHandler namespace packageName (Just pageNumber) = do
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   _ <- guardThatPackageExists namespace packageName
@@ -126,11 +128,16 @@ showDependentsHandler namespace packageName = do
           { title = display namespace <> "/" <> display packageName
           , description = "Dependents of " <> display namespace <> display packageName
           }
-  results <- Query.getAllPackageDependentsWithLatestVersion namespace packageName
+  results <- Query.getAllPackageDependentsWithLatestVersion namespace packageName pageNumber
+  totalDependents <- Query.getNumberOfPackageDependents namespace packageName
   render templateEnv $
     Package.showDependents
+      namespace
+      packageName
       ("Dependents of " <> display namespace <> "/" <> display packageName)
+      totalDependents
       results
+      pageNumber
 
 showDependenciesHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showDependenciesHandler namespace packageName = do
