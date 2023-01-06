@@ -1,6 +1,6 @@
 packages: ./
 
-with-compiler: ghc-9.2.4
+with-compiler: ghc-9.2.5
 
 tests: True
 
@@ -26,6 +26,9 @@ test-show-details: direct
 
 package *
   ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
+
+package pg-entity
+  flags: -prod
 
 package warp
   flags: -x509

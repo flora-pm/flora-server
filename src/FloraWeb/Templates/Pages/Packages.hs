@@ -1,6 +1,7 @@
 module FloraWeb.Templates.Pages.Packages where
 
 import Data.Foldable (fold, forM_)
+import Data.List qualified as List
 import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
@@ -83,8 +84,8 @@ presentationHeader release namespace name synopsis = div_ [class_ "divider"] $ d
   div_ [class_ "page-title"] $
     h1_ [class_ "package-title"] $ do
       span_ [class_ "headline"] $ toHtml (display namespace) <> "/" <> toHtml name
-      span_ [class_ "dark:text-gray-200 version"] $ displayReleaseVersion release.version
-  div_ [class_ "synopsis lg:text-xl text-center"] $
+      span_ [class_ "version"] $ displayReleaseVersion release.version
+  div_ [class_ "synopsis"] $
     p_ [class_ ""] (toHtml synopsis)
 
 packageBody
@@ -137,17 +138,17 @@ displayReleaseVersion = toHtml
 
 displayLicense :: SPDX.License -> FloraHTML
 displayLicense license = li_ [class_ ""] $ do
-  div_ [class_ "license"] $ h3_ [class_ "lg:text-2xl package-body-section"] "License"
+  div_ [class_ "license"] $ h3_ [class_ "package-body-section"] "License"
   p_ [class_ "package-body-section__license"] $ toHtml license
 
 displayCategories :: Vector Category -> FloraHTML
 displayCategories categories = li_ [class_ ""] $ do
-  div_ [class_ "license "] $ h3_ [class_ "lg:text-2xl package-body-section"] "Categories"
+  div_ [class_ "license "] $ h3_ [class_ "package-body-section"] "Categories"
   ul_ [class_ "categories"] $ foldMap renderCategory categories
 
 displayLinks :: Namespace -> PackageName -> Release -> ReleaseMetadata -> FloraHTML
 displayLinks namespace packageName release meta@ReleaseMetadata{..} = li_ [class_ ""] $ do
-  h3_ [class_ "lg:text-2xl package-body-section links"] "Links"
+  h3_ [class_ "package-body-section links"] "Links"
   ul_ [class_ "links"] $ do
     li_ [class_ "package-link"] $ a_ [href_ (getHomepage meta)] "Homepage"
     li_ [class_ "package-link"] $ a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
@@ -166,7 +167,7 @@ displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> toUr
 displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
 displayVersions namespace packageName versions numberOfReleases =
   li_ [class_ ""] $ do
-    h3_ [class_ "lg:text-2xl package-body-section versions"] "Versions"
+    h3_ [class_ "package-body-section versions"] "Versions"
     ul_ [class_ "package-versions"] $ do
       Vector.forM_ versions displayVersion
       if fromIntegral (Vector.length versions) >= numberOfReleases
@@ -205,7 +206,7 @@ displayDependencies (namespace, packageName, version) numberOfDependencies depen
 showAll :: Target -> Maybe Version -> Namespace -> PackageName -> FloraHTML
 showAll target mVersion namespace packageName = do
   let resource = case target of
-        Dependents -> Links.packageDependents namespace packageName
+        Dependents -> Links.packageDependents namespace packageName 1
         Dependencies -> Links.packageDependencies namespace packageName (fromJust mVersion)
         Versions -> Links.packageVersions namespace packageName
   a_ [class_ "dependency", href_ ("/" <> toUrlPiece resource)] "Show all…"
@@ -213,7 +214,7 @@ showAll target mVersion namespace packageName = do
 displayInstructions :: PackageName -> Release -> FloraHTML
 displayInstructions packageName latestRelease = li_ [class_ ""] $ do
   h3_ [class_ "package-body-section"] "Installation"
-  div_ [class_ "items-top"] $ div_ [class_ "space-y-2"] $ do
+  div_ [class_ "items-top"] $ div_ [class_ ""] $ do
     label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
     input_
       [ class_ "package-install-string"
@@ -303,13 +304,21 @@ displayPackageFlags packageFlags =
 
 displayPackageFlag :: PackageFlag -> FloraHTML
 displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = do
-  details_ [] $ do
-    summary_ [] $ do
-      pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
-      toHtmlRaw @Text "&nbsp;"
-      defaultMarker flagDefault
-    div_ [class_ "package-flag-description"] $ do
-      renderHaddock $ Text.pack flagDescription
+  case flagDescription of
+    "" ->
+      div_ [] $ do
+        -- Import for the ".package-flags > *" CSS rule to fire
+        pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+        toHtmlRaw @Text "&nbsp;"
+        defaultMarker flagDefault
+    _ -> do
+      details_ [] $ do
+        summary_ [] $ do
+          pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+          toHtmlRaw @Text "&nbsp;"
+          defaultMarker flagDefault
+        div_ [class_ "package-flag-description"] $ do
+          renderHaddock $ Text.pack flagDescription
 
 defaultMarker :: Bool -> FloraHTML
 defaultMarker True = em_ "(on by default)"
@@ -345,4 +354,6 @@ formatInstallString packageName Release{version} =
     hcat [pretty packageName, PP.space, rangedVersion, ","]
   where
     rangedVersion :: Doc
-    rangedVersion = "^>=" <> pretty version
+    rangedVersion = "^>=" <> majMin
+    majMin :: Doc
+    majMin = pretty $ mkVersion $ List.take 2 $ versionNumbers version

@@ -15,30 +15,37 @@ module FloraWeb.Templates.Packages
   , showChangelog
   ) where
 
+import Control.Monad (when)
 import Data.Text (Text)
+import Data.Text.Display
 import Data.Time (defaultTimeLocale)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Lucid
-
-import Data.Text.Display
 import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
+import Lucid
+import Lucid.Base
+
 import Flora.Model.Package
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
+import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requirementListItem)
+import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Components.VersionListHeader qualified as Template
 import FloraWeb.Templates
-import Lucid.Base
 
-showDependents :: Text -> Vector DependencyInfo -> FloraHTML
-showDependents searchString packagesInfo =
+showDependents :: Namespace -> PackageName -> Text -> Word -> Vector DependencyInfo -> Word -> FloraHTML
+showDependents namespace packageName title count packagesInfo currentPage =
   div_ [class_ "container"] $ do
-    presentationHeader searchString "" (fromIntegral $ Vector.length packagesInfo)
-    div_ [class_ ""] $ dependencyListing packagesInfo
+    presentationHeader title "" count
+    div_ [class_ ""] $ do
+      ul_ [class_ "package-list"] $ Vector.forM_ packagesInfo $ \dep ->
+        packageListItem (dep.namespace, dep.name, dep.latestSynopsis, dep.latestVersion, dep.latestLicense)
+      when (count > 30) $
+        paginationNav count currentPage (DependentsOf namespace packageName)
 
 showDependencies :: Text -> Vector DependencyInfo -> FloraHTML
 showDependencies searchString requirementsInfo = div_ [class_ "container"] $ do
@@ -49,7 +56,7 @@ listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
 listVersions namespace packageName releases =
   div_ [class_ "container"] $ do
     Template.presentationHeader namespace packageName (fromIntegral $ Vector.length releases)
-    div_ [class_ ""] $ ul_ [class_ "package-list space-y-2"] $ Vector.forM_ releases $ \release -> do
+    div_ [class_ ""] $ ul_ [class_ "package-list"] $ Vector.forM_ releases $ \release -> do
       versionListItem namespace packageName release
 
 versionListItem :: Namespace -> PackageName -> Release -> FloraHTML
@@ -71,15 +78,11 @@ versionListItem namespace packageName release = do
 
 -- | Render a list of package informations
 packageListing :: Vector PackageInfo -> FloraHTML
-packageListing packages = ul_ [class_ "package-list space-y-2"] $ Vector.forM_ packages $ \PackageInfo{..} -> do
+packageListing packages = ul_ [class_ "package-list"] $ Vector.forM_ packages $ \PackageInfo{..} -> do
   packageListItem (namespace, name, synopsis, version, license)
 
-dependencyListing :: Vector DependencyInfo -> FloraHTML
-dependencyListing dependencies = ul_ [class_ "package-list space-y-2"] $ Vector.forM_ dependencies $ \dep ->
-  packageListItem (dep.namespace, dep.name, dep.latestSynopsis, dep.latestVersion, dep.latestLicense)
-
 requirementListing :: Vector DependencyInfo -> FloraHTML
-requirementListing requirements = ul_ [class_ "package-list space-y-2"] $ Vector.forM_ requirements requirementListItem
+requirementListing requirements = ul_ [class_ "package-list"] $ Vector.forM_ requirements requirementListItem
 
 showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 showChangelog namespace packageName version mChangelog = do
@@ -89,7 +92,7 @@ showChangelog namespace packageName version mChangelog = do
         h1_ [class_ ""] $ do
           span_ [class_ "headline"] $ toHtml ("Changelog of " <> display namespace <> "/" <> display packageName)
           toHtmlRaw @Text "&nbsp;"
-          span_ [class_ "dark:text-gray-200 version"] $ toHtml $ display version
+          span_ [class_ "version"] $ toHtml $ display version
       section_ [class_ "release-changelog"] $ do
         case mChangelog of
           Nothing -> toHtml @Text "This release does not have a Changelog"

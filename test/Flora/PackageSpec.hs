@@ -126,9 +126,9 @@ testCorrectNumberInHaskellNamespace = do
 
 testBytestringDependents :: TestEff ()
 testBytestringDependents = do
-  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring")
+  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") 1
   assertEqual
-    18
+    19
     (Vector.length results)
 
 testNoSelfDependent :: TestEff ()
@@ -145,6 +145,7 @@ testNoSelfDependent = do
         , PackageName "relude"
         , PackageName "semigroups"
         , PackageName "xml"
+        , PackageName "pg-entity"
         ]
     )
     resultSet

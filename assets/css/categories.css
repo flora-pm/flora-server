@@ -1,0 +1,52 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+.categories-title {
+  padding-top: 1rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+
+  h1 {
+    font-size: 3rem;
+    line-height: 1;
+    letter-spacing: -0.025rem;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+}
+
+.categories-body {
+  display: grid;
+  margin-bottom: 3rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 3rem;
+  max-width: 80rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+
+  .category-card__name {
+    color: var(--category-card-name-color);
+  }
+
+  .category-card__synopsis {
+    color: var(--category-card-synopsis-color);
+    overflow-wrap: break-word;
+  }
+
+  .category-card {
+    display: block;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    width: 400px;
+    height: 112px;
+  }
+
+  .category-card:hover {
+    background-color: var(--category-card-background-hover);
+  }
+}

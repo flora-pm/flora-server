@@ -118,6 +118,8 @@ normalise_category("Snap", "Web Development").
 normalise_category("Servant", "Web Development").
 normalise_category("Servant Web", "Web Development").
 normalise_category("Web development", "Web Development").
+normalise_category("Happstack", "Web Development").
+normalise_category("Semantic Web", "Web Development").
 
 normalise_category("Optics", "Lenses").
 normalise_category("Lens", "Lenses").
@@ -141,10 +143,12 @@ normalise_category("User Interfaces", "GUI").
 normalise_category("graphics", "Graphics").
 
 normalise_category("Code Generation", "FFI").
+normalise_category("Foreign binding", "FFI").
 normalise_category("Elm", "FFI").
 normalise_category("TypeScript", "FFI").
 normalise_category("Java", "FFI").
 normalise_category("JVM", "FFI").
+normalise_category("Jvm", "FFI").
 normalise_category("Erlang", "FFI").
 normalise_category("PHP", "FFI").
 normalise_category("Foreign", "FFI").
@@ -182,6 +186,7 @@ normalise_category("Stemming", "Natural Language Processing").
 normalise_category("Containers", "Data Structures").
 
 normalise_category("Game", "Game Development").
+normalise_category("Game Engine", "Game Development").
 
 normalise_category("Concurrent", "Concurrency").
 normalise_category("Parallel", "Parallelism").
@@ -192,6 +197,7 @@ normalise_category("Filesystem", "Systems Programming").
 normalise_category("system", "Systems Programming").
 normalise_category("System", "Systems Programming").
 normalise_category("SYstem", "Systems Programming").
+normalise_category("Embedded", "Systems Programming").
 
 normalise_category("Distribution", "Package Distribution").
 
@@ -201,3 +207,5 @@ normalise_category("Debugging", "Profiling").
 
 normalise_category("OpenTelemetry", "Telemetry").
 normalise_category("Metrics", "Telemetry").
+
+normalise_category("Regex", "Text").

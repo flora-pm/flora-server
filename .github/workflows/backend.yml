@@ -54,11 +54,12 @@ jobs:
         chmod 0600 ~/.pgpass
         echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
         cat ~/.pgpass
+        cabal update
         cabal freeze
 
 
     - name: Cache
-      uses: actions/cache@v3.0.11
+      uses: actions/cache@v3.2.2
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ghc-9.2.4-${{ hashFiles('cabal.project.freeze') }}
