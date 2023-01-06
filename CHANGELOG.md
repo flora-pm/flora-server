@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.0.9 -- XXXX-XX-XX
+## 1.0.9 -- 2023-01-06
 * Fix package title size in smaller screens ([#297](https://github.com/flora-pm/flora-server/pull/297))
 * Enqueue package import jobs ([#300](https://github.com/flora-pm/flora-server/pull/300))
 * Make the categories page more responsive on smaller screens ([#310](https://github.com/flora-pm/flora-server/pull/310)), ([#314](https://github.com/flora-pm/flora-server/pull/310))
