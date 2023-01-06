@@ -45,6 +45,8 @@ mkURL :: SearchAction -> Word -> Text
 mkURL ListAllPackages pageNumber = "/" <> toUrlPiece (Links.packageIndexLink pageNumber)
 mkURL (SearchPackages searchTerm) pageNumber =
   "/" <> toUrlPiece (Links.packageSearchLink searchTerm pageNumber)
+mkURL (DependentsOf namespace packageName) pageNumber =
+  "/" <> toUrlPiece (Links.packageDependents namespace packageName pageNumber)
 
 paginate
   :: Word

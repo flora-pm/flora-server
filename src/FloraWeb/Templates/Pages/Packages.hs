@@ -206,7 +206,7 @@ displayDependencies (namespace, packageName, version) numberOfDependencies depen
 showAll :: Target -> Maybe Version -> Namespace -> PackageName -> FloraHTML
 showAll target mVersion namespace packageName = do
   let resource = case target of
-        Dependents -> Links.packageDependents namespace packageName
+        Dependents -> Links.packageDependents namespace packageName 1
         Dependencies -> Links.packageDependencies namespace packageName (fromJust mVersion)
         Versions -> Links.packageVersions namespace packageName
   a_ [class_ "dependency", href_ ("/" <> toUrlPiece resource)] "Show all…"

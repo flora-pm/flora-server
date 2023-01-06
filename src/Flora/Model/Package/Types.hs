@@ -99,7 +99,10 @@ instance Display Namespace where
       else "@" <> displayBuilder name
 
 instance ToHttpApiData Namespace where
-  toUrlPiece (Namespace ns) = "@" <> ns
+  toUrlPiece (Namespace ns) =
+    if "@" `isPrefixOf` ns
+      then ns
+      else "@" <> ns
 
 instance FromHttpApiData Namespace where
   parseUrlPiece piece =

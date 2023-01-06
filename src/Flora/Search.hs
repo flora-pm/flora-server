@@ -9,7 +9,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Log qualified
 
-import Flora.Model.Package (PackageInfo (..), formatPackage)
+import Flora.Model.Package (Namespace (..), PackageInfo (..), PackageName (..), formatPackage)
 import Flora.Model.Package.Query qualified as Query
 import FloraWeb.Server.Auth.Types (FloraPage)
 import FloraWeb.Server.Logging
@@ -17,11 +17,13 @@ import FloraWeb.Server.Logging
 data SearchAction
   = ListAllPackages
   | SearchPackages Text
+  | DependentsOf Namespace PackageName
   deriving (Eq, Ord, Show)
 
 instance Display SearchAction where
   displayBuilder ListAllPackages = "Packages"
   displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
+  displayBuilder (DependentsOf namespace packageName) = "Dependents of " <> displayBuilder namespace <> "/" <> displayBuilder packageName
 
 searchPackageByName :: Word -> Text -> FloraPage (Word, Vector PackageInfo)
 searchPackageByName pageNumber queryString = do

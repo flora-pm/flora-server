@@ -28,6 +28,7 @@ data Routes' mode = Routes'
         :- Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> "dependents"
+          :> QueryParam "page" Word
           :> Get '[HTML] (Html ())
   , showDependencies
       :: mode
