@@ -59,7 +59,7 @@ Here is the procedure to follow when making a release:
 1. Create a PR to prepare the release of the next version targeting `development`. It must include:
     * Bump the version in the flora.cabal file
     * Write down the date in the CHANGELOG
-2. Once the PR is merged into `development`, merge `development` into `master`
+2. Once the PR is merged into `development`, merge `development` into `main`
 3. Create a [new release](https://github.com/flora-pm/flora-server/releases/new).
 
 ### Questions 
