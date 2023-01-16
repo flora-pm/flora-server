@@ -5,6 +5,7 @@ import Control.Monad.IO.Class
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 (unpack)
+import Data.Maybe (isJust)
 import Data.Text.Display (display)
 import Flora.Environment
 import GHC.IO.Exception (IOErrorType (..))
@@ -24,7 +25,7 @@ onException logger environment tracingEnv mRequest exception = Log.runLogT "flor
         Aeson.object ["exception" .= display (show exception)]
       throw exception
     Just sentryDSN ->
-      if shouldDisplayException exception
+      if shouldDisplayException exception && isJust mRequest
         then do
           sentryService <-
             liftIO $
