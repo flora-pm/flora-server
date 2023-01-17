@@ -63,15 +63,23 @@ mkPool connectionInfo timeout' connections =
         }
 
 configToEnv :: (Fail :> es, IOE :> es) => FloraConfig -> Eff es FloraEnv
-configToEnv x@FloraConfig{..} = do
-  let PoolConfig{..} = dbConfig
-  pool <- mkPool connectionInfo connectionTimeout connections
-  jobsPool <- mkPool connectionInfo connectionTimeout connections
-  assets <- getAssets environment
+configToEnv floraConfig = do
+  let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
+  pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
+  jobsPool <- mkPool floraConfig.connectionInfo connectionTimeout connections
+  assets <- getAssets floraConfig.environment
   liftIO $ print assets
-  pure FloraEnv{..}
-  where
-    config = x
+  pure
+    FloraEnv
+      { pool = pool
+      , jobsPool = jobsPool
+      , httpPort = floraConfig.httpPort
+      , domain = floraConfig.domain
+      , logging = floraConfig.logging
+      , environment = floraConfig.environment
+      , assets = assets
+      , config = floraConfig
+      }
 
 testConfigToTestEnv :: TestConfig -> Eff '[IOE] TestEnv
 testConfigToTestEnv config@TestConfig{..} = do
