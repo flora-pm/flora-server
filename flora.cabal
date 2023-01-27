@@ -177,7 +177,7 @@ library
   build-depends:
     , aeson
     , async
-    , base
+    , base ^>=4.17
     , base64
     , blaze-builder
     , bytestring
