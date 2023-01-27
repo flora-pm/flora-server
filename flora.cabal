@@ -12,6 +12,8 @@ extra-source-files:
   LICENSE
   README.md
 
+tested-with: GHC ==9.4.4
+
 source-repository head
   type:     git
   location: https://github.com/flora-pm/flora-server
