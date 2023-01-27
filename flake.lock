@@ -68,16 +68,15 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1672495754,
-        "narHash": "sha256-vI1j7otKEg2hSUQ9VMOO3rw7OiUKOBHdkj0Z2Duycr8=",
-        "ref": "cleanup",
-        "rev": "d0d3881d94be2a1ceb6acc8d47dc44eaceda647d",
-        "revCount": 850,
+        "lastModified": 1674764798,
+        "narHash": "sha256-l1TVKod7nR4PbfaPKaYVaoiNIB4I9XmaZp/4iuj/yMg=",
+        "ref": "refs/heads/master",
+        "rev": "9a7f673ba436e51a90c286f78c1e0eabd261dc09",
+        "revCount": 899,
         "type": "git",
         "url": "https://gitlab.homotopic.tech/horizon/horizon-platform"
       },
       "original": {
-        "ref": "cleanup",
         "type": "git",
         "url": "https://gitlab.homotopic.tech/horizon/horizon-platform"
       }
