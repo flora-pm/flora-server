@@ -77,17 +77,25 @@ import FloraWeb.Templates.Error (renderError)
 import FloraWeb.Types
 
 runFlora :: IO ()
-runFlora = bracket (getFloraEnv & runFailIO & runEff) (runEff . shutdownFlora) $ \env -> runEff . runCurrentTimeIO . runConcurrent $ do
-  let baseURL = "http://localhost:" <> display (env.httpPort)
-  liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
-  liftIO $ when (isJust $ env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
-  liftIO $ when env.logging.prometheusEnabled $ do
-    blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
-    void $ Prometheus.register ghcMetrics
-    void $ Prometheus.register procMetrics
-  let withLogger = Logging.makeLogger (env.logging.logger)
-  withLogger $ \appLogger ->
-    runServer appLogger env
+runFlora =
+  bracket
+    (getFloraEnv & runFailIO & runEff)
+    (runEff . shutdownFlora)
+    ( \env ->
+        runEff . runCurrentTimeIO . runConcurrent $! do
+          let baseURL = "http://localhost:" <> display (env.httpPort)
+          liftIO $! blueMessage $! "🌺 Starting Flora server on " <> baseURL
+          liftIO $! when (isJust $! env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
+          liftIO $! when env.logging.prometheusEnabled $! do
+            blueMessage $! "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
+            void $! Prometheus.register ghcMetrics
+            void $! Prometheus.register procMetrics
+          let withLogger = Logging.makeLogger (env.logging.logger)
+          withLogger
+            ( \appLogger ->
+                runServer appLogger env
+            )
+    )
 
 shutdownFlora :: FloraEnv -> Eff '[IOE] ()
 shutdownFlora env =
@@ -103,11 +111,11 @@ logException env logger exception =
   runEff
     . runCurrentTimeIO
     . Logging.runLog env logger
-    $ Log.logAttention "odd-jobs runner crashed " (show exception)
+    $! Log.logAttention "odd-jobs runner crashed " (show exception)
 
 runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
-  httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
+  httpManager <- liftIO $! HTTP.newManager tlsManagerSettings
   let runnerEnv = JobsRunnerEnv httpManager
   let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv.config) appLogger (floraEnv.jobsPool)
       oddJobsCfg =
@@ -124,10 +132,10 @@ runServer appLogger floraEnv = do
   loggingMiddleware <- Logging.runLog (floraEnv.environment) appLogger WaiLog.mkLogMiddleware
   oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
-  webEnvStore <- liftIO $ newWebEnvStore webEnv
+  webEnvStore <- liftIO $! newWebEnvStore webEnv
   let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv
   let warpSettings =
-        setPort (fromIntegral $ floraEnv.httpPort) $
+        setPort (fromIntegral $! floraEnv.httpPort) $
           setOnException
             ( onException
                 appLogger
@@ -136,12 +144,12 @@ runServer appLogger floraEnv = do
             )
             defaultSettings
   liftIO
-    $ runSettings warpSettings
-    $ prometheusMiddleware (floraEnv.environment) (floraEnv.logging)
+    $! runSettings warpSettings
+    $! prometheusMiddleware (floraEnv.environment) (floraEnv.logging)
       . heartbeatMiddleware
       . loggingMiddleware
       . const
-    $ server
+    $! server
 
 mkServer :: Logger -> WebEnvStore -> FloraEnv -> OddJobs.UIConfig -> OddJobs.Env -> Application
 mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
@@ -163,7 +171,7 @@ floraServer pool cfg jobsRunnerEnv =
               floraPage
                 & runVisitorSession
                 & runDB pool
-                & Log.localData [("request_id", Aeson.String $ requestID . getResponse $ sessionWithCookies)]
+                & Log.localData [("request_id", Aeson.String $! requestID . getResponse $! sessionWithCookies)]
                 & runCurrentTimeIO
                 & withReader (const sessionWithCookies)
           )
@@ -186,7 +194,7 @@ errorFormatters assets =
 
 notFoundPage :: Assets -> NotFoundErrorFormatter
 notFoundPage assets _req =
-  let result = runPureEff $ runErrorNoCallStack $ renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
+  let result = runPureEff $! runErrorNoCallStack $! renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
    in case result of
         Left err -> err
         Right _ -> err404

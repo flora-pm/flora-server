@@ -32,6 +32,6 @@ renderMarkdown name bodyText = do
     Commonmark.commonmarkWith extensions name bodyText
       >>= \case
         Left exception -> throw (MarkdownFailed exception)
-        Right (y :: Commonmark.Html ()) -> pure $ Commonmark.renderHtml y
+        Right (y :: Commonmark.Html ()) -> pure $! Commonmark.renderHtml y
 
-  toHtmlRaw @Text $ TL.toStrict htmlTxt
+  toHtmlRaw @Text $! TL.toStrict htmlTxt

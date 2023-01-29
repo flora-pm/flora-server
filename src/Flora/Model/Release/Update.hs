@@ -19,10 +19,10 @@ insertRelease :: (DB :> es) => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
 
 upsertRelease :: (DB :> es) => Release -> Eff es ()
-upsertRelease release = dbtToEff $ upsert @Release release [[field| updated_at |]]
+upsertRelease release = dbtToEff $! upsert @Release release [[field| updated_at |]]
 
 refreshLatestVersions :: (DB :> es) => Eff es ()
-refreshLatestVersions = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
+refreshLatestVersions = dbtToEff $! void $! execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
 
 updateReadme :: (DB :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> Eff es ()
 updateReadme releaseId readmeBody status =

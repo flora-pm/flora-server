@@ -10,6 +10,6 @@ import Servant
 
 instance MimeUnrender PlainText UTCTime where
   mimeUnrender _ bs =
-    case parseISO8601 (TL.unpack $ TL.decodeUtf8 bs) of
+    case parseISO8601 (TL.unpack $! TL.decodeUtf8 bs) of
       Just x -> Right x
-      Nothing -> Left $ "Could not parse " <> show bs
+      Nothing -> Left $! "Could not parse " <> show bs

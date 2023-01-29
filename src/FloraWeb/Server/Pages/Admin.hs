@@ -64,36 +64,51 @@ indexHandler = do
   session <- getSession
   templateEnv <-
     fromSession session defaultTemplateEnv
-      >>= \te -> pure $ set (#activeElements % #adminDashboard) True te
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
-  report <- liftIO $ withPool pool getReport
+      >>= \te -> pure $! set (#activeElements % #adminDashboard) True te
+  FloraEnv{pool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
+  report <- liftIO $! withPool pool getReport
   render templateEnv (Templates.index report)
 
 fetchMetadataHandler :: FloraAdmin FetchMetadataResponse
 fetchMetadataHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
 
   releasesWithoutReadme <- Query.getPackageReleasesWithoutReadme
-  liftIO $ forkIO $ Async.forConcurrently_ releasesWithoutReadme $ \(releaseId, version, packagename) -> do
-    scheduleReadmeJob jobsPool releaseId packagename version
+  liftIO $!
+    forkIO $!
+      Async.forConcurrently_
+        releasesWithoutReadme
+        ( \(releaseId, version, packagename) -> do
+            scheduleReadmeJob jobsPool releaseId packagename version
+        )
 
   releasesWithoutUploadTime <- Query.getPackageReleasesWithoutUploadTimestamp
-  liftIO $ forkIO $ Async.forConcurrently_ releasesWithoutUploadTime $ \(releaseId, version, packagename) -> do
-    scheduleUploadTimeJob jobsPool releaseId packagename version
+  liftIO $!
+    forkIO $!
+      Async.forConcurrently_
+        releasesWithoutUploadTime
+        ( \(releaseId, version, packagename) -> do
+            scheduleUploadTimeJob jobsPool releaseId packagename version
+        )
 
   releasesWithoutChangelog <- Query.getPackageReleasesWithoutChangelog
-  liftIO $ forkIO $ Async.forConcurrently_ releasesWithoutChangelog $ \(releaseId, version, packagename) -> do
-    scheduleChangelogJob jobsPool releaseId packagename version
+  liftIO $!
+    forkIO $!
+      Async.forConcurrently_
+        releasesWithoutChangelog
+        ( \(releaseId, version, packagename) -> do
+            scheduleChangelogJob jobsPool releaseId packagename version
+        )
 
-  pure $ redirect "/admin"
+  pure $! redirect "/admin"
 
 indexImportJobHandler :: FloraAdmin ImportIndexResponse
 indexImportJobHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
-  liftIO $ scheduleIndexImportJob jobsPool
-  pure $ redirect "/admin"
+  FloraEnv{jobsPool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
+  liftIO $! scheduleIndexImportJob jobsPool
+  pure $! redirect "/admin"
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdmin
 adminUsersHandler =
@@ -147,8 +162,8 @@ packageIndexHandler = do
 -- showPackageHandler :: PackageId -> FloraAdmin (Html ())
 -- showPackageHandler packageId = do
 --   session <- getSession
---   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
---   result <- liftIO $ withPool pool $ Query.getPackageById packageId
+--   FloraEnv{pool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
+--   result <- liftIO $! withPool pool $! Query.getPackageById packageId
 --   templateEnv <- fromSession session defaultTemplateEnv
 --   case result of
 --     Nothing -> renderError templateEnv notFound404

@@ -68,7 +68,7 @@ configToEnv floraConfig = do
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   jobsPool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   assets <- getAssets floraConfig.environment
-  liftIO $ print assets
+  liftIO $! print assets
   pure
     FloraEnv
       { pool = pool
@@ -89,11 +89,11 @@ testConfigToTestEnv config@TestConfig{..} = do
 
 getFloraEnv :: Eff '[Fail, IOE] FloraEnv
 getFloraEnv = do
-  config <- liftIO $ Env.parse id parseConfig
-  liftIO $ blueMessage $ "🔌 Connecting to database at " <> Text.decodeUtf8 config.connectionInfo
+  config <- liftIO $! Env.parse id parseConfig
+  liftIO $! blueMessage $! "🔌 Connecting to database at " <> Text.decodeUtf8 config.connectionInfo
   configToEnv config
 
 getFloraTestEnv :: Eff '[IOE] TestEnv
 getFloraTestEnv = do
-  config <- liftIO $ Env.parse id parseTestConfig
+  config <- liftIO $! Env.parse id parseTestConfig
   testConfigToTestEnv config

@@ -33,10 +33,10 @@ newSessionHandler = do
     Nothing -> do
       Log.logInfo_ "[+] No user logged-in"
       templateDefaults <- fromSession session defaultTemplateEnv
-      respond $ WithStatus @200 $ renderUVerb templateDefaults Sessions.newSession
+      respond $! WithStatus @200 $! renderUVerb templateDefaults Sessions.newSession
     Just u -> do
-      Log.logInfo_ $ "[+] User is already logged: " <> display u
-      respond $ WithStatus @301 (redirect "/")
+      Log.logInfo_ $! "[+] User is already logged: " <> display u
+      respond $! WithStatus @301 (redirect "/")
 
 createSessionHandler :: LoginForm -> FloraPage (Union CreateSessionResponses)
 createSessionHandler LoginForm{email, password} = do
@@ -49,24 +49,24 @@ createSessionHandler LoginForm{email, password} = do
       let templateEnv =
             templateDefaults
               & (#flashError ?~ mkError "Could not authenticate")
-      respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
+      respond $! WithStatus @401 $! renderUVerb templateEnv Sessions.newSession
     Just user ->
       if validatePassword (mkPassword password) (user.password)
         then do
           Log.logInfo_ "[+] User connected!"
           sessionId <- persistSession (session.sessionId) (user.userId)
           let sessionCookie = craftSessionCookie sessionId True
-          respond $ WithStatus @301 $ redirectWithCookie "/" sessionCookie
+          respond $! WithStatus @301 $! redirectWithCookie "/" sessionCookie
         else do
           Log.logInfo_ "[+] Couldn't authenticate user"
           templateDefaults <- fromSession session defaultTemplateEnv
           let templateEnv =
                 templateDefaults
                   & (#flashError ?~ mkError "Could not authenticate")
-          respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
+          respond $! WithStatus @401 $! renderUVerb templateEnv Sessions.newSession
 
 deleteSessionHandler :: PersistentSessionId -> FloraPage DeleteSessionResponse
 deleteSessionHandler sessionId = do
-  Log.logInfo_ $ "[+] Logging-off session " <> display sessionId
+  Log.logInfo_ $! "[+] Logging-off session " <> display sessionId
   deleteSession sessionId
-  pure $ redirectWithCookie "/" emptySessionCookie
+  pure $! redirectWithCookie "/" emptySessionCookie

@@ -53,7 +53,7 @@ indexHandler pageParam = do
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
   (count', results) <- Search.listAllPackages pageNumber
-  render templateDefaults $ Search.showAllPackages count' pageNumber results
+  render templateDefaults $! Search.showAllPackages count' pageNumber results
 
 showHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showHandler namespace packageName = do
@@ -182,10 +182,10 @@ showChangelogHandler namespace packageName = do
 
 showVersionChangelogHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
 showVersionChangelogHandler namespace packageName version = do
-  Log.logInfo_ $ display namespace
+  Log.logInfo_ $! display namespace
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
-  void $ guardThatPackageExists namespace packageName
+  void $! guardThatPackageExists namespace packageName
   release <- guardThatReleaseExists namespace packageName version
   let templateEnv =
         templateEnv'
@@ -193,7 +193,7 @@ showVersionChangelogHandler namespace packageName version = do
           , description = "Changelog of @" <> display namespace <> display packageName
           }
 
-  render templateEnv $ Package.showChangelog namespace packageName version (release.changelog)
+  render templateEnv $! Package.showChangelog namespace packageName version (release.changelog)
 
 listVersionsHandler :: Namespace -> PackageName -> FloraPage (Html ())
 listVersionsHandler namespace packageName = do
@@ -206,4 +206,4 @@ listVersionsHandler namespace packageName = do
           , description = "Releases of " <> display namespace <> display packageName
           }
   releases <- Query.getAllReleases (package.packageId)
-  render templateEnv $ Package.listVersions namespace packageName releases
+  render templateEnv $! Package.listVersions namespace packageName releases

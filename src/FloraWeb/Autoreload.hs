@@ -30,5 +30,5 @@ autoreloadHandler connection =
     handler :: Connection -> FloraDevSocket ()
     handler conn = do
       msg <- liftIO (Websocket.receiveData connection :: IO Text)
-      liftIO $ T.putStrLn msg
+      liftIO $! T.putStrLn msg
       handler conn

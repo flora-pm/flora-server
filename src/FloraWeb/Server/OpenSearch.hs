@@ -16,13 +16,14 @@ instance MimeRender OpenSearchXML XML.Document where
   mimeRender _ = XML.renderLBS def
 
 openSearchHandler :: (Monad m) => m XML.Document
-openSearchHandler = pure $
-  openSearchDocument "OpenSearchDescription" $ do
-    element "ShortName" $ content "Flora"
-    element "Description" $ content "Search on Flora"
-    element "InputEncoding" $ content "UTF-8"
-    elementA "Url" [("type", "text/html"), ("method", "get"), ("template", "https://flora.pm/search?q={searchTerms}&ref=opensearch")] empty
-    element "moz:searchForm" $ content "https://flora.pm"
+openSearchHandler =
+  pure $
+    openSearchDocument "OpenSearchDescription" $! do
+      element "ShortName" $! content "Flora"
+      element "Description" $! content "Search on Flora"
+      element "InputEncoding" $! content "UTF-8"
+      elementA "Url" [("type", "text/html"), ("method", "get"), ("template", "https://flora.pm/search?q={searchTerms}&ref=opensearch")] empty
+      element "moz:searchForm" $! content "https://flora.pm"
 
 openSearchDocument :: XML.Name -> XML.XML -> XML.Document
 openSearchDocument name children =

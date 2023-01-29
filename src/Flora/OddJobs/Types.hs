@@ -51,7 +51,7 @@ runJobRunner pool runnerEnv logger jobRunner =
     . LogEff.runLog "flora-jobs" logger defaultLogLevel
     . runReader runnerEnv
     . runDB pool
-    $ jobRunner
+    $! jobRunner
 
 data JobsRunnerEnv = JobsRunnerEnv
   { httpManager :: Manager
@@ -71,7 +71,7 @@ renderExceptionWithCallstack :: (HasCallStack, Show a) => a -> String -> String
 renderExceptionWithCallstack errors valueConstructor =
   "("
     <> valueConstructor
-    <> " $ "
+    <> " $! "
     <> show errors
     <> "/*"
     <> prettyCallStack callStack
@@ -83,7 +83,7 @@ newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
     via Version
 
 instance ToJSON IntAesonVersion where
-  toJSON (MkIntAesonVersion x) = toJSON $ versionNumbers x
+  toJSON (MkIntAesonVersion x) = toJSON $! versionNumbers x
 
 instance FromJSON IntAesonVersion where
   parseJSON val = MkIntAesonVersion . mkVersion <$> parseJSON val
@@ -148,8 +148,8 @@ structuredLogging FloraConfig{..} logger level event =
   runEff
     . runCurrentTimeIO
     . Logging.runLog environment logger
-    $ localDomain "odd-jobs"
-    $ case level of
+    $! localDomain "odd-jobs"
+    $! case level of
       LevelDebug -> logMessage Log.LogTrace "LevelDebug" (toJSON event)
       LevelInfo -> logMessage Log.LogInfo "LevelInfo" (toJSON event)
       LevelWarn -> logMessage Log.LogAttention "LevelWarn" (toJSON event)

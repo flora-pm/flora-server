@@ -45,7 +45,7 @@ data WebEnv = WebEnv
 
 fetchFloraEnv :: WebEnvStore -> IO FloraEnv
 fetchFloraEnv (WebEnvStore mvar) =
-  readMVar mvar >>= \webEnv -> pure $ webEnv.floraEnv
+  readMVar mvar >>= \webEnv -> pure $! webEnv.floraEnv
 
 getWebEnv :: WebEnvStore -> IO WebEnv
 getWebEnv (WebEnvStore mvar) = readMVar mvar
@@ -54,7 +54,7 @@ modifyWebEnv :: WebEnvStore -> (WebEnv -> IO WebEnv) -> IO ()
 modifyWebEnv (WebEnvStore mvar) fun = modifyMVar_ mvar fun
 
 newWebEnvStore :: WebEnv -> IO WebEnvStore
-newWebEnvStore webEnv = liftIO $ WebEnvStore <$> newMVar webEnv
+newWebEnvStore webEnv = liftIO $! WebEnvStore <$> newMVar webEnv
 
 -- | FYI: type Cookies = [(ByteString, ByteString)]
 newtype GetCookies = GetCookies Cookies

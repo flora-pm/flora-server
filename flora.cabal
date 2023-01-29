@@ -12,7 +12,7 @@ extra-source-files:
   LICENSE
   README.md
 
-tested-with: GHC ==9.4.4
+tested-with:        GHC ==9.4.4
 
 source-repository head
   type:     git
@@ -177,7 +177,7 @@ library
   build-depends:
     , aeson
     , async
-    , base ^>=4.17
+    , base                       ^>=4.17
     , base64
     , blaze-builder
     , bytestring
@@ -241,6 +241,7 @@ library
     , slugify
     , souffle-haskell            ==3.4.0
     , streamly
+    , streamly-core
     , text
     , text-display
     , time
