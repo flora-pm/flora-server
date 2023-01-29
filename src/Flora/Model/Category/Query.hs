@@ -19,13 +19,13 @@ import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
 getCategoryById :: (DB :> es) => CategoryId -> Eff es (Maybe Category)
-getCategoryById categoryId = dbtToEff $ selectById (Only categoryId)
+getCategoryById categoryId = dbtToEff $! selectById (Only categoryId)
 
 getCategoryBySlug :: (DB :> es) => Text -> Eff es (Maybe Category)
-getCategoryBySlug slug = dbtToEff $ selectOneByField [field| slug |] (Only slug)
+getCategoryBySlug slug = dbtToEff $! selectOneByField [field| slug |] (Only slug)
 
 getCategoryByName :: (DB :> es) => Text -> Eff es (Maybe Category)
-getCategoryByName categoryName = dbtToEff $ selectOneByField [field| name |] (Only categoryName)
+getCategoryByName categoryName = dbtToEff $! selectOneByField [field| name |] (Only categoryName)
 
 getPackagesFromCategorySlug :: (DB :> es, IOE :> es) => Text -> Eff es (Vector Package)
 getPackagesFromCategorySlug slug =
@@ -33,10 +33,10 @@ getPackagesFromCategorySlug slug =
     getCategoryBySlug slug
     >>= \case
       Nothing -> do
-        liftIO $ T.putStrLn $ "Could not find category from slug: \"" <> slug <> "\""
+        liftIO $! T.putStrLn $! "Could not find category from slug: \"" <> slug <> "\""
         pure Vector.empty
       Just Category{categoryId} -> do
-        liftIO $ T.putStrLn "Category found!"
+        liftIO $! T.putStrLn "Category found!"
         dbtToEff $
           query
             Select
@@ -55,4 +55,4 @@ getPackagesFromCategorySlug slug =
             (Only categoryId)
 
 getAllCategories :: (DB :> es) => Eff es (Vector Category)
-getAllCategories = dbtToEff $ query_ Select (_select @Category)
+getAllCategories = dbtToEff $! query_ Select (_select @Category)

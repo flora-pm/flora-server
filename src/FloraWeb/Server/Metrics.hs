@@ -67,13 +67,16 @@ instrumentHandlerValueWithFilter
   -- ^ The instrumented app
 instrumentHandlerValueWithFilter environment resFilter f app req respond = do
   start <- getTime Monotonic
-  app req $ \res -> do
-    case resFilter res of
-      Nothing -> return ()
-      Just res' -> do
-        end <- getTime Monotonic
-        let method = decodeUtf8 (Wai.requestMethod req)
-        let status_code = display (show (HTTP.statusCode (Wai.responseStatus res')))
-        countRoute (f req) method status_code (display environment)
-        P.observeSeconds (f req) (Just method) (Just status_code) start end
-    respond res
+  app
+    req
+    ( \res -> do
+        case resFilter res of
+          Nothing -> return ()
+          Just res' -> do
+            end <- getTime Monotonic
+            let method = decodeUtf8 (Wai.requestMethod req)
+            let status_code = display (show (HTTP.statusCode (Wai.responseStatus res')))
+            countRoute (f req) method status_code (display environment)
+            P.observeSeconds (f req) (Just method) (Just status_code) start end
+        respond res
+    )

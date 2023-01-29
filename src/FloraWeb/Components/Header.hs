@@ -29,13 +29,13 @@ header = do
     , xBind_ "data-theme" "(theme === 'dark') ? 'dark' : 'light'"
     , xInit_ "$watch('theme', val => localStorage.setItem('theme', val))"
     ]
-    $ do
-      head_ $ do
+    $! do
+      head_ $! do
         meta_ [charset_ "UTF-8"]
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
         title_ (text title)
 
-        script_ [type_ "module"] $ do
+        script_ [type_ "module"] $! do
           toHtmlRaw @Text
             [str|
           document.documentElement.classList.remove('no-js');
@@ -54,10 +54,10 @@ header = do
         ogTags
         theme
         link_ [rel_ "icon", href_ "/static/favicon.svg", type_ "image/svg+xml"]
-        -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
+        -- link_ [rel_ "canonical", href_ $! getCanonicalURL assigns]
         meta_ [name_ "twitter:dnt", content_ "on"]
 
-      body_ [] $ do
+      body_ [] $! do
         navbar
 
 jsLink :: FloraHTML

@@ -33,18 +33,20 @@ packageReleasesQuery :: Query
 packageReleasesQuery = _selectWhere @Release [[field| package_id |]]
 
 getReleases :: (DB :> es) => PackageId -> Eff es (Vector Release)
-getReleases pid = dbtToEff $ do
-  results <- query Select packageReleasesQuery (Only pid)
-  if Vector.null results
-    then pure results
-    else pure $ Vector.take 6 $ Vector.reverse $ Vector.modify MVector.sort results
+getReleases pid =
+  dbtToEff $! do
+    results <- query Select packageReleasesQuery (Only pid)
+    if Vector.null results
+      then pure results
+      else pure $! Vector.take 6 $! Vector.reverse $! Vector.modify MVector.sort results
 
 getAllReleases :: (DB :> es) => PackageId -> Eff es (Vector Release)
-getAllReleases pid = dbtToEff $ do
-  results <- query Select packageReleasesQuery (Only pid)
-  if Vector.null results
-    then pure results
-    else pure $ Vector.reverse $ Vector.modify MVector.sort results
+getAllReleases pid =
+  dbtToEff $! do
+    results <- query Select packageReleasesQuery (Only pid)
+    if Vector.null results
+      then pure results
+      else pure $! Vector.reverse $! Vector.modify MVector.sort results
 
 getPackageReleases :: (DB :> es) => Eff es (Vector (ReleaseId, Version, PackageName))
 getPackageReleases =
@@ -106,14 +108,15 @@ getPackageReleasesWithoutChangelog =
       |]
 
 getReleaseByVersion :: (DB :> es) => PackageId -> Version -> Eff es (Maybe Release)
-getReleaseByVersion packageId version = dbtToEff $ queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
+getReleaseByVersion packageId version = dbtToEff $! queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
 
 getNumberOfReleases :: (DB :> es) => PackageId -> Eff es Word
-getNumberOfReleases pid = dbtToEff $ do
-  (result :: Maybe (Only Int)) <- queryOne Select numberOfReleasesQuery (Only pid)
-  case result of
-    Just (Only n) -> pure $ fromIntegral n
-    Nothing -> pure 0
+getNumberOfReleases pid =
+  dbtToEff $! do
+    (result :: Maybe (Only Int)) <- queryOne Select numberOfReleasesQuery (Only pid)
+    case result of
+      Just (Only n) -> pure $! fromIntegral n
+      Nothing -> pure 0
 
 numberOfReleasesQuery :: Query
 numberOfReleasesQuery =
@@ -125,4 +128,4 @@ numberOfReleasesQuery =
 
 getReleaseComponents :: (DB :> es) => ReleaseId -> Eff es (Vector PackageComponent)
 getReleaseComponents releaseId =
-  dbtToEff $ query Select (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
+  dbtToEff $! query Select (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)

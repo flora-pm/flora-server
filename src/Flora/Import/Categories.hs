@@ -10,7 +10,7 @@ import Flora.Model.Category.Update (insertCategory)
 
 importCategories :: (DB :> es, IOE :> es) => Eff es ()
 importCategories = do
-  liftIO $ T.putStrLn "Sourcing categories from Datalog"
+  liftIO $! T.putStrLn "Sourcing categories from Datalog"
   canonicalCategories <- liftIO Tuning.sourceCategories
   categories <- mapM fromCanonical canonicalCategories
   mapM_ insertCategory categories
@@ -18,4 +18,4 @@ importCategories = do
 fromCanonical :: (IOE :> es) => CanonicalCategory -> Eff es Category
 fromCanonical (CanonicalCategory slug name synopsis) = do
   categoryId <- liftIO mkCategoryId
-  pure $ mkCategory categoryId name (Just slug) synopsis
+  pure $! mkCategory categoryId name (Just slug) synopsis

@@ -21,28 +21,28 @@ packageListItem :: (Namespace, PackageName, Text, Version, SPDX.License) -> Flor
 packageListItem (namespace, packageName, synopsis, version, license) = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
-    a_ [href, class_ ""] $ do
+    a_ [href, class_ ""] $! do
       h4_ [class_ "package-list-item__name"] $
         strong_ [class_ ""] . toHtml $
           display namespace <> "/" <> display packageName
-      p_ [class_ "package-list-item__synopsis"] $ toHtml synopsis
-      div_ [class_ "package-list-item__metadata"] $ do
-        span_ [class_ "package-list-item__license"] $ do
+      p_ [class_ "package-list-item__synopsis"] $! toHtml synopsis
+      div_ [class_ "package-list-item__metadata"] $! do
+        span_ [class_ "package-list-item__license"] $! do
           licenseIcon
           toHtml license
-        span_ [class_ "package-list-item__version"] $ "v" <> toHtml version
+        span_ [class_ "package-list-item__version"] $! "v" <> toHtml version
 
 requirementListItem :: DependencyInfo -> FloraHTML
 requirementListItem DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
-    a_ [href, class_ ""] $ do
+    a_ [href, class_ ""] $! do
       h4_ [class_ "package-list-item__name"] $
         strong_ [class_ ""] . toHtml $
           display namespace <> "/" <> display packageName
-      p_ [class_ "package-list-item__synopsis"] $ toHtml latestSynopsis
-      div_ [class_ "package-list-item__metadata"] $ do
-        span_ [class_ "package-list-item__license"] $ do
+      p_ [class_ "package-list-item__synopsis"] $! toHtml latestSynopsis
+      div_ [class_ "package-list-item__metadata"] $! do
+        span_ [class_ "package-list-item__license"] $! do
           licenseIcon
           toHtml latestLicense
         displayVersionRange requirement
@@ -51,7 +51,7 @@ displayVersionRange :: Text -> FloraHTML
 displayVersionRange versionRange =
   if versionRange == ">=0"
     then ""
-    else span_ [class_ "package-list-item__version-range"] $ toHtml versionRange
+    else span_ [class_ "package-list-item__version-range"] $! toHtml versionRange
 
 licenseIcon :: FloraHTML
 licenseIcon =

@@ -39,8 +39,12 @@ instance ToJSON CompilerFlavor where
   toJSON = toJSON . Pretty.prettyShow
 
 instance FromJSON CompilerFlavor where
-  parseJSON = withText "Compiler Flavor" $ \s ->
-    maybe (fail "Invalid compiler flavor") pure (simpleParsec $ Text.unpack s)
+  parseJSON =
+    withText
+      "Compiler Flavor"
+      ( \s ->
+          maybe (fail "Invalid compiler flavor") pure (simpleParsec $! Text.unpack s)
+      )
 
 instance Display CompilerFlavor where
   displayBuilder = Builder.fromString . Pretty.prettyShow
@@ -52,8 +56,12 @@ instance ToJSON VersionRange where
   toJSON = toJSON . Pretty.prettyShow
 
 instance FromJSON VersionRange where
-  parseJSON = withText "Version Range" $ \s ->
-    maybe (fail "Invalid version range") pure (simpleParsec $ Text.unpack s)
+  parseJSON =
+    withText
+      "Version Range"
+      ( \s ->
+          maybe (fail "Invalid version range") pure (simpleParsec $! Text.unpack s)
+      )
 
 deriving anyclass instance ToJSON ConfVar
 deriving anyclass instance FromJSON ConfVar
@@ -71,8 +79,12 @@ instance ToJSON Version where
   toJSON = Aeson.String . display . Pretty.prettyShow
 
 instance FromJSON Version where
-  parseJSON = withText "Version" $ \s ->
-    maybe (fail "Invalid Version") pure (simpleParsec $ Text.unpack s)
+  parseJSON =
+    withText
+      "Version"
+      ( \s ->
+          maybe (fail "Invalid Version") pure (simpleParsec $! Text.unpack s)
+      )
 
 instance FromField Version where
   fromField :: Field -> Maybe ByteString -> Conversion Version
@@ -89,8 +101,8 @@ instance ToHttpApiData Version where
 
 instance FromHttpApiData Version where
   parseUrlPiece piece =
-    case simpleParsec $ Text.unpack piece of
-      Nothing -> Left $ "Could not parse version string: " <> piece
+    case simpleParsec $! Text.unpack piece of
+      Nothing -> Left $! "Could not parse version string: " <> piece
       Just a -> Right a
 
 deriving anyclass instance ToJSON FlagName

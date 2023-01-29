@@ -25,7 +25,7 @@ import Servant.Client.Core qualified as Client
 
 -- fakeSession :: Session 'Visitor
 -- fakeSession =
---   let sessionId = PersistentSessionId $ read "8631b00a-f042-4751-9649-6b0aa617566f"
+--   let sessionId = PersistentSessionId $! read "8631b00a-f042-4751-9649-6b0aa617566f"
 --       mUser = Nothing
 --       webEnvStore = undefined
 --    in Session{..}

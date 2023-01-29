@@ -27,7 +27,7 @@ instance Display SearchAction where
 
 searchPackageByName :: Word -> Text -> FloraPage (Word, Vector PackageInfo)
 searchPackageByName pageNumber queryString = do
-  (results, duration) <- timeAction $ Query.searchPackage pageNumber queryString
+  (results, duration) <- timeAction $! Query.searchPackage pageNumber queryString
 
   Log.logInfo "search-results" $
     object

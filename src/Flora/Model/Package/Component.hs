@@ -47,7 +47,7 @@ newtype ComponentId = ComponentId {getComponentId :: UUID}
 
 deterministicComponentId :: ReleaseId -> CanonicalComponent -> ComponentId
 deterministicComponentId releaseId canonicalForm =
-  ComponentId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
+  ComponentId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $! concatenated
   where
     concatenated = display releaseId <> display canonicalForm
 
@@ -70,7 +70,7 @@ instance Display ComponentType where
 instance FromField ComponentType where
   fromField f Nothing = returnError UnexpectedNull f ""
   fromField _ (Just bs) | Just status <- parseComponentType bs = pure status
-  fromField f (Just bs) = returnError ConversionFailed f $ T.unpack $ "Conversion error: Expected component to be one of " <> display @[ComponentType] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
+  fromField f (Just bs) = returnError ConversionFailed f $! T.unpack $! "Conversion error: Expected component to be one of " <> display @[ComponentType] [minBound .. maxBound] <> ", but instead got " <> decodeUtf8 bs
 
 parseComponentType :: ByteString -> Maybe ComponentType
 parseComponentType "library" = Just Library
@@ -127,7 +127,7 @@ instance FromRow PackageComponent where
   fromRow = do
     PackageComponent'{..} <- fromRow
     let canonicalForm = CanonicalComponent componentName' componentType'
-    pure $ PackageComponent componentId' releaseId' canonicalForm componentMetadata'
+    pure $! PackageComponent componentId' releaseId' canonicalForm componentMetadata'
 
 -- | Data Access Object used to serialise to the DB
 data PackageComponent' = PackageComponent'

@@ -67,6 +67,6 @@ mkCategory
   -- ^ Synopsis
   -> Category
 mkCategory categoryId name Nothing synopsis =
-  mkCategory categoryId name (Just $ slugify name) synopsis
+  mkCategory categoryId name (Just $! slugify name) synopsis
 mkCategory categoryId name (Just slug) synopsis =
   Category{..}

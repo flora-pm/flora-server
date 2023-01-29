@@ -30,8 +30,8 @@ importAllFilesInRelativeDirectory appLogger user dir directImport = do
 importAllFilesInDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
 importAllFilesInDirectory appLogger user dir directImport = do
   pool <- getPool
-  liftIO $ System.createDirectoryIfMissing True dir
-  liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
+  liftIO $! System.createDirectoryIfMissing True dir
+  liftIO . putStrLn $! "🔎  Searching cabal files in " <> dir
   let displayCount =
         flip SFold.foldlM' (return 0) $
           \previousCount _ ->
@@ -40,7 +40,7 @@ importAllFilesInDirectory appLogger user dir directImport = do
                   when (currentCount `mod` 400 == 0) $
                     displayStats currentCount
                   return currentCount
-  processedPackageCount <- liftIO $ S.fold displayCount $ S.fromAsync $ S.mapM (processFile pool) $ findAllCabalFilesInDirectory dir
+  processedPackageCount <- liftIO $! S.fold displayCount $! S.fromAsync $! S.mapM (processFile pool) $! findAllCabalFilesInDirectory dir
   displayStats processedPackageCount
   Update.refreshLatestVersions >> Update.refreshDependents
   where
@@ -56,16 +56,16 @@ importAllFilesInDirectory appLogger user dir directImport = do
           )
     displayStats :: MonadIO m => Int -> m ()
     displayStats currentCount =
-      liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
+      liftIO . putStrLn $! "✅ Processed " <> show currentCount <> " new cabal files"
 
 findAllCabalFilesInDirectory :: FilePath -> S.AsyncT IO FilePath
-findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $ S.fromList [workdir]
+findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $! S.fromList [workdir]
   where
     traversePath p = do
-      isDir <- liftIO $ System.doesDirectoryExist p
+      isDir <- liftIO $! System.doesDirectoryExist p
       case isDir of
         True -> do
           entries <- System.listDirectory p
-          return $ S.concatMapM (traversePath . (p </>)) $ S.fromList entries
-        False | ".cabal" `isSuffixOf` p -> return $ S.fromPure p
+          return $! S.concatMapM (traversePath . (p </>)) $! S.fromList entries
+        False | ".cabal" `isSuffixOf` p -> return $! S.fromPure p
         _ -> return S.nil

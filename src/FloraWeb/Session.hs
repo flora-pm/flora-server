@@ -31,7 +31,7 @@ getSession = asks (getResponse @'[Header "Set-Cookie" SetCookie])
 getEnv :: (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es) => Eff es FloraEnv
 getEnv = do
   Session{webEnvStore} <- getSession
-  unsafeEff_ $ fetchFloraEnv webEnvStore
+  unsafeEff_ $! fetchFloraEnv webEnvStore
 
 -- | This function builds a cookie with the provided content
 craftSessionCookie

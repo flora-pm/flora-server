@@ -69,16 +69,16 @@ persistSession
 persistSession persistentSessionId userId = do
   persistentSession <- newPersistentSession userId persistentSessionId
   insertSession persistentSession
-  pure $ persistentSession.persistentSessionId
+  pure $! persistentSession.persistentSessionId
 
 insertSession :: (DB :> es) => PersistentSession -> Eff es ()
 insertSession = dbtToEff . insert @PersistentSession
 
 deleteSession :: (DB :> es) => PersistentSessionId -> Eff es ()
-deleteSession sessionId = dbtToEff $ delete @PersistentSession (Only sessionId)
+deleteSession sessionId = dbtToEff $! delete @PersistentSession (Only sessionId)
 
 getPersistentSession :: (DB :> es) => PersistentSessionId -> Eff es (Maybe PersistentSession)
-getPersistentSession sessionId = dbtToEff $ selectById @PersistentSession (Only sessionId)
+getPersistentSession sessionId = dbtToEff $! selectById @PersistentSession (Only sessionId)
 
 lookup :: Text -> SessionData -> Maybe Text
 lookup key (SessionData sdMap) = Map.lookup key sdMap

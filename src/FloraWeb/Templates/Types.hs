@@ -116,7 +116,7 @@ fromSession session defaults = do
   let sessionId = session.sessionId
   let muser = session.mUser
   let webEnvStore = session.webEnvStore
-  floraEnv <- liftIO $ fetchFloraEnv webEnvStore
+  floraEnv <- liftIO $! fetchFloraEnv webEnvStore
   let assets = floraEnv.assets
   let TemplateDefaults{..} =
         defaults

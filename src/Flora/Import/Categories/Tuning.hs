@@ -70,23 +70,24 @@ data CanonicalCategory = CanonicalCategory Text Text Text
 -- | Entrypoint to the Soufflé datalog engine.
 normalise :: [UserPackageCategory] -> IO Results
 normalise input = do
-  result <- liftIO $
-    Souffle.runSouffle Categoriser $ \case
-      Nothing ->
-        error "Failed to load Souffle program!"
-      Just prog -> do
-        Souffle.addFacts prog input
-        Souffle.run prog
-        Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
+  result <-
+    liftIO $
+      Souffle.runSouffle Categoriser $! \case
+        Nothing ->
+          error "Failed to load Souffle program!"
+        Just prog -> do
+          Souffle.addFacts prog input
+          Souffle.run prog
+          Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
   if (not . null) result.normalisationIssues
     then do
-      logStdErr $ "[!] Could not normalise these categories: " <> display result.normalisationIssues
+      logStdErr $! "[!] Could not normalise these categories: " <> display result.normalisationIssues
       pure result
     else pure result
 
 sourceCategories :: IO [CanonicalCategory]
 sourceCategories = do
-  Souffle.runSouffle SourceCategories $ \case
+  Souffle.runSouffle SourceCategories $! \case
     Nothing ->
       error "Failed to load Souffle program!"
     Just prog -> do
