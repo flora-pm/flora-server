@@ -13,7 +13,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}                                                                    
     steps:                                                                                                              
       - name: Checkout base repo                                                                                        
-        uses: actions/checkout@v2                                                                                       
+        uses: actions/checkout@v3                                                                                       
       - name: Extract the tested GHC versions                                                                           
         id: set-matrix                                                                                                  
         run: |                                                                                                          
