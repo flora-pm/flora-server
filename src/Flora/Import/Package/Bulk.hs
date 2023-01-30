@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE PackageImports #-}
 {-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Flora.Import.Package.Bulk (importAllFilesInDirectory, importAllFilesInRelativeDirectory) where
@@ -10,7 +11,7 @@ import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Time
 import Log (Logger, defaultLogLevel)
-import Streamly.Data.Fold qualified as SFold
+import "streamly" Streamly.Data.Fold qualified as SFold
 import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath

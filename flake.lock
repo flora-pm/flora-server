@@ -168,7 +168,24 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "horizon-platform": "horizon-platform",
-        "nixpkgs": "nixpkgs_3"
+        "nixpkgs": "nixpkgs_3",
+        "streamly": "streamly"
+      }
+    },
+    "streamly": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1674133089,
+        "narHash": "sha256-6dkGifxXAx34iohci/V9t4YV38a96sTs9bp2YbjQz64=",
+        "ref": "master",
+        "rev": "81bfdec2246a38fcda3731289093717f5207d62a",
+        "revCount": 3813,
+        "type": "git",
+        "url": "https://github.com/composewell/streamly"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/composewell/streamly"
       }
     }
   },
