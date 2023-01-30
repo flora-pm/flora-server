@@ -6,8 +6,10 @@
       url = "git+https://gitlab.homotopic.tech/horizon/horizon-platform";
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    streamly.url = "git+https://github.com/composewell/streamly";
+    streamly.flake = false;
   };
-  outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, ... }:
+  outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, streamly, ... }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -21,6 +23,8 @@
                     cd ..
                   '';
                 });
+              streamly-core =
+                (hfinal.callCabal2nix "streamly-core" "${streamly}/core/" {});
             };
           };
       in {
