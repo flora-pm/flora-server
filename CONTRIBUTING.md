@@ -5,7 +5,8 @@ but we need you to read this document when you open your PR or your issue:
 
 We need you to read and acknowledge our [Code of Conduct][CoC] document.
 
-The compiler version used is GHC 9.2.5. We encourage to use cabal-install 3.8.
+The compiler version used is described in the `cabal.project` file.
+`cabal-install` version 3.8 or higher is needed.
 
 The following Haskell command-line tools will have to be installed:
 
