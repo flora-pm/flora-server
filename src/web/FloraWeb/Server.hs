@@ -2,14 +2,31 @@ module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
+
+-- , hoistServer
+
+import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
+import Data.Aeson qualified as Aeson
+import Data.Function ((&))
 import Data.Maybe (isJust)
+import Data.Pool (Pool)
 import Data.Pool qualified as Pool
 import Data.Text.Display (display)
+import Database.PostgreSQL.Simple (Connection)
 import Effectful
+import Effectful.Concurrent
+import Effectful.Dispatch.Static
+import Effectful.Error.Static (runErrorNoCallStack)
+import Effectful.Fail (runFailIO)
+import Effectful.PostgreSQL.Transact.Effect (runDB)
+import Effectful.Reader.Static (runReader, withReader)
+import Effectful.Time (runCurrentTimeIO)
 import Log (Logger)
 import Log qualified
+import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Client.TLS (tlsManagerSettings)
+import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
@@ -18,6 +35,9 @@ import Network.Wai.Handler.Warp
   )
 import Network.Wai.Log qualified as WaiLog
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
+import OddJobs.Endpoints qualified as OddJobs
+import OddJobs.Job (startJobRunner)
+import OddJobs.Types qualified as OddJobs
 import Prometheus qualified
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc (procMetrics)
@@ -31,42 +51,21 @@ import Servant
   , Proxy (Proxy)
   , defaultErrorFormatters
   , err404
-  -- , hoistServer
   , notFoundErrorFormatter
   , serveDirectoryWebApp
   )
 import Servant.API (getResponse)
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
-import Control.Exception.Safe qualified as Safe
-import Effectful.Concurrent
-import Effectful.Reader.Static (runReader, withReader)
-import Effectful.Time (runCurrentTimeIO)
-import Network.HTTP.Client qualified as HTTP
-import OddJobs.Endpoints qualified as OddJobs
-import OddJobs.Job (startJobRunner)
-import OddJobs.Types qualified as OddJobs
-
-import Data.Aeson qualified as Aeson
-import Data.Function ((&))
-import Data.Pool (Pool)
-import Database.PostgreSQL.Simple (Connection)
-import Effectful.Dispatch.Static
-import Effectful.Error.Static (runErrorNoCallStack)
-import Effectful.Fail (runFailIO)
-import Effectful.PostgreSQL.Transact.Effect (runDB)
-import Network.HTTP.Types (notFound404)
-
 import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
 import Flora.Environment.Config (Assets)
-import Flora.Environment.OddJobs qualified as OddJobs
-import Flora.OddJobs qualified as OddJobs
-import Flora.OddJobs.Types (JobsRunnerEnv (..))
+import Flora.Logging (runLog)
+import Flora.Logging qualified as Logging
+import FloraJobs.Runner (runner)
+import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
 import FloraWeb.Routes
 import FloraWeb.Routes.Pages qualified as Pages
 import FloraWeb.Server.Auth (FloraAuthContext, authHandler, requestID, runVisitorSession)
-import FloraWeb.Server.Logging (runLog)
-import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Server.Metrics
 import FloraWeb.Server.OpenSearch
 import FloraWeb.Server.Pages qualified as Pages
@@ -117,14 +116,14 @@ runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $! HTTP.newManager tlsManagerSettings
   let runnerEnv = JobsRunnerEnv httpManager
-  let oddjobsUiCfg = OddJobs.makeUIConfig (floraEnv.config) appLogger (floraEnv.jobsPool)
+  let oddjobsUiCfg = makeUIConfig (floraEnv.config) appLogger (floraEnv.jobsPool)
       oddJobsCfg =
-        OddJobs.makeConfig
+        makeConfig
           runnerEnv
           (floraEnv.config)
           appLogger
           (floraEnv.jobsPool)
-          OddJobs.runner
+          runner
 
   forkIO $
     unsafeEff_ $

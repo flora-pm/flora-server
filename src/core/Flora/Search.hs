@@ -7,12 +7,15 @@ import Data.Text.Display (Display (..))
 import Data.Text.Lazy.Builder qualified as Builder
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Effectful
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Time (Time)
 import Log qualified
 
+import Flora.Logging
 import Flora.Model.Package (Namespace (..), PackageInfo (..), PackageName (..), formatPackage)
 import Flora.Model.Package.Query qualified as Query
-import FloraWeb.Server.Auth.Types (FloraPage)
-import FloraWeb.Server.Logging
 
 data SearchAction
   = ListAllPackages
@@ -25,7 +28,7 @@ instance Display SearchAction where
   displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
   displayBuilder (DependentsOf namespace packageName) = "Dependents of " <> displayBuilder namespace <> "/" <> displayBuilder packageName
 
-searchPackageByName :: Word -> Text -> FloraPage (Word, Vector PackageInfo)
+searchPackageByName :: (DB :> es, Log :> es, Time :> es) => Word -> Text -> Eff es (Word, Vector PackageInfo)
 searchPackageByName pageNumber queryString = do
   (results, duration) <- timeAction $! Query.searchPackage pageNumber queryString
 
@@ -48,7 +51,7 @@ searchPackageByName pageNumber queryString = do
   count <- Query.countPackagesByName queryString
   pure (count, results)
 
-listAllPackages :: Word -> FloraPage (Word, Vector PackageInfo)
+listAllPackages :: (DB :> es) => Word -> Eff es (Word, Vector PackageInfo)
 listAllPackages pageNumber = do
   results <- Query.listAllPackages pageNumber
   count <- Query.countPackages

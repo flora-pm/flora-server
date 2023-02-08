@@ -1,7 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Flora.ThirdParties.Hackage.Client where
+module FloraJobs.ThirdParties.Hackage.Client where
 
 import Servant.API ()
 import Servant.Client
@@ -12,8 +12,8 @@ import Data.Text
 import Data.Time (UTCTime)
 import Data.Time.Orphans ()
 import Effectful.Reader.Static
-import Flora.OddJobs.Types (JobsRunner, JobsRunnerEnv (..))
-import Flora.ThirdParties.Hackage.API as API
+import FloraJobs.ThirdParties.Hackage.API as API
+import FloraJobs.Types (JobsRunner, JobsRunnerEnv (..))
 
 request :: ClientM a -> JobsRunner (Either ClientError a)
 request req = do

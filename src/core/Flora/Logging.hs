@@ -1,6 +1,4 @@
-{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
-
-module FloraWeb.Server.Logging
+module Flora.Logging
   ( makeLogger
   , runLog
   , timeAction

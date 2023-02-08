@@ -18,6 +18,7 @@ import Control.Monad (void)
 import Data.Maybe (fromMaybe)
 import Data.Text.Display (display)
 import Distribution.Orphans ()
+import Flora.Logging
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
@@ -26,7 +27,6 @@ import Flora.Search qualified as Search
 import FloraWeb.Routes.Pages.Packages
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Guards
-import FloraWeb.Server.Logging
 import FloraWeb.Session
 import FloraWeb.Templates
 import FloraWeb.Templates.Packages qualified as Package
