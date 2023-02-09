@@ -6,9 +6,9 @@ import Distribution.Types.Version
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
-import Flora.OddJobs
 
 -- TODO aeson roundtrip tests
 spec :: TestTree

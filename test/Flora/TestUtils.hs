@@ -96,13 +96,13 @@ import Flora.Environment
 import Flora.Environment.Config (LoggingDestination (..))
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
+import Flora.Logging qualified as Logging
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
-import FloraWeb.Server.Logging qualified as Logging
 import Log.Backend.StandardOutput qualified as Log
 
 type TestEff = Eff '[Fail, DB, Log, Time, IOE]

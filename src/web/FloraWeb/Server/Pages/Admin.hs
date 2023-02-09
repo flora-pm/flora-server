@@ -18,7 +18,7 @@ import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
-import Flora.OddJobs
+import FloraJobs.Scheduler
 import FloraWeb.Routes.Pages.Admin
 import FloraWeb.Server.Auth
 import FloraWeb.Server.Utils (handlerToEff, redirect)

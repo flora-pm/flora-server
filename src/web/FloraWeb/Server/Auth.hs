@@ -28,11 +28,11 @@ import Data.Text.Encoding qualified as Text
 import Data.UUID.V4 qualified as UUID
 import Effectful.Dispatch.Static
 import Flora.Environment
+import Flora.Logging qualified as Logging
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Query
 import FloraWeb.Server.Auth.Types
-import FloraWeb.Server.Logging qualified as Logging
 import FloraWeb.Session
 import FloraWeb.Types
 import Servant qualified

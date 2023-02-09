@@ -29,6 +29,7 @@ import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Effectful.Time (Time)
 import Log qualified
 
+import Flora.Logging (timeAction)
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName)
@@ -39,7 +40,6 @@ import Flora.Model.Package.Component
   )
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement (DependencyInfo)
-import FloraWeb.Server.Logging (timeAction)
 
 getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do

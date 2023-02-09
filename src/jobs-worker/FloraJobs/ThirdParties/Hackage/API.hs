@@ -1,4 +1,4 @@
-module Flora.ThirdParties.Hackage.API where
+module FloraJobs.ThirdParties.Hackage.API where
 
 import Data.Aeson
 import Data.Bifunctor qualified as Bifunctor
@@ -14,8 +14,8 @@ import Servant.API
 import Servant.API.Generic
 
 import Distribution.Orphans ()
+import Flora.Model.Job (IntAesonVersion)
 import Flora.Model.Package.Types (PackageName)
-import Flora.OddJobs.Types (IntAesonVersion)
 
 type HackageAPI = NamedRoutes HackageAPI'
 

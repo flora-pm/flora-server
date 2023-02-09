@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
-{-# OPTIONS_GHC -Wno-redundant-constraints #-}
-
 {-|
 Module: Flora.Import.Package
 
@@ -73,6 +70,7 @@ import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
+import Flora.Model.Job (FloraOddJobs (..))
 import Flora.Model.Package.Component as Component
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
@@ -87,7 +85,6 @@ import Flora.Model.Requirement
   , flag
   )
 import Flora.Model.User
-import Flora.OddJobs.Types
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -171,8 +168,8 @@ importFile
   -> Eff es ()
 importFile userId path =
   loadFile path
-    >>= extractPackageDataFromCabal userId -- >>= persistImportOutput
-    >>= enqueueImportJob
+    >>= extractPackageDataFromCabal userId
+    >>= persistImportOutput
 
 enqueueImportJob :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 enqueueImportJob importOutput = do
@@ -195,7 +192,7 @@ importRelFile user dir = do
 
 -- | Loads and parses a Cabal file
 loadFile
-  :: (DB :> es, IOE :> es, Log :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Time :> es)
   => FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es GenericPackageDescription
@@ -265,7 +262,7 @@ persistImportOutput (ImportOutput package categories release components) = do
  that can later be inserted into the database. This function produces stable, deterministic ids,
  so it should be possible to extract and insert a single package many times in a row.
 -}
-extractPackageDataFromCabal :: (DB :> es, IOE :> es) => UserId -> GenericPackageDescription -> Eff es ImportOutput
+extractPackageDataFromCabal :: (IOE :> es) => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags

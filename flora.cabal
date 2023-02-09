@@ -73,7 +73,7 @@ library
   cxx-sources:     cbits/categorise.cpp
 
   -- pkgconfig-depends: libpq -any
-  hs-source-dirs:  src
+  hs-source-dirs:  ./src/core ./src/orphans
   exposed-modules:
     Data.Aeson.Orphans
     Data.Password.Orphans
@@ -82,19 +82,20 @@ library
     Distribution.Orphans
     Flora.Environment
     Flora.Environment.Config
-    Flora.Environment.OddJobs
     Flora.Import.Categories
     Flora.Import.Categories.Tuning
     Flora.Import.Package
     Flora.Import.Package.Bulk
     Flora.Import.Package.Types
     Flora.Import.Types
+    Flora.Logging
     Flora.Model.Admin.Report
     Flora.Model.Category
     Flora.Model.Category.Query
     Flora.Model.Category.Types
     Flora.Model.Category.Update
     Flora.Model.Downloads
+    Flora.Model.Job
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Component
@@ -113,14 +114,65 @@ library
     Flora.Model.User.Orphans
     Flora.Model.User.Query
     Flora.Model.User.Update
-    Flora.OddJobs
-    Flora.OddJobs.Render
-    Flora.OddJobs.Types
     Flora.Publish
     Flora.Search
-    Flora.ThirdParties.Hackage.API
-    Flora.ThirdParties.Hackage.Client
-    FloraWeb.Autoreload
+    Log.Backend.File
+    Lucid.Orphans
+
+  build-depends:
+    , aeson
+    , base                   ^>=4.17
+    , base64
+    , blaze-builder
+    , bytestring
+    , Cabal-syntax
+    , colourista
+    , containers
+    , cryptohash-md5
+    , cryptonite
+    , cryptonite-conduit
+    , deepseq
+    , directory
+    , effectful-core
+    , envparse
+    , filepath
+    , http-api-data
+    , iso8601-time
+    , log-base
+    , log-effectful
+    , lucid
+    , memory
+    , mtl
+    , odd-jobs
+    , optics-core
+    , password
+    , password-types
+    , pcre2
+    , pg-entity
+    , pg-transact
+    , pg-transact-effectful
+    , postgresql-simple
+    , pretty
+    , resource-pool
+    , servant-lucid
+    , servant-server
+    , slugify
+    , souffle-haskell        ==3.4.0
+    , streamly
+    , streamly-core
+    , text
+    , text-display
+    , time
+    , time-effectful
+    , uuid
+    , vector
+    , vector-algorithms
+
+library flora-web
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  ./src/web
+  exposed-modules:
     FloraWeb.Client
     FloraWeb.Components.CategoryCard
     FloraWeb.Components.Footer
@@ -143,7 +195,6 @@ library
     FloraWeb.Server.Auth
     FloraWeb.Server.Auth.Types
     FloraWeb.Server.Guards
-    FloraWeb.Server.Logging
     FloraWeb.Server.Metrics
     FloraWeb.Server.OpenSearch
     FloraWeb.Server.Pages
@@ -171,57 +222,41 @@ library
     FloraWeb.Templates.Pages.Sessions
     FloraWeb.Templates.Types
     FloraWeb.Types
-    Log.Backend.File
-    Lucid.Orphans
 
   build-depends:
     , aeson
     , async
     , base                       ^>=4.17
-    , base64
-    , blaze-builder
     , bytestring
     , Cabal-syntax
     , clock
     , cmark-gfm
     , colourista
-    , commonmark
-    , commonmark-extensions
     , containers
     , cookie
-    , cryptohash-md5
-    , cryptonite
-    , cryptonite-conduit
     , data-default
-    , deepseq
-    , directory
     , effectful
     , effectful-core
-    , envparse
-    , filepath
+    , flora
+    , flora-jobs
     , haddock-library
     , http-api-data
     , http-client
     , http-client-tls
     , http-media
     , http-types
-    , iso8601-time
     , log-base
     , log-effectful
     , lucid
     , lucid-alpine
     , lucid-svg
-    , memory
     , monad-time
     , mtl
     , network-uri
     , odd-jobs
     , optics-core
     , password
-    , password-types
-    , pcre2
     , pg-entity
-    , pg-transact
     , pg-transact-effectful
     , postgresql-simple
     , pretty
@@ -237,16 +272,10 @@ library
     , servant-client-core
     , servant-lucid
     , servant-server
-    , servant-websockets
-    , slugify
-    , souffle-haskell            ==3.4.0
-    , streamly
-    , streamly-core
     , text
     , text-display
     , time
     , time-effectful
-    , typed-process
     , uuid
     , vector
     , vector-algorithms
@@ -255,9 +284,49 @@ library
     , wai-middleware-heartbeat
     , wai-middleware-prometheus
     , warp
-    , websockets
     , xml-conduit
     , xml-conduit-writer
+
+library flora-jobs
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  src/jobs-worker
+  exposed-modules:
+    FloraJobs.Render
+    FloraJobs.Runner
+    FloraJobs.Scheduler
+    FloraJobs.ThirdParties.Hackage.API
+    FloraJobs.ThirdParties.Hackage.Client
+    FloraJobs.Types
+
+  build-depends:
+    , aeson
+    , base
+    , bytestring
+    , Cabal-syntax
+    , commonmark
+    , commonmark-extensions
+    , effectful-core
+    , flora
+    , http-client
+    , http-media
+    , http-types
+    , log-base
+    , log-effectful
+    , lucid
+    , odd-jobs
+    , pg-entity
+    , pg-transact-effectful
+    , postgresql-simple
+    , resource-pool
+    , servant
+    , servant-client
+    , servant-client-core
+    , text
+    , text-display
+    , time
+    , time-effectful
+    , typed-process
 
 executable flora-server
   import:         common-extensions
@@ -267,7 +336,7 @@ executable flora-server
   hs-source-dirs: app/server
   build-depends:
     , base
-    , flora
+    , flora-web
 
 executable flora-cli
   import:         common-extensions
@@ -282,6 +351,7 @@ executable flora-cli
     , effectful-core
     , envparse
     , flora
+    , flora-web
     , log-base
     , lucid
     , optics-core
@@ -309,6 +379,7 @@ test-suite flora-test
     , effectful-core
     , exceptions
     , flora
+    , flora-web
     , hedgehog
     , http-client
     , log-base

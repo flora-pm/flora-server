@@ -1,11 +1,11 @@
-module Flora.OddJobs.Render where
+module FloraJobs.Render where
 
 import Commonmark qualified
 import Commonmark.Extensions qualified as Commonmark
 import Control.Exception
 import Data.Text (Text)
 import Data.Text.Lazy qualified as TL
-import Flora.OddJobs.Types (OddJobException (..))
+import FloraJobs.Types (OddJobException (..))
 import Lucid (Html, toHtmlRaw)
 
 renderMarkdown :: String -> Text -> Html ()
