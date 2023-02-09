@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.0.10 -- XXXX-XX-XX
+* Split the project into internal libraries ([#337](https://github.com/flora-pm/flora-server/pull/337)) 
+
 ## 1.0.9 -- 2023-01-06
 * Fix package title size in smaller screens ([#297](https://github.com/flora-pm/flora-server/pull/297))
 * Enqueue package import jobs ([#300](https://github.com/flora-pm/flora-server/pull/300))
