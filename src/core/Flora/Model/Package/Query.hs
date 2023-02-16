@@ -184,7 +184,8 @@ packageDependentsWithLatestVersionQuery =
   WHERE dep."namespace" = ?
     AND dep."name" = ?
   GROUP BY (p.namespace, p.name, synopsis, license)
-  |]
+  ORDER BY p.namespace DESC
+    |]
 
 getComponentById :: (DB :> es) => ComponentId -> Eff es (Maybe PackageComponent)
 getComponentById componentId = dbtToEff $! selectById @PackageComponent (Only componentId)
