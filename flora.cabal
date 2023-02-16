@@ -327,6 +327,7 @@ library flora-jobs
     , time
     , time-effectful
     , typed-process
+    , vector
 
 executable flora-server
   import:         common-extensions

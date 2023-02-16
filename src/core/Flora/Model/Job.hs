@@ -63,6 +63,7 @@ data FloraOddJobs
   | FetchChangelog ChangelogJobPayload
   | ImportHackageIndex ImportHackageIndexPayload
   | ImportPackage ImportOutput
+  | FetchDeprecationList
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 

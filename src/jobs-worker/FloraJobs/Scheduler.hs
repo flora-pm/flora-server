@@ -6,6 +6,7 @@ module FloraJobs.Scheduler
   , scheduleChangelogJob
   , scheduleUploadTimeJob
   , scheduleIndexImportJob
+  , scheduleDeprecationListJob
   , checkIfIndexImportJobIsNotRunning
   , jobTableName
   --   prefer using smart constructors.
@@ -54,7 +55,7 @@ scheduleChangelogJob pool rid package version =
     )
 
 scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
-scheduleUploadTimeJob pool releaseId packageName version = do
+scheduleUploadTimeJob pool releaseId packageName version =
   withResource
     pool
     ( \res ->
@@ -65,7 +66,7 @@ scheduleUploadTimeJob pool releaseId packageName version = do
     )
 
 scheduleIndexImportJob :: Pool PG.Connection -> IO Job
-scheduleIndexImportJob pool = do
+scheduleIndexImportJob pool =
   withResource
     pool
     ( \conn -> do
@@ -76,6 +77,17 @@ scheduleIndexImportJob pool = do
           jobTableName
           (ImportHackageIndex ImportHackageIndexPayload)
           runAt
+    )
+
+scheduleDeprecationListJob :: Pool PG.Connection -> IO Job
+scheduleDeprecationListJob pool =
+  withResource
+    pool
+    ( \conn ->
+        createJob
+          conn
+          jobTableName
+          FetchDeprecationList
     )
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool

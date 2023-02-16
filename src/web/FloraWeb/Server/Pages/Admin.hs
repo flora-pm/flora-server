@@ -74,6 +74,8 @@ fetchMetadataHandler = do
   session <- getSession
   FloraEnv{jobsPool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
 
+  liftIO $! scheduleDeprecationListJob jobsPool
+
   releasesWithoutReadme <- Query.getPackageReleasesWithoutReadme
   liftIO $!
     forkIO $!

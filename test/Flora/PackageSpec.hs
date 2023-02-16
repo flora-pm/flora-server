@@ -21,6 +21,7 @@ import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Package
 import Flora.Model.Package.Component
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
@@ -39,6 +40,7 @@ spec _fixtures =
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns unique results by namespace/package name" testSearchResultUnicity
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
+    , testThis "@haskell/integer-gmp gets deprecated in favour of @haskell/integer-simple" testDeprecateIntegerGmp
     -- Disable until conditions are properly supported everywhere
     -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
@@ -188,6 +190,12 @@ testSearchResultUnicity = do
   results <- Query.searchPackage 1 "text"
   assertEqual 1 (Vector.length results)
   assertEqual (Cabal.mkVersion [2, 0]) ((.version) $ Vector.head results)
+
+testDeprecateIntegerGmp :: TestEff ()
+testDeprecateIntegerGmp = do
+  Update.deprecatePackages (Vector.singleton (PackageName "integer-gmp", Vector.singleton (PackageName "integer-simple")))
+  integerGmp <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
+  assertEqual (Just (Vector.singleton (PackageName "integer-simple"))) integerGmp.metadata.deprecationInfo
 
 countBy :: (Foldable t) => (a -> Bool) -> t a -> Int
 countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
