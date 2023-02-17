@@ -130,6 +130,7 @@ packageDependentsQuery =
                   , p."created_at"
                   , p."updated_at"
                   , p."status"
+                  , p."metadata"
   FROM "packages" AS p
   INNER JOIN "dependents" AS dep
         ON p."package_id" = dep."dependent_id"

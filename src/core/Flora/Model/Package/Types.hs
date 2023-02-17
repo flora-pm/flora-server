@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE QuasiQuotes #-}
-
 module Flora.Model.Package.Types where
 
 import Control.DeepSeq
@@ -17,9 +14,9 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
 import Data.UUID
 import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), returnError)
+import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), fromJSONField, returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
+import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
 import GHC.Generics
@@ -30,6 +27,7 @@ import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
 import Web.HttpApiData (ToHttpApiData (..))
 
+import Data.Vector (Vector)
 import Distribution.Orphans ()
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
@@ -151,22 +149,25 @@ data Package = Package
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   , status :: PackageStatus
+  , metadata :: PackageMetadata
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, ToRow, ToJSON, FromJSON, NFData)
+  deriving
+    (Entity)
+    via (GenericEntity '[TableName "packages"] Package)
 
-instance Entity Package where
-  tableName = "packages"
-  primaryKey = [field| package_id |]
-  fields =
-    [ [field| package_id |]
-    , [field| namespace |]
-    , [field| name |]
-    , [field| owner_id |]
-    , [field| created_at |]
-    , [field| updated_at |]
-    , [field| status |]
-    ]
+data PackageMetadata = PackageMetadata
+  { deprecationInfo :: Maybe (Vector PackageName)
+  }
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (FromJSON, ToJSON, NFData)
+
+instance FromField PackageMetadata where
+  fromField = fromJSONField
+
+instance ToField PackageMetadata where
+  toField = toJSONField
 
 data Dependent = Dependent
   { name :: Text
@@ -192,3 +193,15 @@ data PackageInfo = PackageInfo
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, NFData)
+
+data DeprecatedPackage = DeprecatedPackage
+  { package :: PackageName
+  , inFavourOf :: Vector PackageName
+  }
+  deriving stock (Eq, Show, Generic)
+
+instance FromJSON DeprecatedPackage where
+  parseJSON = withObject "deprecatedPackage" $ \o -> do
+    package <- o .: "deprecated-package"
+    inFavourOf <- o .: "in-favour-of"
+    pure DeprecatedPackage{..}

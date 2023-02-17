@@ -3,15 +3,17 @@
 
 module FloraJobs.ThirdParties.Hackage.Client where
 
-import Servant.API ()
-import Servant.Client
-
 import Control.Monad.IO.Class
 import Data.Proxy
 import Data.Text
 import Data.Time (UTCTime)
 import Data.Time.Orphans ()
+import Data.Vector (Vector)
 import Effectful.Reader.Static
+import Servant.API ()
+import Servant.Client
+
+import Flora.Model.Package.Types (DeprecatedPackage)
 import FloraJobs.ThirdParties.Hackage.API as API
 import FloraJobs.Types (JobsRunner, JobsRunnerEnv (..))
 
@@ -53,3 +55,9 @@ getPackageChangelog versionedPackage =
     // API.withPackage
     /: versionedPackage
     // API.getChangelog
+
+getDeprecatedPackages :: ClientM (Vector DeprecatedPackage)
+getDeprecatedPackages =
+  hackageClient
+    // API.packages
+    // getDeprecated

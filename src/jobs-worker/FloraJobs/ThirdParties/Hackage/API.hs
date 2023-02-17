@@ -9,13 +9,14 @@ import Data.Text.Display
 import Data.Text.Encoding qualified as Text
 import Data.Time (UTCTime)
 import Data.Typeable
+import Data.Vector (Vector)
 import Network.HTTP.Media ((//), (/:))
 import Servant.API
 import Servant.API.Generic
 
 import Distribution.Orphans ()
 import Flora.Model.Job (IntAesonVersion)
-import Flora.Model.Package.Types (PackageName)
+import Flora.Model.Package.Types (DeprecatedPackage (..), PackageName)
 
 type HackageAPI = NamedRoutes HackageAPI'
 
@@ -41,7 +42,13 @@ instance ToHttpApiData VersionedPackage where
 data HackageAPI' mode = HackageAPI'
   { listUsers :: mode :- "users" :> Get '[JSON] [HackageUserObject]
   , withUser :: mode :- "user" :> Capture "username" Text :> NamedRoutes HackageUserAPI
+  , packages :: mode :- "packages" :> NamedRoutes HackagePackagesAPI
   , withPackage :: mode :- "package" :> Capture "versioned_package" VersionedPackage :> NamedRoutes HackagePackageAPI
+  }
+  deriving stock (Generic)
+
+data HackagePackagesAPI mode = HackagePackagesAPI
+  { getDeprecated :: mode :- "deprecated.json" :> Get '[JSON] (Vector DeprecatedPackage)
   }
   deriving stock (Generic)
 
