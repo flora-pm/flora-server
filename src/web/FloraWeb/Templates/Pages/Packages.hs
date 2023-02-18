@@ -1,6 +1,6 @@
 module FloraWeb.Templates.Pages.Packages where
 
-import Data.Foldable (fold, forM_)
+import Data.Foldable (fold)
 import Data.List qualified as List
 import Data.Maybe (fromJust)
 import Data.Text (Text, pack)
@@ -16,16 +16,6 @@ import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Version
-import Flora.Model.Category.Types (Category (..))
-import Flora.Model.Package.Types
-  ( Namespace
-  , Package (..)
-  , PackageName (..)
-  )
-import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
-import FloraWeb.Links qualified as Links
-import FloraWeb.Templates.Haddock (renderHaddock)
-import FloraWeb.Templates.Types (FloraHTML)
 import Lucid
 import Lucid.Base (makeAttribute, relaxHtmlT)
 import Lucid.Orphans ()
@@ -33,6 +23,19 @@ import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
+
+import Flora.Model.Category.Types (Category (..))
+import Flora.Model.Package.Types
+  ( Namespace
+  , Package (..)
+  , PackageMetadata (..)
+  , PackageName (..)
+  )
+import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
+import FloraWeb.Components.Utils (text)
+import FloraWeb.Links qualified as Links
+import FloraWeb.Templates.Haddock (renderHaddock)
+import FloraWeb.Templates.Types (FloraHTML)
 
 data Target
   = Dependents
@@ -101,7 +104,7 @@ packageBody
   -> Vector Category
   -> FloraHTML
 packageBody
-  Package{namespace, name = packageName}
+  Package{namespace, name = packageName, metadata = packageMetadata}
   latestRelease@Release{metadata, version}
   packageReleases
   numberOfReleases
@@ -119,7 +122,9 @@ packageBody
         displayVersions namespace packageName packageReleases numberOfReleases
       div_ [class_ "release-readme-column"] $! div_ [class_ "release-readme"] $! displayReadme latestRelease
       div_ [class_ "package-right-column"] $! ul_ [class_ "package-right-rows"] $! do
-        displayInstructions packageName latestRelease
+        case packageMetadata.deprecationInfo of
+          Just inFavourOf -> displayDeprecation inFavourOf
+          Nothing -> displayInstructions packageName latestRelease
         displayTestedWith latestRelease.metadata.testedWith
         displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
         displayDependents (namespace, packageName) numberOfDependents dependents
@@ -230,6 +235,19 @@ displayInstructions packageName latestRelease =
         , readonly_ "readonly"
         ]
 
+displayDeprecation :: Vector PackageName -> FloraHTML
+displayDeprecation inFavourOf = do
+  li_ [class_ ""] $! do
+    h3_ [class_ "package-body-section"] "Deprecated"
+    div_ [class_ "items-top"] $! div_ [class_ ""] $! do
+      if Vector.null inFavourOf
+        then label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated"
+        else do
+          label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated in favour of"
+          ul_ [class_ "package-alternatives"] $
+            Vector.forM_ inFavourOf $ \alternative ->
+              li_ [] (text $ display alternative)
+
 displayTestedWith :: Vector Version -> FloraHTML
 displayTestedWith compilersVersions'
   | Vector.null compilersVersions' = mempty
@@ -238,7 +256,7 @@ displayTestedWith compilersVersions'
       li_ [class_ ""] $! do
         h3_ [class_ "package-body-section"] "Tested Compilers"
         ul_ [class_ "compiler-badges"] $
-          forM_
+          Vector.forM_
             compilersVersions
             ( \version -> do
                 li_ [] $
