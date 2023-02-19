@@ -15,7 +15,7 @@ import Lucid.Orphans ()
 import Servant (ServerT)
 
 import Control.Monad (void)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Text.Display (display)
 import Distribution.Orphans ()
 import Flora.Logging
@@ -57,22 +57,21 @@ indexHandler pageParam = do
 
 showHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showHandler namespace packageName = do
-  package <- guardThatPackageExists namespace packageName
-  releases <- Query.getAllReleases (package.packageId)
-  let latestRelease = maximumBy (compare `on` (.version)) releases
-  showPackageVersion namespace packageName (latestRelease.version)
+  showPackageVersion namespace packageName Nothing
 
 showVersionHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
 showVersionHandler namespace packageName version =
-  showPackageVersion namespace packageName version
+  showPackageVersion namespace packageName (Just version)
 
-showPackageVersion :: Namespace -> PackageName -> Version -> FloraPage (Html ())
-showPackageVersion namespace packageName version = do
+showPackageVersion :: Namespace -> PackageName -> Maybe Version -> FloraPage (Html ())
+showPackageVersion namespace packageName mversion = do
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
+  releases <- Query.getAllReleases (package.packageId)
+  let latestRelease = maximumBy (compare `on` (.version)) releases
+      version = fromMaybe latestRelease.version mversion
   release <- guardThatReleaseExists namespace packageName version
-  releases <- Query.getReleases (package.packageId)
   numberOfReleases <- Query.getNumberOfReleases package.packageId
   dependents <- Query.getPackageDependents namespace packageName
   releaseDependencies <- Query.getRequirements release.releaseId
@@ -84,6 +83,7 @@ showPackageVersion namespace packageName version = do
         templateEnv'
           { title = display namespace <> "/" <> display packageName
           , description = release.metadata.synopsis
+          , indexPage = isNothing mversion
           }
 
   Log.logInfo "displaying a package" $

@@ -4,6 +4,7 @@
 * Add buttons to the main page for ghcup and cabal guides ([#341](https://github.com/flora-pm/flora-server/pull/341))
 * Split the project into internal libraries ([#337](https://github.com/flora-pm/flora-server/pull/337)) 
 * Fetch and store deprecation information about packages ([#342](https://github.com/flora-pm/flora-server/pull/342))
+* Only index versionless package pages ([#343](https://github.com/flora-pm/flora-server/pull/343))
 
 ## 1.0.9 -- 2023-01-06
 * Fix package title size in smaller screens ([#297](https://github.com/flora-pm/flora-server/pull/297))

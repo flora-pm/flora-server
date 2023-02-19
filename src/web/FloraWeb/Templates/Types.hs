@@ -53,6 +53,7 @@ data TemplateEnv = TemplateEnv
   , environment :: DeploymentEnv
   , activeElements :: ActiveElements
   , assets :: Assets
+  , indexPage :: Bool
   }
   deriving stock (Show, Generic)
 
@@ -75,6 +76,7 @@ data TemplateDefaults = TemplateDefaults
   , mUser :: Maybe User
   , environment :: DeploymentEnv
   , activeElements :: ActiveElements
+  , indexPage :: Bool
   }
   deriving stock (Show, Generic)
 
@@ -99,6 +101,7 @@ defaultTemplateEnv =
     , mUser = Nothing
     , environment = Development
     , activeElements = defaultActiveElements
+    , indexPage = True
     }
 
 -- | ⚠  DO NOT USE THIS FUNCTION IF YOU DON'T KNOW WHAT YOU'RE DOING
