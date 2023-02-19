@@ -16,6 +16,7 @@ import Data.UUID
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), fromJSONField, returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
+import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
@@ -158,7 +159,7 @@ data Package = Package
     via (GenericEntity '[TableName "packages"] Package)
 
 data PackageMetadata = PackageMetadata
-  { deprecationInfo :: Maybe (Vector PackageName)
+  { deprecationInfo :: Maybe (Vector PackageAlternative)
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromJSON, ToJSON, NFData)
@@ -194,14 +195,32 @@ data PackageInfo = PackageInfo
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, NFData)
 
-data DeprecatedPackage = DeprecatedPackage
+-- DTO that we get from Hackage
+data DeprecatedPackage' = DeprecatedPackage'
   { package :: PackageName
   , inFavourOf :: Vector PackageName
   }
   deriving stock (Eq, Show, Generic)
 
-instance FromJSON DeprecatedPackage where
+instance FromJSON DeprecatedPackage' where
   parseJSON = withObject "deprecatedPackage" $ \o -> do
     package <- o .: "deprecated-package"
     inFavourOf <- o .: "in-favour-of"
-    pure DeprecatedPackage{..}
+    pure DeprecatedPackage'{..}
+
+-- DAO that we persist to the database
+data DeprecatedPackage = DeprecatedPackage
+  { package :: PackageName
+  , inFavourOf :: Vector PackageAlternative
+  }
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving (ToField, FromField) via Aeson DeprecatedPackage
+
+data PackageAlternative = PackageAlternative
+  { namespace :: Namespace
+  , package :: PackageName
+  }
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving (ToField, FromField) via Aeson PackageAlternative

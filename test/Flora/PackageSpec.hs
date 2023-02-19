@@ -193,9 +193,10 @@ testSearchResultUnicity = do
 
 testDeprecateIntegerGmp :: TestEff ()
 testDeprecateIntegerGmp = do
-  Update.deprecatePackages (Vector.singleton (PackageName "integer-gmp", Vector.singleton (PackageName "integer-simple")))
+  let alternative = Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
+  Update.deprecatePackages $ Vector.singleton $ DeprecatedPackage (PackageName "integer-gmp") alternative
   integerGmp <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
-  assertEqual (Just (Vector.singleton (PackageName "integer-simple"))) integerGmp.metadata.deprecationInfo
+  assertEqual (Just alternative) integerGmp.metadata.deprecationInfo
 
 countBy :: (Foldable t) => (a -> Bool) -> t a -> Int
 countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)

@@ -13,7 +13,7 @@ import Effectful.Reader.Static
 import Servant.API ()
 import Servant.Client
 
-import Flora.Model.Package.Types (DeprecatedPackage)
+import Flora.Model.Package.Types (DeprecatedPackage')
 import FloraJobs.ThirdParties.Hackage.API as API
 import FloraJobs.Types (JobsRunner, JobsRunnerEnv (..))
 
@@ -56,7 +56,7 @@ getPackageChangelog versionedPackage =
     /: versionedPackage
     // API.getChangelog
 
-getDeprecatedPackages :: ClientM (Vector DeprecatedPackage)
+getDeprecatedPackages :: ClientM (Vector DeprecatedPackage')
 getDeprecatedPackages =
   hackageClient
     // API.packages

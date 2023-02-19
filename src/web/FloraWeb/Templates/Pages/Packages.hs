@@ -30,6 +30,7 @@ import Flora.Model.Package.Types
   , Package (..)
   , PackageMetadata (..)
   , PackageName (..)
+  , PackageAlternative(..)
   )
 import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
 import FloraWeb.Components.Utils (text)
@@ -235,7 +236,7 @@ displayInstructions packageName latestRelease =
         , readonly_ "readonly"
         ]
 
-displayDeprecation :: Vector PackageName -> FloraHTML
+displayDeprecation :: Vector PackageAlternative -> FloraHTML
 displayDeprecation inFavourOf = do
   li_ [class_ ""] $! do
     h3_ [class_ "package-body-section"] "Deprecated"
@@ -245,8 +246,11 @@ displayDeprecation inFavourOf = do
         else do
           label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated in favour of"
           ul_ [class_ "package-alternatives"] $
-            Vector.forM_ inFavourOf $ \alternative ->
-              li_ [] (text $ display alternative)
+            Vector.forM_ inFavourOf $ \PackageAlternative{namespace, package} ->
+              li_ [] $
+                a_
+                  [href_ ("/packages/" <> display namespace <> "/" <> display package)]
+                  (text $ display namespace <> "/" <> display package)
 
 displayTestedWith :: Vector Version -> FloraHTML
 displayTestedWith compilersVersions'
