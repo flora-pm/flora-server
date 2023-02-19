@@ -3,7 +3,7 @@
 module FloraWeb.Components.Header where
 
 import Control.Monad.Reader
-import Data.Text
+import Data.Text (Text)
 import Lucid
 import Lucid.Alpine
 import PyF
@@ -15,7 +15,7 @@ import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
 
 header :: FloraHTML
 header = do
-  TemplateEnv{title} <- ask
+  TemplateEnv{title, indexPage} <- ask
   doctype_
   html_
     [ lang_ "en"
@@ -33,6 +33,7 @@ header = do
       head_ $! do
         meta_ [charset_ "UTF-8"]
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
+        unless indexPage $ meta_ [name_ "robots", content_ "noindex"]
         title_ (text title)
 
         script_ [type_ "module"] $! do
