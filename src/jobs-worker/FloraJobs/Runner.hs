@@ -147,7 +147,7 @@ assignNamespace packages =
   Vector.map
     ( \p ->
         if Set.member p coreLibraries
-          then (PackageAlternative (Namespace "haskell") p)
-          else (PackageAlternative (Namespace "hackage") p)
+          then PackageAlternative (Namespace "haskell") p
+          else PackageAlternative (Namespace "hackage") p
     )
     packages

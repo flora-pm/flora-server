@@ -4,15 +4,15 @@
 module Flora.Model.Package.Update where
 
 import Control.Monad (unless, void)
+import Data.Function ((&))
 import Data.List qualified as List
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity (Entity (fields), delete, insert, insertMany, upsert)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
 import Database.PostgreSQL.Entity.Internal.QQ
-import Database.PostgreSQL.Simple (Only(..))
+import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Data.Function ((&))
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
@@ -43,9 +43,9 @@ deprecatePackages dp = dbtToEff $! void $! executeMany Update q (dp & Vector.map
     q =
       [sql|
       UPDATE packages as p0
-      SET metadata = jsonb_set(p0.metadata, '{deprecationInfo}', to_jsonb(upd.replacement), true)
-      FROM (VALUES (?,?)) as upd(name, replacement)
-      WHERE p0.name = upd.name
+      SET metadata = jsonb_set(p0.metadata, '{deprecationInfo}', jsonb(js) -> 'inFavourOf')
+      FROM (VALUES (?)) as upd (js)
+      WHERE p0.name = jsonb(js) ->> 'package'
       |]
 
 deletePackage :: (DB :> es) => (Namespace, PackageName) -> Eff es ()

@@ -28,9 +28,9 @@ import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
   , Package (..)
+  , PackageAlternative (..)
   , PackageMetadata (..)
   , PackageName (..)
-  , PackageAlternative(..)
   )
 import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
 import FloraWeb.Components.Utils (text)
