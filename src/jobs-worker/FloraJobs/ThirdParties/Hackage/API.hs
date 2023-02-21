@@ -16,7 +16,7 @@ import Servant.API.Generic
 
 import Distribution.Orphans ()
 import Flora.Model.Job (IntAesonVersion)
-import Flora.Model.Package.Types (DeprecatedPackage (..), PackageName)
+import Flora.Model.Package.Types (DeprecatedPackage' (..), PackageName)
 
 type HackageAPI = NamedRoutes HackageAPI'
 
@@ -48,7 +48,7 @@ data HackageAPI' mode = HackageAPI'
   deriving stock (Generic)
 
 data HackagePackagesAPI mode = HackagePackagesAPI
-  { getDeprecated :: mode :- "deprecated.json" :> Get '[JSON] (Vector DeprecatedPackage)
+  { getDeprecated :: mode :- "deprecated.json" :> Get '[JSON] (Vector DeprecatedPackage')
   }
   deriving stock (Generic)
 

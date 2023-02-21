@@ -13,6 +13,11 @@
   width: 100%;
 }
 
+.package-alternatives {
+  list-style-type: disc;
+  list-style-position: inside;
+}
+
 .package-title {
   .version {
     font-size: medium;

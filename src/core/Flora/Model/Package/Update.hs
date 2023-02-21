@@ -4,13 +4,14 @@
 module Flora.Model.Package.Update where
 
 import Control.Monad (unless, void)
+import Data.Function ((&))
 import Data.List qualified as List
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity (Entity (fields), delete, insert, insertMany, upsert)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
 import Database.PostgreSQL.Entity.Internal.QQ
-import Database.PostgreSQL.Simple (Query, ToRow)
+import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
@@ -36,35 +37,30 @@ upsertPackage package =
           , [field| owner_id |]
           ]
 
-deprecatePackages :: (DB :> es) => Vector (PackageName, Vector PackageName) -> Eff es ()
-deprecatePackages dp = updateManyPackages q dp
+deprecatePackages :: (DB :> es) => Vector DeprecatedPackage -> Eff es ()
+deprecatePackages dp = dbtToEff $! void $! executeMany Update q (dp & Vector.map Only & Vector.toList)
   where
     q =
       [sql|
       UPDATE packages as p0
-      SET metadata = jsonb_set(p0.metadata, '{deprecationInfo}', to_jsonb(upd.replacement), true)
-      FROM (VALUES (?,?)) as upd(name, replacement)
-      WHERE p0.name = upd.name
+      SET metadata = jsonb_set(p0.metadata, '{deprecationInfo}', jsonb(js) -> 'inFavourOf')
+      FROM (VALUES (?)) as upd (js)
+      WHERE p0.name = jsonb(js) ->> 'package'
       |]
-
-updateManyPackages
-  :: (ToRow values, DB :> es)
-  => Query
-  -> Vector values
-  -> Eff es ()
-updateManyPackages q values = dbtToEff $! void $! executeMany Update q (Vector.toList values)
 
 deletePackage :: (DB :> es) => (Namespace, PackageName) -> Eff es ()
 deletePackage (namespace, packageName) = dbtToEff $! delete @Package (namespace, packageName)
 
 refreshDependents :: (DB :> es) => Eff es ()
-refreshDependents = dbtToEff $! void $! execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
+refreshDependents =
+  dbtToEff $! void $! execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
 
 insertPackageComponent :: (DB :> es) => PackageComponent -> Eff es ()
 insertPackageComponent = dbtToEff . insert @PackageComponent
 
 upsertPackageComponent :: (DB :> es) => PackageComponent -> Eff es ()
-upsertPackageComponent packageComponent = dbtToEff $! upsert @PackageComponent packageComponent (fields @PackageComponent)
+upsertPackageComponent packageComponent =
+  dbtToEff $! upsert @PackageComponent packageComponent (fields @PackageComponent)
 
 bulkInsertPackageComponents :: (DB :> es) => [PackageComponent] -> Eff es ()
 bulkInsertPackageComponents = dbtToEff . insertMany @PackageComponent
@@ -76,4 +72,5 @@ upsertRequirement :: (DB :> es) => Requirement -> Eff es ()
 upsertRequirement req = dbtToEff $! upsert @Requirement req [[field| metadata |], [field| requirement |]]
 
 bulkInsertRequirements :: (DB :> es) => [Requirement] -> Eff es ()
-bulkInsertRequirements requirements = dbtToEff $! unless (List.null requirements) $! insertMany @Requirement requirements
+bulkInsertRequirements requirements =
+  dbtToEff $! unless (List.null requirements) $! insertMany @Requirement requirements

@@ -306,6 +306,7 @@ library flora-jobs
     , Cabal-syntax
     , commonmark
     , commonmark-extensions
+    , containers
     , effectful-core
     , flora
     , http-client

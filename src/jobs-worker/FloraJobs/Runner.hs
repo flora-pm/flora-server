@@ -5,8 +5,11 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
+import Data.Function
+import Data.Set qualified as Set
 import Data.Text.Display
 import Data.Text.Lazy.Encoding qualified as TL
+import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful.PostgreSQL.Transact.Effect
 import Log
@@ -16,9 +19,9 @@ import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 import System.Process.Typed qualified as System
 
-import Flora.Import.Package
+import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Model.Job
-import Flora.Model.Package.Types (DeprecatedPackage (..))
+import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
@@ -127,6 +130,24 @@ fetchDeprecationList = do
   case result of
     Right deprecationList -> do
       logInfo_ "Deprecation List retrieved"
-      Update.deprecatePackages (Vector.map (\dp -> (dp.package, dp.inFavourOf)) deprecationList)
+      deprecationList
+        & Vector.map
+          ( \DeprecatedPackage'{package, inFavourOf} ->
+              let
+                namespacedReplacements = assignNamespace inFavourOf
+               in
+                DeprecatedPackage package namespacedReplacements
+          )
+        & Update.deprecatePackages
     Left _ -> do
       logAttention_ "Could not fetch deprecation list from Hackage"
+
+assignNamespace :: Vector PackageName -> Vector PackageAlternative
+assignNamespace packages =
+  Vector.map
+    ( \p ->
+        if Set.member p coreLibraries
+          then PackageAlternative (Namespace "haskell") p
+          else PackageAlternative (Namespace "hackage") p
+    )
+    packages

@@ -40,7 +40,7 @@ spec _fixtures =
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns unique results by namespace/package name" testSearchResultUnicity
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
-    , testThis "@haskell/integer-gmp gets deprecated in favour of @haskell/integer-simple" testDeprecateIntegerGmp
+    , testThis "Packages get deprecated" testPackagesDeprecation
     -- Disable until conditions are properly supported everywhere
     -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
@@ -191,11 +191,17 @@ testSearchResultUnicity = do
   assertEqual 1 (Vector.length results)
   assertEqual (Cabal.mkVersion [2, 0]) ((.version) $ Vector.head results)
 
-testDeprecateIntegerGmp :: TestEff ()
-testDeprecateIntegerGmp = do
-  Update.deprecatePackages (Vector.singleton (PackageName "integer-gmp", Vector.singleton (PackageName "integer-simple")))
+testPackagesDeprecation :: TestEff ()
+testPackagesDeprecation = do
+  let alternative1 = Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
+  let alternative2 = Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "monad-control")
+  Update.deprecatePackages $
+    Vector.fromList
+      [ DeprecatedPackage (PackageName "integer-gmp") alternative1
+      , DeprecatedPackage (PackageName "mtl") alternative2
+      ]
   integerGmp <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
-  assertEqual (Just (Vector.singleton (PackageName "integer-simple"))) integerGmp.metadata.deprecationInfo
+  assertEqual (Just alternative1) integerGmp.metadata.deprecationInfo
 
 countBy :: (Foldable t) => (a -> Bool) -> t a -> Int
 countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
