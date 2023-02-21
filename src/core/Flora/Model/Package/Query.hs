@@ -10,6 +10,7 @@ import Database.PostgreSQL.Entity
   ( joinSelectOneByField
   , selectById
   , selectManyByField
+  , selectWhereNull
   , _select
   , _selectWhere
   )
@@ -68,25 +69,8 @@ getPackageByNamespaceAndName namespace name = do
       ]
   pure result
 
--- | This function is to be used when in Hackage Compatibility Mode.
-getHaskellOrHackagePackage :: (DB :> es) => PackageName -> Eff es (Maybe Package)
-getHaskellOrHackagePackage packageName =
-  dbtToEff $
-    queryOne
-      Select
-      [sql|
-  SELECT DISTINCT   p."package_id"
-                  , p."namespace"
-                  , p."name"
-                  , p."owner_id"
-                  , p."created_at"
-                  , p."updated_at"
-  FROM "packages" AS p
-  WHERE p."namespace" IN ('haskell', 'hackage')
-    AND p."name" = ?
-    AND p."status" = 'fully-imported'
-  |]
-      (Only packageName)
+getNonDeprecatedPackages :: (DB :> es) => Eff es (Vector Package)
+getNonDeprecatedPackages = dbtToEff $ selectWhereNull @Package [[field| metadata ->> 'deprecationInfo' |]]
 
 getAllPackageDependents
   :: (DB :> es)

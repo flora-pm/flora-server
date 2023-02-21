@@ -133,10 +133,7 @@ fetchDeprecationList = do
       deprecationList
         & Vector.map
           ( \DeprecatedPackage'{package, inFavourOf} ->
-              let
-                namespacedReplacements = assignNamespace inFavourOf
-               in
-                DeprecatedPackage package namespacedReplacements
+              DeprecatedPackage package (assignNamespace inFavourOf)
           )
         & Update.deprecatePackages
     Left _ -> do
