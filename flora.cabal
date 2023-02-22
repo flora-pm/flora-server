@@ -71,9 +71,11 @@ library
   extra-libraries: stdc++
   cxx-options:     -std=c++17 -Wall -D__EMBEDDED_SOUFFLE__
   cxx-sources:     cbits/categorise.cpp
-
-  -- pkgconfig-depends: libpq -any
+  cabal-fmt:       expand src
   hs-source-dirs:  ./src/core ./src/orphans
+
+  -- cabal-fmt: expand src/core
+  -- cabal-fmt: expand src/orphans
   exposed-modules:
     Data.Aeson.Orphans
     Data.Password.Orphans
@@ -172,6 +174,8 @@ library flora-web
   import:          common-extensions
   import:          common-ghc-options
   hs-source-dirs:  ./src/web
+
+  -- cabal-fmt: expand src/web
   exposed-modules:
     FloraWeb.Client
     FloraWeb.Components.CategoryCard
@@ -291,6 +295,8 @@ library flora-jobs
   import:          common-extensions
   import:          common-ghc-options
   hs-source-dirs:  src/jobs-worker
+
+  -- cabal-fmt expand: src/jobs-worker
   exposed-modules:
     FloraJobs.Render
     FloraJobs.Runner
