@@ -300,6 +300,7 @@ extractPackageDataFromCabal userId genericDesc = do
           , description = display packageDesc.description
           , flags = flags
           , testedWith = getVersions . extractTestedWith . Vector.fromList $! packageDesc.testedWith
+          , deprecated = Nothing
           }
 
   let release =

@@ -13,7 +13,7 @@ import Effectful.Reader.Static
 import Servant.API ()
 import Servant.Client
 
-import Flora.Model.Package.Types (DeprecatedPackage')
+import Flora.Model.Package.Types
 import FloraJobs.ThirdParties.Hackage.API as API
 import FloraJobs.Types (JobsRunner, JobsRunnerEnv (..))
 
@@ -61,3 +61,10 @@ getDeprecatedPackages =
   hackageClient
     // API.packages
     // getDeprecated
+
+getDeprecatedReleasesList :: PackageName -> ClientM HackagePreferredVersions
+getDeprecatedReleasesList packageName =
+  hackageClient
+    // API.withPackageName
+    /: packageName
+    // getDeprecatedReleases

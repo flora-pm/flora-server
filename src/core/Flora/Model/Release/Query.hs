@@ -11,6 +11,8 @@ module Flora.Model.Release.Query
   , getAllReleases
   , getNumberOfReleases
   , getReleaseComponents
+  , getPackagesWithoutReleaseDeprecationInformation
+  , getVersionFromManyReleaseIds
   )
 where
 
@@ -18,9 +20,9 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro as MVector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne)
+import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne, query_)
 import Database.PostgreSQL.Entity.Types (field)
-import Database.PostgreSQL.Simple (Only (..), Query)
+import Database.PostgreSQL.Simple (In (..), Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Version (Version)
 import Effectful
@@ -48,6 +50,20 @@ getAllReleases pid =
       then pure results
       else pure $! Vector.reverse $! Vector.modify MVector.sort results
 
+getVersionFromManyReleaseIds
+  :: (DB :> es)
+  => Vector ReleaseId
+  -> Eff es (Vector (ReleaseId, Version))
+getVersionFromManyReleaseIds releaseIds = do
+  dbtToEff $! query Select q (Only (In (Vector.toList releaseIds)))
+  where
+    q =
+      [sql| 
+        select r0.release_id, r0.version
+        from releases as r0
+        where r0.release_id in ?
+      |]
+
 getPackageReleases :: (DB :> es) => Eff es (Vector (ReleaseId, Version, PackageName))
 getPackageReleases =
   dbtToEff $
@@ -62,7 +78,9 @@ getPackageReleases =
         on p.package_id = r.package_id
       |]
 
-getPackageReleasesWithoutReadme :: (DB :> es) => Eff es (Vector (ReleaseId, Version, PackageName))
+getPackageReleasesWithoutReadme
+  :: (DB :> es)
+  => Eff es (Vector (ReleaseId, Version, PackageName))
 getPackageReleasesWithoutReadme =
   dbtToEff $
     query Select querySpec ()
@@ -77,7 +95,9 @@ getPackageReleasesWithoutReadme =
         where r.readme_status = 'not-imported'
       |]
 
-getPackageReleasesWithoutUploadTimestamp :: (DB :> es) => Eff es (Vector (ReleaseId, Version, PackageName))
+getPackageReleasesWithoutUploadTimestamp
+  :: (DB :> es)
+  => Eff es (Vector (ReleaseId, Version, PackageName))
 getPackageReleasesWithoutUploadTimestamp =
   dbtToEff $
     query Select querySpec ()
@@ -92,7 +112,9 @@ getPackageReleasesWithoutUploadTimestamp =
         where r.uploaded_at is null
       |]
 
-getPackageReleasesWithoutChangelog :: (DB :> es) => Eff es (Vector (ReleaseId, Version, PackageName))
+getPackageReleasesWithoutChangelog
+  :: (DB :> es)
+  => Eff es (Vector (ReleaseId, Version, PackageName))
 getPackageReleasesWithoutChangelog =
   dbtToEff $
     query Select querySpec ()
@@ -107,8 +129,29 @@ getPackageReleasesWithoutChangelog =
         where r.changelog_status = 'not-imported'
       |]
 
-getReleaseByVersion :: (DB :> es) => PackageId -> Version -> Eff es (Maybe Release)
-getReleaseByVersion packageId version = dbtToEff $! queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
+getPackagesWithoutReleaseDeprecationInformation
+  :: (DB :> es)
+  => Eff es (Vector (PackageName, Vector ReleaseId))
+getPackagesWithoutReleaseDeprecationInformation =
+  dbtToEff $! query_ Select q
+  where
+    q =
+      [sql| 
+        select p1.name, array_agg(r0.release_id) 
+        from releases as r0
+        join packages as p1 on r0.package_id = p1.package_id
+        where r0.metadata ->> 'deprecated' is null
+        group by p1.name;
+        |]
+
+getReleaseByVersion
+  :: (DB :> es)
+  => PackageId
+  -> Version
+  -> Eff es (Maybe Release)
+getReleaseByVersion packageId version =
+  dbtToEff $!
+    queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
 
 getNumberOfReleases :: (DB :> es) => PackageId -> Eff es Word
 getNumberOfReleases pid =

@@ -15,6 +15,7 @@ import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
 
+import Distribution.Version (mkVersion)
 import Flora.Import.Package
 import Flora.Model.Category (Category (..))
 import Flora.Model.Category.Query qualified as Query
@@ -24,6 +25,7 @@ import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
 import Flora.TestUtils
 
@@ -41,7 +43,8 @@ spec _fixtures =
     , testThis "Searching for `text` returns unique results by namespace/package name" testSearchResultUnicity
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
     , testThis "Packages get deprecated" testPackagesDeprecation
-    , testThis "Test getting non-deprecated packages" testGetNonDeprecatedPackages
+    , testThis "Get non-deprecated packages" testGetNonDeprecatedPackages
+    , testThis "Get and set release deprecation markers" testReleaseDeprecation
     -- Disable until conditions are properly supported everywhere
     -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
@@ -211,6 +214,17 @@ testGetNonDeprecatedPackages = do
     Vector.fromList [DeprecatedPackage (PackageName "ansi-wl-pprint") alternative]
   nonDeprecatedPackages <- fmap (.name) <$> Query.getNonDeprecatedPackages
   assertBool $ Vector.notElem (PackageName "ansi-wl-pprint") nonDeprecatedPackages
+
+testReleaseDeprecation :: TestEff ()
+testReleaseDeprecation = do
+  result <- Query.getPackagesWithoutReleaseDeprecationInformation
+  assertEqual 62 (length result)
+
+  binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
+  Just deprecatedBinaryVersion' <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
+  Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
+  Just deprecatedBinaryVersion <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
+  assertEqual deprecatedBinaryVersion.metadata.deprecated (Just True)
 
 ---
 

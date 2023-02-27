@@ -5,6 +5,7 @@ module Flora.Model.Release.Types
   , ReleaseMetadata (..)
   , ImportStatus (..)
   , SupportedCompilers (..)
+  , ReleaseDeprecation (..)
   )
 where
 
@@ -151,7 +152,16 @@ data ReleaseMetadata = ReleaseMetadata
   , description :: Text
   , flags :: Vector PackageFlag
   , testedWith :: Vector Version
+  , deprecated :: Maybe Bool
   }
   deriving stock (Eq, Show, Generic, Typeable)
   deriving anyclass (ToJSON, FromJSON, NFData)
   deriving (ToField, FromField) via Aeson ReleaseMetadata
+
+data ReleaseDeprecation = ReleaseDeprecation
+  { deprecated :: Bool
+  , release :: ReleaseId
+  }
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving (ToField, FromField) via Aeson ReleaseDeprecation

@@ -10,11 +10,13 @@ import Data.Text.Encoding qualified as Text
 import Data.Time (UTCTime)
 import Data.Typeable
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Network.HTTP.Media ((//), (/:))
 import Servant.API
 import Servant.API.Generic
 
 import Distribution.Orphans ()
+import Distribution.Types.Version (Version)
 import Flora.Model.Job (IntAesonVersion)
 import Flora.Model.Package.Types (DeprecatedPackage' (..), PackageName)
 
@@ -44,6 +46,7 @@ data HackageAPI' mode = HackageAPI'
   , withUser :: mode :- "user" :> Capture "username" Text :> NamedRoutes HackageUserAPI
   , packages :: mode :- "packages" :> NamedRoutes HackagePackagesAPI
   , withPackage :: mode :- "package" :> Capture "versioned_package" VersionedPackage :> NamedRoutes HackagePackageAPI
+  , withPackageName :: mode :- "package" :> Capture "pacakgeName" PackageName :> NamedRoutes HackagePackageAPI
   }
   deriving stock (Generic)
 
@@ -56,6 +59,7 @@ data HackagePackageAPI mode = HackagePackageAPI
   { getReadme :: mode :- "readme.txt" :> Get '[PlainerText] Text
   , getUploadTime :: mode :- "upload-time" :> Get '[PlainText] UTCTime
   , getChangelog :: mode :- "changelog.txt" :> Get '[PlainerText] Text
+  , getDeprecatedReleases :: mode :- "preferred.json" :> Get '[JSON] HackagePreferredVersions
   }
   deriving stock (Generic)
 
@@ -78,3 +82,15 @@ data HackageUserDetailsObject = HackageUserDetailsOject
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
+
+data HackagePreferredVersions = HackagePreferredVersions
+  { deprecatedVersions :: Vector Version
+  , normalVersions :: Vector Version
+  }
+  deriving stock (Eq, Show, Generic)
+
+instance FromJSON HackagePreferredVersions where
+  parseJSON = withObject "Hacakge preferred versions" $ \o -> do
+    deprecatedVersions <- o .:? "deprecated-version" .!= Vector.empty
+    normalVersions <- o .: "normal-version"
+    pure HackagePreferredVersions{..}

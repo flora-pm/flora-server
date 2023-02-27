@@ -28,7 +28,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
-import FloraJobs.ThirdParties.Hackage.API (VersionedPackage (..))
+import FloraJobs.ThirdParties.Hackage.API (HackagePreferredVersions (..), VersionedPackage (..))
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
 
@@ -47,8 +47,7 @@ fetchNewIndex =
       forkIO $!
         forM_
           releases
-          ( \(releaseId, version, packagename) -> do
-              scheduleReadmeJob pool releaseId packagename version
+          ( \(releaseId, version, packagename) -> scheduleReadmeJob pool releaseId packagename version
           )
     liftIO $! void $! scheduleIndexImportJob pool
 
@@ -62,7 +61,9 @@ runner job = localDomain "job-runner" $
       FetchChangelog x -> fetchChangeLog x
       ImportHackageIndex _ -> fetchNewIndex
       ImportPackage x -> persistImportOutput x
-      FetchDeprecationList -> fetchDeprecationList
+      FetchPackageDeprecationList -> fetchPackageDeprecationList
+      FetchReleaseDeprecationList packageName releases ->
+        fetchReleaseDeprecationList packageName releases
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -124,8 +125,8 @@ fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releas
       Left e -> throw e
 
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
-fetchDeprecationList :: JobsRunner ()
-fetchDeprecationList = do
+fetchPackageDeprecationList :: JobsRunner ()
+fetchPackageDeprecationList = do
   result <- Hackage.request $! Hackage.getDeprecatedPackages
   case result of
     Right deprecationList -> do
@@ -136,15 +137,46 @@ fetchDeprecationList = do
               DeprecatedPackage package (assignNamespace inFavourOf)
           )
         & Update.deprecatePackages
-    Left _ -> do
-      logAttention_ "Could not fetch deprecation list from Hackage"
+    Left e@(FailureResponse _ response) -> do
+      logAttention "Could not fetch package deprecation list from Hackage" $
+        object
+          [ "status_code" .= statusCode (response.responseStatusCode)
+          ]
+      throw e
+    Left e -> throw e
+
+fetchReleaseDeprecationList :: PackageName -> Vector ReleaseId -> JobsRunner ()
+fetchReleaseDeprecationList packageName releases = do
+  result <- Hackage.request $! Hackage.getDeprecatedReleasesList packageName
+  case result of
+    Right deprecationList -> do
+      logInfo "Release deprecation list retrieved" $
+        object ["package" .= display packageName]
+      releasesAndVersions <- Query.getVersionFromManyReleaseIds releases
+      let (deprecatedVersions', preferredVersions') =
+            Vector.unstablePartition
+              ( \(_, v) ->
+                  Vector.elem v deprecationList.deprecatedVersions
+              )
+              releasesAndVersions
+      let deprecatedVersions = fmap (\(releaseId, _) -> (True, releaseId)) deprecatedVersions'
+      let preferredVersions = fmap (\(releaseId, _) -> (False, releaseId)) preferredVersions'
+      unless (Vector.null deprecatedVersions) $ Update.setReleasesDeprecationMarker deprecatedVersions
+      unless (Vector.null preferredVersions) $ Update.setReleasesDeprecationMarker preferredVersions
+    Left e@(FailureResponse _ response) -> do
+      logAttention "Could not fetch release deprecation list from Hackage" $
+        object
+          [ "package" .= display packageName
+          , "status_code" .= statusCode (response.responseStatusCode)
+          ]
+      throw e
+    Left e -> throw e
 
 assignNamespace :: Vector PackageName -> Vector PackageAlternative
-assignNamespace packages =
+assignNamespace =
   Vector.map
     ( \p ->
         if Set.member p coreLibraries
           then PackageAlternative (Namespace "haskell") p
           else PackageAlternative (Namespace "hackage") p
     )
-    packages
