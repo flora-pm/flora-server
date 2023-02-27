@@ -78,7 +78,7 @@ jobs:
 
 
     - name: Cache
-      uses: actions/cache@v3.2.5
+      uses: actions/cache@v3.2.6
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ghc-9.2.4-${{ hashFiles('cabal.project.freeze') }}
