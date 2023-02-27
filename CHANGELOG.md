@@ -6,6 +6,7 @@
 * Fetch and store deprecation information about packages ([#342](https://github.com/flora-pm/flora-server/pull/342))
 * Only index versionless package pages ([#343](https://github.com/flora-pm/flora-server/pull/343))
 * Display deprecation information on the package page ([#344](https://github.com/flora-pm/flora-server/pull/344))
+* Display deprecation information for releases ([#347](https://github.com/flora-pm/flora-server/pull/347))
 
 ## 1.0.9 -- 2023-01-06
 * Fix package title size in smaller screens ([#297](https://github.com/flora-pm/flora-server/pull/297))

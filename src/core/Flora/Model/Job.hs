@@ -13,6 +13,7 @@ import OddJobs.Job (Job, LogEvent (..))
 import OddJobs.Types (FailureMode)
 import Servant (ToHttpApiData)
 
+import Data.Vector (Vector)
 import Flora.Import.Package.Types (ImportOutput)
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Release.Types (ReleaseId (..))
@@ -63,7 +64,8 @@ data FloraOddJobs
   | FetchChangelog ChangelogJobPayload
   | ImportHackageIndex ImportHackageIndexPayload
   | ImportPackage ImportOutput
-  | FetchDeprecationList
+  | FetchPackageDeprecationList
+  | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 
@@ -75,7 +77,8 @@ instance ToJSON LogEvent where
   toJSON = \case
     LogJobStart job -> toJSON ("start" :: Text, job)
     LogJobSuccess job time -> toJSON ("success" :: Text, job, time)
-    LogJobFailed job exception failuremode finishTime -> toJSON ("failed" :: Text, show exception, job, failuremode, finishTime)
+    LogJobFailed job exception failuremode finishTime ->
+      toJSON ("failed" :: Text, show exception, job, failuremode, finishTime)
     LogJobTimeout job -> toJSON ("timed-out" :: Text, job)
     LogPoll -> toJSON ("poll" :: Text)
     LogWebUIRequest -> toJSON ("web-ui-request" :: Text)

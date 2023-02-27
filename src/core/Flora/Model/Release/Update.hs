@@ -5,15 +5,18 @@ module Flora.Model.Release.Update where
 
 import Control.Monad (void)
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
+import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 
+import Data.Function ((&))
 import Data.Time (UTCTime)
-import Flora.Model.Release.Types (ImportStatus (..), Release, ReleaseId, TextHtml (..))
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
+import Flora.Model.Release.Types
 
 insertRelease :: (DB :> es) => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
@@ -54,3 +57,15 @@ updateChangelog releaseId changelogBody status =
         ]
         ([field| release_id |], releaseId)
         (changelogBody, status)
+
+setReleasesDeprecationMarker :: (DB :> es) => Vector (Bool, ReleaseId) -> Eff es ()
+setReleasesDeprecationMarker releaseVersions =
+  dbtToEff $! void $! executeMany Update q (releaseVersions & Vector.toList)
+  where
+    q =
+      [sql|
+    UPDATE releases as r0
+    SET metadata = jsonb_set(r0.metadata, '{deprecated}', to_jsonb(upd.x), true)
+    FROM (VALUES (?,?)) as upd(x,y)
+    WHERE r0.release_id = (upd.y :: uuid) 
+    |]

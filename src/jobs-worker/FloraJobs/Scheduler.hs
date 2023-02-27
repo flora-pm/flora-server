@@ -6,7 +6,8 @@ module FloraJobs.Scheduler
   , scheduleChangelogJob
   , scheduleUploadTimeJob
   , scheduleIndexImportJob
-  , scheduleDeprecationListJob
+  , schedulePackageDeprecationListJob
+  , scheduleReleaseDeprecationListJob
   , checkIfIndexImportJobIsNotRunning
   , jobTableName
   --   prefer using smart constructors.
@@ -18,6 +19,7 @@ where
 
 import Data.Pool
 import Data.Time qualified as Time
+import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple qualified as PG
@@ -79,15 +81,26 @@ scheduleIndexImportJob pool =
           runAt
     )
 
-scheduleDeprecationListJob :: Pool PG.Connection -> IO Job
-scheduleDeprecationListJob pool =
+schedulePackageDeprecationListJob :: Pool PG.Connection -> IO Job
+schedulePackageDeprecationListJob pool =
   withResource
     pool
     ( \conn ->
         createJob
           conn
           jobTableName
-          FetchDeprecationList
+          FetchPackageDeprecationList
+    )
+
+scheduleReleaseDeprecationListJob :: Pool PG.Connection -> (PackageName, Vector ReleaseId) -> IO Job
+scheduleReleaseDeprecationListJob pool (package, releaseIds) =
+  withResource
+    pool
+    ( \conn ->
+        createJob
+          conn
+          jobTableName
+          (FetchReleaseDeprecationList package releaseIds)
     )
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool

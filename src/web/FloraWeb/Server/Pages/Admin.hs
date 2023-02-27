@@ -74,7 +74,7 @@ fetchMetadataHandler = do
   session <- getSession
   FloraEnv{jobsPool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
 
-  liftIO $! scheduleDeprecationListJob jobsPool
+  liftIO $! schedulePackageDeprecationListJob jobsPool
 
   releasesWithoutReadme <- Query.getPackageReleasesWithoutReadme
   liftIO $!
@@ -101,6 +101,15 @@ fetchMetadataHandler = do
         releasesWithoutChangelog
         ( \(releaseId, version, packagename) -> do
             scheduleChangelogJob jobsPool releaseId packagename version
+        )
+
+  packagesWithoutDeprecationInformation <- Query.getPackagesWithoutReleaseDeprecationInformation
+  liftIO $!
+    forkIO $!
+      Async.forConcurrently_
+        packagesWithoutDeprecationInformation
+        ( \a -> do
+            scheduleReleaseDeprecationListJob jobsPool a
         )
 
   pure $! redirect "/admin"

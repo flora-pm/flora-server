@@ -24,6 +24,7 @@ import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
+import Data.Function ((&))
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
   ( Namespace
@@ -124,12 +125,25 @@ packageBody
       div_ [class_ "release-readme-column"] $! div_ [class_ "release-readme"] $! displayReadme latestRelease
       div_ [class_ "package-right-column"] $! ul_ [class_ "package-right-rows"] $! do
         case packageMetadata.deprecationInfo of
-          Just inFavourOf -> displayDeprecation inFavourOf
-          Nothing -> displayInstructions packageName latestRelease
+          Just inFavourOf -> displayPackageDeprecation inFavourOf
+          Nothing ->
+            case metadata.deprecated of
+              Just True -> displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
+              _ -> displayInstructions packageName latestRelease
         displayTestedWith latestRelease.metadata.testedWith
         displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
         displayDependents (namespace, packageName) numberOfDependents dependents
         displayPackageFlags metadata.flags
+
+getLatestViableRelease :: Namespace -> PackageName -> Vector Release -> Maybe (Namespace, PackageName, Version)
+getLatestViableRelease namespace packageName releases = do
+  releases
+    & Vector.filter (\r -> r.metadata.deprecated /= Just True)
+    & Vector.modify (MVector.sortBy (\r1 r2 -> compare r1.version r2.version))
+    & Vector.uncons
+    & \case
+      Just (x, _) -> Just (namespace, packageName, x.version)
+      Nothing -> Nothing
 
 displayReadme :: Release -> FloraHTML
 displayReadme release =
@@ -161,7 +175,7 @@ displayLinks namespace packageName release meta@ReleaseMetadata{..} =
     h3_ [class_ "package-body-section links"] "Links"
     ul_ [class_ "links"] $! do
       li_ [class_ "package-link"] $! a_ [href_ (getHomepage meta)] "Homepage"
-      li_ [class_ "package-link"] $! a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName)] "Documentation"
+      li_ [class_ "package-link"] $! a_ [href_ ("https://hackage.haskell.org/package/" <> display packageName <> "-" <> display release.version)] "Documentation"
       li_ [class_ "package-link"] $! displaySourceRepos sourceRepos
       li_ [class_ "package-link"] $! displayChangelog namespace packageName release.version release.changelog
 
@@ -187,8 +201,10 @@ displayVersions namespace packageName versions numberOfReleases =
     displayVersion :: Release -> FloraHTML
     displayVersion release =
       li_ [class_ "release"] $! do
+        let versionClass = "release-version" <> if release.metadata.deprecated == Just True then " release-deprecated instruction-tooltip" else ""
+        let dataText = ([dataText_ "This release is deprecated, pick another one" | release.metadata.deprecated == Just True])
         a_
-          [class_ "release-version", href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release.version)))]
+          ([class_ versionClass, href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release.version)))] <> dataText)
           (toHtml $! display (release.version))
         " "
         case release.uploadedAt of
@@ -236,8 +252,8 @@ displayInstructions packageName latestRelease =
         , readonly_ "readonly"
         ]
 
-displayDeprecation :: Vector PackageAlternative -> FloraHTML
-displayDeprecation inFavourOf = do
+displayPackageDeprecation :: Vector PackageAlternative -> FloraHTML
+displayPackageDeprecation inFavourOf = do
   li_ [class_ ""] $! do
     h3_ [class_ "package-body-section"] "Deprecated"
     div_ [class_ "items-top"] $! div_ [class_ ""] $! do
@@ -251,6 +267,19 @@ displayDeprecation inFavourOf = do
                 a_
                   [href_ ("/packages/" <> display namespace <> "/" <> display package)]
                   (text $ display namespace <> "/" <> display package)
+
+displayReleaseDeprecation :: Maybe (Namespace, PackageName, Version) -> FloraHTML
+displayReleaseDeprecation mLatestViableRelease = do
+  li_ [class_ ""] $! do
+    h3_ [class_ "package-body-section"] "Deprecated"
+    div_ [class_ "items-top"] $! div_ [class_ ""] $! do
+      case mLatestViableRelease of
+        Nothing -> label_ [for_ "install-string", class_ "font-light"] "This release has been deprecated"
+        Just (namespace, package, version) -> do
+          label_ [for_ "install-string", class_ "font-light"] (text "This release has been deprecated in favour of: ")
+          a_
+            [href_ ("/packages/" <> display namespace <> "/" <> display package <> "/" <> display version)]
+            (text $ display namespace <> "/" <> display package <> "-" <> display version)
 
 displayTestedWith :: Vector Version -> FloraHTML
 displayTestedWith compilersVersions'
