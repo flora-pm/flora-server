@@ -40,7 +40,11 @@ import Flora.Model.Package.Component
   , PackageComponent
   )
 import Flora.Model.Release.Types (ReleaseId)
-import Flora.Model.Requirement (DependencyInfo)
+import Flora.Model.Requirement
+  ( ComponentDependencies
+  , DependencyInfo
+  , toComponentDependencies
+  )
 
 getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do
@@ -201,8 +205,8 @@ unsafeGetComponent releaseId =
 getAllRequirements
   :: (DB :> es)
   => ReleaseId
-  -> Eff es (Vector DependencyInfo)
-getAllRequirements releaseId = dbtToEff $! query Select getAllRequirementsQuery (Only releaseId)
+  -> Eff es ComponentDependencies
+getAllRequirements releaseId = dbtToEff $! toComponentDependencies <$> query Select getAllRequirementsQuery (Only releaseId)
 
 getRequirements :: (DB :> es, Log :> es, Time :> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
 getRequirements releaseId = do
@@ -222,15 +226,16 @@ getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
     with requirements as (
-        select distinct p0.namespace, p0.name, r0.requirement
+        select distinct p1.component_type, p1.component_name, p0.namespace, p0.name, r0.requirement
         from requirements as r0
         inner join packages as p0 on p0.package_id = r0.package_id
         inner join package_components as p1 on p1.package_component_id = r0.package_component_id
-              and (p1.component_type = 'library')
         inner join releases as r1 on r1.release_id = p1.release_id
         where r1.release_id = ?
     )
-    select req.namespace
+    select req.component_type
+         , req.component_name
+         , req.namespace
          , req.name
          , req.requirement
          , r3.version as "dependency_latest_version"
@@ -240,8 +245,8 @@ getAllRequirementsQuery =
     inner join packages as p2 on p2.namespace = req.namespace and p2.name = req.name
     inner join releases as r3 on r3.package_id = p2.package_id
     where r3.version = (select max(version) from releases where package_id = p2.package_id)
-    group by req.namespace, req.name, req.requirement, r3.version, r3.metadata
-    order by req.namespace desc
+    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, r3.version, r3.metadata
+    order by req.component_type, req.component_name desc
   |]
 
 -- | This query provides a limited view of the dependencies of a release.

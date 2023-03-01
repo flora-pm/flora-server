@@ -5,15 +5,23 @@ module FloraWeb.Components.PackageListItem
   )
 where
 
+import Data.Foldable (traverse_)
+import Data.List (sortOn)
+import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text.Display (display)
+import Data.Vector qualified as Vector
 import FloraWeb.Templates (FloraHTML)
 import Lucid
 
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
-import Flora.Model.Package (Namespace, PackageName)
-import Flora.Model.Requirement (DependencyInfo (..))
+import Flora.Model.Package (Namespace, PackageName (..))
+import Flora.Model.Package.Component (CanonicalComponent (..))
+import Flora.Model.Requirement
+  ( ComponentDependencies
+  , DependencyInfo (..)
+  )
 import Lucid.Orphans ()
 import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 
@@ -32,8 +40,20 @@ packageListItem (namespace, packageName, synopsis, version, license) = do
           toHtml license
         span_ [class_ "package-list-item__version"] $! "v" <> toHtml version
 
-requirementListItem :: DependencyInfo -> FloraHTML
-requirementListItem DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do
+requirementListItem :: ComponentDependencies -> FloraHTML
+requirementListItem allComponentDeps =
+  traverse_ (uncurry componentTitle) . sortOn (componentType . fst) $ Map.toList allComponentDeps
+  where
+    open = if Map.size allComponentDeps == 1 then [open_ ""] else mempty
+    componentTitle component componentDeps = do
+      details_ open $! do
+        summary_ . h3_ [] $! do
+          strong_ [] . toHtml $! display component
+          toHtml $ " (" <> display (Vector.length componentDeps) <> " dependencies)"
+        traverse_ componentListItems componentDeps
+
+componentListItems :: DependencyInfo -> FloraHTML
+componentListItems DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
     a_ [href, class_ ""] $! do
