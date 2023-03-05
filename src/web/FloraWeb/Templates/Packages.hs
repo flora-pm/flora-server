@@ -16,6 +16,7 @@ module FloraWeb.Templates.Packages
   ) where
 
 import Control.Monad (when)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text.Display
 import Data.Time (defaultTimeLocale)
@@ -51,11 +52,11 @@ showDependents namespace packageName title count packagesInfo currentPage =
       when (count > 30) $
         paginationNav count currentPage (DependentsOf namespace packageName)
 
-showDependencies :: Text -> Vector DependencyInfo -> FloraHTML
-showDependencies searchString requirementsInfo =
+showDependencies :: Text -> ComponentDependencies -> FloraHTML
+showDependencies searchString componentsInfo =
   div_ [class_ "container"] $! do
-    presentationHeader searchString "" (fromIntegral $! Vector.length requirementsInfo)
-    div_ [class_ ""] $! requirementListing requirementsInfo
+    presentationHeader searchString "" (fromIntegral $! Map.size componentsInfo)
+    div_ [class_ ""] . ul_ [class_ "component-list"] $! requirementListing componentsInfo
 
 listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
 listVersions namespace packageName releases =
@@ -96,8 +97,8 @@ packageListing packages =
           packageListItem (namespace, name, synopsis, version, license)
       )
 
-requirementListing :: Vector DependencyInfo -> FloraHTML
-requirementListing requirements = ul_ [class_ "package-list"] $! Vector.forM_ requirements requirementListItem
+requirementListing :: ComponentDependencies -> FloraHTML
+requirementListing requirements = ul_ [class_ "component-list"] $! requirementListItem requirements
 
 showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 showChangelog namespace packageName version mChangelog = do

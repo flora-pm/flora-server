@@ -1,5 +1,6 @@
 module Flora.PackageSpec where
 
+import Data.Map qualified as Map
 import Data.Maybe
 import Data.Set qualified as Set
 import Data.Vector qualified as Vector
@@ -81,7 +82,10 @@ testCabalDeps = do
         , PackageName "void"
         ]
     )
-    (Set.fromList $ (.name) <$> Vector.toList dependencies)
+    ( Set.fromList $
+        fmap (.name) . Vector.toList . fromJust $
+          Map.lookup (CanonicalComponent "Cabal" Library) dependencies
+    )
 
 testInsertContainers :: TestEff ()
 testInsertContainers = do

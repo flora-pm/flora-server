@@ -6,6 +6,7 @@ where
 
 import Data.Foldable
 import Data.Function
+import Data.Map.Strict as Map
 import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Log (object, (.=))
@@ -165,7 +166,8 @@ showVersionDependenciesHandler namespace packageName version = do
       [ "duration" .= duration
       , "package" .= (display namespace <> "/" <> display packageName)
       , "release_id" .= release.releaseId
-      , "dependencies_count" .= Vector.length releaseDependencies
+      , "component_count" .= Map.size releaseDependencies
+      , "dependencies_count" .= Map.foldl' (\acc ds -> acc + Vector.length ds) 0 releaseDependencies
       ]
 
   render templateEnv $

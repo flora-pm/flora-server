@@ -3,22 +3,26 @@ module Flora.Model.Requirement where
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Data
+import Data.Foldable (foldl')
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text.Display
 import Data.UUID (UUID, fromByteString)
+import Data.Vector (Vector)
 import Database.PostgreSQL.Entity (Entity)
 import Database.PostgreSQL.Entity.Types (GenericEntity, TableName)
-import Database.PostgreSQL.Simple (FromRow, ToRow)
+import Database.PostgreSQL.Simple (ToRow)
 import Database.PostgreSQL.Simple.FromField
   ( FromField
   , fromField
   , fromJSONField
   )
+import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField, toField, toJSONField)
 import GHC.Generics (Generic)
 
 import Control.DeepSeq
-import Data.ByteString.Lazy
+import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust)
 import Data.Text.Encoding (encodeUtf8)
 import Distribution.SPDX.License qualified as SPDX
@@ -82,3 +86,26 @@ data DependencyInfo = DependencyInfo
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, NFData)
+
+-- | Data Access Object for component dependencies to read from db
+data ComponentDependency' = ComponentDependency'
+  { componentType :: ComponentType
+  , componentName :: Text
+  , namespace :: Namespace
+  , name :: PackageName
+  , requirement :: Text
+  , latestVersion :: Version
+  , latestSynopsis :: Text
+  , latestLicense :: SPDX.License
+  }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromRow, NFData)
+
+-- | Map of components to its dependencies
+type ComponentDependencies = Map.Map CanonicalComponent (Vector DependencyInfo)
+
+toComponentDependencies :: Vector ComponentDependency' -> ComponentDependencies
+toComponentDependencies = foldl' go Map.empty
+  where
+    go acc ComponentDependency'{..} =
+      Map.insertWith (<>) (CanonicalComponent{..}) (pure DependencyInfo{..}) acc

@@ -223,12 +223,10 @@ displayDependencies
 displayDependencies (namespace, packageName, version) numberOfDependencies dependencies =
   li_ [class_ ""] $! do
     h3_ [class_ "package-body-section"] (toHtml $! "Dependencies (" <> display numberOfDependencies <> ")")
-    ul_ [class_ "dependencies"] $! do
-      let deps = foldMap renderDependency dependencies
-      let numberOfShownDependencies = fromIntegral @Int @Word (Vector.length dependencies)
-      if numberOfShownDependencies >= numberOfDependencies
-        then deps
-        else deps <> showAll Dependencies (Just version) namespace packageName
+    let deps = foldMap renderDependency dependencies
+    ul_ [class_ "dependencies"] $!
+      deps
+        <> showAll Dependencies (Just version) namespace packageName
 
 showAll :: Target -> Maybe Version -> Namespace -> PackageName -> FloraHTML
 showAll target mVersion namespace packageName = do

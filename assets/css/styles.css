@@ -20,6 +20,26 @@ body {
   color: var(--text-color);
 }
 
+details > summary {
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 1rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+details summary > * {
+  display: inline;
+}
+
+details > summary:hover {
+  background-color: var(--package-list-item-background-hover-color);
+  border-radius: 6px;
+}
+
 .larger-container {
   margin-left: auto;
   margin-right: auto;

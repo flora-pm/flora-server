@@ -5,7 +5,8 @@ jobs:
       - name: Checkout Code
         uses: "actions/checkout@v3"
         with:
-          ref: "${{ github.head_ref }}"
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Make sure there is one proper commit or PR title
         env:
           PULL_REQUEST_TITLE: "${{ github.event.pull_request.title }}"
