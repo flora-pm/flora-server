@@ -12,6 +12,7 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Function ((&))
 import Data.List (isSuffixOf)
 import Data.Text qualified as Text
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Effectful
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
@@ -47,11 +48,11 @@ importFromIndex appLogger user index directImport = do
   where
     buildContentStream acc entry =
       let entryPath = Tar.entryPath entry
-          entryTime = Tar.entryTime entry
+          entryTime = posixSecondsToUTCTime . fromIntegral $ Tar.entryTime entry
        in Tar.entryContent entry & \case
             Tar.NormalFile bs _
               | ".cabal" `isSuffixOf` entryPath ->
-                  (entryPath, BL.toStrict bs) `S.cons` acc
+                  (entryPath, entryTime, BL.toStrict bs) `S.cons` acc
             _ -> acc
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
@@ -66,7 +67,7 @@ importFromStream
   => Logger
   -> UserId
   -> Bool
-  -> S.AsyncT IO (String, BS.ByteString)
+  -> S.AsyncT IO (String, UTCTime, BS.ByteString)
   -> Eff es ()
 importFromStream appLogger user directImport stream = do
   pool <- getPool
@@ -91,18 +92,20 @@ importFromStream appLogger user directImport stream = do
         . runDB pool
         . runCurrentTimeIO
         . Log.runLog "flora-jobs" appLogger defaultLogLevel
-        . ( uncurry loadContent
-              >=> extractPackageDataFromCabal user
-              >=> \importedPackage ->
-                if directImport
-                  then persistImportOutput wq importedPackage
-                  else enqueueImportJob importedPackage
+        . ( \(path, timestamp, content) ->
+              loadContent path content
+                >>= ( extractPackageDataFromCabal user timestamp
+                        >=> \importedPackage ->
+                          if directImport
+                            then persistImportOutput wq importedPackage
+                            else enqueueImportJob importedPackage
+                    )
           )
     displayStats :: MonadIO m => Int -> m ()
     displayStats currentCount =
       liftIO . putStrLn $! "✅ Processed " <> show currentCount <> " new cabal files"
 
-findAllCabalFilesInDirectory :: FilePath -> S.AsyncT IO (String, BS.ByteString)
+findAllCabalFilesInDirectory :: FilePath -> S.AsyncT IO (String, UTCTime, BS.ByteString)
 findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $! S.fromList [workdir]
   where
     traversePath p = do
@@ -113,5 +116,6 @@ findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $! S.fromList [
           return $! S.concatMapM (traversePath . (p </>)) $! S.fromList entries
         False | ".cabal" `isSuffixOf` p -> do
           content <- BS.readFile p
-          return $! S.fromPure (p, content)
+          timestamp <- System.getModificationTime p
+          return $! S.fromPure (p, timestamp, content)
         _ -> return S.nil
