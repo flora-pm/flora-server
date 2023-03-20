@@ -105,6 +105,7 @@ library
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
+    Flora.Model.PackageIndex
     Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Query
@@ -167,6 +168,7 @@ library
     , text-display
     , time
     , time-effectful
+    , unliftio
     , uuid
     , vector
     , vector-algorithms
@@ -418,6 +420,7 @@ test-suite flora-test
   other-modules:
     Flora.CabalSpec
     Flora.CategorySpec
+    Flora.ImportSpec
     Flora.OddJobSpec
     Flora.PackageSpec
     Flora.TemplateSpec

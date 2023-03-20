@@ -63,9 +63,10 @@ import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
 import Data.UUID qualified as UUID
 import Data.Word
-import Database.PostgreSQL.Entity.DBT ()
+import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
 import Database.PostgreSQL.Simple.Migration
+import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact ()
 import Effectful
 import Effectful.Log qualified as Log
@@ -95,7 +96,7 @@ import Effectful.Log (Log, Logger)
 import Flora.Environment
 import Flora.Environment.Config (LoggingDestination (..), PoolConfig (..))
 import Flora.Import.Categories (importCategories)
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
+import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Logging qualified as Logging
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
@@ -122,6 +123,7 @@ importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
   importAllFilesInRelativeDirectory
     appLogger
     (fixtures ^. #hackageUser % #userId)
+    Nothing
     "./test/fixtures/Cabal/"
     True
 

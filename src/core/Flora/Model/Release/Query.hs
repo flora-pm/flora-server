@@ -9,6 +9,7 @@ module Flora.Model.Release.Query
   , getPackageReleasesWithoutChangelog
   , getPackageReleasesWithoutUploadTimestamp
   , getAllReleases
+  , getLatestReleaseTime
   , getNumberOfReleases
   , getReleaseComponents
   , getPackagesWithoutReleaseDeprecationInformation
@@ -16,11 +17,13 @@ module Flora.Model.Release.Query
   )
 where
 
+import Data.Text (Text)
+import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro as MVector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne, query_)
+import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne, queryOne_, query_)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (In (..), Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
@@ -42,6 +45,13 @@ getReleases pid =
       then pure results
       else pure $! Vector.take 6 $! Vector.reverse $! Vector.modify MVector.sort results
 
+getLatestReleaseTime :: DB :> es => Maybe Text -> Eff es (Maybe UTCTime)
+getLatestReleaseTime repo =
+  dbtToEff $! fmap fromOnly <$> maybe (queryOne_ Select q') (queryOne Select q . Only) repo
+  where
+    q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
+    q' = [sql| select max(uploaded_at) from releases |]
+
 getAllReleases :: DB :> es => PackageId -> Eff es (Vector Release)
 getAllReleases pid =
   dbtToEff $! do
@@ -58,7 +68,7 @@ getVersionFromManyReleaseIds releaseIds = do
   dbtToEff $! query Select q (Only (In (Vector.toList releaseIds)))
   where
     q =
-      [sql| 
+      [sql|
         select r0.release_id, r0.version
         from releases as r0
         where r0.release_id in ?
@@ -136,8 +146,8 @@ getPackagesWithoutReleaseDeprecationInformation =
   dbtToEff $! query_ Select q
   where
     q =
-      [sql| 
-        select p1.name, array_agg(r0.release_id) 
+      [sql|
+        select p1.name, array_agg(r0.release_id)
         from releases as r0
         join packages as p1 on r0.package_id = p1.package_id
         where r0.metadata ->> 'deprecated' is null
