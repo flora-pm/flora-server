@@ -355,6 +355,7 @@ executable flora-cli
   build-depends:
     , base
     , bytestring
+    , Cabal-syntax
     , effectful-core
     , envparse
     , flora

@@ -12,12 +12,14 @@ import Data.Text.Lazy qualified as TL
 import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Distribution.Version
 import Effectful
 import Effectful.Fail
 import Env
 import Lucid
 import PyF (fmt)
 
+import Distribution.SPDX
 import Flora.Environment.Config
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category
@@ -93,8 +95,8 @@ packageListItemExample =
     ( namespaceExample
     , packageNameExample
     , "Basic libraries"
-    , read "4.16.0.0"
-    , read "BSD-3-Clause"
+    , mkVersion [4, 16, 0, 0]
+    , License (simpleLicenseExpression BSD_3_Clause)
     )
 
 categoryCardExample :: FloraHTML
