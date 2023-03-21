@@ -20,22 +20,22 @@ body {
   color: var(--text-color);
 }
 
-details > summary {
+summary.package-component {
   cursor: pointer;
   font-size: 1.25rem;
   line-height: 1.25rem;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
   padding-left: 1rem;
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
-details summary > * {
+summary.package-component > * {
   display: inline;
 }
 
-details > summary:hover {
+summary.package-component:hover {
   background-color: var(--package-list-item-background-hover-color);
   border-radius: 6px;
 }
@@ -122,17 +122,15 @@ a {
 }
 
 .package-list-item {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
   list-style: none;
 
   a {
     display: block;
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
     padding-left: 1rem;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
     font-size: 1.25rem;
     line-height: 1.75rem;
   }
