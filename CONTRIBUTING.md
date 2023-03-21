@@ -24,7 +24,7 @@ The following Haskell command-line tools will have to be installed:
 
 ### Nix Setup
 
-Nix Flakes are used to build the application. It is recommended your version of the `nix` tool
+Nix Flakes are a very experimental way to build the application. It is recommended your version of the `nix` tool
 is at least 2.11. Please do not forget to add the appropriate configuration line in order to use flakes, as
 described in the [NixOS Wiki][nix-flakes] page.
 
@@ -33,6 +33,8 @@ After that, it should be straightforward to run:
 ```
 $ make nix-shell
 ```
+
+Contributions on that front are always appreciated. They however need to support the workflow of both Linux and macOS users.
 
 ### Pull Requests
 
@@ -82,7 +84,7 @@ Here are the steps:
 2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
 3. `$ eventlog2html flora-server.eventlog`
 
-[CoC]: https://github.com/flora-pm/flora-server/blob/master/CODE_OF_CONDUCT.md
+[CoC]: https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions
 [Ticket]: https://github.com/flora-pm/flora-server/issues/new
