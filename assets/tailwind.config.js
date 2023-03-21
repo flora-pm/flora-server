@@ -2,7 +2,7 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 
 module.exports = {
   mode: "jit",
-  content: ["./js/**/*.js", "../src/FloraWeb/**/*.*hs"],
+  content: ["./js/**/*.js", "../src/web/FloraWeb//**/*.*hs"],
   darkMode: "class",
   theme: {
     extend: {

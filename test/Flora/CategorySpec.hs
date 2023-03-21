@@ -1,21 +1,9 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-
 module Flora.CategorySpec where
 
 import Control.Monad.IO.Class
-import Data.Maybe
-import Data.Set qualified as Set
-import Data.Vector qualified as Vector
-import Debug.Pretty.Simple
-import Optics.Core
 import Test.Tasty
 
 import Flora.Import.Categories.Tuning as Tuning
-import Flora.Import.Package
-import Flora.Import.Types
-import Flora.Model.Package
-import Flora.Model.Package.Query qualified as Query
-import Flora.Model.User
 import Flora.TestUtils
 
 spec :: TestEff TestTree

@@ -37,6 +37,10 @@
   --changelog-code-background-color: hsl(225 13% 87%);
   --install-string-border: hsl(215 28% 17%);
   --compiler-badge-background: hsl(218 12% 84%);
+  --main-page-button-background: hsl(218 12% 84%);
+  --main-page-button-focus-border-color: hsl(294 40% 30%);
+  --main-page-button-divider: hsl(294 40% 20%);
+  --deprecated-version: hsl(358 80% 60%);
 }
 
 html[data-theme="dark"] {
@@ -75,4 +79,8 @@ html[data-theme="dark"] {
   --changelog-code-background-color: hsl(218 29% 30%);
   --install-string-border: hsl(215 28% 17%);
   --compiler-badge-background: hsl(218 30% 30%);
+  --main-page-button-background: hsl(218 29% 30%);
+  --main-page-button-focus-border-color: hsl(294 40% 30%);
+  --main-page-button-divider: hsl(218 30% 15%);
+  --deprecated-version: hsl(358 80% 60%);
 }

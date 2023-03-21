@@ -29,11 +29,15 @@ db-create: ## Create the database
 db-drop: ## Drop the database
 	@dropdb -f --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
-db-setup: db-create ## Setup the dev database
+db-setup: db-create db-init db-migrate ## Setup the dev database
+
+db-init: ## Create the database schema
 	@migrate init "$(FLORA_DB_CONNSTRING)" 
+
+db-migrate: ## Apply database migrations
 	@migrate migrate "$(FLORA_DB_CONNSTRING)" migrations
 
-db-reset: db-drop db-setup db-provision ## Reset the dev database (uses Cabal)
+db-reset: db-drop db-setup db-provision ## Reset the dev database
 
 db-provision: build ## Load the development data in the database
 	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
@@ -64,7 +68,7 @@ lint: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
 style: ## Run the code formatters (stylish-haskell, cabal-fmt, nixfmt, prettier, stylelint)
-	@find app test src -name '*.hs' -exec fourmolu -i {} +
+	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 	@cabal-fmt -i flora.cabal
 	@nixfmt *.nix
 	@cd assets ; yarn prettier --write css

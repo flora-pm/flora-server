@@ -1,0 +1,29 @@
+Name:               PBKDF2
+Version:            0.3.1.5
+License:            BSD3
+License-file:       bsd3.txt
+Description:        Implementation of Password-Based Key Derivation
+                    Function, aka pbkdf2, from RSA labs.  I'll deprecate
+                    this if it gets folded into an already-existing
+                    crypto package.
+
+Synopsis:           Make password-based security schemes more secure.
+Maintainer:         Silk <code@silk.co>
+Author:             Thomas Hartman
+Stability:          Beta
+Copyright:          Copyright (c) 2008 Thomas Hartman
+Category:           Cryptography
+Build-type:         Simple
+Cabal-version:      >= 1.6
+
+Library
+  Build-Depends:    base       >= 4.3 && < 4.8
+                  , bytestring >= 0.9 && < 0.11
+                  , Crypto     >= 4.2 && < 4.3
+                  , binary     >= 0.5 && < 0.8
+                  , random     >= 1.0 && < 1.2
+  Exposed-Modules:  Crypto.PBKDF2
+
+Source-Repository head
+  Type:             git
+  Location:         http://github.com/silkapp/PBKDF2

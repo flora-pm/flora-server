@@ -1,5 +1,6 @@
 module Flora.PackageSpec where
 
+import Data.Map qualified as Map
 import Data.Maybe
 import Data.Set qualified as Set
 import Data.Vector qualified as Vector
@@ -15,14 +16,17 @@ import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
 
+import Distribution.Version (mkVersion)
 import Flora.Import.Package
 import Flora.Model.Category (Category (..))
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Package
 import Flora.Model.Package.Component
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
 import Flora.TestUtils
 
@@ -37,8 +41,11 @@ spec _fixtures =
     , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
     , testThis "@haskell/bytestring has the correct number of dependents" testBytestringDependents
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
-    , testThis "Searching for `text` returns unique results by namespace/package name" testSearchResultUnicity
+    , testThis "Searching for `text` returns expected results by namespace/package name" testSearchResultText
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
+    , testThis "Packages get deprecated" testPackagesDeprecation
+    , testThis "Get non-deprecated packages" testGetNonDeprecatedPackages
+    , testThis "Get and set release deprecation markers" testReleaseDeprecation
     -- Disable until conditions are properly supported everywhere
     -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
@@ -75,7 +82,10 @@ testCabalDeps = do
         , PackageName "void"
         ]
     )
-    (Set.fromList $ (.name) <$> Vector.toList dependencies)
+    ( Set.fromList $
+        fmap (.name) . Vector.toList . fromJust $
+          Map.lookup (CanonicalComponent "Cabal" Library) dependencies
+    )
 
 testInsertContainers :: TestEff ()
 testInsertContainers = do
@@ -128,7 +138,7 @@ testBytestringDependents :: TestEff ()
 testBytestringDependents = do
   results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") 1
   assertEqual
-    19
+    21
     (Vector.length results)
 
 testNoSelfDependent :: TestEff ()
@@ -142,10 +152,11 @@ testNoSelfDependent = do
         , PackageName "hashable"
         , PackageName "jose"
         , PackageName "parsec"
+        , PackageName "pg-entity"
         , PackageName "relude"
         , PackageName "semigroups"
+        , PackageName "text-display"
         , PackageName "xml"
-        , PackageName "pg-entity"
         ]
     )
     resultSet
@@ -180,14 +191,47 @@ testTimeConditions = do
   assertEqual timeLibExpectedCondition timeLib.metadata.conditions
   assertEqual timeUnixTestExpectedCondition timeUnixTest.metadata.conditions
 
-testSearchResultUnicity :: TestEff ()
-testSearchResultUnicity = do
+testSearchResultText :: TestEff ()
+testSearchResultText = do
   text <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
   releases <- Query.getNumberOfReleases (text ^. #packageId)
   assertEqual 2 releases
   results <- Query.searchPackage 1 "text"
-  assertEqual 1 (Vector.length results)
+  assertEqual 2 (Vector.length results)
   assertEqual (Cabal.mkVersion [2, 0]) ((.version) $ Vector.head results)
+
+testPackagesDeprecation :: TestEff ()
+testPackagesDeprecation = do
+  let alternative1 = Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
+  let alternative2 = Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "monad-control")
+  Update.deprecatePackages $
+    Vector.fromList
+      [ DeprecatedPackage (PackageName "integer-gmp") alternative1
+      , DeprecatedPackage (PackageName "mtl") alternative2
+      ]
+  integerGmp <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
+  assertEqual (Just alternative1) integerGmp.metadata.deprecationInfo
+
+testGetNonDeprecatedPackages :: TestEff ()
+testGetNonDeprecatedPackages = do
+  let alternative = Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
+  Update.deprecatePackages $
+    Vector.fromList [DeprecatedPackage (PackageName "ansi-wl-pprint") alternative]
+  nonDeprecatedPackages <- fmap (.name) <$> Query.getNonDeprecatedPackages
+  assertBool $ Vector.notElem (PackageName "ansi-wl-pprint") nonDeprecatedPackages
+
+testReleaseDeprecation :: TestEff ()
+testReleaseDeprecation = do
+  result <- Query.getPackagesWithoutReleaseDeprecationInformation
+  assertEqual 63 (length result)
+
+  binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
+  Just deprecatedBinaryVersion' <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
+  Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
+  Just deprecatedBinaryVersion <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
+  assertEqual deprecatedBinaryVersion.metadata.deprecated (Just True)
+
+---
 
 countBy :: (Foldable t) => (a -> Bool) -> t a -> Int
 countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)

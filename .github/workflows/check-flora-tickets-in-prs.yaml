@@ -5,7 +5,8 @@ jobs:
       - name: Checkout Code
         uses: "actions/checkout@v3"
         with:
-          ref: "${{ github.head_ref }}"
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Make sure there is one proper commit or PR title
         env:
           PULL_REQUEST_TITLE: "${{ github.event.pull_request.title }}"
@@ -14,7 +15,7 @@ jobs:
           PULL_REQUEST_AUTHOR: "${{ github.event.pull_request.user.login }}"
         run: |
           ./.github/workflows/check-ticket-in-prs.sh
-name: Make sure PR has FLORA issue in title or has one commit with FLORA issue
+name: Make sure PR has FLORA or NO-ISSUE issue in title or has one commit with FLORA/NO-ISSUE issue
 on:
   pull_request:
     types:
