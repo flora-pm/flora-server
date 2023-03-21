@@ -47,7 +47,7 @@ requirementListItem allComponentDeps =
     open = if Map.size allComponentDeps == 1 then [open_ ""] else mempty
     componentTitle component componentDeps = do
       details_ open $! do
-        summary_ . h3_ [] $! do
+        summary_ [class_ "package-component"] . h3_ [] $! do
           strong_ [] . toHtml $! display component
           toHtml $ " (" <> display (Vector.length componentDeps) <> " dependencies)"
         traverse_ componentListItems componentDeps

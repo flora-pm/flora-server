@@ -41,7 +41,7 @@ spec _fixtures =
     , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
     , testThis "@haskell/bytestring has the correct number of dependents" testBytestringDependents
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
-    , testThis "Searching for `text` returns unique results by namespace/package name" testSearchResultUnicity
+    , testThis "Searching for `text` returns expected results by namespace/package name" testSearchResultText
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
     , testThis "Packages get deprecated" testPackagesDeprecation
     , testThis "Get non-deprecated packages" testGetNonDeprecatedPackages
@@ -138,7 +138,7 @@ testBytestringDependents :: TestEff ()
 testBytestringDependents = do
   results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") 1
   assertEqual
-    20
+    21
     (Vector.length results)
 
 testNoSelfDependent :: TestEff ()
@@ -152,10 +152,11 @@ testNoSelfDependent = do
         , PackageName "hashable"
         , PackageName "jose"
         , PackageName "parsec"
+        , PackageName "pg-entity"
         , PackageName "relude"
         , PackageName "semigroups"
+        , PackageName "text-display"
         , PackageName "xml"
-        , PackageName "pg-entity"
         ]
     )
     resultSet
@@ -190,13 +191,13 @@ testTimeConditions = do
   assertEqual timeLibExpectedCondition timeLib.metadata.conditions
   assertEqual timeUnixTestExpectedCondition timeUnixTest.metadata.conditions
 
-testSearchResultUnicity :: TestEff ()
-testSearchResultUnicity = do
+testSearchResultText :: TestEff ()
+testSearchResultText = do
   text <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
   releases <- Query.getNumberOfReleases (text ^. #packageId)
   assertEqual 2 releases
   results <- Query.searchPackage 1 "text"
-  assertEqual 1 (Vector.length results)
+  assertEqual 2 (Vector.length results)
   assertEqual (Cabal.mkVersion [2, 0]) ((.version) $ Vector.head results)
 
 testPackagesDeprecation :: TestEff ()
@@ -222,7 +223,7 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: TestEff ()
 testReleaseDeprecation = do
   result <- Query.getPackagesWithoutReleaseDeprecationInformation
-  assertEqual 62 (length result)
+  assertEqual 63 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
   Just deprecatedBinaryVersion' <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])

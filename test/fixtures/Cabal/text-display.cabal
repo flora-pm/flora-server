@@ -1,0 +1,99 @@
+cabal-version:      3.0
+name:               text-display
+version:            0.0.4.0
+x-revision: 1
+category:           Text
+synopsis:           A typeclass for user-facing output
+description:
+  The 'Display' typeclass provides a solution for user-facing output that does not have to abide by the rules of the Show typeclass.
+
+homepage:           https://hackage.haskell.org/package/text-display/docs/doc/book/Introduction.html
+bug-reports:        https://github.com/haskell-text/text-display/issues
+author:             Hécate Moonlight
+maintainer:         Hécate Moonlight
+license:            MIT
+build-type:         Simple
+tested-with: GHC == {8.8.4, 8.10.7, 9.0.2, 9.2.7, 9.4.4, 9.6.1}
+
+extra-source-files:
+  LICENSE
+  README.md
+
+extra-doc-files:
+  ./doc/book/*.css
+  ./doc/book/*.html
+  ./doc/book/*.js
+  ./doc/book/css/*.css
+  ./doc/book/favicon.png
+  ./doc/book/favicon.svg
+  ./doc/book/FontAwesome/css/font-awesome.css
+  ./doc/book/FontAwesome/fonts/fontawesome-webfont.woff2
+  ./doc/book/fonts/*.css
+  ./doc/book/fonts/*.woff2
+  ./doc/book/searchindex.json
+  CHANGELOG.md
+
+flag book
+  description: Enable the generation of the book
+  default:     False
+  manual:      True
+
+source-repository head
+  type:     git
+  location: https://github.com/haskell-text/text-display
+
+common common-extensions
+  default-language: Haskell2010
+
+common common-ghc-options
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+    -fhide-source-paths -Wno-unused-do-bind -funbox-strict-fields
+    -Wunused-packages
+
+common common-rts-options
+  ghc-options: -rtsopts -threaded -with-rtsopts=-N
+
+library
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  src
+  exposed-modules: Data.Text.Display
+  build-depends:
+    , base        >=4.12 && <5.0
+    , bytestring  >=0.10 && <0.12
+    , text        >=2.0
+
+executable book
+  import:         common-extensions
+  import:         common-ghc-options
+  import:         common-rts-options
+  main-is:        Main.hs
+  hs-source-dirs: doc/src
+
+  if !flag(book)
+    buildable: False
+
+  build-depends:
+    , base
+    , directory
+    , literatex
+    , shake
+
+test-suite text-display-test
+  import:         common-extensions
+  import:         common-ghc-options
+  import:         common-rts-options
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  hs-source-dirs: test
+  build-depends:
+    , base
+    , deepseq
+    , quickcheck-text
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , text
+    , text-display
