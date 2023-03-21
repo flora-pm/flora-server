@@ -53,9 +53,10 @@ showDependents namespace packageName title count packagesInfo currentPage =
         paginationNav count currentPage (DependentsOf namespace packageName)
 
 showDependencies :: Text -> ComponentDependencies -> FloraHTML
-showDependencies searchString componentsInfo =
+showDependencies searchString componentsInfo = do
+  let dependenciesCount = fromIntegral $ Map.foldr (\v acc -> Vector.length v + acc) 0 componentsInfo
   div_ [class_ "container"] $! do
-    presentationHeader searchString "" (fromIntegral $! Map.size componentsInfo)
+    presentationHeader searchString "" dependenciesCount
     div_ [class_ ""] . ul_ [class_ "component-list"] $! requirementListing componentsInfo
 
 listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
