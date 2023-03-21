@@ -398,7 +398,6 @@ test-suite flora-test
     , pg-transact-effectful
     , postgresql-migration
     , postgresql-simple
-    , pretty-simple
     , resource-pool
     , servant
     , servant-client
