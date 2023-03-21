@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.0.10 -- XXXX-XX-XX
+## 1.0.10 -- 2023-03-21
 * Add buttons to the main page for ghcup and cabal guides ([#341](https://github.com/flora-pm/flora-server/pull/341))
 * Split the project into internal libraries ([#337](https://github.com/flora-pm/flora-server/pull/337)) 
 * Fetch and store deprecation information about packages ([#342](https://github.com/flora-pm/flora-server/pull/342))
