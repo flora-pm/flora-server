@@ -28,7 +28,6 @@ test-show-details: direct
 
 package *
   ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j -eventlog -finfo-table-map -fdistinct-constructor-tables
-  flags: -prod
 
 package warp
   flags: -x509
