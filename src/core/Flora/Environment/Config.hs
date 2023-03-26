@@ -27,14 +27,12 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Base64 qualified as B64
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Pool (Pool)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (Display (..), display)
 import Data.Time (NominalDiffTime)
 import Data.Typeable (Typeable)
 import Data.Word (Word16)
-import Database.PostgreSQL.Simple qualified as PG
 import Effectful (Eff, IOE, MonadIO (liftIO), type (:>))
 import Effectful.Fail (Fail)
 import Env
@@ -123,12 +121,6 @@ data TestConfig = TestConfig
   { httpPort :: Word16
   , dbConfig :: PoolConfig
   , connectionInfo :: ByteString
-  }
-  deriving stock (Generic)
-
-data TestEnv = TestEnv
-  { httpPort :: Word16
-  , pool :: Pool PG.Connection
   }
   deriving stock (Generic)
 

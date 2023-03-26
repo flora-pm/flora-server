@@ -8,6 +8,7 @@ import Data.List (isSuffixOf)
 import Effectful
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
+import Effectful.Reader.Static (Reader, ask, runReader)
 import Effectful.Time
 import Log (Logger, defaultLogLevel)
 import Streamly.Data.Fold qualified as SFold
@@ -15,21 +16,23 @@ import Streamly.Prelude qualified as S
 import System.Directory qualified as System
 import System.FilePath
 
-import Flora.Import.Package (enqueueImportJob, loadAndExtractCabalFile, persistImportOutput)
+import Flora.Environment.Config (PoolConfig (..))
+import Flora.Import.Package (enqueueImportJob, loadAndExtractCabalFile, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
-importAllFilesInRelativeDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
+importAllFilesInRelativeDirectory :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
 importAllFilesInRelativeDirectory appLogger user dir directImport = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importAllFilesInDirectory appLogger user workdir directImport
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
-importAllFilesInDirectory :: (DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
+importAllFilesInDirectory :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
 importAllFilesInDirectory appLogger user dir directImport = do
   pool <- getPool
+  poolConfig <- ask @PoolConfig
   liftIO $! System.createDirectoryIfMissing True dir
   liftIO . putStrLn $! "🔎  Searching cabal files in " <> dir
   let displayCount =
@@ -40,18 +43,21 @@ importAllFilesInDirectory appLogger user dir directImport = do
                   when (currentCount `mod` 400 == 0) $
                     displayStats currentCount
                   return currentCount
-  processedPackageCount <- liftIO $! S.fold displayCount $! S.fromAsync $! S.mapM (processFile pool) $! findAllCabalFilesInDirectory dir
+  processedPackageCount <-
+    withWorkerDbPool $ \wq ->
+      liftIO $! S.fold displayCount $! S.fromAsync $! S.mapM (processFile wq pool poolConfig) $! findAllCabalFilesInDirectory dir
   displayStats processedPackageCount
   Update.refreshLatestVersions >> Update.refreshDependents
   where
-    processFile pool =
+    processFile wq pool poolConfig =
       runEff
+        . runReader poolConfig
         . runDB pool
         . runCurrentTimeIO
         . Log.runLog "flora-jobs" appLogger defaultLogLevel
         . ( loadAndExtractCabalFile user >=> \importedPackage ->
               if directImport
-                then persistImportOutput importedPackage
+                then persistImportOutput wq importedPackage
                 else enqueueImportJob importedPackage
           )
     displayStats :: MonadIO m => Int -> m ()

@@ -30,6 +30,7 @@ import GHC.Generics
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
   { pool :: Pool PG.Connection
+  , dbConfig :: PoolConfig
   , jobsPool :: Pool PG.Connection
   , httpPort :: Word16
   , domain :: Text
@@ -41,8 +42,9 @@ data FloraEnv = FloraEnv
   deriving stock (Generic)
 
 data TestEnv = TestEnv
-  { httpPort :: Word16
-  , pool :: Pool PG.Connection
+  { pool :: Pool PG.Connection
+  , dbConfig :: PoolConfig
+  , httpPort :: Word16
   }
   deriving stock (Generic)
 
@@ -72,6 +74,7 @@ configToEnv floraConfig = do
   pure
     FloraEnv
       { pool = pool
+      , dbConfig = floraConfig.dbConfig
       , jobsPool = jobsPool
       , httpPort = floraConfig.httpPort
       , domain = floraConfig.domain

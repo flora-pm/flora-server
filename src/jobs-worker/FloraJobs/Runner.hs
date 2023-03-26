@@ -19,7 +19,7 @@ import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 import System.Process.Typed qualified as System
 
-import Flora.Import.Package (coreLibraries, persistImportOutput)
+import Flora.Import.Package (coreLibraries, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
@@ -60,7 +60,9 @@ runner job = localDomain "job-runner" $
       FetchUploadTime x -> fetchUploadTime x
       FetchChangelog x -> fetchChangeLog x
       ImportHackageIndex _ -> fetchNewIndex
-      ImportPackage x -> persistImportOutput x
+      ImportPackage x ->
+        withWorkerDbPool $ \wq ->
+          persistImportOutput wq x
       FetchPackageDeprecationList -> fetchPackageDeprecationList
       FetchReleaseDeprecationList packageName releases ->
         fetchReleaseDeprecationList packageName releases
