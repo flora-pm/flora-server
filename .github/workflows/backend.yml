@@ -56,9 +56,8 @@ jobs:
 
     - uses: actions/setup-node@v3
       with:
-        node-version: '14'
+        node-version: '18'
         cache: 'yarn'
-        cache-dependency-path: assets/yarn.lock
 
     - name: Configure environment
       run: |
