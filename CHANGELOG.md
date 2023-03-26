@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.0.12 -- XXXX-XX-XX
+
+* Limit the display of versions on package pages ([#358](https://github.com/flora-pm/flora-server/pull/361))
+
 ## 1.0.11 -- 2023-03-26
 
 * Tweak the mobile view dropdown & search ([#358](https://github.com/flora-pm/flora-server/pull/358))
