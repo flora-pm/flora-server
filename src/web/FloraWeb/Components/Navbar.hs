@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module FloraWeb.Components.Navbar where
 
 import Control.Monad.Reader (ask, asks)
@@ -10,22 +12,19 @@ import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User (User (..), UserFlags (..))
 import FloraWeb.Components.Utils
 import FloraWeb.Templates.Types
+import PyF (str)
 
 navbar :: FloraHTML
 navbar = do
   ActiveElements{aboutNav, packagesNav} <- asks activeElements
-  let menuClasses =
-        "md:flex flex md:items-center "
-          <> "flex flex-col md:flex-row absolute md:relative top-[100%] left-0 w-full md:w-auto md:top-0"
-
-  nav_ [class_ "top-navbar", xData_ "{menuOpen: false}"] $! do
+  nav_ [class_ "top-navbar"] $! do
     div_ [class_ "navbar-content"] $! do
+      navbarDropdown aboutNav packagesNav
       div_ [class_ "navbar-left"] $! do
         brand
         navbarSearch
-
-      div_ [class_ (menuClasses <> " navbar-right"), xBind_ "class" "!menuOpen ? 'hidden' : ''"] $! do
-        navBarLink " main-page-button" "/" "Search on Flora" False
+      div_ [class_ "navbar-right"] $! do
+        navBarLink "navbar-menu-button" "/" "Search on Flora" False
         navBarLink' "/about" "About" aboutNav
         navBarLink' "/categories" "Categories" packagesNav
         navBarLink' "/packages" "Packages" packagesNav
@@ -34,11 +33,52 @@ navbar = do
 
 brand :: FloraHTML
 brand = do
-  -- Don't touch the .hidden
-  div_ [class_ "hidden brand"] $
+  div_ [class_ "brand"] $
     link defaultLinkOptions{href = "/", classes = "", childNode = text "Flora :: [Package]"}
-  div_ [class_ "brand-menu", xOn_ "click.prevent" "menuOpen = !menuOpen"] $
-    link defaultLinkOptions{href = "/", classes = "", childNode = text "☰ Flora"}
+
+navbarDropdown :: Bool -> Bool -> FloraHTML
+navbarDropdown aboutNav packagesNav = do
+  let xData =
+        [str|
+    {
+      open: false,
+      toggle() {
+        this.open = this.open ? this.close() : true
+      },
+      close() {
+        this.open = false;
+      }
+    }
+  |]
+
+  div_
+    [ class_ "navbar-dropdown"
+    , xData_ xData
+    , xOn_ "keydown.escape.prevent.stop" "close()"
+    , xId_ "['dropdown-button']"
+    ]
+    $! do
+      button_
+        [ class_ "navbar-dropdown__button"
+        , type_ "button"
+        , xOn_ "click" "toggle()"
+        , ariaExpanded_ "open"
+        , ariaControls_ "$id('dropdown-button')"
+        ]
+        $ text "☰ Flora"
+      div_
+        [ class_ "navbar-dropdown__menu"
+        , xShow_ "open"
+        , xOn_ "click.outside" "close()"
+        , id'_ "$id('dropdown-button')"
+        ]
+        $! do
+          navBarLink "navbar-menu-button" "/" "Search on Flora" False
+          navBarLink' "/about" "About" aboutNav
+          navBarLink' "/categories" "Categories" packagesNav
+          navBarLink' "/packages" "Packages" packagesNav
+          -- userMenu
+          themeToggle
 
 navBarLink
   :: Text
@@ -52,7 +92,9 @@ navBarLink
   -> FloraHTML
 navBarLink additionalClasses href label isActive' =
   let baseClasses = "navbar-link "
-   in a_ [href_ href, class_ (baseClasses <> additionalClasses <> " " <> isActive isActive')] (text label)
+   in a_
+        [href_ href, class_ (baseClasses <> " " <> additionalClasses <> " " <> isActive isActive')]
+        (text label)
 
 navBarLink' :: Text -> Text -> Bool -> FloraHTML
 navBarLink' = navBarLink ""

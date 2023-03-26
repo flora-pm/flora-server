@@ -33,6 +33,7 @@
 }
 
 .package-body {
+  justify-content: center;
   display: grid;
   grid-template-columns: 25% 1fr 25%;
   grid-gap: 10px;
@@ -196,14 +197,7 @@
   }
 }
 
-@media (min-width: 1024px) {
-  .package-body {
-    justify-content: center;
-    align-items: flex-start;
-  }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 47rem) {
   .package-body {
     grid-template-columns: repeat(1, 1fr);
 
