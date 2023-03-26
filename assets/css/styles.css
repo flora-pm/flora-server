@@ -20,6 +20,15 @@ body {
   color: var(--text-color);
 }
 
+.container {
+  width: auto;
+  max-width: 1300px;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
 summary.package-component {
   cursor: pointer;
   font-size: 1.25rem;
@@ -194,8 +203,12 @@ a {
   text-decoration: underline;
 }
 
-.dependency a:hover {
-  text-decoration: underline;
+.dependency {
+  white-space: nowrap;
+
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
 .release a:hover {
@@ -221,6 +234,10 @@ a {
     height: 4rem;
     display: flex;
 
+    .navbar-dropdown {
+      display: none;
+    }
+
     .navbar-left {
       display: flex;
       align-items: center;
@@ -235,42 +252,44 @@ a {
     }
 
     .brand {
+      display: flex;
       flex-shrink: 0;
       border-bottom-width: 4px;
       padding-bottom: 0.5rem; /* 8px */
       border-color: var(--brand-border);
-    }
 
-    .brand a {
-      color: rgb(255 255 255);
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .brand-menu {
-      flex-shrink: 0;
-    }
-
-    .brand-menu a {
-      color: rgb(255 255 255);
-      font-weight: 700;
-      text-decoration: none;
+      a {
+        color: rgb(255 255 255);
+        font-weight: 700;
+        text-decoration: none;
+      }
     }
   }
 
   .navbar-right {
+    align-items: center;
     background-color: var(--navbar-background-color);
+    display: flex;
+    flex-direction: row;
+    left: 0;
+    position: relative;
+    top: 0;
+    width: auto;
 
-    .navbar-link {
-      display: inline-flex;
-      color: rgb(255 255 255);
-      font-weight: 700;
-      padding-top: 0.75rem;
-      padding-bottom: 0.75rem;
-      align-items: center;
-      margin-left: 1rem;
-      margin-right: 1rem;
+    .navbar-menu-button {
+      display: none;
     }
+  }
+
+  .navbar-link {
+    display: inline-flex;
+    color: rgb(255 255 255);
+    font-weight: 700;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    align-items: center;
+    margin-left: 1rem;
+    margin-right: 1rem;
   }
 
   .navbar-search {
@@ -460,12 +479,6 @@ section#main-page-buttons {
     margin-left: 9px;
     margin-right: 9px;
     border-radius: 50rem;
-
-    /*
-  }
-    width: 400px;
-    height: 112px;
-    */
   }
 
   .button:hover {
@@ -526,6 +539,8 @@ section#main-page-buttons {
 .about-page__title {
   letter-spacing: -0.025rem;
   font-weight: 800;
+  font-size: 3.75rem;
+  line-height: 1;
 }
 
 .about-page__subtitle {
@@ -580,42 +595,12 @@ section#main-page-buttons {
   }
 }
 
-/* Large display rules */
-@media (min-width: 1024px) {
-  .container {
-    width: auto;
-    max-width: 1300px;
-    padding-right: 15px;
-    padding-left: 15px;
-    margin-right: auto;
-    margin-left: auto;
-  }
+/* Media Query Breakpoints */
 
-  .dependency {
-    white-space: nowrap;
-  }
+/* Large rule is default */
 
-  .about-page__title {
-    font-size: 3.75rem;
-    line-height: 1;
-  }
-
-  .brand-menu {
-    display: none;
-  }
-
-  .brand {
-    display: flex;
-  }
-
-  .top-navbar .navbar-content .navbar-right .main-page-button {
-    display: none;
-  }
-}
-
-/* Smol display rulz */
-
-@media (max-width: 1024px) {
+/* Medium rules */
+@media (max-width: 48rem) {
   .page-title {
     h1 {
       font-size: 2rem;
@@ -623,12 +608,7 @@ section#main-page-buttons {
   }
 
   .main-search {
-    margin-left: 10px;
-    margin-right: 10px;
-
-    input.search-bar {
-      padding-left: 5rem;
-    }
+    align-items: center;
   }
 
   .about-page {
@@ -651,12 +631,38 @@ section#main-page-buttons {
 
   .top-navbar {
     .navbar-content {
+      display: flex;
       padding-left: 1rem;
       padding-right: 1rem;
-    }
 
-    .navbar-left {
-      display: none;
+      .navbar-left {
+        display: none;
+      }
+
+      .navbar-right {
+        display: none;
+      }
+
+      .navbar-dropdown {
+        align-items: center;
+        display: flex;
+
+        .navbar-dropdown__button {
+          color: rgb(255 255 255);
+          font-weight: 700;
+          text-decoration: none;
+        }
+
+        .navbar-dropdown__menu {
+          background-color: var(--navbar-background-color);
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          left: 0;
+          top: 100%;
+          position: absolute;
+        }
+      }
     }
   }
 

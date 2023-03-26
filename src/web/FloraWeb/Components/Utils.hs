@@ -30,3 +30,16 @@ defaultLinkOptions =
     , classes = ""
     , childNode = mempty
     }
+
+-- Prefer these ones as they are integrated with AlpineJS
+ariaControls_ :: Text -> Attribute
+ariaControls_ = makeAttribute ":aria-controls"
+
+ariaExpanded_ :: Text -> Attribute
+ariaExpanded_ = makeAttribute ":aria-expanded"
+
+xId_ :: Text -> Attribute
+xId_ = makeAttribute "x-id"
+
+id'_ :: Text -> Attribute
+id'_ = makeAttribute ":id"
