@@ -27,9 +27,6 @@ test-show-details: direct
 package *
   ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
 
-package pg-entity
-  flags: -prod
-
 package warp
   flags: -x509
 

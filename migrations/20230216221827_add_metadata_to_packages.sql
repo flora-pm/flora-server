@@ -1,7 +1,7 @@
 -- migrate:up
 
 alter table packages
-    add metadata jsonb; -- { deprecation }
+    add metadata jsonb default '{}'; -- { deprecation }
 
 -- migrate:down
 -- alter table packages

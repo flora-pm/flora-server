@@ -5,7 +5,7 @@
     "@fullhuman/postcss-purgecss": "^4.0.3",
     "@ryangjchandler/alpine-clipboard": "^2.1.0",
     "@tailwindcss/nesting": "^0.0.0-insiders.565cd3e",
-    "alpinejs": "^3.9.6",
+    "alpinejs": "^3.12.0",
     "autoprefixer": "^10.4.0",
     "chokidar": "^3.5.3",
     "concurrently": "^6.4.0",
