@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: fourmolu/fourmolu-action@v6
+    - uses: fourmolu/fourmolu-action@v7
       with:
         pattern: |
           src/**/*.hs
