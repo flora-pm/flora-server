@@ -12,7 +12,7 @@ clean: ## Remove the cabal build artifacts
 	@cabal clean
 
 assets-deps: ## Install the dependencies of the frontend
-	@cd assets/ && yarn
+	@cd assets/ && yarn install --immutable --immutable-cache --check-cache
 
 build-assets: assets-deps ## Build the web assets
 	@cd assets/ && yarn build
