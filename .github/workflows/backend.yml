@@ -58,6 +58,7 @@ jobs:
       with:
         node-version: '18'
         cache: 'yarn'
+        cache-dependency-path: assets/yarn.lock
 
     - name: Configure environment
       run: |
