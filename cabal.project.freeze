@@ -219,6 +219,7 @@ constraints: any.Cabal ==3.8.1.0,
              any.pg-transact ==0.3.2.0,
              any.pg-transact-effectful ==0.0.1.0,
              any.pipes ==4.3.16,
+             any.poolboy ==0.2.1.0,
              any.postgresql-libpq ==0.9.5.0,
              postgresql-libpq -use-pkg-config,
              any.postgresql-migration ==0.2.1.6,
@@ -371,4 +372,4 @@ constraints: any.Cabal ==3.8.1.0,
              any.xml-types ==0.3.8,
              any.zlib ==0.6.3.0,
              zlib -bundled-c-zlib -non-blocking-ffi -pkg-config
-index-state: hackage.haskell.org 2023-03-21T21:20:54Z
+index-state: hackage.haskell.org 2023-04-02T07:59:28Z

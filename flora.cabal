@@ -153,6 +153,7 @@ library
     , pg-transact
     , pg-transact-effectful
     , postgresql-simple
+    , poolboy == 0.2.*
     , pretty
     , resource-pool
     , servant-lucid

@@ -3,6 +3,7 @@
 ## 1.0.12 -- XXXX-XX-XX
 
 * Limit the display of versions on package pages ([#358](https://github.com/flora-pm/flora-server/pull/361))
+* Speed-up package(s) import using bounded concurrency ([#360](https://github.com/flora-pm/flora-server/pull/360))
 
 ## 1.0.11 -- 2023-03-26
 
