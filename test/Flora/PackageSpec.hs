@@ -138,7 +138,7 @@ testBytestringDependents :: TestEff ()
 testBytestringDependents = do
   results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") 1
   assertEqual
-    21
+    22
     (Vector.length results)
 
 testNoSelfDependent :: TestEff ()
