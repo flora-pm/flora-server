@@ -1,9 +1,10 @@
 # CHANGELOG
 
-## 1.0.12 -- XXXX-XX-XX
+## 1.0.12 -- 2023-04-04
 
 * Limit the display of versions on package pages ([#358](https://github.com/flora-pm/flora-server/pull/361))
 * Speed-up package(s) import using bounded concurrency ([#360](https://github.com/flora-pm/flora-server/pull/360))
+* Fix the display of latest viable version when viewing a deprecated release ([fd96294](https://github.com/flora-pm/flora-server/commit/fd962942d8b029083b0d883167bfff2913bf18fd))
 
 ## 1.0.11 -- 2023-03-26
 
