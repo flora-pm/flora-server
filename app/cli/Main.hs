@@ -7,6 +7,7 @@ import DesignSystem (generateComponents)
 import Effectful
 import Effectful.Fail
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static (Reader, runReader)
 import Flora.Model.User.Query qualified as Query
 import GHC.Generics (Generic)
 import Log.Backend.StandardOutput qualified as Log
@@ -14,6 +15,7 @@ import Optics.Core
 import Options.Applicative
 
 import Flora.Environment
+import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Model.User
@@ -50,7 +52,8 @@ main = do
   result <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv & runFailIO & runEff
   runEff
-    . runDB (env ^. #pool)
+    . runReader env.dbConfig
+    . runDB env.pool
     . runFailIO
     $ runOptions result
 
@@ -89,7 +92,7 @@ parseGenDesignSystem = pure GenDesignSystemComponents
 parseImportPackages :: Parser Command
 parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
 
-runOptions :: (DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
+runOptions :: (Reader PoolConfig :> es, DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
 runOptions (Options (CreateUser opts)) = do
@@ -111,7 +114,7 @@ runOptions (Options (CreateUser opts)) = do
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path)) = importFolderOfCabalFiles path
 
-importFolderOfCabalFiles :: (DB :> es, IOE :> es) => FilePath -> Eff es ()
+importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Eff es ()
 importFolderOfCabalFiles path = Log.withStdOutLogger $ \appLogger -> do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
   importAllFilesInRelativeDirectory appLogger (user ^. #userId) path True

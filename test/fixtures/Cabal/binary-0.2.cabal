@@ -1,0 +1,20 @@
+name:            binary
+version:         0.2
+x-revision: 1
+license:         BSD3
+license-file:    LICENSE
+author:          Lennart Kolmodin <kolmodin@dtek.chalmers.se>
+maintainer:      Lennart Kolmodin
+description:     Efficient, pure binary serialisation using lazy ByteStrings
+synopsis:        Binary serialization using lazy ByteStrings
+category:        Data, Parsing
+build-depends:   base < 4.3
+-- ghc 6.4 also needs package fps
+exposed-modules: Data.Binary,
+                 Data.Binary.Put,
+                 Data.Binary.Get,
+                 Data.Binary.Builder
+extensions:      ForeignFunctionInterface,CPP,FlexibleInstances
+hs-source-dirs:  src
+ghc-options:     -O2 -Wall -Werror -fliberate-case-threshold=1000
+extra-source-files: README 

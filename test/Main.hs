@@ -5,12 +5,12 @@ import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time
 import Log.Backend.StandardOutput qualified as Log
 import Log.Data
-import Optics.Core
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
 import Effectful.Fail (runFailIO)
 import Effectful.Log qualified as Log
+import Effectful.Reader.Static (runReader)
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
@@ -27,14 +27,15 @@ main = do
   fixtures <- runEff $ Log.withStdOutLogger $ \stdOutLogger -> do
     runCurrentTimeIO
     . Log.runLog "flora-test" stdOutLogger LogInfo
-    . runDB (env ^. #pool)
+    . runDB env.pool
+    . runReader env.dbConfig
     . runFailIO
     $ do
       testMigrations
       f' <- getFixtures
       importAllPackages f'
       pure f'
-  spec <- traverse (\comp -> runTestEff comp (env ^. #pool)) (specs fixtures)
+  spec <- traverse (\comp -> runTestEff comp env.pool env.dbConfig) (specs fixtures)
   defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 
 specs :: Fixtures -> [TestEff TestTree]

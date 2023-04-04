@@ -139,7 +139,7 @@ getLatestViableRelease :: Namespace -> PackageName -> Vector Release -> Maybe (N
 getLatestViableRelease namespace packageName releases = do
   releases
     & Vector.filter (\r -> r.metadata.deprecated /= Just True)
-    & Vector.modify (MVector.sortBy (\r1 r2 -> compare r1.version r2.version))
+    & Vector.modify (MVector.sortBy (\r1 r2 -> compare r2.version r1.version))
     & Vector.uncons
     & \case
       Just (x, _) -> Just (namespace, packageName, x.version)

@@ -32,18 +32,20 @@ import Flora.Model.Job ()
 type JobsRunner =
   Eff
     '[ DB
+     , Reader PoolConfig
      , Reader JobsRunnerEnv
      , Log
      , Time
      , IOE
      ]
 
-runJobRunner :: Pool Connection -> JobsRunnerEnv -> Logger -> JobsRunner a -> IO a
-runJobRunner pool runnerEnv logger jobRunner =
+runJobRunner :: Pool Connection -> JobsRunnerEnv -> FloraConfig -> Logger -> JobsRunner a -> IO a
+runJobRunner pool runnerEnv cfg logger jobRunner =
   runEff
     . runCurrentTimeIO
     . LogEff.runLog "flora-jobs" logger defaultLogLevel
     . runReader runnerEnv
+    . runReader cfg.dbConfig
     . runDB pool
     $! jobRunner
 
@@ -87,7 +89,7 @@ makeConfig runnerEnv cfg logger pool runnerContinuation =
     jobTableName
     pool
     (MaxConcurrentJobs 100)
-    (runJobRunner pool runnerEnv logger . runnerContinuation)
+    (runJobRunner pool runnerEnv cfg logger . runnerContinuation)
     (\x -> x{cfgDeleteSuccessfulJobs = False, cfgDefaultMaxAttempts = 3})
 
 makeUIConfig :: FloraConfig -> Logger -> Pool PG.Connection -> UIConfig

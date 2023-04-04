@@ -57,7 +57,7 @@ import Data.Kind
 import Data.List qualified as List
 import Data.Maybe (fromJust)
 import Data.Password.Argon2 (Argon2, PasswordHash, mkPassword)
-import Data.Pool
+import Data.Pool hiding (PoolConfig)
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
@@ -93,7 +93,7 @@ import Test.Tasty.HUnit qualified as Test
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.Log (Log, Logger)
 import Flora.Environment
-import Flora.Environment.Config (LoggingDestination (..))
+import Flora.Environment.Config (LoggingDestination (..), PoolConfig (..))
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Logging qualified as Logging
@@ -105,7 +105,7 @@ import Flora.Publish
 import FloraWeb.Client
 import Log.Backend.StandardOutput qualified as Log
 
-type TestEff = Eff '[Fail, DB, Log, Time, IOE]
+type TestEff = Eff '[Fail, Reader PoolConfig, DB, Log, Time, IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
@@ -125,20 +125,22 @@ importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
     "./test/fixtures/Cabal/"
     True
 
-runTestEff :: TestEff a -> Pool Connection -> IO a
-runTestEff comp pool = runEff $
+runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
+runTestEff comp pool poolCfg = runEff $
   Log.withStdOutLogger $ \stdOutLogger ->
     do
       runCurrentTimeIO
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
+      . runReader poolCfg
       . runFailIO
       $ comp
 
 testThis :: String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
   pool <- getPool
-  let test = runTestEff assertion pool
+  poolCfg <- ask @PoolConfig
+  let test = runTestEff assertion pool poolCfg
   pure $ Test.testCase name test
 
 testThese :: String -> [TestEff TestTree] -> TestEff TestTree
