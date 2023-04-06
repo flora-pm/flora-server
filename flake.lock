@@ -82,38 +82,39 @@
       "inputs": {
         "flake-parts": "flake-parts",
         "get-flake": "get-flake",
-        "horizon-platform": "horizon-platform_2",
+        "horizon-shell-flake": "horizon-shell-flake",
         "lint-utils": "lint-utils",
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1678374258,
-        "narHash": "sha256-TwU2WXuZPVZeWm5pEeZJAUO0AzruD2BNAfAGW4pCK1c=",
+        "lastModified": 1680415413,
+        "narHash": "sha256-wwozvhvXFf4OVBC08A3JfR++/s7Q53RAyjH+OCuMWaU=",
         "ref": "refs/heads/master",
-        "rev": "dd6f40a5f8ecc611a4c7fad39835fe594ce5a2f1",
-        "revCount": 979,
+        "rev": "a4ece36e1a2de7e35fa02ae3254504c71a1d4643",
+        "revCount": 1062,
         "type": "git",
-        "url": "https://gitlab.homotopic.tech/horizon/horizon-platform"
+        "url": "https://gitlab.horizon-haskell.net/package-sets/horizon-platform"
       },
       "original": {
         "type": "git",
-        "url": "https://gitlab.homotopic.tech/horizon/horizon-platform"
+        "url": "https://gitlab.horizon-haskell.net/package-sets/horizon-platform"
       }
     },
-    "horizon-platform_2": {
+    "horizon-shell-flake": {
       "flake": false,
       "locked": {
-        "lastModified": 1677263150,
-        "narHash": "sha256-VS8RQKojTgHgPQQeL9WBIdS2C3nMZ1s7tL1slvm1qfA=",
-        "ref": "refs/heads/master",
-        "rev": "2e6a2ea4546bf344f1b7d671d3006e0cc6be1ca1",
-        "revCount": 947,
+        "lastModified": 1679524452,
+        "narHash": "sha256-xzNxvLVa3o0F/z4CnBDORv2Y6PfxjlGv7b7LybIyCSg=",
+        "ref": "refs/tags/0.0.8",
+        "rev": "21b8913803cefeb287bb244c7ee335638233db7f",
+        "revCount": 21,
         "type": "git",
-        "url": "https://gitlab.homotopic.tech/horizon/horizon-platform"
+        "url": "https://gitlab.horizon-haskell.net/shells/horizon-shell"
       },
       "original": {
+        "ref": "refs/tags/0.0.8",
         "type": "git",
-        "url": "https://gitlab.homotopic.tech/horizon/horizon-platform"
+        "url": "https://gitlab.horizon-haskell.net/shells/horizon-shell"
       }
     },
     "lint-utils": {
