@@ -5,6 +5,9 @@
     horizon-platform.url =
       "git+https://gitlab.horizon-haskell.net/package-sets/horizon-platform";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    # nixos-22.05 provides souffle 2.2; that version does not easily
+    # build on the current pin, so use a separate input for this
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-22.05";
     streamly = {
       url = "github:composewell/streamly";
       flake = false;
@@ -15,13 +18,15 @@
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         pkgs = import nixpkgs { inherit system; };
+        souffle_2_2 = inputs.nixpkgs-stable.legacyPackages.${system}.souffle;
         hsPkgs = with pkgs.haskell.lib;
           horizon-platform.legacyPackages.${system}.override {
             overrides = hfinal: hprev: {
               flora = overrideCabal (dontHaddock (dontCheck
                 (doJailbreak (hfinal.callCabal2nix "flora" ./. { })))) (drv: {
                   preConfigure = ''
-                    cd cbits; ${pkgs.souffle}/bin/souffle -g categorise.{cpp,dl}
+                    cd cbits
+                    ${pkgs.lib.getExe souffle_2_2} -g categorise.{cpp,dl}
                     cd ..
                   '';
                 });
@@ -46,7 +51,23 @@
             program = "${hsPkgs.flora}/bin/flora-cli";
           };
         };
-        devShells.default = hsPkgs.flora.env;
+        devShells.default = hsPkgs.shellFor {
+          packages = p: [ p.flora ];
+          nativeBuildInputs = with pkgs; [
+            cabal-install
+            ghcid
+            hlint
+            hsPkgs.apply-refact
+            hsPkgs.fourmolu
+            hsPkgs.postgresql-migration
+            postgresql_14
+            souffle_2_2
+          ];
+          shellHook = ''
+            source ./environment.sh
+            cat ./scripts/shell-welcome.txt
+          '';
+        };
         packages.default = hsPkgs.flora;
       });
 }
