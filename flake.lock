@@ -225,15 +225,15 @@
       "locked": {
         "lastModified": 1680368030,
         "narHash": "sha256-3MY2l3Niwno7ZmiRAoSUjocQvTWzJ5VdmspXZFF5FDc=",
-        "ref": "refs/heads/master",
+        "owner": "blackheaven",
+        "repo": "poolboy",
         "rev": "dadf6504bc5c8c50ba6a8cf387eb4974e055f533",
-        "revCount": 11,
-        "type": "git",
-        "url": "https://github.com/blackheaven/poolboy"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "https://github.com/blackheaven/poolboy"
+        "owner": "blackheaven",
+        "repo": "poolboy",
+        "type": "github"
       }
     },
     "root": {
@@ -250,15 +250,15 @@
       "locked": {
         "lastModified": 1679066570,
         "narHash": "sha256-mMZi6Uo0bA+fERInii28Ok2ZvzSmQH2XPQ76gBZJRD4=",
-        "ref": "refs/heads/master",
+        "owner": "composewell",
+        "repo": "streamly",
         "rev": "7e80fa90885745f1ff2711c8b153cd262af148a1",
-        "revCount": 3989,
-        "type": "git",
-        "url": "https://github.com/composewell/streamly"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "https://github.com/composewell/streamly"
+        "owner": "composewell",
+        "repo": "streamly",
+        "type": "github"
       }
     }
   },
