@@ -8,6 +8,7 @@ module FloraJobs.Scheduler
   , scheduleIndexImportJob
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
+  , scheduleRefreshLatestVersions 
   , checkIfIndexImportJobIsNotRunning
   , jobTableName
   --   prefer using smart constructors.
@@ -101,6 +102,17 @@ scheduleReleaseDeprecationListJob pool (package, releaseIds) =
           conn
           jobTableName
           (FetchReleaseDeprecationList package releaseIds)
+    )
+
+scheduleRefreshLatestVersions :: Pool PG.Connection -> IO Job
+scheduleRefreshLatestVersions pool =
+  withResource
+    pool
+    ( \conn -> 
+        createJob
+          conn
+          jobTableName
+          (RefreshLatestVersions)
     )
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool

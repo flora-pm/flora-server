@@ -29,6 +29,7 @@ import FloraWeb.Templates.Admin.Packages qualified as Templates
 import FloraWeb.Templates.Admin.Users qualified as Templates
 import FloraWeb.Templates.Error
 import FloraWeb.Types (fetchFloraEnv)
+import Control.Monad (void)
 
 server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPage
 server cfg env =
@@ -105,12 +106,13 @@ fetchMetadataHandler = do
 
   packagesWithoutDeprecationInformation <- Query.getPackagesWithoutReleaseDeprecationInformation
   liftIO $!
-    forkIO $!
+    forkIO $! do
       Async.forConcurrently_
         packagesWithoutDeprecationInformation
         ( \a -> do
             scheduleReleaseDeprecationListJob jobsPool a
         )
+      void $! scheduleRefreshLatestVersions jobsPool
 
   pure $! redirect "/admin"
 

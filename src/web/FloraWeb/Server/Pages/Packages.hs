@@ -70,7 +70,9 @@ showPackageVersion namespace packageName mversion = do
   templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName
   releases <- Query.getReleases (package.packageId)
-  let latestRelease = maximumBy (compare `on` (.version)) releases
+  let latestRelease = releases
+                        & Vector.filter (\r -> r.metadata.deprecated /= Just True)
+                        & maximumBy (compare `on` (.version))
       version = fromMaybe latestRelease.version mversion
   release <- guardThatReleaseExists namespace packageName version
   numberOfReleases <- Query.getNumberOfReleases package.packageId
