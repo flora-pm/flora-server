@@ -19,7 +19,7 @@ packageLink :: Namespace -> PackageName -> Link
 packageLink namespace packageName =
   links
     // Web.packages
-    // Web.show
+    // Web.showPackage
     /: namespace
     /: packageName
 

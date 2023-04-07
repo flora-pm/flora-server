@@ -18,7 +18,12 @@ data Routes' mode = Routes'
       :: mode
         :- QueryParam "page" Word
           :> Get '[HTML] (Html ())
-  , show
+  , showNamespace
+      :: mode
+        :- Capture "namespace" Namespace
+          :> QueryParam "page" Word
+          :> Get '[HTML] (Html ())
+  , showPackage
       :: mode
         :- Capture "namespace" Namespace
           :> Capture "package" PackageName

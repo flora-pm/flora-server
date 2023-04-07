@@ -2,11 +2,12 @@ module FloraWeb.Templates.Pages.Search where
 
 import Control.Monad (when)
 import Data.Text (Text)
+import Data.Text.Display (display)
 import Data.Vector (Vector)
 import Lucid
 
 import Data.Maybe (fromJust, isJust)
-import Flora.Model.Package (PackageInfo (..))
+import Flora.Model.Package (Namespace, PackageInfo (..))
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Components.PackageListItem
@@ -20,6 +21,14 @@ showAllPackages count currentPage packagesInfo = do
     presentationHeader "Packages" "" count
     div_ [class_ ""] $! packageListing packagesInfo
     paginationNav count currentPage ListAllPackages
+
+showAllPackagesInNamespace :: Namespace -> Word -> Word -> Vector PackageInfo -> FloraHTML
+showAllPackagesInNamespace namespace count currentPage packagesInfo = do
+  div_ [class_ "container"] $! do
+    let title = "Packages in " <> display namespace
+    presentationHeader title "" count
+    div_ [class_ ""] $! packageListing packagesInfo
+    paginationNav count currentPage (ListAllPackagesInNamespace namespace)
 
 showResults :: Text -> Word -> Word -> Maybe PackageInfo -> Vector PackageInfo -> FloraHTML
 showResults searchString count currentPage mExactMatch results = do

@@ -381,6 +381,39 @@ listAllPackages pageNumber =
     |]
           (Only offset)
 
+listAllPackagesInNamespace
+  :: (DB :> es)
+  => Word
+  -> Namespace
+  -> Eff es (Vector PackageInfo)
+listAllPackagesInNamespace pageNumber namespace =
+  dbtToEff $
+    let limit = 30
+        offset = (limit * pageNumber) - limit
+     in query
+          Select
+          [sql|
+    SELECT  lv."namespace"
+          , lv."name"
+          , lv."synopsis"
+          , lv."version"
+          , lv."license"
+          , (1.0::real) as rating
+    FROM latest_versions as lv
+    WHERE lv."namespace" = ?
+    GROUP BY
+        lv."namespace"
+      , lv."name"
+      , lv."synopsis"
+      , lv."version"
+      , lv."license"
+    ORDER BY rating desc, lv."name" asc
+    LIMIT 30
+    OFFSET ?
+    ;
+    |]
+          (namespace, offset)
+
 countPackages :: (DB :> es) => Eff es Word
 countPackages =
   dbtToEff $! do
@@ -408,6 +441,22 @@ countPackagesByName searchString =
         WHERE ? <% lv.name
       |]
         (Only searchString)
+    case result of
+      Just (Only n) -> pure $! fromIntegral n
+      Nothing -> pure 0
+
+countPackagesInNamespace :: (DB :> es) => Namespace -> Eff es Word
+countPackagesInNamespace namespace =
+  dbtToEff $! do
+    (result :: Maybe (Only Int)) <-
+      queryOne
+        Select
+        [sql|
+        SELECT DISTINCT COUNT(*)
+        FROM latest_versions as lv
+        WHERE lv."namespace" = ?
+      |]
+        (Only namespace)
     case result of
       Just (Only n) -> pure $! fromIntegral n
       Nothing -> pure 0

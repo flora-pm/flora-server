@@ -2,6 +2,7 @@
 
 ## 1.0.13 -- XXXX-XX-XX
 * Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
+* Add namespace browsing ([#375](https://github.com/flora-pm/flora-server/pull/375))
 
 ## 1.0.12 -- 2023-04-04
 
