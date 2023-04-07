@@ -66,6 +66,7 @@ data FloraOddJobs
   | ImportPackage ImportOutput
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
+  | RefreshLatestVersions
   deriving stock (Generic)
   deriving anyclass (ToJSON, FromJSON)
 

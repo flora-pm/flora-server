@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.0.13 -- XXXX-XX-XX
+* Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
+
 ## 1.0.12 -- 2023-04-04
 
 * Limit the display of versions on package pages ([#358](https://github.com/flora-pm/flora-server/pull/361))

@@ -66,6 +66,8 @@ runner job = localDomain "job-runner" $
       FetchPackageDeprecationList -> fetchPackageDeprecationList
       FetchReleaseDeprecationList packageName releases ->
         fetchReleaseDeprecationList packageName releases
+      RefreshLatestVersions ->
+        Update.refreshLatestVersions
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =

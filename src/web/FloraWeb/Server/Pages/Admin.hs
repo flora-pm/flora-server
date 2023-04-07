@@ -12,6 +12,7 @@ import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import Servant (HasServer (..), hoistServer)
 
+import Control.Monad (void)
 import Flora.Environment (FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Package.Query qualified as Query
@@ -105,12 +106,13 @@ fetchMetadataHandler = do
 
   packagesWithoutDeprecationInformation <- Query.getPackagesWithoutReleaseDeprecationInformation
   liftIO $!
-    forkIO $!
+    forkIO $! do
       Async.forConcurrently_
         packagesWithoutDeprecationInformation
         ( \a -> do
             scheduleReleaseDeprecationListJob jobsPool a
         )
+      void $! scheduleRefreshLatestVersions jobsPool
 
   pure $! redirect "/admin"
 
