@@ -85,17 +85,19 @@ and communicates with another container for the PostgreSQL database.
 ```bash
 # You need to build the container first. It's gonna take around 13 minutes the first time you build
 $ make docker-build
-# Start the container.
-$ make docker-start
 # Once the containers are running, you can enter the development environment and start hacking
 $ make docker-enter
+$ source environment.docker.sh
 # You'll be in the docker container. Environment variables are automatically set 
 # so you should be able to start Flora
 (docker)$ make start-tmux
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.
+```
 
-# To provision the development database, type:
+To provision the development database, type:
+
+```bash
 $ make docker-enter
 (docker)$ source environment.docker.sh
 (docker)$ make db-drop  # password is 'postgres' by default
