@@ -12,7 +12,8 @@ services:
       - database
 
   database:
-    image: "postgres"
+    # Pinned postgres:14.7
+    image: "postgres@sha256:577d48a963bdd16e8b93e853aa830c78fc4622ebe9717bc95f6736d9aa5003e3"
     container_name: database
     ports:
       - "5432:5432"
