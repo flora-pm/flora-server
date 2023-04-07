@@ -22,7 +22,7 @@ jobs:
           ./get-tested --ubuntu *.cabal >> $GITHUB_OUTPUT          
 
   tests:
-    name: ${{ matrix.ghc }} on ${{ matrix.os }}                                                                         
+    name: Backend ${{ matrix.ghc }} on ${{ matrix.os }}                                                                         
     needs: generateMatrix                                                                                               
     runs-on: ${{ matrix.os }}   
     strategy:                                                                                                           
