@@ -12,6 +12,7 @@ import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import Servant (HasServer (..), hoistServer)
 
+import Control.Monad (void)
 import Flora.Environment (FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Package.Query qualified as Query
@@ -29,7 +30,6 @@ import FloraWeb.Templates.Admin.Packages qualified as Templates
 import FloraWeb.Templates.Admin.Users qualified as Templates
 import FloraWeb.Templates.Error
 import FloraWeb.Types (fetchFloraEnv)
-import Control.Monad (void)
 
 server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPage
 server cfg env =
