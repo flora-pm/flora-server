@@ -155,11 +155,11 @@ library
     , poolboy
     , postgresql-simple
     , pretty
-    , resource-pool
+    , resource-pool >= 0.3.1 && <0.4
     , servant-lucid
     , servant-server
     , slugify
-    , souffle-haskell        ==3.4.0
+    , souffle-haskell        >=3.4.0 && <3.6
     , streamly
     , streamly-core
     , text

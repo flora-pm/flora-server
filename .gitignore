@@ -3,6 +3,7 @@
 *.hp
 .DS_Store
 .envrc
+.direnv
 .hie
 .hspec-failures
 .vscode/
