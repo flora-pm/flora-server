@@ -21,7 +21,7 @@ import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSON
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
 import GHC.Generics
-import Language.Souffle.Interpreted qualified as Souffle
+import Language.Eclair qualified as Eclair
 import Lucid
 import Servant (FromHttpApiData (..))
 import Text.PrettyPrint qualified as PP
@@ -51,7 +51,7 @@ deterministicPackageId (Namespace ns) (PackageName name) =
 
 newtype PackageName = PackageName Text
   deriving stock (Show, Generic)
-  deriving anyclass (Souffle.Marshal)
+  deriving anyclass (Eclair.Marshal)
   deriving
     (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, ToHttpApiData, NFData)
     via Text

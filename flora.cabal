@@ -157,7 +157,7 @@ library
     , servant-lucid
     , servant-server
     , slugify
-    , souffle-haskell        ==3.4.0
+    , eclair-haskell
     , streamly
     , streamly-core
     , text

@@ -8,7 +8,7 @@ import Data.Text.Display
 import Data.Text.Encoding qualified as T
 import Data.Text.Internal.Builder qualified as TB
 import GHC.Generics
-import Language.Souffle.Interpreted qualified as Souffle
+import Language.Eclair qualified as Eclair
 import System.IO (stderr)
 
 type CName = Text
@@ -16,35 +16,35 @@ type CName = Text
 -- | This is a tag for our datalog program
 data Categoriser = Categoriser
   deriving
-    (Souffle.Program)
-    via Souffle.ProgramOptions Categoriser "categorise" '[UserPackageCategory, NormalisedPackageCategory, NormaliseIssue]
+    (Eclair.Program)
+    via Eclair.ProgramOptions Categoriser "categorise" '[UserPackageCategory, NormalisedPackageCategory, NormaliseIssue]
 
 -- | A package name and category provided by users. Input to our program.
 data UserPackageCategory = UserPackageCategory Text
-  deriving anyclass (Souffle.Marshal)
+  deriving anyclass (Eclair.Marshal)
   deriving stock (Generic, Eq, Show)
   deriving
-    (Souffle.Fact)
-    via Souffle.FactOptions UserPackageCategory "user_package_category" 'Souffle.Input
+    (Eclair.Fact)
+    via Eclair.FactOptions UserPackageCategory "user_package_category" 'Eclair.Input
 
 instance Display UserPackageCategory where
   displayBuilder (UserPackageCategory txt) = TB.fromText txt
 
 -- | A normalised pair of package name and category. Output to our program.
 data NormalisedPackageCategory = NormalisedPackageCategory CName
-  deriving anyclass (Souffle.Marshal, FromJSON, ToJSON)
+  deriving anyclass (Eclair.Marshal, FromJSON, ToJSON)
   deriving stock (Generic, Eq, Show)
   deriving
-    (Souffle.Fact)
-    via Souffle.FactOptions NormalisedPackageCategory "normalised_package_category" 'Souffle.Output
+    (Eclair.Fact)
+    via Eclair.FactOptions NormalisedPackageCategory "normalised_package_category" 'Eclair.Output
 
 -- | A report that arises if no normalisation could be done.
 data NormaliseIssue = NormaliseIssue CName
-  deriving anyclass (Souffle.Marshal)
+  deriving anyclass (Eclair.Marshal)
   deriving stock (Generic, Eq, Show)
   deriving
-    (Souffle.Fact)
-    via Souffle.FactOptions NormaliseIssue "normalise_issue" 'Souffle.Output
+    (Eclair.Fact)
+    via Eclair.FactOptions NormaliseIssue "normalise_issue" 'Eclair.Output
 
 instance Display NormaliseIssue where
   displayBuilder (NormaliseIssue name) = TB.fromText name
@@ -57,28 +57,28 @@ data Results = Results
 
 data SourceCategories = SourceCategories
   deriving
-    (Souffle.Program)
-    via Souffle.ProgramOptions SourceCategories "categorise" '[CanonicalCategory]
+    (Eclair.Program)
+    via Eclair.ProgramOptions SourceCategories "categorise" '[CanonicalCategory]
 
 data CanonicalCategory = CanonicalCategory Text Text Text
-  deriving anyclass (Souffle.Marshal)
+  deriving anyclass (Eclair.Marshal)
   deriving stock (Generic, Eq, Show)
   deriving
-    (Souffle.Fact)
-    via Souffle.FactOptions CanonicalCategory "flora_category" 'Souffle.Output
+    (Eclair.Fact)
+    via Eclair.FactOptions CanonicalCategory "flora_category" 'Eclair.Output
 
 -- | Entrypoint to the Soufflé datalog engine.
 normalise :: [UserPackageCategory] -> IO Results
 normalise input = do
   result <-
     liftIO $
-      Souffle.runSouffle Categoriser $! \case
+      Eclair.withEclair Categoriser $! \case
         Nothing ->
-          error "Failed to load Souffle program!"
+          error "Failed to load Eclair program!"
         Just prog -> do
-          Souffle.addFacts prog input
-          Souffle.run prog
-          Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
+          Eclair.addFacts prog input
+          Eclair.run prog
+          Results <$> Eclair.getFacts prog <*> Eclair.getFacts prog
   if (not . null) result.normalisationIssues
     then do
       logStdErr $! "[!] Could not normalise these categories: " <> display result.normalisationIssues
@@ -87,12 +87,12 @@ normalise input = do
 
 sourceCategories :: IO [CanonicalCategory]
 sourceCategories = do
-  Souffle.runSouffle SourceCategories $! \case
+  Eclair.withEclair SourceCategories $! \case
     Nothing ->
-      error "Failed to load Souffle program!"
+      error "Failed to load Eclair program!"
     Just prog -> do
-      Souffle.run prog
-      Souffle.getFacts prog
+      Eclair.run prog
+      Eclair.getFacts prog
 
 logStdErr :: Text -> IO ()
 logStdErr = S8.hPutStrLn stderr . T.encodeUtf8
