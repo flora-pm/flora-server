@@ -21,7 +21,7 @@ jobs:
           chmod +x get-tested                                                                                           
           ./get-tested --ubuntu *.cabal >> $GITHUB_OUTPUT          
 
-  tests:
+  Backend tests:
     name: Backend ${{ matrix.ghc }} on ${{ matrix.os }}                                                                         
     needs: generateMatrix                                                                                               
     runs-on: ${{ matrix.os }}   
