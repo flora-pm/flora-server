@@ -89,9 +89,9 @@ start-tmux: ## Start a Tmux session with hot code reloading
 	./scripts/start-tmux.sh
 
 datalog: ## Generate the assembly from the LLVM IR of the Datalog file.
-	# Do not use the commented command until éclair has implemented bootstrapping.
-	# cd cbits ; DATALOG_DIR="/home/hecate/Vrac/eclair-lang/cbits" eclair c ./categorise.eclair > categorise.ll
-	@cd cbits ; llc-14 -filetype="asm" categorise.s
+	@# Do not use the commented command until éclair has implemented bootstrapping.
+	@# cd cbits ; DATALOG_DIR="/home/hecate/Vrac/eclair-lang/cbits" eclair c ./categorise.eclair > categorise.ll
+	@cd cbits ; llc-14 -filetype="asm" categorise.ll
 
 tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c

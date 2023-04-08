@@ -14,6 +14,7 @@ _data/
 _database/
 cabal.project.local
 cbits/*.cpp
+cbits/*.s
 dist-newstyle
 environment.local.sh
 environment.test.local.sh
