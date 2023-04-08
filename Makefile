@@ -4,7 +4,7 @@ init: ## Set up git hooks properly - needs calling once when cloning the repo
 start: ## Start flora-server
 	@cabal run exe:flora-server
 
-build: soufflé ## Build the backend
+build: datalog ## Build the backend
 	@cabal build -j -O1
 
 clean: ## Remove the cabal build artifacts
@@ -47,21 +47,21 @@ db-provision: build ## Load the development data in the database
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
 	@cabal run -- flora-cli import-packages ./01-index
 
-repl: soufflé ## Start a cabal REPL
+repl: datalog ## Start a cabal REPL
 	@cabal repl lib:flora
 
 ghci: repl ## Start a cabal REPL (alias for `make repl`)
 
-watch: soufflé ## Load the main library and reload on file change
+watch: datalog ## Load the main library and reload on file change
 	@ghcid --target flora-server -l
 
-test: build soufflé ## Run the test suite
+test: build ## Run the test suite
 	./scripts/run-tests.sh
 
-watch-test: soufflé ## Load the tests in ghcid and reload them on file change
+watch-test: datalog ## Load the tests in ghcid and reload them on file change
 	./scripts/run-tests.sh --watch
 
-watch-server: soufflé ## Start flora-server in ghcid
+watch-server: datalog ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
 
 lint: ## Run the code linter (HLint)
@@ -88,11 +88,10 @@ docker-enter: ## Enter the docker environment
 start-tmux: ## Start a Tmux session with hot code reloading
 	./scripts/start-tmux.sh
 
-soufflé: ## Generate C++ files from the Soufflé Datalog definitions
-	cd cbits ; souffle -g categorise.{cpp,dl}
-datalog: ## Generate the native code from the Datalog files. Do not use it until éclair has implemented bootstrapping.
-	cd cbits ; DATALOG_DIR="/home/hecate/Vrac/eclair-lang/cbits" eclair c ./categorise.eclair > categorise.ll
-	llc-14 -filetype="asm" categorise.s
+datalog: ## Generate the assembly from the LLVM IR of the Datalog file.
+	# Do not use the commented command until éclair has implemented bootstrapping.
+	# cd cbits ; DATALOG_DIR="/home/hecate/Vrac/eclair-lang/cbits" eclair c ./categorise.eclair > categorise.ll
+	@cd cbits ; llc-14 -filetype="asm" categorise.s
 
 tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c
