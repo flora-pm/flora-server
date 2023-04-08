@@ -68,9 +68,7 @@ common common-rts-options
 library
   import:          common-extensions
   import:          common-ghc-options
-  extra-libraries: stdc++
-  cxx-options:     -std=c++17 -Wall -D__EMBEDDED_SOUFFLE__
-  cxx-sources:     cbits/categorise.cpp
+  asm-sources:     ./cbits/categorise.s
   hs-source-dirs:  ./src/core ./src/orphans
 
   -- cabal-fmt: expand src/core

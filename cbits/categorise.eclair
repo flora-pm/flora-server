@@ -2,24 +2,22 @@
 // input : user gives category (1 or more) to each package
 // output : normalised category
 
-.decl user_package_category(category: symbol)
-.input user_package_category
+@def user_package_category(string) input.
 
-.decl normalised_package_category(category: symbol)
-.output normalised_package_category
+@def normalised_package_category(string) output.
+
 normalised_package_category(normalised) :-
   user_package_category(user_category),
   normalise_category(user_category, normalised).
 
-.decl normalise_issue(category: symbol)
-.output normalise_issue
+@def normalise_issue(string) output.
 normalise_issue(category) :-
   user_package_category(category),
   !normalise_category(category, _).
 
 // Allowed flora categories
-.decl flora_category(slug: symbol, name: symbol, synopsis: symbol)
-.output flora_category
+// flora_category(slug, name, synopsis)
+@def flora_category(string, string, string) output.
 flora_category("algorithms", "Algorithms", "Algorithms implemented in Haskell, like sorting, searching").
 flora_category("audio", "Audio", "Process digital signal, make music").
 flora_category("bioinformatics", "Bioinformatics", "Methods and software for the analysis of biological data").
@@ -67,7 +65,8 @@ flora_category("xml", "XML", "Libraries to consume and produce XML documents").
 
 // The actual normalization rules for the categories:
 // The first case returns the name if it already appears in flora_category/3
-.decl normalise_category(user_input: symbol, normalised: symbol)
+// normalise_category(user_input, normalised)
+@def normalise_category(string, string) input.
 normalise_category(X, X) :- flora_category(_, X, _).
 normalise_category("Algorithm", "Algorithms").
 
