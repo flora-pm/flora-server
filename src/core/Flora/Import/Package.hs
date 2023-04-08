@@ -59,8 +59,6 @@ import Effectful.Internal.Monad (unsafeEff_)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Reader.Static (Reader, ask)
-import Effectful.Time (Time)
-import GHC.Stack (HasCallStack)
 import Log qualified
 import OddJobs.Job (createJob)
 import Optics.Core
@@ -163,7 +161,7 @@ versionList =
    * finally, inserting that data into the database
 -}
 importFile
-  :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es, Time :> es)
+  :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
   => UserId
   -> FilePath
   -- ^ The absolute path to the Cabal file
@@ -188,14 +186,14 @@ enqueueImportJob importOutput = do
               (ImportPackage importOutput)
         )
 
-importRelFile :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ()
+importRelFile :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
 
 -- | Loads and parses a Cabal file
 loadFile
-  :: (IOE :> es, Log :> es, Time :> es)
+  :: (IOE :> es, Log :> es)
   => FilePath
   -- ^ The absolute path to the Cabal file
   -> Eff es GenericPackageDescription
@@ -209,7 +207,7 @@ loadFile path = do
   parseString parseGenericPackageDescription path content
 
 parseString
-  :: (HasCallStack, Log :> es, Time :> es)
+  :: (Log :> es)
   => (BS.ByteString -> ParseResult a)
   -- ^ File contents to final value parser
   -> String
@@ -224,7 +222,7 @@ parseString parser name bs = do
       Log.logAttention_ (display $! show err)
       throw $! CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: (DB :> es, IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile :: (IOE :> es, Log :> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
 {-| Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained

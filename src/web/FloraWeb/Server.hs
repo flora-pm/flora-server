@@ -125,9 +125,10 @@ runServer appLogger floraEnv = do
           (floraEnv.jobsPool)
           runner
 
-  forkIO $
-    unsafeEff_ $
-      Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv.environment) appLogger)
+  void $
+    forkIO $
+      unsafeEff_ $
+        Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv.environment) appLogger)
   loggingMiddleware <- Logging.runLog (floraEnv.environment) appLogger WaiLog.mkLogMiddleware
   oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
