@@ -75,44 +75,48 @@ fetchMetadataHandler = do
   session <- getSession
   FloraEnv{jobsPool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
 
-  liftIO $! schedulePackageDeprecationListJob jobsPool
+  liftIO $! void $! schedulePackageDeprecationListJob jobsPool
 
   releasesWithoutReadme <- Query.getPackageReleasesWithoutReadme
   liftIO $!
-    forkIO $!
-      Async.forConcurrently_
-        releasesWithoutReadme
-        ( \(releaseId, version, packagename) -> do
-            scheduleReadmeJob jobsPool releaseId packagename version
-        )
+    void $!
+      forkIO $!
+        Async.forConcurrently_
+          releasesWithoutReadme
+          ( \(releaseId, version, packagename) -> do
+              scheduleReadmeJob jobsPool releaseId packagename version
+          )
 
   releasesWithoutUploadTime <- Query.getPackageReleasesWithoutUploadTimestamp
   liftIO $!
-    forkIO $!
-      Async.forConcurrently_
-        releasesWithoutUploadTime
-        ( \(releaseId, version, packagename) -> do
-            scheduleUploadTimeJob jobsPool releaseId packagename version
-        )
+    void $!
+      forkIO $!
+        Async.forConcurrently_
+          releasesWithoutUploadTime
+          ( \(releaseId, version, packagename) -> do
+              scheduleUploadTimeJob jobsPool releaseId packagename version
+          )
 
   releasesWithoutChangelog <- Query.getPackageReleasesWithoutChangelog
   liftIO $!
-    forkIO $!
-      Async.forConcurrently_
-        releasesWithoutChangelog
-        ( \(releaseId, version, packagename) -> do
-            scheduleChangelogJob jobsPool releaseId packagename version
-        )
+    void $!
+      forkIO $!
+        Async.forConcurrently_
+          releasesWithoutChangelog
+          ( \(releaseId, version, packagename) -> do
+              scheduleChangelogJob jobsPool releaseId packagename version
+          )
 
   packagesWithoutDeprecationInformation <- Query.getPackagesWithoutReleaseDeprecationInformation
   liftIO $!
-    forkIO $! do
-      Async.forConcurrently_
-        packagesWithoutDeprecationInformation
-        ( \a -> do
-            scheduleReleaseDeprecationListJob jobsPool a
-        )
-      void $! scheduleRefreshLatestVersions jobsPool
+    void $!
+      forkIO $! do
+        Async.forConcurrently_
+          packagesWithoutDeprecationInformation
+          ( \a -> do
+              scheduleReleaseDeprecationListJob jobsPool a
+          )
+        void $! scheduleRefreshLatestVersions jobsPool
 
   pure $! redirect "/admin"
 
@@ -120,7 +124,7 @@ indexImportJobHandler :: FloraAdmin ImportIndexResponse
 indexImportJobHandler = do
   session <- getSession
   FloraEnv{jobsPool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
-  liftIO $! scheduleIndexImportJob jobsPool
+  liftIO $! void $! scheduleIndexImportJob jobsPool
   pure $! redirect "/admin"
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdmin
