@@ -42,7 +42,10 @@ paginationNav totalResults currentPage searchAction = do
               }
 
 mkURL :: SearchAction -> Word -> Text
-mkURL ListAllPackages pageNumber = "/" <> toUrlPiece (Links.packageIndexLink pageNumber)
+mkURL ListAllPackages pageNumber =
+  "/" <> toUrlPiece (Links.packageIndexLink pageNumber)
+mkURL (ListAllPackagesInNamespace namespace) pageNumber =
+  "/" <> toUrlPiece (Links.namespaceLink namespace pageNumber)
 mkURL (SearchPackages searchTerm) pageNumber =
   "/" <> toUrlPiece (Links.packageSearchLink searchTerm pageNumber)
 mkURL (DependentsOf namespace packageName) pageNumber =

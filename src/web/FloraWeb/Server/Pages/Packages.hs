@@ -4,10 +4,14 @@ module FloraWeb.Server.Pages.Packages
   )
 where
 
+import Control.Monad (void)
 import Data.Foldable
 import Data.Function
 import Data.Map.Strict as Map
+import Data.Maybe (fromMaybe, isNothing)
+import Data.Text.Display (display)
 import Data.Vector qualified as Vector
+import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
 import Log (object, (.=))
 import Log qualified
@@ -15,10 +19,6 @@ import Lucid
 import Lucid.Orphans ()
 import Servant (ServerT)
 
-import Control.Monad (void)
-import Data.Maybe (fromMaybe, isNothing)
-import Data.Text.Display (display)
-import Distribution.Orphans ()
 import Flora.Logging
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
@@ -38,7 +38,8 @@ server :: ServerT Routes FloraPage
 server =
   Routes'
     { index = indexHandler
-    , show = showHandler
+    , showNamespace = showNamespaceHandler
+    , showPackage = showPackageHandler
     , showVersion = showVersionHandler
     , showDependents = showDependentsHandler
     , showDependencies = showDependenciesHandler
@@ -56,8 +57,16 @@ indexHandler pageParam = do
   (count', results) <- Search.listAllPackages pageNumber
   render templateDefaults $! Search.showAllPackages count' pageNumber results
 
-showHandler :: Namespace -> PackageName -> FloraPage (Html ())
-showHandler namespace packageName = do
+showNamespaceHandler :: Namespace -> Maybe Word -> FloraPage (Html ())
+showNamespaceHandler namespace pageParam = do
+  let pageNumber = fromMaybe 1 pageParam
+  session <- getSession
+  templateDefaults <- fromSession session defaultTemplateEnv
+  (count', results) <- Search.listAllPackagesInNamespace namespace pageNumber
+  render templateDefaults $! Search.showAllPackagesInNamespace namespace count' pageNumber results
+
+showPackageHandler :: Namespace -> PackageName -> FloraPage (Html ())
+showPackageHandler namespace packageName = do
   showPackageVersion namespace packageName Nothing
 
 showVersionHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())

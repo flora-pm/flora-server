@@ -19,12 +19,14 @@ import Flora.Model.Package.Query qualified as Query
 
 data SearchAction
   = ListAllPackages
+  | ListAllPackagesInNamespace Namespace
   | SearchPackages Text
   | DependentsOf Namespace PackageName
   deriving (Eq, Ord, Show)
 
 instance Display SearchAction where
   displayBuilder ListAllPackages = "Packages"
+  displayBuilder (ListAllPackagesInNamespace namespace) = "Packages in " <> displayBuilder namespace
   displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
   displayBuilder (DependentsOf namespace packageName) = "Dependents of " <> displayBuilder namespace <> "/" <> displayBuilder packageName
 
@@ -49,6 +51,29 @@ searchPackageByName pageNumber queryString = do
       ]
 
   count <- Query.countPackagesByName queryString
+  pure (count, results)
+
+listAllPackagesInNamespace :: (DB :> es, Time :> es, Log :> es) => Namespace -> Word -> Eff es (Word, Vector PackageInfo)
+listAllPackagesInNamespace namespace pageNumber = do
+  (results, duration) <- timeAction $! Query.listAllPackagesInNamespace pageNumber namespace
+
+  Log.logInfo "packages-in-namespace" $
+    object
+      [ "namespace" .= namespace
+      , "duration" .= duration
+      , "results_count" .= Vector.length results
+      , "results"
+          .= List.map
+            ( \PackageInfo{namespace = namespace', name, rating} ->
+                object
+                  [ "package" .= formatPackage namespace' name
+                  , "score" .= rating
+                  ]
+            )
+            (Vector.toList results)
+      ]
+
+  count <- Query.countPackagesInNamespace namespace
   pure (count, results)
 
 listAllPackages :: (DB :> es) => Word -> Eff es (Word, Vector PackageInfo)
