@@ -89,7 +89,7 @@ presentationHeader release namespace name synopsis =
   div_ [class_ "divider"] $! do
     div_ [class_ "page-title"] $
       h1_ [class_ "package-title"] $! do
-        span_ [class_ "headline"] $! toHtml (display namespace) <> "/" <> toHtml name
+        span_ [class_ "headline"] $! displayNamespace namespace <> "/" <> toHtml name
         span_ [class_ "version"] $! displayReleaseVersion release.version
     div_ [class_ "synopsis"] $
       p_ [class_ ""] (toHtml synopsis)
@@ -156,6 +156,12 @@ renderDescription input = renderHaddock input
 
 displayReleaseVersion :: Version -> FloraHTML
 displayReleaseVersion = toHtml
+
+displayNamespace :: Namespace -> FloraHTML
+displayNamespace namespace =
+  a_
+    [class_ "", href_ ("/" <> toUrlPiece (Links.namespaceLink namespace 1))]
+    (toHtml $! display namespace)
 
 displayLicense :: SPDX.License -> FloraHTML
 displayLicense license =

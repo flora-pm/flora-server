@@ -18,14 +18,6 @@
   list-style-position: inside;
 }
 
-.package-title {
-  .version {
-    font-size: medium;
-    line-height: 1.3rem;
-    padding-left: 4px;
-  }
-}
-
 .synopsis {
   text-align: center;
   font-size: 1.25rem;
@@ -194,6 +186,18 @@
   .pagination-footer__next {
     border-bottom-right-radius: 0.5rem;
     border-top-right-radius: 0.5rem;
+  }
+}
+
+.package-title {
+  .version {
+    font-size: medium;
+    line-height: 1.3rem;
+    padding-left: 4px;
+  }
+
+  a:hover {
+    text-decoration: underline;
   }
 }
 

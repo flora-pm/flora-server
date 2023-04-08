@@ -15,6 +15,14 @@ import Servant.Links qualified as Links
 links :: Pages.Routes' (Links.AsLink Link)
 links = Links.allFieldLinks
 
+namespaceLink :: Namespace -> Word -> Link
+namespaceLink namespace pageNumber =
+  links
+    // Web.packages
+    // Web.showNamespace
+    /: namespace
+    /: Just pageNumber
+
 packageLink :: Namespace -> PackageName -> Link
 packageLink namespace packageName =
   links
