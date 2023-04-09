@@ -6,22 +6,29 @@
   };
 
   inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     horizon-platform.url =
       "git+https://gitlab.horizon-haskell.net/package-sets/horizon-platform";
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+    pre-commit-hooks.inputs.flake-utils.follows = "flake-utils";
+    pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
 
     # non-nix dependencies
     poolboy.url = "github:blackheaven/poolboy/v0.2.1.0";
     poolboy.flake = false;
   };
-  outputs = inputs@{ flake-utils, horizon-platform, nixpkgs, ... }:
+  outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, pre-commit-hooks, ... }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        src = ./.;
+        pre-commit-check = pre-commit-hooks.lib.${system}.run
+          (import ./nix/pre-commit-config.nix { inherit src; });
         hsPkgs = horizon-platform.legacyPackages.${system}.override {
-          overrides = import ./nix/hspkgs.nix { inherit pkgs inputs; src = ./.; };
+          overrides = import ./nix/hspkgs.nix { inherit src pkgs inputs; };
         };
+        floraShell = import ./nix/shell-config.nix { inherit src pkgs hsPkgs pre-commit-check; };
       in
       {
         apps = rec {
@@ -35,26 +42,18 @@
             name = "flora-cli";
           };
         };
-        formatter = pkgs.nixpkgs-fmt;
-        devShells.default = hsPkgs.shellFor {
-          packages = p: [ p.flora ];
-          nativeBuildInputs = [
-            hsPkgs.apply-refact
-            hsPkgs.fourmolu
-            hsPkgs.haskell-language-server
-            hsPkgs.postgresql-migration
-            pkgs.cabal-install
-            pkgs.ghcid
-            pkgs.hlint
-            pkgs.postgresql_14
-            pkgs.souffle
-          ];
-
-          shellHook = ''
-            source ${./environment.sh}
-            cat ${./scripts/shell-welcome.txt}
-          '';
+        devShells = rec {
+          flora = floraShell;
+          default = flora;
         };
-        packages.default = hsPkgs.flora;
+        packages = rec {
+          inherit (hsPkgs) flora;
+          default = flora;
+        };
+        checks = {
+          inherit (self.packages.${system}) flora;
+          flora-shell = self.devShells.${system}.default;
+          flora-style = pre-commit-check;
+        };
       });
 }

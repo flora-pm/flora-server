@@ -155,7 +155,7 @@ library
     , poolboy
     , postgresql-simple
     , pretty
-    , resource-pool >= 0.3.1 && <0.4
+    , resource-pool          >=0.3.1 && <0.4
     , servant-lucid
     , servant-server
     , slugify

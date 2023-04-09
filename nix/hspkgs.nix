@@ -1,4 +1,4 @@
-{ pkgs, src, inputs }: (hfinal: hprev: with pkgs.haskell.lib; {
+{ pkgs, src, inputs }: (hfinal: _hprev: with pkgs.haskell.lib; {
   flora = overrideCabal (hfinal.callCabal2nix "flora" src { }) (drv: {
     doCheck = true;
 
