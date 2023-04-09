@@ -43,7 +43,7 @@ nix -Lv develop
 We recommend using our proposed `nix` config settings, including the extra binary cache, but ultimately it's up to you
 whether you trust those settings by reacting with `y` on the prompt after running a `nix` command.
 
-> Warning
+> **Warning**
 > accepting binary caches from a flake requires elevated rights for `nix`, only allow it, if you know what you're doing
 
 #### Using `nix` with `direnv`
@@ -91,14 +91,14 @@ to check a single target run
 pre-commit run <target>
 ```
 
-> Note
+> **Note**
 > The available hooks can be found in `./nix/pre-commit-config.nix`
 
 The latter is invoked when calling `git commit`, it will abort the commit, if the linting and formatting does not succeed.
 
 If you want to commit although they do not succeed, pass `--no-verify` to the `git commit` command.
 
-> Warning
+> **Warning**
 > Be careful that this does not mean you get around linting and formatting, as they're checked in `CI`
 
 #### Using `nix` to build and run flora
