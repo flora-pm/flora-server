@@ -1,5 +1,8 @@
 packages: ./
 
+repository hackage.haskell.org
+  url: http://hackage.haskell.org/
+
 with-compiler: ghc-9.4.4
 
 tests: True

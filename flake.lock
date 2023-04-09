@@ -209,25 +209,7 @@
         "flake-utils": "flake-utils",
         "horizon-platform": "horizon-platform",
         "nixpkgs": "nixpkgs_3",
-        "poolboy": "poolboy",
-        "streamly": "streamly"
-      }
-    },
-    "streamly": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1674133089,
-        "narHash": "sha256-6dkGifxXAx34iohci/V9t4YV38a96sTs9bp2YbjQz64=",
-        "owner": "composewell",
-        "repo": "streamly",
-        "rev": "81bfdec2246a38fcda3731289093717f5207d62a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "composewell",
-        "ref": "81bfdec",
-        "repo": "streamly",
-        "type": "github"
+        "poolboy": "poolboy"
       }
     }
   },
