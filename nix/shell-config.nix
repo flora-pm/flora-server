@@ -11,6 +11,8 @@
 
   shellHook = ''
     ${pre-commit-check.shellHook}
+    rm -f ./cbits/categorise.cpp
+    ${pkgs.lib.getExe pkgs.souffle} -g ./cbits/categorise.{cpp,dl}
     source ${src}/environment.sh
     cat ${src}/scripts/shell-welcome.txt
   '';
