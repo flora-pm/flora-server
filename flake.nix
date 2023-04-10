@@ -3,12 +3,11 @@
   nixConfig = {
     extra-substituters = [
       "https://horizon.cachix.org"
-      # this cachix is owned by @MangoIV, contact him with issues
-      "https://flora.cachix.org"
+      "https://flora-pm.cachix.org"
     ];
     extra-trusted-public-keys = [
       "horizon.cachix.org-1:MeEEDRhRZTgv/FFGCv3479/dmJDfJ82G6kfUDxMSAw0="
-      "flora.cachix.org-1:ZrUnT+09aF90+EVSdRPDgA1R7OLq1IUszxE5UqjnSZ4="
+      "flora-pm.cachix.org-1:/6CcPGZqC3kzHk9MKE/soIEKP1BO24L7Y2vx7p1orLM="
     ];
     allow-import-from-derivation = true;
   };
@@ -59,8 +58,8 @@
           default = flora;
         };
         checks = {
-          inherit (self.packages.${system}) flora;
-          flora-shell = self.devShells.${system}.default;
+          flora-tests = self.packages.${system}.flora;
+          flora-shell = self.devShells.${system}.flora;
           flora-style = pre-commit-check;
         };
       });

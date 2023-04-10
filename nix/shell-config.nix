@@ -1,10 +1,7 @@
 { src, pkgs, hsPkgs, pre-commit-check }: hsPkgs.shellFor {
   packages = p: [ p.flora ];
   nativeBuildInputs = [
-    hsPkgs.apply-refact
-    hsPkgs.fourmolu
     hsPkgs.haskell-language-server
-    hsPkgs.hlint
     hsPkgs.postgresql-migration
     pkgs.cabal-install
     pkgs.ghcid
