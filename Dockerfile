@@ -25,8 +25,8 @@ RUN apt install -y nodejs libpq-dev mcpp wget zsh tmux postgresql-client
 RUN corepack enable
 
 # install soufflé
-RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
-RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb
+RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.3/x86_64-ubuntu-2004-souffle-2.3-Linux.deb
+RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.3-Linux.deb
 
 # install Haskell tooling (note that for cabal, it's probably better
 # to run `cabal update` as separate step, as cabal doesn't delete
