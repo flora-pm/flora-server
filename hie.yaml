@@ -1,0 +1,25 @@
+cradle:
+  cabal:
+    - path: "././src/core"
+      component: "lib:flora"
+
+    - path: "././src/orphans"
+      component: "lib:flora"
+
+    - path: "././src/web"
+      component: "flora:lib:flora-web"
+
+    - path: "./src/jobs-worker"
+      component: "flora:lib:flora-jobs"
+
+    - path: "./app/server/Main.hs"
+      component: "flora:exe:flora-server"
+
+    - path: "./app/cli/Main.hs"
+      component: "flora:exe:flora-cli"
+
+    - path: "./app/cli/DesignSystem.hs"
+      component: "flora:exe:flora-cli"
+
+    - path: "./test"
+      component: "flora:test:flora-test"

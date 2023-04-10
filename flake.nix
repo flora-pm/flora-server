@@ -1,55 +1,66 @@
 {
   description = "flora";
-  inputs = {
-    flake-utils = { url = "github:numtide/flake-utils"; };
-    horizon-platform = {
-      url = "git+https://gitlab.horizon-haskell.net/package-sets/horizon-platform";
-    };
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    streamly.url = "git+https://github.com/composewell/streamly";
-    streamly.flake = false;
-    poolboy.url = "git+https://github.com/blackheaven/poolboy";
+  nixConfig = {
+    extra-substituters = [
+      "https://horizon.cachix.org"
+      "https://flora-pm.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "horizon.cachix.org-1:MeEEDRhRZTgv/FFGCv3479/dmJDfJ82G6kfUDxMSAw0="
+      "flora-pm.cachix.org-1:/6CcPGZqC3kzHk9MKE/soIEKP1BO24L7Y2vx7p1orLM="
+    ];
+    allow-import-from-derivation = true;
   };
-  outputs =
-    inputs@{ self, flake-utils, horizon-platform, nixpkgs, ... }:
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    horizon-platform.url =
+      "git+https://gitlab.horizon-haskell.net/package-sets/horizon-platform";
+    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+    pre-commit-hooks.inputs.flake-utils.follows = "flake-utils";
+    pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
+
+    # non-nix dependencies
+    poolboy.url = "github:blackheaven/poolboy/v0.2.1.0";
+    poolboy.flake = false;
+  };
+  outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, pre-commit-hooks, ... }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
-    let
-      pkgs = import nixpkgs { inherit system; };
-      hsPkgs = with pkgs.haskell.lib;
-        horizon-platform.legacyPackages.${system}.override {
-          overrides = hfinal: hprev: rec {
-            flora = overrideCabal
-              (dontHaddock (dontCheck
-                (doJailbreak (hfinal.callCabal2nix "flora" ./. { }))))
-              (drv: {
-                preConfigure = ''
-                  cd cbits; ${pkgs.souffle}/bin/souffle -g categorise.{cpp,dl}
-                  cd ..
-                '';
-              });
-            streamly-core = hfinal.callCabal2nix "streamly-core" "${inputs.streamly}/core/" { };
-            streamly = hfinal.callCabal2nix "streamly" inputs.streamly { };
-            poolboy = hfinal.callCabal2nix "poolboy" inputs.poolboy { };
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        src = ./.;
+        pre-commit-check = pre-commit-hooks.lib.${system}.run
+          (import ./nix/pre-commit-config.nix { inherit src; });
+        hsPkgs = horizon-platform.legacyPackages.${system}.override {
+          overrides = import ./nix/hspkgs.nix { inherit src pkgs inputs; };
+        };
+        floraShell = import ./nix/shell-config.nix { inherit src pkgs hsPkgs pre-commit-check; };
+      in
+      {
+        apps = rec {
+          default = server;
+          server = flake-utils.lib.mkApp {
+            drv = hsPkgs.flora;
+            name = "flora-server";
+          };
+          cli = flake-utils.lib.mkApp {
+            drv = hsPkgs.flora;
+            name = "flora-cli";
           };
         };
-    in
-    {
-      apps = rec {
-        default = server;
-
-        server = {
-          type = "app";
-
-          program = "${hsPkgs.flora}/bin/flora-server";
+        devShells = rec {
+          flora = floraShell;
+          default = flora;
         };
-
-        cli = {
-          type = "app";
-
-          program = "${hsPkgs.flora}/bin/flora-cli";
+        packages = rec {
+          inherit (hsPkgs) flora;
+          default = flora;
         };
-      };
-      devShells.default = hsPkgs.flora.env;
-      packages.default = hsPkgs.flora;
-    });
+        checks = {
+          flora-tests = self.packages.${system}.flora;
+          flora-shell = self.devShells.${system}.flora;
+          flora-style = pre-commit-check;
+        };
+      });
 }

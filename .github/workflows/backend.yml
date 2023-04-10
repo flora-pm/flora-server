@@ -50,8 +50,8 @@ jobs:
       id: setup-haskell
       uses: haskell/actions/setup@v2
       with:
-        ghc-version: "9.2.4"
-        cabal-version: "latest"
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: 'latest'
 
     - uses: actions/setup-node@v3
       with:
@@ -80,7 +80,7 @@ jobs:
       uses: actions/cache@v3.3.1
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ghc-9.2.4-${{ hashFiles('cabal.project.freeze') }}
+        key: ghc-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
 
     - name: Build
       run: |

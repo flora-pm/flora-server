@@ -22,19 +22,127 @@ The following Haskell command-line tools will have to be installed:
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
 
-### Nix Setup
+### Nix
 
-Nix Flakes are a very experimental way to build the application. It is recommended your version of the `nix` tool
-is at least 2.11. Please do not forget to add the appropriate configuration line in order to use flakes, as
-described in the [NixOS Wiki][nix-flakes] page.
+`Flora` provides a `nix` setup to make provisioning a development environment and creating reproducible and simple
+builds. To show all available flake attributes, run
 
-After that, it should be straightforward to run:
-
-```
-$ make nix-shell
+```bash
+nix flake show -Lv --allow-import-from-derivation --fallback
 ```
 
-Contributions on that front are always appreciated. They however need to support the workflow of both Linux and macOS users.
+#### Using `nix` as provider for a development environment
+
+Obtaining a `devShell` which contains all tools for develop `flora`, including correct compiler and haskell tooling
+is as simple as running
+
+```bash
+nix -Lv develop
+```
+
+We recommend using our proposed `nix` config settings, including the extra binary cache, but ultimately it's up to you
+whether you trust those settings by reacting with `y` on the prompt after running a `nix` command.
+
+> **Warning**
+> accepting binary caches from a flake requires elevated rights for `nix`, only allow it, if you know what you're doing
+
+#### Using `nix` with `direnv`
+
+Direnv can drastically reduce development cycles by reducing the amount of times `nix` evaluates the expressions for
+this repository, which is a drastic improvement, especially with `IFD` (which this repo uses due to `callCabal2nix`).
+
+Devshell startup times will be instant if you didn't change anything in the configuration and as long as usual if you
+need to re-evaluate the `nix`-expressions (i.e. on cabal config changes or `nix` changes). 
+
+Find out how to install `direnv` on your machine by visiting [their github](https://github.com/direnv/direnv/).o
+After installing, add a `.envrc` file to the root of the project containing:
+
+```bash
+use flake -Lv --fallback
+```
+
+and run
+
+```bash
+direnv allow
+```
+
+To reload the `direnv` environment, run
+
+```bash
+direnv reload
+```
+
+#### Formatting and Linting with nix and `pre-commit-hooks`
+
+After starting up a `devShell` with `nix develop` or `direnv`, a `shellHook` will run that installs two things
+- a script, called `pre-commit`
+- a pre-commit hook for git
+
+The former can be invoked to run the formatters and linters on the entire project, to check everything, run
+
+```bash
+pre-commit run -a
+```
+
+to check a single check run
+
+```bash
+pre-commit run <check>
+```
+
+> **Note**
+> The available hooks can be found in `./nix/pre-commit-config.nix`
+
+The latter is invoked when calling `git commit`, it will abort the commit, if the linting and formatting does not succeed.
+
+If you want to commit although they do not succeed, pass `--no-verify` to the `git commit` command.
+
+> **Warning**
+> Be careful that this does not mean you get around linting and formatting, as they're checked in `CI`
+
+#### Using `nix` to build and run flora
+
+To verify, that the haskell code builds, the tests pass and the formatting and linting are correct, as well as the nix code
+working, run
+
+```bash
+nix flake check -Lv --allow-import-from-derivation
+```
+
+To build `flora`, invoke
+
+```bash
+nix build -Lv
+```
+
+To run the `cli`, run
+
+```bash
+nix run .#server
+```
+
+To run the server, run
+
+```bash
+nix run .#cli
+```
+
+#### Contributing to our `nix` infrastructure
+
+Contributions to our `nix` infrastructures are always appreciated, however, there are a couple of guidelines
+- don't forget to run formatting and linting (see above for `pre-commit-hooks`)
+- prefer cached derivations, that means:
+  - prefer upstream haskell packages over custom versions- 
+  - prefer frameworks that have reliable and trusted binary caches
+- prefer versions with less IFD:
+  - prefer realized `nix` derivations over `callHackage` over `callCabal2nix`
+  - don't use custom packages if not absolutely necessary
+- locking happens in the `nix` flake 
+  - `nix` provides a native locking mechanism with flakes, we only use that mechanism
+  - if we need a source of a package, we add it as a flake input with `flake = false;`
+  - we don't use any fetcher, if not absolutely needed (e.g. if you need a tarball which is
+    not unpacked, it might sometimes be necessary)
 
 ### Pull Requests
 

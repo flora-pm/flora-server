@@ -3,6 +3,8 @@
 *.hp
 .DS_Store
 .envrc
+.direnv
+.pre-commit-config.yaml
 .hie
 .hspec-failures
 .vscode/
