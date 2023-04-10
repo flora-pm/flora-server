@@ -85,10 +85,10 @@ The former can be invoked to run the formatters and linters on the entire projec
 pre-commit run -a
 ```
 
-to check a single target run
+to check a single check run
 
 ```bash
-pre-commit run <target>
+pre-commit run <check>
 ```
 
 > **Note**
@@ -143,12 +143,6 @@ Contributions to our `nix` infrastructures are always appreciated, however, ther
   - if we need a source of a package, we add it as a flake input with `flake = false;`
   - we don't use any fetcher, if not absolutely needed (e.g. if you need a tarball which is
     not unpacked, it might sometimes be necessary)
-
-Open tasks at the moment of writing include (ordered by priority):
-- support and test on different architectures than `x86_64-linux`
-- build containers for `flora` in `nix`
-- offer easy deployments of `flora` with `nix`
-- switch to [flake-parts](https://flake.parts/)
 
 ### Pull Requests
 
