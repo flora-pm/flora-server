@@ -1,8 +1,15 @@
 {
   description = "flora";
   nixConfig = {
-    extra-substituters = "https://horizon.cachix.org";
-    extra-trusted-public-keys = "horizon.cachix.org-1:MeEEDRhRZTgv/FFGCv3479/dmJDfJ82G6kfUDxMSAw0=";
+    extra-substituters = [
+      "https://horizon.cachix.org"
+      # this cachix is owned by @MangoIV, contact him with issues
+      "https://flora.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "horizon.cachix.org-1:MeEEDRhRZTgv/FFGCv3479/dmJDfJ82G6kfUDxMSAw0="
+      "flora.cachix.org-1:ZrUnT+09aF90+EVSdRPDgA1R7OLq1IUszxE5UqjnSZ4="
+    ];
     allow-import-from-derivation = true;
   };
 
