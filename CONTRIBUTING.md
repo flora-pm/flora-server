@@ -119,13 +119,13 @@ nix build -Lv
 To run the `cli`, run
 
 ```bash
-nix run .#server
+nix run .#cli
 ```
 
 To run the server, run
 
 ```bash
-nix run .#cli
+nix run .#server
 ```
 
 #### Contributing to our `nix` infrastructure
