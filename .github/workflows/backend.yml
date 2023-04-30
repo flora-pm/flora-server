@@ -50,13 +50,13 @@ jobs:
       id: setup-haskell
       uses: haskell/actions/setup@v2
       with:
-        ghc-version: ${{ matrix.ghc }}
-        cabal-version: 'latest'
+        ghc-version: "${{ matrix.ghc }}"
+        cabal-version: "latest"
 
     - uses: actions/setup-node@v3
       with:
-        node-version: '18'
-        cache: 'yarn'
+        node-version: "18"
+        cache: "yarn"
         cache-dependency-path: assets/yarn.lock
 
     - name: Configure environment
@@ -80,7 +80,7 @@ jobs:
       uses: actions/cache@v3.3.1
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ghc-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
+        key: ghc-${{ matrix.ghc }}-${{ hashFiles("cabal.project.freeze") }}
 
     - name: Build
       run: |
