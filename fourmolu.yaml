@@ -8,3 +8,4 @@ haddock-style: multi-line-compact # '--' vs. '{-'
 newlines-between-decls: 1 # number of newlines between top-level declarations
 fixities: []
 function-arrows: leading
+single-constraint-parens: never

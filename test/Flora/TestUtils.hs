@@ -161,7 +161,7 @@ assertBool boolean = liftIO $ Test.assertBool "" boolean
 assertEqual :: (Eq a, Show a) => a -> a -> TestEff ()
 assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 
-assertFailure :: (MonadIO m) => String -> m ()
+assertFailure :: MonadIO m => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
 assertRight :: HasCallStack => Either a b -> TestEff b

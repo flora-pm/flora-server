@@ -137,7 +137,7 @@ mkAdmin AdminCreationForm{username, email, password} = do
   let userFlags = UserFlags{isAdmin = True, canLogin = False}
   pure User{..}
 
-hashPassword :: (IOE :> es) => Password -> Eff es (PasswordHash Argon2)
+hashPassword :: IOE :> es => Password -> Eff es (PasswordHash Argon2)
 hashPassword = Argon2.hashPassword
 
 validatePassword :: Password -> PasswordHash Argon2 -> Bool

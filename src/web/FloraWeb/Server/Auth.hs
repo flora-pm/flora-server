@@ -91,7 +91,7 @@ getSessionId cookies =
         Just sessionId -> pure (Just sessionId)
 
 getInTheFuckingSessionShinji
-  :: (DB :> es)
+  :: DB :> es
   => Maybe PersistentSessionId
   -> Eff es (Maybe PersistentSession)
 getInTheFuckingSessionShinji Nothing = pure Nothing
@@ -116,7 +116,7 @@ lookupUser uid = do
 
 handlerToEff
   :: forall (es :: [Effect]) (a :: Type)
-   . (Error ServerError :> es)
+   . Error ServerError :> es
   => Handler a
   -> Eff es a
 handlerToEff handler = do

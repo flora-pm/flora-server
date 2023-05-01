@@ -76,7 +76,7 @@ listAllPackagesInNamespace namespace pageNumber = do
   count <- Query.countPackagesInNamespace namespace
   pure (count, results)
 
-listAllPackages :: (DB :> es) => Word -> Eff es (Word, Vector PackageInfo)
+listAllPackages :: DB :> es => Word -> Eff es (Word, Vector PackageInfo)
 listAllPackages pageNumber = do
   results <- Query.listAllPackages pageNumber
   count <- Query.countPackages

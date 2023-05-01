@@ -19,7 +19,7 @@ addAdmin form = do
   unlockAccount (adminUser.userId)
   pure adminUser
 
-lockAccount :: (DB :> es) => UserId -> Eff es ()
+lockAccount :: DB :> es => UserId -> Eff es ()
 lockAccount userId = dbtToEff $! void $! execute Update q (Only userId)
   where
     q =
@@ -28,7 +28,7 @@ lockAccount userId = dbtToEff $! void $! execute Update q (Only userId)
         where u.user_id = ?;
       |]
 
-unlockAccount :: (DB :> es) => UserId -> Eff es ()
+unlockAccount :: DB :> es => UserId -> Eff es ()
 unlockAccount userId = dbtToEff $! void $! execute Update q (Only userId)
   where
     q =
@@ -37,8 +37,8 @@ unlockAccount userId = dbtToEff $! void $! execute Update q (Only userId)
         where u.user_id = ?;
       |]
 
-insertUser :: (DB :> es) => User -> Eff es ()
+insertUser :: DB :> es => User -> Eff es ()
 insertUser user = dbtToEff $! insert @User user
 
-deleteUser :: (DB :> es) => UserId -> Eff es ()
+deleteUser :: DB :> es => UserId -> Eff es ()
 deleteUser userId = dbtToEff $! delete @User (Only userId)

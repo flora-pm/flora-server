@@ -111,7 +111,7 @@ defaultsToEnv assets TemplateDefaults{..} =
    in TemplateEnv{..}
 
 fromSession
-  :: (MonadIO m)
+  :: MonadIO m
   => Session
   -> TemplateDefaults
   -> m TemplateEnv

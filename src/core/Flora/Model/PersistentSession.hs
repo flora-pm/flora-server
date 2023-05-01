@@ -55,7 +55,7 @@ newtype SessionData = SessionData {getSessionData :: Map Text Text}
 newPersistentSessionId :: IO PersistentSessionId
 newPersistentSessionId = PersistentSessionId <$> UUID.nextRandom
 
-newPersistentSession :: (Time :> es) => UserId -> PersistentSessionId -> Eff es PersistentSession
+newPersistentSession :: Time :> es => UserId -> PersistentSessionId -> Eff es PersistentSession
 newPersistentSession userId persistentSessionId = do
   createdAt <- Time.getCurrentTime
   let sessionData = SessionData Map.empty
@@ -71,13 +71,13 @@ persistSession persistentSessionId userId = do
   insertSession persistentSession
   pure $! persistentSession.persistentSessionId
 
-insertSession :: (DB :> es) => PersistentSession -> Eff es ()
+insertSession :: DB :> es => PersistentSession -> Eff es ()
 insertSession = dbtToEff . insert @PersistentSession
 
-deleteSession :: (DB :> es) => PersistentSessionId -> Eff es ()
+deleteSession :: DB :> es => PersistentSessionId -> Eff es ()
 deleteSession sessionId = dbtToEff $! delete @PersistentSession (Only sessionId)
 
-getPersistentSession :: (DB :> es) => PersistentSessionId -> Eff es (Maybe PersistentSession)
+getPersistentSession :: DB :> es => PersistentSessionId -> Eff es (Maybe PersistentSession)
 getPersistentSession sessionId = dbtToEff $! selectById @PersistentSession (Only sessionId)
 
 lookup :: Text -> SessionData -> Maybe Text

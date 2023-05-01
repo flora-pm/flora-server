@@ -49,7 +49,7 @@ data TestEnv = TestEnv
   deriving stock (Generic)
 
 mkPool
-  :: (IOE :> es)
+  :: IOE :> es
   => ByteString -- Database access information
   -> NominalDiffTime -- Allowed timeout
   -> Int -- Number of connections

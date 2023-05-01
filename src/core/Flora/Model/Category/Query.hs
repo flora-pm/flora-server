@@ -17,13 +17,13 @@ import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
-getCategoryById :: (DB :> es) => CategoryId -> Eff es (Maybe Category)
+getCategoryById :: DB :> es => CategoryId -> Eff es (Maybe Category)
 getCategoryById categoryId = dbtToEff $! selectById (Only categoryId)
 
-getCategoryBySlug :: (DB :> es) => Text -> Eff es (Maybe Category)
+getCategoryBySlug :: DB :> es => Text -> Eff es (Maybe Category)
 getCategoryBySlug slug = dbtToEff $! selectOneByField [field| slug |] (Only slug)
 
-getCategoryByName :: (DB :> es) => Text -> Eff es (Maybe Category)
+getCategoryByName :: DB :> es => Text -> Eff es (Maybe Category)
 getCategoryByName categoryName = dbtToEff $! selectOneByField [field| name |] (Only categoryName)
 
 getPackagesFromCategorySlug :: (DB :> es, IOE :> es) => Text -> Eff es (Vector Package)
@@ -42,5 +42,5 @@ getPackagesFromCategorySlug slug =
             [field| category_id |]
             categoryId
 
-getAllCategories :: (DB :> es) => Eff es (Vector Category)
+getAllCategories :: DB :> es => Eff es (Vector Category)
 getAllCategories = dbtToEff $! query_ Select (_select @Category)

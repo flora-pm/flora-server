@@ -15,7 +15,7 @@ instance Accept OpenSearchXML where
 instance MimeRender OpenSearchXML XML.Document where
   mimeRender _ = XML.renderLBS def
 
-openSearchHandler :: (Monad m) => m XML.Document
+openSearchHandler :: Monad m => m XML.Document
 openSearchHandler =
   pure $
     openSearchDocument "OpenSearchDescription" $! do

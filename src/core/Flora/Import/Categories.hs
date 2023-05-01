@@ -15,7 +15,7 @@ importCategories = do
   categories <- mapM fromCanonical canonicalCategories
   mapM_ insertCategory categories
 
-fromCanonical :: (IOE :> es) => CanonicalCategory -> Eff es Category
+fromCanonical :: IOE :> es => CanonicalCategory -> Eff es Category
 fromCanonical (CanonicalCategory slug name synopsis) = do
   categoryId <- liftIO mkCategoryId
   pure $! mkCategory categoryId name (Just slug) synopsis

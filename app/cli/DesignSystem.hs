@@ -50,7 +50,7 @@ renderHtml assets template =
   where
     templateEnv = defaultsToEnv assets defaultTemplateEnv
 
-writeComponent :: (IOE :> es) => FilePath -> ComponentTitle -> ComponentName -> TL.Text -> Eff es ()
+writeComponent :: IOE :> es => FilePath -> ComponentTitle -> ComponentName -> TL.Text -> Eff es ()
 writeComponent filename title name html =
   liftIO $
     ByteString.writeFile

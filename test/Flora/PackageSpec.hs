@@ -233,8 +233,8 @@ testReleaseDeprecation = do
 
 ---
 
-countBy :: (Foldable t) => (a -> Bool) -> t a -> Int
+countBy :: Foldable t => (a -> Bool) -> t a -> Int
 countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
 
-countComponentsByType :: (Foldable t) => ComponentType -> t PackageComponent -> Int
+countComponentsByType :: Foldable t => ComponentType -> t PackageComponent -> Int
 countComponentsByType t = countBy (^. #canonicalForm % #componentType % to (== t))

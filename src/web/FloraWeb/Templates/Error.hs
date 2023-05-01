@@ -16,7 +16,7 @@ import Servant (ServerError (..))
 
 renderError
   :: forall (es :: [Effect]) (a :: Type)
-   . (Error ServerError :> es)
+   . Error ServerError :> es
   => TemplateEnv
   -> Status
   -> Eff es a

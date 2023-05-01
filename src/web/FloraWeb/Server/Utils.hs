@@ -25,7 +25,7 @@ redirectWithCookie destination cookie =
 
 handlerToEff
   :: forall (es :: [Effect]) (a :: Type)
-   . (Error ServerError :> es)
+   . Error ServerError :> es
   => Handler a
   -> Eff es a
 handlerToEff handler = do

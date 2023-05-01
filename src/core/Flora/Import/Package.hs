@@ -207,7 +207,7 @@ loadFile path = do
   parseString parseGenericPackageDescription path content
 
 parseString
-  :: (Log :> es)
+  :: Log :> es
   => (BS.ByteString -> ParseResult a)
   -- ^ File contents to final value parser
   -> String
@@ -270,7 +270,7 @@ withWorkerDbPool f = do
  that can later be inserted into the database. This function produces stable, deterministic ids,
  so it should be possible to extract and insert a single package many times in a row.
 -}
-extractPackageDataFromCabal :: (IOE :> es) => UserId -> GenericPackageDescription -> Eff es ImportOutput
+extractPackageDataFromCabal :: IOE :> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags

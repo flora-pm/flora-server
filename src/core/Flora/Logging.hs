@@ -22,7 +22,7 @@ import Flora.Environment.Config
 -- | Wrapper around 'Log.runLogT' with necessary metadata
 runLog
   :: forall (es :: [Effect]) (a :: Type)
-   . (IOE :> es)
+   . IOE :> es
   => DeploymentEnv
   -> Logger
   -> Eff (Log : es) a
@@ -32,14 +32,14 @@ runLog env logger logAction =
   where
     suffix = display env
 
-makeLogger :: (IOE :> es) => LoggingDestination -> (Logger -> Eff es a) -> Eff es a
+makeLogger :: IOE :> es => LoggingDestination -> (Logger -> Eff es a) -> Eff es a
 makeLogger StdOut = Log.withStdOutLogger
 makeLogger Json = Log.withJsonStdOutLogger
 makeLogger JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = "logs/flora.json"}
 
 timeAction
   :: forall (es :: [Effect]) (a :: Type)
-   . (Time :> es)
+   . Time :> es
   => Eff es a
   -> Eff es (a, NominalDiffTime)
 timeAction action = do

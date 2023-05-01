@@ -24,11 +24,11 @@ import FloraWeb.Server.Auth.Types
 import FloraWeb.Types (fetchFloraEnv)
 
 getSession
-  :: (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es)
+  :: Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es
   => Eff es Session
 getSession = asks (getResponse @'[Header "Set-Cookie" SetCookie])
 
-getEnv :: (Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es) => Eff es FloraEnv
+getEnv :: Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es => Eff es FloraEnv
 getEnv = do
   Session{webEnvStore} <- getSession
   unsafeEff_ $! fetchFloraEnv webEnvStore
