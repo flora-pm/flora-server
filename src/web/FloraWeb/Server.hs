@@ -3,8 +3,6 @@ module FloraWeb.Server where
 import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 
--- , hoistServer
-
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
 import Data.Aeson qualified as Aeson
