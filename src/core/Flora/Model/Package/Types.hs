@@ -181,9 +181,8 @@ data Dependent = Dependent
     (Entity)
     via (GenericEntity '[TableName "dependents"] Dependent)
 
-{-| A record specifically crafted for
- templates usage.
--}
+-- | A record specifically crafted for
+--  templates usage.
 data PackageInfo = PackageInfo
   { namespace :: Namespace
   , name :: PackageName

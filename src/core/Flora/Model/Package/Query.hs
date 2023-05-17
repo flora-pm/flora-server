@@ -218,10 +218,9 @@ getRequirements releaseId = do
       ]
   pure result
 
-{-| This query finds all the dependencies of a release,
- and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
- HACK: This query is terrifying, must be optimised by someone who knows their shit.
--}
+-- | This query finds all the dependencies of a release,
+--  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
+--  HACK: This query is terrifying, must be optimised by someone who knows their shit.
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|

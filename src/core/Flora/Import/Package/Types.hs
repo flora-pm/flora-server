@@ -20,9 +20,8 @@ data ImportDependency = ImportDependency
   deriving anyclass (NFData)
   deriving anyclass (FromJSON, ToJSON)
 
-{-| This tuple represents the package that depends on any associated dependency/requirement.
- It is used in the recursive loading of Cabal files
--}
+-- | This tuple represents the package that depends on any associated dependency/requirement.
+--  It is used in the recursive loading of Cabal files
 type DependentName = (Namespace, PackageName)
 
 data ImportOutput = ImportOutput

@@ -221,11 +221,10 @@ getStaticAsset key =
   pure $
     AssetBundle key ""
 
-{-| Get the asset name with its hash
-
- >>> $(getAsset "app.js")
- "app-U6EOZTZG.js"
--}
+-- | Get the asset name with its hash
+--
+--  >>> $(getAsset "app.js")
+--  "app-U6EOZTZG.js"
 getAsset :: (Fail :> es, IOE :> es) => Text -> Eff es AssetBundle
 getAsset key = do
   let path = "./static/manifest.json"

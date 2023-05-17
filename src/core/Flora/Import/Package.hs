@@ -1,21 +1,20 @@
-{-|
-Module: Flora.Import.Package
-
-This module contains all the code to import Cabal packages into Flora. The import process
-for a single package is divided in three consecutive steps:
-
-  1. The Cabal file is read from the file system and parsed into a 'GenericPackageDescription' from the Cabal package
-  2. Relevant data from the Cabal package is extracted and turned into an intermediate representation, 'ImportOutput'
-  3. This 'ImportOutput' is inserted (or more precisely upserted) into the database
-
-We strive to keep step 2 deterministic and side-effect free, besides accessing the current time and logging.
-We also want to keep the import procedure idempotent.
-
-Packages can be imported in any order, even before their dependencies are known. When importing a package,
-any dependency that isn't yet known will be imported as an "unknown package", as indicated by its status field.
-If and when that package is fully imported later, we complete its data and change its status to "fully imported" without
-altering its id.
--}
+-- |
+-- Module: Flora.Import.Package
+--
+-- This module contains all the code to import Cabal packages into Flora. The import process
+-- for a single package is divided in three consecutive steps:
+--
+--   1. The Cabal file is read from the file system and parsed into a 'GenericPackageDescription' from the Cabal package
+--   2. Relevant data from the Cabal package is extracted and turned into an intermediate representation, 'ImportOutput'
+--   3. This 'ImportOutput' is inserted (or more precisely upserted) into the database
+--
+-- We strive to keep step 2 deterministic and side-effect free, besides accessing the current time and logging.
+-- We also want to keep the import procedure idempotent.
+--
+-- Packages can be imported in any order, even before their dependencies are known. When importing a package,
+-- any dependency that isn't yet known will be imported as an "unknown package", as indicated by its status field.
+-- If and when that package is fully imported later, we complete its data and change its status to "fully imported" without
+-- altering its id.
 module Flora.Import.Package where
 
 import Control.DeepSeq (force)
@@ -155,11 +154,10 @@ versionList =
     , Version.mkVersion [7, 10, 3]
     ]
 
-{-| Imports a Cabal file into the database by:
-   * first, reading and parsing the file using 'loadFile'
-   * then, extracting relevant information using 'extractPackageDataFromCabal'
-   * finally, inserting that data into the database
--}
+-- | Imports a Cabal file into the database by:
+--    * first, reading and parsing the file using 'loadFile'
+--    * then, extracting relevant information using 'extractPackageDataFromCabal'
+--    * finally, inserting that data into the database
 importFile
   :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
   => UserId
@@ -225,9 +223,8 @@ parseString parser name bs = do
 loadAndExtractCabalFile :: (IOE :> es, Log :> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
 
-{-| Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
- by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
--}
+-- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
+--  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 persistImportOutput :: (DB :> es, IOE :> es) => Poolboy.WorkQueue -> ImportOutput -> Eff es ()
 persistImportOutput wq (ImportOutput package categories release components) = do
   dbPool <- getPool
@@ -266,10 +263,9 @@ withWorkerDbPool f = do
     Poolboy.withPoolboy (Poolboy.poolboySettingsWith cfg.connections) Poolboy.waitingStopFinishWorkers $ \wq ->
       effIO $ f wq
 
-{-| Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
- that can later be inserted into the database. This function produces stable, deterministic ids,
- so it should be possible to extract and insert a single package many times in a row.
--}
+-- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
+--  that can later be inserted into the database. This function produces stable, deterministic ids,
+--  so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal :: IOE :> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
 extractPackageDataFromCabal userId genericDesc = do
   let packageDesc = genericDesc.packageDescription
@@ -398,9 +394,8 @@ extractBenchmark =
     (^. #benchmarkName % to unUnqualComponentName % to T.pack)
     (^. #benchmarkBuildInfo % #targetBuildDepends)
 
-{-| Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
- to every node, returning a list of 'ImportComponent'
--}
+-- | Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
+--  to every node, returning a list of 'ImportComponent'
 extractCondTree
   :: (Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> component -> ImportComponent)
   -> Package
@@ -419,10 +414,9 @@ extractCondTree extractor package release defaultComponentName = go []
           condIfFalseComponents = maybe [] (go [CNot condBranchCondition]) condBranchIfFalse
        in condIfTrueComponents <> condIfFalseComponents
 
-{-| Cabal often models conditional components as a list of 'CondTree' associated with an 'UnqualComponentName'.
- This function builds upon 'extractCondTree' to make it easier to extract fields such as 'condExecutables', 'condTestSuites' etc.
- from a 'GenericPackageDescription'
--}
+-- | Cabal often models conditional components as a list of 'CondTree' associated with an 'UnqualComponentName'.
+--  This function builds upon 'extractCondTree' to make it easier to extract fields such as 'condExecutables', 'condTestSuites' etc.
+--  from a 'GenericPackageDescription'
 extractCondTrees
   :: (Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> component -> ImportComponent)
   -> Package

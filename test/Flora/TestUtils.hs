@@ -152,12 +152,11 @@ testThese groupName tests = fmap (Test.testGroup groupName) newTests
 assertBool :: Bool -> TestEff ()
 assertBool boolean = liftIO $ Test.assertBool "" boolean
 
-{-| Make sure an expected value is the same as the actual one.
-
- Usage:
-
- >>> assertEqual expected actual
--}
+-- | Make sure an expected value is the same as the actual one.
+--
+--  Usage:
+--
+--  >>> assertEqual expected actual
 assertEqual :: (Eq a, Show a) => a -> a -> TestEff ()
 assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 
