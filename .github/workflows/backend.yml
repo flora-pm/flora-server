@@ -6,25 +6,25 @@ on:
     branches: ["main", "development"]
 
 jobs:
-  generateMatrix:                                                                                                       
-    name: "Generate matrix from cabal"                                                                                  
-    runs-on: ubuntu-latest                                                                                              
-    outputs:                                                                                                            
-      matrix: ${{ steps.set-matrix.outputs.matrix }}                                                                    
-    steps:                                                                                                              
-      - name: Checkout base repo                                                                                        
-        uses: actions/checkout@v3                                                                                       
-      - name: Extract the tested GHC versions                                                                           
-        id: set-matrix                                                                                                  
-        run: |                                                                                                          
+  generateMatrix:
+    name: "Generate matrix from cabal"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout base repo
+        uses: actions/checkout@v3
+      - name: Extract the tested GHC versions
+        id: set-matrix
+        run: |
           wget https://github.com/Kleidukos/get-tested/releases/download/v0.1.4.0/get-tested-0.1.4.0-linux-amd64 -O get-tested
-          chmod +x get-tested                                                                                           
-          ./get-tested --ubuntu *.cabal >> $GITHUB_OUTPUT          
+          chmod +x get-tested
+          ./get-tested --ubuntu *.cabal >> $GITHUB_OUTPUT
 
   Backend_tests:
-    needs: generateMatrix                                                                                               
-    runs-on: ${{ matrix.os }}   
-    strategy:                                                                                                           
+    needs: generateMatrix
+    runs-on: ${{ matrix.os }}
+    strategy:
       matrix: ${{ fromJSON(needs.generateMatrix.outputs.matrix) }}
     # Service containers to run with `container-job`
     services:
@@ -94,7 +94,7 @@ jobs:
         set -x
         source ./environment.ci.sh
         createdb -h "${FLORA_DB_HOST}" -p "${FLORA_DB_PORT}" -U "${FLORA_DB_USER}" -w "${FLORA_DB_DATABASE}"
-        migrate init "${FLORA_DB_CONNSTRING}" 
+        migrate init "${FLORA_DB_CONNSTRING}"
         migrate migrate "${FLORA_DB_CONNSTRING}" migrations
         cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         cabal test
