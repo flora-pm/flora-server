@@ -12,7 +12,7 @@ extra-source-files:
   LICENSE
   README.md
 
-tested-with:        GHC ==9.4.4
+tested-with:        GHC ==9.4.5
 
 source-repository head
   type:     git
@@ -159,7 +159,7 @@ library
     , servant-lucid
     , servant-server
     , slugify
-    , souffle-haskell        >=3.4.0 && <3.6
+    , souffle-haskell        ==3.5.1
     , streamly
     , streamly-core
     , text

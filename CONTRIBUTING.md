@@ -17,6 +17,8 @@ The following Haskell command-line tools will have to be installed:
 * `ghcid`: To automatically reload the Haskell code base upon source changes
 * `ghc-tags`: To generate ctags or etags for the project
 
+You will need the [Soufflé datalog engine v2.3](https://github.com/souffle-lang/souffle/releases/tag/2.3)
+
 (Some of those packages have incompatible dependencies, so don't try to install them all at once with cabal)
 
 * `yarn`: The tool that handles the JavaScript code bases
