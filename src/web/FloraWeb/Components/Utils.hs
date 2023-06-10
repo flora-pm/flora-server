@@ -2,8 +2,18 @@ module FloraWeb.Components.Utils where
 
 import Data.Text (Text)
 import FloraWeb.Templates.Types (FloraHTML)
-import Lucid (Attribute, a_, class_, href_, role_, toHtml)
+import Lucid
 import Lucid.Base (makeAttribute)
+import Lucid.Svg
+  ( d_
+  , fill_
+  , path_
+  , stroke_
+  , stroke_linecap_
+  , stroke_linejoin_
+  , stroke_width_
+  , viewBox_
+  )
 
 text :: Text -> FloraHTML
 text = toHtml
@@ -43,3 +53,28 @@ xId_ = makeAttribute "x-id"
 
 id'_ :: Text -> Attribute
 id'_ = makeAttribute ":id"
+
+data SearchBarOptions = SearchBarOptions
+  { actionUrl :: Text
+  , placeholder :: Text
+  }
+
+searchBar :: SearchBarOptions -> FloraHTML
+searchBar SearchBarOptions{actionUrl, placeholder} =
+  form_ [action_ actionUrl, method_ "GET"] $! do
+    div_ [class_ "main-search"] $! do
+      label_ [for_ "search"] ""
+      input_
+        [ class_
+            "search-bar"
+        , type_ "search"
+        , id_ "search"
+        , name_ "q"
+        , placeholder_ placeholder
+        , value_ ""
+        , tabindex_ "1"
+        , autofocus_
+        ]
+      button_ [type_ "submit"] $
+        svg_ [xmlns_ "http://www.w3.org/2000/svg", style_ "color: gray", fill_ "none", viewBox_ "0 0 24 24", stroke_ "currentColor"] $
+          path_ [stroke_linecap_ "round", stroke_linejoin_ "round", stroke_width_ "2", d_ "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"]

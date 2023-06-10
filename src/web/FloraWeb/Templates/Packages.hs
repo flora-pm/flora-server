@@ -35,14 +35,17 @@ import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requirementListItem)
 import FloraWeb.Components.PaginationNav (paginationNav)
+import FloraWeb.Components.Utils
 import FloraWeb.Components.VersionListHeader qualified as Template
 import FloraWeb.Templates
 
-showDependents :: Namespace -> PackageName -> Text -> Word -> Vector DependencyInfo -> Word -> FloraHTML
-showDependents namespace packageName title count packagesInfo currentPage =
+showDependents :: Namespace -> PackageName -> Word -> Vector DependencyInfo -> Word -> FloraHTML
+showDependents namespace packageName count packagesInfo currentPage = do
+  let title = "Dependents of " <> display namespace <> "/" <> display packageName
   div_ [class_ "container"] $! do
     presentationHeader title "" count
     div_ [class_ ""] $! do
+      searchBar (SearchBarOptions{actionUrl = "", placeholder = ""})
       ul_ [class_ "package-list"] $!
         Vector.forM_
           packagesInfo
@@ -50,7 +53,7 @@ showDependents namespace packageName title count packagesInfo currentPage =
               packageListItem (dep.namespace, dep.name, dep.latestSynopsis, dep.latestVersion, dep.latestLicense)
           )
       when (count > 30) $
-        paginationNav count currentPage (DependentsOf namespace packageName)
+        paginationNav count currentPage (DependentsOf namespace packageName Nothing)
 
 showDependencies :: Text -> ComponentDependencies -> FloraHTML
 showDependencies searchString componentsInfo = do

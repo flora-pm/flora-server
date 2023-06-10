@@ -21,14 +21,19 @@ data SearchAction
   = ListAllPackages
   | ListAllPackagesInNamespace Namespace
   | SearchPackages Text
-  | DependentsOf Namespace PackageName
+  | DependentsOf Namespace PackageName (Maybe Text)
   deriving (Eq, Ord, Show)
 
 instance Display SearchAction where
   displayBuilder ListAllPackages = "Packages"
   displayBuilder (ListAllPackagesInNamespace namespace) = "Packages in " <> displayBuilder namespace
   displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
-  displayBuilder (DependentsOf namespace packageName) = "Dependents of " <> displayBuilder namespace <> "/" <> displayBuilder packageName
+  displayBuilder (DependentsOf namespace packageName mbSearchString) =
+    "Dependents of "
+      <> displayBuilder namespace
+      <> "/"
+      <> displayBuilder packageName
+      <> foldMap (\searchString -> " \"" <> Builder.fromText searchString <> "\"") mbSearchString
 
 searchPackageByName :: (DB :> es, Log :> es, Time :> es) => Word -> Text -> Eff es (Word, Vector PackageInfo)
 searchPackageByName pageNumber queryString = do

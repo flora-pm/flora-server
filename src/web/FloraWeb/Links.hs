@@ -81,14 +81,15 @@ packageDependencies namespace packageName version =
     /: packageName
     /: version
 
-packageDependents :: Namespace -> PackageName -> Word -> Link
-packageDependents namespace packageName pageNumber =
+packageDependents :: Namespace -> PackageName -> Word -> Maybe Text -> Link
+packageDependents namespace packageName pageNumber mbSearchString =
   links
     // Web.packages
     // Web.showDependents
     /: namespace
     /: packageName
     /: Just pageNumber
+    /: mbSearchString
 
 packageVersions :: Namespace -> PackageName -> Link
 packageVersions namespace packageName =

@@ -136,14 +136,14 @@ testCorrectNumberInHaskellNamespace = do
 
 testBytestringDependents :: TestEff ()
 testBytestringDependents = do
-  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") 1
+  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") Nothing 1
   assertEqual
     22
     (Vector.length results)
 
 testNoSelfDependent :: TestEff ()
 testNoSelfDependent = do
-  results <- Query.getAllPackageDependents (Namespace "haskell") (PackageName "text")
+  results <- Query.getAllPackageDependents (Namespace "haskell") (PackageName "text") Nothing
   let resultSet = Set.fromList . fmap (view #name) $ Vector.toList results
   assertEqual
     ( Set.fromList

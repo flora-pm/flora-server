@@ -4,6 +4,7 @@ module FloraWeb.Routes.Pages.Packages
   )
 where
 
+import Data.Text (Text)
 import Distribution.Types.Version (Version)
 import Flora.Model.Package (Namespace, PackageName)
 import Lucid
@@ -34,6 +35,7 @@ data Routes' mode = Routes'
           :> Capture "package" PackageName
           :> "dependents"
           :> QueryParam "page" Word
+          :> QueryParam "q" Text
           :> Get '[HTML] (Html ())
   , showDependencies
       :: mode

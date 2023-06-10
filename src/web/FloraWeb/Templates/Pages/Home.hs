@@ -6,25 +6,16 @@ import CMarkGFM
 import Control.Monad.Reader
 import Data.Text (Text)
 import Lucid
-import Lucid.Svg
-  ( d_
-  , fill_
-  , path_
-  , stroke_
-  , stroke_linecap_
-  , stroke_linejoin_
-  , stroke_width_
-  , viewBox_
-  )
 import PyF
 
 import Flora.Environment
+import FloraWeb.Components.Utils (SearchBarOptions (..), searchBar)
 import FloraWeb.Templates.Types
 
 show :: FloraHTML
 show = do
   banner
-  searchBar
+  searchBar (SearchBarOptions{actionUrl = "/search", placeholder = "Find a package"})
   buttons
 
 about :: FloraHTML
@@ -76,26 +67,6 @@ banner = do
   div_ [class_ "relative"] $
     h1_ [class_ "main-title"] $
       span_ [class_ "main-title"] "Search Haskell packages on Flora"
-
-searchBar :: FloraHTML
-searchBar =
-  form_ [action_ "/search", method_ "GET"] $! do
-    div_ [class_ "main-search"] $! do
-      label_ [for_ "search"] ""
-      input_
-        [ class_
-            "search-bar"
-        , type_ "search"
-        , id_ "search"
-        , name_ "q"
-        , placeholder_ "Find a package"
-        , value_ ""
-        , tabindex_ "1"
-        , autofocus_
-        ]
-      button_ [type_ "submit"] $
-        svg_ [xmlns_ "http://www.w3.org/2000/svg", style_ "color: gray", fill_ "none", viewBox_ "0 0 24 24", stroke_ "currentColor"] $
-          path_ [stroke_linecap_ "round", stroke_linejoin_ "round", stroke_width_ "2", d_ "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"]
 
 buttons :: FloraHTML
 buttons =

@@ -80,8 +80,20 @@ getAllPackageDependents
   :: DB :> es
   => Namespace
   -> PackageName
+  -> Maybe Text
   -> Eff es (Vector Package)
-getAllPackageDependents namespace packageName = dbtToEff $! query Select packageDependentsQuery (namespace, packageName)
+getAllPackageDependents namespace packageName (Just searchString) =
+  dbtToEff $!
+    query
+      Select
+      searchPackageDependentsQuery
+      (namespace, packageName, searchString)
+getAllPackageDependents namespace packageName Nothing =
+  dbtToEff $!
+    query
+      Select
+      packageDependentsQuery
+      (namespace, packageName)
 
 -- | This function gets the first 6 dependents of a package
 getPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es (Vector Package)
@@ -89,13 +101,21 @@ getPackageDependents namespace packageName = dbtToEff $! query Select q (namespa
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
-getNumberOfPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es Word
-getNumberOfPackageDependents namespace packageName =
-  dbtToEff $! do
-    (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
-    case result of
-      Just (Only n) -> pure $! fromIntegral n
-      Nothing -> pure 0
+getNumberOfPackageDependents :: DB :> es => Namespace -> PackageName -> Maybe Text -> Eff es Word
+getNumberOfPackageDependents namespace packageName mbSearchString = do
+  case mbSearchString of
+    Nothing ->
+      dbtToEff $! do
+        (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
+        case result of
+          Just (Only n) -> pure $! fromIntegral n
+          Nothing -> pure 0
+    Just searchString ->
+      dbtToEff $! do
+        (result :: Maybe (Only Int)) <- queryOne Select searchNumberOfPackageDependentsQuery (namespace, packageName, searchString)
+        case result of
+          Just (Only n) -> pure $! fromIntegral n
+          Nothing -> pure 0
 
 numberOfPackageDependentsQuery :: Query
 numberOfPackageDependentsQuery =
@@ -106,6 +126,18 @@ numberOfPackageDependentsQuery =
                 ON p."package_id" = dep."dependent_id"
   WHERE dep."namespace" = ?
     AND dep."name" = ?
+  |]
+
+searchNumberOfPackageDependentsQuery :: Query
+searchNumberOfPackageDependentsQuery =
+  [sql|
+  SELECT DISTINCT count(p."package_id")
+  FROM "packages" AS p
+        INNER JOIN "dependents" AS dep
+                ON p."package_id" = dep."dependent_id"
+  WHERE dep."namespace" = ?
+    AND dep."name" = ?
+    AND ? <% p."name"
   |]
 
 packageDependentsQuery :: Query
@@ -126,18 +158,44 @@ packageDependentsQuery =
     AND dep."name" = ?
   |]
 
+searchPackageDependentsQuery :: Query
+searchPackageDependentsQuery =
+  [sql|
+  SELECT DISTINCT   p."package_id"
+                  , p."namespace"
+                  , p."name"
+                  , p."owner_id"
+                  , p."created_at"
+                  , p."updated_at"
+                  , p."status"
+                  , p."metadata"
+  FROM "packages" AS p
+  INNER JOIN "dependents" AS dep
+        ON p."package_id" = dep."dependent_id"
+  WHERE dep."namespace" = ?
+    AND dep."name" = ?
+    AND ? <% p.name
+  |]
+
 getAllPackageDependentsWithLatestVersion
   :: DB :> es
   => Namespace
   -> PackageName
+  -> Maybe Text
   -> Word
   -> Eff es (Vector DependencyInfo)
-getAllPackageDependentsWithLatestVersion namespace packageName pageNumber =
-  dbtToEff $! query Select q (namespace, packageName, offset)
-  where
-    limit = 30
-    offset = (limit * pageNumber) - limit
-    q = packageDependentsWithLatestVersionQuery <> " LIMIT 30 OFFSET ?"
+getAllPackageDependentsWithLatestVersion namespace packageName mbSearchString pageNumber =
+  let limit = 30
+      offset = (limit * pageNumber) - limit
+   in case mbSearchString of
+        Nothing ->
+          dbtToEff $! query Select q (namespace, packageName, offset)
+          where
+            q = packageDependentsWithLatestVersionQuery <> " LIMIT 30 OFFSET ?"
+        Just searchString ->
+          dbtToEff $! query Select q (namespace, packageName, searchString, offset)
+          where
+            q = searchPackageDependentsWithLatestVersionQuery <> " LIMIT 30 OFFSET ?"
 
 getPackageDependentsWithLatestVersion
   :: (DB :> es, Log :> es, Time :> es)
@@ -172,6 +230,27 @@ packageDependentsWithLatestVersionQuery =
                 ON r."package_id" = p."package_id"
   WHERE dep."namespace" = ?
     AND dep."name" = ?
+  GROUP BY (p.namespace, p.name, synopsis, license)
+  ORDER BY p.namespace DESC
+    |]
+
+searchPackageDependentsWithLatestVersionQuery :: Query
+searchPackageDependentsWithLatestVersionQuery =
+  [sql|
+  SELECT DISTINCT   p."namespace"
+                  , p."name"
+                  , ''
+                  , max(r."version")
+                  , r.metadata ->> 'synopsis' as "synopsis"
+                  , r.metadata ->> 'license' as  "license"
+  FROM "packages" AS p
+        INNER JOIN "dependents" AS dep
+                ON p."package_id" = dep."dependent_id"
+        INNER JOIN "releases" AS r 
+                ON r."package_id" = p."package_id"
+  WHERE dep."namespace" = ?
+    AND dep."name" = ?
+    AND ? <% p."name"
   GROUP BY (p.namespace, p.name, synopsis, license)
   ORDER BY p.namespace DESC
     |]

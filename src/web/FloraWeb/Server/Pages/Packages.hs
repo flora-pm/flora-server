@@ -9,6 +9,7 @@ import Data.Foldable
 import Data.Function
 import Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isNothing)
+import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector qualified as Vector
 import Distribution.Orphans ()
@@ -89,7 +90,7 @@ showPackageVersion namespace packageName mversion = do
   dependents <- Query.getPackageDependents namespace packageName
   releaseDependencies <- Query.getRequirements release.releaseId
   categories <- Query.getPackageCategories (package.packageId)
-  numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName
+  numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName Nothing
   numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
 
   let templateEnv =
@@ -129,10 +130,17 @@ showPackageVersion namespace packageName mversion = do
       numberOfDependencies
       categories
 
-showDependentsHandler :: Namespace -> PackageName -> Maybe Word -> FloraPage (Html ())
-showDependentsHandler namespace packageName Nothing = showDependentsHandler namespace packageName (Just 1)
-showDependentsHandler namespace packageName (Just 0) = showDependentsHandler namespace packageName (Just 1)
-showDependentsHandler namespace packageName (Just pageNumber) = do
+showDependentsHandler :: Namespace -> PackageName -> Maybe Word -> Maybe Text -> FloraPage (Html ())
+showDependentsHandler namespace packageName mbPageNumber possiblyEmptyMbSearchString = do
+  let pageNumber =
+        case mbPageNumber of
+          Nothing -> 1
+          Just 0 -> 1
+          Just n -> n
+  let mbSearchString =
+        case possiblyEmptyMbSearchString of
+          Just "" -> Nothing
+          x -> x
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   _ <- guardThatPackageExists namespace packageName
@@ -141,13 +149,12 @@ showDependentsHandler namespace packageName (Just pageNumber) = do
           { title = display namespace <> "/" <> display packageName
           , description = "Dependents of " <> display namespace <> display packageName
           }
-  results <- Query.getAllPackageDependentsWithLatestVersion namespace packageName pageNumber
-  totalDependents <- Query.getNumberOfPackageDependents namespace packageName
+  results <- Query.getAllPackageDependentsWithLatestVersion namespace packageName mbSearchString pageNumber
+  totalDependents <- Query.getNumberOfPackageDependents namespace packageName mbSearchString
   render templateEnv $
     Package.showDependents
       namespace
       packageName
-      ("Dependents of " <> display namespace <> "/" <> display packageName)
       totalDependents
       results
       pageNumber
