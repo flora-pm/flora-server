@@ -20,7 +20,7 @@ source-repository head
 
 flag prod
   description:
-    Compile the project with additional optimisations (takes longer)  
+    Compile the project with additional optimisations (takes longer)
 
   default:     False
   manual:      True
@@ -162,6 +162,7 @@ library
     , souffle-haskell        ==3.5.1
     , streamly
     , streamly-core
+    , tar
     , text
     , text-display
     , time
@@ -169,6 +170,7 @@ library
     , uuid
     , vector
     , vector-algorithms
+    , zlib
 
 library flora-web
   import:          common-extensions

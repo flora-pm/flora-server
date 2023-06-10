@@ -17,7 +17,7 @@ import Options.Applicative
 import Flora.Environment
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories (importCategories)
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
+import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Model.User
 import Flora.Model.User.Update
 
@@ -31,6 +31,7 @@ data Command
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
   | ImportPackages FilePath
+  | ImportIndex FilePath
   deriving stock (Show, Eq)
 
 data ProvisionTarget
@@ -68,6 +69,7 @@ parseCommand =
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
       <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
       <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
+      <> command "import-index" (parseImportIndex `withInfo` "Import cabal packages from the index tarball")
 
 parseProvision :: Parser Command
 parseProvision =
@@ -92,6 +94,9 @@ parseGenDesignSystem = pure GenDesignSystemComponents
 parseImportPackages :: Parser Command
 parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
 
+parseImportIndex :: Parser Command
+parseImportIndex = ImportIndex <$> argument str (metavar "PATH")
+
 runOptions :: (Reader PoolConfig :> es, DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
@@ -113,11 +118,17 @@ runOptions (Options (CreateUser opts)) = do
       insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path)) = importFolderOfCabalFiles path
+runOptions (Options (ImportIndex path)) = importIndex path
 
 importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Eff es ()
 importFolderOfCabalFiles path = Log.withStdOutLogger $ \appLogger -> do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
   importAllFilesInRelativeDirectory appLogger (user ^. #userId) path True
+
+importIndex :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Eff es ()
+importIndex path = Log.withStdOutLogger $ \logger -> do
+  user <- fromJust <$> Query.getUserByUsername "hackage-user"
+  importFromIndex logger (user ^. #userId) path True
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

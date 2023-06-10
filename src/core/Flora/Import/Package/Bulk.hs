@@ -1,10 +1,17 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -fno-full-laziness #-}
 
-module Flora.Import.Package.Bulk (importAllFilesInDirectory, importAllFilesInRelativeDirectory) where
+module Flora.Import.Package.Bulk (importAllFilesInDirectory, importAllFilesInRelativeDirectory, importFromIndex) where
 
+import Codec.Archive.Tar qualified as Tar
+import Codec.Archive.Tar.Entry qualified as Tar
+import Codec.Compression.GZip qualified as GZip
 import Control.Monad (when, (>=>))
+import Data.ByteString qualified as BS
+import Data.ByteString.Lazy qualified as BL
+import Data.Function ((&))
 import Data.List (isSuffixOf)
+import Data.Text qualified as Text
 import Effectful
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
@@ -17,7 +24,7 @@ import System.Directory qualified as System
 import System.FilePath
 
 import Flora.Environment.Config (PoolConfig (..))
-import Flora.Import.Package (enqueueImportJob, loadAndExtractCabalFile, persistImportOutput, withWorkerDbPool)
+import Flora.Import.Package (enqueueImportJob, extractPackageDataFromCabal, loadContent, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
@@ -28,13 +35,42 @@ importAllFilesInRelativeDirectory appLogger user dir directImport = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importAllFilesInDirectory appLogger user workdir directImport
 
+importFromIndex :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
+importFromIndex appLogger user index directImport = do
+  entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
+  case Tar.foldlEntries buildContentStream S.nil entries of
+    Right stream -> importFromStream appLogger user directImport stream
+    Left (err, _) ->
+      Log.runLog "flora-cli" appLogger defaultLogLevel $
+        Log.logAttention_ $
+          "Failed to get files from index: " <> Text.pack (show err)
+  where
+    buildContentStream acc entry =
+      let entryPath = Tar.entryPath entry
+          entryTime = Tar.entryTime entry
+       in Tar.entryContent entry & \case
+            Tar.NormalFile bs _
+              | ".cabal" `isSuffixOf` entryPath ->
+                  (entryPath, BL.toStrict bs) `S.cons` acc
+            _ -> acc
+
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
 importAllFilesInDirectory :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => Logger -> UserId -> FilePath -> Bool -> Eff es ()
 importAllFilesInDirectory appLogger user dir directImport = do
-  pool <- getPool
-  poolConfig <- ask @PoolConfig
   liftIO $! System.createDirectoryIfMissing True dir
   liftIO . putStrLn $! "🔎  Searching cabal files in " <> dir
+  importFromStream appLogger user directImport $ findAllCabalFilesInDirectory dir
+
+importFromStream
+  :: (Reader PoolConfig :> es, DB :> es, IOE :> es)
+  => Logger
+  -> UserId
+  -> Bool
+  -> S.AsyncT IO (String, BS.ByteString)
+  -> Eff es ()
+importFromStream appLogger user directImport stream = do
+  pool <- getPool
+  poolConfig <- ask @PoolConfig
   let displayCount =
         flip SFold.foldlM' (return 0) $
           \previousCount _ ->
@@ -45,7 +81,7 @@ importAllFilesInDirectory appLogger user dir directImport = do
                   return currentCount
   processedPackageCount <-
     withWorkerDbPool $ \wq ->
-      liftIO $! S.fold displayCount $! S.fromAsync $! S.mapM (processFile wq pool poolConfig) $! findAllCabalFilesInDirectory dir
+      liftIO $! S.fold displayCount $! S.fromAsync $! S.mapM (processFile wq pool poolConfig) $! stream
   displayStats processedPackageCount
   Update.refreshLatestVersions >> Update.refreshDependents
   where
@@ -55,16 +91,18 @@ importAllFilesInDirectory appLogger user dir directImport = do
         . runDB pool
         . runCurrentTimeIO
         . Log.runLog "flora-jobs" appLogger defaultLogLevel
-        . ( loadAndExtractCabalFile user >=> \importedPackage ->
-              if directImport
-                then persistImportOutput wq importedPackage
-                else enqueueImportJob importedPackage
+        . ( uncurry loadContent
+              >=> extractPackageDataFromCabal user
+              >=> \importedPackage ->
+                if directImport
+                  then persistImportOutput wq importedPackage
+                  else enqueueImportJob importedPackage
           )
     displayStats :: MonadIO m => Int -> m ()
     displayStats currentCount =
       liftIO . putStrLn $! "✅ Processed " <> show currentCount <> " new cabal files"
 
-findAllCabalFilesInDirectory :: FilePath -> S.AsyncT IO FilePath
+findAllCabalFilesInDirectory :: FilePath -> S.AsyncT IO (String, BS.ByteString)
 findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $! S.fromList [workdir]
   where
     traversePath p = do
@@ -73,5 +111,7 @@ findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $! S.fromList [
         True -> do
           entries <- System.listDirectory p
           return $! S.concatMapM (traversePath . (p </>)) $! S.fromList entries
-        False | ".cabal" `isSuffixOf` p -> return $! S.fromPure p
+        False | ".cabal" `isSuffixOf` p -> do
+          content <- BS.readFile p
+          return $! S.fromPure (p, content)
         _ -> return S.nil
