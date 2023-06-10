@@ -7,6 +7,8 @@
     pkgs.ghcid
     pkgs.postgresql_14
     pkgs.souffle
+    pkgs.yarn
+    pkgs.esbuild
   ];
 
   shellHook = ''
