@@ -32,9 +32,9 @@
         src = ./.;
         pre-commit-check = pre-commit-hooks.lib.${system}.run
           (import ./nix/pre-commit-config.nix { inherit src; });
-        hsPkgs = horizon-platform.legacyPackages.${system}.override {
-          overrides = import ./nix/hspkgs.nix { inherit src pkgs inputs; };
-        };
+        hsPkgs = horizon-platform.legacyPackages.${system}.extend (
+          import ./nix/hspkgs.nix { inherit src pkgs inputs; }
+        );
         floraShell = import ./nix/shell-config.nix { inherit src pkgs hsPkgs pre-commit-check; };
       in
       {
