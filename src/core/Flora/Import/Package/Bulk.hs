@@ -18,7 +18,7 @@ import Effectful
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Reader.Static (Reader, ask, runReader)
-import Effectful.Time
+import Effectful.Time (runTime)
 import Log (Logger, defaultLogLevel)
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Prelude qualified as S
@@ -138,7 +138,7 @@ importFromStream appLogger user repository directImport stream = do
       runEff
         . runReader poolConfig
         . runDB pool
-        . runCurrentTimeIO
+        . runTime
         . Log.runLog "flora-jobs" appLogger defaultLogLevel
         . ( \(path, timestamp, content) ->
               loadContent path content

@@ -16,7 +16,7 @@ import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
 import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Reader.Static (Reader, runReader)
-import Effectful.Time (Time, runCurrentTimeIO)
+import Effectful.Time (Time, runTime)
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
 import Log hiding (LogLevel)
@@ -42,7 +42,7 @@ type JobsRunner =
 runJobRunner :: Pool Connection -> JobsRunnerEnv -> FloraConfig -> Logger -> JobsRunner a -> IO a
 runJobRunner pool runnerEnv cfg logger jobRunner =
   runEff
-    . runCurrentTimeIO
+    . runTime
     . LogEff.runLog "flora-jobs" logger defaultLogLevel
     . runReader runnerEnv
     . runReader cfg.dbConfig
@@ -99,7 +99,7 @@ makeUIConfig cfg logger pool =
 structuredLogging :: FloraConfig -> Logger -> LogLevel -> LogEvent -> IO ()
 structuredLogging FloraConfig{..} logger level event =
   runEff
-    . runCurrentTimeIO
+    . runTime
     . Logging.runLog environment logger
     $! localDomain "odd-jobs"
     $! case level of

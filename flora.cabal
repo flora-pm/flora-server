@@ -144,6 +144,7 @@ library
     , log-effectful
     , lucid
     , memory
+    , monad-time-effectful
     , mtl
     , odd-jobs
     , optics-core
@@ -167,8 +168,6 @@ library
     , text
     , text-display
     , time
-    , time-effectful
-    , unliftio
     , uuid
     , vector
     , vector-algorithms
@@ -259,6 +258,7 @@ library flora-web
     , lucid-alpine
     , lucid-svg
     , monad-time
+    , monad-time-effectful
     , mtl
     , network-uri
     , odd-jobs
@@ -283,7 +283,6 @@ library flora-web
     , text
     , text-display
     , time
-    , time-effectful
     , uuid
     , vector
     , vector-algorithms
@@ -325,6 +324,7 @@ library flora-jobs
     , log-base
     , log-effectful
     , lucid
+    , monad-time-effectful
     , odd-jobs
     , pg-entity
     , pg-transact-effectful
@@ -336,7 +336,6 @@ library flora-jobs
     , text
     , text-display
     , time
-    , time-effectful
     , typed-process
     , vector
 
@@ -397,6 +396,7 @@ test-suite flora-test
     , http-client
     , log-base
     , log-effectful
+    , monad-time-effectful
     , optics-core
     , password
     , pg-entity
@@ -412,7 +412,6 @@ test-suite flora-test
     , tasty-hunit
     , text
     , time
-    , time-effectful
     , transformers
     , uuid
     , vector

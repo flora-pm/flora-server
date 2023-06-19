@@ -27,6 +27,7 @@ import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Time qualified as Time
 import Log
 import OddJobs.Job (Job (..), createJob, scheduleJob)
 
@@ -73,7 +74,7 @@ scheduleIndexImportJob pool =
   withResource
     pool
     ( \conn -> do
-        t <- Time.getCurrentTime
+        t <- Time.currentTime
         let runAt = Time.addUTCTime Time.nominalDay t
         scheduleJob
           conn

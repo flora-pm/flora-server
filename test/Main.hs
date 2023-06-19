@@ -27,7 +27,7 @@ main = do
   hSetBuffering stdout LineBuffering
   env <- runEff getFloraTestEnv
   fixtures <- runEff $ Log.withStdOutLogger $ \stdOutLogger -> do
-    runCurrentTimeIO
+    runTime
     . Log.runLog "flora-test" stdOutLogger LogInfo
     . runDB env.pool
     . runReader env.dbConfig

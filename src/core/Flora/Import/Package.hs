@@ -65,6 +65,7 @@ import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
 
+import Effectful.Time (Time)
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
@@ -283,7 +284,7 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
   let namespace = force $! chooseNamespace packageName
   let packageId = force $! deterministicPackageId namespace packageName
   let releaseId = force $! deterministicReleaseId packageId packageVersion
-  timestamp <- Time.getCurrentTime
+  timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName $! packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)

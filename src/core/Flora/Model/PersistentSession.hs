@@ -57,7 +57,7 @@ newPersistentSessionId = PersistentSessionId <$> UUID.nextRandom
 
 newPersistentSession :: Time :> es => UserId -> PersistentSessionId -> Eff es PersistentSession
 newPersistentSession userId persistentSessionId = do
-  createdAt <- Time.getCurrentTime
+  createdAt <- Time.currentTime
   let sessionData = SessionData Map.empty
   pure PersistentSession{..}
 
