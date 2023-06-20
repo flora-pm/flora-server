@@ -29,6 +29,9 @@ test-show-details: direct
 package *
   ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j -eventlog -finfo-table-map -fdistinct-constructor-tables
 
+package warp
+  flags: -x509
+
 source-repository-package
     type: git
     location: https://gitlab.com/dpwiz/raven-haskell
