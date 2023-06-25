@@ -1,7 +1,7 @@
 Thank you for your contribution to Flora! There is no Contributor License Agreement (CLA) to sign,
 but we need you to read this document when you open your PR or your issue:
 
-## Contributing
+## Project Setup
 
 We need you to read and acknowledge our [Code of Conduct][CoC] document.
 
@@ -11,20 +11,193 @@ The compiler version used is described in the `cabal.project` file.
 The following Haskell command-line tools will have to be installed:
 
 * `postgresql-migration`: To perform schema migrations
-* `fourmolu`: To style the code base. Minimum version is 0.8.2.0
+* `fourmolu`: To style the code base. Minimum version is 0.12.0.0
 * `hlint` & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-fmt` and `nixfmt`: To style the cabal and nix files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
 * `ghc-tags`: To generate ctags or etags for the project
 
-You will need the [Soufflé datalog engine v2.3](https://github.com/souffle-lang/souffle/releases/tag/2.3)
+(Some of the above packages have incompatible dependencies, so don't try to install them all at once with `cabal install`)
 
-(Some of those packages have incompatible dependencies, so don't try to install them all at once with cabal)
+You will need the [Soufflé datalog engine v2.3](https://github.com/souffle-lang/souffle/releases/tag/2.3)
 
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
 
+### Questions 
+
+Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
+
+### Issues & Bugs
+
+Open a [Ticket][Ticket] and tell us what you can about your problem.
+
+### Pull Requests
+
+You need to
+
+* Read this document
+* Have a ticket that you can relate the PR to, so that we can have some context for your change
+* Provide screenshots of before/after if you change the UI.
+* Put `[FLORA-XXXX]` where XXXX is the ticket this PR is related to, or [NO-ISSUE] if no tickets are related, in the
+PR title and commit message:
+
+```
+[NO-ISSUE] Update dependencies for Storybook.js
+```
+
+### Feature request
+
+Open a thread in the [Feature Request][Feature Request board] discussion board.
+Be certain to search if it has already been suggested!
+
+### Making a release
+
+Here is the procedure to follow when making a release:
+
+1. Create a PR to prepare the release of the next version targeting `development`. It must include:
+    * Bump the version in the flora.cabal file
+    * Write down the date in the CHANGELOG
+2. Once the PR is merged into `development`, merge `development` into `main`
+3. Create a [new release](https://github.com/flora-pm/flora-server/releases/new).
+
+### Profiling
+
+If you are about to run `flora-cli` or `flora-server` with profiling, please first read
+https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/.
+
+Here are the steps:
+
+1. `$ cabal build flora-server -f prof` (or `flora-cli`)
+2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
+3. `$ eventlog2html flora-server.eventlog`
+
+## Installation and Configuration
+
+Step 1. Read The above "Project Setup" section.
+Step 2. Keep reading from here.
+
+### Flora server
+
+The configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
+server will tell you which ones are missing.
+
+To start in the best of conditions, create a file called `environment.local.sh` with the following content:
+
+```bash
+source environment.sh
+```
+
+This will get all the variables from `environment.sh` and allow you to override them locally.
+
+If you use `direnv`, you are advised to create a symbolic link from `environment.local.sh` to `.envrc`.
+
+You can then build the server with `make build`. Do **not** simply run `cabal build`.
+
+A very useful command to run is
+
+```bash
+$ make start-tmux
+```
+To start a tmux session with code reloading for frontend and backend:
+
+
+To explore the other possible `Make` rules, type:
+
+```bash
+$ make help
+```
+
+### Database
+
+The Flora server uses PostgreSQL 14. Please install it.
+
+#### Side-Quest: First installation
+
+If this is your first time with PostgreSQL, here is what you should do:
+
+1. Locate the `pg_hba.conf` file. If a search engine cannot help you, you can find it easily with
+   `sudo find / -type f -name pg_hba.conf` on UNIX systems.
+2. Go to the bottom of the file and perform the following changes:
+
+```diff
+local   all             all                                     peer
+# IPv4 local connections:
+- host    all             all             127.0.0.1/32            md5
++ host    all             all             127.0.0.1/32            scram-sha-256
+# IPv6 local connections:
+- host    all             all             ::1/128                 md5
++ host    all             all             ::1/128                 scram-sha-256
+```
+3. Restart the database engine (using `systemctl` on Linux, or `brew services restart postgresql@14`
+    if you have installed PostgreSQL with `brew`)
+
+3. Connect (via sudo) to the `root` user
+
+```bash
+user $ sudo -s
+[sudo] password: [type your user's password]
+```
+Then as root, connect to the postgres account, and open a `psql` shell.
+
+```bash
+root # su -l postgres
+postgres $ psql
+psql (14.7 (Ubuntu 14.7-1.pgdg18.04+1))
+Type "help" for help.
+```
+
+Now, set the password for user `postgres` to the character string `'postgres'`
+
+```
+postgres=# alter role postgres with password 'postgres';
+```
+
+And you are good to go.
+
+#### Setup project 
+
+To create the database and apply the migrations, type:
+
+```bash
+$ make db-setup
+```
+
+you can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
+
+### Docker Workflow
+
+A docker-based workflow is provided. The idea is to develop from within a container that brings with it all dependencies,
+and communicates with another container for the PostgreSQL database.
+
+```bash
+# You need to build the container first. It's gonna take around 13 minutes the first time you build
+$ make docker-build
+# Once the containers are running, you can enter the development environment and start hacking
+$ make docker-enter
+$ source environment.docker.sh
+# You'll be in the docker container. Environment variables are automatically set 
+# so you should be able to start Flora
+(docker)$ make start-tmux
+# You'll be in a tmux session, everything should be launched
+# Visit localhost:8084 from your web browser to see if it all works.
+```
+
+To provision the development database, type:
+
+```bash
+$ make docker-enter
+(docker)$ source environment.docker.sh
+(docker)$ make db-drop  # password is 'postgres' by default
+(docker)$ make db-setup # password is 'postgres' by default
+(docker)$ make db-provision
+# And you should be good!
+```
+
+
 ### Nix
+
+Nix is an alternative way to interact with the Flora codebase.
 
 `Flora` provides a `nix` setup to make provisioning a development environment and creating reproducible and simple
 builds. To show all available flake attributes, run
@@ -145,54 +318,6 @@ Contributions to our `nix` infrastructures are always appreciated, however, ther
   - if we need a source of a package, we add it as a flake input with `flake = false;`
   - we don't use any fetcher, if not absolutely needed (e.g. if you need a tarball which is
     not unpacked, it might sometimes be necessary)
-
-### Pull Requests
-
-You need to
-
-* Read this document
-* Have a ticket that you can relate the PR to, so that we can have some context for your change
-* Provide screenshots of before/after if you change the UI.
-* Put `[FLORA-XXXX]` where XXXX is the ticket this PR is related to, or [NO-ISSUE] if no tickets are related, in the
-PR title and commit message:
-
-```
-[NO-ISSUE] Update dependencies for Storybook.js
-```
-
-### Feature request
-
-Open a thread in the [Feature Request][Feature Request board] discussion board.
-Be certain to search if it has already been suggested!
-
-### Making a release
-
-Here is the procedure to follow when making a release:
-
-1. Create a PR to prepare the release of the next version targeting `development`. It must include:
-    * Bump the version in the flora.cabal file
-    * Write down the date in the CHANGELOG
-2. Once the PR is merged into `development`, merge `development` into `main`
-3. Create a [new release](https://github.com/flora-pm/flora-server/releases/new).
-
-### Questions 
-
-Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
-
-### Issues & Bugs
-
-Open a [Ticket][Ticket] and tell us what you can about your problem.
-
-### Profiling
-
-If you are about to run `flora-cli` or `flora-server` with profiling, please first read
-https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/.
-
-Here are the steps:
-
-1. `$ cabal build flora-server -f prof` (or `flora-cli`)
-2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
-3. `$ eventlog2html flora-server.eventlog`
 
 [CoC]: https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
