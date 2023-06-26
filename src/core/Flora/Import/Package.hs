@@ -30,7 +30,6 @@ import Data.Text (Text, pack)
 import Data.Text qualified as T
 import Data.Text.Display
 import Data.Text.IO qualified as T
-import Data.Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (Connection)
@@ -58,6 +57,8 @@ import Effectful.Internal.Monad (unsafeEff_)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Reader.Static (Reader, ask)
+import Effectful.Time (Time, UTCTime)
+import Effectful.Time qualified as Time
 import Log qualified
 import OddJobs.Job (createJob)
 import Optics.Core
@@ -159,7 +160,7 @@ versionList =
 --    * then, extracting relevant information using 'extractPackageDataFromCabal'
 --    * finally, inserting that data into the database
 importFile
-  :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
+  :: (Time :> es, Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
   => UserId
   -> FilePath
   -- ^ The absolute path to the Cabal file
@@ -167,7 +168,7 @@ importFile
 importFile userId path =
   withWorkerDbPool $ \wq ->
     loadFile path
-      >>= extractPackageDataFromCabal userId
+      >>= uncurry (extractPackageDataFromCabal userId Nothing)
       >>= persistImportOutput wq
 
 enqueueImportJob :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
@@ -184,7 +185,7 @@ enqueueImportJob importOutput = do
               (ImportPackage importOutput)
         )
 
-importRelFile :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es) => UserId -> FilePath -> Eff es ()
+importRelFile :: (Time :> es, Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es) => UserId -> FilePath -> Eff es ()
 importRelFile user dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importFile user workdir
@@ -194,7 +195,7 @@ loadFile
   :: (IOE :> es, Log :> es)
   => FilePath
   -- ^ The absolute path to the Cabal file
-  -> Eff es GenericPackageDescription
+  -> Eff es (UTCTime, GenericPackageDescription)
 loadFile path = do
   exists <- liftIO $! System.doesFileExist path
   unless exists $
@@ -202,7 +203,12 @@ loadFile path = do
       throwIO $
         CabalFileNotFound path
   content <- liftIO $! BS.readFile path
-  parseString parseGenericPackageDescription path content
+  timestamp <- liftIO $! System.getModificationTime path
+  descr <- loadContent path content
+  pure (timestamp, descr)
+
+loadContent :: Log :> es => String -> BS.ByteString -> Eff es GenericPackageDescription
+loadContent = parseString parseGenericPackageDescription
 
 parseString
   :: Log :> es
@@ -220,8 +226,10 @@ parseString parser name bs = do
       Log.logAttention_ (display $! show err)
       throw $! CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile :: (IOE :> es, Log :> es) => UserId -> FilePath -> Eff es ImportOutput
-loadAndExtractCabalFile userId filePath = loadFile filePath >>= extractPackageDataFromCabal userId
+loadAndExtractCabalFile :: (IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ImportOutput
+loadAndExtractCabalFile userId filePath =
+  loadFile filePath
+    >>= uncurry (extractPackageDataFromCabal userId Nothing)
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
@@ -264,10 +272,10 @@ withWorkerDbPool f = do
       effIO $ f wq
 
 -- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
---  that can later be inserted into the database. This function produces stable, deterministic ids,
---  so it should be possible to extract and insert a single package many times in a row.
-extractPackageDataFromCabal :: IOE :> es => UserId -> GenericPackageDescription -> Eff es ImportOutput
-extractPackageDataFromCabal userId genericDesc = do
+-- that can later be inserted into the database. This function produces stable, deterministic ids,
+-- so it should be possible to extract and insert a single package many times in a row.
+extractPackageDataFromCabal :: (IOE :> es, Time :> es) => UserId -> Maybe Text -> UTCTime -> GenericPackageDescription -> Eff es ImportOutput
+extractPackageDataFromCabal userId repository uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $! packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -275,7 +283,7 @@ extractPackageDataFromCabal userId genericDesc = do
   let namespace = force $! chooseNamespace packageName
   let packageId = force $! deterministicPackageId namespace packageName
   let releaseId = force $! deterministicReleaseId packageId packageVersion
-  timestamp <- liftIO getCurrentTime
+  timestamp <- Time.getCurrentTime
   let sourceRepos = getRepoURL packageName $! packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
@@ -314,13 +322,14 @@ extractPackageDataFromCabal userId genericDesc = do
           , version = packageVersion
           , archiveChecksum = mempty
           , metadata = metadata
-          , uploadedAt = Nothing
+          , uploadedAt = Just uploadTime
           , createdAt = timestamp
           , updatedAt = timestamp
           , readme = Nothing
           , readmeStatus = NotImported
           , changelog = Nothing
           , changelogStatus = NotImported
+          , repository
           }
 
   let lib = extractLibrary package release Nothing [] <$> allLibraries packageDesc

@@ -168,7 +168,7 @@ packageDependentsWithLatestVersionQuery =
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
                 ON p."package_id" = dep."dependent_id"
-        INNER JOIN "releases" AS r 
+        INNER JOIN "releases" AS r
                 ON r."package_id" = p."package_id"
   WHERE dep."namespace" = ?
     AND dep."name" = ?

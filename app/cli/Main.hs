@@ -17,7 +17,7 @@ import Options.Applicative
 import Flora.Environment
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories (importCategories)
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
+import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Model.User
 import Flora.Model.User.Update
 
@@ -30,7 +30,8 @@ data Command
   = Provision ProvisionTarget
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
-  | ImportPackages FilePath
+  | ImportPackages FilePath (Maybe Text)
+  | ImportIndex FilePath (Maybe Text)
   deriving stock (Show, Eq)
 
 data ProvisionTarget
@@ -68,6 +69,7 @@ parseCommand =
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
       <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
       <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
+      <> command "import-index" (parseImportIndex `withInfo` "Import cabal packages from the index tarball")
 
 parseProvision :: Parser Command
 parseProvision =
@@ -90,11 +92,30 @@ parseGenDesignSystem :: Parser Command
 parseGenDesignSystem = pure GenDesignSystemComponents
 
 parseImportPackages :: Parser Command
-parseImportPackages = ImportPackages <$> argument str (metavar "PATH")
+parseImportPackages =
+  ImportPackages
+    <$> argument str (metavar "PATH")
+    <*> optional
+      ( strOption $
+          long "repository"
+            <> metavar "<repository>"
+            <> help "Which repository we're importing from"
+      )
+
+parseImportIndex :: Parser Command
+parseImportIndex =
+  ImportIndex
+    <$> argument str (metavar "PATH")
+    <*> optional
+      ( strOption $
+          long "repository"
+            <> metavar "<repository>"
+            <> help "Which repository we're importing from"
+      )
 
 runOptions :: (Reader PoolConfig :> es, DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
-runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/"
+runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/" Nothing
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
@@ -112,12 +133,18 @@ runOptions (Options (CreateUser opts)) = do
       let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
       insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
-runOptions (Options (ImportPackages path)) = importFolderOfCabalFiles path
+runOptions (Options (ImportPackages path repository)) = importFolderOfCabalFiles path repository
+runOptions (Options (ImportIndex path repository)) = importIndex path repository
 
-importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Eff es ()
-importFolderOfCabalFiles path = Log.withStdOutLogger $ \appLogger -> do
+importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Maybe Text -> Eff es ()
+importFolderOfCabalFiles path repository = Log.withStdOutLogger $ \appLogger -> do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  importAllFilesInRelativeDirectory appLogger (user ^. #userId) path True
+  importAllFilesInRelativeDirectory appLogger (user ^. #userId) repository path True
+
+importIndex :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Maybe Text -> Eff es ()
+importIndex path repository = Log.withStdOutLogger $ \logger -> do
+  user <- fromJust <$> Query.getUserByUsername "hackage-user"
+  importFromIndex logger (user ^. #userId) repository path True
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

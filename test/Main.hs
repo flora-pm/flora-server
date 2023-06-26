@@ -14,6 +14,8 @@ import Effectful.Reader.Static (runReader)
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
+
+import Flora.ImportSpec qualified as ImportSpec
 import Flora.OddJobSpec qualified as OddJobSpec
 import Flora.PackageSpec qualified as PackageSpec
 import Flora.TemplateSpec qualified as TemplateSpec
@@ -45,4 +47,5 @@ specs fixtures =
   , CategorySpec.spec
   , TemplateSpec.spec
   , CabalSpec.spec
+  , ImportSpec.spec fixtures
   ]

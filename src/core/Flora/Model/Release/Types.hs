@@ -94,6 +94,8 @@ data Release = Release
   , changelog :: Maybe TextHtml
   -- ^ Content of the release's Changelog
   , changelogStatus :: ImportStatus
+  -- ^ Repo - where this package has been imported from
+  , repository :: Maybe Text
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData, FromJSON, ToJSON)

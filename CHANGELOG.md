@@ -4,6 +4,7 @@
 * Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
 * Add namespace browsing ([#375](https://github.com/flora-pm/flora-server/pull/375))
 * Overhaul the `nix` setup of flora and adjust the docs accordingly ([#369](https://github.com/flora-pm/flora-server/pull/369))
+* Allow importing from index tarballs and incremental importing ([#387](https://github.com/flora-pm/flora-server/pull/387))
 
 ## 1.0.12 -- 2023-04-04
 
@@ -17,7 +18,7 @@
 
 ## 1.0.10 -- 2023-03-21
 * Add buttons to the main page for ghcup and cabal guides ([#341](https://github.com/flora-pm/flora-server/pull/341))
-* Split the project into internal libraries ([#337](https://github.com/flora-pm/flora-server/pull/337)) 
+* Split the project into internal libraries ([#337](https://github.com/flora-pm/flora-server/pull/337))
 * Fetch and store deprecation information about packages ([#342](https://github.com/flora-pm/flora-server/pull/342))
 * Only index versionless package pages ([#343](https://github.com/flora-pm/flora-server/pull/343))
 * Display deprecation information on the package page ([#344](https://github.com/flora-pm/flora-server/pull/344))

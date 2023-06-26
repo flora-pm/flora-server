@@ -20,7 +20,7 @@ source-repository head
 
 flag prod
   description:
-    Compile the project with additional optimisations (takes longer)  
+    Compile the project with additional optimisations (takes longer)
 
   default:     False
   manual:      True
@@ -105,6 +105,7 @@ library
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
+    Flora.Model.PackageIndex
     Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Query
@@ -162,13 +163,16 @@ library
     , souffle-haskell        ==3.5.1
     , streamly
     , streamly-core
+    , tar
     , text
     , text-display
     , time
     , time-effectful
+    , unliftio
     , uuid
     , vector
     , vector-algorithms
+    , zlib
 
 library flora-web
   import:          common-extensions
@@ -416,6 +420,7 @@ test-suite flora-test
   other-modules:
     Flora.CabalSpec
     Flora.CategorySpec
+    Flora.ImportSpec
     Flora.OddJobSpec
     Flora.PackageSpec
     Flora.TemplateSpec
