@@ -27,6 +27,7 @@ import System.FilePath
 import UnliftIO.Exception (finally)
 
 import Codec.Archive.Tar.Entry qualified as Tar
+import Data.Time (UTCTime)
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Package (enqueueImportJob, extractPackageDataFromCabal, loadContent, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Package.Update qualified as Update

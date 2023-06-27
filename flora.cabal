@@ -168,6 +168,7 @@ library
     , text
     , text-display
     , time
+    , unliftio
     , uuid
     , vector
     , vector-algorithms
