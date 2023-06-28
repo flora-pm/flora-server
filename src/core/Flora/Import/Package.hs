@@ -30,6 +30,7 @@ import Data.Text (Text, pack)
 import Data.Text qualified as T
 import Data.Text.Display
 import Data.Text.IO qualified as T
+import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (Connection)
@@ -57,14 +58,8 @@ import Effectful.Internal.Monad (unsafeEff_)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Reader.Static (Reader, ask)
-import Effectful.Time (Time, UTCTime)
+import Effectful.Time (Time)
 import Effectful.Time qualified as Time
-import Log qualified
-import OddJobs.Job (createJob)
-import Optics.Core
-import System.Directory qualified as System
-import System.FilePath
-
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
@@ -85,6 +80,11 @@ import Flora.Model.Requirement
   , flag
   )
 import Flora.Model.User
+import Log qualified
+import OddJobs.Job (createJob)
+import Optics.Core
+import System.Directory qualified as System
+import System.FilePath
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -283,7 +283,7 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
   let namespace = force $! chooseNamespace packageName
   let packageId = force $! deterministicPackageId namespace packageName
   let releaseId = force $! deterministicReleaseId packageId packageVersion
-  timestamp <- Time.getCurrentTime
+  timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName $! packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)

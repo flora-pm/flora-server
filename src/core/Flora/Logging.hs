@@ -43,7 +43,7 @@ timeAction
   => Eff es a
   -> Eff es (a, NominalDiffTime)
 timeAction action = do
-  start <- Time.getCurrentTime
+  start <- Time.currentTime
   result <- action
-  end <- Time.getCurrentTime
+  end <- Time.currentTime
   pure (result, Time.diffUTCTime end start)

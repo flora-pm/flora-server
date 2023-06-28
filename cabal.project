@@ -74,11 +74,6 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/haskell-effectful/time-effectful
-    tag: 705ac67
-
-source-repository-package
-    type: git
     location: https://github.com/composewell/streamly
     tag: 81bfdec
     subdir: ./

@@ -131,7 +131,7 @@ runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
 runTestEff comp pool poolCfg = runEff $
   Log.withStdOutLogger $ \stdOutLogger ->
     do
-      runCurrentTimeIO
+      runTime
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
       . runReader poolCfg

@@ -18,7 +18,7 @@ import Effectful
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Reader.Static (Reader, ask, runReader)
-import Effectful.Time
+import Effectful.Time (runTime)
 import Log (Logger, defaultLogLevel)
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Prelude qualified as S
@@ -27,6 +27,7 @@ import System.FilePath
 import UnliftIO.Exception (finally)
 
 import Codec.Archive.Tar.Entry qualified as Tar
+import Data.Time (UTCTime)
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Package (enqueueImportJob, extractPackageDataFromCabal, loadContent, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Package.Update qualified as Update
@@ -138,7 +139,7 @@ importFromStream appLogger user repository directImport stream = do
       runEff
         . runReader poolConfig
         . runDB pool
-        . runCurrentTimeIO
+        . runTime
         . Log.runLog "flora-jobs" appLogger defaultLogLevel
         . ( \(path, timestamp, content) ->
               loadContent path content

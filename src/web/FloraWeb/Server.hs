@@ -19,7 +19,7 @@ import Effectful.Error.Static (runErrorNoCallStack)
 import Effectful.Fail (runFailIO)
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Effectful.Reader.Static (runReader, withReader)
-import Effectful.Time (runCurrentTimeIO)
+import Effectful.Time (runTime)
 import Log (Logger)
 import Log qualified
 import Network.HTTP.Client qualified as HTTP
@@ -79,7 +79,7 @@ runFlora =
     (getFloraEnv & runFailIO & runEff)
     (runEff . shutdownFlora)
     ( \env ->
-        runEff . runCurrentTimeIO . runConcurrent $! do
+        runEff . runTime . runConcurrent $! do
           let baseURL = "http://localhost:" <> display (env.httpPort)
           liftIO $! blueMessage $! "🌺 Starting Flora server on " <> baseURL
           liftIO $! when (isJust $! env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
@@ -106,7 +106,7 @@ logException
   -> IO ()
 logException env logger exception =
   runEff
-    . runCurrentTimeIO
+    . runTime
     . Logging.runLog env logger
     $! Log.logAttention "odd-jobs runner crashed " (show exception)
 
@@ -170,7 +170,7 @@ floraServer pool cfg jobsRunnerEnv =
                 & runVisitorSession
                 & runDB pool
                 & Log.localData [("request_id", Aeson.String $! requestID . getResponse $! sessionWithCookies)]
-                & runCurrentTimeIO
+                & runTime
                 & withReader (const sessionWithCookies)
           )
           (Pages.server cfg jobsRunnerEnv)
