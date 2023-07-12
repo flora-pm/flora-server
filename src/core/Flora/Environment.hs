@@ -14,6 +14,7 @@ import Colourista.IO (blueMessage)
 import Data.ByteString (ByteString)
 import Data.Pool (Pool)
 import Data.Pool qualified as Pool
+import Data.Pool.Introspection (defaultPoolConfig)
 import Data.Text
 import Data.Text.Encoding qualified as Text
 import Data.Time (NominalDiffTime)
@@ -57,12 +58,11 @@ mkPool
 mkPool connectionInfo timeout' connections =
   liftIO $
     Pool.newPool $
-      Pool.PoolConfig
-        { createResource = PG.connectPostgreSQL connectionInfo
-        , freeResource = PG.close
-        , poolCacheTTL = realToFrac timeout'
-        , poolMaxResources = connections
-        }
+      defaultPoolConfig
+        (PG.connectPostgreSQL connectionInfo)
+        PG.close
+        (realToFrac timeout')
+        connections
 
 configToEnv :: (Fail :> es, IOE :> es) => FloraConfig -> Eff es FloraEnv
 configToEnv floraConfig = do

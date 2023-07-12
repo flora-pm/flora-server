@@ -46,5 +46,5 @@
   });
 
   poolboy = dontCheck (hfinal.callCabal2nix "poolboy" inputs.poolboy { });
-  resource-pool = hfinal.callHackage "resource-pool" "0.3.1.0" { };
+  resource-pool = hfinal.callHackage "resource-pool" "0.4.0.0" { };
 })
