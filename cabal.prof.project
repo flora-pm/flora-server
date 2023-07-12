@@ -56,23 +56,20 @@ source-repository-package
     location: https://github.com/flora-pm/wai-middleware-heartbeat
     tag: 336523a
 
--- need to use jappeace until this is merged
--- (provides resource-pool 3 support)
--- https://github.com/saurabhnanda/odd-jobs/pull/90
-source-repository-package
-    type: git
-    location: https://github.com/jappeace/odd-jobs
-    tag: a75515791f2c743614ec05d54493ef12b143002e
-
 source-repository-package
     type: git
     location: https://github.com/kleidukos/pg-transact-effectful
-    tag: 590dd6c
+    tag: db6fa06
 
 source-repository-package
     type: git
     location: https://github.com/kleidukos/servant-effectful
     tag: 21b5a1d
+
+source-repository-package
+    type: git
+    location: https://github.com/saurabhnanda/odd-jobs
+    tag: 51c7443
 
 source-repository-package
     type: git
