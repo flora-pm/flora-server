@@ -32,12 +32,6 @@ package warp
 
 source-repository-package
     type: git
-    location: https://gitlab.com/dpwiz/raven-haskell
-    tag: 9dacea2bec9c6f5d9f7d46a2a1d9094cf6147fbf
-    subdir: ./raven-haskell
-
-source-repository-package
-    type: git
     location: https://github.com/supki/envparse
     tag: 503a699
 
