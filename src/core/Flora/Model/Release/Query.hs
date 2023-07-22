@@ -30,7 +30,7 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Version (Version)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
-import Flora.Model.Package.Component
+import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 

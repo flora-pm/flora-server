@@ -71,8 +71,8 @@ import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
+import Flora.Model.Component.Types as Component
 import Flora.Model.Job (FloraOddJobs (..))
-import Flora.Model.Package.Component as Component
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update

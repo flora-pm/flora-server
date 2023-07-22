@@ -24,7 +24,7 @@ lockAccount userId = dbtToEff $! void $! execute Update q (Only userId)
   where
     q =
       [sql|
-        update users as u set user_flags = jsonb_set(user_flags, '{canLogin}', 'false', false)
+        update users as u set user_flags = jsonb_set(user_flags, '{can_login}', 'false', false)
         where u.user_id = ?;
       |]
 
@@ -33,7 +33,7 @@ unlockAccount userId = dbtToEff $! void $! execute Update q (Only userId)
   where
     q =
       [sql|
-        update users as u set user_flags = jsonb_set(user_flags, '{canLogin}', 'true', false)
+        update users as u set user_flags = jsonb_set(user_flags, '{can_login}', 'true', false)
         where u.user_id = ?;
       |]
 

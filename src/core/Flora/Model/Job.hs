@@ -8,12 +8,12 @@ import Data.Text (Text)
 import Data.Text.Display
 import Distribution.Pretty
 import Distribution.Version (Version, mkVersion, versionNumbers)
-import GHC.Generics (Generic)
 import OddJobs.Job (Job, LogEvent (..))
 import OddJobs.Types (FailureMode)
 import Servant (ToHttpApiData)
 
 import Data.Vector (Vector)
+import Deriving.Aeson
 import Flora.Import.Package.Types (ImportOutput)
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Release.Types (ReleaseId (..))
@@ -35,7 +35,9 @@ data ReadmeJobPayload = ReadmeJobPayload
   , mpVersion :: IntAesonVersion
   }
   deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReadmeJobPayload)
 
 data UploadTimeJobPayload = UploadTimeJobPayload
   { packageName :: PackageName
@@ -43,7 +45,9 @@ data UploadTimeJobPayload = UploadTimeJobPayload
   , packageVersion :: IntAesonVersion
   }
   deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] UploadTimeJobPayload)
 
 data ChangelogJobPayload = ChangelogJobPayload
   { packageName :: PackageName
@@ -51,11 +55,15 @@ data ChangelogJobPayload = ChangelogJobPayload
   , packageVersion :: IntAesonVersion
   }
   deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ChangelogJobPayload)
 
 data ImportHackageIndexPayload = ImportHackageIndexPayload
   deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportHackageIndexPayload)
 
 -- these represent the possible odd jobs we can run.
 data FloraOddJobs
@@ -68,7 +76,9 @@ data FloraOddJobs
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
   deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] FloraOddJobs)
 
 -- TODO: Upstream these two ToJSON instances
 deriving instance ToJSON FailureMode

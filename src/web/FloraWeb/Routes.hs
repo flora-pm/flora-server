@@ -6,9 +6,10 @@ import Servant
 import Servant.API.Generic
 import Text.XML
 
--- import FloraWeb.Autoreload (AutoreloadRoute)
-import FloraWeb.Routes.Pages qualified as Pages
-import FloraWeb.Server.OpenSearch
+import Data.OpenApi (OpenApi)
+import FloraWeb.API.Routes qualified as API
+import FloraWeb.Common.OpenSearch
+import FloraWeb.Pages.Routes qualified as Pages
 
 type ServerRoutes = NamedRoutes Routes
 
@@ -16,6 +17,12 @@ data Routes mode = Routes
   { assets :: mode :- "static" :> Raw
   , openSearch :: mode :- "opensearch.xml" :> Get '[OpenSearchXML] Document
   , pages :: mode :- AuthProtect "optional-cookie-auth" :> Pages.Routes
-  -- , autoreload :: mode :- AutoreloadRoute
+  , api :: mode :- "api" :> API.Routes
+  , openApi
+      :: mode
+        :- "documentation"
+          :> "openapi.json"
+          :> Get '[JSON] OpenApi
+  , docs :: mode :- "documentation" :> Raw
   }
   deriving stock (Generic)

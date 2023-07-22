@@ -3,7 +3,7 @@ module FloraWeb.Components.Footer where
 import Lucid
 import Lucid.Svg (clip_rule_, d_, fill_, fill_rule_, path_, viewBox_)
 
-import FloraWeb.Templates.Types
+import FloraWeb.Pages.Templates.Types
 
 footer :: FloraHTML
 footer =

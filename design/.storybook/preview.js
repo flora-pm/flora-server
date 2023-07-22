@@ -1,17 +1,16 @@
 import "../styles.css";
 
-export const parameters = {
-  actions: { argTypesRegex: "^on[A-Z].*" },
-  controls: {
-    matchers: {
-      color: /(background|color)$/i,
-      date: /Date$/,
+/** @type { import('@storybook/html').Preview } */
+const preview = {
+  parameters: {
+    actions: { argTypesRegex: "^on[A-Z].*" },
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
     },
   },
-  darkMode: {
-    current: "dark",
-    classTarget: "html",
-    darkClass: "dark",
-    stylePreview: true
-  }
-}
+};
+
+export default preview;

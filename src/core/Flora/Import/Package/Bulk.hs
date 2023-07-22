@@ -120,9 +120,9 @@ importFromStream appLogger user repository directImport stream = do
       )
   displayStats processedPackageCount
   where
-    updatePkgIdxTimestamp repository =
-      Query.getLatestReleaseTime (Just repository)
-        >>= updatePackageIndexTimestamp repository
+    updatePkgIdxTimestamp repository' =
+      Query.getLatestReleaseTime (Just repository')
+        >>= updatePackageIndexTimestamp repository'
     createPkgIdx repo = do
       pkgIndexTz <- getPackageIndexTimestamp repo
       when (isNothing pkgIndexTz) $

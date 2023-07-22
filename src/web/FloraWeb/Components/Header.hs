@@ -11,7 +11,7 @@ import PyF
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.Utils (property_, text)
-import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
+import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
 import Lucid.Svg.Attributes (color_)
 
 header :: FloraHTML

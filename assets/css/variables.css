@@ -2,85 +2,108 @@
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
 :root {
-  --background-color: hsl(30 10% 96%);
-  --brand-border: hsl(220 13% 91%);
-  --button-hover-background: hsl(294 40% 20%);
-  --category-card-name-color: hsl(218 30% 30%);
-  --category-card-synopsis-color: hsl(221 39% 11%);
-  --category-card-background-hover: hsl(220 13% 91%);
-  --error-button: hsl(294 40% 20%);
-  --error-code: hsl(294 40% 20%);
-  --link-color: hsl(218 30% 45%);
+  /* Primary Blue */
+  --blue-15: hsl(221 30% 15%);
+  --blue-20: hsl(221 30% 20%);
+  --blue-30: hsl(221 30% 30%);
+  --blue-40: hsl(221 30% 40%);
+  --blue-60: hsl(221 30% 60%);
+  --blue-70: hsl(221 30% 70%);
+  --blue-80: hsl(221 30% 80%);
+
+  /* Secondary Purple */
+  --purple-20: hsl(294 40% 20%);
+  --purple-30: hsl(294 40% 30%);
+  --purple-40: hsl(294 40% 40%);
+  --purple-60: hsl(294 40% 60%);
+  --purple-70: hsl(294 40% 70%);
+  --purple-80: hsl(294 40% 80%);
+
+  /* Neutral Grey */
+  --gray-10: hsl(221 9% 10%);
+  --gray-20: hsl(221 9% 20%);
+  --gray-30: hsl(221 9% 30%);
+  --gray-80: hsl(221 9% 80%);
+  --gray-90: hsl(221 9% 90%);
+  --gray-100: hsl(221 9% 100%);
+
+  /* Version */
+  --green-30: hsl(140 100% 30%);
+  --green-40: hsl(140 100% 40%);
+  --red-60: hsl(358 80% 60%);
+  --background-color: var(--gray-100);
+  --brand-border: var(--gray-100);
+  --category-card-name-color: var(--gray-30);
+  --category-card-synopsis-color: var(--blue-20);
+  --category-card-background-hover: var(--gray-90);
+  --error-button: var(--purple-20);
+  --error-code: var(--purple-20);
+  --link-color: var(--blue-40);
   --link-hover-color: hsl(220 13% 91%);
-  --navbar-background-color: hsl(294 40% 20%);
-  --navbar-border-color: hsl(220 13% 91%);
-  --navbar-element-hover-color: hsl(254 95% 77%);
-  --navbar-search-color: hsl(221 39% 11%);
-  --navbar-search-background-color: hsl(30 10% 96%);
-  --navbar-search-border-color: hsl(30 10% 96%);
-  --text-color-dark: hsl(221 39% 11%);
-  --text-color-light: hsl(216 12% 84%);
-  --text-color: hsl(221 39% 11%);
-  --package-list-item-background-hover-color: hsl(220 13% 91%);
-  --package-list-item-name-color: hsl(221 39% 11%);
+  --navbar-background-color: var(--purple-20);
+  --navbar-border-color: var(--gray-90);
+  --navbar-search-color: var(--gray-10);
+  --navbar-search-background-color: var(--gray-100);
+  --navbar-search-border-color: var(--gray-100);
+  --package-list-item-background-hover-color: var(--gray-90);
+  --package-list-item-name-color: var(--blue-20);
   --package-list-item-synopsis-color: black;
   --package-list-item-metadata-color: black;
-  --package-list-item-version-color: #0a6;
+  --package-list-item-version-color: var(--green-30);
   --search-bar-color: hsl(221 39% 11%);
-  --search-bar-background-color: white;
+  --search-bar-background-color: var(--gray-100);
   --search-bar-background-hover-color: white;
   --search-bar-background-focus-color: white;
-  --search-bar-focus-border-color: hsl(294 40% 30%);
-  --readme-pre-background-color: hsl(225 13% 87%);
-  --readme-code-background-color: hsl(225 13% 87%);
-  --changelog-pre-background-color: hsl(225 13% 87%);
-  --changelog-code-background-color: hsl(225 13% 87%);
-  --install-string-border: hsl(215 28% 17%);
+  --search-bar-focus-border-color: var(--purple-30);
+  --readme-pre-background-color: var(--gray-90);
+  --readme-code-background-color: var(--gray-90);
+  --changelog-pre-background-color: var(--gray-90);
+  --changelog-code-background-color: var(--gray-90);
+
+  /* --install-string-border: hsl(215 28% 17%); */
   --compiler-badge-background: hsl(218 12% 84%);
-  --main-page-button-background: hsl(218 12% 84%);
-  --main-page-button-focus-border-color: hsl(294 40% 30%);
-  --main-page-button-divider: hsl(294 40% 20%);
-  --deprecated-version: hsl(358 80% 60%);
+  --text-color: hsl(221 39% 11%);
+  --main-page-button-background: var(--gray-100);
+  --main-page-button-focus-border-color: var(--purple-30);
+  --main-page-button-divider: var(--purple-20);
+  --deprecated-version: var(--red-60);
 }
 
 html[data-theme="dark"] {
-  --background-color: hsl(218 30% 20%);
-  --brand-border: hsl(294 40% 30%);
-  --button-hover-background: hsl(294 40% 20%);
-  --category-card-name-color: hsl(294 40% 60%);
-  --category-card-synopsis-color: hsl(216 12% 84%);
-  --category-card-background-hover: hsl(218 30% 15%);
-  --error-button: hsl(294 40% 30%);
-  --error-code: hsl(294 40% 55%);
-  --link-color: hsl(294 40% 60%);
-  --link-hover-color: hsl(218 30% 15%);
-  --navbar-background-color: hsl(218 30% 15%);
+  --background-color: var(--blue-20);
+  --brand-border: var(--purple-30);
+  --category-card-name-color: var(--purple-60);
+  --category-card-synopsis-color: var(--gray-90);
+  --category-card-background-hover: var(--blue-15);
+  --error-button: var(--purple-30);
+  --error-code: var(--gray-90);
+  --link-color: var(--purple-60);
+  --link-hover-color: var(--blue-15);
+  --navbar-background-color: var(--blue-15);
   --navbar-border-color: transparent;
-  --navbar-element-hover-color: hsl(254 95% 77%);
-  --navbar-search-color: hsl(220 13% 91%);
-  --navbar-search-background-color: hsl(218 30% 20%);
-  --navbar-search-border-color: hsl(218 30% 20%);
-  --text-color-dark: hsl(221 39% 11%);
-  --text-color-light: hsl(216 12% 84%);
-  --text-color: hsl(216 12% 84%);
-  --package-list-item-background-hover-color: hsl(218 30% 15%);
-  --package-list-item-name-color: hsl(294 40% 60%);
-  --package-list-item-metadata-color: hsl(220 13% 91%);
-  --package-list-item-synopsis-color: hsl(220 13% 91%);
-  --package-list-item-version-color: hsl(140 60% 35%);
-  --search-bar-color: hsl(216 12% 84%);
-  --search-bar-background-color: hsl(218 30% 25%);
-  --search-bar-background-hover-color: hsl(218 30% 25%);
-  --search-bar-background-focus-color: hsl(218 30% 25%);
-  --search-bar-focus-border-color: hsl(294 40% 30%);
-  --readme-pre-background-color: hsl(218 29% 30%);
-  --readme-code-background-color: hsl(218 29% 30%);
-  --changelog-pre-background-color: hsl(218 29% 30%);
-  --changelog-code-background-color: hsl(218 29% 30%);
-  --install-string-border: hsl(215 28% 17%);
-  --compiler-badge-background: hsl(218 30% 30%);
-  --main-page-button-background: hsl(218 29% 30%);
-  --main-page-button-focus-border-color: hsl(294 40% 30%);
-  --main-page-button-divider: hsl(218 30% 15%);
-  --deprecated-version: hsl(358 80% 60%);
+  --navbar-search-color: var(--gray-90);
+  --navbar-search-background-color: var(--blue-20);
+  --navbar-search-border-color: var(--blue-20);
+  --package-list-item-background-hover-color: var(--blue-15);
+  --package-list-item-name-color: var(--purple-60);
+  --package-list-item-metadata-color: var(--gray-90);
+  --package-list-item-synopsis-color: var(--gray-90);
+  --package-list-item-version-color: var(--green-40);
+  --search-bar-color: var(--gray-90);
+  --search-bar-background-color: var(--blue-20);
+  --search-bar-background-hover-color: var(--blue-20);
+  --search-bar-background-focus-color: var(--blue-20);
+  --search-bar-focus-border-color: var(--purple-30);
+  --readme-pre-background-color: var(--blue-30);
+  --readme-code-background-color: var(--blue-30);
+  --changelog-pre-background-color: var(--blue-30);
+  --changelog-code-background-color: var(--blue-30);
+
+  /* --install-string-border: hsl(215 28% 17%); */
+  --compiler-badge-background: var(--blue-30);
+  --text-color: var(--blue-80);
+  --main-page-button-background: var(--blue-20);
+  --main-page-button-focus-border-color: var(--purple-30);
+  --main-page-button-divider: var(--blue-15);
+  --deprecated-version: var(--red-60);
 }

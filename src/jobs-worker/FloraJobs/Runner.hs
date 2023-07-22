@@ -163,10 +163,14 @@ fetchReleaseDeprecationList packageName releases = do
                   Vector.elem v deprecationList.deprecatedVersions
               )
               releasesAndVersions
-      let deprecatedVersions = fmap (\(releaseId, _) -> (True, releaseId)) deprecatedVersions'
-      let preferredVersions = fmap (\(releaseId, _) -> (False, releaseId)) preferredVersions'
-      unless (Vector.null deprecatedVersions) $ Update.setReleasesDeprecationMarker deprecatedVersions
-      unless (Vector.null preferredVersions) $ Update.setReleasesDeprecationMarker preferredVersions
+      let deprecatedVersions =
+            fmap (\(releaseId, _) -> (True, releaseId)) deprecatedVersions'
+      let preferredVersions =
+            fmap (\(releaseId, _) -> (False, releaseId)) preferredVersions'
+      unless (Vector.null deprecatedVersions) $
+        Update.setReleasesDeprecationMarker deprecatedVersions
+      unless (Vector.null preferredVersions) $
+        Update.setReleasesDeprecationMarker preferredVersions
     Left e@(FailureResponse _ response) -> do
       logAttention "Could not fetch release deprecation list from Hackage" $
         object

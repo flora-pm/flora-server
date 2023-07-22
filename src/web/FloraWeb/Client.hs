@@ -10,11 +10,11 @@ import Servant.Client.Generic
 
 import Flora.Model.PersistentSession
 import Flora.Model.User.Orphans ()
+import FloraWeb.Common.Auth
+import FloraWeb.Pages.Routes qualified as Pages
+import FloraWeb.Pages.Routes qualified as Web
+import FloraWeb.Pages.Routes.Sessions qualified as Web
 import FloraWeb.Routes as Web
-import FloraWeb.Routes.Pages qualified as Pages
-import FloraWeb.Routes.Pages qualified as Web
-import FloraWeb.Routes.Pages.Sessions qualified as Web
-import FloraWeb.Server.Auth
 import Lucid.Orphans ()
 import Servant.Client.Core qualified as Client
 

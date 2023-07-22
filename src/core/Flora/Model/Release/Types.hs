@@ -12,6 +12,7 @@ where
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.ByteString (ByteString)
+import Data.OpenApi.Schema (ToSchema)
 import Data.Text (Text, unpack)
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -31,11 +32,11 @@ import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag)
 import Distribution.Types.Version
 import Distribution.Types.VersionRange (VersionRange)
-import GHC.Generics (Generic)
 import Lucid qualified
 
 import Control.DeepSeq
 import Data.Text.Lazy qualified as Text
+import Deriving.Aeson
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
@@ -96,7 +97,10 @@ data Release = Release
   , repository :: Maybe Text
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData, FromJSON, ToJSON)
+  deriving anyclass (FromRow, ToRow, NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] Release)
   deriving
     (Entity)
     via (GenericEntity '[TableName "releases"] Release)
@@ -106,7 +110,7 @@ instance Ord Release where
 
 newtype ReleaseFlags = ReleaseFlags (Vector PackageFlag)
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving newtype (ToJSON, FromJSON, NFData, ToSchema)
   deriving (ToField, FromField) via Aeson ReleaseFlags
 
 data ImportStatus
@@ -114,7 +118,10 @@ data ImportStatus
   | Inexistent
   | NotImported
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
-  deriving anyclass (NFData, ToJSON, FromJSON)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportStatus)
 
 parseImportStatus :: ByteString -> Maybe ImportStatus
 parseImportStatus "imported" = pure Imported
@@ -143,19 +150,16 @@ instance ToField ImportStatus where
 
 newtype SupportedCompilers = Vector (CompilerFlavor, VersionRange)
   deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON, NFData)
-
-data ReleaseMetadata = ReleaseMetadata
-  {
-  }
-  deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON, NFData)
-  deriving (ToField, FromField) via Aeson ReleaseMetadata
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] SupportedCompilers)
 
 data ReleaseDeprecation = ReleaseDeprecation
   { deprecated :: Bool
   , release :: ReleaseId
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReleaseDeprecation)
   deriving (ToField, FromField) via Aeson ReleaseDeprecation

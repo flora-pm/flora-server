@@ -305,12 +305,6 @@ a {
     border-color: var(--search-bar-focus-border-color);
   }
 
-  .navbar-element:hover {
-    --tw-text-opacity: 1;
-
-    color: var(--navbar-element-hover-color);
-  }
-
   #navbar-search-package-name {
     padding-left: 20px;
   }
@@ -468,17 +462,17 @@ section#main-page-buttons {
   margin-right: auto;
 
   .button {
+    background-color: var(--main-page-button-background);
+    border-radius: 50rem;
+    border-width: 1px;
     color: var(--text-color);
     font-weight: bolder;
-    background-color: var(--main-page-button-background);
-    border-color: var(--text-color);
-    padding-top: 1rem;
+    margin-left: 9px;
+    margin-right: 9px;
     padding-bottom: 1rem;
     padding-left: 2rem;
     padding-right: 2rem;
-    margin-left: 9px;
-    margin-right: 9px;
-    border-radius: 50rem;
+    padding-top: 1rem;
   }
 
   .button:hover {

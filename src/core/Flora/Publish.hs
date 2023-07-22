@@ -11,8 +11,8 @@ import Effectful.Time
 import Flora.Import.Categories.Tuning
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Model.Category.Update qualified as Update
+import Flora.Model.Component.Types
 import Flora.Model.Package
-import Flora.Model.Package.Component
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
