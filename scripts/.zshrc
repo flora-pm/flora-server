@@ -1,3 +1,8 @@
+#!/usr/bin/env zsh
+
+set -euxo pipefail
+
+export SHELL="zsh"
 export ZSH="$HOME/.oh-my-zsh"
 export LANG=C.UTF-8
 ZSH_THEME="robbyrussell"
