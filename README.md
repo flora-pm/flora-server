@@ -1,8 +1,11 @@
-<h1 align="center"> Flora <br> <small>A package index for the Haskell ecosystem</small> </h1>
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/flora-pm/flora-server/development/assets/favicon.svg" height=250 width=250 alt="Logo" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./banners/logo-dark-background.png">
+    <img alt="Flora" src="./banners/logo-light-background.png" width=50%>
+  </picture>
 </p>
+
+<h1 align="center"><small>A package index for the Haskell ecosystem</small> </h1>
 
 <p align="center">
 <a href="https://github.com/flora-pm/flora-server/actions">
