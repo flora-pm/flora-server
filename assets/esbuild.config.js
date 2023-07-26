@@ -4,6 +4,7 @@ const postcssPlugin = require("@deanc/esbuild-plugin-postcss");
 const fs = require("fs");
 const chokidar = require('chokidar');
 const path = require("path");
+const {sassPlugin} = require('esbuild-sass-plugin');
 
 // PostCSS plugins
 const postcssImport = require("postcss-import");   
@@ -45,6 +46,7 @@ const pluginsList = () => {
         tailwindNesting,
         tailwind,
         autoprefixer,
+        sassPlugin,
         postcssCopy,
       ],
     })];
@@ -77,9 +79,6 @@ const config = {
   incremental: process.argv.includes("--watch"),
   watch: process.argv.includes("--watch"),
 }
-
-console.log(config.outdir);
-console.log(__dirname);
 
 if (process.argv.includes("--watch")) {
   (async () => {

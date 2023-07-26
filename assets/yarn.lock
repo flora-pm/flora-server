@@ -929,6 +929,14 @@ esbuild-plugin-assets-manifest@^1.0.7:
   resolved "https://registry.yarnpkg.com/esbuild-plugin-assets-manifest/-/esbuild-plugin-assets-manifest-1.0.7.tgz#a896616bbfff86427251177936ff0447b1bdfa74"
   integrity sha512-UIuXaCeyWW8ydfJjU5h4/NMLHGvi8nFgDhTVbvcfab03DAkXrMP1/5hnLZ5FpAC63nnOnwmOZk4pLx4amWAyaA==
 
+esbuild-sass-plugin@^2.10.0:
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/esbuild-sass-plugin/-/esbuild-sass-plugin-2.10.0.tgz#002950a4d2d5840143218f8ba65d7f7bf1119ecc"
+  integrity sha512-STv849QGT8g77RRFmroSt4VBVKjv+dypKcO4aWz8IP4G5JbRH0KC0+B8ODuzlUNu9R5MbkGcev/62RDP/JcZ2Q==
+  dependencies:
+    resolve "^1.22.2"
+    sass "^1.63.0"
+
 esbuild-style-plugin@^1.6.0:
   version "1.6.1"
   resolved "https://registry.yarnpkg.com/esbuild-style-plugin/-/esbuild-style-plugin-1.6.1.tgz#9a0f6f47587890c56d10a4ae3fc4ce5697baaa28"
@@ -1475,6 +1483,13 @@ is-buffer@^1.1.5:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/is-buffer/-/is-buffer-1.1.6.tgz#efaa2ea9daa0d7ab2ea13a97b2b8ad51fefbe8be"
   integrity sha512-NcdALwpXkTm5Zvvbk7owOUSvVvBKDgKP5/ewfXEznmQFfs4ZRmanOeKBTjRVjka3QFoN6XJ+9F3USqfHqTaU5w==
+
+is-core-module@^2.11.0:
+  version "2.12.1"
+  resolved "https://registry.yarnpkg.com/is-core-module/-/is-core-module-2.12.1.tgz#0c0b6885b6f80011c71541ce15c8d66cf5a4f9fd"
+  integrity sha512-Q4ZuBAe2FUsKtyQJoQHlvP8OvBERxO3jEmy1I7hcRXcJBGGHFh/aJBswbXuS9sgrDH2QUO8ilkwNPHvHMd8clg==
+  dependencies:
+    has "^1.0.3"
 
 is-core-module@^2.5.0, is-core-module@^2.9.0:
   version "2.11.0"
@@ -2587,6 +2602,15 @@ resolve@^1.1.7, resolve@^1.12.0, resolve@^1.22.1:
     path-parse "^1.0.7"
     supports-preserve-symlinks-flag "^1.0.0"
 
+resolve@^1.22.2:
+  version "1.22.2"
+  resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.22.2.tgz#0ed0943d4e301867955766c9f3e1ae6d01c6845f"
+  integrity sha512-Sb+mjNHOULsBv818T40qSPeRiuWLyaGMa5ewydRLFimneixmVy2zdivRl+AF6jaYPC8ERxGDmFSiqui6SfPd+g==
+  dependencies:
+    is-core-module "^2.11.0"
+    path-parse "^1.0.7"
+    supports-preserve-symlinks-flag "^1.0.0"
+
 ret@~0.1.10:
   version "0.1.15"
   resolved "https://registry.yarnpkg.com/ret/-/ret-0.1.15.tgz#b8a4825d5bdb1fc3f6f53c2bc33f81388681c7bc"
@@ -2634,6 +2658,15 @@ sass@*:
   version "1.60.0"
   resolved "https://registry.yarnpkg.com/sass/-/sass-1.60.0.tgz#657f0c23a302ac494b09a5ba8497b739fb5b5a81"
   integrity sha512-updbwW6fNb5gGm8qMXzVO7V4sWf7LMXnMly/JEyfbfERbVH46Fn6q02BX7/eHTdKpE7d+oTkMMQpFWNUMfFbgQ==
+  dependencies:
+    chokidar ">=3.0.0 <4.0.0"
+    immutable "^4.0.0"
+    source-map-js ">=0.6.2 <2.0.0"
+
+sass@^1.63.0:
+  version "1.64.1"
+  resolved "https://registry.yarnpkg.com/sass/-/sass-1.64.1.tgz#6a46f6d68e0fa5ad90aa59ce025673ddaa8441cf"
+  integrity sha512-16rRACSOFEE8VN7SCgBu1MpYCyN7urj9At898tyzdXFhC+a+yOX5dXwAR7L8/IdPJ1NB8OYoXmD55DM30B2kEQ==
   dependencies:
     chokidar ">=3.0.0 <4.0.0"
     immutable "^4.0.0"
