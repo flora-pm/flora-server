@@ -79,8 +79,11 @@ nix-shell: ## Enter the Nix shell
 docker-build: ## Build and start the container cluster
 	@docker build .
 
-docker-start: ## Start the container cluster
+docker-up: ## Start the container cluster
 	@docker compose up -d
+
+docker-down: ## Start the container cluster
+	@docker compose down
 
 docker-enter: ## Enter the docker environment
 	docker compose exec server zsh

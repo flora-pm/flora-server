@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-set -euxo pipefail
+set -euo pipefail
 
 export SHELL="zsh"
 export ZSH="$HOME/.oh-my-zsh"

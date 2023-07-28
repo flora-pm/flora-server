@@ -71,7 +71,7 @@ RUN cabal install -j ghc-tags
 # configure the shell
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 COPY --chown=${USER} scripts/shell-welcome.txt /etc/motd
-COPY --chown=${USER} scripts/.zshrc /$USER/.zshrc
+COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 
 # build Haskell dependencies
 COPY --chown=${USER} cabal.project flora.cabal ./
@@ -86,7 +86,6 @@ RUN make souffle
 COPY --chown=${USER} assets ./assets
 RUN make build-assets
 
-ENV PATH="$PATH:/$USER/.cabal/bin"
 USER root
-RUN echo 'export PATH="$PATH"' > /etc/profile
+RUN echo 'export PATH="$PATH:/home/$USER/.cabal/bin"' > /etc/profile
 USER ${USER}
