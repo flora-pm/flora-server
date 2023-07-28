@@ -1,6 +1,21 @@
 version: "3"
 services:
   server:
+    image: ghcr.io/flora-pm/flora-server:latest
+    ports:
+      - "8084:8084"
+    volumes:
+      - database-data:/flora-server/pgdata/
+      - .:/flora-server:Z
+    links:
+      - database
+    command: sleep infinity
+    profiles:
+      - local
+    depends_on:
+      - database
+
+  dev-server:
     ports:
       - "8084:8084"
     build:
@@ -16,7 +31,7 @@ services:
       - database
     command: sleep infinity
     profiles:
-      - local
+      - dev
     depends_on:
       - database
 
@@ -40,6 +55,7 @@ services:
       - database-data:/var/lib/postgresql/data    
     profiles:
       - local
+      - dev
     restart: always
 
 volumes:

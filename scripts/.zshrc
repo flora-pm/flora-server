@@ -11,5 +11,6 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 source /flora-server/environment.docker.sh
+export PATH=${PATH}:~/.cabal/bin
 
 cat /etc/motd

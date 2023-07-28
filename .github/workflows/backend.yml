@@ -5,6 +5,10 @@ on:
   push:
     branches: ["main", "development"]
 
+concurrency:
+  group: backend-${{ github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   generateMatrix:
     name: "Generate matrix from cabal"
@@ -74,7 +78,6 @@ jobs:
         cat ~/.pgpass
         cabal update
         cabal freeze
-
 
     - name: Cache
       uses: actions/cache@v3.3.1
