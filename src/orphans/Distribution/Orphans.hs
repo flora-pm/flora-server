@@ -17,6 +17,7 @@ import Database.PostgreSQL.Simple.FromField
   , ResultError (ConversionFailed, UnexpectedNull)
   , returnError
   )
+import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Database.PostgreSQL.Simple.Types (PGArray (..))
 import Distribution.Compiler (CompilerFlavor)
@@ -135,5 +136,8 @@ instance Display UnqualComponentName where
 instance Ord PackageFlag where
   compare = compare `on` flagName
 
-deriving instance ToJSON PackageFlag
-deriving instance FromJSON PackageFlag
+deriving anyclass instance ToJSON PackageFlag
+deriving anyclass instance FromJSON PackageFlag
+
+deriving via (Aeson PackageFlag) instance FromField PackageFlag
+deriving via (Aeson PackageFlag) instance ToField PackageFlag

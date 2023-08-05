@@ -86,7 +86,7 @@ versionListItem namespace packageName release = do
       uploadedAt
       div_ [class_ "package-list-item__metadata"] $! span_ [class_ "package-list-item__license"] $! do
         licenseIcon
-        toHtml release.metadata.license
+        toHtml release.license
 
 -- | Render a list of package informations
 packageListing :: Vector PackageInfo -> FloraHTML

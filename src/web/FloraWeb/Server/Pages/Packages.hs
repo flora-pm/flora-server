@@ -81,7 +81,7 @@ showPackageVersion namespace packageName mversion = do
   releases <- Query.getReleases (package.packageId)
   let latestRelease =
         releases
-          & Vector.filter (\r -> r.metadata.deprecated /= Just True)
+          & Vector.filter (\r -> r.deprecated /= Just True)
           & maximumBy (compare `on` (.version))
       version = fromMaybe latestRelease.version mversion
   release <- guardThatReleaseExists namespace packageName version
@@ -95,7 +95,7 @@ showPackageVersion namespace packageName mversion = do
   let templateEnv =
         templateEnv'
           { title = display namespace <> "/" <> display packageName
-          , description = release.metadata.synopsis
+          , description = release.synopsis
           , indexPage = isNothing mversion
           }
 

@@ -60,6 +60,12 @@ import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Reader.Static (Reader, ask)
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
+import Log qualified
+import OddJobs.Job (createJob)
+import Optics.Core
+import System.Directory qualified as System
+import System.FilePath
+
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
@@ -80,11 +86,6 @@ import Flora.Model.Requirement
   , flag
   )
 import Flora.Model.User
-import Log qualified
-import OddJobs.Job (createJob)
-import Optics.Core
-import System.Directory qualified as System
-import System.FilePath
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -300,28 +301,12 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
           , deprecationInfo = Nothing
           }
 
-  let metadata =
-        ReleaseMetadata
-          { license = Cabal.license packageDesc
-          , sourceRepos
-          , homepage = Just $! display packageDesc.homepage
-          , documentation = ""
-          , bugTracker = Just $! display packageDesc.bugReports
-          , maintainer = display packageDesc.maintainer
-          , synopsis = display packageDesc.synopsis
-          , description = display packageDesc.description
-          , flags = flags
-          , testedWith = getVersions . extractTestedWith . Vector.fromList $! packageDesc.testedWith
-          , deprecated = Nothing
-          }
-
   let release =
         Release
           { releaseId
           , packageId
           , version = packageVersion
           , archiveChecksum = mempty
-          , metadata = metadata
           , uploadedAt = Just uploadTime
           , createdAt = timestamp
           , updatedAt = timestamp
@@ -330,6 +315,17 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
           , changelog = Nothing
           , changelogStatus = NotImported
           , repository
+          , license = Cabal.license packageDesc
+          , sourceRepos
+          , homepage = Just $! display packageDesc.homepage
+          , documentation = ""
+          , bugTracker = Just $! display packageDesc.bugReports
+          , maintainer = display packageDesc.maintainer
+          , synopsis = display packageDesc.synopsis
+          , description = display packageDesc.description
+          , flags = ReleaseFlags flags
+          , testedWith = getVersions . extractTestedWith . Vector.fromList $! packageDesc.testedWith
+          , deprecated = Nothing
           }
 
   let lib = extractLibrary package release Nothing [] <$> allLibraries packageDesc

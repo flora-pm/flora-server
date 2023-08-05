@@ -150,7 +150,7 @@ getPackagesWithoutReleaseDeprecationInformation =
         select p1.name, array_agg(r0.release_id)
         from releases as r0
         join packages as p1 on r0.package_id = p1.package_id
-        where r0.metadata ->> 'deprecated' is null
+        where r0.deprecated is null
         group by p1.name;
         |]
 

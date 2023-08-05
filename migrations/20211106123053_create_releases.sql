@@ -6,7 +6,6 @@ create table if not exists releases (
   release_id uuid primary key,
   package_id uuid references packages,
   version int[] not null,
-  metadata jsonb, -- { description, synopsis, homepage, documentation url, repository url, issues url }
   archive_checksum text not null,
   uploaded_at timestamptz,
   created_at timestamptz not null,
@@ -15,6 +14,18 @@ create table if not exists releases (
   readme_status import_status not null,
   changelog text,
   changelog_status import_status,
+  license text not null,
+  source_repos text[] not null,
+  homepage text,
+  documentation text not null,
+  bug_tracker text,
+  maintainer text not null,
+  synopsis text not null,
+  description text not null,
+  flags jsonb not null,
+  tested_with int[][] not null,
+  deprecated boolean,
+  repository text default null
   constraint consistent_readme_status
     check (
          (readme_status = 'imported' and readme is not null)

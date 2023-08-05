@@ -163,8 +163,8 @@ packageDependentsWithLatestVersionQuery =
                   , p."name"
                   , ''
                   , max(r."version")
-                  , r.metadata ->> 'synopsis' as "synopsis"
-                  , r.metadata ->> 'license' as  "license"
+                  , r.synopsis as "synopsis"
+                  , r.license as  "license"
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
                 ON p."package_id" = dep."dependent_id"
@@ -238,13 +238,13 @@ getAllRequirementsQuery =
          , req.name
          , req.requirement
          , r3.version as "dependency_latest_version"
-         , r3.metadata ->> 'synopsis' as "dependency_latest_synopsis"
-         , r3.metadata ->> 'license' as "dependency_latest_license"
+         , r3.synopsis as "dependency_latest_synopsis"
+         , r3.license as "dependency_latest_license"
     from requirements as req
     inner join packages as p2 on p2.namespace = req.namespace and p2.name = req.name
     inner join releases as r3 on r3.package_id = p2.package_id
     where r3.version = (select max(version) from releases where package_id = p2.package_id)
-    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, r3.version, r3.metadata
+    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, r3.version, r3.synopsis, r3.license
     order by req.component_type, req.component_name desc
   |]
 
