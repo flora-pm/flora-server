@@ -14,10 +14,10 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
 import Data.UUID
 import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), fromJSONField, returnError)
+import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
-import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSONField)
+import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Pretty (Pretty (..))
 import GHC.Generics
@@ -150,25 +150,13 @@ data Package = Package
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   , status :: PackageStatus
-  , metadata :: PackageMetadata
+  , deprecationInfo :: Maybe PackageAlternatives
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, ToRow, ToJSON, FromJSON, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "packages"] Package)
-
-data PackageMetadata = PackageMetadata
-  { deprecationInfo :: Maybe (Vector PackageAlternative)
-  }
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, NFData)
-
-instance FromField PackageMetadata where
-  fromField = fromJSONField
-
-instance ToField PackageMetadata where
-  toField = toJSONField
 
 data Dependent = Dependent
   { name :: Text
@@ -210,11 +198,16 @@ instance FromJSON DeprecatedPackage' where
 -- DAO that we persist to the database
 data DeprecatedPackage = DeprecatedPackage
   { package :: PackageName
-  , inFavourOf :: Vector PackageAlternative
+  , inFavourOf :: PackageAlternatives
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (ToJSON, FromJSON, NFData)
   deriving (ToField, FromField) via Aeson DeprecatedPackage
+
+newtype PackageAlternatives = PackageAlternatives (Vector PackageAlternative)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving (ToField, FromField) via Aeson PackageAlternatives
 
 data PackageAlternative = PackageAlternative
   { namespace :: Namespace

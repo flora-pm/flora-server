@@ -30,7 +30,7 @@ import Flora.Model.Package.Types
   ( Namespace
   , Package (..)
   , PackageAlternative (..)
-  , PackageMetadata (..)
+  , PackageAlternatives (..)
   , PackageName (..)
   )
 import Flora.Model.Release.Types (Release (..), ReleaseMetadata (..), TextHtml (..))
@@ -106,7 +106,7 @@ packageBody
   -> Vector Category
   -> FloraHTML
 packageBody
-  Package{namespace, name = packageName, metadata = packageMetadata}
+  Package{namespace, name = packageName, deprecationInfo}
   latestRelease@Release{metadata, version}
   packageReleases
   numberOfReleases
@@ -124,7 +124,7 @@ packageBody
         displayVersions namespace packageName packageReleases numberOfReleases
       div_ [class_ "release-readme-column"] $! div_ [class_ "release-readme"] $! displayReadme latestRelease
       div_ [class_ "package-right-column"] $! ul_ [class_ "package-right-rows"] $! do
-        case packageMetadata.deprecationInfo of
+        case deprecationInfo of
           Just inFavourOf -> displayPackageDeprecation inFavourOf
           Nothing ->
             case metadata.deprecated of
@@ -256,8 +256,8 @@ displayInstructions packageName latestRelease =
         , readonly_ "readonly"
         ]
 
-displayPackageDeprecation :: Vector PackageAlternative -> FloraHTML
-displayPackageDeprecation inFavourOf = do
+displayPackageDeprecation :: PackageAlternatives -> FloraHTML
+displayPackageDeprecation (PackageAlternatives inFavourOf) = do
   li_ [class_ ""] $! do
     h3_ [class_ "package-body-section"] "Deprecated"
     div_ [class_ "items-top"] $! div_ [class_ ""] $! do

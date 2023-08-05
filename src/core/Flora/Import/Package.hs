@@ -297,7 +297,7 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
           , createdAt = timestamp
           , updatedAt = timestamp
           , status = FullyImportedPackage
-          , metadata = PackageMetadata Nothing
+          , deprecationInfo = Nothing
           }
 
   let metadata =
@@ -476,7 +476,7 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
       createdAt = package.createdAt
       updatedAt = package.updatedAt
       status = UnknownPackage
-      metadata = PackageMetadata Nothing
+      deprecationInfo = Nothing
       dependencyPackage = Package{..}
       requirement =
         Requirement

@@ -43,7 +43,7 @@ deprecatePackages dp = dbtToEff $! void $! executeMany Update q (dp & Vector.map
     q =
       [sql|
       UPDATE packages as p0
-      SET metadata = jsonb_set(p0.metadata, '{deprecationInfo}', jsonb(js) -> 'inFavourOf')
+      SET deprecation_info = jsonb(js) -> 'inFavourOf'
       FROM (VALUES (?)) as upd (js)
       WHERE p0.name = jsonb(js) ->> 'package'
       |]
