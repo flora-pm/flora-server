@@ -69,6 +69,8 @@ import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact ()
 import Effectful
+import Effectful.Fail (Fail, runFailIO)
+import Effectful.Log (Log, Logger)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
@@ -80,6 +82,7 @@ import GHC.TypeLits
 import Hedgehog (MonadGen (..))
 import Hedgehog.Gen qualified as H
 import Hedgehog.Range qualified as Range
+import Log.Backend.StandardOutput qualified as Log
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import Optics.Core
@@ -91,8 +94,6 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
-import Effectful.Fail (Fail, runFailIO)
-import Effectful.Log (Log, Logger)
 import Flora.Environment
 import Flora.Environment.Config (LoggingDestination (..), PoolConfig (..))
 import Flora.Import.Categories (importCategories)
@@ -104,7 +105,6 @@ import Flora.Model.User.Update
 import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
-import Log.Backend.StandardOutput qualified as Log
 
 type TestEff = Eff '[Fail, Reader PoolConfig, DB, Log, Time, IOE]
 

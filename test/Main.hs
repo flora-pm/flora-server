@@ -1,19 +1,18 @@
 module Main where
 
 import Effectful
+import Effectful.Fail (runFailIO)
+import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static (runReader)
 import Effectful.Time
+import Flora.CabalSpec qualified as CabalSpec
+import Flora.CategorySpec qualified as CategorySpec
+import Flora.Environment
 import Log.Backend.StandardOutput qualified as Log
 import Log.Data
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
-
-import Effectful.Fail (runFailIO)
-import Effectful.Log qualified as Log
-import Effectful.Reader.Static (runReader)
-import Flora.CabalSpec qualified as CabalSpec
-import Flora.CategorySpec qualified as CategorySpec
-import Flora.Environment
 
 import Flora.ImportSpec qualified as ImportSpec
 import Flora.OddJobSpec qualified as OddJobSpec

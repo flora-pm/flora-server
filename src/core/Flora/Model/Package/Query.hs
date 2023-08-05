@@ -74,7 +74,7 @@ getPackageByNamespaceAndName namespace name = do
   pure result
 
 getNonDeprecatedPackages :: DB :> es => Eff es (Vector Package)
-getNonDeprecatedPackages = dbtToEff $ selectWhereNull @Package [[field| metadata ->> 'deprecationInfo' |]]
+getNonDeprecatedPackages = dbtToEff $ selectWhereNull @Package [[field| deprecation_info |]]
 
 getAllPackageDependents
   :: DB :> es
@@ -118,7 +118,7 @@ packageDependentsQuery =
                   , p."created_at"
                   , p."updated_at"
                   , p."status"
-                  , p."metadata"
+                  , p."deprecation_info"
   FROM "packages" AS p
   INNER JOIN "dependents" AS dep
         ON p."package_id" = dep."dependent_id"

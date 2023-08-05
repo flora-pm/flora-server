@@ -176,11 +176,12 @@ fetchReleaseDeprecationList packageName releases = do
       throw e
     Left e -> throw e
 
-assignNamespace :: Vector PackageName -> Vector PackageAlternative
+assignNamespace :: Vector PackageName -> PackageAlternatives
 assignNamespace =
-  Vector.map
-    ( \p ->
-        if Set.member p coreLibraries
-          then PackageAlternative (Namespace "haskell") p
-          else PackageAlternative (Namespace "hackage") p
-    )
+  PackageAlternatives
+    . Vector.map
+      ( \p ->
+          if Set.member p coreLibraries
+            then PackageAlternative (Namespace "haskell") p
+            else PackageAlternative (Namespace "hackage") p
+      )

@@ -154,6 +154,7 @@ testNoSelfDependent = do
         , PackageName "parsec"
         , PackageName "pg-entity"
         , PackageName "relude"
+        , PackageName "saturn"
         , PackageName "semigroups"
         , PackageName "text-display"
         , PackageName "xml"
@@ -202,19 +203,19 @@ testSearchResultText = do
 
 testPackagesDeprecation :: TestEff ()
 testPackagesDeprecation = do
-  let alternative1 = Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
-  let alternative2 = Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "monad-control")
+  let alternative1 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
+  let alternative2 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "monad-control")
   Update.deprecatePackages $
     Vector.fromList
       [ DeprecatedPackage (PackageName "integer-gmp") alternative1
       , DeprecatedPackage (PackageName "mtl") alternative2
       ]
   integerGmp <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
-  assertEqual (Just alternative1) integerGmp.metadata.deprecationInfo
+  assertEqual (Just alternative1) integerGmp.deprecationInfo
 
 testGetNonDeprecatedPackages :: TestEff ()
 testGetNonDeprecatedPackages = do
-  let alternative = Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
+  let alternative = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
   Update.deprecatePackages $
     Vector.fromList [DeprecatedPackage (PackageName "ansi-wl-pprint") alternative]
   nonDeprecatedPackages <- fmap (.name) <$> Query.getNonDeprecatedPackages
@@ -223,7 +224,7 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: TestEff ()
 testReleaseDeprecation = do
   result <- Query.getPackagesWithoutReleaseDeprecationInformation
-  assertEqual 63 (length result)
+  assertEqual 64 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
   Just deprecatedBinaryVersion' <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
