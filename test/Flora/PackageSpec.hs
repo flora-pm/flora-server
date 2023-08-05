@@ -230,7 +230,7 @@ testReleaseDeprecation = do
   Just deprecatedBinaryVersion' <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
   Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
   Just deprecatedBinaryVersion <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
-  assertEqual deprecatedBinaryVersion.metadata.deprecated (Just True)
+  assertEqual deprecatedBinaryVersion.deprecated (Just True)
 
 ---
 

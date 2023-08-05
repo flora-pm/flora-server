@@ -65,7 +65,7 @@ setReleasesDeprecationMarker releaseVersions =
     q =
       [sql|
     UPDATE releases as r0
-    SET metadata = jsonb_set(r0.metadata, '{deprecated}', to_jsonb(upd.x), true)
+    SET deprecated = upd.x
     FROM (VALUES (?,?)) as upd(x,y)
     WHERE r0.release_id = (upd.y :: uuid) 
     |]

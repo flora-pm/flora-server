@@ -2,10 +2,10 @@ module Flora.Model.Release.Types
   ( ReleaseId (..)
   , TextHtml (..)
   , Release (..)
-  , ReleaseMetadata (..)
   , ImportStatus (..)
   , SupportedCompilers (..)
   , ReleaseDeprecation (..)
+  , ReleaseFlags (..)
   )
 where
 
@@ -72,29 +72,27 @@ instance ToField TextHtml where
 
 data Release = Release
   { releaseId :: ReleaseId
-  -- ^ The unique ID of this release
   , packageId :: PackageId
-  -- ^ The package to which this release is linked
   , version :: Version
-  -- ^ The version that this release represents
-  , metadata :: ReleaseMetadata
-  -- ^ Metadata associated with this release
   , archiveChecksum :: Text
-  -- ^ The SHA256 checksum of the stored archive for this release
   , uploadedAt :: Maybe UTCTime
-  , --  ^ The timestamp of upload, provided by Hackage
-    createdAt :: UTCTime
-  -- ^ Date of creation of this release
+  , createdAt :: UTCTime
   , updatedAt :: UTCTime
-  -- ^ Last update timestamp for this release
   , readme :: Maybe TextHtml
-  -- ^ Content of the release's README
   , readmeStatus :: ImportStatus
-  -- ^ Import status of the README
   , changelog :: Maybe TextHtml
-  -- ^ Content of the release's Changelog
   , changelogStatus :: ImportStatus
-  -- ^ Repo - where this package has been imported from
+  , license :: SPDX.License
+  , sourceRepos :: Vector Text
+  , homepage :: Maybe Text
+  , documentation :: Text
+  , bugTracker :: Maybe Text
+  , maintainer :: Text
+  , synopsis :: Text
+  , description :: Text
+  , flags :: ReleaseFlags
+  , testedWith :: Vector Version
+  , deprecated :: Maybe Bool
   , repository :: Maybe Text
   }
   deriving stock (Eq, Show, Generic)
@@ -105,6 +103,11 @@ data Release = Release
 
 instance Ord Release where
   compare x y = compare (x.version) (y.version)
+
+newtype ReleaseFlags = ReleaseFlags (Vector PackageFlag)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving (ToField, FromField) via Aeson ReleaseFlags
 
 data ImportStatus
   = Imported
@@ -143,17 +146,7 @@ newtype SupportedCompilers = Vector (CompilerFlavor, VersionRange)
   deriving anyclass (ToJSON, FromJSON, NFData)
 
 data ReleaseMetadata = ReleaseMetadata
-  { license :: SPDX.License
-  , sourceRepos :: Vector Text
-  , homepage :: Maybe Text
-  , documentation :: Text
-  , bugTracker :: Maybe Text
-  , maintainer :: Text
-  , synopsis :: Text
-  , description :: Text
-  , flags :: Vector PackageFlag
-  , testedWith :: Vector Version
-  , deprecated :: Maybe Bool
+  {
   }
   deriving stock (Eq, Show, Generic, Typeable)
   deriving anyclass (ToJSON, FromJSON, NFData)
