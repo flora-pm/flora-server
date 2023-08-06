@@ -77,13 +77,16 @@ nix-shell: ## Enter the Nix shell
 	@nix-shell
 
 docker-build: ## Build and start the container cluster
-	@docker compose up -d --build
+	@docker build .
 
-docker-start: ## Start the container cluster
+docker-up: ## Start the container cluster
 	@docker compose up -d
 
+docker-down: ## Start the container cluster
+	@docker compose down
+
 docker-enter: ## Enter the docker environment
-	docker compose exec flora-server "zsh"
+	docker compose exec server zsh
 
 start-tmux: ## Start a Tmux session with hot code reloading
 	./scripts/start-tmux.sh
