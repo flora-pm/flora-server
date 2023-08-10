@@ -16,7 +16,7 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
-import Flora.Model.Package.Component (PackageComponent)
+import Flora.Model.Component.Types (PackageComponent)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
@@ -43,7 +43,7 @@ deprecatePackages dp = dbtToEff $! void $! executeMany Update q (dp & Vector.map
     q =
       [sql|
       UPDATE packages as p0
-      SET deprecation_info = jsonb(js) -> 'inFavourOf'
+      SET deprecation_info = jsonb(js) -> 'in_favour_of'
       FROM (VALUES (?)) as upd (js)
       WHERE p0.name = jsonb(js) ->> 'package'
       |]

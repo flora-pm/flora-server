@@ -7,31 +7,39 @@ import Data.Aeson.Orphans ()
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
+import Data.OpenApi (Schema (..), ToParamSchema (..), ToSchema (..), genericDeclareNamedSchema)
 import Data.Text (Text, isPrefixOf, unpack)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
 import Data.UUID
-import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), returnError)
+import Data.Vector (Vector)
+import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
+import Database.PostgreSQL.Simple.FromField
+  ( FromField (..)
+  , ResultError (ConversionFailed, UnexpectedNull)
+  , returnError
+  )
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
+import Distribution.Orphans ()
 import Distribution.Pretty (Pretty (..))
+import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.Version (Version)
 import GHC.Generics
+import JSON
 import Language.Souffle.Interpreted qualified as Souffle
 import Lucid
+import Optics.Core
 import Servant (FromHttpApiData (..))
 import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
 import Web.HttpApiData (ToHttpApiData (..))
 
-import Data.Vector (Vector)
-import Distribution.Orphans ()
-import Distribution.SPDX.License qualified as SPDX
-import Distribution.Types.Version (Version)
+import Deriving.Aeson
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 
@@ -74,8 +82,24 @@ parsePackageName txt =
     then Just $! PackageName txt
     else Nothing
 
+instance ToSchema PackageName where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy
+      & mapped
+        % #schema
+        .~ packageNameSchema
+
+instance ToParamSchema PackageName where
+  toParamSchema _ = packageNameSchema
+
+packageNameSchema :: Schema
+packageNameSchema =
+  mempty
+    & #description
+      ?~ "Name of a package\n It corresponds to the regular expression: `[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*`"
+
 newtype Namespace = Namespace Text
-  deriving stock (Show)
+  deriving stock (Show, Generic)
   deriving
     (Eq, Ord, FromJSON, ToJSON, ToHtml, NFData)
     via Text
@@ -115,9 +139,28 @@ parseNamespace txt =
     then Just $! Namespace txt
     else Nothing
 
+instance ToSchema Namespace where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy
+      & mapped
+        % #schema
+        .~ namespaceSchema
+
+instance ToParamSchema Namespace where
+  toParamSchema _ = namespaceSchema
+
+namespaceSchema :: Schema
+namespaceSchema =
+  mempty
+    & #description
+      ?~ "Namespace containing packages"
+
 data PackageStatus = UnknownPackage | FullyImportedPackage
   deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageStatus)
 
 parsePackageStatus :: ByteString -> Maybe PackageStatus
 parsePackageStatus "unknown" = pure UnknownPackage
@@ -153,7 +196,10 @@ data Package = Package
   , deprecationInfo :: Maybe PackageAlternatives
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (FromRow, ToRow, ToJSON, FromJSON, NFData)
+  deriving anyclass (FromRow, ToRow, NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] Package)
   deriving
     (Entity)
     via (GenericEntity '[TableName "packages"] Package)
@@ -179,7 +225,7 @@ data PackageInfo = PackageInfo
   , license :: SPDX.License
   , rating :: Maybe Double
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, NFData)
 
 -- DTO that we get from Hackage
@@ -201,12 +247,18 @@ data DeprecatedPackage = DeprecatedPackage
   , inFavourOf :: PackageAlternatives
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] DeprecatedPackage)
   deriving (ToField, FromField) via Aeson DeprecatedPackage
 
 newtype PackageAlternatives = PackageAlternatives (Vector PackageAlternative)
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageAlternatives)
   deriving (ToField, FromField) via Aeson PackageAlternatives
 
 data PackageAlternative = PackageAlternative
@@ -214,5 +266,8 @@ data PackageAlternative = PackageAlternative
   , package :: PackageName
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageAlternative)
   deriving (ToField, FromField) via Aeson PackageAlternative

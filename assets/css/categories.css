@@ -38,12 +38,12 @@
 
   .category-card {
     display: block;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     padding-left: 2rem;
     padding-right: 2rem;
     width: 400px;
-    height: 112px;
+    height: 100px;
   }
 
   .category-card:hover {

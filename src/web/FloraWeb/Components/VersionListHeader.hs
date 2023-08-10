@@ -5,7 +5,7 @@ import Data.Text.Display (display)
 import Distribution.Orphans ()
 import Flora.Model.Package (Namespace, PackageName, formatPackage)
 import FloraWeb.Components.Utils (text)
-import FloraWeb.Templates.Types
+import FloraWeb.Pages.Templates.Types
 import Lucid
 
 presentationHeader

@@ -1,7 +1,7 @@
 module FloraWeb.Components.CategoryCard where
 
 import Flora.Model.Category (Category (..))
-import FloraWeb.Templates (FloraHTML)
+import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid
 
 categoryCard :: Category -> FloraHTML

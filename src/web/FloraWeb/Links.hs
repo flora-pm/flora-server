@@ -1,13 +1,14 @@
 module FloraWeb.Links where
 
+import Data.Positive
 import Data.Text (Text)
 import Distribution.Orphans ()
 import Distribution.Version (Version)
 import Flora.Model.Package (Namespace (..), PackageName (..))
-import FloraWeb.Routes.Pages qualified as Pages
-import FloraWeb.Routes.Pages qualified as Web
-import FloraWeb.Routes.Pages.Packages qualified as Web
-import FloraWeb.Routes.Pages.Search qualified as Search
+import FloraWeb.Pages.Routes qualified as Pages
+import FloraWeb.Pages.Routes qualified as Web
+import FloraWeb.Pages.Routes.Packages qualified as Web
+import FloraWeb.Pages.Routes.Search qualified as Search
 import Servant.API
 import Servant.Client
 import Servant.Links qualified as Links
@@ -15,7 +16,7 @@ import Servant.Links qualified as Links
 links :: Pages.Routes' (Links.AsLink Link)
 links = Links.allFieldLinks
 
-namespaceLink :: Namespace -> Word -> Link
+namespaceLink :: Namespace -> Positive Word -> Link
 namespaceLink namespace pageNumber =
   links
     // Web.packages
@@ -57,14 +58,14 @@ packageChangelog namespace packageName =
     /: namespace
     /: packageName
 
-packageIndexLink :: Word -> Link
+packageIndexLink :: Positive Word -> Link
 packageIndexLink pageNumber =
   links
     // Web.packages
     // Web.index
     /: Just pageNumber
 
-packageSearchLink :: Text -> Word -> Link
+packageSearchLink :: Text -> Positive Word -> Link
 packageSearchLink search pageNumber =
   links
     // Web.search
@@ -81,7 +82,7 @@ packageDependencies namespace packageName version =
     /: packageName
     /: version
 
-packageDependents :: Namespace -> PackageName -> Word -> Link
+packageDependents :: Namespace -> PackageName -> Positive Word -> Link
 packageDependents namespace packageName pageNumber =
   links
     // Web.packages

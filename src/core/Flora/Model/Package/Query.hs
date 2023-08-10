@@ -33,12 +33,12 @@ import Log qualified
 import Flora.Logging (timeAction)
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
-import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName)
-import Flora.Model.Package.Component
+import Flora.Model.Component.Types
   ( ComponentId
   , ComponentType
   , PackageComponent
   )
+import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName)
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
   ( ComponentDependencies
@@ -130,14 +130,12 @@ getAllPackageDependentsWithLatestVersion
   :: DB :> es
   => Namespace
   -> PackageName
-  -> Word
+  -> (Word, Word)
   -> Eff es (Vector DependencyInfo)
-getAllPackageDependentsWithLatestVersion namespace packageName pageNumber =
-  dbtToEff $! query Select q (namespace, packageName, offset)
+getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) =
+  dbtToEff $! query Select q (namespace, packageName, offset, limit)
   where
-    limit = 30
-    offset = (limit * pageNumber) - limit
-    q = packageDependentsWithLatestVersionQuery <> " LIMIT 30 OFFSET ?"
+    q = packageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
 
 getPackageDependentsWithLatestVersion
   :: (DB :> es, Log :> es, Time :> es)
@@ -304,30 +302,28 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $! query Select q
   where
     q =
       [sql|
-      select distinct l0.namespace
-                    , l0.name
-                    , l0.synopsis
-                    , l0.version
-                    , l0.license
+      select distinct lv.namespace
+                    , lv.name
+                    , lv.synopsis
+                    , lv.version
+                    , lv.license
                     , 1
-      from latest_versions as l0
-        inner join package_categories as p1 on p1.package_id = l0.package_id
+      from latest_versions as lv
+        inner join package_categories as p1 on p1.package_id = lv.package_id
         inner join categories as c2 on c2.category_id = p1.category_id
       where c2.category_id = ?
       |]
 
 searchPackage
   :: DB :> es
-  => Word
+  => (Word, Word)
   -> Text
   -> Eff es (Vector PackageInfo)
-searchPackage pageNumber searchString =
+searchPackage (offset, limit) searchString =
   dbtToEff $
-    let limit = 30
-        offset = (limit * pageNumber) - limit
-     in query
-          Select
-          [sql|
+    query
+      Select
+      [sql|
         SELECT  lv."namespace"
               , lv."name"
               , lv."synopsis"
@@ -343,20 +339,20 @@ searchPackage pageNumber searchString =
           , lv."version"
           , lv."license"
         ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
-        LIMIT 30
         OFFSET ?
+        LIMIT ?
         ;
         |]
-          (searchString, searchString, offset)
+      (searchString, searchString, offset, limit)
 
+-- | Returns a summary of packages
 listAllPackages
   :: DB :> es
-  => Word
+  => (Word, Word)
   -> Eff es (Vector PackageInfo)
-listAllPackages pageNumber =
+listAllPackages (offset, limit) =
   dbtToEff $
-    let limit = 30
-        offset = (limit * pageNumber) - limit
+    let
      in query
           Select
           [sql|
@@ -373,25 +369,25 @@ listAllPackages pageNumber =
       , lv."synopsis"
       , lv."version"
       , lv."license"
-    ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
-    LIMIT 30
+    ORDER BY rating DESC
+           , COUNT(lv."namespace") DESC
+           , lv.name ASC
     OFFSET ?
+    LIMIT ?
     ;
     |]
-          (Only offset)
+          (offset, limit)
 
 listAllPackagesInNamespace
   :: DB :> es
-  => Word
+  => (Word, Word)
   -> Namespace
   -> Eff es (Vector PackageInfo)
-listAllPackagesInNamespace pageNumber namespace =
+listAllPackagesInNamespace (offset, limit) namespace =
   dbtToEff $
-    let limit = 30
-        offset = (limit * pageNumber) - limit
-     in query
-          Select
-          [sql|
+    query
+      Select
+      [sql|
     SELECT  lv."namespace"
           , lv."name"
           , lv."synopsis"
@@ -407,11 +403,11 @@ listAllPackagesInNamespace pageNumber namespace =
       , lv."version"
       , lv."license"
     ORDER BY rating desc, lv."name" asc
-    LIMIT 30
     OFFSET ?
+    LIMIT ?
     ;
     |]
-          (namespace, offset)
+      (namespace, offset, limit)
 
 countPackages :: DB :> es => Eff es Word
 countPackages =

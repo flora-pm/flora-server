@@ -1,7 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
 module FloraWeb.Session
-  ( module FloraWeb.Server.Auth.Types
+  ( module FloraWeb.Common.Auth.Types
   , getSession
   , getEnv
   , craftSessionCookie
@@ -20,7 +20,7 @@ import Effectful.Dispatch.Static (unsafeEff_)
 import Effectful.Reader.Static (Reader, asks)
 import Flora.Environment
 import Flora.Model.PersistentSession
-import FloraWeb.Server.Auth.Types
+import FloraWeb.Common.Auth.Types
 import FloraWeb.Types (fetchFloraEnv)
 
 getSession

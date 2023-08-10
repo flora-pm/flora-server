@@ -28,7 +28,7 @@ import Flora.Search
 import FloraWeb.Components.CategoryCard qualified as Component
 import FloraWeb.Components.PackageListItem qualified as Component
 import FloraWeb.Components.PaginationNav qualified as Component
-import FloraWeb.Templates (FloraHTML, defaultTemplateEnv, defaultsToEnv)
+import FloraWeb.Pages.Templates.Types
 
 newtype ComponentName = ComponentName Text
   deriving newtype (Eq, Ord, Show)

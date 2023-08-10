@@ -2,7 +2,7 @@ module FloraWeb.Components.PackageListHeader where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
-import FloraWeb.Templates.Types
+import FloraWeb.Pages.Templates.Types
 import Lucid
 
 presentationHeader

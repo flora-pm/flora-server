@@ -30,9 +30,13 @@ instance Display SearchAction where
   displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
   displayBuilder (DependentsOf namespace packageName) = "Dependents of " <> displayBuilder namespace <> "/" <> displayBuilder packageName
 
-searchPackageByName :: (DB :> es, Log :> es, Time :> es) => Word -> Text -> Eff es (Word, Vector PackageInfo)
-searchPackageByName pageNumber queryString = do
-  (results, duration) <- timeAction $! Query.searchPackage pageNumber queryString
+searchPackageByName
+  :: (DB :> es, Log :> es, Time :> es)
+  => (Word, Word)
+  -> Text
+  -> Eff es (Word, Vector PackageInfo)
+searchPackageByName (offset, limit) queryString = do
+  (results, duration) <- timeAction $! Query.searchPackage (offset, limit) queryString
 
   Log.logInfo "search-results" $
     object
@@ -53,9 +57,13 @@ searchPackageByName pageNumber queryString = do
   count <- Query.countPackagesByName queryString
   pure (count, results)
 
-listAllPackagesInNamespace :: (DB :> es, Time :> es, Log :> es) => Namespace -> Word -> Eff es (Word, Vector PackageInfo)
-listAllPackagesInNamespace namespace pageNumber = do
-  (results, duration) <- timeAction $! Query.listAllPackagesInNamespace pageNumber namespace
+listAllPackagesInNamespace
+  :: (DB :> es, Time :> es, Log :> es)
+  => Namespace
+  -> (Word, Word)
+  -> Eff es (Word, Vector PackageInfo)
+listAllPackagesInNamespace namespace (offset, limit) = do
+  (results, duration) <- timeAction $! Query.listAllPackagesInNamespace (offset, limit) namespace
 
   Log.logInfo "packages-in-namespace" $
     object
@@ -76,8 +84,12 @@ listAllPackagesInNamespace namespace pageNumber = do
   count <- Query.countPackagesInNamespace namespace
   pure (count, results)
 
-listAllPackages :: DB :> es => Word -> Eff es (Word, Vector PackageInfo)
-listAllPackages pageNumber = do
-  results <- Query.listAllPackages pageNumber
+listAllPackages
+  :: forall (es :: [Effect])
+   . DB :> es
+  => (Word, Word)
+  -> Eff es (Word, Vector PackageInfo)
+listAllPackages (offset, limit) = do
+  results <- Query.listAllPackages (offset, limit)
   count <- Query.countPackages
   pure (count, results)

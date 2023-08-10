@@ -11,13 +11,13 @@ import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector qualified as Vector
-import FloraWeb.Templates (FloraHTML)
+import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid
 
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
+import Flora.Model.Component.Types (CanonicalComponent (..))
 import Flora.Model.Package (Namespace, PackageName (..))
-import Flora.Model.Package.Component (CanonicalComponent (..))
 import Flora.Model.Requirement
   ( ComponentDependencies
   , DependencyInfo (..)

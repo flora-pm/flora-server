@@ -11,7 +11,7 @@ import Lucid.Alpine
 import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User (User (..), UserFlags (..))
 import FloraWeb.Components.Utils
-import FloraWeb.Templates.Types
+import FloraWeb.Pages.Templates.Types
 import PyF (str)
 
 navbar :: FloraHTML

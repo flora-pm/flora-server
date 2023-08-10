@@ -5,6 +5,7 @@
 * Add namespace browsing ([#375](https://github.com/flora-pm/flora-server/pull/375))
 * Overhaul the `nix` setup of flora and adjust the docs accordingly ([#369](https://github.com/flora-pm/flora-server/pull/369))
 * Allow importing from index tarballs and incremental importing ([#387](https://github.com/flora-pm/flora-server/pull/387))
+* Introduce a public API ([#415](https://github.com/flora-pm/flora-server/pull/415))
 
 ## 1.0.12 -- 2023-04-04
 
