@@ -1,9 +1,11 @@
 {-# LANGUAGE GADTs #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Flora.Model.Job where
 
 import Data.Aeson
+import Data.Aeson.TH
 import Data.Text (Text)
 import Data.Text.Display
 import Distribution.Pretty
@@ -77,13 +79,13 @@ data FloraOddJobs
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
   deriving stock (Generic)
-  deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] FloraOddJobs)
 
 -- TODO: Upstream these two ToJSON instances
-deriving instance ToJSON FailureMode
-deriving instance ToJSON Job
+
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''FloraOddJobs)
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''FailureMode)
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Job)
 
 instance ToJSON LogEvent where
   toJSON = \case

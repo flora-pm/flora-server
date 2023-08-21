@@ -1,6 +1,8 @@
+{-# LANGUAGE TemplateHaskell #-}
 module FloraWeb.API.Routes.Packages.Types where
 
 import Control.DeepSeq
+import Data.Aeson.TH
 import Data.Aeson
 import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi.Schema
@@ -44,9 +46,6 @@ data PackageDTO (version :: Natural) = PackageDTO
   , components :: Vector Text
   }
   deriving stock (Eq, Show, Generic)
-  deriving
-    (FromJSON, ToJSON)
-    via CustomJSON '[FieldLabelModifier '[CamelToSnake]] (PackageDTO 0)
   deriving anyclass (FromRow, NFData)
 
 toPackageDTO :: Package -> Release -> Vector CanonicalComponent -> PackageDTO 0
@@ -69,6 +68,8 @@ toPackageDTO package release releaseComponents =
       testedWith = release.testedWith
       components = fmap display releaseComponents
    in PackageDTO{..}
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''PackageDTO)
 
 instance KnownNat i => ToSchema (PackageDTO i) where
   declareNamedSchema proxy =
