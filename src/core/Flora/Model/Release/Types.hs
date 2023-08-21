@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Flora.Model.Release.Types
   ( ReleaseId (..)
   , TextHtml (..)
@@ -10,6 +11,7 @@ module Flora.Model.Release.Types
 where
 
 import Data.Aeson
+import Data.Aeson.TH
 import Data.Aeson.Orphans ()
 import Data.ByteString (ByteString)
 import Data.OpenApi.Schema (ToSchema)
@@ -101,9 +103,6 @@ data Release = Release
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)
   deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] Release)
-  deriving
     (Entity)
     via (GenericEntity '[TableName "releases"] Release)
 
@@ -165,3 +164,6 @@ data ReleaseDeprecation = ReleaseDeprecation
     (ToJSON, FromJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReleaseDeprecation)
   deriving (ToField, FromField) via Aeson ReleaseDeprecation
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Release)
+
