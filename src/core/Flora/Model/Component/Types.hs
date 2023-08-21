@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Flora.Model.Component.Types
   ( ComponentId (..)
@@ -16,7 +17,7 @@ where
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
-import Data.Aeson.Orphans ()
+import Data.Aeson.TH
 import Data.ByteString
 import Data.Data
 import Data.Maybe
@@ -35,7 +36,6 @@ import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField, retu
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
-import Deriving.Aeson
 import Distribution.PackageDescription qualified as Condition
 import Distribution.SPDX qualified as SPDX
 import Distribution.Types.Version
@@ -44,6 +44,8 @@ import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 import Distribution.Orphans ()
 import Distribution.Orphans.ConfVar ()
+import Data.Aeson.Orphans ()
+import GHC.Generics
 
 newtype ComponentId = ComponentId {getComponentId :: UUID}
   deriving stock (Generic)
@@ -51,12 +53,6 @@ newtype ComponentId = ComponentId {getComponentId :: UUID}
     (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, NFData)
     via UUID
   deriving (Display) via ShowInstance UUID
-
-deterministicComponentId :: ReleaseId -> CanonicalComponent -> ComponentId
-deterministicComponentId releaseId canonicalForm =
-  ComponentId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
-  where
-    concatenated = display releaseId <> display canonicalForm
 
 data ComponentType
   = Library
@@ -66,9 +62,8 @@ data ComponentType
   | ForeignLib
   deriving stock (Eq, Ord, Show, Generic, Bounded, Enum)
   deriving anyclass (NFData)
-  deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[Deriving.Aeson.CamelToSnake]] ComponentType)
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''ComponentType)
 
 instance Display ComponentType where
   displayBuilder Library = "library"
@@ -99,13 +94,34 @@ data CanonicalComponent = CanonicalComponent
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (NFData)
-  deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[Deriving.Aeson.CamelToSnake]] CanonicalComponent)
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''CanonicalComponent)
+
+deterministicComponentId :: ReleaseId -> CanonicalComponent -> ComponentId
+deterministicComponentId releaseId canonicalForm =
+  ComponentId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
+  where
+    concatenated = display releaseId <> display canonicalForm
 
 instance Display CanonicalComponent where
   displayBuilder CanonicalComponent{componentName, componentType} =
     displayBuilder componentType <> ":" <> B.fromText componentName
+
+newtype ComponentCondition = ComponentCondition (Condition.Condition Condition.ConfVar)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON, ToJSON, NFData)
+
+data ComponentMetadata = ComponentMetadata
+  { conditions :: [ComponentCondition]
+  }
+  deriving stock (Eq, Show, Generic, Typeable)
+  deriving anyclass (FromJSON, ToJSON, NFData)
+
+instance FromField ComponentMetadata where
+  fromField = fromJSONField
+
+instance ToField ComponentMetadata where
+  toField = toJSONField
 
 data PackageComponent = PackageComponent
   { componentId :: ComponentId
@@ -114,8 +130,10 @@ data PackageComponent = PackageComponent
   , metadata :: ComponentMetadata
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (NFData, FromJSON, ToJSON)
+  deriving anyclass (NFData)
   deriving (Display) via ShowInstance PackageComponent
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''PackageComponent)
 
 instance Entity PackageComponent where
   tableName = "package_components"
@@ -153,25 +171,6 @@ data PackageComponent' = PackageComponent'
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (ToRow, FromRow)
-
-data ComponentMetadata = ComponentMetadata
-  { conditions :: [ComponentCondition]
-  }
-  deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (NFData)
-  deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[Deriving.Aeson.CamelToSnake]] ComponentMetadata)
-
-instance FromField ComponentMetadata where
-  fromField = fromJSONField
-
-instance ToField ComponentMetadata where
-  toField = toJSONField
-
-newtype ComponentCondition = ComponentCondition (Condition.Condition Condition.ConfVar)
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, NFData)
 
 data PackageWithLatestRelease = PackageWithLatestRelease
   { namespace :: Namespace
