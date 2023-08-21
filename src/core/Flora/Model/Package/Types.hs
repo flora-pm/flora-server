@@ -1,8 +1,10 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Flora.Model.Package.Types where
 
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
+import Data.Aeson.TH
 import Data.Aeson.Orphans ()
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
@@ -198,9 +200,6 @@ data Package = Package
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)
   deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] Package)
-  deriving
     (Entity)
     via (GenericEntity '[TableName "packages"] Package)
 
@@ -271,3 +270,5 @@ data PackageAlternative = PackageAlternative
     (ToJSON, FromJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageAlternative)
   deriving (ToField, FromField) via Aeson PackageAlternative
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Package)
