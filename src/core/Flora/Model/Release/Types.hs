@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Flora.Model.Release.Types
   ( ReleaseId (..)
   , TextHtml (..)
@@ -11,6 +13,7 @@ where
 
 import Data.Aeson
 import Data.Aeson.Orphans ()
+import Data.Aeson.TH
 import Data.ByteString (ByteString)
 import Data.OpenApi.Schema (ToSchema)
 import Data.Text (Text, unpack)
@@ -26,7 +29,6 @@ import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), r
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Distribution.Compiler (CompilerFlavor)
-import Distribution.Orphans ()
 import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag)
@@ -37,6 +39,9 @@ import Lucid qualified
 import Control.DeepSeq
 import Data.Text.Lazy qualified as Text
 import Deriving.Aeson
+import Distribution.Orphans ()
+import Distribution.Orphans.CompilerFlavor ()
+import Distribution.Orphans.PackageFlag ()
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
@@ -99,9 +104,6 @@ data Release = Release
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)
   deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] Release)
-  deriving
     (Entity)
     via (GenericEntity '[TableName "releases"] Release)
 
@@ -163,3 +165,5 @@ data ReleaseDeprecation = ReleaseDeprecation
     (ToJSON, FromJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReleaseDeprecation)
   deriving (ToField, FromField) via Aeson ReleaseDeprecation
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Release)

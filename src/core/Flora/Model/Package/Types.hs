@@ -1,9 +1,12 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Flora.Model.Package.Types where
 
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
+import Data.Aeson.TH
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
@@ -25,11 +28,10 @@ import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
-import Distribution.Orphans ()
+import Deriving.Aeson
 import Distribution.Pretty (Pretty (..))
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
-import GHC.Generics
 import JSON
 import Language.Souffle.Interpreted qualified as Souffle
 import Lucid
@@ -39,7 +41,8 @@ import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
 import Web.HttpApiData (ToHttpApiData (..))
 
-import Deriving.Aeson
+import Distribution.Orphans ()
+import Distribution.Orphans.Version ()
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 
@@ -198,9 +201,6 @@ data Package = Package
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)
   deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] Package)
-  deriving
     (Entity)
     via (GenericEntity '[TableName "packages"] Package)
 
@@ -271,3 +271,5 @@ data PackageAlternative = PackageAlternative
     (ToJSON, FromJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageAlternative)
   deriving (ToField, FromField) via Aeson PackageAlternative
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Package)
