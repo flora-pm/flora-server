@@ -25,11 +25,10 @@ import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
-import Distribution.Orphans ()
+import Deriving.Aeson
 import Distribution.Pretty (Pretty (..))
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
-import GHC.Generics
 import JSON
 import Language.Souffle.Interpreted qualified as Souffle
 import Lucid
@@ -39,7 +38,8 @@ import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
 import Web.HttpApiData (ToHttpApiData (..))
 
-import Deriving.Aeson
+import Distribution.Orphans ()
+import Distribution.Orphans.Version ()
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 

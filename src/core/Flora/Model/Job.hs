@@ -14,6 +14,7 @@ import Servant (ToHttpApiData)
 
 import Data.Vector (Vector)
 import Deriving.Aeson
+import Distribution.Orphans.Version ()
 import Flora.Import.Package.Types (ImportOutput)
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Release.Types (ReleaseId (..))

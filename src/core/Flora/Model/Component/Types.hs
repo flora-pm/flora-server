@@ -36,13 +36,14 @@ import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Deriving.Aeson
-import Distribution.Orphans ()
 import Distribution.PackageDescription qualified as Condition
 import Distribution.SPDX qualified as SPDX
 import Distribution.Types.Version
 
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
+import Distribution.Orphans ()
+import Distribution.Orphans.ConfVar ()
 
 newtype ComponentId = ComponentId {getComponentId :: UUID}
   deriving stock (Generic)

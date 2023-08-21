@@ -26,7 +26,6 @@ import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), r
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Distribution.Compiler (CompilerFlavor)
-import Distribution.Orphans ()
 import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag)
@@ -35,6 +34,9 @@ import Distribution.Types.VersionRange (VersionRange)
 import Lucid qualified
 
 import Control.DeepSeq
+import Distribution.Orphans ()
+import Distribution.Orphans.PackageFlag ()
+import Distribution.Orphans.CompilerFlavor ()
 import Data.Text.Lazy qualified as Text
 import Deriving.Aeson
 import Flora.Model.Package

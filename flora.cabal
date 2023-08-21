@@ -82,6 +82,10 @@ library
     Data.Text.Display.Orphans
     Data.Time.Orphans
     Distribution.Orphans
+    Distribution.Orphans.CompilerFlavor
+    Distribution.Orphans.ConfVar
+    Distribution.Orphans.PackageFlag
+    Distribution.Orphans.Version
     Flora.Environment
     Flora.Environment.Config
     Flora.Import.Categories
