@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Flora.Model.Job where
 
@@ -81,7 +81,6 @@ data FloraOddJobs
   deriving stock (Generic)
 
 -- TODO: Upstream these two ToJSON instances
-
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''FloraOddJobs)
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''FailureMode)

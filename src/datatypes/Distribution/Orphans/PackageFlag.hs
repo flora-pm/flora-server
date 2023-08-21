@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Distribution.Orphans.PackageFlag where
 

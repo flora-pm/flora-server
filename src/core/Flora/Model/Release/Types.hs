@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Flora.Model.Release.Types
   ( ReleaseId (..)
   , TextHtml (..)
@@ -11,8 +12,8 @@ module Flora.Model.Release.Types
 where
 
 import Data.Aeson
-import Data.Aeson.TH
 import Data.Aeson.Orphans ()
+import Data.Aeson.TH
 import Data.ByteString (ByteString)
 import Data.OpenApi.Schema (ToSchema)
 import Data.Text (Text, unpack)
@@ -36,11 +37,11 @@ import Distribution.Types.VersionRange (VersionRange)
 import Lucid qualified
 
 import Control.DeepSeq
-import Distribution.Orphans ()
-import Distribution.Orphans.PackageFlag ()
-import Distribution.Orphans.CompilerFlavor ()
 import Data.Text.Lazy qualified as Text
 import Deriving.Aeson
+import Distribution.Orphans ()
+import Distribution.Orphans.CompilerFlavor ()
+import Distribution.Orphans.PackageFlag ()
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
@@ -166,4 +167,3 @@ data ReleaseDeprecation = ReleaseDeprecation
   deriving (ToField, FromField) via Aeson ReleaseDeprecation
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Release)
-

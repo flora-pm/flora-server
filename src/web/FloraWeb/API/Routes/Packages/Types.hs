@@ -1,9 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module FloraWeb.API.Routes.Packages.Types where
 
 import Control.DeepSeq
-import Data.Aeson.TH
 import Data.Aeson
+import Data.Aeson.TH
 import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi.Schema
 import Data.Text (Text)

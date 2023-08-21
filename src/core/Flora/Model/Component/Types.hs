@@ -40,11 +40,11 @@ import Distribution.PackageDescription qualified as Condition
 import Distribution.SPDX qualified as SPDX
 import Distribution.Types.Version
 
-import Flora.Model.Package.Types
-import Flora.Model.Release.Types
+import Data.Aeson.Orphans ()
 import Distribution.Orphans ()
 import Distribution.Orphans.ConfVar ()
-import Data.Aeson.Orphans ()
+import Flora.Model.Package.Types
+import Flora.Model.Release.Types
 import GHC.Generics
 
 newtype ComponentId = ComponentId {getComponentId :: UUID}

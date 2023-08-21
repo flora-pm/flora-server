@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Distribution.Orphans.ConfVar where
 
@@ -17,4 +17,4 @@ import Distribution.Orphans.Version ()
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''OS)
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Arch)
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''ConfVar)
-$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Condition )
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Condition)

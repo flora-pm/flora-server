@@ -1,11 +1,12 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Flora.Model.Package.Types where
 
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
-import Data.Aeson.TH
 import Data.Aeson.Orphans ()
+import Data.Aeson.TH
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
