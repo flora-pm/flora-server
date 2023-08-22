@@ -14,6 +14,9 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    # we need souffle 2.3, only change this if you're sure, that flora should compile with
+    # souffle > 2.3
+    nixpkgs-souffle.url = "github:nixos/nixpkgs/a74a4a2f324fb54637a9e2597ef1fdca6ad869c8";
     flake-utils.url = "github:numtide/flake-utils";
     horizon-platform.url =
       "git+https://gitlab.horizon-haskell.net/package-sets/horizon-platform";
@@ -28,7 +31,9 @@
   outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, pre-commit-hooks, ... }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = nixpkgs.legacyPackages.${system}.appendOverlays [
+          (_self: _super: { inherit (inputs.nixpkgs-souffle.legacyPackages.${system}) souffle; })
+        ];
         src = ./.;
         pre-commit-check = pre-commit-hooks.lib.${system}.run
           (import ./nix/pre-commit-config.nix { inherit src; });
@@ -50,6 +55,10 @@
           };
         };
         devShells = rec {
+          onlyPreCommit = pkgs.mkShell {
+            name = "pre-commit-shell";
+            inherit (pre-commit-check) shellHook;
+          };
           flora = floraShell;
           default = flora;
         };
