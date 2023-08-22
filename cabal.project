@@ -62,10 +62,3 @@ source-repository-package
     type: git
     location: https://github.com/saurabhnanda/odd-jobs
     tag: 51c7443
-
-source-repository-package
-    type: git
-    location: https://github.com/composewell/streamly
-    tag: 81bfdec
-    subdir: ./
-            core/
