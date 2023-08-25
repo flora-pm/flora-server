@@ -6,9 +6,15 @@ import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Set qualified as Set
+import Data.Text qualified as T
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Effectful (Eff, IOE, type (:>))
+import Effectful.Log
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Reader.Static (Reader)
+import Effectful.Time (Time)
 import Log
 import Network.HTTP.Types (gone410, notFound404, statusCode)
 import OddJobs.Job (Job (..))
@@ -16,6 +22,8 @@ import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
 import Flora.Import.Package (coreLibraries, persistImportOutput, withWorkerDbPool)
+import Flora.Model.BlobIndex.Update qualified as Update
+import Flora.Model.BlobStore.API
 import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
@@ -33,6 +41,7 @@ runner job = localDomain "job-runner" $
     Error str -> logMessage LogAttention "decode error" (toJSON str)
     Success val -> case val of
       FetchReadme x -> makeReadme x
+      FetchTarball x -> fetchTarball x
       FetchUploadTime x -> fetchUploadTime x
       FetchChangelog x -> fetchChangeLog x
       ImportPackage x ->
@@ -79,6 +88,27 @@ makeReadme pay@ReadmeJobPayload{..} =
         logInfo ("got a readme for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
         let readmeBody = renderMarkdown ("README" <> show mpPackage) bodyText
         Update.updateReadme mpReleaseId (Just $ MkTextHtml readmeBody) Imported
+
+fetchTarball :: (IOE :> es, Time :> es, DB :> es, Reader JobsRunnerEnv :> es, Log :> es, BlobStoreAPI :> es) => TarballJobPayload -> Eff es ()
+fetchTarball pay@TarballJobPayload{..} = do
+  localDomain "fetch-tarball" $! do
+    logInfo "Fetching tarball" pay
+    let payload = VersionedPackage{..}
+    result <- Hackage.request $! Hackage.getPackageTarball payload
+    case result of
+      Right bs -> do
+        mhash <- Update.insertTar package (unIntAesonVersion version) bs
+        case mhash of
+          Right hash -> do
+            Update.updateTarball releaseId hash
+            logInfo
+              ("Inserted tarball for " <> display package)
+              (object ["release_id" .= releaseId, "root_hash" .= hash])
+          Left err -> do
+            logAttention_ $! "Failed to insert tarball for " <> display package
+            throw err
+      Left (FailureResponse _ response) -> logAttention_ $! "Failure! " <> T.pack (show response)
+      Left e -> throw e
 
 fetchUploadTime :: UploadTimeJobPayload -> JobsRunner ()
 fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} =

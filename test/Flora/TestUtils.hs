@@ -100,6 +100,7 @@ import Flora.Environment.Config (LoggingDestination (..), PoolConfig (..))
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Logging qualified as Logging
+import Flora.Model.BlobStore.API
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
@@ -107,7 +108,7 @@ import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
 
-type TestEff = Eff '[Fail, Reader PoolConfig, DB, Log, Time, IOE]
+type TestEff = Eff '[Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
@@ -136,6 +137,7 @@ runTestEff comp pool poolCfg = runEff $
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
       . runReader poolCfg
+      . runBlobStorePure
       . runFailIO
       $ comp
 

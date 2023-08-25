@@ -3,6 +3,7 @@
 module FloraWeb.Pages.Templates.Packages where
 
 import Control.Monad (when)
+import Control.Monad.Reader (ask)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
 import Data.Positive
@@ -27,8 +28,9 @@ import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
 import Data.Foldable (fold)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isJust)
 import Distribution.Pretty (pretty)
+import Flora.Environment (FeatureEnv (..))
 import Flora.Model.Category.Types
 import Flora.Model.Package
 import Flora.Model.Release.Types
@@ -38,7 +40,7 @@ import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requir
 import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Components.Utils (text)
 import FloraWeb.Links qualified as Links
-import FloraWeb.Pages.Templates (FloraHTML)
+import FloraWeb.Pages.Templates (FloraHTML, TemplateEnv (..))
 import FloraWeb.Pages.Templates.Haddock (renderHaddock)
 
 data Target
@@ -315,6 +317,13 @@ displayInstructions packageName latestRelease =
         , value_ (formatInstallString packageName latestRelease)
         , readonly_ "readonly"
         ]
+      TemplateEnv{features} <- ask
+      when (isJust $ features.blobStoreImpl) $ do
+        label_ [for_ "tarball", class_ "font-light"] "Download"
+        let v = display latestRelease.version
+            tarballName = display packageName <> "-" <> v <> ".tar.gz"
+            tarballLink = v <> "/" <> tarballName
+        div_ $ a_ [href_ tarballLink, download_ ""] $ toHtml tarballName
 
 displayPackageDeprecation :: PackageAlternatives -> FloraHTML
 displayPackageDeprecation (PackageAlternatives inFavourOf) =

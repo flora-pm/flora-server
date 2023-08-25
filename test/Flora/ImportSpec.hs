@@ -27,7 +27,7 @@ spec fixtures =
     ]
 
 testIndex :: FilePath
-testIndex = "./test/fixtures/test-index.tar.gz"
+testIndex = "./test/fixtures/tarballs/test-index.tar.gz"
 
 defaultRepo :: Text
 defaultRepo = "test-namespace"

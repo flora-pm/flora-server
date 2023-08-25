@@ -16,6 +16,7 @@ import Data.Function ((&))
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Flora.Model.BlobStore.Types
 import Flora.Model.Release.Types
 
 insertRelease :: DB :> es => Release -> Eff es ()
@@ -67,6 +68,15 @@ updateChangelog releaseId changelogBody status =
         ([field| release_id |], releaseId)
         (changelogBody, status)
 
+updateTarball :: DB :> es => ReleaseId -> Sha256Sum -> Eff es ()
+updateTarball releaseId hash =
+  dbtToEff $!
+    void $!
+      updateFieldsBy @Release
+        [[field| tarball |]]
+        ([field| release_id |], releaseId)
+        (Only $ Just hash)
+
 setReleasesDeprecationMarker :: DB :> es => Vector (Bool, ReleaseId) -> Eff es ()
 setReleasesDeprecationMarker releaseVersions =
   dbtToEff $ void $ executeMany Update q (releaseVersions & Vector.toList)
@@ -76,5 +86,5 @@ setReleasesDeprecationMarker releaseVersions =
     UPDATE releases as r0
     SET deprecated = upd.x
     FROM (VALUES (?,?)) as upd(x,y)
-    WHERE r0.release_id = (upd.y :: uuid) 
+    WHERE r0.release_id = (upd.y :: uuid)
     |]

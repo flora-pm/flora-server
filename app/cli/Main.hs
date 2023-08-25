@@ -1,15 +1,22 @@
 module Main where
 
+import Codec.Compression.GZip qualified as GZip
+import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Maybe
 import Data.Password.Types
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Display (display)
 import DesignSystem (generateComponents)
+import Distribution.Version (Version)
 import Effectful
 import Effectful.Fail
+import Effectful.Log
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (Reader, runReader)
+import Effectful.Time (Time, runTime)
 import GHC.Generics (Generic)
+import Log qualified
 import Log.Backend.StandardOutput qualified as Log
 import Optics.Core
 import Options.Applicative
@@ -18,6 +25,9 @@ import Flora.Environment
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
+import Flora.Model.BlobIndex.Update qualified as Update
+import Flora.Model.BlobStore.API
+import Flora.Model.Package (PackageName)
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
@@ -37,6 +47,7 @@ data Command
   | ImportPackages FilePath Text
   | ImportIndex FilePath Text
   | ProvisionRepository Text Text
+  | ImportPackageTarball PackageName Version FilePath
   deriving stock (Show, Eq)
 
 data ProvisionTarget
@@ -61,6 +72,11 @@ main = do
     . runReader env.dbConfig
     . runDB env.pool
     . runFailIO
+    . runTime
+    . ( case env.features.blobStoreImpl of
+          Just (BlobStoreFS fp) -> runBlobStoreFS fp
+          _ -> runBlobStorePure
+      )
     $ runOptions result
 
 parseOptions :: Parser Options
@@ -76,6 +92,11 @@ parseCommand =
       <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
       <> command "import-index" (parseImportIndex `withInfo` "Import cabal packages from the index tarball")
       <> command "provision-repository" (parseProvisionRepository `withInfo` "Create a package repository")
+      <> command
+        "import-package-tarball"
+        ( parseImportPackageTarball
+            `withInfo` "Import a single package tarball, useful for testing"
+        )
 
 parseProvision :: Parser Command
 parseProvision =
@@ -115,7 +136,23 @@ parseProvisionRepository =
     <$> option str (long "name" <> metavar "<repository name>" <> help "Name of the repository")
     <*> option str (long "url" <> metavar "<repository url>" <> help "Link to the package repository")
 
-runOptions :: (Reader PoolConfig :> es, DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
+parseImportPackageTarball :: Parser Command
+parseImportPackageTarball =
+  ImportPackageTarball
+    <$> argument str (metavar "PACKAGE_NAME")
+    <*> argument str (metavar "VERSION")
+    <*> argument str (metavar "PATH")
+
+runOptions
+  :: ( Reader PoolConfig :> es
+     , DB :> es
+     , Time :> es
+     , Fail :> es
+     , IOE :> es
+     , BlobStoreAPI :> es
+     )
+  => Options
+  -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/" "hackage"
 runOptions (Options (CreateUser opts)) = do
@@ -138,6 +175,7 @@ runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path repository)) = importFolderOfCabalFiles path repository
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
 runOptions (Options (ProvisionRepository name url)) = provisionRepository name url
+runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
 
 provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Eff es ()
 provisionRepository name url = do
@@ -160,6 +198,20 @@ importIndex path repository = Log.withStdOutLogger $ \logger -> do
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
       importFromIndex logger (user ^. #userId) (repository, packageIndex.url) path True
+
+importPackageTarball
+  :: (BlobStoreAPI :> es, Time :> es, IOE :> es, DB :> es)
+  => PackageName
+  -> Version
+  -> FilePath
+  -> Eff es ()
+importPackageTarball pname version path = Log.withStdOutLogger $ \logger -> do
+  contents <- liftIO $ GZip.decompress <$> BS.readFile path
+  runLog "flora-cli" logger Log.LogTrace $ do
+    res <- Update.insertTar pname version contents
+    case res of
+      Right hash -> Log.logInfo_ $ "Insert tarball with root hash: " <> display hash
+      Left err -> Log.logAttention_ $ display err
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

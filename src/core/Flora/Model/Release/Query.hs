@@ -4,10 +4,12 @@
 module Flora.Model.Release.Query
   ( getReleases
   , getRelease
+  , getReleaseTarball
   , getReleaseByVersion
   , getHackagePackageReleasesWithoutReadme
   , getHackagePackageReleasesWithoutChangelog
   , getHackagePackageReleasesWithoutUploadTimestamp
+  , getHackagePackageReleasesWithoutTarball
   , getAllReleases
   , getLatestReleaseTime
   , getNumberOfReleases
@@ -32,6 +34,7 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
 import Distribution.Orphans.Version ()
+import Flora.Model.BlobStore.Types
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
@@ -53,6 +56,13 @@ getLatestReleaseTime repo =
   where
     q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
     q' = [sql| select max(uploaded_at) from releases |]
+
+getReleaseTarball :: DB :> es => ReleaseId -> Eff es (Maybe Sha256Sum)
+getReleaseTarball releaseId = dbtToEff $ do
+  mRelease <- selectOneByField @Release [field| release_id |] (Only releaseId)
+  case mRelease of
+    Just release -> pure $ tarball release
+    Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
 
 getAllReleases :: DB :> es => PackageId -> Eff es (Vector Release)
 getAllReleases pid =
@@ -131,6 +141,21 @@ getHackagePackageReleasesWithoutChangelog =
         where r.changelog_status = 'not-imported'
           and p.namespace = 'hackage'
            or p.namespace = 'haskell'
+      |]
+
+getHackagePackageReleasesWithoutTarball
+  :: DB :> es
+  => Eff es (Vector (ReleaseId, Version, PackageName))
+getHackagePackageReleasesWithoutTarball =
+  dbtToEff $! query Select querySpec ()
+  where
+    querySpec =
+      [sql|
+        select r.release_id, r.version, p.name
+        from releases as r
+        join packages as p
+        on p.package_id = r.package_id
+        where r.tarball is null
       |]
 
 getHackagePackagesWithoutReleaseDeprecationInformation

@@ -42,6 +42,14 @@ data ReadmeJobPayload = ReadmeJobPayload
     (ToJSON, FromJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReadmeJobPayload)
 
+data TarballJobPayload = TarballJobPayload
+  { package :: PackageName
+  , releaseId :: ReleaseId
+  , version :: IntAesonVersion
+  }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
 data UploadTimeJobPayload = UploadTimeJobPayload
   { packageName :: PackageName
   , releaseId :: ReleaseId
@@ -71,6 +79,7 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
 -- these represent the possible odd jobs we can run.
 data FloraOddJobs
   = FetchReadme ReadmeJobPayload
+  | FetchTarball TarballJobPayload
   | FetchUploadTime UploadTimeJobPayload
   | FetchChangelog ChangelogJobPayload
   | ImportPackage ImportOutput

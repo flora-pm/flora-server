@@ -5,6 +5,7 @@
 * Colourise in red deprecation markers on the package page ([#438](https://github.com/flora-pm/flora-server/pull/439))
 * Allow package imports from multiple repositories ([#444](https://github.com/flora-pm/flora-server/pull/444))
 * Add a page on namespaces in the documentation ([#451](https://github.com/flora-pm/flora-server/pull/451))
+* Add initial support for hosting package tarballs ([#452](https://github.com/flora-pm/flora-server/pull/452))
 
 ## 1.0.13 -- 2023-09-17
 * Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))

@@ -13,13 +13,15 @@ module FloraWeb.Pages.Templates.Types
 where
 
 import Control.Monad.Identity
-import Control.Monad.Reader
+import Control.Monad.Reader (ReaderT)
 import Data.Text (Text)
 import Data.UUID qualified as UUID
 import GHC.Generics
 import Lucid
 import Optics.Core
 
+import Effectful
+import Effectful.Reader.Static (Reader, ask)
 import Flora.Environment
 import Flora.Environment.Config (Assets)
 import Flora.Model.PersistentSession (PersistentSessionId (..))
@@ -51,6 +53,7 @@ data TemplateEnv = TemplateEnv
   , mUser :: Maybe User
   , sessionId :: PersistentSessionId
   , environment :: DeploymentEnv
+  , features :: FeatureEnv
   , activeElements :: ActiveElements
   , assets :: Assets
   , indexPage :: Bool
@@ -75,6 +78,7 @@ data TemplateDefaults = TemplateDefaults
   , description :: Text
   , mUser :: Maybe User
   , environment :: DeploymentEnv
+  , features :: FeatureEnv
   , activeElements :: ActiveElements
   , indexPage :: Bool
   }
@@ -100,6 +104,7 @@ defaultTemplateEnv =
     , description = "Package index for the Haskell ecosystem"
     , mUser = Nothing
     , environment = Development
+    , features = FeatureEnv Nothing
     , activeElements = defaultActiveElements
     , indexPage = True
     }
@@ -111,18 +116,20 @@ defaultsToEnv assets TemplateDefaults{..} =
    in TemplateEnv{..}
 
 fromSession
-  :: MonadIO m
+  :: (Reader FeatureEnv :> es, IOE :> es)
   => Session
   -> TemplateDefaults
-  -> m TemplateEnv
+  -> Eff es TemplateEnv
 fromSession session defaults = do
   let sessionId = session.sessionId
   let muser = session.mUser
   let webEnvStore = session.webEnvStore
   floraEnv <- liftIO $ fetchFloraEnv webEnvStore
+  featuresEnv <- ask @FeatureEnv
   let assets = floraEnv.assets
   let TemplateDefaults{..} =
         defaults
           & (#mUser .~ muser)
           & (#environment .~ (floraEnv.environment))
+          & (#features .~ featuresEnv)
   pure TemplateEnv{..}

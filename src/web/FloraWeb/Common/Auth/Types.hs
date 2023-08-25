@@ -16,6 +16,8 @@ import Servant.Server.Experimental.Auth (AuthServerData)
 import Web.Cookie (SetCookie)
 
 import Data.Text (Text)
+import Flora.Environment
+import Flora.Model.BlobStore.API
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Types
@@ -73,6 +75,8 @@ type FloraPage =
      , DB
      , Time
      , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
+     , Reader FeatureEnv
+     , BlobStoreAPI
      , Log
      , Error ServerError
      , IOE
@@ -85,6 +89,8 @@ type FloraAdmin =
      , DB
      , Time
      , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
+     , Reader FeatureEnv
+     , BlobStoreAPI
      , Log
      , Error ServerError
      , IOE

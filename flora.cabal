@@ -81,6 +81,7 @@ library
     Data.Positive
     Data.Text.Display.Orphans
     Data.Time.Orphans
+    Database.PostgreSQL.Simple.Orphans
     Distribution.Orphans
     Distribution.Orphans.CompilerFlavor
     Distribution.Orphans.ConfVar
@@ -96,6 +97,12 @@ library
     Flora.Import.Types
     Flora.Logging
     Flora.Model.Admin.Report
+    Flora.Model.BlobIndex.Internal
+    Flora.Model.BlobIndex.Query
+    Flora.Model.BlobIndex.Types
+    Flora.Model.BlobIndex.Update
+    Flora.Model.BlobStore.API
+    Flora.Model.BlobStore.Types
     Flora.Model.Category
     Flora.Model.Category.Query
     Flora.Model.Category.Types
@@ -129,6 +136,7 @@ library
     JSON
     Log.Backend.File
     Lucid.Orphans
+    Servant.API.ContentTypes.GZip
 
   build-depends:
     , aeson
@@ -140,6 +148,7 @@ library
     , colourista
     , containers
     , cryptohash-md5
+    , cryptohash-sha256
     , cryptonite
     , cryptonite-conduit
     , deepseq
@@ -149,6 +158,7 @@ library
     , envparse
     , filepath
     , http-api-data
+    , http-media
     , iso8601-time
     , log-base
     , log-effectful
@@ -169,6 +179,7 @@ library
     , postgresql-simple
     , pretty
     , resource-pool
+    , servant
     , servant-lucid
     , servant-server
     , slugify
@@ -180,6 +191,7 @@ library
     , text-display
     , time
     , unliftio
+    , utf8-string
     , uuid
     , vector
     , vector-algorithms
@@ -363,7 +375,6 @@ library flora-jobs
     , text
     , text-display
     , time
-    , typed-process
     , vector
 
 executable flora-server
@@ -392,16 +403,20 @@ executable flora-cli
     , flora
     , flora-web
     , log-base
+    , log-effectful
     , lucid
+    , monad-time-effectful
     , optics-core
     , optparse-applicative
     , password-types
     , pg-transact-effectful
     , PyF
     , text
+    , text-display
     , transformers
     , uuid
     , vector
+    , zlib
 
 test-suite flora-test
   import:         common-extensions
@@ -413,10 +428,12 @@ test-suite flora-test
   build-depends:
     , aeson
     , base
+    , bytestring
     , Cabal-syntax
     , containers
     , effectful-core
     , exceptions
+    , filepath
     , flora
     , flora-web
     , hedgehog
@@ -435,6 +452,7 @@ test-suite flora-test
     , servant
     , servant-client
     , servant-server
+    , tar
     , tasty
     , tasty-hunit
     , text
@@ -442,8 +460,10 @@ test-suite flora-test
     , transformers
     , uuid
     , vector
+    , zlib
 
   other-modules:
+    Flora.BlobSpec
     Flora.CabalSpec
     Flora.CategorySpec
     Flora.ImportSpec
