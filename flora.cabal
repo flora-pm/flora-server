@@ -330,6 +330,8 @@ library flora-jobs
     FloraJobs.Scheduler
     FloraJobs.ThirdParties.Hackage.API
     FloraJobs.ThirdParties.Hackage.Client
+    FloraJobs.ThirdParties.GitHub.API
+    FloraJobs.ThirdParties.GitHub.Client
     FloraJobs.Types
 
   build-depends:
@@ -342,6 +344,7 @@ library flora-jobs
     , containers
     , effectful-core
     , flora
+    , github
     , http-client
     , http-media
     , http-types

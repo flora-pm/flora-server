@@ -10,6 +10,7 @@ import Data.Aeson.TH
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
+import Data.Map qualified as M
 import Data.OpenApi (Schema (..), ToParamSchema (..), ToSchema (..), genericDeclareNamedSchema)
 import Data.Text (Text, isPrefixOf, unpack)
 import Data.Text qualified as Text
@@ -188,6 +189,16 @@ instance FromField PackageStatus where
 instance ToField PackageStatus where
   toField = Escape . encodeUtf8 . display
 
+newtype PackageFunding = PackageFunding { getPackageFunding :: M.Map Text Text }
+  deriving stock (Generic)
+  deriving
+    (Eq, Ord, Show, FromField, ToField, ToJSON, FromJSON, NFData)
+
+-- parsePackageFunding :: ByteString -> Maybe PackageFunding
+
+-- instance FromRow PackageStatus where
+-- instance ToRow PackageStatus where
+
 data Package = Package
   { packageId :: PackageId
   , namespace :: Namespace
@@ -196,6 +207,7 @@ data Package = Package
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   , status :: PackageStatus
+  -- , funding :: PackageFunding
   , deprecationInfo :: Maybe PackageAlternatives
   }
   deriving stock (Eq, Ord, Show, Generic)
