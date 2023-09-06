@@ -6,9 +6,9 @@ import Lucid
 newSession :: FloraHTML
 newSession = do
   let formClasses = "login-form"
-  form_ [action_ "/sessions/new", method_ "POST", class_ formClasses] $! do
+  form_ [action_ "/sessions/new", method_ "POST", class_ formClasses] $ do
     h2_ [class_ ""] "Sign in"
-    div_ $! do
+    div_ $ do
       label_ [for_ "email", class_ "sr-only"] "Email address"
       input_
         [ id_ "email"
@@ -19,7 +19,7 @@ newSession = do
         , placeholder_ "Email address"
         , class_ "form-input"
         ]
-    div_ $! do
+    div_ $ do
       label_ [for_ "password", class_ "sr-only"] "Email address"
       input_
         [ id_ "password"
@@ -30,7 +30,7 @@ newSession = do
         , placeholder_ "Password"
         , class_ "form-input"
         ]
-    -- div_ $! do
+    -- div_ $ do
     --   label_ [for_ "remember", class_ "text-xl mr-3"] "Remember me"
     --   input_ [id_ "remember", name_ "remember", type_ "checkbox", class_ ""]
 

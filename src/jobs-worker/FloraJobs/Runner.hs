@@ -34,7 +34,7 @@ import FloraJobs.Types
 
 fetchNewIndex :: JobsRunner ()
 fetchNewIndex =
-  localDomain "index-import" $! do
+  localDomain "index-import" $ do
     logInfo_ "Fetching new index"
     System.runProcess_ "cabal update"
     System.runProcess_ "cp ~/.cabal/packages/hackage.haskell.org/01-index.tar 01-index/"
@@ -43,13 +43,13 @@ fetchNewIndex =
     logInfo_ "New index processed"
     releases <- Query.getPackageReleasesWithoutReadme
     pool <- getPool
-    liftIO $!
-      forkIO $!
+    liftIO $
+      forkIO $
         forM_
           releases
           ( \(releaseId, version, packagename) -> scheduleReadmeJob pool releaseId packagename version
           )
-    liftIO $! void $! scheduleIndexImportJob pool
+    liftIO $ void $ scheduleIndexImportJob pool
 
 runner :: Job -> JobsRunner ()
 runner job = localDomain "job-runner" $
@@ -71,10 +71,10 @@ runner job = localDomain "job-runner" $
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
-  localDomain "fetch-changelog" $! do
+  localDomain "fetch-changelog" $ do
     Log.logInfo "Fetching CHANGELOG" payload
     let requestPayload = VersionedPackage packageName packageVersion
-    result <- Hackage.request $! Hackage.getPackageChangelog requestPayload
+    result <- Hackage.request $ Hackage.getPackageChangelog requestPayload
     case result of
       Left e@(FailureResponse _ response)
         -- If the CHANGELOG simply doesn't exist, we skip it by marking the job as successful.
@@ -85,14 +85,14 @@ fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseI
       Right bodyText -> do
         logInfo ("got a changelog for package " <> display packageName) (object ["release_id" .= releaseId])
         let changelogBody = renderMarkdown ("CHANGELOG" <> show packageName) bodyText
-        Update.updateChangelog releaseId (Just $! MkTextHtml changelogBody) Imported
+        Update.updateChangelog releaseId (Just $ MkTextHtml changelogBody) Imported
 
 makeReadme :: ReadmeJobPayload -> JobsRunner ()
 makeReadme pay@ReadmeJobPayload{..} =
-  localDomain "fetch-readme" $! do
+  localDomain "fetch-readme" $ do
     logInfo "Fetching README" pay
     let payload = VersionedPackage mpPackage mpVersion
-    gewt <- Hackage.request $! Hackage.getPackageReadme payload
+    gewt <- Hackage.request $ Hackage.getPackageReadme payload
     case gewt of
       Left e@(FailureResponse _ response)
         -- If the README simply doesn't exist, we skip it by marking the job as successful.
@@ -103,17 +103,17 @@ makeReadme pay@ReadmeJobPayload{..} =
       Right bodyText -> do
         logInfo ("got a readme for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
         let readmeBody = renderMarkdown ("README" <> show mpPackage) bodyText
-        Update.updateReadme mpReleaseId (Just $! MkTextHtml readmeBody) Imported
+        Update.updateReadme mpReleaseId (Just $ MkTextHtml readmeBody) Imported
 
 fetchUploadTime :: UploadTimeJobPayload -> JobsRunner ()
 fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} =
-  localDomain "fetch-upload-time" $! do
+  localDomain "fetch-upload-time" $ do
     logInfo "Fetching upload time" payload
     let requestPayload = VersionedPackage packageName packageVersion
-    result <- Hackage.request $! Hackage.getPackageUploadTime requestPayload
+    result <- Hackage.request $ Hackage.getPackageUploadTime requestPayload
     case result of
       Right timestamp -> do
-        logInfo_ $! "Got a timestamp for " <> display packageName
+        logInfo_ $ "Got a timestamp for " <> display packageName
         Update.updateUploadTime releaseId timestamp
       Left e@(FailureResponse _ response)
         -- If the upload time simply doesn't exist, we skip it by marking the job as successful.
@@ -131,7 +131,7 @@ fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releas
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: JobsRunner ()
 fetchPackageDeprecationList = do
-  result <- Hackage.request $! Hackage.getDeprecatedPackages
+  result <- Hackage.request $ Hackage.getDeprecatedPackages
   case result of
     Right deprecationList -> do
       logInfo_ "Deprecation List retrieved"
@@ -151,7 +151,7 @@ fetchPackageDeprecationList = do
 
 fetchReleaseDeprecationList :: PackageName -> Vector ReleaseId -> JobsRunner ()
 fetchReleaseDeprecationList packageName releases = do
-  result <- Hackage.request $! Hackage.getDeprecatedReleasesList packageName
+  result <- Hackage.request $ Hackage.getDeprecatedReleasesList packageName
   case result of
     Right deprecationList -> do
       logInfo "Release deprecation list retrieved" $

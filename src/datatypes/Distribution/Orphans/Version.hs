@@ -26,7 +26,7 @@ instance FromJSON Version where
     withText
       "Version"
       ( \s ->
-          maybe (fail "Invalid Version") pure (simpleParsec $! Text.unpack s)
+          maybe (fail "Invalid Version") pure (simpleParsec $ Text.unpack s)
       )
 
 instance FromField Version where
@@ -44,8 +44,8 @@ instance ToHttpApiData Version where
 
 instance FromHttpApiData Version where
   parseUrlPiece piece =
-    case simpleParsec $! Text.unpack piece of
-      Nothing -> Left $! "Could not parse version string: " <> piece
+    case simpleParsec $ Text.unpack piece of
+      Nothing -> Left $ "Could not parse version string: " <> piece
       Just a -> Right a
 
 instance Display VersionRange where
@@ -59,5 +59,5 @@ instance FromJSON VersionRange where
     withText
       "Version Range"
       ( \s ->
-          maybe (fail "Invalid version range") pure (simpleParsec $! Text.unpack s)
+          maybe (fail "Invalid version range") pure (simpleParsec $ Text.unpack s)
       )

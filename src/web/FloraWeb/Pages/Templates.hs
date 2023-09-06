@@ -21,12 +21,12 @@ render env template = pure (renderUVerb env template)
 renderUVerb :: TemplateEnv -> FloraHTML -> Html ()
 renderUVerb env template =
   let deploymentEnv = env.environment
-   in toHtmlRaw $! runIdentity $! runReaderT (renderBST (rendered deploymentEnv template)) env
+   in toHtmlRaw $ runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
 
 mkErrorPage :: TemplateEnv -> FloraHTML -> ByteString
 mkErrorPage env template =
   let deploymentEnv = env.environment
-   in runIdentity $! runReaderT (renderBST (rendered deploymentEnv template)) env
+   in runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
 
 rendered :: DeploymentEnv -> FloraHTML -> FloraHTML
 rendered _deploymentEnv target = do

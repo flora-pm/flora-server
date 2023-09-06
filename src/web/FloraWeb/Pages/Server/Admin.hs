@@ -64,22 +64,22 @@ indexHandler = do
   session <- getSession
   templateEnv <-
     fromSession session defaultTemplateEnv
-      >>= \te -> pure $! set (#activeElements % #adminDashboard) True te
-  FloraEnv{pool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
-  report <- liftIO $! withPool pool getReport
+      >>= \te -> pure $ set (#activeElements % #adminDashboard) True te
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
+  report <- liftIO $ withPool pool getReport
   render templateEnv (Templates.index report)
 
 fetchMetadataHandler :: FloraAdmin FetchMetadataResponse
 fetchMetadataHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
 
-  liftIO $! void $! schedulePackageDeprecationListJob jobsPool
+  liftIO $ void $ schedulePackageDeprecationListJob jobsPool
 
   releasesWithoutReadme <- Query.getPackageReleasesWithoutReadme
-  liftIO $!
-    void $!
-      forkIO $!
+  liftIO $
+    void $
+      forkIO $
         Async.forConcurrently_
           releasesWithoutReadme
           ( \(releaseId, version, packagename) -> do
@@ -87,9 +87,9 @@ fetchMetadataHandler = do
           )
 
   releasesWithoutUploadTime <- Query.getPackageReleasesWithoutUploadTimestamp
-  liftIO $!
-    void $!
-      forkIO $!
+  liftIO $
+    void $
+      forkIO $
         Async.forConcurrently_
           releasesWithoutUploadTime
           ( \(releaseId, version, packagename) -> do
@@ -97,9 +97,9 @@ fetchMetadataHandler = do
           )
 
   releasesWithoutChangelog <- Query.getPackageReleasesWithoutChangelog
-  liftIO $!
-    void $!
-      forkIO $!
+  liftIO $
+    void $
+      forkIO $
         Async.forConcurrently_
           releasesWithoutChangelog
           ( \(releaseId, version, packagename) -> do
@@ -107,24 +107,24 @@ fetchMetadataHandler = do
           )
 
   packagesWithoutDeprecationInformation <- Query.getPackagesWithoutReleaseDeprecationInformation
-  liftIO $!
-    void $!
-      forkIO $! do
+  liftIO $
+    void $
+      forkIO $ do
         Async.forConcurrently_
           packagesWithoutDeprecationInformation
           ( \a -> do
               scheduleReleaseDeprecationListJob jobsPool a
           )
-        void $! scheduleRefreshLatestVersions jobsPool
+        void $ scheduleRefreshLatestVersions jobsPool
 
-  pure $! redirect "/admin"
+  pure $ redirect "/admin"
 
 indexImportJobHandler :: FloraAdmin ImportIndexResponse
 indexImportJobHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
-  liftIO $! void $! scheduleIndexImportJob jobsPool
-  pure $! redirect "/admin"
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
+  liftIO $ void $ scheduleIndexImportJob jobsPool
+  pure $ redirect "/admin"
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdmin
 adminUsersHandler =
@@ -178,8 +178,8 @@ packageIndexHandler = do
 -- showPackageHandler :: PackageId -> FloraAdmin (Html ())
 -- showPackageHandler packageId = do
 --   session <- getSession
---   FloraEnv{pool} <- liftIO $! fetchFloraEnv (session.webEnvStore)
---   result <- liftIO $! withPool pool $! Query.getPackageById packageId
+--   FloraEnv{pool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
+--   result <- liftIO $ withPool pool $ Query.getPackageById packageId
 --   templateEnv <- fromSession session defaultTemplateEnv
 --   case result of
 --     Nothing -> renderError templateEnv notFound404

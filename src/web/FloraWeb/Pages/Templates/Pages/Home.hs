@@ -30,8 +30,8 @@ show = do
 about :: FloraHTML
 about = do
   TemplateEnv{environment} <- ask
-  div_ [class_ "about-page"] $! do
-    div_ [class_ "divider about-page__banner"] $! do
+  div_ [class_ "about-page"] $ do
+    div_ [class_ "divider about-page__banner"] $ do
       p_ [class_ "about-page__title"] "Flora.pm"
       p_ [class_ "about-page__subtitle"] "An index for the Haskell ecosystem"
     case environment of
@@ -42,7 +42,7 @@ about = do
 
 aboutText :: FloraHTML
 aboutText = do
-  toHtmlRaw $! commonmarkToHtml [optUnsafe] [] text
+  toHtmlRaw $ commonmarkToHtml [optUnsafe] [] text
   where
     text :: Text
     text =
@@ -79,8 +79,8 @@ banner = do
 
 searchBar :: FloraHTML
 searchBar =
-  form_ [action_ "/search", method_ "GET"] $! do
-    div_ [class_ "main-search"] $! do
+  form_ [action_ "/search", method_ "GET"] $ do
+    div_ [class_ "main-search"] $ do
       label_ [for_ "search"] ""
       input_
         [ class_

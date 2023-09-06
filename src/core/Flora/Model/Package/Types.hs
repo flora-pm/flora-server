@@ -58,7 +58,7 @@ newtype PackageId = PackageId {getPackageId :: UUID}
 -- | Generates a package id deterministically by hashing the namespace and the package name
 deterministicPackageId :: Namespace -> PackageName -> PackageId
 deterministicPackageId (Namespace ns) (PackageName name) =
-  PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $! ns <> name
+  PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ ns <> name
 
 newtype PackageName = PackageName Text
   deriving stock (Show, Generic)
@@ -68,7 +68,7 @@ newtype PackageName = PackageName Text
     via Text
 
 instance Pretty PackageName where
-  pretty (PackageName txt) = PP.text $! unpack txt
+  pretty (PackageName txt) = PP.text $ unpack txt
 
 instance Display PackageName where
   displayBuilder (PackageName name) = displayBuilder name
@@ -82,7 +82,7 @@ instance FromHttpApiData PackageName where
 parsePackageName :: Text -> Maybe PackageName
 parsePackageName txt =
   if matches "[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
-    then Just $! PackageName txt
+    then Just $ PackageName txt
     else Nothing
 
 instance ToSchema PackageName where
@@ -108,15 +108,15 @@ newtype Namespace = Namespace Text
     via Text
 
 instance ToField Namespace where
-  toField (Namespace txt) = toField $! fromMaybe txt (Text.stripPrefix "@" txt)
+  toField (Namespace txt) = toField $ fromMaybe txt (Text.stripPrefix "@" txt)
 
 instance FromField Namespace where
   fromField f dat = do
     (rawField :: Text) <- fromField f dat
-    pure $! Namespace rawField
+    pure $ Namespace rawField
 
 instance Pretty Namespace where
-  pretty (Namespace txt) = PP.text $! unpack txt
+  pretty (Namespace txt) = PP.text $ unpack txt
 
 instance Display Namespace where
   displayBuilder (Namespace name) =
@@ -139,7 +139,7 @@ instance FromHttpApiData Namespace where
 parseNamespace :: Text -> Maybe Namespace
 parseNamespace txt =
   if matches "@[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
-    then Just $! Namespace txt
+    then Just $ Namespace txt
     else Nothing
 
 instance ToSchema Namespace where

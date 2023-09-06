@@ -44,7 +44,7 @@ scheduleReadmeJob pool rid package version =
         createJob
           res
           jobTableName
-          (FetchReadme $! ReadmeJobPayload package rid $! MkIntAesonVersion version)
+          (FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version)
     )
 
 scheduleChangelogJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
@@ -55,7 +55,7 @@ scheduleChangelogJob pool rid package version =
         createJob
           res
           jobTableName
-          (FetchChangelog $! ChangelogJobPayload package rid $! MkIntAesonVersion version)
+          (FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version)
     )
 
 scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
@@ -66,7 +66,7 @@ scheduleUploadTimeJob pool releaseId packageName version =
         createJob
           res
           jobTableName
-          (FetchUploadTime $! UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version))
+          (FetchUploadTime $ UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version))
     )
 
 scheduleIndexImportJob :: Pool PG.Connection -> IO Job

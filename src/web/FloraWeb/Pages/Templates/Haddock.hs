@@ -28,14 +28,14 @@ htmlMarkup modResolv =
     , markupParagraph = p_
     , markupAppend = (<>)
     , markupIdentifier = code_ . toHtml
-    , markupIdentifierUnchecked = const $! code_ [] (toHtml @Text "FIXME") -- should never happen
+    , markupIdentifierUnchecked = const $ code_ [] (toHtml @Text "FIXME") -- should never happen
     , markupModule = mkModLink
     , markupWarning = div_ [class_ "warning"]
     , markupEmphasis = em_
     , markupBold = strong_
     , markupMonospaced = code_
-    , markupUnorderedList = \listItems -> ul_ [] $! forM_ listItems (\item -> li_ item)
-    , markupOrderedList = \listItems -> ol_ [] $! forM_ listItems (\(_, item) -> li_ [] item)
+    , markupUnorderedList = \listItems -> ul_ [] $ forM_ listItems (\item -> li_ item)
+    , markupOrderedList = \listItems -> ol_ [] $ forM_ listItems (\(_, item) -> li_ [] item)
     , markupDefList = \listItems ->
         dl_ [] $
           forM_
@@ -47,7 +47,7 @@ htmlMarkup modResolv =
     , markupCodeBlock = pre_ []
     , markupHyperlink = \(Hyperlink strUrl mLabel) ->
         let url = Text.pack strUrl
-         in a_ [href_ url] $! fromMaybe (toHtml url) mLabel
+         in a_ [href_ url] $ fromMaybe (toHtml url) mLabel
     , markupAName = (`namedAnchor` "")
     , markupPic = \(Picture uri mTitle) -> i_ [src_ (Text.pack uri), title_ (maybe "" Text.pack mTitle)] ""
     , markupMathInline = \mathjax -> toHtml ("\\(" ++ mathjax ++ "\\)")
@@ -66,14 +66,14 @@ htmlMarkup modResolv =
     makeHeader _ mkup = h6_ mkup
 
     examplesToHtml :: [Example] -> FloraHTML
-    examplesToHtml examples = pre_ [class_ "screen"] $! forM_ examples (\e -> exampleToHtml e)
+    examplesToHtml examples = pre_ [class_ "screen"] $ forM_ examples (\e -> exampleToHtml e)
 
     exampleToHtml :: Example -> FloraHTML
     exampleToHtml (Example expression result) = do
       code_ [class_ "prompt"] ">>>"
-      strong_ [class_ "userinput"] $! do
-        code_ [] (pure $! Text.pack $! expression <> "\n")
-        forM_ result (\resultLine -> pure $! Text.pack resultLine)
+      strong_ [class_ "userinput"] $ do
+        code_ [] (pure $ Text.pack $ expression <> "\n")
+        forM_ result (\resultLine -> pure $ Text.pack resultLine)
 
     mkModLink :: ModLink FloraHTML -> FloraHTML
     mkModLink (ModLink name _mLabel) =
@@ -91,10 +91,10 @@ htmlMarkup modResolv =
 
     makeTable :: [TableRow FloraHTML] -> [TableRow FloraHTML] -> FloraHTML
     makeTable headers cells =
-      table_ $! do
-        thead_ $! do
-          forM_ headers (\(TableRow cs) -> tr_ [] $! forM_ cs (\cell -> makeHeaderCell cell))
-          forM_ cells (\(TableRow cs) -> tr_ [] $! forM_ cs (\cell -> makeDataCell cell))
+      table_ $ do
+        thead_ $ do
+          forM_ headers (\(TableRow cs) -> tr_ [] $ forM_ cs (\cell -> makeHeaderCell cell))
+          forM_ cells (\(TableRow cs) -> tr_ [] $ forM_ cs (\cell -> makeDataCell cell))
 
     makeHeaderCell :: TableCell FloraHTML -> FloraHTML
     makeHeaderCell (TableCell colSpan rowSpan content) =
@@ -109,7 +109,7 @@ htmlMarkup modResolv =
       td_ [colspan_ (display colSpan), rowspan_ (display rowSpan)] content
 
 namedAnchor :: String -> FloraHTML -> FloraHTML
-namedAnchor n = a_ [name_ (Text.pack $! escapeStr n)]
+namedAnchor n = a_ [name_ (Text.pack $ escapeStr n)]
 
 escapeStr :: String -> String
 escapeStr = escapeURIString isUnreserved

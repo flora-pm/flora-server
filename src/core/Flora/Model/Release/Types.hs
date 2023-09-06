@@ -58,10 +58,10 @@ newtype TextHtml = MkTextHtml (Lucid.Html ())
   deriving stock (Show, Generic)
 
 instance ToJSON TextHtml where
-  toJSON (MkTextHtml a) = String $! Text.toStrict $! Lucid.renderText a
+  toJSON (MkTextHtml a) = String $ Text.toStrict $ Lucid.renderText a
 
 instance FromJSON TextHtml where
-  parseJSON = withText "TextHtml" (\text -> pure $! MkTextHtml $! Lucid.toHtmlRaw @Text text)
+  parseJSON = withText "TextHtml" (\text -> pure $ MkTextHtml $ Lucid.toHtmlRaw @Text text)
 
 instance NFData TextHtml where
   rnf a = seq a ()
@@ -74,7 +74,7 @@ instance FromField TextHtml where
   fromField field bs = MkTextHtml . Lucid.toHtmlRaw @Text <$> fromField field bs
 
 instance ToField TextHtml where
-  toField (MkTextHtml x) = toField $! Lucid.renderText x
+  toField (MkTextHtml x) = toField $ Lucid.renderText x
 
 data Release = Release
   { releaseId :: ReleaseId

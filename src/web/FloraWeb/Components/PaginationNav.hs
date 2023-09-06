@@ -24,9 +24,9 @@ paginationNav
 paginationNav totalResults currentPage searchAction = do
   let (totalPages :: Word) = (totalResults `div` 30) + 1
   nav_ [class_ "pagination-area"] $
-    ul_ [class_ "pagination-footer inline-flex"] $! do
+    ul_ [class_ "pagination-footer inline-flex"] $ do
       when (unPositive currentPage > 1) $
-        li_ [class_ "pagination-footer__item"] $! do
+        li_ [class_ "pagination-footer__item"] $ do
           link
             defaultLinkOptions
               { href = mkURL searchAction (currentPage - 1)
@@ -71,7 +71,7 @@ previousArrow =
     , viewBox_ "0 0 20 20"
     , xmlns_ "http://www.w3.org/2000/svg"
     ]
-    $! path_
+    $ path_
       [ fill_rule_ "evenodd"
       , d_
           "M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1\

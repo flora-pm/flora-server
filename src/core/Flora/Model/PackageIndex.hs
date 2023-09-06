@@ -46,14 +46,14 @@ mkPackageIndex repository timestamp = do
 
 getPackageIndexTimestamp :: DB :> es => Text -> Eff es (Maybe UTCTime)
 getPackageIndexTimestamp repository = do
-  res :: Maybe PackageIndex <- dbtToEff $! selectOneByField [field| repository |] (Only repository)
+  res :: Maybe PackageIndex <- dbtToEff $ selectOneByField [field| repository |] (Only repository)
   pure $ res >>= timestamp
 
 updatePackageIndexTimestamp :: (IOE :> es, DB :> es) => Text -> Maybe UTCTime -> Eff es ()
 updatePackageIndexTimestamp repository timestamp = do
   packageIndex <- mkPackageIndex repository timestamp
-  void $!
-    dbtToEff $!
+  void $
+    dbtToEff $
       selectOneByField @PackageIndex [field| repository |] (Only repository)
         >>= maybe
           (insert @PackageIndex packageIndex)

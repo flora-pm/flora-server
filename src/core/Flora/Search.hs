@@ -36,7 +36,7 @@ searchPackageByName
   -> Text
   -> Eff es (Word, Vector PackageInfo)
 searchPackageByName (offset, limit) queryString = do
-  (results, duration) <- timeAction $! Query.searchPackage (offset, limit) queryString
+  (results, duration) <- timeAction $ Query.searchPackage (offset, limit) queryString
 
   Log.logInfo "search-results" $
     object
@@ -63,7 +63,7 @@ listAllPackagesInNamespace
   -> (Word, Word)
   -> Eff es (Word, Vector PackageInfo)
 listAllPackagesInNamespace namespace (offset, limit) = do
-  (results, duration) <- timeAction $! Query.listAllPackagesInNamespace (offset, limit) namespace
+  (results, duration) <- timeAction $ Query.listAllPackagesInNamespace (offset, limit) namespace
 
   Log.logInfo "packages-in-namespace" $
     object

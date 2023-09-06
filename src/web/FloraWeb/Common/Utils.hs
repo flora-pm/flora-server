@@ -29,7 +29,7 @@ handlerToEff
   => Handler a
   -> Eff es a
 handlerToEff handler = do
-  v <- unsafeEff_ $! Servant.runHandler handler
+  v <- unsafeEff_ $ Servant.runHandler handler
   either throwError pure v
 
 effToHandler
@@ -38,5 +38,5 @@ effToHandler
   => Eff '[Error ServerError, IOE] a
   -> Handler a
 effToHandler computation = do
-  v <- liftIO . runEff . runErrorNoCallStack @ServerError $! computation
+  v <- liftIO . runEff . runErrorNoCallStack @ServerError $ computation
   either T.throwError pure v

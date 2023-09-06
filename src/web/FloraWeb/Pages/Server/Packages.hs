@@ -58,7 +58,7 @@ listPackagesHandler pageParam = do
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
   (count', results) <- Search.listAllPackages (fromPage pageNumber)
-  render templateDefaults $! Search.showAllPackages count' pageNumber results
+  render templateDefaults $ Search.showAllPackages count' pageNumber results
 
 showNamespaceHandler :: Namespace -> Maybe (Positive Word) -> FloraPage (Html ())
 showNamespaceHandler namespace pageParam = do
@@ -66,7 +66,7 @@ showNamespaceHandler namespace pageParam = do
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
   (count', results) <- Search.listAllPackagesInNamespace namespace (fromPage pageNumber)
-  render templateDefaults $!
+  render templateDefaults $
     Search.showAllPackagesInNamespace namespace count' pageNumber results
 
 showPackageHandler :: Namespace -> PackageName -> FloraPage (Html ())
@@ -207,7 +207,7 @@ showChangelogHandler namespace packageName = do
 
 showVersionChangelogHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
 showVersionChangelogHandler namespace packageName version = do
-  Log.logInfo_ $! display namespace
+  Log.logInfo_ $ display namespace
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName web404
@@ -221,7 +221,7 @@ showVersionChangelogHandler namespace packageName version = do
           , description = "Changelog of @" <> display namespace <> display packageName
           }
 
-  render templateEnv $! Package.showChangelog namespace packageName version (release.changelog)
+  render templateEnv $ Package.showChangelog namespace packageName version (release.changelog)
 
 listVersionsHandler :: Namespace -> PackageName -> FloraPage (Html ())
 listVersionsHandler namespace packageName = do
@@ -234,4 +234,4 @@ listVersionsHandler namespace packageName = do
           , description = "Releases of " <> display namespace <> display packageName
           }
   releases <- Query.getAllReleases (package.packageId)
-  render templateEnv $! Package.listVersions namespace packageName releases
+  render templateEnv $ Package.listVersions namespace packageName releases

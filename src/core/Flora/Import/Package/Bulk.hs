@@ -86,8 +86,8 @@ importAllFilesInDirectory
   -> Bool
   -> Eff es ()
 importAllFilesInDirectory appLogger user repository dir directImport = do
-  liftIO $! System.createDirectoryIfMissing True dir
-  liftIO . putStrLn $! "🔎  Searching cabal files in " <> dir
+  liftIO $ System.createDirectoryIfMissing True dir
+  liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
   importFromStream appLogger user repository directImport $ findAllCabalFilesInDirectory dir
 
 importFromStream
@@ -106,10 +106,10 @@ importFromStream appLogger user repository directImport stream = do
   processedPackageCount <-
     finally
       ( withWorkerDbPool $ \wq ->
-          liftIO $!
-            S.fold displayCount $!
-              S.fromAsync $!
-                S.mapM (processFile wq pool poolConfig) $!
+          liftIO $
+            S.fold displayCount $
+              S.fromAsync $
+                S.mapM (processFile wq pool poolConfig) $
                   stream
       )
       -- We want to refresh db and update latest timestamp even if we fell
@@ -152,19 +152,19 @@ importFromStream appLogger user repository directImport stream = do
           )
     displayStats :: MonadIO m => Int -> m ()
     displayStats currentCount =
-      liftIO . putStrLn $! "✅ Processed " <> show currentCount <> " new cabal files"
+      liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
 findAllCabalFilesInDirectory :: FilePath -> S.AsyncT IO (String, UTCTime, BS.ByteString)
-findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $! S.fromList [workdir]
+findAllCabalFilesInDirectory workdir = S.concatMapM traversePath $ S.fromList [workdir]
   where
     traversePath p = do
-      isDir <- liftIO $! System.doesDirectoryExist p
+      isDir <- liftIO $ System.doesDirectoryExist p
       case isDir of
         True -> do
           entries <- System.listDirectory p
-          return $! S.concatMapM (traversePath . (p </>)) $! S.fromList entries
+          return $ S.concatMapM (traversePath . (p </>)) $ S.fromList entries
         False | ".cabal" `isSuffixOf` p -> do
           content <- BS.readFile p
           timestamp <- System.getModificationTime p
-          return $! S.fromPure (p, timestamp, content)
+          return $ S.fromPure (p, timestamp, content)
         _ -> return S.nil

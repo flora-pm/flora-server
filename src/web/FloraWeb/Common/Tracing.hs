@@ -19,7 +19,7 @@ import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))
 
 onException :: Logger -> DeploymentEnv -> LoggingEnv -> Maybe Request -> SomeException -> IO ()
 onException logger environment tracingEnv mRequest exception =
-  Log.runLogT "flora" logger LogAttention $! do
+  Log.runLogT "flora" logger LogAttention $ do
     case tracingEnv.sentryDSN of
       Nothing -> do
         logAttention "Unhandled exception" $
@@ -32,7 +32,7 @@ onException logger environment tracingEnv mRequest exception =
               liftIO $
                 initRaven
                   sentryDSN
-                  (\defaultRecord -> defaultRecord{srEnvironment = Just $! show environment})
+                  (\defaultRecord -> defaultRecord{srEnvironment = Just $ show environment})
                   sendRecord
                   silentFallback
             liftIO $
@@ -42,8 +42,8 @@ onException logger environment tracingEnv mRequest exception =
                 Error
                 (formatMessage mRequest exception)
                 (recordUpdate mRequest exception)
-            liftIO $! defaultOnException mRequest exception
-          else liftIO $! defaultOnException mRequest exception
+            liftIO $ defaultOnException mRequest exception
+          else liftIO $ defaultOnException mRequest exception
 
 shouldDisplayException :: SomeException -> Bool
 shouldDisplayException exception
@@ -63,6 +63,6 @@ recordUpdate :: Maybe Request -> SomeException -> SentryRecord -> SentryRecord
 recordUpdate Nothing _exception record = record
 recordUpdate (Just request) _exception record =
   record
-    { srCulprit = Just $! unpack $! rawPathInfo request
+    { srCulprit = Just $ unpack $ rawPathInfo request
     , srServerName = unpack <$> requestHeaderHost request
     }

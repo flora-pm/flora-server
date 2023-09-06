@@ -53,10 +53,10 @@ authHandler logger floraEnv =
     handler :: Request -> Eff '[Log, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
     handler req = do
       let cookies = getCookies req
-      mbPersistentSessionId <- handlerToEff $! getSessionId cookies
+      mbPersistentSessionId <- handlerToEff $ getSessionId cookies
       mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
       mUserInfo <- fetchUser mbPersistentSession
-      requestID <- liftIO $! getRequestID req
+      requestID <- liftIO $ getRequestID req
       (mUser, sessionId) <- do
         case mUserInfo of
           Nothing -> do
@@ -64,9 +64,9 @@ authHandler logger floraEnv =
             pure (Nothing, nSessionId)
           Just (user, userSession) -> do
             pure (Just user, userSession.persistentSessionId)
-      webEnvStore <- liftIO $! newWebEnvStore (WebEnv floraEnv)
+      webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
       let sessionCookie = craftSessionCookie sessionId False
-      pure $! addCookie sessionCookie (Session{..})
+      pure $ addCookie sessionCookie (Session{..})
 
 getCookies :: Request -> Cookies
 getCookies req =
@@ -79,7 +79,7 @@ getRequestID req = do
   let headers = requestHeaders req
   case List.lookup "X-Request-ID" headers of
     Nothing -> fmap UUID.toText UUID.nextRandom
-    Just requestID -> pure $! Text.decodeUtf8 requestID
+    Just requestID -> pure $ Text.decodeUtf8 requestID
 
 getSessionId :: Cookies -> Handler (Maybe PersistentSessionId)
 getSessionId cookies =
@@ -120,7 +120,7 @@ handlerToEff
   => Handler a
   -> Eff es a
 handlerToEff handler = do
-  v <- unsafeEff_ $! Servant.runHandler handler
+  v <- unsafeEff_ $ Servant.runHandler handler
   either throwError pure v
 
 effToHandler
@@ -129,5 +129,5 @@ effToHandler
   => Eff '[Error ServerError, IOE] a
   -> Handler a
 effToHandler computation = do
-  v <- liftIO . runEff . runErrorNoCallStack @ServerError $! computation
+  v <- liftIO . runEff . runErrorNoCallStack @ServerError $ computation
   either T.throwError pure v

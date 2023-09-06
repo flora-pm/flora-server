@@ -30,7 +30,7 @@ searchHandler (Just "") pageParam = do
   (count, results) <- Search.listAllPackages (fromPage pageNumber)
   let (templateEnv :: TemplateEnv) =
         templateDefaults & #displayNavbarSearch .~ False
-  render templateEnv $! Search.showAllPackages count pageNumber results
+  render templateEnv $ Search.showAllPackages count pageNumber results
 searchHandler (Just searchString) pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1
   session <- getSession
@@ -41,4 +41,4 @@ searchHandler (Just searchString) pageParam = do
         case Vector.uncons matchVector of
           Just (exactResult, _) -> (Just exactResult, rest)
           Nothing -> (Nothing, rest)
-  render templateEnv $! Search.showResults searchString count pageNumber mExactMatch packagesInfo
+  render templateEnv $ Search.showResults searchString count pageNumber mExactMatch packagesInfo

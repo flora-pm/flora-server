@@ -48,14 +48,14 @@ import Flora.Model.Requirement
 
 getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do
-  (result, duration) <- timeAction $! dbtToEff $! query_ Select (_select @Package)
+  (result, duration) <- timeAction $ dbtToEff $ query_ Select (_select @Package)
   Log.logInfo "Retrieving all packages" $
     object
       ["duration" .= duration]
   pure result
 
 getPackagesByNamespace :: DB :> es => Namespace -> Eff es (Vector Package)
-getPackagesByNamespace namespace = dbtToEff $! selectManyByField @Package [field| namespace |] (Only namespace)
+getPackagesByNamespace namespace = dbtToEff $ selectManyByField @Package [field| namespace |] (Only namespace)
 
 getPackageByNamespaceAndName :: (DB :> es, Log :> es, Time :> es) => Namespace -> PackageName -> Eff es (Maybe Package)
 getPackageByNamespaceAndName namespace name = do
@@ -81,20 +81,20 @@ getAllPackageDependents
   => Namespace
   -> PackageName
   -> Eff es (Vector Package)
-getAllPackageDependents namespace packageName = dbtToEff $! query Select packageDependentsQuery (namespace, packageName)
+getAllPackageDependents namespace packageName = dbtToEff $ query Select packageDependentsQuery (namespace, packageName)
 
 -- | This function gets the first 6 dependents of a package
 getPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es (Vector Package)
-getPackageDependents namespace packageName = dbtToEff $! query Select q (namespace, packageName)
+getPackageDependents namespace packageName = dbtToEff $ query Select q (namespace, packageName)
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
 getNumberOfPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es Word
 getNumberOfPackageDependents namespace packageName =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
 numberOfPackageDependentsQuery :: Query
@@ -133,7 +133,7 @@ getAllPackageDependentsWithLatestVersion
   -> (Word, Word)
   -> Eff es (Vector DependencyInfo)
 getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) =
-  dbtToEff $! query Select q (namespace, packageName, offset, limit)
+  dbtToEff $ query Select q (namespace, packageName, offset, limit)
   where
     q = packageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
 
@@ -175,7 +175,7 @@ packageDependentsWithLatestVersionQuery =
     |]
 
 getComponentById :: DB :> es => ComponentId -> Eff es (Maybe PackageComponent)
-getComponentById componentId = dbtToEff $! selectById @PackageComponent (Only componentId)
+getComponentById componentId = dbtToEff $ selectById @PackageComponent (Only componentId)
 
 getComponent :: DB :> es => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
 getComponent releaseId name componentType =
@@ -204,11 +204,11 @@ getAllRequirements
   :: DB :> es
   => ReleaseId
   -> Eff es ComponentDependencies
-getAllRequirements releaseId = dbtToEff $! toComponentDependencies <$> query Select getAllRequirementsQuery (Only releaseId)
+getAllRequirements releaseId = dbtToEff $ toComponentDependencies <$> query Select getAllRequirementsQuery (Only releaseId)
 
 getRequirements :: (DB :> es, Log :> es, Time :> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
 getRequirements releaseId = do
-  (result, duration) <- timeAction $! dbtToEff $! query Select (getRequirementsQuery <> " LIMIT 6") (Only releaseId)
+  (result, duration) <- timeAction $ dbtToEff $ query Select (getRequirementsQuery <> " LIMIT 6") (Only releaseId)
   Log.logInfo "Retrieving limited dependencies of a release" $
     object
       [ "duration" .= duration
@@ -261,10 +261,10 @@ getRequirementsQuery =
 
 getNumberOfPackageRequirements :: DB :> es => ReleaseId -> Eff es Word
 getNumberOfPackageRequirements releaseId =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageRequirementsQuery (Only releaseId)
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
 numberOfPackageRequirementsQuery :: Query
@@ -298,7 +298,7 @@ getPackagesFromCategoryWithLatestVersion
   :: DB :> es
   => CategoryId
   -> Eff es (Vector PackageInfo)
-getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $! query Select q (Only categoryId)
+getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q (Only categoryId)
   where
     q =
       [sql|
@@ -411,7 +411,7 @@ listAllPackagesInNamespace (offset, limit) namespace =
 
 countPackages :: DB :> es => Eff es Word
 countPackages =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne_
         Select
@@ -421,12 +421,12 @@ countPackages =
     WHERE status = 'fully-imported'
     |]
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
 countPackagesByName :: DB :> es => Text -> Eff es Word
 countPackagesByName searchString =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne
         Select
@@ -437,12 +437,12 @@ countPackagesByName searchString =
       |]
         (Only searchString)
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
 countPackagesInNamespace :: DB :> es => Namespace -> Eff es Word
 countPackagesInNamespace namespace =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne
         Select
@@ -453,5 +453,5 @@ countPackagesInNamespace namespace =
       |]
         (Only namespace)
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0

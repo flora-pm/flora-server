@@ -13,7 +13,7 @@ instance FromJSON SPDX.License where
     withText
       "SPDX License"
       ( \s ->
-          maybe (fail "Invalid SPDX License expression!") pure (simpleParsec $! T.unpack s)
+          maybe (fail "Invalid SPDX License expression!") pure (simpleParsec $ T.unpack s)
       )
 
 instance ToJSON SPDX.License where

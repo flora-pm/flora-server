@@ -22,11 +22,11 @@ import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
 
 insertPackage :: DB :> es => Package -> Eff es ()
-insertPackage package = dbtToEff $! insert @Package package
+insertPackage package = dbtToEff $ insert @Package package
 
 upsertPackage :: DB :> es => Package -> Eff es ()
 upsertPackage package =
-  dbtToEff $!
+  dbtToEff $
     case package.status of
       UnknownPackage -> upsert @Package package [[field| owner_id |]]
       FullyImportedPackage ->
@@ -38,7 +38,7 @@ upsertPackage package =
           ]
 
 deprecatePackages :: DB :> es => Vector DeprecatedPackage -> Eff es ()
-deprecatePackages dp = dbtToEff $! void $! executeMany Update q (dp & Vector.map Only & Vector.toList)
+deprecatePackages dp = dbtToEff $ void $ executeMany Update q (dp & Vector.map Only & Vector.toList)
   where
     q =
       [sql|
@@ -49,18 +49,18 @@ deprecatePackages dp = dbtToEff $! void $! executeMany Update q (dp & Vector.map
       |]
 
 deletePackage :: DB :> es => (Namespace, PackageName) -> Eff es ()
-deletePackage (namespace, packageName) = dbtToEff $! delete @Package (namespace, packageName)
+deletePackage (namespace, packageName) = dbtToEff $ delete @Package (namespace, packageName)
 
 refreshDependents :: DB :> es => Eff es ()
 refreshDependents =
-  dbtToEff $! void $! execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
+  dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
 
 insertPackageComponent :: DB :> es => PackageComponent -> Eff es ()
 insertPackageComponent = dbtToEff . insert @PackageComponent
 
 upsertPackageComponent :: DB :> es => PackageComponent -> Eff es ()
 upsertPackageComponent packageComponent =
-  dbtToEff $! upsert @PackageComponent packageComponent (fields @PackageComponent)
+  dbtToEff $ upsert @PackageComponent packageComponent (fields @PackageComponent)
 
 bulkInsertPackageComponents :: DB :> es => [PackageComponent] -> Eff es ()
 bulkInsertPackageComponents = dbtToEff . insertMany @PackageComponent
@@ -69,8 +69,8 @@ insertRequirement :: DB :> es => Requirement -> Eff es ()
 insertRequirement = dbtToEff . insert @Requirement
 
 upsertRequirement :: DB :> es => Requirement -> Eff es ()
-upsertRequirement req = dbtToEff $! upsert @Requirement req [[field| metadata |], [field| requirement |]]
+upsertRequirement req = dbtToEff $ upsert @Requirement req [[field| metadata |], [field| requirement |]]
 
 bulkInsertRequirements :: DB :> es => [Requirement] -> Eff es ()
 bulkInsertRequirements requirements =
-  dbtToEff $! unless (List.null requirements) $! insertMany @Requirement requirements
+  dbtToEff $ unless (List.null requirements) $ insertMany @Requirement requirements

@@ -18,7 +18,7 @@ instance FromJSON CompilerFlavor where
     withText
       "Compiler Flavor"
       ( \s ->
-          maybe (fail "Invalid compiler flavor") pure (simpleParsec $! Text.unpack s)
+          maybe (fail "Invalid compiler flavor") pure (simpleParsec $ Text.unpack s)
       )
 
 instance Display CompilerFlavor where

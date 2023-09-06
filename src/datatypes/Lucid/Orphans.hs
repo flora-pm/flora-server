@@ -26,7 +26,7 @@ instance ToHtml SPDX.License where
   toHtmlRaw = build . Blaze.fromString . Pretty.prettyShow
 
 instance MimeUnrender HTML (Html ()) where
-  mimeUnrender _ bs = Right $! toHtmlRaw bs
+  mimeUnrender _ bs = Right $ toHtmlRaw bs
 
 instance MimeUnrender HTML NoContent where
   mimeUnrender _ _ = Right NoContent

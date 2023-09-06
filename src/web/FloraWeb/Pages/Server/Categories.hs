@@ -27,7 +27,7 @@ indexHandler = do
   session <- getSession
   templateEnv <- fromSession session defaultTemplateEnv
   categories <- Query.getAllCategories
-  render templateEnv $! Template.index categories
+  render templateEnv $ Template.index categories
 
 showHandler :: Text -> FloraPage (Html ())
 showHandler categorySlug = do
@@ -38,4 +38,4 @@ showHandler categorySlug = do
     Nothing -> renderError templateEnv notFound404
     Just cat -> do
       packagesInfo <- Query.getPackagesFromCategoryWithLatestVersion (cat.categoryId)
-      render templateEnv $! Template.showCategory cat packagesInfo
+      render templateEnv $ Template.showCategory cat packagesInfo

@@ -37,7 +37,7 @@ newtype RequirementId = RequirementId {getRequirementId :: UUID}
 
 deterministicRequirementId :: ComponentId -> PackageId -> RequirementId
 deterministicRequirementId componentId packageId =
-  RequirementId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $! concatenated
+  RequirementId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
   where
     concatenated = display componentId <> display packageId
 

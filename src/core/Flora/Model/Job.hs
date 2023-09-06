@@ -27,7 +27,7 @@ newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
     via Version
 
 instance ToJSON IntAesonVersion where
-  toJSON (MkIntAesonVersion x) = toJSON $! versionNumbers x
+  toJSON (MkIntAesonVersion x) = toJSON $ versionNumbers x
 
 instance FromJSON IntAesonVersion where
   parseJSON val = MkIntAesonVersion . mkVersion <$> parseJSON val
