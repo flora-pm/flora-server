@@ -328,10 +328,10 @@ library flora-jobs
     FloraJobs.Render
     FloraJobs.Runner
     FloraJobs.Scheduler
-    FloraJobs.ThirdParties.Hackage.API
-    FloraJobs.ThirdParties.Hackage.Client
     FloraJobs.ThirdParties.GitHub.API
     FloraJobs.ThirdParties.GitHub.Client
+    FloraJobs.ThirdParties.Hackage.API
+    FloraJobs.ThirdParties.Hackage.Client
     FloraJobs.Types
 
   build-depends:

@@ -120,7 +120,7 @@ logException env logger exception =
 runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
-  let runnerEnv = JobsRunnerEnv httpManager
+  let runnerEnv = JobsRunnerEnv httpManager floraEnv.githubToken
   let oddjobsUiCfg = makeUIConfig (floraEnv.config) appLogger (floraEnv.jobsPool)
       oddJobsCfg =
         makeConfig

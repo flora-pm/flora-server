@@ -1,5 +1,8 @@
 module FloraJobs.Runner where
 
+import GitHub.Auth
+import GitHub.Data.Content
+import Effectful.Reader.Static qualified as Reader
 import Control.Concurrent (forkIO)
 import Control.Exception
 import Control.Monad
@@ -7,6 +10,7 @@ import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Data.Text.Display
 import Data.Text.Lazy.Encoding qualified as TL
 import Data.Vector (Vector)
@@ -21,6 +25,7 @@ import System.Process.Typed qualified as System
 
 import Flora.Import.Package (coreLibraries, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Job
+import FloraJobs.ThirdParties.GitHub.Client
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
@@ -68,6 +73,8 @@ runner job = localDomain "job-runner" $
         fetchReleaseDeprecationList packageName releases
       RefreshLatestVersions ->
         Update.refreshLatestVersions
+      FetchFundingInformation owner repo ->
+        fetchFundingInformation owner repo
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -189,3 +196,15 @@ assignNamespace =
             then PackageAlternative (Namespace "haskell") p
             else PackageAlternative (Namespace "hackage") p
       )
+
+fetchFundingInformation :: Text -> Text -> JobsRunner ()
+fetchFundingInformation owner repo = do
+  JobsRunnerEnv{ mGithubToken } <- Reader.ask @JobsRunnerEnv
+  case mGithubToken of
+    Nothing -> pure ()
+    Just githubToken -> do
+      result <- liftIO $ runRequest (OAuth githubToken) $
+        fetchFundingFile owner repo
+      case result of
+        Left e -> error (show e)
+        Right (ContentFile content) -> liftIO $ print content.contentFileContent
