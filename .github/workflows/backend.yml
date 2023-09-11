@@ -80,7 +80,7 @@ jobs:
         cabal freeze
 
     - name: Cache
-      uses: actions/cache@v3.3.1
+      uses: actions/cache@v3.3.2
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ghc-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
