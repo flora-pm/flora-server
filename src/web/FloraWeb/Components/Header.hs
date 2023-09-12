@@ -58,7 +58,7 @@ header = do
         link_
           [ rel_ "search"
           , type_ "application/opensearchdescription+xml"
-          , title_ "Search on Flora"
+          , title_ "Flora"
           , href_ "/opensearch.xml"
           ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]

@@ -19,7 +19,7 @@ openSearchHandler :: Monad m => m XML.Document
 openSearchHandler =
   pure $
     openSearchDocument "OpenSearchDescription" $ do
-      element "ShortName" $ content "Search on Flora"
+      element "ShortName" $ content "Flora"
       element "Description" $ content "Search on Flora"
       element "InputEncoding" $ content "UTF-8"
       elementA "Url" [("type", "text/html"), ("method", "get"), ("template", "https://flora.pm/search?q={searchTerms}&ref=opensearch")] empty
