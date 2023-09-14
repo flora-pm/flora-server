@@ -39,6 +39,7 @@ data FloraEnv = FloraEnv
   , environment :: DeploymentEnv
   , config :: FloraConfig
   , assets :: Assets
+  , githubToken :: Maybe ByteString
   }
   deriving stock (Generic)
 
@@ -82,6 +83,7 @@ configToEnv floraConfig = do
       , environment = floraConfig.environment
       , assets = assets
       , config = floraConfig
+      , githubToken = floraConfig.githubToken
       }
 
 testConfigToTestEnv :: TestConfig -> Eff '[IOE] TestEnv

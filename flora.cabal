@@ -328,6 +328,8 @@ library flora-jobs
     FloraJobs.Render
     FloraJobs.Runner
     FloraJobs.Scheduler
+    FloraJobs.ThirdParties.GitHub.API
+    FloraJobs.ThirdParties.GitHub.Client
     FloraJobs.ThirdParties.Hackage.API
     FloraJobs.ThirdParties.Hackage.Client
     FloraJobs.Types
@@ -342,6 +344,7 @@ library flora-jobs
     , containers
     , effectful-core
     , flora
+    , github
     , http-client
     , http-media
     , http-types

@@ -9,6 +9,7 @@ module FloraJobs.Scheduler
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
   , scheduleRefreshLatestVersions
+  , scheduleFetchFundingInformation
   , checkIfIndexImportJobIsNotRunning
   , jobTableName
   --   prefer using smart constructors.
@@ -19,6 +20,7 @@ module FloraJobs.Scheduler
 where
 
 import Data.Pool
+import Data.Text (Text)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.DBT
@@ -114,6 +116,17 @@ scheduleRefreshLatestVersions pool =
           conn
           jobTableName
           RefreshLatestVersions
+    )
+
+scheduleFetchFundingInformation :: Pool PG.Connection -> Text -> Text -> IO Job
+scheduleFetchFundingInformation pool owner repo =
+  withResource
+    pool
+    ( \conn ->
+        createJob
+          conn
+          jobTableName
+          (FetchFundingInformation owner repo)
     )
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool

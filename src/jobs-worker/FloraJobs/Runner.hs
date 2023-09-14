@@ -7,11 +7,15 @@ import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Data.Text.Display
 import Data.Text.Lazy.Encoding qualified as TL
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static qualified as Reader
+import GitHub.Auth
+import GitHub.Data.Content
 import Log
 import Network.HTTP.Types (gone410, notFound404, statusCode)
 import OddJobs.Job (Job (..))
@@ -28,6 +32,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
+import FloraJobs.ThirdParties.GitHub.Client
 import FloraJobs.ThirdParties.Hackage.API (HackagePreferredVersions (..), VersionedPackage (..))
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
@@ -68,6 +73,8 @@ runner job = localDomain "job-runner" $
         fetchReleaseDeprecationList packageName releases
       RefreshLatestVersions ->
         Update.refreshLatestVersions
+      FetchFundingInformation owner repo ->
+        fetchFundingInformation owner repo
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -131,7 +138,7 @@ fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releas
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: JobsRunner ()
 fetchPackageDeprecationList = do
-  result <- Hackage.request $ Hackage.getDeprecatedPackages
+  result <- Hackage.request Hackage.getDeprecatedPackages
   case result of
     Right deprecationList -> do
       logInfo_ "Deprecation List retrieved"
@@ -189,3 +196,17 @@ assignNamespace =
             then PackageAlternative (Namespace "haskell") p
             else PackageAlternative (Namespace "hackage") p
       )
+
+fetchFundingInformation :: Text -> Text -> JobsRunner ()
+fetchFundingInformation owner repo = do
+  JobsRunnerEnv{mGithubToken} <- Reader.ask @JobsRunnerEnv
+  case mGithubToken of
+    Nothing -> pure ()
+    Just githubToken -> do
+      result <-
+        liftIO $
+          runRequest (OAuth githubToken) $
+            fetchFundingFile owner repo
+      case result of
+        Left e -> error (show e)
+        Right (ContentFile content) -> liftIO $ print content.contentFileContent

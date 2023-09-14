@@ -78,6 +78,7 @@ data FloraOddJobs
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
+  | FetchFundingInformation Text Text
   deriving stock (Generic)
 
 -- TODO: Upstream these two ToJSON instances

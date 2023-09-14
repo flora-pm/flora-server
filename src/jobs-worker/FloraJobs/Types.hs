@@ -5,6 +5,7 @@ module FloraJobs.Types where
 import Commonmark qualified
 import Control.Exception (Exception)
 import Data.Aeson
+import Data.ByteString (ByteString)
 import Data.Pool hiding (PoolConfig)
 import Data.Text qualified as Text
 import Data.Text.Encoding.Error (UnicodeException)
@@ -73,6 +74,7 @@ jobTableName = "oddjobs"
 
 data JobsRunnerEnv = JobsRunnerEnv
   { httpManager :: Manager
+  , mGithubToken :: Maybe ByteString
   }
   deriving stock (Generic)
 

@@ -43,6 +43,7 @@ import Env
   , def
   , help
   , nonempty
+  , optional
   , str
   , switch
   , var
@@ -108,6 +109,7 @@ data FloraConfig = FloraConfig
   , httpPort :: Word16
   , logging :: LoggingEnv
   , environment :: DeploymentEnv
+  , githubToken :: Maybe ByteString
   }
   deriving stock (Show, Generic)
 
@@ -154,6 +156,11 @@ parseDeploymentEnv :: Parser Error DeploymentEnv
 parseDeploymentEnv =
   var deploymentEnv "FLORA_ENVIRONMENT" (help "Name of the current environment (production, development, test)")
 
+parseGithubToken :: Parser Error (Maybe ByteString)
+parseGithubToken =
+  optional $
+    var str "FLORA_GITHUB_TOKEN" (help "The GitHub Token for Flora")
+
 parseConfig :: Parser Error FloraConfig
 parseConfig =
   FloraConfig
@@ -163,6 +170,7 @@ parseConfig =
     <*> parsePort
     <*> parseLoggingEnv
     <*> parseDeploymentEnv
+    <*> parseGithubToken
 
 parseTestConfig :: Parser Error TestConfig
 parseTestConfig =
