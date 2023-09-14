@@ -1,8 +1,5 @@
 module FloraJobs.Runner where
 
-import GitHub.Auth
-import GitHub.Data.Content
-import Effectful.Reader.Static qualified as Reader
 import Control.Concurrent (forkIO)
 import Control.Exception
 import Control.Monad
@@ -16,6 +13,9 @@ import Data.Text.Lazy.Encoding qualified as TL
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static qualified as Reader
+import GitHub.Auth
+import GitHub.Data.Content
 import Log
 import Network.HTTP.Types (gone410, notFound404, statusCode)
 import OddJobs.Job (Job (..))
@@ -25,7 +25,6 @@ import System.Process.Typed qualified as System
 
 import Flora.Import.Package (coreLibraries, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Job
-import FloraJobs.ThirdParties.GitHub.Client
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
@@ -33,6 +32,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
+import FloraJobs.ThirdParties.GitHub.Client
 import FloraJobs.ThirdParties.Hackage.API (HackagePreferredVersions (..), VersionedPackage (..))
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
@@ -199,12 +199,14 @@ assignNamespace =
 
 fetchFundingInformation :: Text -> Text -> JobsRunner ()
 fetchFundingInformation owner repo = do
-  JobsRunnerEnv{ mGithubToken } <- Reader.ask @JobsRunnerEnv
+  JobsRunnerEnv{mGithubToken} <- Reader.ask @JobsRunnerEnv
   case mGithubToken of
     Nothing -> pure ()
     Just githubToken -> do
-      result <- liftIO $ runRequest (OAuth githubToken) $
-        fetchFundingFile owner repo
+      result <-
+        liftIO $
+          runRequest (OAuth githubToken) $
+            fetchFundingFile owner repo
       case result of
         Left e -> error (show e)
         Right (ContentFile content) -> liftIO $ print content.contentFileContent

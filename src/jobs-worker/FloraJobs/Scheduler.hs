@@ -20,9 +20,9 @@ module FloraJobs.Scheduler
 where
 
 import Data.Pool
+import Data.Text (Text)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
-import Data.Text (Text)
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple qualified as PG
