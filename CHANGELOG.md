@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 1.0.13 -- XXXX-XX-XX
+* Integrating Funding information from GitHub source repository ([#412](https://github.com/flora-pm/flora-server/issues/412))
 * Fixed text color for header and button in login page ([#418](https://github.com/flora-pm/flora-server/pull/418))
 * Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
 * Add namespace browsing ([#375](https://github.com/flora-pm/flora-server/pull/375))
