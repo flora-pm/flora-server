@@ -109,8 +109,7 @@ importFromStream appLogger user repository directImport stream = do
           liftIO $
             S.fold displayCount $
               S.fromAsync $
-                S.mapM (processFile wq pool poolConfig) $
-                  stream
+                S.mapM (processFile wq pool poolConfig) stream
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point

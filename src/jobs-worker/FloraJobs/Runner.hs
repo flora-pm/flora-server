@@ -131,7 +131,7 @@ fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releas
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: JobsRunner ()
 fetchPackageDeprecationList = do
-  result <- Hackage.request $ Hackage.getDeprecatedPackages
+  result <- Hackage.request Hackage.getDeprecatedPackages
   case result of
     Right deprecationList -> do
       logInfo_ "Deprecation List retrieved"
