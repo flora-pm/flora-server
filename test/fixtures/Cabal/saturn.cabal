@@ -1,0 +1,121 @@
+cabal-version:   3.0
+name:            saturn
+version:         1.0.0.2
+synopsis:        Handle POSIX cron schedules.
+description:     Saturn handles POSIX cron schedules.
+build-type:      Simple
+category:        Cron
+extra-doc-files:
+  CHANGELOG.markdown
+  README.markdown
+
+maintainer:      Taylor Fausak
+license:         MIT
+license-file:    LICENSE.markdown
+
+source-repository head
+  location: https://github.com/tfausak/saturn
+  type:     git
+
+flag pedantic
+  default: False
+  manual:  True
+
+common library
+  build-depends:    base ^>=4.16.0 || ^>=4.17.0 || ^>=4.18.0
+  default-language: Haskell2010
+  ghc-options:
+    -Weverything -Wno-all-missed-specialisations -Wno-implicit-prelude
+    -Wno-missed-specialisations -Wno-missing-deriving-strategies
+    -Wno-missing-export-lists -Wno-missing-kind-signatures
+    -Wno-missing-safe-haskell-mode -Wno-prepositive-qualified-module
+    -Wno-safe -Wno-unsafe
+
+  if flag(pedantic)
+    ghc-options: -Werror
+
+library unstable
+  import:          library
+  build-depends:
+    , containers ^>=0.6.5
+    , parsec ^>=3.1.14
+    , text ^>=1.2.5 || ^>=2.0.2
+    , time ^>=1.11.1 || ^>=1.12.2
+
+  exposed-modules:
+    Saturn.Unstable.Constant
+    Saturn.Unstable.Extra.Int
+    Saturn.Unstable.Extra.Ord
+    Saturn.Unstable.Extra.Parsec
+    Saturn.Unstable.Extra.Time
+    Saturn.Unstable.Extra.Tuple
+    Saturn.Unstable.Match
+    Saturn.Unstable.Parse
+    Saturn.Unstable.Render
+    Saturn.Unstable.Type.Day
+    Saturn.Unstable.Type.Element
+    Saturn.Unstable.Type.Field
+    Saturn.Unstable.Type.Hour
+    Saturn.Unstable.Type.Minute
+    Saturn.Unstable.Type.Month
+    Saturn.Unstable.Type.Number
+    Saturn.Unstable.Type.Range
+    Saturn.Unstable.Type.Schedule
+    Saturn.Unstable.Type.Weekday
+    Saturn.Unstable.Type.Wildcard
+
+  hs-source-dirs:  source/libraries/unstable
+  visibility:      public
+
+library
+  import:          library
+  build-depends:   saturn:unstable
+  exposed-modules: Saturn
+  hs-source-dirs:  source/libraries/saturn
+
+library spec
+  import:          library
+  build-depends:
+    , hspec ^>=2.9.0 || ^>=2.10.0 || ^>=2.11.0
+    , parsec
+    , QuickCheck ^>=2.14.3
+    , saturn:unstable
+    , text
+    , time
+
+  exposed-modules:
+    Saturn.Unstable.ConstantSpec
+    Saturn.Unstable.Extra.IntSpec
+    Saturn.Unstable.Extra.OrdSpec
+    Saturn.Unstable.Extra.ParsecSpec
+    Saturn.Unstable.Extra.TimeSpec
+    Saturn.Unstable.Extra.TupleSpec
+    Saturn.Unstable.MatchSpec
+    Saturn.Unstable.ParseSpec
+    Saturn.Unstable.RenderSpec
+    Saturn.Unstable.Type.DaySpec
+    Saturn.Unstable.Type.ElementSpec
+    Saturn.Unstable.Type.FieldSpec
+    Saturn.Unstable.Type.HourSpec
+    Saturn.Unstable.Type.MinuteSpec
+    Saturn.Unstable.Type.MonthSpec
+    Saturn.Unstable.Type.NumberSpec
+    Saturn.Unstable.Type.RangeSpec
+    Saturn.Unstable.Type.ScheduleSpec
+    Saturn.Unstable.Type.WeekdaySpec
+    Saturn.Unstable.Type.WildcardSpec
+    SaturnSpec
+
+  hs-source-dirs:  source/libraries/spec
+  visibility:      public
+
+test-suite saturn-test-suite
+  import:         library
+  build-depends:
+    , hspec
+    , saturn:spec
+
+  ghc-options:    -rtsopts -threaded
+  hs-source-dirs: source/test-suite
+  main-is:        Main.hs
+  type:           exitcode-stdio-1.0

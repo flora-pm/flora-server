@@ -3,7 +3,7 @@ module Flora.Import.Package.Types where
 import Control.DeepSeq
 import Data.Aeson
 import Flora.Import.Categories.Tuning qualified as Tuning
-import Flora.Model.Package.Component
+import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement

@@ -1,17 +1,21 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Flora.Model.Release.Types
   ( ReleaseId (..)
   , TextHtml (..)
   , Release (..)
-  , ReleaseMetadata (..)
   , ImportStatus (..)
   , SupportedCompilers (..)
   , ReleaseDeprecation (..)
+  , ReleaseFlags (..)
   )
 where
 
 import Data.Aeson
 import Data.Aeson.Orphans ()
+import Data.Aeson.TH
 import Data.ByteString (ByteString)
+import Data.OpenApi.Schema (ToSchema)
 import Data.Text (Text, unpack)
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -25,17 +29,19 @@ import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), r
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Distribution.Compiler (CompilerFlavor)
-import Distribution.Orphans ()
 import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag)
 import Distribution.Types.Version
 import Distribution.Types.VersionRange (VersionRange)
-import GHC.Generics (Generic)
 import Lucid qualified
 
 import Control.DeepSeq
 import Data.Text.Lazy qualified as Text
+import Deriving.Aeson
+import Distribution.Orphans ()
+import Distribution.Orphans.CompilerFlavor ()
+import Distribution.Orphans.PackageFlag ()
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
@@ -52,10 +58,10 @@ newtype TextHtml = MkTextHtml (Lucid.Html ())
   deriving stock (Show, Generic)
 
 instance ToJSON TextHtml where
-  toJSON (MkTextHtml a) = String $! Text.toStrict $! Lucid.renderText a
+  toJSON (MkTextHtml a) = String $ Text.toStrict $ Lucid.renderText a
 
 instance FromJSON TextHtml where
-  parseJSON = withText "TextHtml" (\text -> pure $! MkTextHtml $! Lucid.toHtmlRaw @Text text)
+  parseJSON = withText "TextHtml" (\text -> pure $ MkTextHtml $ Lucid.toHtmlRaw @Text text)
 
 instance NFData TextHtml where
   rnf a = seq a ()
@@ -68,37 +74,35 @@ instance FromField TextHtml where
   fromField field bs = MkTextHtml . Lucid.toHtmlRaw @Text <$> fromField field bs
 
 instance ToField TextHtml where
-  toField (MkTextHtml x) = toField $! Lucid.renderText x
+  toField (MkTextHtml x) = toField $ Lucid.renderText x
 
 data Release = Release
   { releaseId :: ReleaseId
-  -- ^ The unique ID of this release
   , packageId :: PackageId
-  -- ^ The package to which this release is linked
   , version :: Version
-  -- ^ The version that this release represents
-  , metadata :: ReleaseMetadata
-  -- ^ Metadata associated with this release
   , archiveChecksum :: Text
-  -- ^ The SHA256 checksum of the stored archive for this release
   , uploadedAt :: Maybe UTCTime
-  , --  ^ The timestamp of upload, provided by Hackage
-    createdAt :: UTCTime
-  -- ^ Date of creation of this release
+  , createdAt :: UTCTime
   , updatedAt :: UTCTime
-  -- ^ Last update timestamp for this release
   , readme :: Maybe TextHtml
-  -- ^ Content of the release's README
   , readmeStatus :: ImportStatus
-  -- ^ Import status of the README
   , changelog :: Maybe TextHtml
-  -- ^ Content of the release's Changelog
   , changelogStatus :: ImportStatus
-  -- ^ Repo - where this package has been imported from
+  , license :: SPDX.License
+  , sourceRepos :: Vector Text
+  , homepage :: Maybe Text
+  , documentation :: Text
+  , bugTracker :: Maybe Text
+  , maintainer :: Text
+  , synopsis :: Text
+  , description :: Text
+  , flags :: ReleaseFlags
+  , testedWith :: Vector Version
+  , deprecated :: Maybe Bool
   , repository :: Maybe Text
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData, FromJSON, ToJSON)
+  deriving anyclass (FromRow, ToRow, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "releases"] Release)
@@ -106,12 +110,20 @@ data Release = Release
 instance Ord Release where
   compare x y = compare (x.version) (y.version)
 
+newtype ReleaseFlags = ReleaseFlags (Vector PackageFlag)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving newtype (ToJSON, FromJSON, NFData, ToSchema)
+  deriving (ToField, FromField) via Aeson ReleaseFlags
+
 data ImportStatus
   = Imported
   | Inexistent
   | NotImported
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
-  deriving anyclass (NFData, ToJSON, FromJSON)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportStatus)
 
 parseImportStatus :: ByteString -> Maybe ImportStatus
 parseImportStatus "imported" = pure Imported
@@ -140,29 +152,18 @@ instance ToField ImportStatus where
 
 newtype SupportedCompilers = Vector (CompilerFlavor, VersionRange)
   deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON, NFData)
-
-data ReleaseMetadata = ReleaseMetadata
-  { license :: SPDX.License
-  , sourceRepos :: Vector Text
-  , homepage :: Maybe Text
-  , documentation :: Text
-  , bugTracker :: Maybe Text
-  , maintainer :: Text
-  , synopsis :: Text
-  , description :: Text
-  , flags :: Vector PackageFlag
-  , testedWith :: Vector Version
-  , deprecated :: Maybe Bool
-  }
-  deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON, NFData)
-  deriving (ToField, FromField) via Aeson ReleaseMetadata
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] SupportedCompilers)
 
 data ReleaseDeprecation = ReleaseDeprecation
   { deprecated :: Bool
   , release :: ReleaseId
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReleaseDeprecation)
   deriving (ToField, FromField) via Aeson ReleaseDeprecation
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Release)

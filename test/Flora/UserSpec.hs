@@ -16,7 +16,7 @@ import Flora.Model.User
 import Flora.Model.User.Query
 import Flora.TestUtils
 import FloraWeb.Client as Client
-import FloraWeb.Routes.Pages.Sessions
+import FloraWeb.Pages.Routes.Sessions
 
 spec :: Fixtures -> TestEff TestTree
 spec fixtures =

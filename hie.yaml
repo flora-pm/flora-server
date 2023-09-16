@@ -3,7 +3,7 @@ cradle:
     - path: "././src/core"
       component: "lib:flora"
 
-    - path: "././src/orphans"
+    - path: "././src/datatypes"
       component: "lib:flora"
 
     - path: "././src/web"

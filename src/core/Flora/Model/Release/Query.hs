@@ -30,7 +30,9 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Version (Version)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
-import Flora.Model.Package.Component
+
+import Distribution.Orphans.Version ()
+import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
@@ -39,33 +41,33 @@ packageReleasesQuery = _selectWhere @Release [[field| package_id |]]
 
 getReleases :: DB :> es => PackageId -> Eff es (Vector Release)
 getReleases pid =
-  dbtToEff $! do
+  dbtToEff $ do
     results <- query Select packageReleasesQuery (Only pid)
     if Vector.null results
       then pure results
-      else pure $! Vector.take 6 $! Vector.reverse $! Vector.modify MVector.sort results
+      else pure $ Vector.take 6 $ Vector.reverse $ Vector.modify MVector.sort results
 
 getLatestReleaseTime :: DB :> es => Maybe Text -> Eff es (Maybe UTCTime)
 getLatestReleaseTime repo =
-  dbtToEff $! fmap fromOnly <$> maybe (queryOne_ Select q') (queryOne Select q . Only) repo
+  dbtToEff $ fmap fromOnly <$> maybe (queryOne_ Select q') (queryOne Select q . Only) repo
   where
     q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
     q' = [sql| select max(uploaded_at) from releases |]
 
 getAllReleases :: DB :> es => PackageId -> Eff es (Vector Release)
 getAllReleases pid =
-  dbtToEff $! do
+  dbtToEff $ do
     results <- query Select packageReleasesQuery (Only pid)
     if Vector.null results
       then pure results
-      else pure $! Vector.reverse $! Vector.modify MVector.sort results
+      else pure $ Vector.reverse $ Vector.modify MVector.sort results
 
 getVersionFromManyReleaseIds
   :: DB :> es
   => Vector ReleaseId
   -> Eff es (Vector (ReleaseId, Version))
 getVersionFromManyReleaseIds releaseIds = do
-  dbtToEff $! query Select q (Only (In (Vector.toList releaseIds)))
+  dbtToEff $ query Select q (Only (In (Vector.toList releaseIds)))
   where
     q =
       [sql|
@@ -143,14 +145,14 @@ getPackagesWithoutReleaseDeprecationInformation
   :: DB :> es
   => Eff es (Vector (PackageName, Vector ReleaseId))
 getPackagesWithoutReleaseDeprecationInformation =
-  dbtToEff $! query_ Select q
+  dbtToEff $ query_ Select q
   where
     q =
       [sql|
         select p1.name, array_agg(r0.release_id)
         from releases as r0
         join packages as p1 on r0.package_id = p1.package_id
-        where r0.metadata ->> 'deprecated' is null
+        where r0.deprecated is null
         group by p1.name;
         |]
 
@@ -160,15 +162,15 @@ getReleaseByVersion
   -> Version
   -> Eff es (Maybe Release)
 getReleaseByVersion packageId version =
-  dbtToEff $!
+  dbtToEff $
     queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
 
 getNumberOfReleases :: DB :> es => PackageId -> Eff es Word
 getNumberOfReleases pid =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <- queryOne Select numberOfReleasesQuery (Only pid)
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
 numberOfReleasesQuery :: Query
@@ -181,4 +183,4 @@ numberOfReleasesQuery =
 
 getReleaseComponents :: DB :> es => ReleaseId -> Eff es (Vector PackageComponent)
 getReleaseComponents releaseId =
-  dbtToEff $! query Select (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
+  dbtToEff $ query Select (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)

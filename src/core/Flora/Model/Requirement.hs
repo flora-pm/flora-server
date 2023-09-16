@@ -1,7 +1,6 @@
 module Flora.Model.Requirement where
 
 import Crypto.Hash.MD5 qualified as MD5
-import Data.Aeson (FromJSON, ToJSON)
 import Data.Data
 import Data.Foldable (foldl')
 import Data.Map.Strict qualified as Map
@@ -19,15 +18,15 @@ import Database.PostgreSQL.Simple.FromField
   )
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField, toField, toJSONField)
-import GHC.Generics (Generic)
 
 import Control.DeepSeq
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust)
 import Data.Text.Encoding (encodeUtf8)
+import Deriving.Aeson
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
-import Flora.Model.Package.Component
+import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 
 newtype RequirementId = RequirementId {getRequirementId :: UUID}
@@ -38,7 +37,7 @@ newtype RequirementId = RequirementId {getRequirementId :: UUID}
 
 deterministicRequirementId :: ComponentId -> PackageId -> RequirementId
 deterministicRequirementId componentId packageId =
-  RequirementId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $! concatenated
+  RequirementId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
   where
     concatenated = display componentId <> display packageId
 
@@ -67,7 +66,10 @@ data RequirementMetadata = RequirementMetadata
   { flag :: Maybe Text
   }
   deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] RequirementMetadata)
 
 instance FromField RequirementMetadata where
   fromField = fromJSONField

@@ -1,27 +1,26 @@
 module Flora.PackageSpec where
 
-import Data.Map qualified as Map
-import Data.Maybe
-import Data.Set qualified as Set
-import Data.Vector qualified as Vector
-import Optics.Core
-import Test.Tasty
-
 import Data.Foldable
 import Data.Function
+import Data.Map qualified as Map
+import Data.Maybe
 import Data.Monoid (Sum (..))
+import Data.Set qualified as Set
 import Data.Vector qualified as V
+import Data.Vector qualified as Vector
 import Distribution.System (OS (Windows))
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
+import Optics.Core
+import Test.Tasty
 
 import Distribution.Version (mkVersion)
 import Flora.Import.Package
 import Flora.Model.Category (Category (..))
 import Flora.Model.Category.Query qualified as Query
+import Flora.Model.Component.Types
 import Flora.Model.Package
-import Flora.Model.Package.Component
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
@@ -136,7 +135,7 @@ testCorrectNumberInHaskellNamespace = do
 
 testBytestringDependents :: TestEff ()
 testBytestringDependents = do
-  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") 1
+  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") (0, 30)
   assertEqual
     22
     (Vector.length results)
@@ -154,6 +153,7 @@ testNoSelfDependent = do
         , PackageName "parsec"
         , PackageName "pg-entity"
         , PackageName "relude"
+        , PackageName "saturn"
         , PackageName "semigroups"
         , PackageName "text-display"
         , PackageName "xml"
@@ -196,25 +196,25 @@ testSearchResultText = do
   text <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
   releases <- Query.getNumberOfReleases (text ^. #packageId)
   assertEqual 2 releases
-  results <- Query.searchPackage 1 "text"
+  results <- Query.searchPackage (0, 30) "text"
   assertEqual 2 (Vector.length results)
   assertEqual (Cabal.mkVersion [2, 0]) ((.version) $ Vector.head results)
 
 testPackagesDeprecation :: TestEff ()
 testPackagesDeprecation = do
-  let alternative1 = Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
-  let alternative2 = Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "monad-control")
+  let alternative1 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
+  let alternative2 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "monad-control")
   Update.deprecatePackages $
     Vector.fromList
       [ DeprecatedPackage (PackageName "integer-gmp") alternative1
       , DeprecatedPackage (PackageName "mtl") alternative2
       ]
   integerGmp <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
-  assertEqual (Just alternative1) integerGmp.metadata.deprecationInfo
+  assertEqual (Just alternative1) integerGmp.deprecationInfo
 
 testGetNonDeprecatedPackages :: TestEff ()
 testGetNonDeprecatedPackages = do
-  let alternative = Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
+  let alternative = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "haskell") (PackageName "integer-simple")
   Update.deprecatePackages $
     Vector.fromList [DeprecatedPackage (PackageName "ansi-wl-pprint") alternative]
   nonDeprecatedPackages <- fmap (.name) <$> Query.getNonDeprecatedPackages
@@ -223,13 +223,13 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: TestEff ()
 testReleaseDeprecation = do
   result <- Query.getPackagesWithoutReleaseDeprecationInformation
-  assertEqual 63 (length result)
+  assertEqual 64 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
   Just deprecatedBinaryVersion' <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
   Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
   Just deprecatedBinaryVersion <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
-  assertEqual deprecatedBinaryVersion.metadata.deprecated (Just True)
+  assertEqual deprecatedBinaryVersion.deprecated (Just True)
 
 ---
 

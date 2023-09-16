@@ -72,7 +72,7 @@ normalise :: [UserPackageCategory] -> IO Results
 normalise input = do
   result <-
     liftIO $
-      Souffle.runSouffle Categoriser $! \case
+      Souffle.runSouffle Categoriser $ \case
         Nothing ->
           error "Failed to load Souffle program!"
         Just prog -> do
@@ -81,13 +81,13 @@ normalise input = do
           Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
   if (not . null) result.normalisationIssues
     then do
-      logStdErr $! "[!] Could not normalise these categories: " <> display result.normalisationIssues
+      logStdErr $ "[!] Could not normalise these categories: " <> display result.normalisationIssues
       pure result
     else pure result
 
 sourceCategories :: IO [CanonicalCategory]
 sourceCategories = do
-  Souffle.runSouffle SourceCategories $! \case
+  Souffle.runSouffle SourceCategories $ \case
     Nothing ->
       error "Failed to load Souffle program!"
     Just prog -> do

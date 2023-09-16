@@ -337,6 +337,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-souffle": {
+      "locked": {
+        "lastModified": 1684687439,
+        "narHash": "sha256-csHkwrf0pnbHoVBsVDVNf2TyHOEVKRAvLkPDOTTguIM=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "a74a4a2f324fb54637a9e2597ef1fdca6ad869c8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "a74a4a2f324fb54637a9e2597ef1fdca6ad869c8",
+        "type": "github"
+      }
+    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1685801374,
@@ -465,6 +481,7 @@
         "flake-utils": "flake-utils",
         "horizon-platform": "horizon-platform",
         "nixpkgs": "nixpkgs_5",
+        "nixpkgs-souffle": "nixpkgs-souffle",
         "poolboy": "poolboy",
         "pre-commit-hooks": "pre-commit-hooks"
       }

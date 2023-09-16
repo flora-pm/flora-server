@@ -1,37 +1,48 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Flora.Model.Package.Types where
 
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
+import Data.Aeson.TH
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
+import Data.OpenApi (Schema (..), ToParamSchema (..), ToSchema (..), genericDeclareNamedSchema)
 import Data.Text (Text, isPrefixOf, unpack)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
 import Data.UUID
-import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (ConversionFailed, UnexpectedNull), fromJSONField, returnError)
+import Data.Vector (Vector)
+import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
+import Database.PostgreSQL.Simple.FromField
+  ( FromField (..)
+  , ResultError (ConversionFailed, UnexpectedNull)
+  , returnError
+  )
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
-import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..), toJSONField)
+import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
+import Deriving.Aeson
 import Distribution.Pretty (Pretty (..))
-import GHC.Generics
+import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.Version (Version)
+import JSON
 import Language.Souffle.Interpreted qualified as Souffle
 import Lucid
+import Optics.Core
 import Servant (FromHttpApiData (..))
 import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
 import Web.HttpApiData (ToHttpApiData (..))
 
-import Data.Vector (Vector)
 import Distribution.Orphans ()
-import Distribution.SPDX.License qualified as SPDX
-import Distribution.Types.Version (Version)
+import Distribution.Orphans.Version ()
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
 
@@ -47,7 +58,7 @@ newtype PackageId = PackageId {getPackageId :: UUID}
 -- | Generates a package id deterministically by hashing the namespace and the package name
 deterministicPackageId :: Namespace -> PackageName -> PackageId
 deterministicPackageId (Namespace ns) (PackageName name) =
-  PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $! ns <> name
+  PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ ns <> name
 
 newtype PackageName = PackageName Text
   deriving stock (Show, Generic)
@@ -57,7 +68,7 @@ newtype PackageName = PackageName Text
     via Text
 
 instance Pretty PackageName where
-  pretty (PackageName txt) = PP.text $! unpack txt
+  pretty (PackageName txt) = PP.text $ unpack txt
 
 instance Display PackageName where
   displayBuilder (PackageName name) = displayBuilder name
@@ -71,25 +82,41 @@ instance FromHttpApiData PackageName where
 parsePackageName :: Text -> Maybe PackageName
 parsePackageName txt =
   if matches "[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
-    then Just $! PackageName txt
+    then Just $ PackageName txt
     else Nothing
 
+instance ToSchema PackageName where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy
+      & mapped
+        % #schema
+        .~ packageNameSchema
+
+instance ToParamSchema PackageName where
+  toParamSchema _ = packageNameSchema
+
+packageNameSchema :: Schema
+packageNameSchema =
+  mempty
+    & #description
+      ?~ "Name of a package\n It corresponds to the regular expression: `[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*`"
+
 newtype Namespace = Namespace Text
-  deriving stock (Show)
+  deriving stock (Show, Generic)
   deriving
     (Eq, Ord, FromJSON, ToJSON, ToHtml, NFData)
     via Text
 
 instance ToField Namespace where
-  toField (Namespace txt) = toField $! fromMaybe txt (Text.stripPrefix "@" txt)
+  toField (Namespace txt) = toField $ fromMaybe txt (Text.stripPrefix "@" txt)
 
 instance FromField Namespace where
   fromField f dat = do
     (rawField :: Text) <- fromField f dat
-    pure $! Namespace rawField
+    pure $ Namespace rawField
 
 instance Pretty Namespace where
-  pretty (Namespace txt) = PP.text $! unpack txt
+  pretty (Namespace txt) = PP.text $ unpack txt
 
 instance Display Namespace where
   displayBuilder (Namespace name) =
@@ -112,12 +139,31 @@ instance FromHttpApiData Namespace where
 parseNamespace :: Text -> Maybe Namespace
 parseNamespace txt =
   if matches "@[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
-    then Just $! Namespace txt
+    then Just $ Namespace txt
     else Nothing
+
+instance ToSchema Namespace where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy
+      & mapped
+        % #schema
+        .~ namespaceSchema
+
+instance ToParamSchema Namespace where
+  toParamSchema _ = namespaceSchema
+
+namespaceSchema :: Schema
+namespaceSchema =
+  mempty
+    & #description
+      ?~ "Namespace containing packages"
 
 data PackageStatus = UnknownPackage | FullyImportedPackage
   deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageStatus)
 
 parsePackageStatus :: ByteString -> Maybe PackageStatus
 parsePackageStatus "unknown" = pure UnknownPackage
@@ -150,25 +196,13 @@ data Package = Package
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   , status :: PackageStatus
-  , metadata :: PackageMetadata
+  , deprecationInfo :: Maybe PackageAlternatives
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (FromRow, ToRow, ToJSON, FromJSON, NFData)
+  deriving anyclass (FromRow, ToRow, NFData)
   deriving
     (Entity)
     via (GenericEntity '[TableName "packages"] Package)
-
-data PackageMetadata = PackageMetadata
-  { deprecationInfo :: Maybe (Vector PackageAlternative)
-  }
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, NFData)
-
-instance FromField PackageMetadata where
-  fromField = fromJSONField
-
-instance ToField PackageMetadata where
-  toField = toJSONField
 
 data Dependent = Dependent
   { name :: Text
@@ -191,7 +225,7 @@ data PackageInfo = PackageInfo
   , license :: SPDX.License
   , rating :: Maybe Double
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, NFData)
 
 -- DTO that we get from Hackage
@@ -210,16 +244,32 @@ instance FromJSON DeprecatedPackage' where
 -- DAO that we persist to the database
 data DeprecatedPackage = DeprecatedPackage
   { package :: PackageName
-  , inFavourOf :: Vector PackageAlternative
+  , inFavourOf :: PackageAlternatives
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] DeprecatedPackage)
   deriving (ToField, FromField) via Aeson DeprecatedPackage
+
+newtype PackageAlternatives = PackageAlternatives (Vector PackageAlternative)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageAlternatives)
+  deriving (ToField, FromField) via Aeson PackageAlternatives
 
 data PackageAlternative = PackageAlternative
   { namespace :: Namespace
   , package :: PackageName
   }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON, NFData)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON, FromJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageAlternative)
   deriving (ToField, FromField) via Aeson PackageAlternative
+
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Package)

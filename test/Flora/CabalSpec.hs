@@ -5,8 +5,8 @@ import Data.Set qualified as Set
 import Data.Vector qualified as Vector
 import Test.Tasty
 
+import Flora.Model.Component.Types
 import Flora.Model.Package
-import Flora.Model.Package.Component
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types

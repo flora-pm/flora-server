@@ -1,5 +1,4 @@
-Thank you for your contribution to Flora! There is no Contributor License Agreement (CLA) to sign,
-but we need you to read this document when you open your PR or your issue:
+Thank you for your contribution to Flora! We need you to read and understand this document when you open your PR or your ticket:
 
 ## Project Setup
 

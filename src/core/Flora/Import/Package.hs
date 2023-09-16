@@ -60,13 +60,19 @@ import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Reader.Static (Reader, ask)
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
+import Log qualified
+import OddJobs.Job (createJob)
+import Optics.Core
+import System.Directory qualified as System
+import System.FilePath
+
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
+import Flora.Model.Component.Types as Component
 import Flora.Model.Job (FloraOddJobs (..))
-import Flora.Model.Package.Component as Component
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
@@ -80,11 +86,6 @@ import Flora.Model.Requirement
   , flag
   )
 import Flora.Model.User
-import Log qualified
-import OddJobs.Job (createJob)
-import Optics.Core
-import System.Directory qualified as System
-import System.FilePath
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -174,8 +175,8 @@ importFile userId path =
 enqueueImportJob :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 enqueueImportJob importOutput = do
   pool <- getPool
-  void $!
-    liftIO $!
+  void $
+    liftIO $
       withResource
         pool
         ( \conn ->
@@ -197,13 +198,13 @@ loadFile
   -- ^ The absolute path to the Cabal file
   -> Eff es (UTCTime, GenericPackageDescription)
 loadFile path = do
-  exists <- liftIO $! System.doesFileExist path
+  exists <- liftIO $ System.doesFileExist path
   unless exists $
     unsafeEff_ $
       throwIO $
         CabalFileNotFound path
-  content <- liftIO $! BS.readFile path
-  timestamp <- liftIO $! System.getModificationTime path
+  content <- liftIO $ BS.readFile path
+  timestamp <- liftIO $ System.getModificationTime path
   descr <- loadContent path content
   pure (timestamp, descr)
 
@@ -223,8 +224,8 @@ parseString parser name bs = do
   case result of
     Right x -> pure x
     Left err -> do
-      Log.logAttention_ (display $! show err)
-      throw $! CabalFileCouldNotBeParsed name
+      Log.logAttention_ (display $ show err)
+      throw $ CabalFileCouldNotBeParsed name
 
 loadAndExtractCabalFile :: (IOE :> es, Log :> es, Time :> es) => UserId -> FilePath -> Eff es ImportOutput
 loadAndExtractCabalFile userId filePath =
@@ -236,11 +237,11 @@ loadAndExtractCabalFile userId filePath =
 persistImportOutput :: (DB :> es, IOE :> es) => Poolboy.WorkQueue -> ImportOutput -> Eff es ()
 persistImportOutput wq (ImportOutput package categories release components) = do
   dbPool <- getPool
-  liftIO . T.putStrLn $! "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release.version)
+  liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release.version)
   persistPackage
   Update.upsertRelease release
   parallelRun dbPool (persistComponent dbPool) components
-  liftIO $! putStr "\n"
+  liftIO $ putStr "\n"
   where
     parallelRun :: (MonadIO m, Foldable t) => Pool Connection -> (a -> Eff [DB, IOE] b) -> t a -> m ()
     parallelRun pool f xs = liftIO $ forM_ xs $ Poolboy.enqueue wq . void . runEff . runDB pool . f
@@ -278,16 +279,16 @@ extractPackageDataFromCabal :: (IOE :> es, Time :> es) => UserId -> Maybe Text -
 extractPackageDataFromCabal userId repository uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
-  let packageName = force $! packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
-  let packageVersion = force $! packageDesc.package.pkgVersion
-  let namespace = force $! chooseNamespace packageName
-  let packageId = force $! deterministicPackageId namespace packageName
-  let releaseId = force $! deterministicReleaseId packageId packageVersion
+  let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
+  let packageVersion = force $ packageDesc.package.pkgVersion
+  let namespace = force $ chooseNamespace packageName
+  let packageId = force $ deterministicPackageId namespace packageName
+  let releaseId = force $ deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
-  let sourceRepos = getRepoURL packageName $! packageDesc.sourceRepos
+  let sourceRepos = getRepoURL packageName $ packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
-  categories <- liftIO $! Tuning.normalisedCategories <$> Tuning.normalise categoryList
+  categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
   let package =
         Package
           { packageId
@@ -297,22 +298,7 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
           , createdAt = timestamp
           , updatedAt = timestamp
           , status = FullyImportedPackage
-          , metadata = PackageMetadata Nothing
-          }
-
-  let metadata =
-        ReleaseMetadata
-          { license = Cabal.license packageDesc
-          , sourceRepos
-          , homepage = Just $! display packageDesc.homepage
-          , documentation = ""
-          , bugTracker = Just $! display packageDesc.bugReports
-          , maintainer = display packageDesc.maintainer
-          , synopsis = display packageDesc.synopsis
-          , description = display packageDesc.description
-          , flags = flags
-          , testedWith = getVersions . extractTestedWith . Vector.fromList $! packageDesc.testedWith
-          , deprecated = Nothing
+          , deprecationInfo = Nothing
           }
 
   let release =
@@ -321,7 +307,6 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
           , packageId
           , version = packageVersion
           , archiveChecksum = mempty
-          , metadata = metadata
           , uploadedAt = Just uploadTime
           , createdAt = timestamp
           , updatedAt = timestamp
@@ -330,6 +315,17 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
           , changelog = Nothing
           , changelogStatus = NotImported
           , repository
+          , license = Cabal.license packageDesc
+          , sourceRepos
+          , homepage = Just $ display packageDesc.homepage
+          , documentation = ""
+          , bugTracker = Just $ display packageDesc.bugReports
+          , maintainer = display packageDesc.maintainer
+          , synopsis = display packageDesc.synopsis
+          , description = display packageDesc.description
+          , flags = ReleaseFlags flags
+          , testedWith = getVersions . extractTestedWith . Vector.fromList $ packageDesc.testedWith
+          , deprecated = Nothing
           }
 
   let lib = extractLibrary package release Nothing [] <$> allLibraries packageDesc
@@ -372,7 +368,7 @@ extractLibrary package =
   where
     getLibName :: LibraryName -> Text
     getLibName LMainLibName = display (package.name)
-    getLibName (LSubLibName lname) = T.pack $! unUnqualComponentName lname
+    getLibName (LSubLibName lname) = T.pack $ unUnqualComponentName lname
 
 extractForeignLib :: Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> ForeignLib -> ImportComponent
 extractForeignLib package =
@@ -415,7 +411,7 @@ extractCondTree
 extractCondTree extractor package release defaultComponentName = go []
   where
     go cond tree =
-      let treeComponent = extractor package release defaultComponentName cond $! tree.condTreeData
+      let treeComponent = extractor package release defaultComponentName cond $ tree.condTreeData
           treeSubComponents = (tree.condTreeComponents) >>= extractBranch
        in treeComponent : treeSubComponents
     extractBranch CondBranch{condBranchCondition, condBranchIfTrue, condBranchIfFalse} =
@@ -464,7 +460,7 @@ genericComponentExtractor
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
         component = PackageComponent{..}
-        dependencies = force $! buildDependency package componentId <$> getDeps rawComponent
+        dependencies = force $ buildDependency package componentId <$> getDeps rawComponent
      in force (component, dependencies)
 
 buildDependency :: Package -> ComponentId -> Cabal.Dependency -> ImportDependency
@@ -476,21 +472,21 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
       createdAt = package.createdAt
       updatedAt = package.updatedAt
       status = UnknownPackage
-      metadata = PackageMetadata Nothing
+      deprecationInfo = Nothing
       dependencyPackage = Package{..}
       requirement =
         Requirement
           { requirementId = deterministicRequirementId packageComponentId packageId
           , packageComponentId
           , packageId
-          , requirement = display . prettyShow $! versionRange
+          , requirement = display . prettyShow $ versionRange
           , metadata = RequirementMetadata{flag = Nothing}
           }
-   in force $! ImportDependency{package = dependencyPackage, requirement}
+   in force $ ImportDependency{package = dependencyPackage, requirement}
 
 getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
 getRepoURL _ [] = Vector.empty
-getRepoURL _ (repo : _) = Vector.singleton $! display $! fromMaybe mempty (repo.repoLocation)
+getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty (repo.repoLocation)
 
 chooseNamespace :: PackageName -> Namespace
 chooseNamespace name | Set.member name coreLibraries = Namespace "haskell"

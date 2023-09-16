@@ -29,6 +29,15 @@ body {
   margin-left: auto;
 }
 
+.container-small {
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: 1rem;
+  padding-left: 1rem;
+  max-width: 28rem;
+  width: calc(100% - 2rem);
+}
+
 summary.package-component {
   cursor: pointer;
   font-size: 1.25rem;
@@ -67,12 +76,16 @@ summary.package-component:hover {
   padding-right: 0.5rem;
 
   h2 {
-    color: rgb(17 24 39);
+    color: var(--text-color);
     font-weight: 800;
     font-size: 1.875rem;
     line-height: 2.25rem;
     text-align: center;
     margin-bottom: 0.75rem;
+  }
+
+  button {
+    color: var(--text-color);
   }
 
   .form-input {
@@ -305,12 +318,6 @@ a {
     border-color: var(--search-bar-focus-border-color);
   }
 
-  .navbar-element:hover {
-    --tw-text-opacity: 1;
-
-    color: var(--navbar-element-hover-color);
-  }
-
   #navbar-search-package-name {
     padding-left: 20px;
   }
@@ -402,8 +409,6 @@ a {
   font-size: 1.5rem;
   justify-content: center;
   line-height: 2rem;
-  margin-left: auto;
-  margin-right: auto;
   max-width: 28rem;
   outline-offset: -2px;
   overflow: hidden;
@@ -418,6 +423,7 @@ a {
     line-height: 2rem;
     padding: 0.5rem;
     flex-grow: 1;
+    min-width: 0;
   }
 
   .search-bar:hover {
@@ -455,7 +461,6 @@ a {
 }
 
 section#main-page-buttons {
-  max-width: 28rem;
   border-top: 1px solid var(--text-color);
   border-color: var(--navbar-background-color);
   display: flex;
@@ -464,21 +469,17 @@ section#main-page-buttons {
   justify-content: center;
   padding-top: 3rem;
   margin-top: 3rem;
-  margin-left: auto;
-  margin-right: auto;
 
   .button {
+    background-color: var(--main-page-button-background);
+    border-radius: 50rem;
+    border-width: 1px;
     color: var(--text-color);
     font-weight: bolder;
-    background-color: var(--main-page-button-background);
-    border-color: var(--text-color);
-    padding-top: 1rem;
     padding-bottom: 1rem;
     padding-left: 2rem;
     padding-right: 2rem;
-    margin-left: 9px;
-    margin-right: 9px;
-    border-radius: 50rem;
+    padding-top: 1rem;
   }
 
   .button:hover {

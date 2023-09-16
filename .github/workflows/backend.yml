@@ -5,6 +5,10 @@ on:
   push:
     branches: ["main", "development"]
 
+concurrency:
+  group: backend-${{ github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   generateMatrix:
     name: "Generate matrix from cabal"
@@ -13,7 +17,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout base repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Extract the tested GHC versions
         id: set-matrix
         run: |
@@ -44,7 +48,7 @@ jobs:
         ports:
           - 5432:5432
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Haskell
       id: setup-haskell
@@ -75,9 +79,8 @@ jobs:
         cabal update
         cabal freeze
 
-
     - name: Cache
-      uses: actions/cache@v3.3.1
+      uses: actions/cache@v3.3.2
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ghc-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}

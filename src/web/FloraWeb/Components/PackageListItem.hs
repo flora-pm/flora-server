@@ -11,13 +11,13 @@ import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector qualified as Vector
-import FloraWeb.Templates (FloraHTML)
+import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid
 
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
+import Flora.Model.Component.Types (CanonicalComponent (..))
 import Flora.Model.Package (Namespace, PackageName (..))
-import Flora.Model.Package.Component (CanonicalComponent (..))
 import Flora.Model.Requirement
   ( ComponentDependencies
   , DependencyInfo (..)
@@ -29,16 +29,16 @@ packageListItem :: (Namespace, PackageName, Text, Version, SPDX.License) -> Flor
 packageListItem (namespace, packageName, synopsis, version, license) = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
-    a_ [href, class_ ""] $! do
+    a_ [href, class_ ""] $ do
       h4_ [class_ "package-list-item__name"] $
         strong_ [class_ ""] . toHtml $
           display namespace <> "/" <> display packageName
-      p_ [class_ "package-list-item__synopsis"] $! toHtml synopsis
-      div_ [class_ "package-list-item__metadata"] $! do
-        span_ [class_ "package-list-item__license"] $! do
+      p_ [class_ "package-list-item__synopsis"] $ toHtml synopsis
+      div_ [class_ "package-list-item__metadata"] $ do
+        span_ [class_ "package-list-item__license"] $ do
           licenseIcon
           toHtml license
-        span_ [class_ "package-list-item__version"] $! "v" <> toHtml version
+        span_ [class_ "package-list-item__version"] $ "v" <> toHtml version
 
 requirementListItem :: ComponentDependencies -> FloraHTML
 requirementListItem allComponentDeps =
@@ -46,9 +46,9 @@ requirementListItem allComponentDeps =
   where
     open = if Map.size allComponentDeps == 1 then [open_ ""] else mempty
     componentTitle component componentDeps = do
-      details_ open $! do
-        summary_ [class_ "package-component"] . h3_ [] $! do
-          strong_ [] . toHtml $! display component
+      details_ open $ do
+        summary_ [class_ "package-component"] . h3_ [] $ do
+          strong_ [] . toHtml $ display component
           toHtml $ " (" <> display (Vector.length componentDeps) <> " dependencies)"
         traverse_ componentListItems componentDeps
 
@@ -56,13 +56,13 @@ componentListItems :: DependencyInfo -> FloraHTML
 componentListItems DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
-    a_ [href, class_ ""] $! do
+    a_ [href, class_ ""] $ do
       h4_ [class_ "package-list-item__name"] $
         strong_ [class_ ""] . toHtml $
           display namespace <> "/" <> display packageName
-      p_ [class_ "package-list-item__synopsis"] $! toHtml latestSynopsis
-      div_ [class_ "package-list-item__metadata"] $! do
-        span_ [class_ "package-list-item__license"] $! do
+      p_ [class_ "package-list-item__synopsis"] $ toHtml latestSynopsis
+      div_ [class_ "package-list-item__metadata"] $ do
+        span_ [class_ "package-list-item__license"] $ do
           licenseIcon
           toHtml latestLicense
         displayVersionRange requirement
@@ -71,7 +71,7 @@ displayVersionRange :: Text -> FloraHTML
 displayVersionRange versionRange =
   if versionRange == ">=0"
     then ""
-    else span_ [class_ "package-list-item__version-range"] $! toHtml versionRange
+    else span_ [class_ "package-list-item__version-range"] $ toHtml versionRange
 
 licenseIcon :: FloraHTML
 licenseIcon =

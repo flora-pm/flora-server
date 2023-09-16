@@ -10,7 +10,8 @@ create table if not exists packages (
   owner_id uuid references users,
   created_at timestamptz not null,
   updated_at timestamptz not null,
-  status package_state not null
+  status package_state not null,
+  deprecation_info jsonb
 );
 
 create index package_name_trgm on packages USING GIN (name gin_trgm_ops);

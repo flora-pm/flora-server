@@ -13,15 +13,18 @@ clean: ## Remove the cabal build artifacts
 
 assets-deps: ## Install the dependencies of the frontend
 	@cd assets/ && yarn install --immutable --immutable-cache --check-cache
+	@cd docs/ && yarn install --immutable --immutable-cache --check-cache
 
 build-assets: assets-deps ## Build the web assets
 	@cd assets/ && yarn build
+	@cd docs/ && yarn build
 
 watch-assets: ## Continuously rebuild the web assets
 	@cd assets/ && yarn watch
 
 clean-assets: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
+	@cd docs/ && rm -R node_modules
 
 db-create: ## Create the database
 	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
@@ -68,8 +71,8 @@ lint: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
 style: ## Run the code formatters (stylish-haskell, cabal-fmt, prettier, stylelint)
-	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 	@cabal-fmt -i flora.cabal
+	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 	@cd assets ; yarn prettier --write css
 	@cd assets ; yarn stylelint --fix css
 
@@ -77,13 +80,16 @@ nix-shell: ## Enter the Nix shell
 	@nix-shell
 
 docker-build: ## Build and start the container cluster
-	@docker compose up -d --build
+	@docker build .
 
-docker-start: ## Start the container cluster
+docker-up: ## Start the container cluster
 	@docker compose up -d
 
+docker-down: ## Start the container cluster
+	@docker compose down
+
 docker-enter: ## Enter the docker environment
-	docker compose exec flora-server "zsh"
+	docker compose exec server zsh
 
 start-tmux: ## Start a Tmux session with hot code reloading
 	./scripts/start-tmux.sh

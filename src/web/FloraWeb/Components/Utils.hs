@@ -1,7 +1,7 @@
 module FloraWeb.Components.Utils where
 
 import Data.Text (Text)
-import FloraWeb.Templates.Types (FloraHTML)
+import FloraWeb.Pages.Templates.Types (FloraHTML)
 import Lucid (Attribute, a_, class_, href_, role_, toHtml)
 import Lucid.Base (makeAttribute)
 

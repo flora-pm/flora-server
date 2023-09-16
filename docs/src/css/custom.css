@@ -1,0 +1,223 @@
+/* stylelint-disable docusaurus/copyright-header */
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+:root {
+  /* Primary Blue */
+  --blue-15: hsl(221 30% 15%);
+  --blue-20: hsl(221 30% 20%);
+  --blue-30: hsl(221 30% 30%);
+  --blue-40: hsl(221 30% 40%);
+  --blue-60: hsl(221 30% 60%);
+  --blue-70: hsl(221 30% 70%);
+  --blue-80: hsl(221 30% 80%);
+
+  /* Secondary Purple */
+  --purple-20: hsl(294 40% 20%);
+  --purple-30: hsl(294 40% 30%);
+  --purple-40: hsl(294 40% 40%);
+  --purple-60: hsl(294 40% 60%);
+  --purple-70: hsl(294 40% 70%);
+  --purple-80: hsl(294 40% 80%);
+
+  /* Neutral Grey */
+  --gray-10: hsl(221 9% 10%);
+  --gray-20: hsl(221 9% 20%);
+  --gray-30: hsl(221 9% 30%);
+  --gray-80: hsl(221 9% 80%);
+  --gray-90: hsl(221 9% 90%);
+  --gray-100: hsl(221 9% 100%);
+
+  /* Version */
+  --green-30: hsl(140 100% 30%);
+  --green-40: hsl(140 100% 40%);
+  --red-60: hsl(358, 80%, 60%);
+
+  /* Override the default Infima variables. */
+  --ifm-color-primary: var(--blue-20);
+  --ifm-color-primary-dark: #234082;
+  --ifm-color-primary-darker: #213c7a;
+  --ifm-color-primary-darkest: #1b3265;
+  --ifm-color-primary-light: #2b4e9e;
+  --ifm-color-primary-lighter: #2d52a6;
+  --ifm-color-primary-lightest: #335cbb;
+  --ifm-code-font-size: 95%;
+  /* --ifm-font-size-base: 16px; */
+  --ifm-font-family-base: Montserrat, Helvetica, Arial, sans-serif;
+
+  /* Redoc colours */
+  --redoc-code-color: #ffffff;
+  --redoc-code-background-color: var(--gray-90);
+  --redoc-require-label-color: var(--blue-30);
+}
+
+[data-theme="light"] {
+  --ifm-color-content: var(--blue-30);
+  --ifm-background-color: var(--grey-90) !important;
+  --ifm-color-warning: #dcb30e;
+  --ifm-code-background: var(--grey-90);
+  --redoc-code-color: var(--ifm-color-primary-lightest);
+  --redoc-code-background-color: var(--gray-90);
+  --redoc-require-label-color: var(--ifm-color-primary-lightest);
+}
+
+[data-theme="dark"] {
+  --ifm-background-color: var(--blue-30) !important;
+  --redoc-code-background-color: var(--blue-30);
+  --ifm-link-color: white;
+  --ifm-menu-color-active: white;
+}
+
+[data-theme="dark"] .table-of-contents__link--active,
+[data-theme="dark"] .table-of-contents__link:hover,
+[data-theme="dark"] .table-of-contents__link--active code,
+[data-theme="dark"] .table-of-contents__link:hover code {
+  color: var(--blue-30);
+}
+
+[data-theme="dark"] .navbar {
+  --ifm-navbar-link-color: var(--blue-60);
+  background-color: var(--blue-15);
+  --ifm-navbar-link-hover-color: var(--blue-60);
+}
+
+[data-theme="light"] .navbar {
+  --ifm-navbar-link-color: white;
+  background-color: var(--purple-20);
+  --ifm-navbar-link-hover-color: var(--purple-70);
+}
+
+[data-theme="dark"] .footer {
+    background-color: var(--blue-15);
+  }
+
+.navbar .navbar__title {
+  color: #ffffff;
+  margin-left: 5px;
+}
+
+.navbar .navbar__toggle svg {
+  color: #ffffff;
+}
+
+.navbar .react-toggle-track {
+  background-color: var(--blue-30);
+}
+
+.footer {
+  background-color: var(--purple-20);
+}
+
+.docusaurus-highlight-code-line {
+  background-color: rgb(72, 77, 91);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+/* Redoc style overrides */
+
+.redoc-wrap .api-content h1,
+.redoc-wrap .api-content h2,
+.redoc-wrap .api-content h3,
+.redoc-wrap .api-content h4,
+.redoc-wrap .api-content h5,
+.redoc-wrap .api-content h6 {
+  color: var(--ifm-heading-color);
+}
+
+.redoc-wrap .api-content a,
+.redoc-wrap .api-content a:visited,
+.redoc-wrap .api-content a:hover,
+.redoc-wrap .scrollbar-container label {
+  color: var(--ifm-link-color);
+}
+
+.redoc-wrap .api-content a[download="swagger.json"] {
+  border: 1px solid var(--ifm-link-color);
+}
+
+[data-theme="dark"] .redoc-wrap .scrollbar-container label {
+  color: var(--blue-30);
+}
+
+.redoc-wrap .api-content a:hover {
+  text-decoration: underline;
+}
+
+.redoc-json {
+  --ifm-code-background: var(--blue-30);
+  --ifm-code-padding-horizontal: 0;
+}
+
+.redoc-json code {
+  background: none;
+  border: none;
+}
+
+.redoc-wrap .api-content {
+  color: var(--ifm-font-color-base);
+}
+
+[data-theme="dark"] .redoc-wrap .api-content td span {
+  color: var(--ifm-color-gray-500);
+}
+
+[data-theme="dark"] .redoc-wrap .api-content td div {
+  background: none !important;
+}
+
+/* Remove ugly borders around table elements */
+.redoc-wrap table:not(.security-details) td {
+  border: none !important;
+}
+
+[data-theme="dark"] .redoc-wrap table:not(.security-details) td {
+  border: var(--ifm-table-border-width) solid var(--ifm-color-gray-700);
+  border-bottom: 1px solid var(--ifm-color-gray-600);
+}
+
+[data-theme="dark"] .redoc-wrap .api-content h5 span {
+  color: white;
+}
+
+[data-theme="dark"]
+  .redoc-wrap
+  tr:not(.last):not(:first-of-type)
+  td:first-of-type {
+  border-left: 1px solid rgb(124, 209, 191);
+}
+
+[data-theme="dark"] .redoc-wrap tr.last:not(:first-of-type) {
+  background-image: linear-gradient(
+    rgb(124, 209, 191) 0%,
+    rgb(124, 209, 191) 22px,
+    transparent 22px,
+    transparent 100%
+  );
+  border-left-width: 0px;
+  background-position: left top;
+  background-repeat: no-repeat;
+  background-size: 1px 100%;
+}
+
+[data-theme="dark"] .redoc-wrap tr:first-of-type:not(.last) {
+  background-image: linear-gradient(
+    transparent 0%,
+    transparent 22px,
+    rgb(124, 209, 191) 22px,
+    rgb(124, 209, 191) 100%
+  );
+  border-left-width: 0px;
+  background-position: left top;
+  background-repeat: no-repeat;
+  background-size: 1px 100%;
+}
+
+[data-theme="dark"] .security-details td,
+[data-theme="dark"] .security-details th {
+  background-color: #3e494b;
+}

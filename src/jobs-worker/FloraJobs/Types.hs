@@ -47,7 +47,7 @@ runJobRunner pool runnerEnv cfg logger jobRunner =
     . runReader runnerEnv
     . runReader cfg.dbConfig
     . runDB pool
-    $! jobRunner
+    $ jobRunner
 
 data OddJobException where
   DecodeFailed :: HasCallStack => UnicodeException -> OddJobException
@@ -62,7 +62,7 @@ renderExceptionWithCallstack :: (HasCallStack, Show a) => a -> String -> String
 renderExceptionWithCallstack errors valueConstructor =
   "("
     <> valueConstructor
-    <> " $! "
+    <> " $ "
     <> show errors
     <> "/*"
     <> prettyCallStack callStack
@@ -101,8 +101,8 @@ structuredLogging FloraConfig{..} logger level event =
   runEff
     . runTime
     . Logging.runLog environment logger
-    $! localDomain "odd-jobs"
-    $! case level of
+    $ localDomain "odd-jobs"
+    $ case level of
       LevelDebug -> logMessage Log.LogTrace "LevelDebug" (toJSON event)
       LevelInfo -> logMessage Log.LogInfo "LevelInfo" (toJSON event)
       LevelWarn -> logMessage Log.LogAttention "LevelWarn" (toJSON event)
