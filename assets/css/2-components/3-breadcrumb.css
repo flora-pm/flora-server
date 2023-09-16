@@ -1,0 +1,8 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+.breadcrumb {
+  height: 1.5ex;
+  width: auto;
+  display: inline;
+  color: var(--breadcrumb-color);
+}

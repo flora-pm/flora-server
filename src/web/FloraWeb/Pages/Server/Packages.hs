@@ -45,6 +45,7 @@ server =
     , showPackage = showPackageHandler
     , showVersion = showVersionHandler
     , showDependents = showDependentsHandler
+    , showVersionDependents = showVersionDependentsHandler
     , showDependencies = showDependenciesHandler
     , showVersionDependencies = showVersionDependenciesHandler
     , showChangelog = showChangelogHandler
@@ -138,8 +139,15 @@ showPackageVersion namespace packageName mversion = do
       categories
 
 showDependentsHandler :: Namespace -> PackageName -> Maybe (Positive Word) -> FloraPage (Html ())
-showDependentsHandler namespace packageName Nothing = showDependentsHandler namespace packageName (Just $ PositiveUnsafe 1)
-showDependentsHandler namespace packageName (Just pageNumber) = do
+showDependentsHandler namespace packageName mPage = do
+  package <- guardThatPackageExists namespace packageName web404
+  releases <- Query.getAllReleases (package.packageId)
+  let latestRelease = maximumBy (compare `on` (.version)) releases
+  showVersionDependentsHandler namespace packageName latestRelease.version mPage
+
+showVersionDependentsHandler :: Namespace -> PackageName -> Version -> Maybe (Positive Word) -> FloraPage (Html ())
+showVersionDependentsHandler namespace packageName version Nothing = showVersionDependentsHandler namespace packageName version (Just $ PositiveUnsafe 1)
+showVersionDependentsHandler namespace packageName version (Just pageNumber) = do
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   _ <- guardThatPackageExists namespace packageName web404
@@ -154,7 +162,7 @@ showDependentsHandler namespace packageName (Just pageNumber) = do
     Package.showDependents
       namespace
       packageName
-      ("Dependents of " <> display namespace <> "/" <> display packageName)
+      version
       totalDependents
       results
       pageNumber
@@ -194,9 +202,7 @@ showVersionDependenciesHandler namespace packageName version = do
       ]
 
   render templateEnv $
-    Package.showDependencies
-      ("Dependencies of " <> display namespace <> "/" <> display packageName)
-      releaseDependencies
+    Package.showDependencies namespace packageName version releaseDependencies
 
 showChangelogHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showChangelogHandler namespace packageName = do

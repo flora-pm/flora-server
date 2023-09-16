@@ -1,0 +1,117 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+.about-page {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1000px;
+  padding-bottom: 4rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-top: 6rem;
+  width: auto;
+
+  h3 {
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    margin-top: 2.5rem;
+  }
+
+  div h3 {
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    margin-bottom: 2.5rem;
+  }
+
+  ul {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+.about-page__banner {
+  margin-top: 0.25rem;
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.about-page__title {
+  letter-spacing: -0.025rem;
+  font-weight: 800;
+  font-size: 3.75rem;
+  line-height: 1;
+}
+
+.about-page__subtitle {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  max-width: 36rem;
+  margin-top: 1.25rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.admin-page {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+
+  .admin-title {
+    font-size: 3rem;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    text-align: center;
+  }
+
+  .admin-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+    gap: 1.25rem;
+    display: grid;
+    margin-top: 1.25rem;
+  }
+
+  .admin-card {
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+
+    dt {
+      font-weight: 500;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    dd {
+      font-weight: 600;
+      font-size: 1.875rem;
+      line-height: 2.25rem;
+      margin-top: 0.25rem;
+    }
+  }
+}
+
+@media (max-width: 48rem) {
+  .about-page {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1000px;
+    padding-bottom: 4rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 4rem;
+    width: auto;
+  }
+
+  .about-page__subtitle {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    max-width: 36rem;
+    margin-top: 1.25rem;
+  }
+}

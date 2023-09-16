@@ -9,6 +9,7 @@
 * Introduce a public API ([#415](https://github.com/flora-pm/flora-server/pull/415))
 * Fix mismatching OpenSearch names ([#427](https://github.com/flora-pm/flora-server/pull/427))
 * Fix the margins of the search bar in mobile view ([#430](https://github.com/flora-pm/flora-server/pull/430))
+* Have proper breadcrumbs for the package page title ([#431](https://github.com/flora-pm/flora-server/pull/431))
 
 ## 1.0.12 -- 2023-04-04
 
