@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module FloraWeb.Pages.Templates.Packages where
 
 import Control.Monad (when)
