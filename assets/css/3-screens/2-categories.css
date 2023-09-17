@@ -9,7 +9,6 @@
   h1 {
     font-size: 3rem;
     line-height: 1;
-    letter-spacing: -0.025rem;
     text-align: center;
     overflow-wrap: anywhere;
   }
@@ -48,5 +47,11 @@
 
   .category-card:hover {
     background-color: var(--category-card-background-hover);
+  }
+}
+
+@media (max-width: 48rem) {
+  .categories-body {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }

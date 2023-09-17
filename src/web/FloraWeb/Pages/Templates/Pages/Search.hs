@@ -26,8 +26,7 @@ showAllPackages count currentPage packagesInfo = do
 showAllPackagesInNamespace :: Namespace -> Word -> Positive Word -> Vector PackageInfo -> FloraHTML
 showAllPackagesInNamespace namespace count currentPage packagesInfo = do
   div_ [class_ "container"] $ do
-    let title = "Packages in " <> display namespace
-    presentationHeader title "" count
+    presentationHeader (display namespace) "" count
     div_ [class_ ""] $ packageListing packagesInfo
     paginationNav count currentPage (ListAllPackagesInNamespace namespace)
 

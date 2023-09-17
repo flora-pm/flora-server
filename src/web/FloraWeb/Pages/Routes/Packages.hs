@@ -36,6 +36,14 @@ data Routes' mode = Routes'
           :> "dependents"
           :> QueryParam "page" (Positive Word)
           :> Get '[HTML] (Html ())
+  , showVersionDependents
+      :: mode
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
+          :> Capture "version" Version
+          :> "dependents"
+          :> QueryParam "page" (Positive Word)
+          :> Get '[HTML] (Html ())
   , showDependencies
       :: mode
         :- Capture "namespace" Namespace
