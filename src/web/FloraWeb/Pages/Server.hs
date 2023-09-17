@@ -14,6 +14,7 @@ import FloraWeb.Pages.Server.Packages qualified as Packages
 import FloraWeb.Pages.Server.Search qualified as Search
 import FloraWeb.Pages.Server.Sessions qualified as Sessions
 import FloraWeb.Pages.Templates
+import FloraWeb.Pages.Templates.Error (web404)
 import FloraWeb.Pages.Templates.Pages.Home qualified as Home
 import FloraWeb.Session
 import OddJobs.Endpoints qualified as OddJobs
@@ -29,6 +30,7 @@ server cfg env =
     , packages = Packages.server
     , categories = Categories.server
     , search = Search.server
+    , notFound = serveNotFound
     }
 
 homeHandler :: FloraPage (Html ())
@@ -46,3 +48,6 @@ aboutHandler = do
         templateDefaults
           & #activeElements % #aboutNav .~ True
   render templateEnv Home.about
+
+serveNotFound :: FloraPage (Html ())
+serveNotFound = web404

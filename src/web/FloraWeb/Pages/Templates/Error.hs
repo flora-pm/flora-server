@@ -13,7 +13,6 @@ import Data.Kind (Type)
 import Effectful
 import Effectful.Error.Static (Error, throwError)
 import Effectful.Reader.Static (Reader)
-import Flora.Model.Package.Types
 import FloraWeb.Pages.Templates
 import FloraWeb.Session
 import Servant (Header, Headers, ServerError (..))
@@ -41,10 +40,8 @@ web404
      , IOE :> es
      , Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es
      )
-  => Namespace
-  -> PackageName
-  -> Eff es a
-web404 _ _ = do
+  => Eff es a
+web404 = do
   session <- getSession
   templateEnv <- fromSession session defaultTemplateEnv
   renderError templateEnv notFound404
