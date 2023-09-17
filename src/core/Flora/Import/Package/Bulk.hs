@@ -4,6 +4,7 @@
 module Flora.Import.Package.Bulk (importAllFilesInDirectory, importAllFilesInRelativeDirectory, importFromIndex) where
 
 import Codec.Archive.Tar qualified as Tar
+import Codec.Archive.Tar.Entry qualified as Tar
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad (join, when, (>=>))
 import Data.ByteString qualified as BS
@@ -13,6 +14,7 @@ import Data.List (isSuffixOf)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Effectful
 import Effectful.Log qualified as Log
@@ -26,8 +28,6 @@ import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
 
-import Codec.Archive.Tar.Entry qualified as Tar
-import Data.Time (UTCTime)
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Package (enqueueImportJob, extractPackageDataFromCabal, loadContent, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Package.Update qualified as Update
@@ -139,7 +139,7 @@ importFromStream appLogger user repository directImport stream = do
         . runReader poolConfig
         . runDB pool
         . runTime
-        . Log.runLog "flora-jobs" appLogger defaultLogLevel
+        . Log.runLog "flora-cli" appLogger defaultLogLevel
         . ( \(path, timestamp, content) ->
               loadContent path content
                 >>= ( extractPackageDataFromCabal user repository timestamp
