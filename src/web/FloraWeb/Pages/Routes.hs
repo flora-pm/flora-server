@@ -20,5 +20,6 @@ data Routes' mode = Routes'
   , packages :: mode :- "packages" :> Packages.Routes
   , categories :: mode :- "categories" :> Categories.Routes
   , search :: mode :- "search" :> Search.Routes
+  , notFound :: mode :- Get '[HTML] (Html ())
   }
   deriving stock (Generic)
