@@ -137,7 +137,7 @@ showPackageVersion namespace packageName mversion = do
 
 showDependentsHandler :: Namespace -> PackageName -> Maybe (Positive Word) -> FloraPage (Html ())
 showDependentsHandler namespace packageName mPage = do
-  package <- guardThatPackageExists namespace packageName web404
+  package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
   releases <- Query.getAllReleases (package.packageId)
   let latestRelease = maximumBy (compare `on` (.version)) releases
   showVersionDependentsHandler namespace packageName latestRelease.version mPage
