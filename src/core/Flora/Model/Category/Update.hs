@@ -15,9 +15,9 @@ import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
-insertCategory :: (DB :> es) => Category -> Eff es ()
+insertCategory :: DB :> es => Category -> Eff es ()
 insertCategory category = do
-  dbtToEff $! void $! execute Insert q category
+  dbtToEff $ void $ execute Insert q category
   where
     q =
       [sql|
@@ -27,8 +27,8 @@ insertCategory category = do
         |]
 
 -- | Adds a package to a category. Adding a package to an already-assigned category has no effect
-addToCategory :: (DB :> es) => PackageId -> CategoryId -> Eff es ()
-addToCategory packageId categoryId = dbtToEff $! (void . execute Update q) (packageId, categoryId)
+addToCategory :: DB :> es => PackageId -> CategoryId -> Eff es ()
+addToCategory packageId categoryId = dbtToEff $ (void . execute Update q) (packageId, categoryId)
   where
     q =
       [sql| 
@@ -41,6 +41,6 @@ addToCategoryByName packageId categoryName = do
   mCategory <- Query.getCategoryByName categoryName
   case mCategory of
     Nothing -> do
-      liftIO $! T.putStrLn ("Could not find category " <> categoryName)
+      liftIO $ T.putStrLn ("Could not find category " <> categoryName)
     Just Category{categoryId} -> do
       addToCategory packageId categoryId

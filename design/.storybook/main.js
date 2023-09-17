@@ -1,17 +1,20 @@
-module.exports = {
-  "stories": [
-    "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)"
+/** @type { import('@storybook/html-vite').StorybookConfig } */
+const config = {
+  stories: [
+    "../stories/**/*.mdx",
+    "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)",
   ],
-  "addons": [
+  addons: [
     "@storybook/addon-links",
     "@storybook/addon-essentials",
-    "@storybook/addon-storysource",
-    "@pbutlewski/storybook-html",
-    "storybook-dark-mode"
+    "@storybook/addon-interactions",
   ],
-  "framework": "@storybook/html",
-  "core": {
-    "builder": 'webpack5',
+  framework: {
+    name: "@storybook/html-vite",
+    options: {},
   },
-}
+  docs: {
+    autodocs: "tag",
+  },
+};
+export default config;

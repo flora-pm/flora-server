@@ -1,6 +1,6 @@
 packages: ./
 
-with-compiler: ghc-9.4.4
+with-compiler: ghc-9.4.5
 
 tests: True
 
@@ -32,12 +32,6 @@ package warp
 
 source-repository-package
     type: git
-    location: https://gitlab.com/dpwiz/raven-haskell
-    tag: 9dacea2bec9c6f5d9f7d46a2a1d9094cf6147fbf
-    subdir: ./raven-haskell
-
-source-repository-package
-    type: git
     location: https://github.com/supki/envparse
     tag: 503a699
 
@@ -54,18 +48,10 @@ source-repository-package
     location: https://github.com/flora-pm/wai-middleware-heartbeat
     tag: 336523a
 
--- need to use jappeace until this is merged
--- (provides resource-pool 3 support)
--- https://github.com/saurabhnanda/odd-jobs/pull/90
-source-repository-package
-    type: git
-    location: https://github.com/jappeace/odd-jobs
-    tag: a75515791f2c743614ec05d54493ef12b143002e
-
 source-repository-package
     type: git
     location: https://github.com/kleidukos/pg-transact-effectful
-    tag: 98ee27b
+    tag: db6fa06
 
 source-repository-package
     type: git
@@ -74,12 +60,5 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/haskell-effectful/time-effectful
-    tag: 705ac67
-
-source-repository-package
-    type: git
-    location: https://github.com/composewell/streamly
-    tag: 81bfdec
-    subdir: ./
-            core/
+    location: https://github.com/saurabhnanda/odd-jobs
+    tag: 51c7443

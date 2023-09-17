@@ -8,6 +8,7 @@ module FloraJobs.Scheduler
   , scheduleIndexImportJob
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
+  , scheduleRefreshLatestVersions
   , checkIfIndexImportJobIsNotRunning
   , jobTableName
   --   prefer using smart constructors.
@@ -26,6 +27,7 @@ import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Time qualified as Time
 import Log
 import OddJobs.Job (Job (..), createJob, scheduleJob)
 
@@ -42,7 +44,7 @@ scheduleReadmeJob pool rid package version =
         createJob
           res
           jobTableName
-          (FetchReadme $! ReadmeJobPayload package rid $! MkIntAesonVersion version)
+          (FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version)
     )
 
 scheduleChangelogJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
@@ -53,7 +55,7 @@ scheduleChangelogJob pool rid package version =
         createJob
           res
           jobTableName
-          (FetchChangelog $! ChangelogJobPayload package rid $! MkIntAesonVersion version)
+          (FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version)
     )
 
 scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
@@ -64,7 +66,7 @@ scheduleUploadTimeJob pool releaseId packageName version =
         createJob
           res
           jobTableName
-          (FetchUploadTime $! UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version))
+          (FetchUploadTime $ UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version))
     )
 
 scheduleIndexImportJob :: Pool PG.Connection -> IO Job
@@ -72,7 +74,7 @@ scheduleIndexImportJob pool =
   withResource
     pool
     ( \conn -> do
-        t <- Time.getCurrentTime
+        t <- Time.currentTime
         let runAt = Time.addUTCTime Time.nominalDay t
         scheduleJob
           conn
@@ -101,6 +103,17 @@ scheduleReleaseDeprecationListJob pool (package, releaseIds) =
           conn
           jobTableName
           (FetchReleaseDeprecationList package releaseIds)
+    )
+
+scheduleRefreshLatestVersions :: Pool PG.Connection -> IO Job
+scheduleRefreshLatestVersions pool =
+  withResource
+    pool
+    ( \conn ->
+        createJob
+          conn
+          jobTableName
+          RefreshLatestVersions
     )
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool

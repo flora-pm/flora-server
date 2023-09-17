@@ -5,27 +5,30 @@ on:
   push:
     branches: ["main", "development"]
 
-jobs:
-  generateMatrix:                                                                                                       
-    name: "Generate matrix from cabal"                                                                                  
-    runs-on: ubuntu-latest                                                                                              
-    outputs:                                                                                                            
-      matrix: ${{ steps.set-matrix.outputs.matrix }}                                                                    
-    steps:                                                                                                              
-      - name: Checkout base repo                                                                                        
-        uses: actions/checkout@v3                                                                                       
-      - name: Extract the tested GHC versions                                                                           
-        id: set-matrix                                                                                                  
-        run: |                                                                                                          
-          wget https://github.com/Kleidukos/get-tested/releases/download/v0.1.4.0/get-tested-0.1.4.0-linux-amd64 -O get-tested
-          chmod +x get-tested                                                                                           
-          ./get-tested --ubuntu *.cabal >> $GITHUB_OUTPUT          
+concurrency:
+  group: backend-${{ github.ref_name }}
+  cancel-in-progress: true
 
-  tests:
-    name: ${{ matrix.ghc }} on ${{ matrix.os }}                                                                         
-    needs: generateMatrix                                                                                               
-    runs-on: ${{ matrix.os }}   
-    strategy:                                                                                                           
+jobs:
+  generateMatrix:
+    name: "Generate matrix from cabal"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout base repo
+        uses: actions/checkout@v4
+      - name: Extract the tested GHC versions
+        id: set-matrix
+        run: |
+          wget https://github.com/Kleidukos/get-tested/releases/download/v0.1.4.0/get-tested-0.1.4.0-linux-amd64 -O get-tested
+          chmod +x get-tested
+          ./get-tested --ubuntu *.cabal >> $GITHUB_OUTPUT
+
+  Backend_tests:
+    needs: generateMatrix
+    runs-on: ${{ matrix.os }}
+    strategy:
       matrix: ${{ fromJSON(needs.generateMatrix.outputs.matrix) }}
     # Service containers to run with `container-job`
     services:
@@ -45,19 +48,19 @@ jobs:
         ports:
           - 5432:5432
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Haskell
       id: setup-haskell
       uses: haskell/actions/setup@v2
       with:
-        ghc-version: "9.2.4"
+        ghc-version: "${{ matrix.ghc }}"
         cabal-version: "latest"
 
     - uses: actions/setup-node@v3
       with:
-        node-version: '18'
-        cache: 'yarn'
+        node-version: "18"
+        cache: "yarn"
         cache-dependency-path: assets/yarn.lock
 
     - name: Configure environment
@@ -76,12 +79,11 @@ jobs:
         cabal update
         cabal freeze
 
-
     - name: Cache
-      uses: actions/cache@v3.3.1
+      uses: actions/cache@v3.3.2
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ghc-9.2.4-${{ hashFiles('cabal.project.freeze') }}
+        key: ghc-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
 
     - name: Build
       run: |
@@ -95,7 +97,7 @@ jobs:
         set -x
         source ./environment.ci.sh
         createdb -h "${FLORA_DB_HOST}" -p "${FLORA_DB_PORT}" -U "${FLORA_DB_USER}" -w "${FLORA_DB_DATABASE}"
-        migrate init "${FLORA_DB_CONNSTRING}" 
+        migrate init "${FLORA_DB_CONNSTRING}"
         migrate migrate "${FLORA_DB_CONNSTRING}" migrations
         cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         cabal test

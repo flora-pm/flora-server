@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.9
+version:            1.0.12
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -12,7 +12,7 @@ extra-source-files:
   LICENSE
   README.md
 
-tested-with:        GHC ==9.4.4
+tested-with:        GHC ==9.4.5
 
 source-repository head
   type:     git
@@ -20,7 +20,7 @@ source-repository head
 
 flag prod
   description:
-    Compile the project with additional optimisations (takes longer)  
+    Compile the project with additional optimisations (takes longer)
 
   default:     False
   manual:      True
@@ -105,6 +105,7 @@ library
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
+    Flora.Model.PackageIndex
     Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Query
@@ -143,6 +144,7 @@ library
     , log-effectful
     , lucid
     , memory
+    , monad-time-effectful
     , mtl
     , odd-jobs
     , optics-core
@@ -152,22 +154,25 @@ library
     , pg-entity
     , pg-transact
     , pg-transact-effectful
+    , poolboy
     , postgresql-simple
     , pretty
     , resource-pool
     , servant-lucid
     , servant-server
     , slugify
-    , souffle-haskell        ==3.4.0
+    , souffle-haskell        ==3.5.1
     , streamly
     , streamly-core
+    , tar
     , text
     , text-display
     , time
-    , time-effectful
+    , unliftio
     , uuid
     , vector
     , vector-algorithms
+    , zlib
 
 library flora-web
   import:          common-extensions
@@ -254,6 +259,7 @@ library flora-web
     , lucid-alpine
     , lucid-svg
     , monad-time
+    , monad-time-effectful
     , mtl
     , network-uri
     , odd-jobs
@@ -278,7 +284,6 @@ library flora-web
     , text
     , text-display
     , time
-    , time-effectful
     , uuid
     , vector
     , vector-algorithms
@@ -320,6 +325,7 @@ library flora-jobs
     , log-base
     , log-effectful
     , lucid
+    , monad-time-effectful
     , odd-jobs
     , pg-entity
     , pg-transact-effectful
@@ -331,7 +337,6 @@ library flora-jobs
     , text
     , text-display
     , time
-    , time-effectful
     , typed-process
     , vector
 
@@ -355,6 +360,7 @@ executable flora-cli
   build-depends:
     , base
     , bytestring
+    , Cabal-syntax
     , effectful-core
     , envparse
     , flora
@@ -391,6 +397,7 @@ test-suite flora-test
     , http-client
     , log-base
     , log-effectful
+    , monad-time-effectful
     , optics-core
     , password
     , pg-entity
@@ -406,7 +413,6 @@ test-suite flora-test
     , tasty-hunit
     , text
     , time
-    , time-effectful
     , transformers
     , uuid
     , vector
@@ -414,6 +420,7 @@ test-suite flora-test
   other-modules:
     Flora.CabalSpec
     Flora.CategorySpec
+    Flora.ImportSpec
     Flora.OddJobSpec
     Flora.PackageSpec
     Flora.TemplateSpec

@@ -19,18 +19,24 @@ import Flora.Model.Package.Query qualified as Query
 
 data SearchAction
   = ListAllPackages
+  | ListAllPackagesInNamespace Namespace
   | SearchPackages Text
   | DependentsOf Namespace PackageName
   deriving (Eq, Ord, Show)
 
 instance Display SearchAction where
   displayBuilder ListAllPackages = "Packages"
+  displayBuilder (ListAllPackagesInNamespace namespace) = "Packages in " <> displayBuilder namespace
   displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
   displayBuilder (DependentsOf namespace packageName) = "Dependents of " <> displayBuilder namespace <> "/" <> displayBuilder packageName
 
-searchPackageByName :: (DB :> es, Log :> es, Time :> es) => Word -> Text -> Eff es (Word, Vector PackageInfo)
-searchPackageByName pageNumber queryString = do
-  (results, duration) <- timeAction $! Query.searchPackage pageNumber queryString
+searchPackageByName
+  :: (DB :> es, Log :> es, Time :> es)
+  => (Word, Word)
+  -> Text
+  -> Eff es (Word, Vector PackageInfo)
+searchPackageByName (offset, limit) queryString = do
+  (results, duration) <- timeAction $ Query.searchPackage (offset, limit) queryString
 
   Log.logInfo "search-results" $
     object
@@ -51,8 +57,39 @@ searchPackageByName pageNumber queryString = do
   count <- Query.countPackagesByName queryString
   pure (count, results)
 
-listAllPackages :: (DB :> es) => Word -> Eff es (Word, Vector PackageInfo)
-listAllPackages pageNumber = do
-  results <- Query.listAllPackages pageNumber
+listAllPackagesInNamespace
+  :: (DB :> es, Time :> es, Log :> es)
+  => Namespace
+  -> (Word, Word)
+  -> Eff es (Word, Vector PackageInfo)
+listAllPackagesInNamespace namespace (offset, limit) = do
+  (results, duration) <- timeAction $ Query.listAllPackagesInNamespace (offset, limit) namespace
+
+  Log.logInfo "packages-in-namespace" $
+    object
+      [ "namespace" .= namespace
+      , "duration" .= duration
+      , "results_count" .= Vector.length results
+      , "results"
+          .= List.map
+            ( \PackageInfo{namespace = namespace', name, rating} ->
+                object
+                  [ "package" .= formatPackage namespace' name
+                  , "score" .= rating
+                  ]
+            )
+            (Vector.toList results)
+      ]
+
+  count <- Query.countPackagesInNamespace namespace
+  pure (count, results)
+
+listAllPackages
+  :: forall (es :: [Effect])
+   . DB :> es
+  => (Word, Word)
+  -> Eff es (Word, Vector PackageInfo)
+listAllPackages (offset, limit) = do
+  results <- Query.listAllPackages (offset, limit)
   count <- Query.countPackages
   pure (count, results)

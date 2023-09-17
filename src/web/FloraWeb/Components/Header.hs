@@ -11,7 +11,8 @@ import PyF
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.Utils (property_, text)
-import FloraWeb.Templates.Types (FloraHTML, TemplateEnv (..))
+import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
+import Lucid.Svg.Attributes (color_)
 
 header :: FloraHTML
 header = do
@@ -29,14 +30,23 @@ header = do
     , xBind_ "data-theme" "(theme === 'dark') ? 'dark' : 'light'"
     , xInit_ "$watch('theme', val => localStorage.setItem('theme', val))"
     ]
-    $! do
-      head_ $! do
+    $ do
+      head_ $ do
         meta_ [charset_ "UTF-8"]
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
         unless indexPage $ meta_ [name_ "robots", content_ "noindex"]
+        -- link_ [rel_ "icon", href_ "/static/icons/favicon.svg", type_ "image/svg+xml"]
+        link_ [rel_ "apple-touch-icon", sizes_ "180x180", href_ "/static/icons/apple-touch-icon.png"]
+        link_ [rel_ "icon", type_ "image/png", sizes_ "32x32", href_ "/static/icons/favicon-32x32.png"]
+        link_ [rel_ "icon", type_ "image/png", sizes_ "16x16", href_ "/static/icons/favicon-16x16.png"]
+        link_ [rel_ "manifest", href_ "/static/icons/site.webmanifest"]
+        link_ [rel_ "mask-icon", href_ "/static/icons/safari-pinned-tab.svg", color_ "#5bbad5"]
+        meta_ [name_ "msapplication-TileColor", content_ "#da532c"]
+        meta_ [name_ "theme-color", content_ "#ffffff"]
+
         title_ (text title)
 
-        script_ [type_ "module"] $! do
+        script_ [type_ "module"] $ do
           toHtmlRaw @Text
             [str|
           document.documentElement.classList.remove('no-js');
@@ -48,17 +58,16 @@ header = do
         link_
           [ rel_ "search"
           , type_ "application/opensearchdescription+xml"
-          , title_ "Search on Flora"
+          , title_ "Flora"
           , href_ "/opensearch.xml"
           ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
         theme
-        link_ [rel_ "icon", href_ "/static/favicon.svg", type_ "image/svg+xml"]
-        -- link_ [rel_ "canonical", href_ $! getCanonicalURL assigns]
+        -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
         meta_ [name_ "twitter:dnt", content_ "on"]
 
-      body_ [] $! do
+      body_ [] $ do
         navbar
 
 jsLink :: FloraHTML

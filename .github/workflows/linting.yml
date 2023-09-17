@@ -9,9 +9,9 @@ jobs:
   fourmolu:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - uses: fourmolu/fourmolu-action@v6
+    - uses: fourmolu/fourmolu-action@v8
       with:
         pattern: |
           src/**/*.hs
@@ -21,7 +21,7 @@ jobs:
   hlint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: 'Set up HLint'
       uses: rwe/actions-hlint-setup@v1

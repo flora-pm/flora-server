@@ -33,12 +33,12 @@ import Log qualified
 import Flora.Logging (timeAction)
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
-import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName)
-import Flora.Model.Package.Component
+import Flora.Model.Component.Types
   ( ComponentId
   , ComponentType
   , PackageComponent
   )
+import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName)
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
   ( ComponentDependencies
@@ -48,14 +48,14 @@ import Flora.Model.Requirement
 
 getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do
-  (result, duration) <- timeAction $! dbtToEff $! query_ Select (_select @Package)
+  (result, duration) <- timeAction $ dbtToEff $ query_ Select (_select @Package)
   Log.logInfo "Retrieving all packages" $
     object
       ["duration" .= duration]
   pure result
 
-getPackagesByNamespace :: (DB :> es) => Namespace -> Eff es (Vector Package)
-getPackagesByNamespace namespace = dbtToEff $! selectManyByField @Package [field| namespace |] (Only namespace)
+getPackagesByNamespace :: DB :> es => Namespace -> Eff es (Vector Package)
+getPackagesByNamespace namespace = dbtToEff $ selectManyByField @Package [field| namespace |] (Only namespace)
 
 getPackageByNamespaceAndName :: (DB :> es, Log :> es, Time :> es) => Namespace -> PackageName -> Eff es (Maybe Package)
 getPackageByNamespaceAndName namespace name = do
@@ -73,28 +73,28 @@ getPackageByNamespaceAndName namespace name = do
       ]
   pure result
 
-getNonDeprecatedPackages :: (DB :> es) => Eff es (Vector Package)
-getNonDeprecatedPackages = dbtToEff $ selectWhereNull @Package [[field| metadata ->> 'deprecationInfo' |]]
+getNonDeprecatedPackages :: DB :> es => Eff es (Vector Package)
+getNonDeprecatedPackages = dbtToEff $ selectWhereNull @Package [[field| deprecation_info |]]
 
 getAllPackageDependents
-  :: (DB :> es)
+  :: DB :> es
   => Namespace
   -> PackageName
   -> Eff es (Vector Package)
-getAllPackageDependents namespace packageName = dbtToEff $! query Select packageDependentsQuery (namespace, packageName)
+getAllPackageDependents namespace packageName = dbtToEff $ query Select packageDependentsQuery (namespace, packageName)
 
 -- | This function gets the first 6 dependents of a package
-getPackageDependents :: (DB :> es) => Namespace -> PackageName -> Eff es (Vector Package)
-getPackageDependents namespace packageName = dbtToEff $! query Select q (namespace, packageName)
+getPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es (Vector Package)
+getPackageDependents namespace packageName = dbtToEff $ query Select q (namespace, packageName)
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
-getNumberOfPackageDependents :: (DB :> es) => Namespace -> PackageName -> Eff es Word
+getNumberOfPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es Word
 getNumberOfPackageDependents namespace packageName =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
 numberOfPackageDependentsQuery :: Query
@@ -118,7 +118,7 @@ packageDependentsQuery =
                   , p."created_at"
                   , p."updated_at"
                   , p."status"
-                  , p."metadata"
+                  , p."deprecation_info"
   FROM "packages" AS p
   INNER JOIN "dependents" AS dep
         ON p."package_id" = dep."dependent_id"
@@ -127,17 +127,15 @@ packageDependentsQuery =
   |]
 
 getAllPackageDependentsWithLatestVersion
-  :: (DB :> es)
+  :: DB :> es
   => Namespace
   -> PackageName
-  -> Word
+  -> (Word, Word)
   -> Eff es (Vector DependencyInfo)
-getAllPackageDependentsWithLatestVersion namespace packageName pageNumber =
-  dbtToEff $! query Select q (namespace, packageName, offset)
+getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) =
+  dbtToEff $ query Select q (namespace, packageName, offset, limit)
   where
-    limit = 30
-    offset = (limit * pageNumber) - limit
-    q = packageDependentsWithLatestVersionQuery <> " LIMIT 30 OFFSET ?"
+    q = packageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
 
 getPackageDependentsWithLatestVersion
   :: (DB :> es, Log :> es, Time :> es)
@@ -163,12 +161,12 @@ packageDependentsWithLatestVersionQuery =
                   , p."name"
                   , ''
                   , max(r."version")
-                  , r.metadata ->> 'synopsis' as "synopsis"
-                  , r.metadata ->> 'license' as  "license"
+                  , r.synopsis as "synopsis"
+                  , r.license as  "license"
   FROM "packages" AS p
         INNER JOIN "dependents" AS dep
                 ON p."package_id" = dep."dependent_id"
-        INNER JOIN "releases" AS r 
+        INNER JOIN "releases" AS r
                 ON r."package_id" = p."package_id"
   WHERE dep."namespace" = ?
     AND dep."name" = ?
@@ -176,10 +174,10 @@ packageDependentsWithLatestVersionQuery =
   ORDER BY p.namespace DESC
     |]
 
-getComponentById :: (DB :> es) => ComponentId -> Eff es (Maybe PackageComponent)
-getComponentById componentId = dbtToEff $! selectById @PackageComponent (Only componentId)
+getComponentById :: DB :> es => ComponentId -> Eff es (Maybe PackageComponent)
+getComponentById componentId = dbtToEff $ selectById @PackageComponent (Only componentId)
 
-getComponent :: (DB :> es) => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
+getComponent :: DB :> es => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
 getComponent releaseId name componentType =
   dbtToEff $
     queryOne Select (_selectWhere @PackageComponent queryFields) (releaseId, name, componentType)
@@ -192,7 +190,7 @@ getComponent releaseId name componentType =
       ]
 
 unsafeGetComponent
-  :: (DB :> es)
+  :: DB :> es
   => ReleaseId
   -> Eff es (Maybe PackageComponent)
 unsafeGetComponent releaseId =
@@ -203,14 +201,14 @@ unsafeGetComponent releaseId =
     queryFields = [[field| release_id |]]
 
 getAllRequirements
-  :: (DB :> es)
+  :: DB :> es
   => ReleaseId
   -> Eff es ComponentDependencies
-getAllRequirements releaseId = dbtToEff $! toComponentDependencies <$> query Select getAllRequirementsQuery (Only releaseId)
+getAllRequirements releaseId = dbtToEff $ toComponentDependencies <$> query Select getAllRequirementsQuery (Only releaseId)
 
 getRequirements :: (DB :> es, Log :> es, Time :> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
 getRequirements releaseId = do
-  (result, duration) <- timeAction $! dbtToEff $! query Select (getRequirementsQuery <> " LIMIT 6") (Only releaseId)
+  (result, duration) <- timeAction $ dbtToEff $ query Select (getRequirementsQuery <> " LIMIT 6") (Only releaseId)
   Log.logInfo "Retrieving limited dependencies of a release" $
     object
       [ "duration" .= duration
@@ -218,10 +216,9 @@ getRequirements releaseId = do
       ]
   pure result
 
-{-| This query finds all the dependencies of a release,
- and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
- HACK: This query is terrifying, must be optimised by someone who knows their shit.
--}
+-- | This query finds all the dependencies of a release,
+--  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
+--  HACK: This query is terrifying, must be optimised by someone who knows their shit.
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
@@ -239,13 +236,13 @@ getAllRequirementsQuery =
          , req.name
          , req.requirement
          , r3.version as "dependency_latest_version"
-         , r3.metadata ->> 'synopsis' as "dependency_latest_synopsis"
-         , r3.metadata ->> 'license' as "dependency_latest_license"
+         , r3.synopsis as "dependency_latest_synopsis"
+         , r3.license as "dependency_latest_license"
     from requirements as req
     inner join packages as p2 on p2.namespace = req.namespace and p2.name = req.name
     inner join releases as r3 on r3.package_id = p2.package_id
     where r3.version = (select max(version) from releases where package_id = p2.package_id)
-    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, r3.version, r3.metadata
+    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, r3.version, r3.synopsis, r3.license
     order by req.component_type, req.component_name desc
   |]
 
@@ -262,12 +259,12 @@ getRequirementsQuery =
     order by dependency.namespace desc
   |]
 
-getNumberOfPackageRequirements :: (DB :> es) => ReleaseId -> Eff es Word
+getNumberOfPackageRequirements :: DB :> es => ReleaseId -> Eff es Word
 getNumberOfPackageRequirements releaseId =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageRequirementsQuery (Only releaseId)
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
 numberOfPackageRequirementsQuery :: Query
@@ -286,7 +283,7 @@ numberOfPackageRequirementsQuery =
   |]
 
 getPackageCategories
-  :: (DB :> es)
+  :: DB :> es
   => PackageId
   -> Eff es (Vector Category)
 getPackageCategories packageId =
@@ -298,37 +295,35 @@ getPackageCategories packageId =
       packageId
 
 getPackagesFromCategoryWithLatestVersion
-  :: (DB :> es)
+  :: DB :> es
   => CategoryId
   -> Eff es (Vector PackageInfo)
-getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $! query Select q (Only categoryId)
+getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q (Only categoryId)
   where
     q =
       [sql|
-      select distinct l0.namespace
-                    , l0.name
-                    , l0.synopsis
-                    , l0.version
-                    , l0.license
+      select distinct lv.namespace
+                    , lv.name
+                    , lv.synopsis
+                    , lv.version
+                    , lv.license
                     , 1
-      from latest_versions as l0
-        inner join package_categories as p1 on p1.package_id = l0.package_id
+      from latest_versions as lv
+        inner join package_categories as p1 on p1.package_id = lv.package_id
         inner join categories as c2 on c2.category_id = p1.category_id
       where c2.category_id = ?
       |]
 
 searchPackage
-  :: (DB :> es)
-  => Word
+  :: DB :> es
+  => (Word, Word)
   -> Text
   -> Eff es (Vector PackageInfo)
-searchPackage pageNumber searchString =
+searchPackage (offset, limit) searchString =
   dbtToEff $
-    let limit = 30
-        offset = (limit * pageNumber) - limit
-     in query
-          Select
-          [sql|
+    query
+      Select
+      [sql|
         SELECT  lv."namespace"
               , lv."name"
               , lv."synopsis"
@@ -344,20 +339,20 @@ searchPackage pageNumber searchString =
           , lv."version"
           , lv."license"
         ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
-        LIMIT 30
         OFFSET ?
+        LIMIT ?
         ;
         |]
-          (searchString, searchString, offset)
+      (searchString, searchString, offset, limit)
 
+-- | Returns a summary of packages
 listAllPackages
-  :: (DB :> es)
-  => Word
+  :: DB :> es
+  => (Word, Word)
   -> Eff es (Vector PackageInfo)
-listAllPackages pageNumber =
+listAllPackages (offset, limit) =
   dbtToEff $
-    let limit = 30
-        offset = (limit * pageNumber) - limit
+    let
      in query
           Select
           [sql|
@@ -374,16 +369,49 @@ listAllPackages pageNumber =
       , lv."synopsis"
       , lv."version"
       , lv."license"
-    ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
-    LIMIT 30
+    ORDER BY rating DESC
+           , COUNT(lv."namespace") DESC
+           , lv.name ASC
     OFFSET ?
+    LIMIT ?
     ;
     |]
-          (Only offset)
+          (offset, limit)
 
-countPackages :: (DB :> es) => Eff es Word
+listAllPackagesInNamespace
+  :: DB :> es
+  => (Word, Word)
+  -> Namespace
+  -> Eff es (Vector PackageInfo)
+listAllPackagesInNamespace (offset, limit) namespace =
+  dbtToEff $
+    query
+      Select
+      [sql|
+    SELECT  lv."namespace"
+          , lv."name"
+          , lv."synopsis"
+          , lv."version"
+          , lv."license"
+          , (1.0::real) as rating
+    FROM latest_versions as lv
+    WHERE lv."namespace" = ?
+    GROUP BY
+        lv."namespace"
+      , lv."name"
+      , lv."synopsis"
+      , lv."version"
+      , lv."license"
+    ORDER BY rating desc, lv."name" asc
+    OFFSET ?
+    LIMIT ?
+    ;
+    |]
+      (namespace, offset, limit)
+
+countPackages :: DB :> es => Eff es Word
 countPackages =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne_
         Select
@@ -393,12 +421,12 @@ countPackages =
     WHERE status = 'fully-imported'
     |]
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
-countPackagesByName :: (DB :> es) => Text -> Eff es Word
+countPackagesByName :: DB :> es => Text -> Eff es Word
 countPackagesByName searchString =
-  dbtToEff $! do
+  dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne
         Select
@@ -409,5 +437,21 @@ countPackagesByName searchString =
       |]
         (Only searchString)
     case result of
-      Just (Only n) -> pure $! fromIntegral n
+      Just (Only n) -> pure $ fromIntegral n
+      Nothing -> pure 0
+
+countPackagesInNamespace :: DB :> es => Namespace -> Eff es Word
+countPackagesInNamespace namespace =
+  dbtToEff $ do
+    (result :: Maybe (Only Int)) <-
+      queryOne
+        Select
+        [sql|
+        SELECT DISTINCT COUNT(*)
+        FROM latest_versions as lv
+        WHERE lv."namespace" = ?
+      |]
+        (Only namespace)
+    case result of
+      Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0

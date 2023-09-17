@@ -25,5 +25,5 @@ spec =
                   }
               )
           )
-          @?= "{\"contents\":{\"mpPackage\":\"uwu\",\"mpReleaseId\":\"0000000c-0000-000d-0000-000e0000000f\",\"mpVersion\":[1,2,3]},\"tag\":\"FetchReadme\"}"
+          @?= "{\"tag\":\"FetchReadme\",\"contents\":{\"mp_package\":\"uwu\",\"mp_release_id\":\"0000000c-0000-000d-0000-000e0000000f\",\"mp_version\":[1,2,3]}}"
     ]

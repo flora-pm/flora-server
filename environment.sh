@@ -1,12 +1,13 @@
 export NIXPKGS_ALLOW_BROKEN=1
 export DATALOG_DIR="cbits/"
+export COMPOSE_PROFILES=local
 
 export FLORA_DB_HOST="localhost"
 export FLORA_DB_PORT="5432"
 export FLORA_DB_USER="postgres"
 export FLORA_DB_PASSWORD="postgres"
 export FLORA_DB_DATABASE="flora_dev"
-export FLORA_DB_POOL_CONNECTIONS="100"
+export FLORA_DB_POOL_CONNECTIONS="96"
 export FLORA_DB_TIMEOUT="10"
 export FLORA_DB_SSLMODE="allow"
 export FLORA_DB_PARAMETERS="?sslmode=verify-ca"
@@ -30,6 +31,6 @@ export FLORA_LOGGING_DESTINATION="stdout"
 export FLORA_COMPATIBILITY_MODE="True"
 
 # Set these variables in `environment.local.sh`, which is not tracked by git.
-#export SENTRY_DSN="" # Set this variable to connecto to your Sentry instance
+#export SENTRY_DSN="" # Set this variable to connect to to your Sentry instance
 #export FLORA_PROMETHEUS_ENABLED="true" # Set this variable to true or false to enable Prometheus metrics export
 

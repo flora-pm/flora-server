@@ -3,7 +3,7 @@ module Flora.Import.Package.Types where
 import Control.DeepSeq
 import Data.Aeson
 import Flora.Import.Categories.Tuning qualified as Tuning
-import Flora.Model.Package.Component
+import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
@@ -20,9 +20,8 @@ data ImportDependency = ImportDependency
   deriving anyclass (NFData)
   deriving anyclass (FromJSON, ToJSON)
 
-{-| This tuple represents the package that depends on any associated dependency/requirement.
- It is used in the recursive loading of Cabal files
--}
+-- | This tuple represents the package that depends on any associated dependency/requirement.
+--  It is used in the recursive loading of Cabal files
 type DependentName = (Namespace, PackageName)
 
 data ImportOutput = ImportOutput

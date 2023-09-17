@@ -24,7 +24,7 @@ request req = do
         mkClientEnv
           httpManager
           BaseUrl{baseUrlScheme = Https, baseUrlHost = "hackage.haskell.org", baseUrlPort = 443, baseUrlPath = ""}
-  liftIO $! runClientM req clientEnv
+  liftIO $ runClientM req clientEnv
 
 hackageClient :: Client ClientM HackageAPI
 hackageClient = client (Proxy @HackageAPI)

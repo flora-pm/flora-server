@@ -3,13 +3,11 @@ module FloraWeb.Server where
 import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 
--- , hoistServer
-
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
 import Data.Aeson qualified as Aeson
-import Data.Function ((&))
 import Data.Maybe (isJust)
+import Data.OpenApi (OpenApi)
 import Data.Pool (Pool)
 import Data.Pool qualified as Pool
 import Data.Text.Display (display)
@@ -21,7 +19,7 @@ import Effectful.Error.Static (runErrorNoCallStack)
 import Effectful.Fail (runFailIO)
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Effectful.Reader.Static (runReader, withReader)
-import Effectful.Time (runCurrentTimeIO)
+import Effectful.Time (runTime)
 import Log (Logger)
 import Log qualified
 import Network.HTTP.Client qualified as HTTP
@@ -38,6 +36,7 @@ import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Job (startJobRunner)
 import OddJobs.Types qualified as OddJobs
+import Optics.Core
 import Prometheus qualified
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc (procMetrics)
@@ -51,10 +50,13 @@ import Servant
   , Proxy (Proxy)
   , defaultErrorFormatters
   , err404
+  , hoistServer
   , notFoundErrorFormatter
   , serveDirectoryWebApp
+  , serveDirectoryWith
   )
 import Servant.API (getResponse)
+import Servant.OpenApi
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
 import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
@@ -63,16 +65,19 @@ import Flora.Logging (runLog)
 import Flora.Logging qualified as Logging
 import FloraJobs.Runner (runner)
 import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
+import FloraWeb.API.Routes qualified as API
+import FloraWeb.API.Server qualified as API
+import FloraWeb.Common.Auth (FloraAuthContext, authHandler, requestID, runVisitorSession)
+import FloraWeb.Common.Metrics
+import FloraWeb.Common.OpenSearch
+import FloraWeb.Common.Tracing
+import FloraWeb.Common.Utils
+import FloraWeb.Embedded
+import FloraWeb.Pages.Routes qualified as Pages
+import FloraWeb.Pages.Server qualified as Pages
+import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
+import FloraWeb.Pages.Templates.Error (renderError)
 import FloraWeb.Routes
-import FloraWeb.Routes.Pages qualified as Pages
-import FloraWeb.Server.Auth (FloraAuthContext, authHandler, requestID, runVisitorSession)
-import FloraWeb.Server.Metrics
-import FloraWeb.Server.OpenSearch
-import FloraWeb.Server.Pages qualified as Pages
-import FloraWeb.Server.Tracing
-import FloraWeb.Server.Utils
-import FloraWeb.Templates (defaultTemplateEnv, defaultsToEnv)
-import FloraWeb.Templates.Error (renderError)
 import FloraWeb.Types
 
 runFlora :: IO ()
@@ -81,14 +86,14 @@ runFlora =
     (getFloraEnv & runFailIO & runEff)
     (runEff . shutdownFlora)
     ( \env ->
-        runEff . runCurrentTimeIO . runConcurrent $! do
+        runEff . runTime . runConcurrent $ do
           let baseURL = "http://localhost:" <> display (env.httpPort)
-          liftIO $! blueMessage $! "🌺 Starting Flora server on " <> baseURL
-          liftIO $! when (isJust $! env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
-          liftIO $! when env.logging.prometheusEnabled $! do
-            blueMessage $! "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
-            void $! Prometheus.register ghcMetrics
-            void $! Prometheus.register procMetrics
+          liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
+          liftIO $ when (isJust $ env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
+          liftIO $ when env.logging.prometheusEnabled $ do
+            blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
+            void $ Prometheus.register ghcMetrics
+            void $ Prometheus.register procMetrics
           let withLogger = Logging.makeLogger (env.logging.logger)
           withLogger
             ( \appLogger ->
@@ -108,13 +113,13 @@ logException
   -> IO ()
 logException env logger exception =
   runEff
-    . runCurrentTimeIO
+    . runTime
     . Logging.runLog env logger
-    $! Log.logAttention "odd-jobs runner crashed " (show exception)
+    $ Log.logAttention "odd-jobs runner crashed " (show exception)
 
 runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
-  httpManager <- liftIO $! HTTP.newManager tlsManagerSettings
+  httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   let runnerEnv = JobsRunnerEnv httpManager
   let oddjobsUiCfg = makeUIConfig (floraEnv.config) appLogger (floraEnv.jobsPool)
       oddJobsCfg =
@@ -125,16 +130,14 @@ runServer appLogger floraEnv = do
           (floraEnv.jobsPool)
           runner
 
-  forkIO $
-    unsafeEff_ $
-      Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv.environment) appLogger)
+  void $ forkIO $ unsafeEff_ $ Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv.environment) appLogger)
   loggingMiddleware <- Logging.runLog (floraEnv.environment) appLogger WaiLog.mkLogMiddleware
   oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
-  webEnvStore <- liftIO $! newWebEnvStore webEnv
+  webEnvStore <- liftIO $ newWebEnvStore webEnv
   let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv
   let warpSettings =
-        setPort (fromIntegral $! floraEnv.httpPort) $
+        setPort (fromIntegral $ floraEnv.httpPort) $
           setOnException
             ( onException
                 appLogger
@@ -143,21 +146,45 @@ runServer appLogger floraEnv = do
             )
             defaultSettings
   liftIO
-    $! runSettings warpSettings
-    $! prometheusMiddleware (floraEnv.environment) (floraEnv.logging)
+    $ runSettings warpSettings
+    $ prometheusMiddleware (floraEnv.environment) (floraEnv.logging)
       . heartbeatMiddleware
       . loggingMiddleware
       . const
-    $! server
+    $ server
 
-mkServer :: Logger -> WebEnvStore -> FloraEnv -> OddJobs.UIConfig -> OddJobs.Env -> Application
+mkServer
+  :: Logger
+  -> WebEnvStore
+  -> FloraEnv
+  -> OddJobs.UIConfig
+  -> OddJobs.Env
+  -> Application
 mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
   genericServeTWithContext
     (naturalTransform (floraEnv.environment) logger webEnvStore)
     (floraServer (floraEnv.pool) cfg jobsRunnerEnv)
     (genAuthServerContext logger floraEnv)
 
-floraServer :: Pool Connection -> OddJobs.UIConfig -> OddJobs.Env -> Routes (AsServerT Flora)
+-- What the fuck is happening here:
+--
+-- In 'pages' and 'api', we have to reconcile two list of effects:
+--  pages has effects:
+--    [IsVisitor, DB, Time, Reader (Headers '[Header "Set-Cookie" SetCookie] Session), Log, Error ServerError, IOE]
+--  api has effects:
+--    [DB, Time, Reader (), Log, Error ServerError, IOE]
+--  An the intermediate effect list of effects:
+--    [Reader WebEnvStore, Log, Error ServerError, IOE]
+--
+-- What must happen is that the list of effects of 'pages' and 'api' must correspond to the intermediate 'Flora'
+-- list of effects. For 'pages', we can change the 'Reader Session' to a 'Reader WebEnvStore',
+-- but for 'api' there is no such Reader to transform in the first place, so we put an artificial
+-- Reader that we can transform to make the types match.
+floraServer
+  :: Pool Connection
+  -> OddJobs.UIConfig
+  -> OddJobs.Env
+  -> Routes (AsServerT Flora)
 floraServer pool cfg jobsRunnerEnv =
   Routes
     { assets = serveDirectoryWebApp "./static"
@@ -170,11 +197,23 @@ floraServer pool cfg jobsRunnerEnv =
               floraPage
                 & runVisitorSession
                 & runDB pool
-                & Log.localData [("request_id", Aeson.String $! requestID . getResponse $! sessionWithCookies)]
-                & runCurrentTimeIO
+                & Log.localData [("request_id", Aeson.String $ requestID . getResponse $ sessionWithCookies)]
+                & runTime
                 & withReader (const sessionWithCookies)
           )
           (Pages.server cfg jobsRunnerEnv)
+    , api =
+        hoistServer
+          (Proxy @API.Routes)
+          ( \floraPage ->
+              floraPage
+                & runDB pool
+                & runTime
+                & withReader (const ())
+          )
+          API.apiServer
+    , openApi = pure openApiHandler
+    , docs = serveDirectoryWith docsBundler
     }
 
 naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
@@ -193,7 +232,14 @@ errorFormatters assets =
 
 notFoundPage :: Assets -> NotFoundErrorFormatter
 notFoundPage assets _req =
-  let result = runPureEff $! runErrorNoCallStack $! renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
+  let result = runPureEff $ runErrorNoCallStack $ renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
    in case result of
         Left err -> err
         Right _ -> err404
+
+openApiHandler :: OpenApi
+openApiHandler =
+  toOpenApi (Proxy @API.Routes)
+    & (#info % #title .~ "Flora API")
+    & (#info % #version .~ "v0")
+    & (#info % #description ?~ "Flora API Documentation")

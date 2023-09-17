@@ -63,11 +63,14 @@ import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
 import Data.UUID qualified as UUID
 import Data.Word
-import Database.PostgreSQL.Entity.DBT ()
+import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
 import Database.PostgreSQL.Simple.Migration
+import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact ()
 import Effectful
+import Effectful.Fail (Fail, runFailIO)
+import Effectful.Log (Log, Logger)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
@@ -79,6 +82,7 @@ import GHC.TypeLits
 import Hedgehog (MonadGen (..))
 import Hedgehog.Gen qualified as H
 import Hedgehog.Range qualified as Range
+import Log.Backend.StandardOutput qualified as Log
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import Optics.Core
@@ -90,12 +94,10 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
-import Effectful.Fail (Fail, runFailIO)
-import Effectful.Log (Log, Logger)
 import Flora.Environment
 import Flora.Environment.Config (LoggingDestination (..), PoolConfig (..))
 import Flora.Import.Categories (importCategories)
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
+import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Logging qualified as Logging
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
@@ -103,7 +105,6 @@ import Flora.Model.User.Update
 import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
-import Log.Backend.StandardOutput qualified as Log
 
 type TestEff = Eff '[Fail, Reader PoolConfig, DB, Log, Time, IOE]
 
@@ -122,6 +123,7 @@ importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
   importAllFilesInRelativeDirectory
     appLogger
     (fixtures ^. #hackageUser % #userId)
+    Nothing
     "./test/fixtures/Cabal/"
     True
 
@@ -129,7 +131,7 @@ runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
 runTestEff comp pool poolCfg = runEff $
   Log.withStdOutLogger $ \stdOutLogger ->
     do
-      runCurrentTimeIO
+      runTime
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
       . runReader poolCfg
@@ -152,16 +154,15 @@ testThese groupName tests = fmap (Test.testGroup groupName) newTests
 assertBool :: Bool -> TestEff ()
 assertBool boolean = liftIO $ Test.assertBool "" boolean
 
-{-| Make sure an expected value is the same as the actual one.
-
- Usage:
-
- >>> assertEqual expected actual
--}
+-- | Make sure an expected value is the same as the actual one.
+--
+--  Usage:
+--
+--  >>> assertEqual expected actual
 assertEqual :: (Eq a, Show a) => a -> a -> TestEff ()
 assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 
-assertFailure :: (MonadIO m) => String -> m ()
+assertFailure :: MonadIO m => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
 assertRight :: HasCallStack => Either a b -> TestEff b

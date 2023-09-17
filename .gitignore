@@ -3,6 +3,8 @@
 *.hp
 .DS_Store
 .envrc
+.direnv
+.pre-commit-config.yaml
 .hie
 .hspec-failures
 .vscode/
@@ -30,3 +32,6 @@ tags.mtime
 assets/fonts
 assets/node_modules
 assets/yarn-error.log
+design/node_modules
+
+*.dump-timings

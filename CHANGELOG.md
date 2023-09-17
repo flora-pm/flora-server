@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 1.0.13 -- XXXX-XX-XX
+* Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
+* Add namespace browsing ([#375](https://github.com/flora-pm/flora-server/pull/375))
+* Overhaul the `nix` setup of flora and adjust the docs accordingly ([#369](https://github.com/flora-pm/flora-server/pull/369))
+* Allow importing from index tarballs and incremental importing ([#387](https://github.com/flora-pm/flora-server/pull/387))
+* Introduce a public API ([#415](https://github.com/flora-pm/flora-server/pull/415))
+* Fixed text color for header and button in login page ([#418](https://github.com/flora-pm/flora-server/pull/418))
+* Fix mismatching OpenSearch names ([#427](https://github.com/flora-pm/flora-server/pull/427))
+* Fix the margins of the search bar in mobile view ([#430](https://github.com/flora-pm/flora-server/pull/430))
+* Have proper breadcrumbs for the package page title ([#431](https://github.com/flora-pm/flora-server/pull/431))
+* Configure the API gateway ([#432](https://github.com/flora-pm/flora-server/pull/432))
+
 ## 1.0.12 -- 2023-04-04
 
 * Limit the display of versions on package pages ([#358](https://github.com/flora-pm/flora-server/pull/361))
@@ -12,7 +24,7 @@
 
 ## 1.0.10 -- 2023-03-21
 * Add buttons to the main page for ghcup and cabal guides ([#341](https://github.com/flora-pm/flora-server/pull/341))
-* Split the project into internal libraries ([#337](https://github.com/flora-pm/flora-server/pull/337)) 
+* Split the project into internal libraries ([#337](https://github.com/flora-pm/flora-server/pull/337))
 * Fetch and store deprecation information about packages ([#342](https://github.com/flora-pm/flora-server/pull/342))
 * Only index versionless package pages ([#343](https://github.com/flora-pm/flora-server/pull/343))
 * Display deprecation information on the package page ([#344](https://github.com/flora-pm/flora-server/pull/344))

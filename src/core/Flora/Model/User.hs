@@ -28,7 +28,6 @@ import Data.Password.Orphans ()
 import Data.Text (Text)
 import Data.Text.Display (Display, ShowInstance (..), displayBuilder)
 import Data.Time (UTCTime)
-import Data.Time qualified as Time
 import Data.UUID
 import Data.UUID.V4 qualified as UUID
 import Database.PostgreSQL.Entity
@@ -38,6 +37,7 @@ import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Effectful
+import Effectful.Time qualified as Time
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (..), TypeError)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
@@ -120,7 +120,7 @@ deriving via Text instance FromField (PasswordHash a)
 mkUser :: IOE :> es => UserCreationForm -> Eff es User
 mkUser UserCreationForm{username, email, password} = do
   userId <- UserId <$> liftIO UUID.nextRandom
-  timestamp <- liftIO Time.getCurrentTime
+  timestamp <- liftIO Time.currentTime
   let createdAt = timestamp
   let updatedAt = timestamp
   let displayName = ""
@@ -130,14 +130,14 @@ mkUser UserCreationForm{username, email, password} = do
 mkAdmin :: IOE :> es => AdminCreationForm -> Eff es User
 mkAdmin AdminCreationForm{username, email, password} = do
   userId <- UserId <$> liftIO UUID.nextRandom
-  timestamp <- liftIO Time.getCurrentTime
+  timestamp <- liftIO Time.currentTime
   let createdAt = timestamp
   let updatedAt = timestamp
   let displayName = ""
   let userFlags = UserFlags{isAdmin = True, canLogin = False}
   pure User{..}
 
-hashPassword :: (IOE :> es) => Password -> Eff es (PasswordHash Argon2)
+hashPassword :: IOE :> es => Password -> Eff es (PasswordHash Argon2)
 hashPassword = Argon2.hashPassword
 
 validatePassword :: Password -> PasswordHash Argon2 -> Bool

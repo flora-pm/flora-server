@@ -175,7 +175,7 @@ parseTestConfig =
 
 int :: Reader Error Int
 int i = case readMaybe i of
-  Nothing -> Left . unread . show $! i
+  Nothing -> Left . unread . show $ i
   Just i' -> Right i'
 
 port :: Reader Error Word16
@@ -183,26 +183,26 @@ port p = case int p of
   Left err -> Left err
   Right intPort ->
     if intPort >= 1 && intPort <= 65535
-      then Right $! fromIntegral intPort
-      else Left . unread . show $! p
+      then Right $ fromIntegral intPort
+      else Left . unread . show $ p
 
 nonNegative :: Int -> Either Error Int
-nonNegative nni = if nni >= 0 then Right nni else Left . unread . show $! nni
+nonNegative nni = if nni >= 0 then Right nni else Left . unread . show $ nni
 
 timeout :: Reader Error NominalDiffTime
-timeout t = second fromIntegral (int >=> nonNegative $! t)
+timeout t = second fromIntegral (int >=> nonNegative $ t)
 
 deploymentEnv :: Reader Error DeploymentEnv
 deploymentEnv "production" = Right Production
 deploymentEnv "development" = Right Development
 deploymentEnv "test" = Right Test
-deploymentEnv e = Left $! unread e
+deploymentEnv e = Left $ unread e
 
 loggingDestination :: Reader Error LoggingDestination
 loggingDestination "stdout" = Right StdOut
 loggingDestination "json" = Right Json
 loggingDestination "json-file" = Right JSONFile
-loggingDestination e = Left $! unread e
+loggingDestination e = Left $ unread e
 
 getAssets :: (Fail :> es, IOE :> es) => DeploymentEnv -> Eff es Assets
 getAssets environment =
@@ -221,21 +221,20 @@ getStaticAsset key =
   pure $
     AssetBundle key ""
 
-{-| Get the asset name with its hash
-
- >>> $(getAsset "app.js")
- "app-U6EOZTZG.js"
--}
+-- | Get the asset name with its hash
+--
+--  >>> $(getAsset "app.js")
+--  "app-U6EOZTZG.js"
 getAsset :: (Fail :> es, IOE :> es) => Text -> Eff es AssetBundle
 getAsset key = do
   let path = "./static/manifest.json"
-  Just (json :: Map Text Text) <- liftIO $! Aeson.decodeFileStrict path
+  Just (json :: Map Text Text) <- liftIO $ Aeson.decodeFileStrict path
   case Map.lookup key json of
-    Nothing -> error $! "Could not find an entry for " <> Text.unpack key
+    Nothing -> error $ "Could not find an entry for " <> Text.unpack key
     Just fullPath -> do
-      let name = last $! Text.splitOn "/" fullPath
+      let name = last $ Text.splitOn "/" fullPath
       hash <- getAssetHash ("./static/" <> name)
-      pure $! AssetBundle{name, hash}
+      pure $ AssetBundle{name, hash}
 
 -- Get the SHA256 hash of an asset bundle.
 getAssetHash :: IOE :> es => Text -> Eff es Text
@@ -247,4 +246,4 @@ getAssetHash hashedAssetPath = do
 hashBundle :: IOE :> es => Text -> Eff es Text
 hashBundle path = do
   digest :: Digest SHA256 <- hashFile (Text.unpack path)
-  pure . display . B64.encodeBase64 . BA.convert $! digest
+  pure . display . B64.encodeBase64 . BA.convert $ digest
