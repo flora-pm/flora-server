@@ -19,7 +19,6 @@ import Lucid
 import Lucid.Orphans ()
 import Servant (ServerT)
 
-import Control.Monad.IO.Class
 import Flora.Logging
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
@@ -84,7 +83,6 @@ showPackageVersion namespace packageName mversion = do
   templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
   releases <- Query.getReleases (package.packageId)
-  liftIO $ putStrLn $ "Number of releases: " <> show (length releases)
   let latestRelease =
         releases
           & Vector.filter (\r -> not (fromMaybe False r.deprecated))
