@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.0.13 -- XXXX-XX-XX
+## 1.0.13 -- 2023-09-17
 * Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
 * Add namespace browsing ([#375](https://github.com/flora-pm/flora-server/pull/375))
 * Overhaul the `nix` setup of flora and adjust the docs accordingly ([#369](https://github.com/flora-pm/flora-server/pull/369))
