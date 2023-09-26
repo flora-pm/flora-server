@@ -15,6 +15,7 @@
 * Fix the margins of the search bar in mobile view ([#430](https://github.com/flora-pm/flora-server/pull/430))
 * Have proper breadcrumbs for the package page title ([#431](https://github.com/flora-pm/flora-server/pull/431))
 * Configure the API gateway ([#432](https://github.com/flora-pm/flora-server/pull/432))
+* Store and show the latest revision date of releases ([#437](https://github.com/flora-pm/flora-server/pull/437))
 
 ## 1.0.12 -- 2023-04-04
 
