@@ -95,4 +95,6 @@ instance ToJSON LogEvent where
     LogJobTimeout job -> toJSON ("timed-out" :: Text, job)
     LogPoll -> toJSON ("poll" :: Text)
     LogWebUIRequest -> toJSON ("web-ui-request" :: Text)
+    LogKillJobSuccess job -> toJSON ("kill-success" :: Text, job)
+    LogKillJobFailed job -> toJSON ("kill-failed" :: Text, job)
     LogText other -> toJSON ("other" :: Text, other)

@@ -3,6 +3,7 @@
 module FloraJobs.ThirdParties.Hackage.API where
 
 import Data.Aeson
+import Data.Aeson.TH
 import Data.Bifunctor qualified as Bifunctor
 import Data.ByteString.Lazy as ByteString
 import Data.List.NonEmpty
@@ -16,7 +17,6 @@ import Data.Vector qualified as Vector
 import Network.HTTP.Media ((//), (/:))
 import Servant.API
 import Servant.API.Generic
-import Data.Aeson.TH
 
 import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
@@ -49,7 +49,7 @@ data HackageAPI' mode = HackageAPI'
   , withUser :: mode :- "user" :> Capture "username" Text :> NamedRoutes HackageUserAPI
   , packages :: mode :- "packages" :> NamedRoutes HackagePackagesAPI
   , withPackage :: mode :- "package" :> Capture "versioned_package" VersionedPackage :> NamedRoutes HackagePackageAPI
-  , withPackageName :: mode :- "package" :> Capture "pacakgeName" PackageName :> NamedRoutes HackagePackageAPI
+  , withPackageNameOnly :: mode :- "package" :> Capture "packageName" PackageName :> NamedRoutes HackagePackageAPI
   }
   deriving stock (Generic)
 
@@ -64,6 +64,7 @@ data HackagePackageAPI mode = HackagePackageAPI
   , getChangelog :: mode :- "changelog.txt" :> Get '[PlainerText] Text
   , getDeprecatedReleases :: mode :- "preferred.json" :> Get '[JSON] HackagePreferredVersions
   , getPackageInfo :: mode :- Get '[JSON] HackagePackageInfo
+  , getPackageWithRevision :: mode :- "revision" :> Capture "revision_number" Text :> Get '[JSON] HackagePackageInfo
   }
   deriving stock (Generic)
 
@@ -94,7 +95,7 @@ data HackagePreferredVersions = HackagePreferredVersions
   deriving stock (Eq, Show, Generic)
 
 instance FromJSON HackagePreferredVersions where
-  parseJSON = withObject "Hacakge preferred versions" $ \o -> do
+  parseJSON = withObject "Hackage preferred versions" $ \o -> do
     deprecatedVersions <- o .:? "deprecated-version" .!= Vector.empty
     normalVersions <- o .: "normal-version"
     pure HackagePreferredVersions{..}

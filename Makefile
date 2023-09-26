@@ -45,6 +45,8 @@ db-reset: db-drop db-setup db-provision ## Reset the dev database
 db-provision: build ## Load the development data in the database
 	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
 	@cabal run -- flora-cli provision categories
+
+db-provision-test-packages:
 	@cabal run -- flora-cli provision test-packages
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory

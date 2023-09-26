@@ -61,7 +61,7 @@ instance ToJSON TextHtml where
   toJSON (MkTextHtml a) = String $ Text.toStrict $ Lucid.renderText a
 
 instance FromJSON TextHtml where
-  parseJSON = withText "TextHtml" (\text -> pure $ MkTextHtml $ Lucid.toHtmlRaw @Text text)
+  parseJSON = withText "TextHtml" (pure . MkTextHtml . Lucid.toHtmlRaw @Text)
 
 instance NFData TextHtml where
   rnf a = seq a ()
@@ -100,6 +100,7 @@ data Release = Release
   , testedWith :: Vector Version
   , deprecated :: Maybe Bool
   , repository :: Maybe Text
+  , revisedAt :: Maybe UTCTime
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)
@@ -108,7 +109,7 @@ data Release = Release
     via (GenericEntity '[TableName "releases"] Release)
 
 instance Ord Release where
-  compare x y = compare (x.version) (y.version)
+  compare x y = compare x.version y.version
 
 newtype ReleaseFlags = ReleaseFlags (Vector PackageFlag)
   deriving stock (Eq, Ord, Show, Generic)
