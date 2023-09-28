@@ -273,12 +273,7 @@ displayVersions namespace packageName versions numberOfReleases =
                 Just revisionDate -> do
                   span_
                     [ dataText_
-                        ( display $
-                            Time.formatTime
-                              defaultTimeLocale
-                              "%a, %_d %b %Y, %R %EZ"
-                              revisionDate
-                        )
+                        ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
                     , class_ "revised-date"
                     ]
                     pen
