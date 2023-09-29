@@ -92,7 +92,8 @@ getPackageDependents namespace packageName = dbtToEff $ query Select q (namespac
 getNumberOfPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es Word
 getNumberOfPackageDependents namespace packageName =
   dbtToEff $ do
-    (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
+    (result :: Maybe (Only Int)) <-
+      queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
     case result of
       Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
