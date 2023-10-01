@@ -55,7 +55,7 @@ showPackage
   numberOfDependencies
   categories =
     div_ [class_ "larger-container"] $ do
-      presentationHeader latestRelease namespace name (latestRelease.synopsis)
+      presentationHeader latestRelease namespace name latestRelease.synopsis
       packageBody
         package
         latestRelease
@@ -70,13 +70,14 @@ showPackage
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis =
   div_ [class_ "divider"] $ do
-    div_ [class_ "page-title"] $
+    div_ [class_ "page-title"] $ do
       h1_ [class_ "package-title"] $ do
         span_ [class_ "headline"] $ do
           displayNamespace namespace
           chevronRightOutline
           toHtml name
-        span_ [class_ "version"] $ displayReleaseVersion release.version
+        let versionClass = "version" <> if Just True == release.deprecated then " release-deprecated" else ""
+        span_ [class_ versionClass] $ displayReleaseVersion release.version
     div_ [class_ "synopsis"] $
       p_ [class_ ""] (toHtml synopsis)
 
@@ -121,7 +122,11 @@ packageBody
         displayDependents (namespace, packageName) numberOfDependents dependents
         displayPackageFlags flags
 
-getLatestViableRelease :: Namespace -> PackageName -> Vector Release -> Maybe (Namespace, PackageName, Version)
+getLatestViableRelease
+  :: Namespace
+  -> PackageName
+  -> Vector Release
+  -> Maybe (Namespace, PackageName, Version)
 getLatestViableRelease namespace packageName releases =
   releases
     & Vector.filter (\r -> not (fromMaybe False r.deprecated))

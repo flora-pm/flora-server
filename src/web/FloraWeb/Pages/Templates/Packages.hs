@@ -27,7 +27,7 @@ import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
 import Data.Foldable (fold)
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust)
 import Distribution.Pretty (pretty)
 import Flora.Model.Category.Types
 import Flora.Model.Package
@@ -55,56 +55,54 @@ instance Display Target where
 presentationHeaderForSubpage
   :: Namespace
   -> PackageName
-  -> Version
+  -> Release
   -> Target
   -> Word
   -> FloraHTML
-presentationHeaderForSubpage namespace packageName version target numberOfPackages = do
-  div_ [class_ "divider"] $ do
-    div_ [class_ "page-title"] $ do
-      h1_ [class_ ""] $ do
-        span_ [class_ "headline"] $ do
-          displayNamespace namespace
-          chevronRightOutline
-          linkToPackageWithVersion namespace packageName version
-          chevronRightOutline
-          toHtml (display target)
-    p_ [class_ "synopsis"] $
-      span_ [class_ "version"] $
-        toHtml $
-          display numberOfPackages <> " results"
+presentationHeaderForSubpage namespace packageName release target numberOfPackages = div_ [class_ "divider"] $ do
+  div_ [class_ "page-title"] $ do
+    h1_ [class_ ""] $ do
+      span_ [class_ "headline"] $ do
+        displayNamespace namespace
+        chevronRightOutline
+        linkToPackageWithVersion namespace packageName release.version
+        chevronRightOutline
+        toHtml (display target)
+  p_ [class_ "synopsis"] $ do
+    span_ [class_ "version"] $
+      toHtml $
+        display numberOfPackages <> " results"
 
 presentationHeaderForVersions
   :: Namespace
   -> PackageName
   -> Word
   -> FloraHTML
-presentationHeaderForVersions namespace packageName numberOfReleases = do
-  div_ [class_ "divider"] $ do
-    div_ [class_ "page-title"] $ do
-      h1_ [class_ ""] $ do
-        span_ [class_ "headline"] $ do
-          displayNamespace namespace
-          chevronRightOutline
-          linkToPackage namespace packageName
-          chevronRightOutline
-          toHtml (display Versions)
-    p_ [class_ "synopsis"] $
-      span_ [class_ "version"] $
-        toHtml $
-          display numberOfReleases <> " results"
+presentationHeaderForVersions namespace packageName numberOfReleases = div_ [class_ "divider"] $ do
+  div_ [class_ "page-title"] $ do
+    h1_ [class_ ""] $ do
+      span_ [class_ "headline"] $ do
+        displayNamespace namespace
+        chevronRightOutline
+        linkToPackage namespace packageName
+        chevronRightOutline
+        toHtml (display Versions)
+  p_ [class_ "synopsis"] $
+    span_ [class_ "version"] $
+      toHtml $
+        display numberOfReleases <> " results"
 
 showDependents
   :: Namespace
   -> PackageName
-  -> Version
+  -> Release
   -> Word
   -> Vector DependencyInfo
   -> Positive Word
   -> FloraHTML
-showDependents namespace packageName version count packagesInfo currentPage =
+showDependents namespace packageName release count packagesInfo currentPage =
   div_ [class_ "container"] $ do
-    presentationHeaderForSubpage namespace packageName version Dependents count
+    presentationHeaderForSubpage namespace packageName release Dependents count
     div_ [class_ ""] $ do
       ul_ [class_ "package-list"] $
         Vector.forM_
@@ -115,11 +113,11 @@ showDependents namespace packageName version count packagesInfo currentPage =
       when (count > 30) $
         paginationNav count currentPage (DependentsOf namespace packageName)
 
-showDependencies :: Namespace -> PackageName -> Version -> ComponentDependencies -> FloraHTML
-showDependencies namespace packageName version componentsInfo = do
+showDependencies :: Namespace -> PackageName -> Release -> ComponentDependencies -> FloraHTML
+showDependencies namespace packageName release componentsInfo = do
   let dependenciesCount = fromIntegral $ Map.foldr (\v acc -> Vector.length v + acc) 0 componentsInfo
   div_ [class_ "container"] $ do
-    presentationHeaderForSubpage namespace packageName version Dependencies dependenciesCount
+    presentationHeaderForSubpage namespace packageName release Dependencies dependenciesCount
     div_ [class_ ""] $ requirementListing componentsInfo
 
 listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
@@ -130,8 +128,7 @@ listVersions namespace packageName releases =
       ul_ [class_ "package-list"] $
         Vector.forM_
           releases
-          ( \release -> do
-              versionListItem namespace packageName release
+          ( \release -> versionListItem namespace packageName release
           )
 
 versionListItem :: Namespace -> PackageName -> Release -> FloraHTML
@@ -157,8 +154,7 @@ packageListing packages =
   ul_ [class_ "package-list"] $
     Vector.forM_
       packages
-      ( \PackageInfo{..} -> do
-          packageListItem (namespace, name, synopsis, version, license)
+      ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license)
       )
 
 requirementListing :: ComponentDependencies -> FloraHTML
@@ -166,18 +162,17 @@ requirementListing requirements =
   ul_ [class_ "component-list"] $ requirementListItem requirements
 
 showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
-showChangelog namespace packageName version mChangelog = do
-  div_ [class_ "container"] $ do
-    div_ [class_ "divider"] $ do
-      div_ [class_ "page-title"] $
-        h1_ [class_ ""] $ do
-          span_ [class_ "headline"] $ toHtml ("Changelog of " <> display namespace <> "/" <> display packageName)
-          toHtmlRaw @Text "&nbsp;"
-          span_ [class_ "version"] $ toHtml $ display version
-      section_ [class_ "release-changelog"] $ do
-        case mChangelog of
-          Nothing -> toHtml @Text "This release does not have a Changelog"
-          Just (MkTextHtml changelogText) -> relaxHtmlT changelogText
+showChangelog namespace packageName version mChangelog = div_ [class_ "container"] $ do
+  div_ [class_ "divider"] $ do
+    div_ [class_ "page-title"] $
+      h1_ [class_ ""] $ do
+        span_ [class_ "headline"] $ toHtml ("Changelog of " <> display namespace <> "/" <> display packageName)
+        toHtmlRaw @Text "&nbsp;"
+        span_ [class_ "version"] $ toHtml $ display version
+    section_ [class_ "release-changelog"] $ do
+      case mChangelog of
+        Nothing -> toHtml @Text "This release does not have a Changelog"
+        Just (MkTextHtml changelogText) -> relaxHtmlT changelogText
 
 displayReleaseVersion :: Version -> FloraHTML
 displayReleaseVersion = toHtml
@@ -260,11 +255,11 @@ displayVersions namespace packageName versions numberOfReleases =
     displayVersion :: Release -> FloraHTML
     displayVersion release =
       li_ [class_ "release"] $ do
-        let versionClass = "release-version" <> if fromMaybe False release.deprecated then " release-deprecated instruction-tooltip" else ""
-        let dataText = ([dataText_ "This release is deprecated, pick another one" | fromMaybe False release.deprecated])
+        let versionClass = "release-version" <> if Just True == release.deprecated then " release-deprecated instruction-tooltip" else ""
+        let dataText = ([dataText_ "This release is deprecated, pick another one" | Just True == release.deprecated])
         a_
-          ([class_ versionClass, href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName (release.version)))] <> dataText)
-          (toHtml $ display (release.version))
+          ([class_ versionClass, href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName release.version))] <> dataText)
+          (toHtml $ display release.version)
         " "
         case release.uploadedAt of
           Nothing -> ""
@@ -312,31 +307,31 @@ displayInstructions packageName latestRelease =
 displayPackageDeprecation :: PackageAlternatives -> FloraHTML
 displayPackageDeprecation (PackageAlternatives inFavourOf) =
   li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section"] "Deprecated"
-    div_ [class_ "items-top"] $ div_ [class_ ""] $ do
-      if Vector.null inFavourOf
-        then label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated"
-        else do
-          label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated in favour of"
-          ul_ [class_ "package-alternatives"] $
-            Vector.forM_ inFavourOf $ \PackageAlternative{namespace, package} ->
-              li_ [] $
-                a_
-                  [href_ ("/packages/" <> display namespace <> "/" <> display package)]
-                  (text $ display namespace <> "/" <> display package)
+    h3_ [class_ "package-body-section release-deprecated"] "Deprecated"
+    div_ [class_ "items-top"] $
+      div_ [class_ ""] $
+        if Vector.null inFavourOf
+          then label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated"
+          else do
+            label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated in favour of"
+            ul_ [class_ "package-alternatives"] $
+              Vector.forM_ inFavourOf $ \PackageAlternative{namespace, package} ->
+                li_ [] $
+                  a_
+                    [href_ ("/packages/" <> display namespace <> "/" <> display package)]
+                    (text $ display namespace <> "/" <> display package)
 
 displayReleaseDeprecation :: Maybe (Namespace, PackageName, Version) -> FloraHTML
 displayReleaseDeprecation mLatestViableRelease =
   li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section"] "Deprecated"
-    div_ [class_ "items-top"] $ div_ [class_ ""] $ do
-      case mLatestViableRelease of
-        Nothing -> label_ [for_ "install-string", class_ "font-light"] "This release has been deprecated"
-        Just (namespace, package, version) -> do
-          label_ [for_ "install-string", class_ "font-light"] (text "This release has been deprecated in favour of: ")
-          a_
-            [href_ ("/packages/" <> display namespace <> "/" <> display package <> "/" <> display version)]
-            (text $ display namespace <> "/" <> display package <> "-" <> display version)
+    h3_ [class_ "package-body-section release-deprecated"] "Deprecated"
+    div_ [class_ "items-top"] $ div_ [class_ ""] $ case mLatestViableRelease of
+      Nothing -> label_ [for_ "install-string", class_ "font-light"] "This release has been deprecated"
+      Just (namespace, package, version) -> do
+        label_ [for_ "install-string", class_ "font-light"] (text "This release has been deprecated in favour of: ")
+        a_
+          [href_ ("/packages/" <> display namespace <> "/" <> display package <> "/" <> display version)]
+          (text $ display namespace <> "/" <> display package <> "-" <> display version)
 
 displayTestedWith :: Vector Version -> FloraHTML
 displayTestedWith compilersVersions'
@@ -348,10 +343,7 @@ displayTestedWith compilersVersions'
         ul_ [class_ "compiler-badges"] $
           Vector.forM_
             compilersVersions
-            ( \version ->
-                li_ [] $
-                  a_ [class_ "compiler-badge"] $
-                    toHtml @Text (display version)
+            ( li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display
             )
 
 displayMaintainer :: Text -> FloraHTML
@@ -429,14 +421,13 @@ displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = case 
       pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
       toHtmlRaw @Text "&nbsp;"
       defaultMarker flagDefault
-  _ -> do
-    details_ [] $ do
-      summary_ [] $ do
-        pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
-        toHtmlRaw @Text "&nbsp;"
-        defaultMarker flagDefault
-      div_ [class_ "package-flag-description"] $ do
-        renderHaddock $ Text.pack flagDescription
+  _ -> details_ [] $ do
+    summary_ [] $ do
+      pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+      toHtmlRaw @Text "&nbsp;"
+      defaultMarker flagDefault
+    div_ [class_ "package-flag-description"] $ do
+      renderHaddock $ Text.pack flagDescription
 
 defaultMarker :: Bool -> FloraHTML
 defaultMarker True = em_ "(on by default)"

@@ -3,8 +3,8 @@
 
 module Flora.Model.Release.Query
   ( getReleases
+  , getRelease
   , getReleaseByVersion
-  , getPackageReleases
   , getPackageReleasesWithoutReadme
   , getPackageReleasesWithoutChangelog
   , getPackageReleasesWithoutUploadTimestamp
@@ -74,20 +74,6 @@ getVersionFromManyReleaseIds releaseIds = do
         select r0.release_id, r0.version
         from releases as r0
         where r0.release_id in ?
-      |]
-
-getPackageReleases :: DB :> es => Eff es (Vector (ReleaseId, Version, PackageName))
-getPackageReleases =
-  dbtToEff $
-    query Select querySpec ()
-  where
-    querySpec :: Query
-    querySpec =
-      [sql|
-        select r.release_id, r.version, p."name"
-        from releases as r
-        join packages as p
-        on p.package_id = r.package_id
       |]
 
 getPackageReleasesWithoutReadme
@@ -164,6 +150,19 @@ getReleaseByVersion
 getReleaseByVersion packageId version =
   dbtToEff $
     queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
+
+getRelease
+  :: DB :> es
+  => Namespace
+  -> PackageName
+  -> Version
+  -> Eff es (Maybe Release)
+getRelease namespace packageName version =
+  dbtToEff $
+    queryOne
+      Select
+      (_selectWhere @Release [[field| namespace |], [field| package_name |], [field| version |]])
+      (namespace, packageName, version)
 
 getNumberOfReleases :: DB :> es => PackageId -> Eff es Word
 getNumberOfReleases pid =
