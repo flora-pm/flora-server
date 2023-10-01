@@ -24,6 +24,10 @@
   line-height: 1.75rem;
 }
 
+.release-deprecated {
+  color: var(--deprecated-version);
+}
+
 .package-body {
   justify-content: center;
   display: grid;
@@ -43,10 +47,6 @@
     font-size: 1.5rem;
     line-height: 2rem;
     margin-bottom: 0.75rem;
-  }
-
-  .release-deprecated {
-    color: var(--deprecated-version);
   }
 
   .package-right-column {
