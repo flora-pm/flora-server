@@ -353,6 +353,7 @@ library flora-jobs
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
+    , req
     , resource-pool
     , servant
     , servant-client

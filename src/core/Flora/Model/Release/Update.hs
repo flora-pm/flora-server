@@ -47,6 +47,15 @@ updateUploadTime releaseId timestamp =
         ([field| release_id |], releaseId)
         (Only (Just timestamp))
 
+updateRevisionTime :: DB :> es => ReleaseId -> UTCTime -> Eff es ()
+updateRevisionTime releaseId timestamp =
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+        [[field| revised_at |]]
+        ([field| release_id |], releaseId)
+        (Only (Just timestamp))
+
 updateChangelog :: DB :> es => ReleaseId -> Maybe TextHtml -> ImportStatus -> Eff es ()
 updateChangelog releaseId changelogBody status =
   dbtToEff $
