@@ -59,13 +59,13 @@ presentationHeaderForSubpage
   -> Target
   -> Word
   -> FloraHTML
-presentationHeaderForSubpage namespace packageName version target numberOfPackages = div_ [class_ "divider"] $ do
+presentationHeaderForSubpage namespace packageName release target numberOfPackages = div_ [class_ "divider"] $ do
   div_ [class_ "page-title"] $ do
     h1_ [class_ ""] $ do
       span_ [class_ "headline"] $ do
         displayNamespace namespace
         chevronRightOutline
-        linkToPackageWithVersion namespace packageName version
+        linkToPackageWithVersion namespace packageName (release.version)
         chevronRightOutline
         toHtml (display target)
   p_ [class_ "synopsis"] $
