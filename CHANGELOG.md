@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.0.14 -- 2023-10-1
+* Added more matches to the the natural language processing catergory ([#44](https://github.com/flora-pm/flora-server/pull/440))
+
 ## 1.0.13 -- 2023-09-17
 * Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
 * Add namespace browsing ([#375](https://github.com/flora-pm/flora-server/pull/375))
