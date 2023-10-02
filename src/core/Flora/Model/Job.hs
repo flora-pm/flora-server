@@ -73,7 +73,6 @@ data FloraOddJobs
   = FetchReadme ReadmeJobPayload
   | FetchUploadTime UploadTimeJobPayload
   | FetchChangelog ChangelogJobPayload
-  | ImportHackageIndex ImportHackageIndexPayload
   | ImportPackage ImportOutput
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)

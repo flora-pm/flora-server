@@ -111,7 +111,9 @@ library
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
-    Flora.Model.PackageIndex
+    Flora.Model.PackageIndex.Query
+    Flora.Model.PackageIndex.Types
+    Flora.Model.PackageIndex.Update
     Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Query

@@ -3,12 +3,12 @@ module Main where
 import Data.Maybe
 import Data.Password.Types
 import Data.Text (Text)
+import Data.Text qualified as Text
 import DesignSystem (generateComponents)
 import Effectful
 import Effectful.Fail
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (Reader, runReader)
-import Flora.Model.User.Query qualified as Query
 import GHC.Generics (Generic)
 import Log.Backend.StandardOutput qualified as Log
 import Optics.Core
@@ -18,7 +18,11 @@ import Flora.Environment
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
+import Flora.Model.PackageIndex.Query qualified as Query
+import Flora.Model.PackageIndex.Types
+import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User
+import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 
 data Options = Options
@@ -30,8 +34,9 @@ data Command
   = Provision ProvisionTarget
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
-  | ImportPackages FilePath (Maybe Text)
-  | ImportIndex FilePath (Maybe Text)
+  | ImportPackages FilePath Text
+  | ImportIndex FilePath Text
+  | ProvisionRepository Text Text
   deriving stock (Show, Eq)
 
 data ProvisionTarget
@@ -70,6 +75,7 @@ parseCommand =
       <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
       <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
       <> command "import-index" (parseImportIndex `withInfo` "Import cabal packages from the index tarball")
+      <> command "provision-repository" (parseProvisionRepository `withInfo` "Create a package repository")
 
 parseProvision :: Parser Command
 parseProvision =
@@ -95,27 +101,23 @@ parseImportPackages :: Parser Command
 parseImportPackages =
   ImportPackages
     <$> argument str (metavar "PATH")
-    <*> optional
-      ( strOption $
-          long "repository"
-            <> metavar "<repository>"
-            <> help "Which repository we're importing from"
-      )
+    <*> option str (long "repository" <> metavar "<repository>" <> help "Which repository we're importing from (hackage, cardano…)")
 
 parseImportIndex :: Parser Command
 parseImportIndex =
   ImportIndex
     <$> argument str (metavar "PATH")
-    <*> optional
-      ( strOption $
-          long "repository"
-            <> metavar "<repository>"
-            <> help "Which repository we're importing from"
-      )
+    <*> option str (long "repository" <> metavar "<repository>" <> help "Which repository we're importing from (hackage, cardano…)")
+
+parseProvisionRepository :: Parser Command
+parseProvisionRepository =
+  ProvisionRepository
+    <$> option str (long "name" <> metavar "<repository name>" <> help "Name of the repository")
+    <*> option str (long "url" <> metavar "<repository url>" <> help "Link to the package repository")
 
 runOptions :: (Reader PoolConfig :> es, DB :> es, Fail :> es, IOE :> es) => Options -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
-runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/" Nothing
+runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/" "hackage"
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
@@ -135,16 +137,29 @@ runOptions (Options (CreateUser opts)) = do
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path repository)) = importFolderOfCabalFiles path repository
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
+runOptions (Options (ProvisionRepository name url)) = provisionRepository name url
 
-importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Maybe Text -> Eff es ()
+provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Eff es ()
+provisionRepository name url = do
+  Update.createPackageIndex name url Nothing
+
+importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
 importFolderOfCabalFiles path repository = Log.withStdOutLogger $ \appLogger -> do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  importAllFilesInRelativeDirectory appLogger (user ^. #userId) repository path True
+  mPackageIndex <- Query.getPackageIndexByName repository
+  case mPackageIndex of
+    Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
+    Just packageIndex ->
+      importAllFilesInRelativeDirectory appLogger (user ^. #userId) (repository, packageIndex.url) path True
 
-importIndex :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Maybe Text -> Eff es ()
+importIndex :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
 importIndex path repository = Log.withStdOutLogger $ \logger -> do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  importFromIndex logger (user ^. #userId) repository path True
+  mPackageIndex <- Query.getPackageIndexByName repository
+  case mPackageIndex of
+    Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
+    Just packageIndex ->
+      importFromIndex logger (user ^. #userId) (repository, packageIndex.url) path True
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

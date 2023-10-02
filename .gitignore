@@ -9,7 +9,7 @@
 .hspec-failures
 .vscode/
 /.stack-work/
-01-index
+01-index*
 <
 Session.vim
 _data/

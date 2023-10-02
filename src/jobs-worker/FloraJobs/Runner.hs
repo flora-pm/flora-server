@@ -1,6 +1,5 @@
 module FloraJobs.Runner where
 
-import Control.Concurrent (forkIO)
 import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
@@ -10,13 +9,11 @@ import Data.Set qualified as Set
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Effectful.PostgreSQL.Transact.Effect
 import Log
 import Network.HTTP.Types (gone410, notFound404, statusCode)
 import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
-import System.Process.Typed qualified as System
 
 import Flora.Import.Package (coreLibraries, persistImportOutput, withWorkerDbPool)
 import Flora.Model.Job
@@ -26,29 +23,9 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import FloraJobs.Render (renderMarkdown)
-import FloraJobs.Scheduler
 import FloraJobs.ThirdParties.Hackage.API (HackagePackageInfo (..), HackagePreferredVersions (..), VersionedPackage (..))
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
-
-fetchNewIndex :: JobsRunner ()
-fetchNewIndex =
-  localDomain "index-import" $ do
-    logInfo_ "Fetching new index"
-    System.runProcess_ "cabal update"
-    System.runProcess_ "cp ~/.cabal/packages/hackage.haskell.org/01-index.tar 01-index/"
-    System.runProcess_ "cd 01-index && tar -xf 01-index.tar"
-    System.runProcess_ "make import-from-hackage"
-    logInfo_ "New index processed"
-    releases <- Query.getPackageReleasesWithoutReadme
-    pool <- getPool
-    liftIO $
-      forkIO $
-        forM_
-          releases
-          ( \(releaseId, version, packagename) -> scheduleReadmeJob pool releaseId packagename version
-          )
-    liftIO $ void $ scheduleIndexImportJob pool
 
 runner :: Job -> JobsRunner ()
 runner job = localDomain "job-runner" $
@@ -58,7 +35,6 @@ runner job = localDomain "job-runner" $
       FetchReadme x -> makeReadme x
       FetchUploadTime x -> fetchUploadTime x
       FetchChangelog x -> fetchChangeLog x
-      ImportHackageIndex _ -> fetchNewIndex
       ImportPackage x ->
         withWorkerDbPool $ \wq ->
           persistImportOutput wq x

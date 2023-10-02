@@ -5,7 +5,6 @@ module FloraJobs.Scheduler
   ( scheduleReadmeJob
   , scheduleChangelogJob
   , scheduleUploadTimeJob
-  , scheduleIndexImportJob
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
   , scheduleRefreshLatestVersions
@@ -19,7 +18,6 @@ module FloraJobs.Scheduler
 where
 
 import Data.Pool
-import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (Only (..))
@@ -27,9 +25,8 @@ import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
 import Effectful.PostgreSQL.Transact.Effect
-import Effectful.Time qualified as Time
 import Log
-import OddJobs.Job (Job (..), createJob, scheduleJob)
+import OddJobs.Job (Job (..), createJob)
 
 import Flora.Model.Job
 import Flora.Model.Package
@@ -67,20 +64,6 @@ scheduleUploadTimeJob pool releaseId packageName version =
           res
           jobTableName
           (FetchUploadTime $ UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version))
-    )
-
-scheduleIndexImportJob :: Pool PG.Connection -> IO Job
-scheduleIndexImportJob pool =
-  withResource
-    pool
-    ( \conn -> do
-        t <- Time.currentTime
-        let runAt = Time.addUTCTime Time.nominalDay t
-        scheduleJob
-          conn
-          jobTableName
-          (ImportHackageIndex ImportHackageIndexPayload)
-          runAt
     )
 
 schedulePackageDeprecationListJob :: Pool PG.Connection -> IO Job
