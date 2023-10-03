@@ -181,7 +181,11 @@ normalise_category("Database", "Databases").
 normalise_category("PostgreSQL", "Databases").
 
 normalise_category("NLP", "Natural Language Processing").
+normalise_category("Japanese Natural Language Processing", "Natural Language Processing").
+normalise_category("Natural Language", "Natural Language Processing").
+normalise_category("Natural Language Processing", "Natural Language Processing").
 normalise_category("Stemming", "Natural Language Processing").
+normalise_category("Natural-language-processing", "Natural Language Processing").
 
 normalise_category("Containers", "Data Structures").
 
