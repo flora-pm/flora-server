@@ -237,7 +237,7 @@ loadAndExtractCabalFile userId filePath =
 persistImportOutput :: (DB :> es, IOE :> es) => Poolboy.WorkQueue -> ImportOutput -> Eff es ()
 persistImportOutput wq (ImportOutput package categories release components) = do
   dbPool <- getPool
-  liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display (release.version)
+  liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display release.version
   persistPackage
   Update.upsertRelease release
   parallelRun dbPool (persistComponent dbPool) components
@@ -245,7 +245,7 @@ persistImportOutput wq (ImportOutput package categories release components) = do
   where
     parallelRun :: (MonadIO m, Foldable t) => Pool Connection -> (a -> Eff [DB, IOE] b) -> t a -> m ()
     parallelRun pool f xs = liftIO $ forM_ xs $ Poolboy.enqueue wq . void . runEff . runDB pool . f
-    packageName = display (package.namespace) <> "/" <> display (package.name)
+    packageName = display package.namespace <> "/" <> display package.name
     persistPackage = do
       let packageId = package.packageId
       Update.upsertPackage package
@@ -254,7 +254,7 @@ persistImportOutput wq (ImportOutput package categories release components) = do
     persistComponent dbPool (packageComponent, deps) = do
       liftIO . T.putStrLn $
         "🧩  Persisting component: "
-          <> display (packageComponent.canonicalForm)
+          <> display packageComponent.canonicalForm
           <> " with "
           <> display (length deps)
           <> " dependencies."
@@ -262,8 +262,8 @@ persistImportOutput wq (ImportOutput package categories release components) = do
       parallelRun dbPool persistImportDependency deps
 
     persistImportDependency dep = do
-      Update.upsertPackage (dep.package)
-      Update.upsertRequirement (dep.requirement)
+      Update.upsertPackage dep.package
+      Update.upsertRequirement dep.requirement
 
 withWorkerDbPool :: (Reader PoolConfig :> es, IOE :> es) => (Poolboy.WorkQueue -> Eff es a) -> Eff es a
 withWorkerDbPool f = do
@@ -280,12 +280,12 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
-  let packageVersion = force $ packageDesc.package.pkgVersion
+  let packageVersion = force packageDesc.package.pkgVersion
   let namespace = force $ chooseNamespace packageName
   let packageId = force $ deterministicPackageId namespace packageName
   let releaseId = force $ deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
-  let sourceRepos = getRepoURL packageName $ packageDesc.sourceRepos
+  let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
   categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
@@ -326,10 +326,11 @@ extractPackageDataFromCabal userId repository uploadTime genericDesc = do
           , flags = ReleaseFlags flags
           , testedWith = getVersions . extractTestedWith . Vector.fromList $ packageDesc.testedWith
           , deprecated = Nothing
+          , revisedAt = Nothing
           }
 
   let lib = extractLibrary package release Nothing [] <$> allLibraries packageDesc
-  let condLib = maybe [] (extractCondTree extractLibrary package release Nothing) (genericDesc.condLibrary)
+  let condLib = maybe [] (extractCondTree extractLibrary package release Nothing) genericDesc.condLibrary
   let condSubLibs = extractCondTrees extractLibrary package release genericDesc.condSubLibraries
 
   let foreignLibs = extractForeignLib package release Nothing [] <$> packageDesc.foreignLibs
@@ -367,16 +368,15 @@ extractLibrary package =
     package
   where
     getLibName :: LibraryName -> Text
-    getLibName LMainLibName = display (package.name)
+    getLibName LMainLibName = display package.name
     getLibName (LSubLibName lname) = T.pack $ unUnqualComponentName lname
 
 extractForeignLib :: Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> ForeignLib -> ImportComponent
-extractForeignLib package =
+extractForeignLib =
   genericComponentExtractor
     Component.ForeignLib
     (^. #foreignLibName % to unUnqualComponentName % to T.pack)
     (^. #foreignLibBuildInfo % #targetBuildDepends)
-    package
 
 extractExecutable :: Package -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> Executable -> ImportComponent
 extractExecutable =
@@ -411,8 +411,8 @@ extractCondTree
 extractCondTree extractor package release defaultComponentName = go []
   where
     go cond tree =
-      let treeComponent = extractor package release defaultComponentName cond $ tree.condTreeData
-          treeSubComponents = (tree.condTreeComponents) >>= extractBranch
+      let treeComponent = extractor package release defaultComponentName cond tree.condTreeData
+          treeSubComponents = tree.condTreeComponents >>= extractBranch
        in treeComponent : treeSubComponents
     extractBranch CondBranch{condBranchCondition, condBranchIfTrue, condBranchIfFalse} =
       let condIfTrueComponents = go [condBranchCondition] condBranchIfTrue
@@ -486,7 +486,7 @@ buildDependency package packageComponentId (Cabal.Dependency depName versionRang
 
 getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
 getRepoURL _ [] = Vector.empty
-getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty (repo.repoLocation)
+getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.repoLocation
 
 chooseNamespace :: PackageName -> Namespace
 chooseNamespace name | Set.member name coreLibraries = Namespace "haskell"
@@ -502,7 +502,7 @@ extractTestedWith testedWithVector =
 getVersions :: Vector VersionRange -> Vector Version
 getVersions supportedCompilers =
   foldMap
-    (\version -> Vector.foldMap (\versionRange -> checkVersion version versionRange) supportedCompilers)
+    (\version -> Vector.foldMap (checkVersion version) supportedCompilers)
     versionList
 
 checkVersion :: Version -> VersionRange -> Vector Version

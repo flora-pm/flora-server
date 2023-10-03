@@ -119,6 +119,39 @@
   }
 }
 
+.release {
+  a:hover {
+    text-decoration: underline;
+  }
+}
+
+span.revised-date::before {
+  content: attr(data-text); /* here's the magic */
+  position: absolute;
+  font-size: 0.85em;
+
+  /* vertically center */
+  top: 50%;
+  transform: translateY(-50%);
+
+  /* move to right */
+  left: 100%;
+
+  /* basic styles */
+  background: #000;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
+  color: #fff;
+  padding: 5px;
+  text-align: center;
+  width: 200px;
+  display: none; /* hide by default */
+}
+
+span.revised-date:hover::before {
+  display: block;
+}
+
 .instruction-tooltip {
   svg {
     display: inline;
@@ -140,7 +173,6 @@
 
   /* move to right */
   left: 100%;
-  margin-left: 15px; /* and add a small left margin */
 
   /* basic styles */
   background: #000;

@@ -52,7 +52,7 @@ jobs:
 
     - name: Set up Haskell
       id: setup-haskell
-      uses: haskell/actions/setup@v2
+      uses: haskell-actions/setup@v2
       with:
         ghc-version: "${{ matrix.ghc }}"
         cabal-version: "latest"
@@ -83,7 +83,8 @@ jobs:
       uses: actions/cache@v3.3.2
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ghc-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('**/plan.json') }}
+        restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
     - name: Build
       run: |

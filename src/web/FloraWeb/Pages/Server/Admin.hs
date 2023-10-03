@@ -47,8 +47,7 @@ server cfg env =
 --  to a sub-tree of Flora pages.
 --  It acts as the safeguard that rejects non-admins from protected routes.
 ensureAdmin :: ServerT Routes FloraAdmin -> ServerT Routes FloraPage
-ensureAdmin adminServer = do
-  hoistServer (Proxy :: Proxy Routes) checkAdmin adminServer
+ensureAdmin adminServer = hoistServer (Proxy :: Proxy Routes) checkAdmin adminServer
   where
     checkAdmin :: FloraAdmin a -> FloraPage a
     checkAdmin adminRoutes = do
@@ -65,14 +64,14 @@ indexHandler = do
   templateEnv <-
     fromSession session defaultTemplateEnv
       >>= \te -> pure $ set (#activeElements % #adminDashboard) True te
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
+  FloraEnv{pool} <- liftIO $ fetchFloraEnv session.webEnvStore
   report <- liftIO $ withPool pool getReport
   render templateEnv (Templates.index report)
 
 fetchMetadataHandler :: FloraAdmin FetchMetadataResponse
 fetchMetadataHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv session.webEnvStore
 
   liftIO $ void $ schedulePackageDeprecationListJob jobsPool
 
@@ -82,8 +81,7 @@ fetchMetadataHandler = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutReadme
-          ( \(releaseId, version, packagename) -> do
-              scheduleReadmeJob jobsPool releaseId packagename version
+          ( \(releaseId, version, packagename) -> scheduleReadmeJob jobsPool releaseId packagename version
           )
 
   releasesWithoutUploadTime <- Query.getPackageReleasesWithoutUploadTimestamp
@@ -92,8 +90,7 @@ fetchMetadataHandler = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutUploadTime
-          ( \(releaseId, version, packagename) -> do
-              scheduleUploadTimeJob jobsPool releaseId packagename version
+          ( \(releaseId, version, packagename) -> scheduleUploadTimeJob jobsPool releaseId packagename version
           )
 
   releasesWithoutChangelog <- Query.getPackageReleasesWithoutChangelog
@@ -102,8 +99,7 @@ fetchMetadataHandler = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutChangelog
-          ( \(releaseId, version, packagename) -> do
-              scheduleChangelogJob jobsPool releaseId packagename version
+          ( \(releaseId, version, packagename) -> scheduleChangelogJob jobsPool releaseId packagename version
           )
 
   packagesWithoutDeprecationInformation <- Query.getPackagesWithoutReleaseDeprecationInformation
@@ -112,8 +108,7 @@ fetchMetadataHandler = do
       forkIO $ do
         Async.forConcurrently_
           packagesWithoutDeprecationInformation
-          ( \a -> do
-              scheduleReleaseDeprecationListJob jobsPool a
+          ( \a -> scheduleReleaseDeprecationListJob jobsPool a
           )
         void $ scheduleRefreshLatestVersions jobsPool
 
@@ -122,7 +117,7 @@ fetchMetadataHandler = do
 indexImportJobHandler :: FloraAdmin ImportIndexResponse
 indexImportJobHandler = do
   session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv (session.webEnvStore)
+  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv session.webEnvStore
   liftIO $ void $ scheduleIndexImportJob jobsPool
   pure $ redirect "/admin"
 
@@ -153,8 +148,7 @@ showUserHandler userId = do
   templateEnv <- fromSession session defaultTemplateEnv
   case result of
     Nothing -> renderError templateEnv notFound404
-    Just user -> do
-      render templateEnv (Templates.showUser user)
+    Just user -> render templateEnv (Templates.showUser user)
 
 adminPackagesHandler :: ServerT PackagesAdminRoutes FloraAdmin
 adminPackagesHandler =

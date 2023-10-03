@@ -8,7 +8,6 @@ import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Set qualified as Set
 import Data.Text.Display
-import Data.Text.Lazy.Encoding qualified as TL
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful.PostgreSQL.Transact.Effect
@@ -28,7 +27,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
-import FloraJobs.ThirdParties.Hackage.API (HackagePreferredVersions (..), VersionedPackage (..))
+import FloraJobs.ThirdParties.Hackage.API (HackagePackageInfo (..), HackagePreferredVersions (..), VersionedPackage (..))
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
 
@@ -110,23 +109,16 @@ fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releas
   localDomain "fetch-upload-time" $ do
     logInfo "Fetching upload time" payload
     let requestPayload = VersionedPackage packageName packageVersion
-    result <- Hackage.request $ Hackage.getPackageUploadTime requestPayload
-    case result of
-      Right timestamp -> do
-        logInfo_ $ "Got a timestamp for " <> display packageName
-        Update.updateUploadTime releaseId timestamp
-      Left e@(FailureResponse _ response)
-        -- If the upload time simply doesn't exist, we skip it by marking the job as successful.
-        | response.responseStatusCode == notFound404 -> pure ()
-        | response.responseStatusCode == gone410 -> pure ()
-        | otherwise -> do
-            logAttention "Timestamp retrieval failed" $
-              object
-                [ "status" .= statusCode (response.responseStatusCode)
-                , "body" .= TL.decodeUtf8 (response.responseBody)
-                ]
-            throw e
-      Left e -> throw e
+    packageInfo <- liftIO $ Hackage.getPackageInfo requestPayload
+    if packageInfo.metadataRevision == 0
+      then do
+        Log.logInfo_ "No revision, using the upload time"
+        Update.updateUploadTime releaseId packageInfo.uploadedAt
+      else do
+        Log.logInfo_ "Found a revision, querying the original package info"
+        originalPackageInfo <- liftIO $ Hackage.getPackageWithRevision requestPayload 0
+        Update.updateRevisionTime releaseId packageInfo.uploadedAt
+        Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
 
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: JobsRunner ()
@@ -144,7 +136,7 @@ fetchPackageDeprecationList = do
     Left e@(FailureResponse _ response) -> do
       logAttention "Could not fetch package deprecation list from Hackage" $
         object
-          [ "status_code" .= statusCode (response.responseStatusCode)
+          [ "status_code" .= statusCode response.responseStatusCode
           ]
       throw e
     Left e -> throw e
@@ -175,7 +167,7 @@ fetchReleaseDeprecationList packageName releases = do
       logAttention "Could not fetch release deprecation list from Hackage" $
         object
           [ "package" .= display packageName
-          , "status_code" .= statusCode (response.responseStatusCode)
+          , "status_code" .= statusCode response.responseStatusCode
           ]
       throw e
     Left e -> throw e

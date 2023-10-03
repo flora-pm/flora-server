@@ -149,10 +149,6 @@
   }
 }
 
-.release a:hover {
-  text-decoration: underline;
-}
-
 .theme-button--light {
   display: none;
 }
