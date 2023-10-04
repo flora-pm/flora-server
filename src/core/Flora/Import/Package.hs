@@ -124,7 +124,21 @@ coreLibraries =
 versionList :: Set Version
 versionList =
   Set.fromList
-    [ Version.mkVersion [9, 4, 1]
+    [ Version.mkVersion [9, 8, 1]
+    , Version.mkVersion [9, 6, 3]
+    , Version.mkVersion [9, 6, 2]
+    , Version.mkVersion [9, 6, 1]
+    , Version.mkVersion [9, 4, 7]
+    , Version.mkVersion [9, 4, 6]
+    , Version.mkVersion [9, 4, 5]
+    , Version.mkVersion [9, 4, 4]
+    , Version.mkVersion [9, 4, 3]
+    , Version.mkVersion [9, 4, 2]
+    , Version.mkVersion [9, 4, 1]
+    , Version.mkVersion [9, 2, 8]
+    , Version.mkVersion [9, 2, 7]
+    , Version.mkVersion [9, 2, 6]
+    , Version.mkVersion [9, 2, 5]
     , Version.mkVersion [9, 2, 4]
     , Version.mkVersion [9, 2, 3]
     , Version.mkVersion [9, 2, 2]
