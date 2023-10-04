@@ -6,15 +6,16 @@ import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (runReader)
 import Effectful.Time
-import Flora.CabalSpec qualified as CabalSpec
-import Flora.CategorySpec qualified as CategorySpec
-import Flora.Environment
 import Log.Backend.StandardOutput qualified as Log
 import Log.Data
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
+import Flora.CabalSpec qualified as CabalSpec
+import Flora.CategorySpec qualified as CategorySpec
+import Flora.Environment
 import Flora.ImportSpec qualified as ImportSpec
+import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.OddJobSpec qualified as OddJobSpec
 import Flora.PackageSpec qualified as PackageSpec
 import Flora.TemplateSpec qualified as TemplateSpec
@@ -32,6 +33,7 @@ main = do
     . runReader env.dbConfig
     . runFailIO
     $ do
+      Update.createPackageIndex "hackage" "" Nothing
       testMigrations
       f' <- getFixtures
       importAllPackages f'
