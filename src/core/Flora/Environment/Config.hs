@@ -135,7 +135,7 @@ parsePoolConfig =
     <*> var
       (int >=> nonNegative)
       "FLORA_DB_POOL_CONNECTIONS"
-      (help "Number of connections per sub-pool")
+      (help "Number of connections across all sub-pools")
 
 parseLoggingEnv :: Parser Error LoggingEnv
 parseLoggingEnv =

@@ -5,14 +5,14 @@ module Flora.Model.Release.Query
   ( getReleases
   , getRelease
   , getReleaseByVersion
-  , getPackageReleasesWithoutReadme
-  , getPackageReleasesWithoutChangelog
-  , getPackageReleasesWithoutUploadTimestamp
+  , getHackagePackageReleasesWithoutReadme
+  , getHackagePackageReleasesWithoutChangelog
+  , getHackagePackageReleasesWithoutUploadTimestamp
   , getAllReleases
   , getLatestReleaseTime
   , getNumberOfReleases
   , getReleaseComponents
-  , getPackagesWithoutReleaseDeprecationInformation
+  , getHackagePackagesWithoutReleaseDeprecationInformation
   , getVersionFromManyReleaseIds
   )
 where
@@ -76,10 +76,10 @@ getVersionFromManyReleaseIds releaseIds = do
         where r0.release_id in ?
       |]
 
-getPackageReleasesWithoutReadme
+getHackagePackageReleasesWithoutReadme
   :: DB :> es
   => Eff es (Vector (ReleaseId, Version, PackageName))
-getPackageReleasesWithoutReadme =
+getHackagePackageReleasesWithoutReadme =
   dbtToEff $
     query Select querySpec ()
   where
@@ -91,29 +91,33 @@ getPackageReleasesWithoutReadme =
         join packages as p
         on p.package_id = r.package_id
         where r.readme_status = 'not-imported'
+          and p.namespace = 'hackage'
+           or p.namespace = 'haskell'
       |]
 
-getPackageReleasesWithoutUploadTimestamp
+getHackagePackageReleasesWithoutUploadTimestamp
   :: DB :> es
   => Eff es (Vector (ReleaseId, Version, PackageName))
-getPackageReleasesWithoutUploadTimestamp =
+getHackagePackageReleasesWithoutUploadTimestamp =
   dbtToEff $
     query Select querySpec ()
   where
     querySpec :: Query
     querySpec =
       [sql|
-        select r.release_id, r.version, p."name"
+        select r."release_id", r."version", p."name"
         from releases as r
         join packages as p
-        on p.package_id = r.package_id
-        where r.uploaded_at is null
+        on p."package_id" = r."package_id"
+        where r."uploaded_at" is null
+          and p."namespace" = 'hackage'
+           or p."namespace" = 'haskell'
       |]
 
-getPackageReleasesWithoutChangelog
+getHackagePackageReleasesWithoutChangelog
   :: DB :> es
   => Eff es (Vector (ReleaseId, Version, PackageName))
-getPackageReleasesWithoutChangelog =
+getHackagePackageReleasesWithoutChangelog =
   dbtToEff $
     query Select querySpec ()
   where
@@ -125,12 +129,14 @@ getPackageReleasesWithoutChangelog =
         join packages as p
         on p.package_id = r.package_id
         where r.changelog_status = 'not-imported'
+          and p.namespace = 'hackage'
+           or p.namespace = 'haskell'
       |]
 
-getPackagesWithoutReleaseDeprecationInformation
+getHackagePackagesWithoutReleaseDeprecationInformation
   :: DB :> es
   => Eff es (Vector (PackageName, Vector ReleaseId))
-getPackagesWithoutReleaseDeprecationInformation =
+getHackagePackagesWithoutReleaseDeprecationInformation =
   dbtToEff $ query_ Select q
   where
     q =
@@ -139,6 +145,8 @@ getPackagesWithoutReleaseDeprecationInformation =
         from releases as r0
         join packages as p1 on r0.package_id = p1.package_id
         where r0.deprecated is null
+          and p1.namespace = 'hackage'
+           or p1.namespace = 'haskell'
         group by p1.name;
         |]
 

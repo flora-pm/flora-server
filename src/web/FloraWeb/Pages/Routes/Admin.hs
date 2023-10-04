@@ -17,17 +17,9 @@ type FetchMetadata =
 type FetchMetadataResponse =
   Headers '[Header "Location" Text] NoContent
 
-type ImportIndex =
-  "index-import"
-    :> Verb 'POST 301 '[HTML] ImportIndexResponse
-
-type ImportIndexResponse =
-  Headers '[Header "Location" Text] NoContent
-
 data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
   , fetchMetadata :: mode :- FetchMetadata
-  , importIndex :: mode :- ImportIndex
   , oddJobs :: mode :- "odd-jobs" :> OddJobs.FinalAPI -- they compose :o
   , users :: mode :- "users" :> AdminUsersRoutes
   , packages :: mode :- "packages" :> PackagesAdminRoutes

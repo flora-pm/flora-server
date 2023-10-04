@@ -9,3 +9,5 @@ export FLORA_DB_DATABASE="flora_test"
 export FLORA_DB_CONNSTRING="host=${FLORA_DB_HOST} dbname=${FLORA_DB_DATABASE} \
   user=${FLORA_DB_USER} password=${FLORA_DB_PASSWORD} \
   sslmode=allow"
+
+export FLORA_DB_POOL_CONNECTIONS=50

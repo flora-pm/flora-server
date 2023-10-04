@@ -11,6 +11,7 @@ module Flora.TestUtils
   , assertBool
   , assertEqual
   , assertFailure
+  , assertJust
   , assertRight
   , assertRight'
   , assertClientRight
@@ -123,7 +124,7 @@ importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
   importAllFilesInRelativeDirectory
     appLogger
     (fixtures ^. #hackageUser % #userId)
-    Nothing
+    ("hackage", "https://hackage.haskell.org")
     "./test/fixtures/Cabal/"
     True
 
@@ -164,6 +165,10 @@ assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 
 assertFailure :: MonadIO m => String -> m ()
 assertFailure = liftIO . Test.assertFailure
+
+assertJust :: HasCallStack => Maybe a -> TestEff a
+assertJust (Just a) = pure a
+assertJust Nothing = liftIO $ Test.assertFailure "Test return Nothing instead of Just"
 
 assertRight :: HasCallStack => Either a b -> TestEff b
 assertRight (Left _a) = liftIO $ Test.assertFailure "Test return Left instead of Right"

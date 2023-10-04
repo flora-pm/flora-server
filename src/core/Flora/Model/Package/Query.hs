@@ -251,7 +251,8 @@ getAllRequirementsQuery =
 getRequirementsQuery :: Query
 getRequirementsQuery =
   [sql|
-    select distinct dependency.namespace, dependency.name, req.requirement from requirements as req
+    select distinct dependency.namespace, dependency.name, req.requirement
+    from requirements as req
     inner join packages as dependency on dependency.package_id = req.package_id
     inner join package_components as pc ON pc.package_component_id = req.package_component_id
           and (pc.component_type = 'library')

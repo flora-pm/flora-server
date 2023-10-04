@@ -36,9 +36,5 @@ searchHandler (Just searchString) pageParam = do
   session <- getSession
   templateEnv <- fromSession session defaultTemplateEnv
   (count, results) <- Search.searchPackageByName (fromPage pageNumber) searchString
-  let (matchVector, rest) = Vector.partition (\p -> p.name == PackageName searchString) results
-  let (mExactMatch, packagesInfo) =
-        case Vector.uncons matchVector of
-          Just (exactResult, _) -> (Just exactResult, rest)
-          Nothing -> (Nothing, rest)
-  render templateEnv $ Search.showResults searchString count pageNumber mExactMatch packagesInfo
+  let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
+  render templateEnv $ Search.showResults searchString count pageNumber matchVector packagesInfo

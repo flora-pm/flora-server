@@ -34,20 +34,11 @@ dataReport adminReport = do
     div_ [class_ "admin-card"] $ do
       dt_
         [class_ ""]
-        "README, CHANGELOG, Upload time…"
+        "README, CHANGELOG, Upload time, Revision time, deprecation information"
 
       dd_ [class_ ""] $
         form_ [action_ "/admin/metadata", method_ "POST"] $ do
-          button_ [class_ ""] "Fetch release metadata"
-
-    div_ [class_ "admin-card"] $ do
-      dt_
-        [class_ ""]
-        "Index import"
-
-      dd_ [class_ ""] $
-        form_ [action_ "/admin/index-import", method_ "POST"] $ do
-          button_ [class_ ""] "Schedule"
+          button_ [class_ ""] "Fetch Hackage releases metadata"
 
     a_ [href_ "/admin/odd-jobs"] $
       div_ [class_ "admin-card"] $ do

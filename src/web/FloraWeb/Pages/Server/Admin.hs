@@ -40,7 +40,6 @@ server cfg env =
       , packages = adminPackagesHandler
       , oddJobs = OddJobs.server cfg env handlerToEff
       , fetchMetadata = fetchMetadataHandler
-      , importIndex = indexImportJobHandler
       }
 
 -- | This function converts a sub-tree of routes that require 'Admin' role
@@ -75,7 +74,7 @@ fetchMetadataHandler = do
 
   liftIO $ void $ schedulePackageDeprecationListJob jobsPool
 
-  releasesWithoutReadme <- Query.getPackageReleasesWithoutReadme
+  releasesWithoutReadme <- Query.getHackagePackageReleasesWithoutReadme
   liftIO $
     void $
       forkIO $
@@ -84,7 +83,7 @@ fetchMetadataHandler = do
           ( \(releaseId, version, packagename) -> scheduleReadmeJob jobsPool releaseId packagename version
           )
 
-  releasesWithoutUploadTime <- Query.getPackageReleasesWithoutUploadTimestamp
+  releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
   liftIO $
     void $
       forkIO $
@@ -93,7 +92,7 @@ fetchMetadataHandler = do
           ( \(releaseId, version, packagename) -> scheduleUploadTimeJob jobsPool releaseId packagename version
           )
 
-  releasesWithoutChangelog <- Query.getPackageReleasesWithoutChangelog
+  releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
   liftIO $
     void $
       forkIO $
@@ -102,7 +101,7 @@ fetchMetadataHandler = do
           ( \(releaseId, version, packagename) -> scheduleChangelogJob jobsPool releaseId packagename version
           )
 
-  packagesWithoutDeprecationInformation <- Query.getPackagesWithoutReleaseDeprecationInformation
+  packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
   liftIO $
     void $
       forkIO $ do
@@ -112,13 +111,6 @@ fetchMetadataHandler = do
           )
         void $ scheduleRefreshLatestVersions jobsPool
 
-  pure $ redirect "/admin"
-
-indexImportJobHandler :: FloraAdmin ImportIndexResponse
-indexImportJobHandler = do
-  session <- getSession
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv session.webEnvStore
-  liftIO $ void $ scheduleIndexImportJob jobsPool
   pure $ redirect "/admin"
 
 adminUsersHandler :: ServerT AdminUsersRoutes FloraAdmin
