@@ -9,7 +9,7 @@
 
 <p align="center">
 <a href="https://github.com/flora-pm/flora-server/actions">
-  <img src="https://img.shields.io/github/actions/workflow/status/flora-pm/flora-server/backend.yml?branch=development&style=flat-square" alt="CI badge" />
+  <img src="https://img.shields.io/github/actions/workflow/status/flora-pm/flora-server/backend.yml?branch=development&style=flat-square&logo=github" alt="CI badge" />
 </a>
 <a href="https://haskell.org">
   <img src="https://img.shields.io/badge/Made%20in-Haskell-%235e5086?logo=haskell&style=flat-square" alt="made with Haskell"/>
@@ -18,6 +18,16 @@
 <a href="https://app.element.io/#/room/#flora-pm:matrix.org">
   <img src="https://img.shields.io/badge/matrix-%23flora--pm%3Amatrix.org-brightgreen?style=flat-square&logo=matrix" alt="Matrix chatroom badge" />
 </a>
+
+<a href="https://functional.cafe/@flora_pm">
+  <img alt="Mastodon" src="https://img.shields.io/badge/Fediverse-%40flora_pm%40functional.cafe-blue?style=flat-square&logo=mastodon">
+
+</a>
+
+<a href="https://twitter.com/flora_haskell">
+  <img alt="Static Badge" src="https://img.shields.io/badge/Twitter-%40flora_haskell-blue?style=flat-square&logo=x">
+</a>
+
 </p>
 
 <dl>
