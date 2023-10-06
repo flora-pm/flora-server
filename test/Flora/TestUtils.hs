@@ -127,7 +127,6 @@ importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
     (fixtures ^. #hackageUser % #userId)
     ("hackage", "https://hackage.haskell.org")
     "./test/fixtures/Cabal/"
-    True
 
 runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
 runTestEff comp pool poolCfg = runEff $

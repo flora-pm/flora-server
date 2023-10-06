@@ -188,7 +188,7 @@ importFolderOfCabalFiles path repository = Log.withStdOutLogger $ \appLogger -> 
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importAllFilesInRelativeDirectory appLogger (user ^. #userId) (repository, packageIndex.url) path True
+      importAllFilesInRelativeDirectory appLogger (user ^. #userId) (repository, packageIndex.url) path
 
 importIndex :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
 importIndex path repository = Log.withStdOutLogger $ \logger -> do
@@ -197,7 +197,7 @@ importIndex path repository = Log.withStdOutLogger $ \logger -> do
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importFromIndex logger (user ^. #userId) (repository, packageIndex.url) path True
+      importFromIndex logger (user ^. #userId) (repository, packageIndex.url) path
 
 importPackageTarball
   :: (BlobStoreAPI :> es, Time :> es, IOE :> es, DB :> es)

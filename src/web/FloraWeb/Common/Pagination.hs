@@ -84,39 +84,54 @@ instance
   where
   toOpenApi _ =
     toOpenApi (Proxy @api)
-      & #allOperations % #parameters <>~ [O.Inline offsetParam, O.Inline limitParam]
+      & #allOperations
+      % #parameters
+      <>~ [O.Inline offsetParam, O.Inline limitParam]
     where
       offsetParam :: O.Param
       limitParam :: O.Param
       offsetParam =
         mempty
-          & #name .~ "offset"
+          & #name
+          .~ "offset"
           & #description
-            ?~ "Pagination parameter. How many items to skip from the beginning."
-          & #required ?~ False
-          & #in .~ O.ParamQuery
-          & #schema ?~ O.Inline offsetParamSchema
+          ?~ "Pagination parameter. How many items to skip from the beginning."
+          & #required
+          ?~ False
+          & #in
+          .~ O.ParamQuery
+          & #schema
+          ?~ O.Inline offsetParamSchema
       offsetParamSchema =
         mempty
-          & #type ?~ O.OpenApiInteger
-          & #format ?~ "int32"
+          & #type
+          ?~ O.OpenApiInteger
+          & #format
+          ?~ "int32"
 
       limitParam =
         mempty
-          & #name .~ "limit"
+          & #name
+          .~ "limit"
           & #description
-            ?~ mconcat
-              [ "Pagination parameter. Maximum number of items to return.\n"
-              , defaultPageSizeDesc
-              ]
-          & #required ?~ False
-          & #in .~ O.ParamQuery
-          & #schema ?~ O.Inline limitParamSchema
+          ?~ mconcat
+            [ "Pagination parameter. Maximum number of items to return.\n"
+            , defaultPageSizeDesc
+            ]
+          & #required
+          ?~ False
+          & #in
+          .~ O.ParamQuery
+          & #schema
+          ?~ O.Inline limitParamSchema
       limitParamSchema =
         mempty
-          & #type ?~ O.OpenApiInteger
-          & #format ?~ "int32"
-          & #pattern ?~ "^\\d*[1-9]\\d*$"
+          & #type
+          ?~ O.OpenApiInteger
+          & #format
+          ?~ "int32"
+          & #pattern
+          ?~ "^\\d*[1-9]\\d*$"
       defaultPageSizeDesc :: Text
       defaultPageSizeDesc = case settingDefPageSize @settings of
         Nothing -> "By default, no limit will be applied."

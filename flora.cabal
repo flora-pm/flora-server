@@ -27,13 +27,13 @@ flag prod
 
 common common-extensions
   default-extensions:
-    NoStarIsType
     DataKinds
     DeriveAnyClass
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
     LambdaCase
+    NoStarIsType
     OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
@@ -139,6 +139,7 @@ library
 
   build-depends:
     , aeson
+    , aeson-optics
     , base                   ^>=4.17
     , base16-bytestring
     , base64

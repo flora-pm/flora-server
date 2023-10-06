@@ -46,7 +46,9 @@ aboutHandler = do
   templateDefaults <- fromSession session defaultTemplateEnv
   let (templateEnv :: TemplateEnv) =
         templateDefaults
-          & #activeElements % #aboutNav .~ True
+          & #activeElements
+          % #aboutNav
+          .~ True
   render templateEnv Home.about
 
 serveNotFound :: FloraPage (Html ())

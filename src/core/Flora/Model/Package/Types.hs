@@ -96,8 +96,8 @@ instance ToSchema PackageName where
   declareNamedSchema proxy =
     genericDeclareNamedSchema openApiSchemaOptions proxy
       & mapped
-        % #schema
-        .~ packageNameSchema
+      % #schema
+      .~ packageNameSchema
 
 instance ToParamSchema PackageName where
   toParamSchema _ = packageNameSchema
@@ -106,7 +106,7 @@ packageNameSchema :: Schema
 packageNameSchema =
   mempty
     & #description
-      ?~ "Name of a package\n It corresponds to the regular expression: `[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*`"
+    ?~ "Name of a package\n It corresponds to the regular expression: `[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*`"
 
 newtype Namespace = Namespace Text
   deriving stock (Show, Generic)
@@ -153,8 +153,8 @@ instance ToSchema Namespace where
   declareNamedSchema proxy =
     genericDeclareNamedSchema openApiSchemaOptions proxy
       & mapped
-        % #schema
-        .~ namespaceSchema
+      % #schema
+      .~ namespaceSchema
 
 instance ToParamSchema Namespace where
   toParamSchema _ = namespaceSchema
@@ -163,7 +163,7 @@ namespaceSchema :: Schema
 namespaceSchema =
   mempty
     & #description
-      ?~ "Namespace containing packages"
+    ?~ "Namespace containing packages"
 
 data PackageStatus = UnknownPackage | FullyImportedPackage
   deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
