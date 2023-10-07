@@ -30,6 +30,7 @@ import Flora.Logging
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Search qualified as Search
@@ -90,6 +91,7 @@ showPackageVersion namespace packageName mversion = do
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
+  packageIndex <- guardThatPackageIndexExists namespace $ const web404
   releases <- Query.getReleases package.packageId
   let latestRelease =
         releases
@@ -129,12 +131,15 @@ showPackageVersion namespace packageName mversion = do
       , "package" .= (display namespace <> "/" <> display packageName)
       ]
 
+  let packageIndexURL = packageIndex.url
+
   render templateEnv $
     Packages.showPackage
       release
       releases
       numberOfReleases
       package
+      packageIndexURL
       dependents
       numberOfDependents
       releaseDependencies

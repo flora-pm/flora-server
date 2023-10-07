@@ -38,6 +38,7 @@ showPackage
   -> Vector Release
   -> Word
   -> Package
+  -> Text
   -> Vector Package
   -> Word
   -> Vector (Namespace, PackageName, Text)
@@ -49,6 +50,7 @@ showPackage
   packageReleases
   numberOfReleases
   package@Package{namespace, name}
+  packageIndexURL
   dependents
   numberOfDependents
   dependencies
@@ -58,6 +60,7 @@ showPackage
       presentationHeader latestRelease namespace name latestRelease.synopsis
       packageBody
         package
+        packageIndexURL
         latestRelease
         packageReleases
         numberOfReleases
@@ -83,6 +86,7 @@ presentationHeader release namespace name synopsis =
 
 packageBody
   :: Package
+  -> Text
   -> Release
   -> Vector Release
   -> Word
@@ -94,6 +98,7 @@ packageBody
   -> FloraHTML
 packageBody
   Package{namespace, name = packageName, deprecationInfo}
+  packageIndexURL
   latestRelease@Release{flags, deprecated, license, maintainer, version}
   packageReleases
   numberOfReleases
@@ -107,7 +112,7 @@ packageBody
         displayCategories categories
         displayLicense license
         displayMaintainer maintainer
-        displayLinks namespace packageName latestRelease
+        displayLinks namespace packageName packageIndexURL latestRelease
         displayVersions namespace packageName packageReleases numberOfReleases
       div_ [class_ "release-readme-column"] $ div_ [class_ "release-readme"] $ displayReadme latestRelease
       div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows"] $ do
