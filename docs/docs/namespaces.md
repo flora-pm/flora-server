@@ -17,7 +17,8 @@ This is where most third-party packages live, which you will find on [Hackage](h
 
 ## @cardano Packages
 
-Flora also indexes the [Cardano Haskell Packages (CHaP)][CHaP], whose packages live under the [`@cardano`] namespace.
+Flora also indexes the [Cardano Haskell Packages (CHaP)][CHaP], an index of packages by the Cardano project.
+These packages live under the [`@cardano`] namespace.
 
 To use them in your own project, insert the following configuration in your `cabal.project` file:
 
@@ -36,7 +37,7 @@ repository cardano
 and run `cabal update`.
 
 [`@haskell`]: https://flora.pm/packages/@haskell
-[`@cardano`]: https://flora.pm/packages/@haskell
+[`@cardano`]: https://flora.pm/packages/@cardano
 [`@hackage`]: https://flora.pm/packages/@hackage
 [`@hackage/servant-server`]: https://flora.pm/packages/@hackage/servant-server
 [`@haskell/text`]: https://flora.pm/packages/@haskell/text
