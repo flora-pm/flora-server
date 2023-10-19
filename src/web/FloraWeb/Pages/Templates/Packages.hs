@@ -304,8 +304,8 @@ showAll target mVersion namespace packageName = do
         Versions -> Links.packageVersions namespace packageName
   a_ [class_ "dependency", href_ ("/" <> toUrlPiece resource)] "Show all…"
 
-displayInstructions :: PackageName -> Release -> FloraHTML
-displayInstructions packageName latestRelease =
+displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
+displayInstructions namespace packageName latestRelease =
   li_ [class_ ""] $ do
     h3_ [class_ "package-body-section"] "Installation"
     div_ [class_ "items-top"] $ div_ [class_ ""] $ do
@@ -322,7 +322,7 @@ displayInstructions packageName latestRelease =
         label_ [for_ "tarball", class_ "font-light"] "Download"
         let v = display latestRelease.version
             tarballName = display packageName <> "-" <> v <> ".tar.gz"
-            tarballLink = v <> "/" <> tarballName
+            tarballLink = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> v <> "/" <> tarballName
         div_ $ a_ [href_ tarballLink, download_ ""] $ toHtml tarballName
 
 displayPackageDeprecation :: PackageAlternatives -> FloraHTML
