@@ -2,10 +2,9 @@ module Flora.Model.BlobIndex.Update where
 
 import Control.Monad (void, when)
 import Control.Monad.IO.Class (MonadIO)
-import Data.ByteString.Lazy as BL
+import Data.ByteString.Lazy (LazyByteString)
 import Data.Int (Int64)
 import Data.Map qualified as M
-import Data.Maybe (isNothing)
 import Data.String (fromString)
 import Data.Text.Display (display)
 import Effectful (Eff, type (:>))
@@ -35,7 +34,7 @@ insertTar
   :: (Log :> es, DB :> es, BlobStoreAPI :> es, Time :> es)
   => PackageName
   -> Version
-  -> BL.ByteString
+  -> LazyByteString
   -> Eff es (Either BlobStoreInsertError Sha256Sum)
 insertTar pname version contents = do
   mpackage <- Query.getPackageByNamespaceAndName (Namespace "hackage") pname
@@ -56,12 +55,13 @@ insertTree
   -> Eff es ()
 insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
   Log.logTrace "Trying to insert directory tree" t
-  mTarball <- Query.getReleaseTarball releaseId
-  when (isNothing mTarball) $ do
-    Update.updateTarball releaseId rootHash
-    void $! M.traverseWithKey (insertBlobs rootHash) tree
-
-  Log.logInfo_ $ "Inserted hash tree with root " <> display rootHash
+  mTarballHash <- Query.getReleaseTarballHash releaseId
+  case mTarballHash of
+    Just tarballHash -> Log.logInfo_ $ "Hash already inserted with hash: " <> display tarballHash
+    Nothing -> do
+      Update.updateTarballHash releaseId rootHash
+      void $! M.traverseWithKey (insertBlobs rootHash) tree
+      Log.logInfo_ $ "Inserted hash tree with root " <> display rootHash
   where
     _onConflictDoNothing :: Query
     _onConflictDoNothing = fromString "on conflict do nothing"

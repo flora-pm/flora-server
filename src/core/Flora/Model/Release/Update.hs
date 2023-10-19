@@ -68,12 +68,12 @@ updateChangelog releaseId changelogBody status =
         ([field| release_id |], releaseId)
         (changelogBody, status)
 
-updateTarball :: DB :> es => ReleaseId -> Sha256Sum -> Eff es ()
-updateTarball releaseId hash =
+updateTarballHash :: DB :> es => ReleaseId -> Sha256Sum -> Eff es ()
+updateTarballHash releaseId hash =
   dbtToEff $!
     void $!
       updateFieldsBy @Release
-        [[field| tarball |]]
+        [[field| tarball_hash |]]
         ([field| release_id |], releaseId)
         (Only $ Just hash)
 

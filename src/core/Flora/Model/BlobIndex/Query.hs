@@ -6,9 +6,9 @@ module Flora.Model.BlobIndex.Query
   ) where
 
 import Control.Exception (throw)
-import Data.ByteString.Lazy qualified as BL
+import Data.ByteString.Lazy (LazyByteString)
 import Data.Map qualified as M
-import Data.Text.Display
+import Data.Text.Display (display)
 import Data.Vector qualified as V
 
 import Database.PostgreSQL.Entity (_orderBy, _selectWhere)
@@ -21,11 +21,11 @@ import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Log qualified
 
 import Distribution.Version (Version)
-import Flora.Model.BlobIndex.Types
+import Flora.Model.BlobIndex.Types (BlobRelation (..), BlobStoreQueryError (..))
+import Flora.Model.BlobStore.API (BlobStoreAPI, get)
 import Flora.Model.Package (PackageName)
 
 import Flora.Model.BlobIndex.Internal
-import Flora.Model.BlobStore.API
 
 -- | Query a package name, version and hash and construct a uncompressed tarball
 -- from the database
@@ -35,7 +35,7 @@ queryTar
   => PackageName
   -> Version
   -> Sha256Sum
-  -> Eff es BL.ByteString
+  -> Eff es LazyByteString
 queryTar pname version rootHash = do
   Log.logInfo_ $ "Querying for " <> display rootHash
   children <- traverse go =<< queryChildren rootHash

@@ -4,7 +4,7 @@
 module Flora.Model.Release.Query
   ( getReleases
   , getRelease
-  , getReleaseTarball
+  , getReleaseTarballHash
   , getReleaseByVersion
   , getHackagePackageReleasesWithoutReadme
   , getHackagePackageReleasesWithoutChangelog
@@ -57,11 +57,11 @@ getLatestReleaseTime repo =
     q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
     q' = [sql| select max(uploaded_at) from releases |]
 
-getReleaseTarball :: DB :> es => ReleaseId -> Eff es (Maybe Sha256Sum)
-getReleaseTarball releaseId = dbtToEff $ do
+getReleaseTarballHash :: DB :> es => ReleaseId -> Eff es (Maybe Sha256Sum)
+getReleaseTarballHash releaseId = dbtToEff $ do
   mRelease <- selectOneByField @Release [field| release_id |] (Only releaseId)
   case mRelease of
-    Just release -> pure $ tarball release
+    Just release -> pure $ tarballHash release
     Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
 
 getAllReleases :: DB :> es => PackageId -> Eff es (Vector Release)
@@ -155,7 +155,7 @@ getHackagePackageReleasesWithoutTarball =
         from releases as r
         join packages as p
         on p.package_id = r.package_id
-        where r.tarball is null
+        where r.tarball_hash is null
       |]
 
 getHackagePackagesWithoutReleaseDeprecationInformation

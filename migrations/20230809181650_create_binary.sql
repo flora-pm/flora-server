@@ -8,4 +8,4 @@ create table if not exists blob_relations (
 );
 
 -- Just points to the hash of the root directory
-alter table releases add tarball bytea;
+alter table releases add tarball_hash bytea;

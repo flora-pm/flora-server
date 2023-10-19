@@ -12,8 +12,9 @@ module Flora.Model.BlobIndex.Internal
 where
 
 import Data.Aeson (ToJSON (..), object)
+import Data.ByteString (StrictByteString)
 import Data.ByteString qualified as BS
-import Data.ByteString.Lazy qualified as BL
+import Data.ByteString.Lazy (LazyByteString)
 import Data.ByteString.UTF8 qualified as BSU
 import Data.List (foldl')
 import Data.Map qualified as M
@@ -33,15 +34,13 @@ import Flora.Model.Package (PackageName)
 
 -- | Structure for representing a tarball directory tree
 data TarTree a
-  = TarDirectory
-      { ann :: a
-      , _nodes :: M.Map FilePath (TarTree a)
-      }
-  | TarFile
-      { ann :: a
-      , _contents :: BS.ByteString
-      }
+  = TarDirectory a (M.Map FilePath (TarTree a))
+  | TarFile a StrictByteString
   deriving (Eq, Show)
+
+ann :: TarTree a -> a
+ann (TarDirectory a _) = a
+ann (TarFile a _) = a
 
 instance ToJSON a => ToJSON (TarTree a) where
   toJSON (TarDirectory a nodes) =
@@ -89,7 +88,7 @@ insertTarContents dirs content (TarRoot () pname version tree) = case dirs of
 -- First we construct a directory tree from a tarball
 -- This makes it easier to create merkle trees later, and gives us a check for
 -- conflicts
-tarballToTree :: PackageName -> Version -> BL.ByteString -> Either TarError (TarRoot ())
+tarballToTree :: PackageName -> Version -> LazyByteString -> Either TarError (TarRoot ())
 tarballToTree pname version =
   either (Left . TarFormatError . fst) id
     . checkAndFold
@@ -126,7 +125,7 @@ tarballToTree pname version =
         dirs = sanitisedTarPaths entry
 
 -- Traverse over directory tree and create tarball contents
-treeToTarball :: TarRoot a -> BL.ByteString
+treeToTarball :: TarRoot a -> LazyByteString
 treeToTarball (TarRoot _ pname version tree) =
   Tar.write $
     Tar.directoryEntry

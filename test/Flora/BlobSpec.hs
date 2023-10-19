@@ -5,6 +5,7 @@ import Codec.Archive.Tar.Entry qualified as Tar
 import Codec.Compression.GZip qualified as GZip
 import Control.Arrow
 import Control.Monad.IO.Class
+import Data.ByteString.Lazy (LazyByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.Function (on)
 import Data.List (sortBy)
@@ -32,7 +33,7 @@ spec =
 toList :: Tar.Entries e -> Either e [Tar.Entry]
 toList = right reverse . left fst . Tar.foldlEntries (\acc x -> x : acc) []
 
-readTarball :: FilePath -> TestEff BL.ByteString
+readTarball :: FilePath -> TestEff LazyByteString
 readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/tarballs" </> tarball)
 
 testImportTarball :: TestEff ()

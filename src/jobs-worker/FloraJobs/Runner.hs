@@ -91,23 +91,23 @@ makeReadme pay@ReadmeJobPayload{..} =
 
 fetchTarball :: (IOE :> es, Time :> es, DB :> es, Reader JobsRunnerEnv :> es, Log :> es, BlobStoreAPI :> es) => TarballJobPayload -> Eff es ()
 fetchTarball pay@TarballJobPayload{..} = do
-  localDomain "fetch-tarball" $! do
+  localDomain "fetch-tarball" $ do
     logInfo "Fetching tarball" pay
     let payload = VersionedPackage{..}
-    result <- Hackage.request $! Hackage.getPackageTarball payload
+    result <- Hackage.request $ Hackage.getPackageTarball payload
     case result of
       Right bs -> do
         mhash <- Update.insertTar package (unIntAesonVersion version) bs
         case mhash of
           Right hash -> do
-            Update.updateTarball releaseId hash
+            Update.updateTarballHash releaseId hash
             logInfo
               ("Inserted tarball for " <> display package)
               (object ["release_id" .= releaseId, "root_hash" .= hash])
           Left err -> do
-            logAttention_ $! "Failed to insert tarball for " <> display package
+            logAttention_ $ "Failed to insert tarball for " <> display package
             throw err
-      Left (FailureResponse _ response) -> logAttention_ $! "Failure! " <> T.pack (show response)
+      Left (FailureResponse _ response) -> logAttention_ $ "Failure! " <> T.pack (show response)
       Left e -> throw e
 
 fetchUploadTime :: UploadTimeJobPayload -> JobsRunner ()

@@ -352,7 +352,7 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
           , changelog = Nothing
           , changelogStatus = NotImported
           , repository = Just repositoryName
-          , tarball = Nothing
+          , tarballHash = Nothing
           , license = Cabal.license packageDesc
           , sourceRepos
           , homepage = Just $ display packageDesc.homepage
