@@ -100,12 +100,12 @@
 
   .package-list-item__name {
     display: inline;
-    margin-right: 0.5rem;
     color: var(--package-list-item-name-color);
   }
 
   .package-list-item__synopsis {
     display: inline;
+    margin-left: 10px;
     color: var(--package-list-item-synopsis-color);
   }
 
@@ -126,6 +126,11 @@
     margin-right: 10px;
     font-size: 0.875rem;
     line-height: 1.25rem;
+  }
+
+  .package-list-item__component {
+    display: inline;
+    color: var(--package-list-item-component-color);
   }
 }
 

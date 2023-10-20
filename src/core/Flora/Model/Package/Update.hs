@@ -69,7 +69,7 @@ insertRequirement :: DB :> es => Requirement -> Eff es ()
 insertRequirement = dbtToEff . insert @Requirement
 
 upsertRequirement :: DB :> es => Requirement -> Eff es ()
-upsertRequirement req = dbtToEff $ upsert @Requirement req [[field| metadata |], [field| requirement |]]
+upsertRequirement req = dbtToEff $ upsert @Requirement req [[field| components |], [field| requirement |]]
 
 bulkInsertRequirements :: DB :> es => [Requirement] -> Eff es ()
 bulkInsertRequirements requirements =
