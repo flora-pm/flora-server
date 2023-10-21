@@ -4,6 +4,7 @@
 module Flora.Model.Release.Update where
 
 import Control.Monad (void)
+import Data.Text.Display (display)
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
 import Database.PostgreSQL.Entity.Types (field)
@@ -75,7 +76,7 @@ updateTarballHash releaseId hash =
       updateFieldsBy @Release
         [[field| tarball_hash |]]
         ([field| release_id |], releaseId)
-        (Only $ Just hash)
+        (Only $ Just $ display hash)
 
 setReleasesDeprecationMarker :: DB :> es => Vector (Bool, ReleaseId) -> Eff es ()
 setReleasesDeprecationMarker releaseVersions =

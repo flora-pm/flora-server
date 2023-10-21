@@ -3,17 +3,17 @@ module Flora.Model.BlobIndex.Types where
 import Control.DeepSeq (NFData)
 import Control.Exception (Exception)
 import Data.Aeson.Orphans ()
-import Data.Text.Display
-import GHC.Generics
+import Data.Text.Display (Display (..))
+import GHC.Generics (Generic)
 
 import Codec.Archive.Tar qualified as Tar
-import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple.FromRow (FromRow)
+import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
+import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Orphans ()
-import Database.PostgreSQL.Simple.ToRow (ToRow)
+import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Version (Version)
 
-import Flora.Model.BlobStore.Types (Sha256Sum)
+import Flora.Model.BlobStore.Types (Sha256Sum (..))
 import Flora.Model.Package.Types (PackageName)
 
 data TarError
@@ -39,9 +39,20 @@ data BlobStoreInsertError
 
 instance Display BlobStoreInsertError where
   displayBuilder = \case
-    NoPackage pname -> "Couldn't find package " <> displayBuilder pname
-    NoRelease pname version -> "Couldn't find release " <> displayBuilder pname <> "-" <> displayBuilder version
-    BlobStoreTarError pname version err -> "Tarball issue with release " <> displayBuilder pname <> "-" <> displayBuilder version <> ": " <> displayBuilder (show err)
+    NoPackage pname ->
+      "Couldn't find package " <> displayBuilder pname
+    NoRelease pname version ->
+      "Couldn't find release "
+        <> displayBuilder pname
+        <> "-"
+        <> displayBuilder version
+    BlobStoreTarError pname version err ->
+      "Tarball issue with release "
+        <> displayBuilder pname
+        <> "-"
+        <> displayBuilder version
+        <> ": "
+        <> displayBuilder (show err)
 
 data BlobRelation = BlobRelation
   { blobHash :: Sha256Sum
@@ -49,8 +60,8 @@ data BlobRelation = BlobRelation
   , blobDepPath :: FilePath
   , blobDepDirectory :: Bool
   }
-  deriving (Generic)
-  deriving (FromRow, ToRow, NFData)
+  deriving (Generic, NFData)
+  deriving (FromRow, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "blob_relations"] BlobRelation)

@@ -1,6 +1,6 @@
 create table if not exists blob_relations (
-  blob_hash bytea not null,
-  blob_dep_hash bytea not null,
+  blob_hash text not null,
+  blob_dep_hash text not null,
   blob_dep_path text not null,
   blob_dep_directory bool not null,
 

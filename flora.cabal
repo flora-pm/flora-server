@@ -141,6 +141,7 @@ library
   build-depends:
     , aeson
     , base                   ^>=4.17
+    , base16-bytestring
     , base64
     , blaze-builder
     , bytestring
