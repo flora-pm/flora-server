@@ -18,6 +18,10 @@ import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobIndex.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.Package
+import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Package.Types ()
+import Flora.Model.Release.Query qualified as Query
+import Flora.Model.Release.Types
 import Flora.TestUtils
 
 spec :: TestEff TestTree
@@ -55,6 +59,12 @@ testImportTarball = do
           -- Check both paths and content are the same in input and output
           checkAll Tar.entryPath (sortByPath tarEntries) tarEntries'
           checkAll Tar.entryContent (sortByPath tarEntries) tarEntries'
+
+          -- check that we also archived the initial tarball along with the release
+          package <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") pname
+          release <- fromJust <$> Query.getReleaseByVersion package.packageId version
+          archivedContent <- fromJust <$> Query.getReleaseTarballArchive release.releaseId
+          assertEqual content archivedContent
         [Left _, _] -> assertFailure "Input tar is corrupted"
         [_, Left _] -> assertFailure "Generated corrupted tarball"
         _ -> assertFailure "Something impossible happened!"

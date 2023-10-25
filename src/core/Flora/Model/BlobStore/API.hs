@@ -3,12 +3,14 @@ module Flora.Model.BlobStore.API
     BlobStoreAPI
   , get
   , put
+  , hashByteString
     -- | Handlers
   , runBlobStoreFS
   , runBlobStorePure
   )
 where
 
+import Crypto.Hash.SHA256 qualified as SHA
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Map.Strict qualified as M
@@ -34,6 +36,9 @@ get = send . Get
 
 put :: BlobStoreAPI :> es => Sha256Sum -> ByteString -> Eff es ()
 put hash content = send (Put hash content)
+
+hashByteString :: ByteString -> Sha256Sum
+hashByteString = Sha256Sum . SHA.hash
 
 -- | Run a blob store in a local filepath
 runBlobStoreFS

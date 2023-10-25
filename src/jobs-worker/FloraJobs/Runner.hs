@@ -6,7 +6,6 @@ import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Set qualified as Set
-import Data.Text qualified as T
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -89,26 +88,44 @@ makeReadme pay@ReadmeJobPayload{..} =
         let readmeBody = renderMarkdown ("README" <> show mpPackage) bodyText
         Update.updateReadme mpReleaseId (Just $ MkTextHtml readmeBody) Imported
 
-fetchTarball :: (IOE :> es, Time :> es, DB :> es, Reader JobsRunnerEnv :> es, Log :> es, BlobStoreAPI :> es) => TarballJobPayload -> Eff es ()
+fetchTarball
+  :: ( IOE :> es
+     , Time :> es
+     , DB :> es
+     , Reader JobsRunnerEnv :> es
+     , Log :> es
+     , BlobStoreAPI :> es
+     )
+  => TarballJobPayload
+  -> Eff es ()
 fetchTarball pay@TarballJobPayload{..} = do
   localDomain "fetch-tarball" $ do
-    logInfo "Fetching tarball" pay
-    let payload = VersionedPackage{..}
-    result <- Hackage.request $ Hackage.getPackageTarball payload
-    case result of
-      Right bs -> do
-        mhash <- Update.insertTar package (unIntAesonVersion version) bs
-        case mhash of
-          Right hash -> do
-            Update.updateTarballHash releaseId hash
-            logInfo
-              ("Inserted tarball for " <> display package)
-              (object ["release_id" .= releaseId, "root_hash" .= hash])
-          Left err -> do
-            logAttention_ $ "Failed to insert tarball for " <> display package
-            throw err
-      Left (FailureResponse _ response) -> logAttention_ $ "Failure! " <> T.pack (show response)
-      Left e -> throw e
+    mArchive <- Query.getReleaseTarballArchive releaseId
+    content <- case mArchive of
+      Just bs -> pure bs
+      Nothing -> do
+        logInfo "Fetching tarball" pay
+        let payload = VersionedPackage{..}
+        result <- Hackage.request $ Hackage.getPackageTarball payload
+        case result of
+          Right bs -> pure bs
+          Left e@(FailureResponse _ response) -> do
+            logAttention "Could not fetch tarball from hackage" $
+              object
+                [ "package" .= display payload.package
+                , "status_code" .= statusCode response.responseStatusCode
+                ]
+            throw e
+          Left e -> throw e
+    mhash <- Update.insertTar package (unIntAesonVersion version) content
+    case mhash of
+      Right hash ->
+        logInfo
+          ("Inserted tarball for " <> display package)
+          (object ["release_id" .= releaseId, "root_hash" .= hash])
+      Left err -> do
+        logAttention_ $ "Failed to insert tarball for " <> display package
+        throw err
 
 fetchUploadTime :: UploadTimeJobPayload -> JobsRunner ()
 fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} =

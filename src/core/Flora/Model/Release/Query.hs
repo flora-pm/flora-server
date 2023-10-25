@@ -4,7 +4,8 @@
 module Flora.Model.Release.Query
   ( getReleases
   , getRelease
-  , getReleaseTarballHash
+  , getReleaseTarballRootHash
+  , getReleaseTarballArchive
   , getReleaseByVersion
   , getHackagePackageReleasesWithoutReadme
   , getHackagePackageReleasesWithoutChangelog
@@ -19,6 +20,7 @@ module Flora.Model.Release.Query
   )
 where
 
+import Control.Monad (join)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
@@ -33,7 +35,10 @@ import Distribution.Version (Version)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
+import Data.ByteString (fromStrict)
+import Data.ByteString.Lazy (LazyByteString)
 import Distribution.Orphans.Version ()
+import Flora.Model.BlobStore.API (BlobStoreAPI, get)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
@@ -57,12 +62,20 @@ getLatestReleaseTime repo =
     q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
     q' = [sql| select max(uploaded_at) from releases |]
 
-getReleaseTarballHash :: DB :> es => ReleaseId -> Eff es (Maybe Sha256Sum)
-getReleaseTarballHash releaseId = dbtToEff $ do
+getReleaseTarballRootHash :: DB :> es => ReleaseId -> Eff es (Maybe Sha256Sum)
+getReleaseTarballRootHash releaseId = dbtToEff $ do
   mRelease <- selectOneByField @Release [field| release_id |] (Only releaseId)
   case mRelease of
-    Just release -> pure $ tarballHash release
+    Just release -> pure $ tarballRootHash release
     Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
+
+getReleaseTarballArchive :: (BlobStoreAPI :> es, DB :> es) => ReleaseId -> Eff es (Maybe LazyByteString)
+getReleaseTarballArchive releaseId = do
+  mRelease <- dbtToEff $ selectOneByField @Release [field| release_id |] (Only releaseId)
+  case mRelease of
+    Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
+    Just release -> do
+      fmap fromStrict . join <$> traverse get release.tarballArchiveHash
 
 getAllReleases :: DB :> es => PackageId -> Eff es (Vector Release)
 getAllReleases pid =
@@ -155,7 +168,7 @@ getHackagePackageReleasesWithoutTarball =
         from releases as r
         join packages as p
         on p.package_id = r.package_id
-        where r.tarball_hash is null
+        where r.tarball_root_hash is null
       |]
 
 getHackagePackagesWithoutReleaseDeprecationInformation

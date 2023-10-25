@@ -250,7 +250,7 @@ getTarballHandler namespace packageName version tarballName = do
   unless (isJust $ features.blobStoreImpl) $! throwError err404
   package <- guardThatPackageExists namespace packageName $ \_ _ -> web404
   release <- guardThatReleaseExists package.packageId version $ const web404
-  case release.tarballHash of
+  case release.tarballRootHash of
     Just rootHash
       | constructTarballPath packageName version == tarballName ->
           Query.queryTar packageName version rootHash

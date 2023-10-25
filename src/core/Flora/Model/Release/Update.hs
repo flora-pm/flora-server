@@ -13,10 +13,14 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 
+import Crypto.Hash.SHA256 qualified as SHA
+import Data.ByteString (toStrict)
+import Data.ByteString.Lazy (LazyByteString)
 import Data.Function ((&))
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Release.Types
 
@@ -69,14 +73,29 @@ updateChangelog releaseId changelogBody status =
         ([field| release_id |], releaseId)
         (changelogBody, status)
 
-updateTarballHash :: DB :> es => ReleaseId -> Sha256Sum -> Eff es ()
-updateTarballHash releaseId hash =
-  dbtToEff $!
-    void $!
+updateTarballRootHash :: DB :> es => ReleaseId -> Sha256Sum -> Eff es ()
+updateTarballRootHash releaseId hash =
+  dbtToEff $
+    void $
       updateFieldsBy @Release
-        [[field| tarball_hash |]]
+        [[field| tarball_root_hash |]]
         ([field| release_id |], releaseId)
         (Only $ Just $ display hash)
+
+updateTarballArchiveHash
+  :: (BlobStoreAPI :> es, DB :> es)
+  => ReleaseId
+  -> LazyByteString
+  -> Eff es ()
+updateTarballArchiveHash releaseId (toStrict -> content) = do
+  let hash = Sha256Sum . SHA.hash $ content
+  put hash content
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+        [[field| tarball_archive_hash |]]
+        ([field| release_id |], releaseId)
+        (Only . Just $ display hash)
 
 setReleasesDeprecationMarker :: DB :> es => Vector (Bool, ReleaseId) -> Eff es ()
 setReleasesDeprecationMarker releaseVersions =

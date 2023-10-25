@@ -29,6 +29,7 @@ import Crypto.Hash.SHA256 qualified as SHA
 import Distribution.Version (Version)
 
 import Flora.Model.BlobIndex.Types (TarError (..))
+import Flora.Model.BlobStore.API (hashByteString)
 import Flora.Model.BlobStore.Types (Sha256Sum (..))
 import Flora.Model.Package (PackageName)
 
@@ -155,7 +156,7 @@ hashTree (TarRoot _ pname version tree) =
    in TarRoot (toHash tree') pname version tree'
   where
     go (TarFile _ content) =
-      let hash = Sha256Sum $ SHA.hash content
+      let hash = hashByteString content
        in TarFile hash content
     go (TarDirectory _ nodes) =
       let nodes' = go <$> nodes

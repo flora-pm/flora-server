@@ -44,9 +44,11 @@ insertTar pname version contents = do
       mrelease <- Query.getReleaseByVersion (package.packageId) version
       case mrelease of
         Nothing -> pure . Left $ NoRelease pname version
-        Just release -> case hashTree <$> tarballToTree pname version contents of
-          Left err -> pure . Left $ BlobStoreTarError pname version err
-          Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree (release.releaseId) t
+        Just release -> do
+          Update.updateTarballArchiveHash release.releaseId contents
+          case hashTree <$> tarballToTree pname version contents of
+            Left err -> pure . Left $ BlobStoreTarError pname version err
+            Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree (release.releaseId) t
 
 insertTree
   :: (Log :> es, DB :> es, BlobStoreAPI :> es)
@@ -55,11 +57,11 @@ insertTree
   -> Eff es ()
 insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
   Log.logTrace "Trying to insert directory tree" t
-  mTarballHash <- Query.getReleaseTarballHash releaseId
+  mTarballHash <- Query.getReleaseTarballRootHash releaseId
   case mTarballHash of
     Just tarballHash -> Log.logInfo_ $ "Hash already inserted with hash: " <> display tarballHash
     Nothing -> do
-      Update.updateTarballHash releaseId rootHash
+      Update.updateTarballRootHash releaseId rootHash
       void $! M.traverseWithKey (insertBlobs rootHash) tree
       Log.logInfo_ $ "Inserted hash tree with root " <> display rootHash
   where

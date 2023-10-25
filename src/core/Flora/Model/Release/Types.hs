@@ -89,7 +89,8 @@ data Release = Release
   , readmeStatus :: ImportStatus
   , changelog :: Maybe TextHtml
   , changelogStatus :: ImportStatus
-  , tarballHash :: Maybe Sha256Sum
+  , tarballRootHash :: Maybe Sha256Sum
+  , tarballArchiveHash :: Maybe Sha256Sum
   , license :: SPDX.License
   , sourceRepos :: Vector Text
   , homepage :: Maybe Text
