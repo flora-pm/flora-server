@@ -5,6 +5,8 @@ module Distribution.Orphans.Version where
 import Data.Aeson
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
+import Data.Either (fromRight)
+import Data.String (IsString (..))
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Lazy.Builder qualified as Builder
@@ -17,6 +19,9 @@ import Distribution.Types.Version
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Version (VersionRange)
 import Servant
+
+instance IsString Version where
+  fromString = fromRight (error "Bad version") . eitherParsec
 
 instance ToJSON Version where
   toJSON = Aeson.String . display . Pretty.prettyShow

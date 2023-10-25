@@ -42,6 +42,7 @@ import Deriving.Aeson
 import Distribution.Orphans ()
 import Distribution.Orphans.CompilerFlavor ()
 import Distribution.Orphans.PackageFlag ()
+import Flora.Model.BlobStore.Types
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
@@ -88,6 +89,8 @@ data Release = Release
   , readmeStatus :: ImportStatus
   , changelog :: Maybe TextHtml
   , changelogStatus :: ImportStatus
+  , tarballRootHash :: Maybe Sha256Sum
+  , tarballArchiveHash :: Maybe Sha256Sum
   , license :: SPDX.License
   , sourceRepos :: Vector Text
   , homepage :: Maybe Text

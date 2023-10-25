@@ -16,6 +16,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Network.HTTP.Media ((//), (/:))
 import Servant.API
+import Servant.API.ContentTypes.GZip
 import Servant.API.Generic
 
 import Distribution.Orphans ()
@@ -44,6 +45,11 @@ instance ToHttpApiData VersionedPackage where
   toUrlPiece VersionedPackage{package, version} =
     display package <> "-" <> display version
 
+newtype VersionedTarball = VersionedTarball VersionedPackage
+
+instance ToHttpApiData VersionedTarball where
+  toUrlPiece (VersionedTarball vt) = toUrlPiece vt <> ".tar.gz"
+
 data HackageAPI' mode = HackageAPI'
   { listUsers :: mode :- "users" :> Get '[JSON] [HackageUserObject]
   , withUser :: mode :- "user" :> Capture "username" Text :> NamedRoutes HackageUserAPI
@@ -65,6 +71,7 @@ data HackagePackageAPI mode = HackagePackageAPI
   , getDeprecatedReleases :: mode :- "preferred.json" :> Get '[JSON] HackagePreferredVersions
   , getPackageInfo :: mode :- Get '[JSON] HackagePackageInfo
   , getPackageWithRevision :: mode :- "revision" :> Capture "revision_number" Text :> Get '[JSON] HackagePackageInfo
+  , getTarball :: mode :- Capture "tarball" VersionedTarball :> Get '[GZipped] ByteString
   }
   deriving stock (Generic)
 

@@ -4,6 +4,8 @@ module Flora.Environment
   ( FloraEnv (..)
   , DeploymentEnv (..)
   , LoggingEnv (..)
+  , FeatureEnv (..)
+  , BlobStoreImpl (..)
   , TestEnv (..)
   , getFloraEnv
   , getFloraTestEnv
@@ -11,6 +13,7 @@ module Flora.Environment
 where
 
 import Colourista.IO (blueMessage)
+import Data.Aeson (ToJSON)
 import Data.ByteString (ByteString)
 import Data.Pool (Pool)
 import Data.Pool qualified as Pool
@@ -37,6 +40,7 @@ data FloraEnv = FloraEnv
   , domain :: Text
   , logging :: LoggingEnv
   , environment :: DeploymentEnv
+  , features :: FeatureEnv
   , config :: FloraConfig
   , assets :: Assets
   }
@@ -64,6 +68,25 @@ mkPool connectionInfo timeout' connections =
         (realToFrac timeout')
         connections
 
+data BlobStoreImpl = BlobStoreFS FilePath | BlobStorePure
+  deriving stock (Generic, Show)
+
+instance ToJSON BlobStoreImpl
+
+newtype FeatureEnv = FeatureEnv {blobStoreImpl :: Maybe BlobStoreImpl}
+  deriving stock (Generic, Show)
+
+instance ToJSON FeatureEnv
+
+-- In future we'll want to error for conflicting options
+featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
+featureConfigToEnv FeatureConfig{..} =
+  case blobStoreFS of
+    Just fp | tarballsEnabled -> pure . FeatureEnv . Just $ BlobStoreFS fp
+    _ ->
+      pure . FeatureEnv $
+        if tarballsEnabled then Just BlobStorePure else Nothing
+
 configToEnv :: (Fail :> es, IOE :> es) => FloraConfig -> Eff es FloraEnv
 configToEnv floraConfig = do
   let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
@@ -71,6 +94,7 @@ configToEnv floraConfig = do
   jobsPool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   assets <- getAssets floraConfig.environment
   liftIO $ print assets
+  featureEnv <- featureConfigToEnv floraConfig.features
   pure
     FloraEnv
       { pool = pool
@@ -80,6 +104,7 @@ configToEnv floraConfig = do
       , domain = floraConfig.domain
       , logging = floraConfig.logging
       , environment = floraConfig.environment
+      , features = featureEnv
       , assets = assets
       , config = floraConfig
       }

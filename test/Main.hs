@@ -11,6 +11,9 @@ import Log.Data
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
+import Flora.Model.BlobStore.API
+
+import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
@@ -31,6 +34,7 @@ main = do
     . Log.runLog "flora-test" stdOutLogger LogInfo
     . runDB env.pool
     . runReader env.dbConfig
+    . runBlobStorePure
     . runFailIO
     $ do
       Update.createPackageIndex "hackage" "" Nothing
@@ -49,4 +53,5 @@ specs fixtures =
   , TemplateSpec.spec
   , CabalSpec.spec
   , ImportSpec.spec fixtures
+  , BlobSpec.spec
   ]

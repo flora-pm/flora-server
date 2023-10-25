@@ -3,6 +3,7 @@
 -- | Represents the various jobs that can be run
 module FloraJobs.Scheduler
   ( scheduleReadmeJob
+  , scheduleTarballJob
   , scheduleChangelogJob
   , scheduleUploadTimeJob
   , schedulePackageDeprecationListJob
@@ -17,6 +18,7 @@ module FloraJobs.Scheduler
   )
 where
 
+import Data.Aeson (ToJSON)
 import Data.Pool
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.DBT
@@ -44,60 +46,35 @@ scheduleReadmeJob pool rid package version =
           (FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version)
     )
 
+scheduleTarballJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
+scheduleTarballJob pool rid package version =
+  createJobWithResource pool $ FetchTarball $ TarballJobPayload package rid $ MkIntAesonVersion version
+
 scheduleChangelogJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
 scheduleChangelogJob pool rid package version =
-  withResource
-    pool
-    ( \res ->
-        createJob
-          res
-          jobTableName
-          (FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version)
-    )
+  createJobWithResource pool $ FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version
 
 scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
 scheduleUploadTimeJob pool releaseId packageName version =
-  withResource
-    pool
-    ( \res ->
-        createJob
-          res
-          jobTableName
-          (FetchUploadTime $ UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version))
-    )
+  createJobWithResource pool $
+    FetchUploadTime $
+      UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version)
 
 schedulePackageDeprecationListJob :: Pool PG.Connection -> IO Job
 schedulePackageDeprecationListJob pool =
-  withResource
-    pool
-    ( \conn ->
-        createJob
-          conn
-          jobTableName
-          FetchPackageDeprecationList
-    )
+  createJobWithResource pool FetchPackageDeprecationList
 
-scheduleReleaseDeprecationListJob :: Pool PG.Connection -> (PackageName, Vector ReleaseId) -> IO Job
+scheduleReleaseDeprecationListJob
+  :: Pool PG.Connection -> (PackageName, Vector ReleaseId) -> IO Job
 scheduleReleaseDeprecationListJob pool (package, releaseIds) =
-  withResource
-    pool
-    ( \conn ->
-        createJob
-          conn
-          jobTableName
-          (FetchReleaseDeprecationList package releaseIds)
-    )
+  createJobWithResource pool (FetchReleaseDeprecationList package releaseIds)
 
 scheduleRefreshLatestVersions :: Pool PG.Connection -> IO Job
-scheduleRefreshLatestVersions pool =
-  withResource
-    pool
-    ( \conn ->
-        createJob
-          conn
-          jobTableName
-          RefreshLatestVersions
-    )
+scheduleRefreshLatestVersions pool = createJobWithResource pool RefreshLatestVersions
+
+createJobWithResource :: ToJSON p => Pool PG.Connection -> p -> IO Job
+createJobWithResource pool job =
+  withResource pool $ \conn -> createJob conn jobTableName job
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool
 checkIfIndexImportJobIsNotRunning = do

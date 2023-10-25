@@ -25,8 +25,10 @@ import OddJobs.ConfigBuilder
 import OddJobs.Job (Config (..), Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
 
+import Flora.Environment
 import Flora.Environment.Config
 import Flora.Logging qualified as Logging
+import Flora.Model.BlobStore.API
 import Flora.Model.Job ()
 
 type JobsRunner =
@@ -34,18 +36,23 @@ type JobsRunner =
     '[ DB
      , Reader PoolConfig
      , Reader JobsRunnerEnv
+     , BlobStoreAPI
      , Log
      , Time
      , IOE
      ]
 
-runJobRunner :: Pool Connection -> JobsRunnerEnv -> FloraConfig -> Logger -> JobsRunner a -> IO a
-runJobRunner pool runnerEnv cfg logger jobRunner =
+runJobRunner :: Pool Connection -> JobsRunnerEnv -> FloraEnv -> Logger -> JobsRunner a -> IO a
+runJobRunner pool runnerEnv floraEnv logger jobRunner =
   runEff
     . runTime
     . LogEff.runLog "flora-jobs" logger defaultLogLevel
+    . ( case floraEnv.features.blobStoreImpl of
+          Just (BlobStoreFS fp) -> runBlobStoreFS fp
+          _ -> runBlobStorePure
+      )
     . runReader runnerEnv
-    . runReader cfg.dbConfig
+    . runReader floraEnv.config.dbConfig
     . runDB pool
     $ jobRunner
 
@@ -78,18 +85,18 @@ data JobsRunnerEnv = JobsRunnerEnv
 
 makeConfig
   :: JobsRunnerEnv
-  -> FloraConfig
+  -> FloraEnv
   -> Logger
   -> Pool PG.Connection
   -> (Job -> JobsRunner ())
   -> Config
-makeConfig runnerEnv cfg logger pool runnerContinuation =
+makeConfig runnerEnv floraEnv logger pool runnerContinuation =
   mkConfig
-    (\level event -> structuredLogging cfg logger level event)
+    (\level event -> structuredLogging (floraEnv.config) logger level event)
     jobTableName
     pool
     (MaxConcurrentJobs 100)
-    (runJobRunner pool runnerEnv cfg logger . runnerContinuation)
+    (runJobRunner pool runnerEnv floraEnv logger . runnerContinuation)
     (\x -> x{cfgDeleteSuccessfulJobs = False, cfgDefaultMaxAttempts = 3})
 
 makeUIConfig :: FloraConfig -> Logger -> Pool PG.Connection -> UIConfig
