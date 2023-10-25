@@ -3,7 +3,6 @@
 
 module Flora.Model.Release.Query
   ( getReleases
-  , getRelease
   , getReleaseTarballRootHash
   , getReleaseTarballArchive
   , getReleaseByVersion
@@ -196,19 +195,6 @@ getReleaseByVersion
 getReleaseByVersion packageId version =
   dbtToEff $
     queryOne Select (_selectWhere @Release [[field| package_id |], [field| version |]]) (packageId, version)
-
-getRelease
-  :: DB :> es
-  => Namespace
-  -> PackageName
-  -> Version
-  -> Eff es (Maybe Release)
-getRelease namespace packageName version =
-  dbtToEff $
-    queryOne
-      Select
-      (_selectWhere @Release [[field| namespace |], [field| package_name |], [field| version |]])
-      (namespace, packageName, version)
 
 getNumberOfReleases :: DB :> es => PackageId -> Eff es Word
 getNumberOfReleases pid =
