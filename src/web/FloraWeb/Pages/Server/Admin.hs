@@ -2,9 +2,13 @@ module FloraWeb.Pages.Server.Admin where
 
 import Control.Concurrent (forkIO)
 import Control.Concurrent.Async qualified as Async
+import Control.Monad (void, when)
 import Control.Monad.IO.Class
+import Data.Maybe (isJust)
 import Data.Proxy (Proxy (..))
 import Database.PostgreSQL.Entity.DBT
+import Effectful.Reader.Static (ask)
+import Log qualified
 import Lucid
 import Network.HTTP.Types.Status (notFound404)
 import OddJobs.Endpoints qualified as OddJobs
@@ -12,8 +16,7 @@ import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import Servant (HasServer (..), hoistServer)
 
-import Control.Monad (void)
-import Flora.Environment (FloraEnv (..))
+import Flora.Environment (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
@@ -100,6 +103,19 @@ fetchMetadataHandler = do
           releasesWithoutChangelog
           ( \(releaseId, version, packagename) -> scheduleChangelogJob jobsPool releaseId packagename version
           )
+
+  features <- ask @FeatureEnv
+  Log.logAttention "features" features
+  when (isJust $ features.blobStoreImpl) $ do
+    releasesWithoutTarball <- Query.getHackagePackageReleasesWithoutTarball
+    liftIO $!
+      void $!
+        forkIO $!
+          Async.forConcurrently_
+            releasesWithoutTarball
+            ( \(releaseId, version, packagename) ->
+                scheduleTarballJob jobsPool releaseId packagename version
+            )
 
   packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
   liftIO $

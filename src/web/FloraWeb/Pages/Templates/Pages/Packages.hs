@@ -116,7 +116,7 @@ packageBody
           Nothing ->
             if fromMaybe False deprecated
               then displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
-              else displayInstructions packageName latestRelease
+              else displayInstructions namespace packageName latestRelease
         displayTestedWith latestRelease.testedWith
         displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
         displayDependents (namespace, packageName) numberOfDependents dependents

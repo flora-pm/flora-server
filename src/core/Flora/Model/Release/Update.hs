@@ -4,6 +4,7 @@
 module Flora.Model.Release.Update where
 
 import Control.Monad (void)
+import Data.Text.Display (display)
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
 import Database.PostgreSQL.Entity.Types (field)
@@ -12,10 +13,15 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 
+import Crypto.Hash.SHA256 qualified as SHA
+import Data.ByteString (toStrict)
+import Data.ByteString.Lazy (LazyByteString)
 import Data.Function ((&))
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Flora.Model.BlobStore.API (BlobStoreAPI, put)
+import Flora.Model.BlobStore.Types
 import Flora.Model.Release.Types
 
 insertRelease :: DB :> es => Release -> Eff es ()
@@ -67,6 +73,30 @@ updateChangelog releaseId changelogBody status =
         ([field| release_id |], releaseId)
         (changelogBody, status)
 
+updateTarballRootHash :: DB :> es => ReleaseId -> Sha256Sum -> Eff es ()
+updateTarballRootHash releaseId hash =
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+        [[field| tarball_root_hash |]]
+        ([field| release_id |], releaseId)
+        (Only $ Just $ display hash)
+
+updateTarballArchiveHash
+  :: (BlobStoreAPI :> es, DB :> es)
+  => ReleaseId
+  -> LazyByteString
+  -> Eff es ()
+updateTarballArchiveHash releaseId (toStrict -> content) = do
+  let hash = Sha256Sum . SHA.hash $ content
+  put hash content
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+        [[field| tarball_archive_hash |]]
+        ([field| release_id |], releaseId)
+        (Only . Just $ display hash)
+
 setReleasesDeprecationMarker :: DB :> es => Vector (Bool, ReleaseId) -> Eff es ()
 setReleasesDeprecationMarker releaseVersions =
   dbtToEff $ void $ executeMany Update q (releaseVersions & Vector.toList)
@@ -76,5 +106,5 @@ setReleasesDeprecationMarker releaseVersions =
     UPDATE releases as r0
     SET deprecated = upd.x
     FROM (VALUES (?,?)) as upd(x,y)
-    WHERE r0.release_id = (upd.y :: uuid) 
+    WHERE r0.release_id = (upd.y :: uuid)
     |]

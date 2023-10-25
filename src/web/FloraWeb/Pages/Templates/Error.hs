@@ -13,6 +13,7 @@ import Data.Kind (Type)
 import Effectful
 import Effectful.Error.Static (Error, throwError)
 import Effectful.Reader.Static (Reader)
+import Flora.Environment (FeatureEnv)
 import FloraWeb.Pages.Templates
 import FloraWeb.Session
 import Servant (Header, Headers, ServerError (..))
@@ -39,6 +40,7 @@ web404
   :: ( Error ServerError :> es
      , IOE :> es
      , Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es
+     , Reader FeatureEnv :> es
      )
   => Eff es a
 web404 = do

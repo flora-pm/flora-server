@@ -59,10 +59,11 @@ import Servant.API (getResponse)
 import Servant.OpenApi
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
-import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import Flora.Environment (BlobStoreImpl (..), DeploymentEnv, FeatureEnv (..), FloraEnv (..), LoggingEnv (..), getFloraEnv)
 import Flora.Environment.Config (Assets)
 import Flora.Logging (runLog)
 import Flora.Logging qualified as Logging
+import Flora.Model.BlobStore.API
 import FloraJobs.Runner (runner)
 import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
 import FloraWeb.API.Routes qualified as API
@@ -125,7 +126,7 @@ runServer appLogger floraEnv = do
       oddJobsCfg =
         makeConfig
           runnerEnv
-          (floraEnv.config)
+          floraEnv
           appLogger
           (floraEnv.jobsPool)
           runner
@@ -162,7 +163,7 @@ mkServer
   -> Application
 mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
   genericServeTWithContext
-    (naturalTransform (floraEnv.environment) logger webEnvStore)
+    (naturalTransform (floraEnv.environment) (floraEnv.features) logger webEnvStore)
     (floraServer (floraEnv.pool) cfg jobsRunnerEnv)
     (genAuthServerContext logger floraEnv)
 
@@ -216,10 +217,15 @@ floraServer pool cfg jobsRunnerEnv =
     , docs = serveDirectoryWith docsBundler
     }
 
-naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
-naturalTransform deploymentEnv logger webEnvStore app =
+naturalTransform :: DeploymentEnv -> FeatureEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
+naturalTransform deploymentEnv features logger webEnvStore app =
   app
     & runReader webEnvStore
+    & runReader features
+    & ( case features.blobStoreImpl of
+          Just (BlobStoreFS fp) -> runBlobStoreFS fp
+          _ -> runBlobStorePure
+      )
     & runLog deploymentEnv logger
     & effToHandler
 

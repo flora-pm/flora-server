@@ -4,22 +4,30 @@ module FloraWeb.Pages.Server.Packages
   )
 where
 
+import Control.Monad (unless)
+import Data.ByteString.Lazy (ByteString)
 import Data.Foldable
 import Data.Function
 import Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Positive
+import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector qualified as Vector
 import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
+import Effectful.Error.Static (throwError)
+import Effectful.Reader.Static (ask)
 import Log (object, (.=))
 import Log qualified
 import Lucid
 import Lucid.Orphans ()
 import Servant (ServerT)
+import Servant.Server (err404)
 
+import Flora.Environment (FeatureEnv (..))
 import Flora.Logging
+import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
@@ -50,6 +58,7 @@ server =
     , showChangelog = showChangelogHandler
     , showVersionChangelog = showVersionChangelogHandler
     , listVersions = listVersionsHandler
+    , getTarball = getTarballHandler
     }
 
 listPackagesHandler :: Maybe (Positive Word) -> FloraPage (Html ())
@@ -231,3 +240,18 @@ listVersionsHandler namespace packageName = do
           }
   releases <- Query.getAllReleases package.packageId
   render templateEnv $ Package.listVersions namespace packageName releases
+
+constructTarballPath :: PackageName -> Version -> Text
+constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
+
+getTarballHandler :: Namespace -> PackageName -> Version -> Text -> FloraPage ByteString
+getTarballHandler namespace packageName version tarballName = do
+  features <- ask @FeatureEnv
+  unless (isJust $ features.blobStoreImpl) $! throwError err404
+  package <- guardThatPackageExists namespace packageName $ \_ _ -> web404
+  release <- guardThatReleaseExists package.packageId version $ const web404
+  case release.tarballRootHash of
+    Just rootHash
+      | constructTarballPath packageName version == tarballName ->
+          Query.queryTar packageName version rootHash
+    _ -> throwError err404

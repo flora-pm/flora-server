@@ -11,6 +11,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi (Schema (..), ToParamSchema (..), ToSchema (..), genericDeclareNamedSchema)
+import Data.String (IsString (..))
 import Data.Text (Text, isPrefixOf, unpack)
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -84,6 +85,12 @@ parsePackageName txt =
   if matches "[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
     then Just $ PackageName txt
     else Nothing
+
+instance IsString PackageName where
+  fromString =
+    fromMaybe (error "Bad package name")
+      . parsePackageName
+      . Text.pack
 
 instance ToSchema PackageName where
   declareNamedSchema proxy =
