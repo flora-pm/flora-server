@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module FloraWeb.Components.PackageListItem
   ( packageListItem
   , requirementListItem
@@ -6,7 +8,7 @@ module FloraWeb.Components.PackageListItem
 where
 
 import Data.Foldable (traverse_)
-import Data.List (sortOn)
+import Data.List (intersperse, sortOn)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text.Display (display)
@@ -53,13 +55,25 @@ requirementListItem allComponentDeps =
         traverse_ componentListItems componentDeps
 
 componentListItems :: DependencyInfo -> FloraHTML
-componentListItems DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do
+componentListItems DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense, components} = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
+      component_ = p_ [class_ "package-list-item__component"] . toHtml
   li_ [class_ "package-list-item"] $
     a_ [href, class_ ""] $ do
-      h4_ [class_ "package-list-item__name"] $
+      h4_ [class_ "package-list-item__name"] $ do
         strong_ [class_ ""] . toHtml $
           display namespace <> "/" <> display packageName
+      case components of
+        [name]
+          | name == display packageName -> pure ()
+          | otherwise -> ":" >> component_ name
+        -- The empty case should never happen but displaying pkg:{} will indicate
+        -- something has gone wrong.
+        _ -> do
+          ":{"
+          sequence_ . intersperse (toHtml @Text ", ") $
+            component_ <$> Vector.toList components
+          "}"
       p_ [class_ "package-list-item__synopsis"] $ toHtml latestSynopsis
       div_ [class_ "package-list-item__metadata"] $ do
         span_ [class_ "package-list-item__license"] $ do

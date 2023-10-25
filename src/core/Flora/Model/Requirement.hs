@@ -1,7 +1,6 @@
 module Flora.Model.Requirement where
 
 import Crypto.Hash.MD5 qualified as MD5
-import Data.Data
 import Data.Foldable (foldl')
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -13,11 +12,9 @@ import Database.PostgreSQL.Entity.Types (GenericEntity, TableName)
 import Database.PostgreSQL.Simple (ToRow)
 import Database.PostgreSQL.Simple.FromField
   ( FromField
-  , fromField
-  , fromJSONField
   )
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.ToField (ToField, toField, toJSONField)
+import Database.PostgreSQL.Simple.ToField (ToField)
 
 import Control.DeepSeq
 import Data.ByteString.Lazy (fromStrict)
@@ -50,8 +47,8 @@ data Requirement = Requirement
   -- ^ Package that is being depended on
   , requirement :: Text
   -- ^ The human-readable version range expression of this requirement
-  , metadata :: RequirementMetadata
-  -- ^ Additional metadata, like flags
+  , components :: Vector Text
+  -- ^ Components that are depended on
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData, FromJSON, ToJSON)
@@ -62,26 +59,12 @@ data Requirement = Requirement
     (Display)
     via ShowInstance Requirement
 
-data RequirementMetadata = RequirementMetadata
-  { flag :: Maybe Text
-  }
-  deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (NFData)
-  deriving
-    (ToJSON, FromJSON)
-    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] RequirementMetadata)
-
-instance FromField RequirementMetadata where
-  fromField = fromJSONField
-
-instance ToField RequirementMetadata where
-  toField = toJSONField
-
 -- | This datatype holds information about the latest version of a dependency
 data DependencyInfo = DependencyInfo
   { namespace :: Namespace
   , name :: PackageName
   , requirement :: Text
+  , components :: Vector Text
   , latestVersion :: Version
   , latestSynopsis :: Text
   , latestLicense :: SPDX.License
@@ -96,6 +79,7 @@ data ComponentDependency' = ComponentDependency'
   , namespace :: Namespace
   , name :: PackageName
   , requirement :: Text
+  , components :: Vector Text
   , latestVersion :: Version
   , latestSynopsis :: Text
   , latestLicense :: SPDX.License

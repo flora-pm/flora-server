@@ -161,6 +161,7 @@ packageDependentsWithLatestVersionQuery =
   SELECT DISTINCT   p."namespace"
                   , p."name"
                   , ''
+                  , array[]::text[]
                   , max(r."version")
                   , r.synopsis as "synopsis"
                   , r.license as  "license"
@@ -224,7 +225,7 @@ getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
     with requirements as (
-        select distinct p1.component_type, p1.component_name, p0.namespace, p0.name, r0.requirement
+        select distinct p1.component_type, p1.component_name, p0.namespace, p0.name, r0.requirement, r0.components
         from requirements as r0
         inner join packages as p0 on p0.package_id = r0.package_id
         inner join package_components as p1 on p1.package_component_id = r0.package_component_id
@@ -236,6 +237,7 @@ getAllRequirementsQuery =
          , req.namespace
          , req.name
          , req.requirement
+         , req.components
          , r3.version as "dependency_latest_version"
          , r3.synopsis as "dependency_latest_synopsis"
          , r3.license as "dependency_latest_license"
@@ -243,7 +245,7 @@ getAllRequirementsQuery =
     inner join packages as p2 on p2.namespace = req.namespace and p2.name = req.name
     inner join releases as r3 on r3.package_id = p2.package_id
     where r3.version = (select max(version) from releases where package_id = p2.package_id)
-    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, r3.version, r3.synopsis, r3.license
+    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license
     order by req.component_type, req.component_name desc
   |]
 

@@ -36,6 +36,7 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (Connection)
+import Distribution.Compat.NonEmptySet (toList)
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
 import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
@@ -83,9 +84,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
   ( Requirement (..)
-  , RequirementMetadata (..)
   , deterministicRequirementId
-  , flag
   )
 import Flora.Model.User
 
@@ -409,14 +408,14 @@ extractLibrary
 extractLibrary package repository =
   genericComponentExtractor
     Component.Library
-    (^. #libName % to getLibName)
+    (^. #libName % to (getLibName package.name))
     (^. #libBuildInfo % #targetBuildDepends)
     package
     repository
-  where
-    getLibName :: LibraryName -> Text
-    getLibName LMainLibName = display package.name
-    getLibName (LSubLibName lname) = T.pack $ unUnqualComponentName lname
+
+getLibName :: PackageName -> LibraryName -> Text
+getLibName pname LMainLibName = display pname
+getLibName _ (LSubLibName lname) = T.pack $ unUnqualComponentName lname
 
 extractForeignLib
   :: Package
@@ -548,7 +547,7 @@ buildDependency
   -> ComponentId
   -> Cabal.Dependency
   -> ImportDependency
-buildDependency package (repository, repositoryPackages) packageComponentId (Cabal.Dependency depName versionRange _) =
+buildDependency package (repository, repositoryPackages) packageComponentId (Cabal.Dependency depName versionRange libs) =
   let name = depName & unPackageName & pack & PackageName
       namespace = chooseNamespace name repository repositoryPackages
       packageId = deterministicPackageId namespace name
@@ -564,7 +563,7 @@ buildDependency package (repository, repositoryPackages) packageComponentId (Cab
           , packageComponentId
           , packageId
           , requirement = display . prettyShow $ versionRange
-          , metadata = RequirementMetadata{flag = Nothing}
+          , components = fmap (getLibName name) . Vector.fromList $ toList libs
           }
    in ImportDependency{package = dependencyPackage, requirement}
 
