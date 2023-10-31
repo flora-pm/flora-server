@@ -1,11 +1,11 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 module FloraWeb.Pages.Templates.Packages where
 
 import Control.Monad (when)
 import Control.Monad.Reader (ask)
+import Data.Foldable (fold)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Positive
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -16,29 +16,28 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.Orphans ()
+import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Types.Version (Version, mkVersion, versionNumbers)
 import Lucid
 import Lucid.Base
-import PyF
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
-import Data.Foldable (fold)
-import Data.Maybe (fromJust, isJust)
-import Distribution.Pretty (pretty)
 import Flora.Environment (FeatureEnv (..))
 import Flora.Model.Category.Types
 import Flora.Model.Package
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
+import FloraWeb.Components.Icons
 import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requirementListItem)
 import FloraWeb.Components.PaginationNav (paginationNav)
-import FloraWeb.Components.Utils (text)
+import FloraWeb.Components.SlimSearchBar
+import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML, TemplateEnv (..))
 import FloraWeb.Pages.Templates.Haddock (renderHaddock)
@@ -101,19 +100,28 @@ showDependents
   -> Word
   -> Vector DependencyInfo
   -> Positive Word
+  -> Maybe Text
   -> FloraHTML
-showDependents namespace packageName release count packagesInfo currentPage =
+showDependents namespace packageName release count packagesInfo currentPage mSearch =
   div_ [class_ "container"] $ do
     presentationHeaderForSubpage namespace packageName release Dependents count
-    div_ [class_ ""] $ do
-      ul_ [class_ "package-list"] $
-        Vector.forM_
-          packagesInfo
-          ( \dep ->
-              packageListItem (dep.namespace, dep.name, dep.latestSynopsis, dep.latestVersion, dep.latestLicense)
-          )
-      when (count > 30) $
-        paginationNav count currentPage (DependentsOf namespace packageName)
+    let placeholder = fromMaybe "Search dependents" mSearch
+    let value = fromMaybe "" mSearch
+    ul_ [class_ "package-list"] $ do
+      slimSearchBar (SearchBarOptions{actionUrl = "", placeholder, value})
+      Vector.forM_
+        packagesInfo
+        ( \dep ->
+            packageListItem
+              ( dep.namespace
+              , dep.name
+              , dep.latestSynopsis
+              , dep.latestVersion
+              , dep.latestLicense
+              )
+        )
+    when (count > 30) $
+      paginationNav count currentPage (DependentsOf namespace packageName Nothing)
 
 showDependencies :: Namespace -> PackageName -> Release -> ComponentDependencies -> FloraHTML
 showDependencies namespace packageName release componentsInfo = do
@@ -270,8 +278,7 @@ displayVersions namespace packageName versions numberOfReleases =
             span_ [] $ do
               toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts
               case release.revisedAt of
-                Nothing -> do
-                  span_ [] ""
+                Nothing -> span_ [] ""
                 Just revisionDate -> do
                   span_
                     [ dataText_
@@ -299,7 +306,7 @@ displayDependencies (namespace, packageName, version) numberOfDependencies depen
 showAll :: Target -> Maybe Version -> Namespace -> PackageName -> FloraHTML
 showAll target mVersion namespace packageName = do
   let resource = case target of
-        Dependents -> Links.packageDependents namespace packageName (PositiveUnsafe 1)
+        Dependents -> Links.packageDependents namespace packageName (PositiveUnsafe 1) Nothing
         Dependencies -> Links.packageDependencies namespace packageName (fromJust mVersion)
         Versions -> Links.packageVersions namespace packageName
   a_ [class_ "dependency", href_ ("/" <> toUrlPiece resource)] "Show all…"
@@ -453,35 +460,6 @@ displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = case 
 defaultMarker :: Bool -> FloraHTML
 defaultMarker True = em_ "(on by default)"
 defaultMarker False = em_ "(off by default)"
-
----
-
-usageInstructionTooltip :: FloraHTML
-usageInstructionTooltip =
-  toHtmlRaw @Text
-    [str|
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="tooltip"> 
-  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /> 
-</svg> 
-|]
-
-chevronRightOutline :: FloraHTML
-chevronRightOutline =
-  toHtmlRaw @Text
-    [str|
-<svg xmlns="http://www.w3.org/2000/svg" class="breadcrumb" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke="currentColor" /> 
-</svg>
-|]
-
-pen :: FloraHTML
-pen =
-  toHtmlRaw @Text
-    [str|
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="pen">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-</svg>
-|]
 
 -- | @datalist@ element
 dataText_ :: Text -> Attribute

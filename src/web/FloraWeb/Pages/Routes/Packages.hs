@@ -38,6 +38,7 @@ data Routes' mode = Routes'
           :> Capture "package" PackageName
           :> "dependents"
           :> QueryParam "page" (Positive Word)
+          :> QueryParam "q" Text
           :> Get '[HTML] (Html ())
   , showVersionDependents
       :: mode
@@ -46,6 +47,7 @@ data Routes' mode = Routes'
           :> Capture "version" Version
           :> "dependents"
           :> QueryParam "page" (Positive Word)
+          :> QueryParam "q" Text
           :> Get '[HTML] (Html ())
   , showDependencies
       :: mode

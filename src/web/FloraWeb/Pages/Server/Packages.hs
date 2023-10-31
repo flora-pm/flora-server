@@ -101,7 +101,7 @@ showPackageVersion namespace packageName mversion = do
   dependents <- Query.getPackageDependents namespace packageName
   releaseDependencies <- Query.getRequirements release.releaseId
   categories <- Query.getPackageCategories package.packageId
-  numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName
+  numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName Nothing
   numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
 
   let templateEnv =
@@ -141,17 +141,30 @@ showPackageVersion namespace packageName mversion = do
       numberOfDependencies
       categories
 
-showDependentsHandler :: Namespace -> PackageName -> Maybe (Positive Word) -> FloraPage (Html ())
-showDependentsHandler namespace packageName mPage = do
+showDependentsHandler
+  :: Namespace
+  -> PackageName
+  -> Maybe (Positive Word)
+  -> Maybe Text
+  -> FloraPage (Html ())
+showDependentsHandler namespace packageName mPage mSearch = do
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
   releases <- Query.getAllReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
-  showVersionDependentsHandler namespace packageName latestRelease.version mPage
+  showVersionDependentsHandler namespace packageName latestRelease.version mPage mSearch
 
-showVersionDependentsHandler :: Namespace -> PackageName -> Version -> Maybe (Positive Word) -> FloraPage (Html ())
-showVersionDependentsHandler namespace packageName version Nothing =
-  showVersionDependentsHandler namespace packageName version (Just $ PositiveUnsafe 1)
-showVersionDependentsHandler namespace packageName version (Just pageNumber) = do
+showVersionDependentsHandler
+  :: Namespace
+  -> PackageName
+  -> Version
+  -> Maybe (Positive Word)
+  -> Maybe Text
+  -> FloraPage (Html ())
+showVersionDependentsHandler namespace packageName version Nothing mSearch =
+  showVersionDependentsHandler namespace packageName version (Just $ PositiveUnsafe 1) mSearch
+showVersionDependentsHandler namespace packageName version pageNumber (Just "") =
+  showVersionDependentsHandler namespace packageName version pageNumber Nothing
+showVersionDependentsHandler namespace packageName version (Just pageNumber) mSearch = do
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
@@ -161,8 +174,14 @@ showVersionDependentsHandler namespace packageName version (Just pageNumber) = d
           { title = display namespace <> "/" <> display packageName
           , description = "Dependents of " <> display namespace <> display packageName
           }
-  results <- Query.getAllPackageDependentsWithLatestVersion namespace packageName (fromPage pageNumber)
-  totalDependents <- Query.getNumberOfPackageDependents namespace packageName
+  results <-
+    Query.getAllPackageDependentsWithLatestVersion
+      namespace
+      packageName
+      (fromPage pageNumber)
+      mSearch
+
+  totalDependents <- Query.getNumberOfPackageDependents namespace packageName mSearch
   render templateEnv $
     Package.showDependents
       namespace
@@ -171,6 +190,7 @@ showVersionDependentsHandler namespace packageName version (Just pageNumber) = d
       totalDependents
       results
       pageNumber
+      mSearch
 
 showDependenciesHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showDependenciesHandler namespace packageName = do
