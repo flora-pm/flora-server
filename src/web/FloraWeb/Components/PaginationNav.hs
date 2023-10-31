@@ -49,8 +49,8 @@ mkURL (ListAllPackagesInNamespace namespace) pageNumber =
   "/" <> toUrlPiece (Links.namespaceLink namespace pageNumber)
 mkURL (SearchPackages searchTerm) pageNumber =
   "/" <> toUrlPiece (Links.packageSearchLink searchTerm pageNumber)
-mkURL (DependentsOf namespace packageName) pageNumber =
-  "/" <> toUrlPiece (Links.packageDependents namespace packageName pageNumber)
+mkURL (DependentsOf namespace packageName mbSearchString) pageNumber =
+  "/" <> toUrlPiece (Links.packageDependents namespace packageName pageNumber mbSearchString)
 
 paginate
   :: Word

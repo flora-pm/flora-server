@@ -13,9 +13,9 @@ import Lucid.Orphans ()
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types (Release (..))
+import FloraWeb.Components.Icons
 import FloraWeb.Pages.Templates.Packages
-  ( chevronRightOutline
-  , displayCategories
+  ( displayCategories
   , displayDependencies
   , displayDependents
   , displayInstructions

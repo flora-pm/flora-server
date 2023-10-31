@@ -39,7 +39,6 @@ common common-extensions
     OverloadedStrings
     PackageImports
     PolyKinds
-    QuasiQuotes
     RecordWildCards
     StrictData
     TypeFamilies
@@ -157,6 +156,7 @@ library
     , directory
     , effectful-core
     , envparse
+    , extra
     , filepath
     , http-api-data
     , http-media
@@ -223,10 +223,13 @@ library flora-web
     FloraWeb.Components.CategoryCard
     FloraWeb.Components.Footer
     FloraWeb.Components.Header
+    FloraWeb.Components.Icons
+    FloraWeb.Components.MainSearchBar
     FloraWeb.Components.Navbar
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
+    FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
     FloraWeb.Embedded
@@ -280,6 +283,7 @@ library flora-web
     , deriving-aeson
     , effectful
     , effectful-core
+    , extra
     , flora
     , flora-jobs
     , haddock-library
