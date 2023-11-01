@@ -152,6 +152,17 @@ span.revised-date:hover::before {
   display: block;
 }
 
+.revised-date {
+  svg {
+    display: inline;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  position: relative; /* making the .tooltip span a container for the tooltip text */
+  border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
+}
+
 .instruction-tooltip {
   svg {
     display: inline;
