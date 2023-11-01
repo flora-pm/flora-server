@@ -2,7 +2,7 @@
 
 ## 1.0.14 -- XXXX-XX-XX
 * Colourise in red deprecation markers on the package page ([#438](https://github.com/flora-pm/flora-server/pull/439))
-* Added more matches to the the natural language processing catergory ([#44](https://github.com/flora-pm/flora-server/pull/440))
+* Added more matches to the the natural language processing catergory ([#440](https://github.com/flora-pm/flora-server/pull/440))
 * Allow package imports from multiple repositories ([#444](https://github.com/flora-pm/flora-server/pull/444))
 * Add a page on namespaces in the documentation ([#451](https://github.com/flora-pm/flora-server/pull/451))
 * Add initial support for hosting package tarballs ([#452](https://github.com/flora-pm/flora-server/pull/452))
