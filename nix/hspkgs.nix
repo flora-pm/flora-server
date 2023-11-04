@@ -1,4 +1,4 @@
-{ pkgs, src, inputs }: (hfinal: _hprev: with pkgs.haskell.lib; {
+{ pkgs, src }: (hfinal: _hprev: with pkgs.haskell.lib; {
   flora = overrideCabal (hfinal.callCabal2nix "flora" src { }) (drv: {
     doCheck = true;
 
@@ -45,6 +45,5 @@
     '';
   });
 
-  poolboy = dontCheck (hfinal.callCabal2nix "poolboy" inputs.poolboy { });
   resource-pool = hfinal.callHackage "resource-pool" "0.4.0.0" { };
 })

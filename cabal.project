@@ -1,6 +1,8 @@
 packages: ./
 
-with-compiler: ghc-9.4.5
+active-repositories: hackage.haskell.org
+
+with-compiler: ghc-9.4.7
 
 tests: True
 

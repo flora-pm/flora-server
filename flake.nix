@@ -24,9 +24,9 @@
     pre-commit-hooks.inputs.flake-utils.follows = "flake-utils";
     pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
 
-    # non-nix dependencies
-    poolboy.url = "github:blackheaven/poolboy/v0.2.1.0";
-    poolboy.flake = false;
+    # # non-nix dependencies
+    # poolboy.url = "github:blackheaven/poolboy/v0.2.1.0";
+    # poolboy.flake = false;
   };
   outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, pre-commit-hooks, ... }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
@@ -38,7 +38,7 @@
         pre-commit-check = pre-commit-hooks.lib.${system}.run
           (import ./nix/pre-commit-config.nix { inherit src; });
         hsPkgs = horizon-platform.legacyPackages.${system}.extend (
-          import ./nix/hspkgs.nix { inherit src pkgs inputs; }
+          import ./nix/hspkgs.nix { inherit src pkgs; }
         );
         floraShell = import ./nix/shell-config.nix { inherit src pkgs hsPkgs pre-commit-check; };
       in
