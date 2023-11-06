@@ -1,6 +1,6 @@
 packages: ./
 
-active-repositories: hakage.haskell.org
+active-repositories: hackage.haskell.org
 
 with-compiler: ghc-9.4.7
 
@@ -60,7 +60,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/kleidukos/servant-effectful
-    tag: 21b5a1d
+    tag: 856ff5b
 
 source-repository-package
     type: git

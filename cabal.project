@@ -35,7 +35,7 @@ package warp
 source-repository-package
     type: git
     location: https://github.com/supki/envparse
-    tag: 503a699
+    tag: 345b092
 
 source-repository-package
     type: git
@@ -53,14 +53,14 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/kleidukos/pg-transact-effectful
-    tag: db6fa06
+    tag: d296ec5
 
 source-repository-package
     type: git
     location: https://github.com/kleidukos/servant-effectful
-    tag: 21b5a1d
+    tag: 856ff5b
 
 source-repository-package
     type: git
     location: https://github.com/saurabhnanda/odd-jobs
-    tag: 51c7443
+    tag: 411d5d0

@@ -295,7 +295,7 @@ persistImportOutput wq (ImportOutput package categories release components) = do
 withWorkerDbPool :: (Reader PoolConfig :> es, IOE :> es) => (Poolboy.WorkQueue -> Eff es a) -> Eff es a
 withWorkerDbPool f = do
   cfg <- ask @PoolConfig
-  withEffToIO $ \effIO ->
+  withEffToIO SeqUnlift $ \effIO ->
     Poolboy.withPoolboy
       (Poolboy.poolboySettingsWith cfg.connections)
       Poolboy.waitingStopFinishWorkers
