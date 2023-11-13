@@ -84,6 +84,7 @@ RUN make souffle
 
 # copy and build the assets
 COPY --chown=${USER} assets ./assets
+RUN mkdir docs
 RUN make build-assets
 
 USER root
