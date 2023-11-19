@@ -128,6 +128,7 @@ versionList =
     , Version.mkVersion [9, 6, 3]
     , Version.mkVersion [9, 6, 2]
     , Version.mkVersion [9, 6, 1]
+    , Version.mkVersion [9, 4, 8]
     , Version.mkVersion [9, 4, 7]
     , Version.mkVersion [9, 4, 6]
     , Version.mkVersion [9, 4, 5]
