@@ -6,7 +6,7 @@ ARG GID=1000
 ARG UID=1000
 
 ARG ghc_version=9.4.5
-ARG cabal_version=3.10.1.0
+ARG cabal_version=3.10.2.0
 
 # generate a working directory
 USER "root"
@@ -41,7 +41,6 @@ RUN chmod ugo+x /home/$USER/.cabal
 
 USER ${USER}
 RUN git config --global --add safe.directory "*"
-RUN ls -lh /home/$USER/.cabal
 RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 
 
@@ -84,7 +83,7 @@ RUN make souffle
 
 # copy and build the assets
 COPY --chown=${USER} assets ./assets
-RUN mkdir docs
+COPY --chown=${USER} docs ./docs
 RUN make build-assets
 
 USER root
