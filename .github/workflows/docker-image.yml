@@ -1,12 +1,8 @@
 name: Publish Docker Image
 
 on: 
-  pull_request:
-    paths:
-      - Dockerfile 
-      - docker-compose.yml
-      - scripts/.zshrc
   push:
+    branches: ["development"]
     paths:
       - Dockerfile 
       - docker-compose.yml
