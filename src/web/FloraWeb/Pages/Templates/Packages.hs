@@ -188,11 +188,10 @@ requirementListing requirements =
 showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 showChangelog namespace packageName version mChangelog = div_ [class_ "container"] $ div_ [class_ "divider"] $ do
   div_ [class_ "page-title"] $
-    h1_ [class_ ""] $
-      do
-        span_ [class_ "headline"] $ toHtml ("Changelog of " <> display namespace <> "/" <> display packageName)
-        toHtmlRaw @Text "&nbsp;"
-        span_ [class_ "version"] $ toHtml $ display version
+    h1_ [class_ ""] $ do
+      span_ [class_ "headline"] $ toHtml ("Changelog of " <> display namespace <> "/" <> display packageName)
+      toHtmlRaw @Text "&nbsp;"
+      span_ [class_ "version"] $ toHtml $ display version
   section_ [class_ "release-changelog"] $ do
     case mChangelog of
       Nothing -> toHtml @Text "This release does not have a Changelog"

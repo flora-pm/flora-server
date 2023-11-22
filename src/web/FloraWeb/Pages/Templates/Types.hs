@@ -20,6 +20,7 @@ import GHC.Generics
 import Lucid
 import Optics.Core
 
+import Data.Text.Display
 import Effectful
 import Effectful.Reader.Static (Reader, ask)
 import Flora.Environment
@@ -32,13 +33,13 @@ import FloraWeb.Types
 type FloraHTML = HtmlT (ReaderT TemplateEnv Identity) ()
 
 newtype FlashInfo = FlashInfo {getFlashInfo :: Text}
-  deriving (Show) via Text
+  deriving (Show, Display) via Text
 
 mkInfo :: Text -> FlashInfo
 mkInfo = FlashInfo
 
 newtype FlashError = FlashError {getFlashInfo :: Text}
-  deriving (Show) via Text
+  deriving (Show, Display) via Text
 
 mkError :: Text -> FlashError
 mkError = FlashError
@@ -130,6 +131,6 @@ fromSession session defaults = do
   let TemplateDefaults{..} =
         defaults
           & (#mUser .~ muser)
-          & (#environment .~ (floraEnv.environment))
+          & (#environment .~ floraEnv.environment)
           & (#features .~ featuresEnv)
   pure TemplateEnv{..}

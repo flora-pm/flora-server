@@ -1,0 +1,68 @@
+module FloraWeb.Pages.Routes.Settings
+  ( Routes
+  , Routes' (..)
+  , TwoFactorSetupResponses
+  , TwoFactorConfirmationForm (..)
+  , DeleteTwoFactorSetupResponse
+  )
+where
+
+import Lucid
+import Servant
+import Servant.API.Generic
+import Servant.HTML.Lucid
+
+import Data.Text (Text)
+import FloraWeb.Common.Auth ()
+import Web.FormUrlEncoded
+
+type Routes =
+  NamedRoutes Routes'
+
+type GetUserSettings =
+  Get '[HTML] (Html ())
+
+type GetUserSecuritySettings =
+  "security"
+    :> Get '[HTML] (Html ())
+
+type GetTwoFactorSettingsPage =
+  "security"
+    :> "two-factor"
+    :> Get '[HTML] (Html ())
+
+type TwoFactorSetupResponses =
+  '[ WithStatus 200 (Html ())
+   , WithStatus 301 (Headers '[Header "Location" Text] NoContent)
+   ]
+
+data TwoFactorConfirmationForm = TwoFactorConfirmationForm
+  { code :: Text
+  }
+  deriving stock (Generic)
+  deriving anyclass (FromForm, ToForm)
+
+type PostTwoFactorSetup =
+  "security"
+    :> "two-factor"
+    :> "setup"
+    :> ReqBody '[FormUrlEncoded] TwoFactorConfirmationForm
+    :> UVerb 'POST '[HTML] TwoFactorSetupResponses
+
+type DeleteTwoFactorSetup =
+  "security"
+    :> "two-factor"
+    :> "delete"
+    :> Verb 'POST 301 '[HTML] DeleteTwoFactorSetupResponse
+
+type DeleteTwoFactorSetupResponse =
+  Headers '[Header "Location" Text] NoContent
+
+data Routes' mode = Routes'
+  { index :: mode :- GetUserSettings
+  , getSecuritySettings :: mode :- GetUserSecuritySettings
+  , getTwoFactorSettings :: mode :- GetTwoFactorSettingsPage
+  , postTwoFactorSetup :: mode :- PostTwoFactorSetup
+  , deleteTwoFactorSetup :: mode :- DeleteTwoFactorSetup
+  }
+  deriving stock (Generic)

@@ -272,7 +272,7 @@ constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
 getTarballHandler :: Namespace -> PackageName -> Version -> Text -> FloraPage ByteString
 getTarballHandler namespace packageName version tarballName = do
   features <- ask @FeatureEnv
-  unless (isJust $ features.blobStoreImpl) $! throwError err404
+  unless (isJust features.blobStoreImpl) $ throwError err404
   package <- guardThatPackageExists namespace packageName $ \_ _ -> web404
   release <- guardThatReleaseExists package.packageId version $ const web404
   case release.tarballRootHash of

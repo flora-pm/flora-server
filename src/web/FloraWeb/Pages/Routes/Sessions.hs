@@ -54,7 +54,6 @@ data Routes' mode = Routes'
 data LoginForm = LoginForm
   { email :: Text
   , password :: Text
-  , remember :: Maybe ()
   }
   deriving stock (Generic)
 

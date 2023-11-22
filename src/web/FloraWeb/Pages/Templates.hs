@@ -6,12 +6,15 @@ module FloraWeb.Pages.Templates
   )
 where
 
+import Control.Monad.Extra (whenJust)
 import Control.Monad.Identity (runIdentity)
-import Control.Monad.Reader (runReaderT)
+import Control.Monad.Reader (ask, runReaderT)
 import Data.ByteString.Lazy
+import Data.Text.Display
 import Lucid
 
 import Flora.Environment (DeploymentEnv (..))
+import FloraWeb.Components.Alert qualified as Alert
 import FloraWeb.Components.Header (header)
 import FloraWeb.Pages.Templates.Types as Types
 
@@ -30,7 +33,12 @@ mkErrorPage env template =
 
 rendered :: DeploymentEnv -> FloraHTML -> FloraHTML
 rendered _deploymentEnv target = do
+  TemplateEnv{flashInfo, flashError} <- ask
   header
+  whenJust flashInfo $ \msg -> do
+    Alert.info (display msg)
+  whenJust flashError $ \msg -> do
+    Alert.exception (display msg)
   main_ [] target
 
 -- when (deploymentEnv == Development) $

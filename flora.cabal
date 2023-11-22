@@ -12,7 +12,7 @@ extra-source-files:
   LICENSE
   README.md
 
-tested-with:        GHC ==9.4.5
+tested-with:        GHC ==9.4.7
 
 source-repository head
   type:     git
@@ -131,6 +131,7 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.Publish
+    Flora.QRCode
     Flora.Search
     JSON
     Log.Backend.File
@@ -161,6 +162,7 @@ library
     , http-api-data
     , http-media
     , iso8601-time
+    , JuicyPixels
     , log-base
     , log-effectful
     , lucid
@@ -168,6 +170,7 @@ library
     , monad-time-effectful
     , mtl
     , odd-jobs
+    , one-time-password
     , openapi3
     , optics-core
     , password
@@ -179,7 +182,10 @@ library
     , poolboy
     , postgresql-simple
     , pretty
+    , qrcode-core
+    , qrcode-juicypixels
     , resource-pool
+    , sel
     , servant
     , servant-lucid
     , servant-server
@@ -213,6 +219,7 @@ library flora-web
     FloraWeb.API.Server.Packages
     FloraWeb.Client
     FloraWeb.Common.Auth
+    FloraWeb.Common.Auth.TwoFactor
     FloraWeb.Common.Auth.Types
     FloraWeb.Common.Guards
     FloraWeb.Common.Metrics
@@ -220,6 +227,8 @@ library flora-web
     FloraWeb.Common.Pagination
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
+    FloraWeb.Components.Alert
+    FloraWeb.Components.Button
     FloraWeb.Components.CategoryCard
     FloraWeb.Components.Footer
     FloraWeb.Components.Header
@@ -240,12 +249,14 @@ library flora-web
     FloraWeb.Pages.Routes.Packages
     FloraWeb.Pages.Routes.Search
     FloraWeb.Pages.Routes.Sessions
+    FloraWeb.Pages.Routes.Settings
     FloraWeb.Pages.Server
     FloraWeb.Pages.Server.Admin
     FloraWeb.Pages.Server.Categories
     FloraWeb.Pages.Server.Packages
     FloraWeb.Pages.Server.Search
     FloraWeb.Pages.Server.Sessions
+    FloraWeb.Pages.Server.Settings
     FloraWeb.Pages.Templates
     FloraWeb.Pages.Templates.Admin
     FloraWeb.Pages.Templates.Admin.Packages
@@ -260,6 +271,7 @@ library flora-web
     FloraWeb.Pages.Templates.Pages.Packages
     FloraWeb.Pages.Templates.Pages.Search
     FloraWeb.Pages.Templates.Pages.Sessions
+    FloraWeb.Pages.Templates.Pages.Settings
     FloraWeb.Pages.Templates.Types
     FloraWeb.Routes
     FloraWeb.Servant.Common
@@ -271,8 +283,10 @@ library flora-web
     , aeson
     , async
     , base                       ^>=4.17
+    , base32
     , bytestring
     , Cabal-syntax
+    , chronos
     , clock
     , cmark-gfm
     , colourista
@@ -302,6 +316,7 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
+    , one-time-password
     , openapi3
     , optics-core
     , password
@@ -316,6 +331,7 @@ library flora-web
     , raven-haskell
     , resource-pool
     , safe-exceptions
+    , sel
     , servant
     , servant-client
     , servant-client-core
@@ -325,6 +341,7 @@ library flora-web
     , text
     , text-display
     , time
+    , torsor
     , uuid
     , vector
     , vector-algorithms

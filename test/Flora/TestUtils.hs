@@ -290,6 +290,8 @@ genUser = do
   userFlags <- genUserFlags
   createdAt <- genUTCTime
   updatedAt <- genUTCTime
+  let totpKey = Nothing
+  let totpEnabled = False
   pure User{..}
 
 data RandomUserTemplate m = RandomUserTemplate
@@ -337,4 +339,6 @@ randomUser
     userFlags <- generateUserFlags
     createdAt <- generateCreatedAt
     updatedAt <- generateUpdatedAt
+    let totpKey = Nothing
+    let totpEnabled = False
     pure User{..}

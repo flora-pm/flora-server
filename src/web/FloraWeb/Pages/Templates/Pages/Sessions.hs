@@ -30,9 +30,5 @@ newSession = do
         , placeholder_ "Password"
         , class_ "form-input"
         ]
-    -- div_ $ do
-    --   label_ [for_ "remember", class_ "text-xl mr-3"] "Remember me"
-    --   input_ [id_ "remember", name_ "remember", type_ "checkbox", class_ ""]
-
     div_ $
       button_ [type_ "submit", class_ "btn bg-brand-purple text-white w-full my-2"] "Sign in"

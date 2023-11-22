@@ -25,6 +25,7 @@ import Flora.Model.Category
 import Flora.Model.Category qualified as Category
 import Flora.Model.Package
 import Flora.Search
+import FloraWeb.Components.Alert qualified as Component
 import FloraWeb.Components.CategoryCard qualified as Component
 import FloraWeb.Components.PackageListItem qualified as Component
 import FloraWeb.Components.PaginationNav qualified as Component
@@ -69,6 +70,7 @@ components =
       )
     , ("category-card", ComponentTitle "Category", ComponentName "CategoryCard", categoryCardExample)
     , ("pagination-area", ComponentTitle "Pagination Area", ComponentName "Pagination", paginationExample)
+    , ("alerts", ComponentTitle "Alerts", ComponentName "Alert", alertsExample)
     ]
 
 -----------------------
@@ -76,8 +78,9 @@ components =
 -----------------------
 
 storyTemplate :: ComponentTitle -> ComponentName -> TL.Text -> ByteString
-storyTemplate (ComponentTitle title) (ComponentName name) html =
-  [fmt| 
+storyTemplate (ComponentTitle title) (ComponentName name) unprocessedHtml =
+  let html = TL.replace "\n" " " unprocessedHtml
+   in [fmt|
 export default {{
   title: "Components/{title}"
 }};
@@ -124,3 +127,11 @@ paginationExample = div_ $ do
   div_ $ do
     h4_ "Next button"
     Component.paginationNav 32 1 (SearchPackages "text")
+
+alertsExample :: FloraHTML
+alertsExample = div_ $ do
+  div_ $ do
+    h4_ "Info alert"
+    Component.info "Info alert"
+    h4_ "Error alert"
+    Component.exception "Error alert!"
