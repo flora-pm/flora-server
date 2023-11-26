@@ -9,6 +9,8 @@ import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time (Time)
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.PackageIndex.Query as Query
+import Flora.Model.PackageIndex.Types (PackageIndex)
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types (Release)
 
@@ -40,3 +42,15 @@ guardThatReleaseExists packageId version action = do
   case result of
     Just release -> pure release
     Nothing -> action version
+
+guardThatPackageIndexExists
+  :: DB :> es
+  => Namespace
+  -> (Namespace -> Eff es PackageIndex)
+  -- ^ Action to run if the package index does not exist
+  -> Eff es PackageIndex
+guardThatPackageIndexExists namespace action = do
+  result <- Query.getPackageIndexByName (extractNamespaceText namespace)
+  case result of
+    Just packageIndex -> pure packageIndex
+    Nothing -> action namespace

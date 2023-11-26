@@ -80,6 +80,9 @@ instance FromHttpApiData PackageName where
       Nothing -> Left "Could not parse package name"
       Just a -> Right a
 
+extractPackageNameText :: PackageName -> Text
+extractPackageNameText (PackageName text) = text
+
 parsePackageName :: Text -> Maybe PackageName
 parsePackageName txt =
   if matches "[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
@@ -148,6 +151,10 @@ parseNamespace txt =
   if matches "@[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
     then Just $ Namespace txt
     else Nothing
+
+extractNamespaceText :: Namespace -> Text
+extractNamespaceText (Namespace text) =
+  fromMaybe text (Text.stripPrefix "@" text)
 
 instance ToSchema Namespace where
   declareNamedSchema proxy =

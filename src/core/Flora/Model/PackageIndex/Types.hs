@@ -25,8 +25,8 @@ newtype PackageIndexId = PackageIndexId {getPackageIndexId :: UUID}
 data PackageIndex = PackageIndex
   { packageIndexId :: PackageIndexId
   , repository :: Text
-  , url :: Text
   , timestamp :: Maybe UTCTime
+  , url :: Text
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)

@@ -16,6 +16,9 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
 import Flora.Model.PackageIndex.Types
+  ( PackageIndex
+  , mkPackageIndex
+  )
 
 updatePackageIndexByName :: DB :> es => Text -> Maybe UTCTime -> Eff es ()
 updatePackageIndexByName repositoryName newTimestamp = do
