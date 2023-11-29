@@ -14,5 +14,8 @@ import Flora.Model.PackageIndex.Types
 
 getPackageIndexByName :: DB :> es => Text -> Eff es (Maybe PackageIndex)
 getPackageIndexByName repository =
-  dbtToEff $
-    selectOneByField [field| repository |] (Only repository)
+  let index = case repository of
+        "haskell" -> "hackage"
+        r -> r
+   in dbtToEff $
+        selectOneByField [field| repository |] (Only index)
