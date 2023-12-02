@@ -24,7 +24,7 @@ uriFromKey domain email key =
     issuer = "Flora (" <> domain <> ")"
    in
     totpToURI
-      (Base32.encodeBase32 $ HMAC.unsafeAuthenticationKeyToBinary key)
+      (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary key)
       email
       issuer
       sixDigits

@@ -47,14 +47,15 @@ securitySettings = do
       li_ [] $
         a_ [href_ "/settings/security/two-factor"] "Two-factor authentication"
 
-twoFactorSettings :: Text -> FloraHTML
-twoFactorSettings qrCode = do
+twoFactorSettings :: Text -> Text -> FloraHTML
+twoFactorSettings qrCode base32Key = do
   div_ [class_ "container"] $ do
     div_ [class_ "divider"] $ do
       div_ [class_ "page-title"] $ do
         h1_ "Two-Factor Authentication"
       h2_ "Scan the QR Code"
     img_ [src_ ("data:image/png;base64," <> qrCode), height_ "300", width_ "300"]
+    toHtml base32Key
     form_ [action_ "/settings/security/two-factor/setup", method_ "POST"] $ do
       label_ [for_ "code"] "Code from the authenticator app"
       input_

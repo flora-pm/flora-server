@@ -4,12 +4,17 @@ module FloraWeb.Pages.Server.Settings
   ) where
 
 import Control.Monad.IO.Class
+import Data.ByteString.Base32 qualified as Base32
 import Data.Maybe (fromJust)
 import Data.Text.Encoding qualified as Text
+import Log qualified
 import Lucid
+import OTP.Commons
+import OTP.TOTP qualified as TOTP
 import Optics.Core
 import Sel.HMAC.SHA256 qualified as HMAC
 import Servant
+import Torsor (scale)
 
 import Chronos qualified
 import Data.Aeson (object, (.=))
@@ -25,10 +30,6 @@ import FloraWeb.Pages.Templates (render, renderUVerb)
 import FloraWeb.Pages.Templates.Pages.Settings qualified as Settings
 import FloraWeb.Pages.Templates.Types
 import FloraWeb.Session
-import Log qualified
-import OTP.Commons
-import OTP.TOTP qualified as TOTP
-import Torsor (scale)
 
 server :: ServerT Routes FloraPage
 server =
@@ -80,7 +81,9 @@ getTwoFactorSettingsHandler = do
             QRCode.generateQRCode uri
               & Text.decodeUtf8
       render templateEnv $
-        Settings.twoFactorSettings qrCode
+        Settings.twoFactorSettings
+          qrCode
+          (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
     Just userKey -> do
       if user.totpEnabled
         then render templateEnv Settings.twoFactorSettingsRemove
@@ -90,7 +93,9 @@ getTwoFactorSettingsHandler = do
                 QRCode.generateQRCode uri
                   & Text.decodeUtf8
           render templateEnv $
-            Settings.twoFactorSettings qrCode
+            Settings.twoFactorSettings
+              qrCode
+              (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
 postTwoFactorSetupHandler :: TwoFactorConfirmationForm -> FloraPage (Union TwoFactorSetupResponses)
 postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
@@ -109,7 +114,6 @@ postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
               (fromJust $ mkDigits 6)
       Log.logInfo "TOTP" $
         object ["value" .= display totp, "key" .= Text.decodeUtf8 (HMAC.unsafeAuthenticationKeyToHexByteString userKey), "date" .= show timestamp]
-
       validated <- liftIO $ TwoFactor.validateTOTP userKey userCode
       if validated
         then do
@@ -131,6 +135,7 @@ postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
               templateEnv
             $ Settings.twoFactorSettings
               qrCode
+              (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
 deleteTwoFactorSetupHandler :: FloraPage DeleteTwoFactorSetupResponse
 deleteTwoFactorSetupHandler = do
