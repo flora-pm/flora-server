@@ -113,7 +113,11 @@ postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
               (scale 30 Chronos.second)
               (fromJust $ mkDigits 6)
       Log.logInfo "TOTP" $
-        object ["value" .= display totp, "key" .= Text.decodeUtf8 (HMAC.unsafeAuthenticationKeyToHexByteString userKey), "date" .= show timestamp]
+        object
+          [ "value" .= display totp
+          , "key" .= Text.decodeUtf8 (HMAC.unsafeAuthenticationKeyToHexByteString userKey)
+          , "date" .= show timestamp
+          ]
       validated <- liftIO $ TwoFactor.validateTOTP userKey userCode
       if validated
         then do
@@ -129,13 +133,12 @@ postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
           let qrCode =
                 QRCode.generateQRCode uri
                   & Text.decodeUtf8
-          respond
-            $ WithStatus @200
-            $ renderUVerb
-              templateEnv
-            $ Settings.twoFactorSettings
-              qrCode
-              (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
+          respond $
+            WithStatus @200 $
+              renderUVerb templateEnv $
+                Settings.twoFactorSettings
+                  qrCode
+                  (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
 deleteTwoFactorSetupHandler :: FloraPage DeleteTwoFactorSetupResponse
 deleteTwoFactorSetupHandler = do
