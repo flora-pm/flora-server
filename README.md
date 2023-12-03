@@ -42,18 +42,22 @@
   </p>
 </dl>
 
-**Read More**
+## ⚡ Features
+
+* 📁 Curated category model, with elimination of duplicates
+* 🏛️ Package namespaces, so that packages with the same name can live without conflict
+* 🌓 Dark and light modes
+* 📱 Mobile user interface
+
+## 🤝 Contributing
+
+We welcome new contributors! Join the [Matrix chatroom](https://app.element.io/#/room/#flora-pm:matrix.org) or open a [Discussion](https://github.com/flora-pm/flora-server/discussions/new/choose).
+
+To setup a local installation, see [CONTRIBUTING.md#project-setup](https://github.com/flora-pm/flora-server/blob/development/CONTRIBUTING.md#project-setup)
+
+## 📖 Read More
 
 * [Code of Conduct](./CODE_OF_CONDUCT.md)
-* [Contribution Guide](./CONTRIBUTING.md)
 * [Development Wiki](https://github.com/flora-pm/flora-server/wiki)
 
-### Importing everything from Hackage
-
-1. Download the archive containing all packages [here](https://hackage.haskell.org/01-index.tar)
-2. Extract it in Flora's root directory. You should now have a `01-index` folder
-3. Run `make import-from-hackage`
-
 ---
-
-You can explore the Makefile rules by typing `make` in your shell. I promise you it's worth it.

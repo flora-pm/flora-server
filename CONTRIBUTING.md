@@ -181,18 +181,35 @@ $ source environment.docker.sh
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.
 ```
+### Provisioning the database
 
-To provision the development database, type:
+After everything is set up, (locally or via Docker), you can start populating the database:
 
 ```bash
-$ make docker-enter
-(docker)$ source environment.docker.sh
-(docker)$ make db-drop  # password is 'postgres' by default
-(docker)$ make db-setup # password is 'postgres' by default
-(docker)$ make db-provision
-# And you should be good!
+$ make db-setup
+$ make db-provision
+$ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
+    --email "admin@localhost" --password "password123" 
+$ make db-provision-test-packages
 ```
 
+### Importing a package index
+
+The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shit and giggles.
+
+You can do so with:
+
+```bash
+$ cabal run flora-cli -- import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
+  --repository hackage.haskell.org
+```
+
+Similarly if you have the [cardano packages index](https://input-output-hk.github.io/cardano-haskell-packages/) configured, run:
+
+```bash
+$ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz \
+  --repository "cardano"
+```
 
 ### Nix
 
