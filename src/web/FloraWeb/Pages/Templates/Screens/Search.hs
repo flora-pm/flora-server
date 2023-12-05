@@ -1,4 +1,4 @@
-module FloraWeb.Pages.Templates.Pages.Search where
+module FloraWeb.Pages.Templates.Screens.Search where
 
 import Control.Monad (when)
 import Data.Positive

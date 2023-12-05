@@ -1,7 +1,9 @@
 module FloraWeb.Common.Auth
   ( module FloraWeb.Common.Auth.Types
-  , FloraAuthContext
-  , authHandler
+  , OptionalAuthContext
+  , StrictAuthContext
+  , optionalAuthHandler
+  , strictAuthHandler
   )
 where
 
@@ -37,36 +39,56 @@ import FloraWeb.Session
 import FloraWeb.Types
 import Servant qualified
 
-type FloraAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
+type OptionalAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
+type StrictAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
 
-authHandler :: Logger -> FloraEnv -> FloraAuthContext
-authHandler logger floraEnv =
+optionalAuthHandler :: Logger -> FloraEnv -> OptionalAuthContext
+optionalAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
-        handler request
-          & Logging.runLog (floraEnv.environment) logger
-          & DB.runDB (floraEnv.pool)
+        handler False floraEnv request
+          & Logging.runLog floraEnv.environment logger
+          & DB.runDB floraEnv.pool
           & runVisitorSession
           & effToHandler
     )
-  where
-    handler :: Request -> Eff '[Log, DB, IsVisitor, Error ServerError, IOE] (Headers '[Header "Set-Cookie" SetCookie] Session)
-    handler req = do
-      let cookies = getCookies req
-      mbPersistentSessionId <- handlerToEff $ getSessionId cookies
-      mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
-      mUserInfo <- fetchUser mbPersistentSession
-      requestID <- liftIO $ getRequestID req
-      (mUser, sessionId) <- do
-        case mUserInfo of
-          Nothing -> do
+
+strictAuthHandler :: Logger -> FloraEnv -> StrictAuthContext
+strictAuthHandler logger floraEnv =
+  mkAuthHandler
+    ( \request ->
+        handler True floraEnv request
+          & Logging.runLog floraEnv.environment logger
+          & DB.runDB floraEnv.pool
+          & runVisitorSession
+          & effToHandler
+    )
+
+handler
+  :: Bool
+  -> FloraEnv
+  -> Request
+  -> Eff
+      '[Log, DB, IsVisitor, Error ServerError, IOE]
+      (Headers '[Header "Set-Cookie" SetCookie] Session)
+handler mustBeConnected floraEnv req = do
+  let cookies = getCookies req
+  mbPersistentSessionId <- handlerToEff $ getSessionId cookies
+  mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
+  mUserInfo <- fetchUser mbPersistentSession
+  requestID <- liftIO $ getRequestID req
+  (mUser, sessionId) <- do
+    case mUserInfo of
+      Nothing ->
+        if mustBeConnected
+          then throwError $ err401{errBody = "Connect first"}
+          else do
             nSessionId <- liftIO newPersistentSessionId
             pure (Nothing, nSessionId)
-          Just (user, userSession) -> do
-            pure (Just user, userSession.persistentSessionId)
-      webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
-      let sessionCookie = craftSessionCookie sessionId False
-      pure $ addCookie sessionCookie (Session{..})
+      Just (user, userSession) -> pure (Just user, userSession.persistentSessionId)
+  webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
+  let sessionCookie = craftSessionCookie sessionId False
+  pure $ addCookie sessionCookie (Session{..})
 
 getCookies :: Request -> Cookies
 getCookies req =
@@ -101,10 +123,13 @@ getInTheFuckingSessionShinji (Just persistentSessionId) = do
     Nothing -> pure Nothing
     (Just userSession) -> pure (Just userSession)
 
-fetchUser :: (Error ServerError :> es, DB :> es) => Maybe PersistentSession -> Eff es (Maybe (User, PersistentSession))
+fetchUser
+  :: (Error ServerError :> es, DB :> es)
+  => Maybe PersistentSession
+  -> Eff es (Maybe (User, PersistentSession))
 fetchUser Nothing = pure Nothing
 fetchUser (Just userSession) = do
-  user <- lookupUser (userSession.userId)
+  user <- lookupUser userSession.userId
   pure (Just (user, userSession))
 
 lookupUser :: (Error ServerError :> es, DB :> es) => UserId -> Eff es User
@@ -119,8 +144,8 @@ handlerToEff
    . Error ServerError :> es
   => Handler a
   -> Eff es a
-handlerToEff handler = do
-  v <- unsafeEff_ $ Servant.runHandler handler
+handlerToEff handler' = do
+  v <- unsafeEff_ $ Servant.runHandler handler'
   either throwError pure v
 
 effToHandler

@@ -12,7 +12,7 @@ import Flora.Search qualified as Search
 import FloraWeb.Common.Pagination
 import FloraWeb.Pages.Routes.Search (Routes, Routes' (..))
 import FloraWeb.Pages.Templates (TemplateEnv (..), defaultTemplateEnv, fromSession, render)
-import FloraWeb.Pages.Templates.Pages.Search qualified as Search
+import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Session
 
 server :: ServerT Routes FloraPage

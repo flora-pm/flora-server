@@ -28,7 +28,7 @@ navbar = do
         navBarLink' "/about" "About" aboutNav
         navBarLink' "/categories" "Categories" packagesNav
         navBarLink' "/packages" "Packages" packagesNav
-        -- userMenu
+        userMenu
         themeToggle
 
 brand :: FloraHTML

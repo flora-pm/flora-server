@@ -41,8 +41,8 @@ import FloraWeb.Pages.Routes.Packages
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Error
 import FloraWeb.Pages.Templates.Packages qualified as Package
-import FloraWeb.Pages.Templates.Pages.Packages qualified as Packages
-import FloraWeb.Pages.Templates.Pages.Search qualified as Search
+import FloraWeb.Pages.Templates.Screens.Packages qualified as Packages
+import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Session
 
 server :: ServerT Routes FloraPage
@@ -272,7 +272,7 @@ constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
 getTarballHandler :: Namespace -> PackageName -> Version -> Text -> FloraPage ByteString
 getTarballHandler namespace packageName version tarballName = do
   features <- ask @FeatureEnv
-  unless (isJust $ features.blobStoreImpl) $! throwError err404
+  unless (isJust features.blobStoreImpl) $ throwError err404
   package <- guardThatPackageExists namespace packageName $ \_ _ -> web404
   release <- guardThatReleaseExists package.packageId version $ const web404
   case release.tarballRootHash of
