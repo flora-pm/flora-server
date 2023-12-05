@@ -57,12 +57,44 @@
     width: 100%;
   }
 
+  .password {
+    margin-bottom: 1rem;
+  }
+
   .totp-zone {
     display: none;
   }
 
   input[type="checkbox"]:checked + div.totp-zone {
     display: block;
+  }
+
+  .login-button {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  div.login-button button {
+    background-color: var(--main-page-button-background);
+    border-radius: 50rem;
+    border-width: 1px;
+    color: var(--text-color);
+    font-weight: bolder;
+    padding-bottom: 1rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    padding-top: 1rem;
+  }
+
+  div.login-button button:hover {
+    border-color: var(--main-page-button-focus-border-color);
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+
+    /* offset-x | offset-y | blur-radius | spread-radius | color */
+    box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
   }
 }
 

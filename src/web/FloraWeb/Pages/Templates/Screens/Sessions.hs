@@ -26,7 +26,7 @@ newSession = do
       , autocomplete_ "current-password"
       , required_ ""
       , placeholder_ "Password"
-      , class_ "form-input"
+      , class_ "form-input password"
       ]
     label_ [for_ "use_totp"] "Use two-factor authentication"
     input_
@@ -44,5 +44,5 @@ newSession = do
         , autocomplete_ "off"
         , class_ "form-input"
         ]
-    div_ $
-      button_ [type_ "submit", class_ "btn bg-brand-purple text-white w-full my-2"] "Sign in"
+    div_ [class_ "login-button"] $
+      button_ [type_ "submit"] "Sign in"
