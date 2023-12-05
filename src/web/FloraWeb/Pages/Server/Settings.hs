@@ -9,16 +9,10 @@ import Data.Maybe (fromJust)
 import Data.Text.Encoding qualified as Text
 import Log qualified
 import Lucid
-import OTP.Commons
-import OTP.TOTP qualified as TOTP
 import Optics.Core
 import Sel.HMAC.SHA256 qualified as HMAC
 import Servant
-import Torsor (scale)
 
-import Chronos qualified
-import Data.Aeson (object, (.=))
-import Data.Text.Display
 import Flora.Environment
 import Flora.Model.User
 import Flora.Model.User.Update qualified as Update
@@ -105,22 +99,10 @@ postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
   case user.totpKey of
     Nothing -> respond $ WithStatus @301 (redirect "/settings/security/two-factor")
     Just userKey -> do
-      timestamp <- liftIO Chronos.now
-      let totp =
-            TOTP.totpSHA1
-              userKey
-              timestamp
-              (scale 30 Chronos.second)
-              (fromJust $ mkDigits 6)
-      Log.logInfo "TOTP" $
-        object
-          [ "value" .= display totp
-          , "key" .= Text.decodeUtf8 (HMAC.unsafeAuthenticationKeyToHexByteString userKey)
-          , "date" .= show timestamp
-          ]
       validated <- liftIO $ TwoFactor.validateTOTP userKey userCode
       if validated
         then do
+          Update.confirmTOTP user.userId
           Log.logInfo_ "Code validation succeeded"
           respond $ WithStatus @301 (redirect "/settings/security/two-factor")
         else do

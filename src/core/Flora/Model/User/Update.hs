@@ -91,7 +91,7 @@ confirmTOTP userId = do
     q =
       [sql|
         update users as u
-        set totp_active = true,
+        set totp_enabled = true,
             updated_at = ?
         where u.user_id = ?;
       |]

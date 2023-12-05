@@ -68,4 +68,4 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/haskell-cryptography/one-time-password
-    tag: 867162a
+    tag: 2ca2313
