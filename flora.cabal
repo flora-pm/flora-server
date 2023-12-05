@@ -264,14 +264,14 @@ library flora-web
     FloraWeb.Pages.Templates.Error
     FloraWeb.Pages.Templates.Haddock
     FloraWeb.Pages.Templates.Packages
-    FloraWeb.Pages.Templates.Pages.Categories
-    FloraWeb.Pages.Templates.Pages.Categories.Index
-    FloraWeb.Pages.Templates.Pages.Categories.Show
-    FloraWeb.Pages.Templates.Pages.Home
-    FloraWeb.Pages.Templates.Pages.Packages
-    FloraWeb.Pages.Templates.Pages.Search
-    FloraWeb.Pages.Templates.Pages.Sessions
-    FloraWeb.Pages.Templates.Pages.Settings
+    FloraWeb.Pages.Templates.Screens.Categories
+    FloraWeb.Pages.Templates.Screens.Categories.Index
+    FloraWeb.Pages.Templates.Screens.Categories.Show
+    FloraWeb.Pages.Templates.Screens.Home
+    FloraWeb.Pages.Templates.Screens.Packages
+    FloraWeb.Pages.Templates.Screens.Search
+    FloraWeb.Pages.Templates.Screens.Sessions
+    FloraWeb.Pages.Templates.Screens.Settings
     FloraWeb.Pages.Templates.Types
     FloraWeb.Routes
     FloraWeb.Servant.Common

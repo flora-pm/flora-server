@@ -22,7 +22,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types (Release)
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes.Sessions (CreateSessionResponses)
-import FloraWeb.Pages.Templates.Pages.Sessions qualified as Sessions
+import FloraWeb.Pages.Templates.Screens.Sessions qualified as Sessions
 import FloraWeb.Session (getSession)
 
 guardThatPackageExists

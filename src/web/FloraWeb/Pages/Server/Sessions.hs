@@ -10,6 +10,7 @@ import Optics.Core
 import Servant
 
 import Control.Monad.IO.Class
+import Data.Text (Text)
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Orphans ()
@@ -20,9 +21,8 @@ import FloraWeb.Common.Guards (guardThatUserHasProvidedTOTP)
 import FloraWeb.Common.Utils
 import FloraWeb.Pages.Routes.Sessions
 import FloraWeb.Pages.Templates
-import FloraWeb.Pages.Templates.Pages.Sessions as Sessions
+import FloraWeb.Pages.Templates.Screens.Sessions as Sessions
 import FloraWeb.Session
-import Data.Text (Text)
 
 server :: ServerT Routes FloraPage
 server =
@@ -62,7 +62,7 @@ createSessionHandler LoginForm{email, password, totp} = do
         then do
           if user.totpEnabled
             then guardThatUserHasProvidedTOTP totp $ \userCode -> do
-             checkTOTPIsValid userCode user
+              checkTOTPIsValid userCode user
             else do
               Log.logInfo_ "[+] User connected!"
               sessionId <- persistSession session.sessionId user.userId

@@ -21,7 +21,7 @@ import FloraWeb.Common.Auth.TwoFactor qualified as TwoFactor
 import FloraWeb.Common.Utils (redirect)
 import FloraWeb.Pages.Routes.Settings
 import FloraWeb.Pages.Templates (render, renderUVerb)
-import FloraWeb.Pages.Templates.Pages.Settings qualified as Settings
+import FloraWeb.Pages.Templates.Screens.Settings qualified as Settings
 import FloraWeb.Pages.Templates.Types
 import FloraWeb.Session
 

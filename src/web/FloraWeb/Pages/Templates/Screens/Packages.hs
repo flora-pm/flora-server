@@ -1,4 +1,4 @@
-module FloraWeb.Pages.Templates.Pages.Packages where
+module FloraWeb.Pages.Templates.Screens.Packages where
 
 import Data.Function ((&))
 import Data.Maybe (fromMaybe)

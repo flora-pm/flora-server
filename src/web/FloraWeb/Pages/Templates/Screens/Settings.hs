@@ -1,4 +1,4 @@
-module FloraWeb.Pages.Templates.Pages.Settings where
+module FloraWeb.Pages.Templates.Screens.Settings where
 
 import Lucid
 

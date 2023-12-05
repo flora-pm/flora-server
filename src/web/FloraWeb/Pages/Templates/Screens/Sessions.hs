@@ -1,4 +1,4 @@
-module FloraWeb.Pages.Templates.Pages.Sessions where
+module FloraWeb.Pages.Templates.Screens.Sessions where
 
 import FloraWeb.Pages.Templates.Types
 import Lucid

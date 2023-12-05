@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module FloraWeb.Pages.Templates.Pages.Home where
+module FloraWeb.Pages.Templates.Screens.Home where
 
 import CMarkGFM
 import Control.Monad.Reader
