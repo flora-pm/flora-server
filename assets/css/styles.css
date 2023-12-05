@@ -56,6 +56,14 @@
     padding: 0.5rem;
     width: 100%;
   }
+
+  .totp-zone {
+    display: none;
+  }
+
+  input[type="checkbox"]:checked + div.totp-zone {
+    display: block;
+  }
 }
 
 .version-list-item {
