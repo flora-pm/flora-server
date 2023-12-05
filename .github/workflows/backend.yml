@@ -71,6 +71,7 @@ jobs:
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
+        sudo apt install libsodium
         source ./environment.ci.sh
         touch ~/.pgpass
         chmod 0600 ~/.pgpass
