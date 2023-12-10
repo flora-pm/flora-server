@@ -37,7 +37,7 @@ main = do
     . runBlobStorePure
     . runFailIO
     $ do
-      Update.createPackageIndex "hackage" "" Nothing
+      Update.createPackageIndex "hackage" "" "" Nothing
       testMigrations
       f' <- getFixtures
       importAllPackages f'
