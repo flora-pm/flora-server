@@ -18,6 +18,6 @@ presentationHeader title subtitle numberOfPackages = do
     div_ [class_ "page-title"] $ do
       h1_ [class_ ""] $ do
         span_ [class_ "headline"] $ toHtml title
-    p_ [class_ "package-count"] $ toHtml $ display numberOfPackages <> " results"
     div_ [class_ "synopsis lg:text-xl text-center"] $
       p_ [class_ ""] (toHtml subtitle)
+    p_ [class_ "package-count"] $ toHtml $ display numberOfPackages <> " results"

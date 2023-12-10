@@ -16,7 +16,7 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
 import Flora.Model.PackageIndex.Types
-  ( PackageIndex
+  ( PackageIndex (..)
   , mkPackageIndex
   )
 
@@ -29,7 +29,7 @@ updatePackageIndexByName repositoryName newTimestamp = do
         ([field| repository |], repositoryName)
         (Only newTimestamp)
 
-createPackageIndex :: (IOE :> es, DB :> es) => Text -> Text -> Maybe UTCTime -> Eff es ()
-createPackageIndex repositoryName url timestamp = do
-  packageIndex <- mkPackageIndex repositoryName url timestamp
+createPackageIndex :: (IOE :> es, DB :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
+createPackageIndex repositoryName url description timestamp = do
+  packageIndex <- mkPackageIndex repositoryName url description timestamp
   void $ dbtToEff $ insert @PackageIndex packageIndex

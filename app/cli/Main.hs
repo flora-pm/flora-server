@@ -46,7 +46,7 @@ data Command
   | GenDesignSystemComponents
   | ImportPackages FilePath Text
   | ImportIndex FilePath Text
-  | ProvisionRepository Text Text
+  | ProvisionRepository Text Text Text
   | ImportPackageTarball PackageName Version FilePath
   deriving stock (Show, Eq)
 
@@ -135,6 +135,7 @@ parseProvisionRepository =
   ProvisionRepository
     <$> option str (long "name" <> metavar "<repository name>" <> help "Name of the repository")
     <*> option str (long "url" <> metavar "<repository url>" <> help "Link to the package repository")
+    <*> option str (long "description" <> metavar "<repository description>" <> help "Description of the package repository" <> value "" <> showDefault)
 
 parseImportPackageTarball :: Parser Command
 parseImportPackageTarball =
@@ -174,12 +175,12 @@ runOptions (Options (CreateUser opts)) = do
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path repository)) = importFolderOfCabalFiles path repository
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
-runOptions (Options (ProvisionRepository name url)) = provisionRepository name url
+runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
 
-provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Eff es ()
-provisionRepository name url = do
-  Update.createPackageIndex name url Nothing
+provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es ()
+provisionRepository name url description = do
+  Update.createPackageIndex name url description Nothing
 
 importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
 importFolderOfCabalFiles path repository = Log.withStdOutLogger $ \appLogger -> do
