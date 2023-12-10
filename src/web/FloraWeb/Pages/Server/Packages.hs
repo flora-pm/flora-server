@@ -30,6 +30,7 @@ import Flora.Logging
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
@@ -44,6 +45,7 @@ import FloraWeb.Pages.Templates.Packages qualified as Package
 import FloraWeb.Pages.Templates.Screens.Packages qualified as Packages
 import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Session
+import Network.HTTP.Types (notFound404)
 
 server :: ServerT Routes FloraPage
 server =
@@ -76,8 +78,22 @@ showNamespaceHandler namespace pageParam = do
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
   (count', results) <- Search.listAllPackagesInNamespace namespace (fromPage pageNumber)
-  render templateDefaults $
-    Search.showAllPackagesInNamespace namespace count' pageNumber results
+  if extractNamespaceText namespace == "haskell"
+    then
+      render templateDefaults $
+        Search.showAllPackagesInNamespace
+          namespace
+          "Core Haskell packages"
+          count'
+          pageNumber
+          results
+    else do
+      mPackageIndex <- Query.getPackageIndexByName (extractNamespaceText namespace)
+      case mPackageIndex of
+        Nothing -> renderError templateDefaults notFound404
+        Just packageIndex ->
+          render templateDefaults $
+            Search.showAllPackagesInNamespace namespace packageIndex.description count' pageNumber results
 
 showPackageHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showPackageHandler namespace packageName = showPackageVersion namespace packageName Nothing

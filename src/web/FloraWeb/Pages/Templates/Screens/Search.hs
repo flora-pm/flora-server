@@ -21,10 +21,10 @@ showAllPackages count currentPage packagesInfo = do
     div_ [class_ ""] $ packageListing Nothing packagesInfo
     paginationNav count currentPage ListAllPackages
 
-showAllPackagesInNamespace :: Namespace -> Word -> Positive Word -> Vector PackageInfo -> FloraHTML
-showAllPackagesInNamespace namespace count currentPage packagesInfo = do
+showAllPackagesInNamespace :: Namespace -> Text -> Word -> Positive Word -> Vector PackageInfo -> FloraHTML
+showAllPackagesInNamespace namespace description count currentPage packagesInfo = do
   div_ [class_ "container"] $ do
-    presentationHeader (display namespace) "" count
+    presentationHeader (display namespace) description count
     div_ [class_ ""] $ packageListing Nothing packagesInfo
     paginationNav count currentPage (ListAllPackagesInNamespace namespace)
 

@@ -45,8 +45,10 @@ db-reset: db-drop db-setup db-provision ## Reset the dev database
 db-provision: ## Create categories and repositories
 	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
 	@cabal run -- flora-cli provision categories
-	@cabal run -- flora-cli provision-repository --name "hackage" --url https://hackage.haskell.org
-	@cabal run -- flora-cli provision-repository --name "cardano" --url https://input-output-hk.github.io/cardano-haskell-packages
+	@cabal run -- flora-cli provision-repository --name "hackage" --url https://hackage.haskell.org \
+			--description "Central package repository"
+	@cabal run -- flora-cli provision-repository --name "cardano" --url https://input-output-hk.github.io/cardano-haskell-packages \
+			--description "Packages of the Cardano project"
 
 db-provision-test-packages: ## Load development data in the database
 	@cabal run -- flora-cli provision test-packages
