@@ -35,12 +35,15 @@ defaultRepo = "test-namespace"
 defaultRepoURL :: Text
 defaultRepoURL = "localhost"
 
+defaultDescription :: Text
+defaultDescription = "test-description"
+
 testImportIndex :: Fixtures -> TestEff ()
 testImportIndex fixture = withStdOutLogger $
   \logger -> do
     mIndex <- Query.getPackageIndexByName defaultRepo
     case mIndex of
-      Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL Nothing
+      Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
       Just _ -> pure ()
     importFromIndex
       logger
