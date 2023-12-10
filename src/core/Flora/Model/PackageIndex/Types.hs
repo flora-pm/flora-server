@@ -27,6 +27,7 @@ data PackageIndex = PackageIndex
   , repository :: Text
   , timestamp :: Maybe UTCTime
   , url :: Text
+  , description :: Text
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)
@@ -34,8 +35,8 @@ data PackageIndex = PackageIndex
     (Entity)
     via (GenericEntity '[TableName "package_indexes"] PackageIndex)
 
-mkPackageIndex :: IOE :> es => Text -> Text -> Maybe UTCTime -> Eff es PackageIndex
-mkPackageIndex repository url timestamp = do
+mkPackageIndex :: IOE :> es => Text -> Text -> Text -> Maybe UTCTime -> Eff es PackageIndex
+mkPackageIndex repository url description timestamp = do
   packageIndexId <- PackageIndexId <$> liftIO UUID.nextRandom
   pure $ PackageIndex{..}
 

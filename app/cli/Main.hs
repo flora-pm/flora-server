@@ -179,7 +179,7 @@ runOptions (Options (ImportPackageTarball pname version path)) = importPackageTa
 
 provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Eff es ()
 provisionRepository name url = do
-  Update.createPackageIndex name url Nothing
+  Update.createPackageIndex name url "" Nothing
 
 importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
 importFolderOfCabalFiles path repository = Log.withStdOutLogger $ \appLogger -> do
