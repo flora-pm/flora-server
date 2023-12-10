@@ -57,7 +57,11 @@ getAllPackages = do
 getPackagesByNamespace :: DB :> es => Namespace -> Eff es (Vector Package)
 getPackagesByNamespace namespace = dbtToEff $ selectManyByField @Package [field| namespace |] (Only namespace)
 
-getPackageByNamespaceAndName :: (DB :> es, Log :> es, Time :> es) => Namespace -> PackageName -> Eff es (Maybe Package)
+getPackageByNamespaceAndName
+  :: (DB :> es, Log :> es, Time :> es)
+  => Namespace
+  -> PackageName
+  -> Eff es (Maybe Package)
 getPackageByNamespaceAndName namespace name = do
   (result, duration) <-
     timeAction $

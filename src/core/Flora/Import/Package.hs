@@ -22,15 +22,20 @@ module Flora.Import.Package where
 import Control.DeepSeq (force)
 import Control.Exception
 import Control.Monad.Except
+import Data.Aeson
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
+import Data.Char qualified as Char
 import Data.Maybe
-import Data.Pool (Pool, withResource)
+import Data.Pool (Pool)
 import Data.Poolboy qualified as Poolboy
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Display
+import Data.Text.Encoding qualified as T
 import Data.Text.IO qualified as T
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
@@ -64,9 +69,9 @@ import Effectful.Reader.Static (Reader, ask)
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Log qualified
-import OddJobs.Job (createJob)
 import Optics.Core
 import System.Directory qualified as System
+import System.Exit
 import System.FilePath
 
 import Flora.Environment.Config (PoolConfig (..))
@@ -75,11 +80,12 @@ import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
-import Flora.Model.Job (FloraOddJobs (..))
 import Flora.Model.Package.Orphans ()
+import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release (deterministicReleaseId)
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
@@ -190,30 +196,6 @@ importFile userId path repo =
       >>= uncurry (extractPackageDataFromCabal userId repo)
       >>= persistImportOutput wq
 
-enqueueImportJob :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
-enqueueImportJob importOutput = do
-  pool <- getPool
-  void $
-    liftIO $
-      withResource
-        pool
-        ( \conn ->
-            createJob
-              conn
-              "oddjobs"
-              (ImportPackage importOutput)
-        )
-
-importRelFile
-  :: (Time :> es, Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
-  => UserId
-  -> FilePath
-  -> (Text, Set PackageName)
-  -> Eff es ()
-importRelFile user dir repo = do
-  workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importFile user workdir repo
-
 -- | Loads and parses a Cabal file
 loadFile
   :: (IOE :> es, Log :> es)
@@ -231,8 +213,47 @@ loadFile path = do
   descr <- loadContent path content
   pure (timestamp, descr)
 
-loadContent :: Log :> es => String -> BS.ByteString -> Eff es GenericPackageDescription
+loadContent :: Log :> es => FilePath -> BS.ByteString -> Eff es GenericPackageDescription
 loadContent = parseString parseGenericPackageDescription
+
+loadJSONContent
+  :: (Log :> es, IOE :> es)
+  => FilePath
+  -> BS.ByteString
+  -> (Text, Set PackageName)
+  -> Eff es (PackageName, Namespace, Version, Target)
+loadJSONContent path content (repositoryName, repositoryPackages) = do
+  case getNameAndVersionFromPath path of
+    Nothing -> do
+      Log.logAttention "parse error" $
+        object ["path" .= path]
+      error "Parse error"
+    Just (name, versionText) -> do
+      let (mReleaseJSON :: Maybe ReleaseJSONFile) = decodeStrict' content
+      let field = "<repo>/package/" <> name <> "-" <> versionText <> ".tar.gz"
+      case mReleaseJSON of
+        Nothing -> do
+          Log.logAttention "Could not parse JSON" $
+            object ["json" .= T.decodeUtf8 content]
+          liftIO exitFailure
+        Just releaseJSON -> do
+          let mTarget = KeyMap.lookup (Key.fromText field) releaseJSON.signed.targets
+          case mTarget of
+            Nothing -> do
+              Log.logAttention ("Could not find field: " <> field) $
+                object ["json" .= releaseJSON]
+              liftIO exitFailure
+            Just target -> do
+              let version = Version.mkVersion $ map Char.digitToInt $ T.unpack versionText
+              let packageName = PackageName name
+              let chosenNamespace = chooseNamespace packageName repositoryName repositoryPackages
+              pure (packageName, chosenNamespace, version, target)
+
+getNameAndVersionFromPath :: FilePath -> Maybe (Text, Text)
+getNameAndVersionFromPath path =
+  case T.split (== '/') $ T.pack $ takeDirectory path of
+    [name, versionText] -> Just (name, versionText)
+    _ -> Nothing
 
 parseString
   :: Log :> es
@@ -293,7 +314,24 @@ persistImportOutput wq (ImportOutput package categories release components) = do
       Update.upsertPackage dep.package
       Update.upsertRequirement dep.requirement
 
-withWorkerDbPool :: (Reader PoolConfig :> es, IOE :> es) => (Poolboy.WorkQueue -> Eff es a) -> Eff es a
+persistHashes
+  :: (DB :> es, Time :> es, Log :> es)
+  => (PackageName, Namespace, Version, Target)
+  -> Eff es ()
+persistHashes (packageName, namespace, version, target) = do
+  mPackage <- Query.getPackageByNamespaceAndName namespace packageName
+  case mPackage of
+    Nothing -> error $ show packageName <> " does not exist!"
+    Just package -> do
+      mRelease <- Query.getReleaseByVersion package.packageId version
+      case mRelease of
+        Nothing -> error "Release does not exist"
+        Just release -> Update.setArchiveChecksum release.releaseId target.hashes.sha256
+
+withWorkerDbPool
+  :: (Reader PoolConfig :> es, IOE :> es)
+  => (Poolboy.WorkQueue -> Eff es a)
+  -> Eff es a
 withWorkerDbPool f = do
   cfg <- ask @PoolConfig
   withEffToIO $ \effIO ->
@@ -316,7 +354,7 @@ extractPackageDataFromCabal
 extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
-  let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
+  let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to T.pack % to PackageName
   let packageVersion = force packageDesc.package.pkgVersion
   let namespace = chooseNamespace packageName repositoryName repositoryPackages
   let packageId = deterministicPackageId namespace packageName
@@ -549,7 +587,7 @@ buildDependency
   -> Cabal.Dependency
   -> ImportDependency
 buildDependency package (repository, repositoryPackages) packageComponentId (Cabal.Dependency depName versionRange libs) =
-  let name = depName & unPackageName & pack & PackageName
+  let name = depName & unPackageName & T.pack & PackageName
       namespace = chooseNamespace name repository repositoryPackages
       packageId = deterministicPackageId namespace name
       ownerId = package.ownerId
@@ -575,9 +613,9 @@ getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.rep
 chooseNamespace :: PackageName -> Text -> Set PackageName -> Namespace
 chooseNamespace name repo repositoryPackages =
   if
-      | name `Set.member` coreLibraries -> Namespace "haskell"
-      | name `Set.member` repositoryPackages -> Namespace repo
-      | otherwise -> Namespace "hackage"
+    | name `Set.member` coreLibraries -> Namespace "haskell"
+    | name `Set.member` repositoryPackages -> Namespace repo
+    | otherwise -> Namespace "hackage"
 
 extractTestedWith :: Vector (CompilerFlavor, VersionRange) -> Vector VersionRange
 extractTestedWith testedWithVector =

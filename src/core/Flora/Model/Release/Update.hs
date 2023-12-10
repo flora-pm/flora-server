@@ -4,7 +4,15 @@
 module Flora.Model.Release.Update where
 
 import Control.Monad (void)
+import Crypto.Hash.SHA256 qualified as SHA
+import Data.ByteString (toStrict)
+import Data.ByteString.Lazy (LazyByteString)
+import Data.Function ((&))
+import Data.Text (Text)
 import Data.Text.Display (display)
+import Data.Time (UTCTime)
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
 import Database.PostgreSQL.Entity.Types (field)
@@ -13,13 +21,6 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 
-import Crypto.Hash.SHA256 qualified as SHA
-import Data.ByteString (toStrict)
-import Data.ByteString.Lazy (LazyByteString)
-import Data.Function ((&))
-import Data.Time (UTCTime)
-import Data.Vector (Vector)
-import Data.Vector qualified as Vector
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Release.Types
@@ -108,3 +109,12 @@ setReleasesDeprecationMarker releaseVersions =
     FROM (VALUES (?,?)) as upd(x,y)
     WHERE r0.release_id = (upd.y :: uuid)
     |]
+
+setArchiveChecksum :: DB :> es => ReleaseId -> Text -> Eff es ()
+setArchiveChecksum releaseId sha256Hash =
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+        [[field| archive_checksum |]]
+        ([field| release_id |], releaseId)
+        (Only sha256Hash)
