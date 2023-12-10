@@ -140,7 +140,7 @@ mkAdmin AdminCreationForm{username, email, password} = do
   let createdAt = timestamp
   let updatedAt = timestamp
   let displayName = ""
-  let userFlags = UserFlags{isAdmin = True, canLogin = False}
+  let userFlags = UserFlags{isAdmin = True, canLogin = True}
   let totpKey = Nothing
   let totpEnabled = False
   pure User{..}

@@ -27,13 +27,13 @@ flag prod
 
 common common-extensions
   default-extensions:
-    NoStarIsType
     DataKinds
     DeriveAnyClass
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
     LambdaCase
+    NoStarIsType
     OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings

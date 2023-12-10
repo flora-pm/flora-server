@@ -58,18 +58,26 @@ createSessionHandler LoginForm{email, password, totp} = do
               & (#flashError ?~ mkError "Could not authenticate")
       respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
     Just user ->
-      if validatePassword (mkPassword password) user.password
-        then do
-          if user.totpEnabled
-            then guardThatUserHasProvidedTOTP totp $ \userCode -> do
-              checkTOTPIsValid userCode user
+      if user.userFlags.canLogin
+        then
+          if validatePassword (mkPassword password) user.password
+            then do
+              if user.totpEnabled
+                then guardThatUserHasProvidedTOTP totp $ \userCode -> do
+                  checkTOTPIsValid userCode user
+                else do
+                  sessionId <- persistSession session.sessionId user.userId
+                  let sessionCookie = craftSessionCookie sessionId True
+                  respond $ WithStatus @301 $ redirectWithCookie "/" sessionCookie
             else do
-              Log.logInfo_ "[+] User connected!"
-              sessionId <- persistSession session.sessionId user.userId
-              let sessionCookie = craftSessionCookie sessionId True
-              respond $ WithStatus @301 $ redirectWithCookie "/" sessionCookie
+              Log.logInfo_ "Invalid password"
+              templateDefaults <- fromSession session defaultTemplateEnv
+              let templateEnv =
+                    templateDefaults
+                      & (#flashError ?~ mkError "Could not authenticate")
+              respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
         else do
-          Log.logInfo_ "[+] Couldn't authenticate user"
+          Log.logInfo_ "User not allowed to log-in"
           templateDefaults <- fromSession session defaultTemplateEnv
           let templateEnv =
                 templateDefaults

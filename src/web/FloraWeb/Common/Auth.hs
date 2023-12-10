@@ -81,7 +81,7 @@ handler mustBeConnected floraEnv req = do
     case mUserInfo of
       Nothing ->
         if mustBeConnected
-          then throwError $ err401{errBody = "Connect first"}
+          then throwError $ err401{errBody = "Log-in first"}
           else do
             nSessionId <- liftIO newPersistentSessionId
             pure (Nothing, nSessionId)
