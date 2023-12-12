@@ -1,8 +1,14 @@
+{-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use <$>" #-}
+
 module Flora.Search where
 
 import Data.Aeson
 import Data.List qualified as List
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display (Display (..))
 import Data.Text.Lazy.Builder qualified as Builder
 import Data.Vector (Vector)
@@ -16,12 +22,14 @@ import Log qualified
 import Flora.Logging
 import Flora.Model.Package (Namespace (..), PackageInfo (..), PackageName (..), formatPackage)
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Package.Types qualified as Package
 
 data SearchAction
   = ListAllPackages
   | ListAllPackagesInNamespace Namespace
   | SearchPackages Text
   | DependentsOf Namespace PackageName (Maybe Text)
+  | SearchPackage Namespace PackageName
   deriving (Eq, Ord, Show)
 
 instance Display SearchAction where
@@ -34,6 +42,8 @@ instance Display SearchAction where
       <> "/"
       <> displayBuilder packageName
       <> foldMap (\searchString -> " \"" <> Builder.fromText searchString <> "\"") mbSearchString
+  displayBuilder (SearchPackage namespace packageName) =
+    "Package " <> displayBuilder namespace <> "/" <> displayBuilder packageName
 
 searchPackageByName
   :: (DB :> es, Log :> es, Time :> es)
@@ -98,3 +108,48 @@ listAllPackages (offset, limit) = do
   results <- Query.listAllPackages (offset, limit)
   count <- Query.countPackages
   pure (count, results)
+
+-- | Search modifiers:
+--
+-- * depends:<@namespace>/<packagename>
+-- * in:<@namespace>/<packagename>
+-- * in:<@namespace>
+parseSearchQuery :: Text -> Maybe SearchAction
+parseSearchQuery = \case
+  (Text.stripPrefix "depends:" -> Just rest) ->
+    case parseNamespacedPackageSearch rest of
+      Just (namespace, packageName) ->
+        Just $ DependentsOf namespace packageName Nothing
+      Nothing -> Just $ SearchPackages rest
+  (Text.stripPrefix "in:" -> Just rest) ->
+    case parseNamespaceAndPackageSearch rest of
+      (Just namespace, Just packageName) ->
+        Just $ SearchPackage namespace packageName
+      (Just namespace, Nothing) ->
+        Just $ ListAllPackagesInNamespace namespace
+      _ -> Just $ SearchPackages rest
+  e -> Just $ SearchPackages e
+
+-- Determine if the string is
+-- <@namespace>/<packagename>
+parseNamespacedPackageSearch :: Text -> Maybe (Namespace, PackageName)
+parseNamespacedPackageSearch text =
+  case Text.breakOn "/" text of
+    (_, "") -> Nothing
+    (Package.parseNamespace -> Just namespace, Text.stripPrefix "/" -> Just potentialPackageName) ->
+      case Package.parsePackageName potentialPackageName of
+        Just packageName -> Just (namespace, packageName)
+        Nothing -> Nothing
+    (_, _) -> Nothing
+
+parseNamespaceAndPackageSearch :: Text -> (Maybe Namespace, Maybe PackageName)
+parseNamespaceAndPackageSearch text =
+  case Text.breakOn " " text of
+    (Package.parseNamespace -> Just namespace, "") ->
+      (Just namespace, Nothing)
+    (_, "") -> (Nothing, Nothing)
+    (Package.parseNamespace -> Just namespace, Text.stripPrefix " " -> Just potentialPackageName) ->
+      case Package.parsePackageName potentialPackageName of
+        Just packageName -> (Just namespace, Just packageName)
+        Nothing -> (Just namespace, Nothing)
+    (_, _) -> (Nothing, Nothing)

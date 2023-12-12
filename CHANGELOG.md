@@ -10,6 +10,7 @@
 * Add search bar for reverse dependencies ([#476](https://github.com/flora-pm/flora-server/pull/476))
 * Support non Hackage repo URLs ([#479](https://github.com/flora-pm/flora-server/pull/479))
 * Add description field in package index ([#486](https://github.com/flora-pm/flora-server/pull/486))
+* Introduce search bar modifiers ([#487](https://github.com/flora-pm/flora-server/pull/487))
 
 ## 1.0.13 -- 2023-09-17
 * Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
