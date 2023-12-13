@@ -1,7 +1,34 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Flora.Model.Package.Query where
+module Flora.Model.Package.Query
+  ( countPackages
+  , countPackagesByName
+  , countPackagesInNamespace
+  , getAllPackageDependents
+  , getAllPackageDependentsWithLatestVersion
+  , getAllPackages
+  , getAllRequirements
+  , getComponent
+  , getNonDeprecatedPackages
+  , getNumberOfPackageDependents
+  , getPackageByNamespaceAndName
+  , getPackageCategories
+  , getPackageDependents
+  , getPackageDependentsByName
+  , getPackageDependentsWithLatestVersion
+  , getPackagesByNamespace
+  , getPackagesFromCategoryWithLatestVersion
+  , getRequirements
+  , listAllPackages
+  , listAllPackagesInNamespace
+  , numberOfPackageRequirementsQuery
+  , searchPackage
+  , unsafeGetComponent
+  , getComponentById
+  , searchPackageByNamespace
+  , getNumberOfPackageRequirements
+  ) where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
@@ -436,6 +463,40 @@ searchPackage (offset, limit) searchString =
         ;
         |]
       (searchString, searchString, offset, limit)
+
+searchPackageByNamespace
+  :: DB :> es
+  => (Word, Word)
+  -> Namespace
+  -> Text
+  -> Eff es (Vector PackageInfo)
+searchPackageByNamespace (offset, limit) namespace searchString =
+  dbtToEff $
+    query
+      Select
+      [sql|
+        SELECT  lv."namespace"
+              , lv."name"
+              , lv."synopsis"
+              , lv."version"
+              , lv."license"
+              , word_similarity(lv.name, ?) as rating
+        FROM latest_versions as lv
+        WHERE 
+        ? <% lv."name"
+        AND lv."namespace" = ?
+        GROUP BY
+            lv."namespace"
+          , lv."name"
+          , lv."synopsis"
+          , lv."version"
+          , lv."license"
+        ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
+        OFFSET ?
+        LIMIT ?
+        ;
+        |]
+      (searchString, searchString, namespace, offset, limit)
 
 -- | Returns a summary of packages
 listAllPackages

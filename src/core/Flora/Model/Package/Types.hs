@@ -85,7 +85,7 @@ extractPackageNameText (PackageName text) = text
 
 parsePackageName :: Text -> Maybe PackageName
 parsePackageName txt =
-  if matches "[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
+  if matches "^[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*$" txt
     then Just $ PackageName txt
     else Nothing
 
@@ -109,7 +109,7 @@ packageNameSchema :: Schema
 packageNameSchema =
   mempty
     & #description
-      ?~ "Name of a package\n It corresponds to the regular expression: `[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*`"
+      ?~ "Name of a package\n It corresponds to the regular expression: `^[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*$`"
 
 newtype Namespace = Namespace Text
   deriving stock (Show, Generic)
@@ -148,7 +148,7 @@ instance FromHttpApiData Namespace where
 
 parseNamespace :: Text -> Maybe Namespace
 parseNamespace txt =
-  if matches "@[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
+  if matches "^@[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*$" txt
     then Just $ Namespace txt
     else Nothing
 

@@ -228,9 +228,9 @@ testReleaseDeprecation = do
   assertEqual 68 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
-  deprecatedBinaryVersion' <- assertJust =<< Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
+  deprecatedBinaryVersion' <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
   Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
-  deprecatedBinaryVersion <- assertJust =<< Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
+  deprecatedBinaryVersion <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
   assertEqual deprecatedBinaryVersion.deprecated (Just True)
 
 ---

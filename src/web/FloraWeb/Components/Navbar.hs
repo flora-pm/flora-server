@@ -110,18 +110,24 @@ userMenu = do
 navbarSearch :: FloraHTML
 navbarSearch = do
   flag <- asks displayNavbarSearch
+  mContent <- asks navbarSearchContent
   if flag
     then do
+      let contentValue =
+            case mContent of
+              Nothing -> []
+              Just content -> [value_ content]
       form_ [action_ "/search", method_ "GET"] $ do
         div_ [class_ "flex items-center py-2"] $ do
           label_ [for_ "search"] ""
-          input_
+          input_ $
             [ class_ "navbar-search"
             , id_ "search"
             , type_ "search"
             , name_ "q"
             , placeholder_ "Search a package"
             ]
+              ++ contentValue
     else pure mempty
 
 logOff :: Maybe User -> PersistentSessionId -> FloraHTML

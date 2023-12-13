@@ -170,7 +170,6 @@ library
     , monad-time-effectful
     , mtl
     , odd-jobs
-    , one-time-password
     , openapi3
     , optics-core
     , password
@@ -465,6 +464,7 @@ test-suite flora-test
     , monad-time-effectful
     , optics-core
     , password
+    , password-types
     , pg-entity
     , pg-transact
     , pg-transact-effectful
@@ -480,6 +480,7 @@ test-suite flora-test
     , text
     , time
     , transformers
+    , typed-process
     , uuid
     , vector
     , zlib
@@ -491,6 +492,7 @@ test-suite flora-test
     Flora.ImportSpec
     Flora.OddJobSpec
     Flora.PackageSpec
+    Flora.SearchSpec
     Flora.TemplateSpec
     Flora.TestUtils
     Flora.UserSpec
