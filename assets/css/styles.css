@@ -8,6 +8,10 @@
 @import "2-components/2-package-component.css";
 @import "2-components/3-breadcrumb.css";
 @import "2-components/4-license.css";
+@import "2-components/5-primary-search.css";
+@import "2-components/6-secondary-search.css";
+@import "2-components/7-button.css";
+@import "2-components/8-alert.css";
 
 @import "3-screens/1-package/1-package.css";
 @import "3-screens/1-package/2-release-changelog.css";
@@ -52,6 +56,46 @@
     padding: 0.5rem;
     width: 100%;
   }
+
+  .password {
+    margin-bottom: 1rem;
+  }
+
+  .totp-zone {
+    display: none;
+  }
+
+  input[type="checkbox"]:checked + div.totp-zone {
+    display: block;
+  }
+
+  .login-button {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  div.login-button button {
+    background-color: var(--main-page-button-background);
+    border-radius: 50rem;
+    border-width: 1px;
+    color: var(--text-color);
+    font-weight: bolder;
+    padding-bottom: 1rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    padding-top: 1rem;
+  }
+
+  div.login-button button:hover {
+    border-color: var(--main-page-button-focus-border-color);
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+
+    /* offset-x | offset-y | blur-radius | spread-radius | color */
+    box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
+  }
 }
 
 .version-list-item {
@@ -80,13 +124,13 @@
 
   a {
     display: block;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     margin-top: 1rem;
     margin-bottom: 1rem;
     padding-left: 1rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
-    font-size: 1.25rem;
-    line-height: 1.75rem;
   }
 
   a:hover {
@@ -100,12 +144,12 @@
 
   .package-list-item__name {
     display: inline;
-    margin-right: 0.5rem;
     color: var(--package-list-item-name-color);
   }
 
   .package-list-item__synopsis {
     display: inline;
+    margin-left: 10px;
     color: var(--package-list-item-synopsis-color);
   }
 
@@ -127,6 +171,11 @@
     font-size: 0.875rem;
     line-height: 1.25rem;
   }
+
+  .package-list-item__component {
+    display: inline;
+    color: var(--package-list-item-component-color);
+  }
 }
 
 .category a:hover {
@@ -147,10 +196,6 @@
   a:hover {
     text-decoration: underline;
   }
-}
-
-.release a:hover {
-  text-decoration: underline;
 }
 
 .theme-button--light {
@@ -221,8 +266,10 @@
   text-decoration: underline;
 }
 
+/* offset-x | offset-y | blur-radius | spread-radius | color */
 .exact-match {
   box-shadow: 0 5px 10px 0 rgb(0 0 0 / 50%);
+  border-radius: 6px;
 }
 
 .package-count {

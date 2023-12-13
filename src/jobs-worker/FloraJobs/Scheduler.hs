@@ -3,9 +3,9 @@
 -- | Represents the various jobs that can be run
 module FloraJobs.Scheduler
   ( scheduleReadmeJob
+  , scheduleTarballJob
   , scheduleChangelogJob
   , scheduleUploadTimeJob
-  , scheduleIndexImportJob
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
   , scheduleRefreshLatestVersions
@@ -18,8 +18,8 @@ module FloraJobs.Scheduler
   )
 where
 
+import Data.Aeson (ToJSON)
 import Data.Pool
-import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (Only (..))
@@ -27,9 +27,8 @@ import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
 import Effectful.PostgreSQL.Transact.Effect
-import Effectful.Time qualified as Time
 import Log
-import OddJobs.Job (Job (..), createJob, scheduleJob)
+import OddJobs.Job (Job (..), createJob)
 
 import Flora.Model.Job
 import Flora.Model.Package
@@ -47,74 +46,35 @@ scheduleReadmeJob pool rid package version =
           (FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version)
     )
 
+scheduleTarballJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
+scheduleTarballJob pool rid package version =
+  createJobWithResource pool $ FetchTarball $ TarballJobPayload package rid $ MkIntAesonVersion version
+
 scheduleChangelogJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
 scheduleChangelogJob pool rid package version =
-  withResource
-    pool
-    ( \res ->
-        createJob
-          res
-          jobTableName
-          (FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version)
-    )
+  createJobWithResource pool $ FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version
 
 scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
 scheduleUploadTimeJob pool releaseId packageName version =
-  withResource
-    pool
-    ( \res ->
-        createJob
-          res
-          jobTableName
-          (FetchUploadTime $ UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version))
-    )
-
-scheduleIndexImportJob :: Pool PG.Connection -> IO Job
-scheduleIndexImportJob pool =
-  withResource
-    pool
-    ( \conn -> do
-        t <- Time.currentTime
-        let runAt = Time.addUTCTime Time.nominalDay t
-        scheduleJob
-          conn
-          jobTableName
-          (ImportHackageIndex ImportHackageIndexPayload)
-          runAt
-    )
+  createJobWithResource pool $
+    FetchUploadTime $
+      UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version)
 
 schedulePackageDeprecationListJob :: Pool PG.Connection -> IO Job
 schedulePackageDeprecationListJob pool =
-  withResource
-    pool
-    ( \conn ->
-        createJob
-          conn
-          jobTableName
-          FetchPackageDeprecationList
-    )
+  createJobWithResource pool FetchPackageDeprecationList
 
-scheduleReleaseDeprecationListJob :: Pool PG.Connection -> (PackageName, Vector ReleaseId) -> IO Job
+scheduleReleaseDeprecationListJob
+  :: Pool PG.Connection -> (PackageName, Vector ReleaseId) -> IO Job
 scheduleReleaseDeprecationListJob pool (package, releaseIds) =
-  withResource
-    pool
-    ( \conn ->
-        createJob
-          conn
-          jobTableName
-          (FetchReleaseDeprecationList package releaseIds)
-    )
+  createJobWithResource pool (FetchReleaseDeprecationList package releaseIds)
 
 scheduleRefreshLatestVersions :: Pool PG.Connection -> IO Job
-scheduleRefreshLatestVersions pool =
-  withResource
-    pool
-    ( \conn ->
-        createJob
-          conn
-          jobTableName
-          RefreshLatestVersions
-    )
+scheduleRefreshLatestVersions pool = createJobWithResource pool RefreshLatestVersions
+
+createJobWithResource :: ToJSON p => Pool PG.Connection -> p -> IO Job
+createJobWithResource pool job =
+  withResource pool $ \conn -> createJob conn jobTableName job
 
 checkIfIndexImportJobIsNotRunning :: JobsRunner Bool
 checkIfIndexImportJobIsNotRunning = do

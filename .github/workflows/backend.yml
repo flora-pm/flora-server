@@ -52,12 +52,12 @@ jobs:
 
     - name: Set up Haskell
       id: setup-haskell
-      uses: haskell/actions/setup@v2
+      uses: haskell-actions/setup@v2
       with:
         ghc-version: "${{ matrix.ghc }}"
         cabal-version: "latest"
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
         node-version: "18"
         cache: "yarn"
@@ -71,6 +71,7 @@ jobs:
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
+        sudo apt install libsodium-dev
         source ./environment.ci.sh
         touch ~/.pgpass
         chmod 0600 ~/.pgpass
@@ -83,7 +84,8 @@ jobs:
       uses: actions/cache@v3.3.2
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ghc-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('**/plan.json') }}
+        restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
     - name: Build
       run: |
@@ -100,6 +102,6 @@ jobs:
         migrate init "${FLORA_DB_CONNSTRING}"
         migrate migrate "${FLORA_DB_CONNSTRING}" migrations
         cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
-        cabal test
+        make test
       env:
         PGPASSWORD: "postgres"

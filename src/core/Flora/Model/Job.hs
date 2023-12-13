@@ -42,6 +42,14 @@ data ReadmeJobPayload = ReadmeJobPayload
     (ToJSON, FromJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReadmeJobPayload)
 
+data TarballJobPayload = TarballJobPayload
+  { package :: PackageName
+  , releaseId :: ReleaseId
+  , version :: IntAesonVersion
+  }
+  deriving stock (Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
 data UploadTimeJobPayload = UploadTimeJobPayload
   { packageName :: PackageName
   , releaseId :: ReleaseId
@@ -71,9 +79,9 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
 -- these represent the possible odd jobs we can run.
 data FloraOddJobs
   = FetchReadme ReadmeJobPayload
+  | FetchTarball TarballJobPayload
   | FetchUploadTime UploadTimeJobPayload
   | FetchChangelog ChangelogJobPayload
-  | ImportHackageIndex ImportHackageIndexPayload
   | ImportPackage ImportOutput
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
@@ -95,4 +103,6 @@ instance ToJSON LogEvent where
     LogJobTimeout job -> toJSON ("timed-out" :: Text, job)
     LogPoll -> toJSON ("poll" :: Text)
     LogWebUIRequest -> toJSON ("web-ui-request" :: Text)
+    LogKillJobSuccess job -> toJSON ("kill-success" :: Text, job)
+    LogKillJobFailed job -> toJSON ("kill-failed" :: Text, job)
     LogText other -> toJSON ("other" :: Text, other)

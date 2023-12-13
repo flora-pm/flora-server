@@ -16,6 +16,8 @@ import Servant.Server.Experimental.Auth (AuthServerData)
 import Web.Cookie (SetCookie)
 
 import Data.Text (Text)
+import Flora.Environment
+import Flora.Model.BlobStore.API
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import FloraWeb.Types
@@ -66,29 +68,24 @@ demoteSession
   -> Eff (IsVisitor : es) a
 demoteSession = putVisitorTag . runAdminSession
 
+type BaseEffects =
+  '[ DB
+   , Time
+   , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
+   , Reader FeatureEnv
+   , BlobStoreAPI
+   , Log
+   , Error ServerError
+   , IOE
+   ]
+
 -- | Datatypes used for every route that doesn't *need* an authenticated user
 type FloraPage =
-  Eff
-    '[ IsVisitor
-     , DB
-     , Time
-     , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
-     , Log
-     , Error ServerError
-     , IOE
-     ]
+  Eff (IsVisitor ': BaseEffects)
 
 -- | Datatypes used for routes that *need* an admin
 type FloraAdmin =
-  Eff
-    '[ IsAdmin
-     , DB
-     , Time
-     , Reader (Headers '[Header "Set-Cookie" SetCookie] Session)
-     , Log
-     , Error ServerError
-     , IOE
-     ]
+  Eff (IsAdmin ': BaseEffects)
 
 -- | The effect stack for the development websockets
 type FloraDevSocket = Eff [Reader (), Log, Error ServerError, IOE]
@@ -97,6 +94,6 @@ type instance
   AuthServerData (AuthProtect "optional-cookie-auth") =
     (Headers '[Header "Set-Cookie" SetCookie] Session)
 
--- type instance
---   AuthServerData (AuthProtect "cookie-auth") =
---     (Headers '[Header "Set-Cookie" SetCookie] (Session 'Authenticated))
+type instance
+  AuthServerData (AuthProtect "cookie-auth") =
+    (Headers '[Header "Set-Cookie" SetCookie] Session)

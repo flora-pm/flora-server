@@ -10,7 +10,7 @@ The compiler version used is described in the `cabal.project` file.
 The following Haskell command-line tools will have to be installed:
 
 * `postgresql-migration`: To perform schema migrations
-* `fourmolu`: To style the code base. Minimum version is 0.12.0.0
+* `fourmolu`: To style the code base. Version is 0.12.0.0
 * `hlint` & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-fmt` and `nixfmt`: To style the cabal and nix files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
@@ -18,8 +18,8 @@ The following Haskell command-line tools will have to be installed:
 
 (Some of the above packages have incompatible dependencies, so don't try to install them all at once with `cabal install`)
 
-You will need the [Soufflé datalog engine v2.3](https://github.com/souffle-lang/souffle/releases/tag/2.3)
-
+* [Soufflé datalog engine v2.3](https://github.com/souffle-lang/souffle/releases/tag/2.3): The datalog engine for package classification
+* `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
 
@@ -181,18 +181,35 @@ $ source environment.docker.sh
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.
 ```
+### Provisioning the database
 
-To provision the development database, type:
+After everything is set up, (locally or via Docker), you can start populating the database:
 
 ```bash
-$ make docker-enter
-(docker)$ source environment.docker.sh
-(docker)$ make db-drop  # password is 'postgres' by default
-(docker)$ make db-setup # password is 'postgres' by default
-(docker)$ make db-provision
-# And you should be good!
+$ make db-setup
+$ make db-provision
+$ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
+    --email "admin@localhost" --password "password123" 
+$ make db-provision-test-packages
 ```
 
+### Importing a package index
+
+The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shit and giggles.
+
+You can do so with:
+
+```bash
+$ cabal run flora-cli -- import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
+  --repository hackage.haskell.org
+```
+
+Similarly if you have the [cardano packages index](https://input-output-hk.github.io/cardano-haskell-packages/) configured, run:
+
+```bash
+$ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz \
+  --repository "cardano"
+```
 
 ### Nix
 

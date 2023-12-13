@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -fno-warn-orphans -Wno-redundant-constraints #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Flora.Model.User
   ( UserId (..)
@@ -34,12 +34,14 @@ import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
+import Database.PostgreSQL.Simple.Orphans ()
 import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Effectful
 import Effectful.Time qualified as Time
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (..), TypeError)
+import Sel.HMAC.SHA256 qualified as HMAC
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
 newtype UserId = UserId {getUserId :: UUID}
@@ -60,6 +62,8 @@ data User = User
   , userFlags :: UserFlags
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
+  , totpKey :: Maybe HMAC.AuthenticationKey
+  , totpEnabled :: Bool
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow, ToRow, NFData)
@@ -125,6 +129,8 @@ mkUser UserCreationForm{username, email, password} = do
   let updatedAt = timestamp
   let displayName = ""
   let userFlags = UserFlags{isAdmin = False, canLogin = True}
+  let totpKey = Nothing
+  let totpEnabled = False
   pure User{..}
 
 mkAdmin :: IOE :> es => AdminCreationForm -> Eff es User
@@ -134,7 +140,9 @@ mkAdmin AdminCreationForm{username, email, password} = do
   let createdAt = timestamp
   let updatedAt = timestamp
   let displayName = ""
-  let userFlags = UserFlags{isAdmin = True, canLogin = False}
+  let userFlags = UserFlags{isAdmin = True, canLogin = True}
+  let totpKey = Nothing
+  let totpEnabled = False
   pure User{..}
 
 hashPassword :: IOE :> es => Password -> Eff es (PasswordHash Argon2)

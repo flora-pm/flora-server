@@ -11,6 +11,7 @@ module Flora.TestUtils
   , assertBool
   , assertEqual
   , assertFailure
+  , assertJust
   , assertRight
   , assertRight'
   , assertClientRight
@@ -99,6 +100,7 @@ import Flora.Environment.Config (LoggingDestination (..), PoolConfig (..))
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Logging qualified as Logging
+import Flora.Model.BlobStore.API
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
@@ -106,7 +108,7 @@ import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
 
-type TestEff = Eff '[Fail, Reader PoolConfig, DB, Log, Time, IOE]
+type TestEff = Eff '[Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
@@ -123,7 +125,7 @@ importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
   importAllFilesInRelativeDirectory
     appLogger
     (fixtures ^. #hackageUser % #userId)
-    Nothing
+    ("hackage", "https://hackage.haskell.org")
     "./test/fixtures/Cabal/"
     True
 
@@ -135,6 +137,7 @@ runTestEff comp pool poolCfg = runEff $
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
       . runReader poolCfg
+      . runBlobStorePure
       . runFailIO
       $ comp
 
@@ -164,6 +167,10 @@ assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 
 assertFailure :: MonadIO m => String -> m ()
 assertFailure = liftIO . Test.assertFailure
+
+assertJust :: HasCallStack => Maybe a -> TestEff a
+assertJust (Just a) = pure a
+assertJust Nothing = liftIO $ Test.assertFailure "Test return Nothing instead of Just"
 
 assertRight :: HasCallStack => Either a b -> TestEff b
 assertRight (Left _a) = liftIO $ Test.assertFailure "Test return Left instead of Right"
@@ -283,6 +290,8 @@ genUser = do
   userFlags <- genUserFlags
   createdAt <- genUTCTime
   updatedAt <- genUTCTime
+  let totpKey = Nothing
+  let totpEnabled = False
   pure User{..}
 
 data RandomUserTemplate m = RandomUserTemplate
@@ -330,4 +339,6 @@ randomUser
     userFlags <- generateUserFlags
     createdAt <- generateCreatedAt
     updatedAt <- generateUpdatedAt
+    let totpKey = Nothing
+    let totpEnabled = False
     pure User{..}

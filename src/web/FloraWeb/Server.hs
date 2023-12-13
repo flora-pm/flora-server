@@ -2,7 +2,6 @@ module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
-
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
 import Data.Aeson qualified as Aeson
@@ -40,6 +39,7 @@ import Optics.Core
 import Prometheus qualified
 import Prometheus.Metric.GHC (ghcMetrics)
 import Prometheus.Metric.Proc (procMetrics)
+import Sel
 import Servant
   ( Application
   , Context (..)
@@ -59,15 +59,16 @@ import Servant.API (getResponse)
 import Servant.OpenApi
 import Servant.Server.Generic (AsServerT, genericServeTWithContext)
 
-import Flora.Environment (DeploymentEnv, FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import Flora.Environment (BlobStoreImpl (..), DeploymentEnv, FeatureEnv (..), FloraEnv (..), LoggingEnv (..), getFloraEnv)
 import Flora.Environment.Config (Assets)
 import Flora.Logging (runLog)
 import Flora.Logging qualified as Logging
+import Flora.Model.BlobStore.API
 import FloraJobs.Runner (runner)
 import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
-import FloraWeb.Common.Auth (FloraAuthContext, authHandler, requestID, runVisitorSession)
+import FloraWeb.Common.Auth (OptionalAuthContext, StrictAuthContext, optionalAuthHandler, requestID, runVisitorSession, strictAuthHandler)
 import FloraWeb.Common.Metrics
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.Tracing
@@ -82,29 +83,30 @@ import FloraWeb.Types
 
 runFlora :: IO ()
 runFlora =
-  bracket
-    (getFloraEnv & runFailIO & runEff)
-    (runEff . shutdownFlora)
-    ( \env ->
-        runEff . runTime . runConcurrent $ do
-          let baseURL = "http://localhost:" <> display (env.httpPort)
-          liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
-          liftIO $ when (isJust $ env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
-          liftIO $ when env.logging.prometheusEnabled $ do
-            blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
-            void $ Prometheus.register ghcMetrics
-            void $ Prometheus.register procMetrics
-          let withLogger = Logging.makeLogger (env.logging.logger)
-          withLogger
-            ( \appLogger ->
-                runServer appLogger env
-            )
-    )
+  secureMain $
+    bracket
+      (getFloraEnv & runFailIO & runEff)
+      (runEff . shutdownFlora)
+      ( \env ->
+          runEff . runTime . runConcurrent $ do
+            let baseURL = "http://localhost:" <> display env.httpPort
+            liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
+            liftIO $ when (isJust env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
+            liftIO $ when env.logging.prometheusEnabled $ do
+              blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
+              void $ Prometheus.register ghcMetrics
+              void $ Prometheus.register procMetrics
+            let withLogger = Logging.makeLogger env.logging.logger
+            withLogger
+              ( \appLogger ->
+                  runServer appLogger env
+              )
+      )
 
 shutdownFlora :: FloraEnv -> Eff '[IOE] ()
 shutdownFlora env =
   liftIO $
-    Pool.destroyAllResources (env.pool)
+    Pool.destroyAllResources env.pool
 
 logException
   :: DeploymentEnv
@@ -121,33 +123,36 @@ runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   let runnerEnv = JobsRunnerEnv httpManager
-  let oddjobsUiCfg = makeUIConfig (floraEnv.config) appLogger (floraEnv.jobsPool)
+  let oddjobsUiCfg = makeUIConfig floraEnv.config appLogger floraEnv.jobsPool
       oddJobsCfg =
         makeConfig
           runnerEnv
-          (floraEnv.config)
+          floraEnv
           appLogger
-          (floraEnv.jobsPool)
+          floraEnv.jobsPool
           runner
 
-  void $ forkIO $ unsafeEff_ $ Safe.withException (startJobRunner oddJobsCfg) (logException (floraEnv.environment) appLogger)
-  loggingMiddleware <- Logging.runLog (floraEnv.environment) appLogger WaiLog.mkLogMiddleware
+  void $
+    forkIO $
+      unsafeEff_ $
+        Safe.withException (startJobRunner oddJobsCfg) (logException floraEnv.environment appLogger)
+  loggingMiddleware <- Logging.runLog floraEnv.environment appLogger WaiLog.mkLogMiddleware
   oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv
   let warpSettings =
-        setPort (fromIntegral $ floraEnv.httpPort) $
+        setPort (fromIntegral floraEnv.httpPort) $
           setOnException
             ( onException
                 appLogger
-                (floraEnv.environment)
-                (floraEnv.logging)
+                floraEnv.environment
+                floraEnv.logging
             )
             defaultSettings
   liftIO
     $ runSettings warpSettings
-    $ prometheusMiddleware (floraEnv.environment) (floraEnv.logging)
+    $ prometheusMiddleware floraEnv.environment floraEnv.logging
       . heartbeatMiddleware
       . loggingMiddleware
       . const
@@ -160,10 +165,10 @@ mkServer
   -> OddJobs.UIConfig
   -> OddJobs.Env
   -> Application
-mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
+mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv =
   genericServeTWithContext
-    (naturalTransform (floraEnv.environment) logger webEnvStore)
-    (floraServer (floraEnv.pool) cfg jobsRunnerEnv)
+    (naturalTransform floraEnv.environment floraEnv.features logger webEnvStore)
+    (floraServer floraEnv.pool cfg jobsRunnerEnv)
     (genAuthServerContext logger floraEnv)
 
 -- What the fuck is happening here:
@@ -173,7 +178,7 @@ mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv = do
 --    [IsVisitor, DB, Time, Reader (Headers '[Header "Set-Cookie" SetCookie] Session), Log, Error ServerError, IOE]
 --  api has effects:
 --    [DB, Time, Reader (), Log, Error ServerError, IOE]
---  An the intermediate effect list of effects:
+--  And the intermediate effect list of effects:
 --    [Reader WebEnvStore, Log, Error ServerError, IOE]
 --
 -- What must happen is that the list of effects of 'pages' and 'api' must correspond to the intermediate 'Flora'
@@ -192,7 +197,7 @@ floraServer pool cfg jobsRunnerEnv =
     , pages = \sessionWithCookies ->
         hoistServerWithContext
           (Proxy @Pages.Routes)
-          (Proxy @'[FloraAuthContext])
+          (Proxy @'[OptionalAuthContext])
           ( \floraPage ->
               floraPage
                 & runVisitorSession
@@ -216,15 +221,24 @@ floraServer pool cfg jobsRunnerEnv =
     , docs = serveDirectoryWith docsBundler
     }
 
-naturalTransform :: DeploymentEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
-naturalTransform deploymentEnv logger webEnvStore app =
+naturalTransform :: DeploymentEnv -> FeatureEnv -> Logger -> WebEnvStore -> Flora a -> Handler a
+naturalTransform deploymentEnv features logger webEnvStore app =
   app
     & runReader webEnvStore
+    & runReader features
+    & ( case features.blobStoreImpl of
+          Just (BlobStoreFS fp) -> runBlobStoreFS fp
+          _ -> runBlobStorePure
+      )
     & runLog deploymentEnv logger
     & effToHandler
 
-genAuthServerContext :: Logger -> FloraEnv -> Context '[FloraAuthContext, ErrorFormatters]
-genAuthServerContext logger floraEnv = authHandler logger floraEnv :. errorFormatters floraEnv.assets :. EmptyContext
+genAuthServerContext :: Logger -> FloraEnv -> Context '[OptionalAuthContext, StrictAuthContext, ErrorFormatters]
+genAuthServerContext logger floraEnv =
+  optionalAuthHandler logger floraEnv
+    :. strictAuthHandler logger floraEnv
+    :. errorFormatters floraEnv.assets
+    :. EmptyContext
 
 errorFormatters :: Assets -> ErrorFormatters
 errorFormatters assets =
@@ -232,7 +246,10 @@ errorFormatters assets =
 
 notFoundPage :: Assets -> NotFoundErrorFormatter
 notFoundPage assets _req =
-  let result = runPureEff $ runErrorNoCallStack $ renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
+  let result =
+        runPureEff $
+          runErrorNoCallStack $
+            renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
    in case result of
         Left err -> err
         Right _ -> err404
@@ -240,6 +257,6 @@ notFoundPage assets _req =
 openApiHandler :: OpenApi
 openApiHandler =
   toOpenApi (Proxy @API.Routes)
-    & (#info % #title .~ "Flora API")
-    & (#info % #version .~ "v0")
-    & (#info % #description ?~ "Flora API Documentation")
+    & #info % #title .~ "Flora API"
+    & #info % #version .~ "v0"
+    & #info % #description ?~ "Flora API Documentation"

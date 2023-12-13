@@ -30,11 +30,14 @@ import Servant (FromHttpApiData (..), Handler, ServerError)
 import Web.Cookie
 
 import Flora.Environment
+import Flora.Model.BlobStore.API
 
 type Flora :: Type -> Type
 type Flora =
   Eff
     '[ Reader WebEnvStore
+     , Reader FeatureEnv
+     , BlobStoreAPI
      , Log
      , Error ServerError
      , IOE
@@ -45,6 +48,8 @@ type FloraAPI =
     '[ DB
      , Time
      , Reader ()
+     , Reader FeatureEnv
+     , BlobStoreAPI
      , Log
      , Error ServerError
      , IOE

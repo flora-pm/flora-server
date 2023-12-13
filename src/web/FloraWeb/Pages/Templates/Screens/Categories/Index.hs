@@ -1,4 +1,4 @@
-module FloraWeb.Pages.Templates.Pages.Categories.Index where
+module FloraWeb.Pages.Templates.Screens.Categories.Index where
 
 import Data.Vector (Vector)
 import Data.Vector qualified as V

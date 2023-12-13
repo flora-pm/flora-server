@@ -12,7 +12,7 @@ import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes.Categories
 import FloraWeb.Pages.Templates (defaultTemplateEnv, fromSession, render)
 import FloraWeb.Pages.Templates.Error
-import FloraWeb.Pages.Templates.Pages.Categories qualified as Template
+import FloraWeb.Pages.Templates.Screens.Categories qualified as Template
 import FloraWeb.Session (getSession)
 
 server :: ServerT Routes FloraPage

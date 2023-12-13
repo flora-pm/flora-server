@@ -4,20 +4,24 @@
 module FloraJobs.ThirdParties.Hackage.Client where
 
 import Control.Monad.IO.Class
+import Data.ByteString.Lazy (ByteString)
 import Data.Proxy
 import Data.Text
 import Data.Time (UTCTime)
 import Data.Time.Orphans ()
 import Data.Vector (Vector)
+import Effectful (Eff, IOE, type (:>))
 import Effectful.Reader.Static
+import Network.HTTP.Req (GET (GET), NoReqBody (..))
+import Network.HTTP.Req qualified as Req
 import Servant.API ()
-import Servant.Client
+import Servant.Client (BaseUrl (..), Client, ClientError (..), ClientM, Scheme (..), client, mkClientEnv, runClientM, (//), (/:))
 
 import Flora.Model.Package.Types
 import FloraJobs.ThirdParties.Hackage.API as API
-import FloraJobs.Types (JobsRunner, JobsRunnerEnv (..))
+import FloraJobs.Types (JobsRunnerEnv (..))
 
-request :: ClientM a -> JobsRunner (Either ClientError a)
+request :: (IOE :> es, Reader JobsRunnerEnv :> es) => ClientM a -> Eff es (Either ClientError a)
 request req = do
   JobsRunnerEnv{httpManager} <- ask
   let clientEnv =
@@ -34,6 +38,14 @@ listHackageUsers = hackageClient // API.listUsers
 
 getHackageUser :: Text -> ClientM HackageUserDetailsObject
 getHackageUser username = hackageClient // API.withUser /: username // API.getUser
+
+getPackageTarball :: VersionedPackage -> ClientM ByteString
+getPackageTarball versionedPackage =
+  hackageClient
+    // API.withPackage
+    /: versionedPackage
+    // API.getTarball
+    /: VersionedTarball versionedPackage
 
 getPackageReadme :: VersionedPackage -> ClientM Text
 getPackageReadme versionedPackage =
@@ -65,6 +77,30 @@ getDeprecatedPackages =
 getDeprecatedReleasesList :: PackageName -> ClientM HackagePreferredVersions
 getDeprecatedReleasesList packageName =
   hackageClient
-    // API.withPackageName
+    // API.withPackageNameOnly
     /: packageName
     // getDeprecatedReleases
+
+getPackageInfo :: VersionedPackage -> IO HackagePackageInfo
+getPackageInfo versionedPackage = do
+  Req.runReq Req.defaultHttpConfig $ do
+    response <-
+      Req.req
+        GET
+        (Req.https "hackage.haskell.org" Req./: "package" Req./~ versionedPackage)
+        NoReqBody
+        Req.jsonResponse
+        mempty
+    pure $ Req.responseBody response
+
+getPackageWithRevision :: VersionedPackage -> Word -> IO HackagePackageInfo
+getPackageWithRevision versionedPackage revision = do
+  Req.runReq Req.defaultHttpConfig $ do
+    response <-
+      Req.req
+        GET
+        (Req.https "hackage.haskell.org" Req./: "package" Req./~ versionedPackage Req./: "revision" Req./~ revision)
+        NoReqBody
+        Req.jsonResponse
+        mempty
+    pure $ Req.responseBody response

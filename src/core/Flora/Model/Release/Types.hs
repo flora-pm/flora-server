@@ -42,6 +42,7 @@ import Deriving.Aeson
 import Distribution.Orphans ()
 import Distribution.Orphans.CompilerFlavor ()
 import Distribution.Orphans.PackageFlag ()
+import Flora.Model.BlobStore.Types
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
@@ -61,7 +62,7 @@ instance ToJSON TextHtml where
   toJSON (MkTextHtml a) = String $ Text.toStrict $ Lucid.renderText a
 
 instance FromJSON TextHtml where
-  parseJSON = withText "TextHtml" (\text -> pure $ MkTextHtml $ Lucid.toHtmlRaw @Text text)
+  parseJSON = withText "TextHtml" (pure . MkTextHtml . Lucid.toHtmlRaw @Text)
 
 instance NFData TextHtml where
   rnf a = seq a ()
@@ -88,6 +89,8 @@ data Release = Release
   , readmeStatus :: ImportStatus
   , changelog :: Maybe TextHtml
   , changelogStatus :: ImportStatus
+  , tarballRootHash :: Maybe Sha256Sum
+  , tarballArchiveHash :: Maybe Sha256Sum
   , license :: SPDX.License
   , sourceRepos :: Vector Text
   , homepage :: Maybe Text
@@ -100,6 +103,7 @@ data Release = Release
   , testedWith :: Vector Version
   , deprecated :: Maybe Bool
   , repository :: Maybe Text
+  , revisedAt :: Maybe UTCTime
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)
@@ -108,7 +112,7 @@ data Release = Release
     via (GenericEntity '[TableName "releases"] Release)
 
 instance Ord Release where
-  compare x y = compare (x.version) (y.version)
+  compare x y = compare x.version y.version
 
 newtype ReleaseFlags = ReleaseFlags (Vector PackageFlag)
   deriving stock (Eq, Ord, Show, Generic)

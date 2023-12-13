@@ -2,6 +2,7 @@
 module Flora.Environment.Config
   ( FloraConfig (..)
   , LoggingEnv (..)
+  , FeatureConfig (..)
   , ConnectionInfo (..)
   , TestConfig (..)
   , PoolConfig (..)
@@ -43,12 +44,14 @@ import Env
   , def
   , help
   , nonempty
+  , optional
   , str
   , switch
   , var
   , (<=<)
   )
 import GHC.Generics (Generic)
+import System.FilePath (isValid)
 import Text.Read (readMaybe)
 
 data ConnectionInfo = ConnectionInfo
@@ -100,6 +103,12 @@ data LoggingEnv = LoggingEnv
   }
   deriving stock (Show, Generic)
 
+data FeatureConfig = FeatureConfig
+  { tarballsEnabled :: Bool
+  , blobStoreFS :: Maybe FilePath
+  }
+  deriving stock (Show, Generic)
+
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
   { dbConfig :: PoolConfig
@@ -107,6 +116,7 @@ data FloraConfig = FloraConfig
   , domain :: Text
   , httpPort :: Word16
   , logging :: LoggingEnv
+  , features :: FeatureConfig
   , environment :: DeploymentEnv
   }
   deriving stock (Show, Generic)
@@ -135,7 +145,7 @@ parsePoolConfig =
     <*> var
       (int >=> nonNegative)
       "FLORA_DB_POOL_CONNECTIONS"
-      (help "Number of connections per sub-pool")
+      (help "Number of connections across all sub-pools")
 
 parseLoggingEnv :: Parser Error LoggingEnv
 parseLoggingEnv =
@@ -143,6 +153,15 @@ parseLoggingEnv =
     <$> var (pure . Just <=< nonempty) "FLORA_SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
     <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Whether or not Prometheus is enabled")
     <*> var loggingDestination "FLORA_LOGGING_DESTINATION" (help "Where do the logs go")
+
+parseFeatures :: Parser Error FeatureConfig
+parseFeatures =
+  FeatureConfig
+    <$> switch "FLORA_TARBALLS_ENABLED" (help "Whether to store package tarballs, by default off for now")
+    <*> optional
+      ( var filepath "FLORA_TARBALLS_FS_PATH" $
+          help "Store tarball blobs in the supplied filesystem directory"
+      )
 
 parsePort :: Parser Error Word16
 parsePort = var port "FLORA_HTTP_PORT" (help "HTTP Port for Flora")
@@ -162,6 +181,7 @@ parseConfig =
     <*> parseDomain
     <*> parsePort
     <*> parseLoggingEnv
+    <*> parseFeatures
     <*> parseDeploymentEnv
 
 parseTestConfig :: Parser Error TestConfig
@@ -203,6 +223,9 @@ loggingDestination "stdout" = Right StdOut
 loggingDestination "json" = Right Json
 loggingDestination "json-file" = Right JSONFile
 loggingDestination e = Left $ unread e
+
+filepath :: Reader Error FilePath
+filepath fp = if isValid fp then Right fp else Left $ unread fp
 
 getAssets :: (Fail :> es, IOE :> es) => DeploymentEnv -> Eff es Assets
 getAssets environment =

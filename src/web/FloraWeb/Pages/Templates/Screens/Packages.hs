@@ -1,4 +1,4 @@
-module FloraWeb.Pages.Templates.Pages.Packages where
+module FloraWeb.Pages.Templates.Screens.Packages where
 
 import Data.Function ((&))
 import Data.Maybe (fromMaybe)
@@ -13,9 +13,9 @@ import Lucid.Orphans ()
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types (Release (..))
+import FloraWeb.Components.Icons
 import FloraWeb.Pages.Templates.Packages
-  ( chevronRightOutline
-  , displayCategories
+  ( displayCategories
   , displayDependencies
   , displayDependents
   , displayInstructions
@@ -38,6 +38,7 @@ showPackage
   -> Vector Release
   -> Word
   -> Package
+  -> Text
   -> Vector Package
   -> Word
   -> Vector (Namespace, PackageName, Text)
@@ -49,15 +50,17 @@ showPackage
   packageReleases
   numberOfReleases
   package@Package{namespace, name}
+  packageIndexURL
   dependents
   numberOfDependents
   dependencies
   numberOfDependencies
   categories =
     div_ [class_ "larger-container"] $ do
-      presentationHeader latestRelease namespace name (latestRelease.synopsis)
+      presentationHeader latestRelease namespace name latestRelease.synopsis
       packageBody
         package
+        packageIndexURL
         latestRelease
         packageReleases
         numberOfReleases
@@ -70,18 +73,20 @@ showPackage
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis =
   div_ [class_ "divider"] $ do
-    div_ [class_ "page-title"] $
+    div_ [class_ "page-title"] $ do
       h1_ [class_ "package-title"] $ do
         span_ [class_ "headline"] $ do
           displayNamespace namespace
           chevronRightOutline
           toHtml name
-        span_ [class_ "version"] $ displayReleaseVersion release.version
+        let versionClass = "version" <> if Just True == release.deprecated then " release-deprecated" else ""
+        span_ [class_ versionClass] $ displayReleaseVersion release.version
     div_ [class_ "synopsis"] $
       p_ [class_ ""] (toHtml synopsis)
 
 packageBody
   :: Package
+  -> Text
   -> Release
   -> Vector Release
   -> Word
@@ -93,6 +98,7 @@ packageBody
   -> FloraHTML
 packageBody
   Package{namespace, name = packageName, deprecationInfo}
+  packageIndexURL
   latestRelease@Release{flags, deprecated, license, maintainer, version}
   packageReleases
   numberOfReleases
@@ -106,7 +112,7 @@ packageBody
         displayCategories categories
         displayLicense license
         displayMaintainer maintainer
-        displayLinks namespace packageName latestRelease
+        displayLinks namespace packageName packageIndexURL latestRelease
         displayVersions namespace packageName packageReleases numberOfReleases
       div_ [class_ "release-readme-column"] $ div_ [class_ "release-readme"] $ displayReadme latestRelease
       div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows"] $ do
@@ -115,13 +121,17 @@ packageBody
           Nothing ->
             if fromMaybe False deprecated
               then displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
-              else displayInstructions packageName latestRelease
+              else displayInstructions namespace packageName latestRelease
         displayTestedWith latestRelease.testedWith
         displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
         displayDependents (namespace, packageName) numberOfDependents dependents
         displayPackageFlags flags
 
-getLatestViableRelease :: Namespace -> PackageName -> Vector Release -> Maybe (Namespace, PackageName, Version)
+getLatestViableRelease
+  :: Namespace
+  -> PackageName
+  -> Vector Release
+  -> Maybe (Namespace, PackageName, Version)
 getLatestViableRelease namespace packageName releases =
   releases
     & Vector.filter (\r -> not (fromMaybe False r.deprecated))

@@ -35,7 +35,6 @@ getPackagesFromCategorySlug slug =
         liftIO $ T.putStrLn $ "Could not find category from slug: \"" <> slug <> "\""
         pure Vector.empty
       Just Category{categoryId} -> do
-        liftIO $ T.putStrLn "Category found!"
         dbtToEff $
           joinSelectOneByField @Package @PackageCategory
             [field| package_id |]

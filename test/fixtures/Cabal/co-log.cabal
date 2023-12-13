@@ -1,0 +1,189 @@
+cabal-version:       2.4
+name:                co-log
+version:             0.6.0.2
+synopsis:            Composable Contravariant Comonadic Logging Library
+description:
+    The default implementation of logging based on [co-log-core](http://hackage.haskell.org/package/co-log-core).
+    .
+    The ideas behind this package are described in the following blog post:
+    .
+    * [co-log: Composable Contravariant Combinatorial Comonadic Configurable Convenient Logging](https://kowainik.github.io/posts/2018-09-25-co-log)
+
+homepage:            https://github.com/co-log/co-log
+bug-reports:         https://github.com/co-log/co-log/issues
+license:             MPL-2.0
+license-file:        LICENSE
+author:              Dmitrii Kovanikov
+maintainer:          Kowainik <xrom.xkov@gmail.com>
+copyright:           2018-2022 Kowainik, 2023 Co-Log
+category:            Logging, Contravariant, Comonad
+build-type:          Simple
+stability:           provisional
+extra-doc-files:     CHANGELOG.md
+                     README.md
+tested-with:         GHC == 8.10.7
+                     GHC == 9.0.2
+                     GHC == 9.2.8
+                     GHC == 9.4.7
+                     GHC == 9.6.2
+
+flag tutorial
+  description: Controls if tutorials get build (mainly to avoid building them on hackage).
+  default: False
+
+source-repository head
+  type:                git
+  location:            https://github.com/co-log/co-log.git
+
+common common-options
+  build-depends:       base >= 4.14 && < 4.19
+
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Widentities
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wredundant-constraints
+  if impl(ghc >= 8.2)
+    ghc-options:       -fhide-source-paths
+  if impl(ghc >= 8.4)
+    ghc-options:       -Wmissing-export-lists
+                       -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options:       -Wmissing-deriving-strategies
+  if impl(ghc >= 8.10)
+    ghc-options:       -Wunused-packages
+  if impl(ghc >= 9.0)
+    ghc-options:       -Winvalid-haddock
+  if impl(ghc >= 9.2)
+    ghc-options:       -Wredundant-bang-patterns
+                       -Woperator-whitespace
+
+  default-language:    Haskell2010
+  default-extensions:  ConstraintKinds
+                       DerivingStrategies
+                       DeriveGeneric
+                       GeneralizedNewtypeDeriving
+                       LambdaCase
+                       OverloadedStrings
+                       RecordWildCards
+                       ScopedTypeVariables
+                       StandaloneDeriving
+                       TupleSections
+                       TypeApplications
+                       ViewPatterns
+
+common tutorial-options
+  import:              common-options
+  if os(windows) || !flag(tutorial)
+    buildable:         False
+  build-depends:       co-log-core
+                       , text
+
+  build-tool-depends:  markdown-unlit:markdown-unlit >= 0.5.0 && < 0.7
+  ghc-options:         -pgmL markdown-unlit
+
+common tutorial-depends
+  import: tutorial-options
+  build-depends:     co-log
+                     , mtl
+
+
+library
+  import:              common-options
+  hs-source-dirs:      src
+  exposed-modules:     Colog
+                       Colog.Actions
+                       Colog.Contra
+                       Colog.Message
+                       Colog.Monad
+                       Colog.Pure
+                       Colog.Rotation
+
+  build-depends:       ansi-terminal >= 1.0 && < 1.1
+                     , bytestring >= 0.10.8 && < 0.13
+                     , co-log-core ^>= 0.3
+                     , containers >= 0.5.7 && < 0.7
+                     , contravariant ^>= 1.5
+                     , directory ^>= 1.3.0
+                     , exceptions >= 0.8.3 && < 0.11
+                     , filepath ^>= 1.4.1
+                     , mtl >= 2.2.2 && < 2.4
+                     , text >= 1.2.3 && < 2.2
+                     , chronos ^>= 1.1 && < 1.2
+                     , transformers >= 0.5 && < 0.7
+                     , dependent-sum >= 0.7 && < 0.8
+                     , dependent-map >= 0.4 && < 0.5
+                     , unliftio-core ^>= 0.2
+                     , vector >= 0.12.0.3 && < 0.14
+  if impl(ghc < 9.4.5)
+    build-depends:     run-st <= 0.1.3.0
+
+executable play-colog
+  import:              common-options
+  hs-source-dirs:      tutorials
+  main-is:             Main.hs
+
+  build-depends:       co-log
+                     , mtl
+                     , dependent-map
+
+  ghc-options:         -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
+
+executable concurrent-playground
+  import:              common-options
+  hs-source-dirs:      tutorials
+  main-is:             Concurrent.hs
+  build-depends:       bytestring
+                     , co-log
+  ghc-options:         -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
+
+executable readme
+  import:              tutorial-options
+  main-is:             README.lhs
+  build-depends:       co-log
+                     , text
+
+test-suite test-co-log
+  import:              common-options
+  build-depends:       co-log
+                     , co-log-core
+                     , hedgehog >= 1.0 && < 1.5
+  hs-source-dirs:      test
+  main-is:             Property.hs
+  type:                exitcode-stdio-1.0
+
+test-suite co-log-doctest
+  import:              common-options
+  -- Disable `doctest` on windows since it couldn't handle qualified imports reliable (which leads to errors like "Not in scope: `C.timeToOffsetDatetime'").
+  if os(windows)
+    buildable:         False
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Doctest.hs
+
+  build-depends:       doctest >= 0.16.0 && < 0.23
+                     , Glob ^>= 0.10.0
+  ghc-options:         -threaded
+
+
+executable tutorial-intro
+  import:              tutorial-options
+  main-is:             tutorials/1-intro/Intro.lhs
+
+executable tutorial-loggert-simple
+  import:              tutorial-depends
+  main-is:             tutorials/2-loggert/loggert.lhs
+  
+executable tutorial-loggert
+  import:              tutorial-depends
+  main-is:             tutorials/3-loggert-with-message/loggert.lhs
+
+executable tutorial-custom
+  import:              tutorial-depends
+  main-is:             tutorials/custom/Custom.lhs
+

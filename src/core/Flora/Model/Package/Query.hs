@@ -1,7 +1,34 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Flora.Model.Package.Query where
+module Flora.Model.Package.Query
+  ( countPackages
+  , countPackagesByName
+  , countPackagesInNamespace
+  , getAllPackageDependents
+  , getAllPackageDependentsWithLatestVersion
+  , getAllPackages
+  , getAllRequirements
+  , getComponent
+  , getNonDeprecatedPackages
+  , getNumberOfPackageDependents
+  , getPackageByNamespaceAndName
+  , getPackageCategories
+  , getPackageDependents
+  , getPackageDependentsByName
+  , getPackageDependentsWithLatestVersion
+  , getPackagesByNamespace
+  , getPackagesFromCategoryWithLatestVersion
+  , getRequirements
+  , listAllPackages
+  , listAllPackagesInNamespace
+  , numberOfPackageRequirementsQuery
+  , searchPackage
+  , unsafeGetComponent
+  , getComponentById
+  , searchPackageByNamespace
+  , getNumberOfPackageRequirements
+  ) where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
@@ -81,7 +108,21 @@ getAllPackageDependents
   => Namespace
   -> PackageName
   -> Eff es (Vector Package)
-getAllPackageDependents namespace packageName = dbtToEff $ query Select packageDependentsQuery (namespace, packageName)
+getAllPackageDependents namespace packageName =
+  dbtToEff $ query Select packageDependentsQuery (namespace, packageName)
+
+getPackageDependentsByName
+  :: DB :> es
+  => Namespace
+  -> PackageName
+  -> Text
+  -> Eff es (Vector Package)
+getPackageDependentsByName namespace packageName searchString =
+  dbtToEff $
+    query
+      Select
+      searchPackageDependentsQuery
+      (namespace, packageName, searchString)
 
 -- | This function gets the first 6 dependents of a package
 getPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es (Vector Package)
@@ -89,13 +130,26 @@ getPackageDependents namespace packageName = dbtToEff $ query Select q (namespac
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
-getNumberOfPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es Word
-getNumberOfPackageDependents namespace packageName =
-  dbtToEff $ do
-    (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
-    case result of
-      Just (Only n) -> pure $ fromIntegral n
-      Nothing -> pure 0
+getNumberOfPackageDependents
+  :: DB :> es
+  => Namespace
+  -> PackageName
+  -> Maybe Text
+  -> Eff es Word
+getNumberOfPackageDependents namespace packageName mbSearchString = do
+  case mbSearchString of
+    Nothing ->
+      dbtToEff $ do
+        (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
+        case result of
+          Just (Only n) -> pure $ fromIntegral n
+          Nothing -> pure 0
+    Just searchString ->
+      dbtToEff $ do
+        (result :: Maybe (Only Int)) <- queryOne Select searchNumberOfPackageDependentsQuery (namespace, packageName, searchString)
+        case result of
+          Just (Only n) -> pure $ fromIntegral n
+          Nothing -> pure 0
 
 numberOfPackageDependentsQuery :: Query
 numberOfPackageDependentsQuery =
@@ -108,6 +162,19 @@ numberOfPackageDependentsQuery =
     AND dep."name" = ?
   |]
 
+searchNumberOfPackageDependentsQuery :: Query
+searchNumberOfPackageDependentsQuery =
+  [sql|
+  SELECT DISTINCT count(p."package_id")
+  FROM "packages" AS p
+        INNER JOIN "dependents" AS dep
+                ON p."package_id" = dep."dependent_id"
+  WHERE dep."namespace" = ?
+    AND dep."name" = ?
+    AND ? <% p."name"
+  |]
+
+-- | Fetch the dependents of a package.
 packageDependentsQuery :: Query
 packageDependentsQuery =
   [sql|
@@ -126,16 +193,27 @@ packageDependentsQuery =
     AND dep."name" = ?
   |]
 
+searchPackageDependentsQuery :: Query
+searchPackageDependentsQuery =
+  packageDependentsQuery <> " AND ? <% p.name"
+
 getAllPackageDependentsWithLatestVersion
   :: DB :> es
   => Namespace
   -> PackageName
   -> (Word, Word)
+  -> Maybe Text
   -> Eff es (Vector DependencyInfo)
-getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) =
-  dbtToEff $ query Select q (namespace, packageName, offset, limit)
-  where
-    q = packageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
+getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) mSearchString =
+  case mSearchString of
+    Nothing ->
+      dbtToEff $ query Select q (namespace, packageName, offset, limit)
+      where
+        q = packageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
+    Just searchString ->
+      dbtToEff $ query Select q (namespace, packageName, searchString, offset, limit)
+      where
+        q = searchPackageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
 
 getPackageDependentsWithLatestVersion
   :: (DB :> es, Log :> es, Time :> es)
@@ -157,21 +235,60 @@ getPackageDependentsWithLatestVersion namespace packageName = do
 packageDependentsWithLatestVersionQuery :: Query
 packageDependentsWithLatestVersionQuery =
   [sql|
-  SELECT DISTINCT   p."namespace"
-                  , p."name"
-                  , ''
-                  , max(r."version")
-                  , r.synopsis as "synopsis"
-                  , r.license as  "license"
-  FROM "packages" AS p
-        INNER JOIN "dependents" AS dep
-                ON p."package_id" = dep."dependent_id"
-        INNER JOIN "releases" AS r
-                ON r."package_id" = p."package_id"
-  WHERE dep."namespace" = ?
-    AND dep."name" = ?
-  GROUP BY (p.namespace, p.name, synopsis, license)
-  ORDER BY p.namespace DESC
+WITH dependents AS (
+  SELECT row_number() OVER (
+    PARTITION BY p.name
+      ORDER BY r.version DESC) AS rank
+       , p.namespace
+       , p.name
+       , r.version
+       , r.synopsis
+       , r.license
+  FROM packages AS p
+       INNER JOIN dependents AS dep ON p.package_id = dep.dependent_id
+       INNER JOIN releases AS r ON r.package_id = p.package_id
+  WHERE dep.namespace = ?
+    AND dep.name = ?
+)
+
+SELECT d.namespace
+     , d.name
+     , ''
+     , (ARRAY[]::text[])
+     , d.version
+     , d.synopsis
+     , d.license
+FROM dependents AS d
+WHERE rank = 1
+    |]
+
+searchPackageDependentsWithLatestVersionQuery :: Query
+searchPackageDependentsWithLatestVersionQuery =
+  [sql|
+WITH dependents AS (
+  SELECT row_number() OVER (
+    PARTITION BY p.name
+      ORDER BY r.version DESC) AS rank
+       , p.namespace
+       , p.name
+       , r.version
+       , r.synopsis
+       , r.license
+  FROM packages AS p
+       INNER JOIN dependents AS dep ON p.package_id = dep.dependent_id
+       INNER JOIN releases AS r ON r.package_id = p.package_id
+  WHERE dep.namespace = ? AND dep.name = ? AND ? <% p."name"
+)
+
+SELECT d.namespace
+     , d.name
+     , ''
+     , (ARRAY[]::text[])
+     , d.version
+     , d.synopsis
+     , d.license
+FROM dependents AS d
+WHERE rank = 1
     |]
 
 getComponentById :: DB :> es => ComponentId -> Eff es (Maybe PackageComponent)
@@ -223,7 +340,7 @@ getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
     with requirements as (
-        select distinct p1.component_type, p1.component_name, p0.namespace, p0.name, r0.requirement
+        select distinct p1.component_type, p1.component_name, p0.namespace, p0.name, r0.requirement, r0.components
         from requirements as r0
         inner join packages as p0 on p0.package_id = r0.package_id
         inner join package_components as p1 on p1.package_component_id = r0.package_component_id
@@ -235,6 +352,7 @@ getAllRequirementsQuery =
          , req.namespace
          , req.name
          , req.requirement
+         , req.components
          , r3.version as "dependency_latest_version"
          , r3.synopsis as "dependency_latest_synopsis"
          , r3.license as "dependency_latest_license"
@@ -242,7 +360,7 @@ getAllRequirementsQuery =
     inner join packages as p2 on p2.namespace = req.namespace and p2.name = req.name
     inner join releases as r3 on r3.package_id = p2.package_id
     where r3.version = (select max(version) from releases where package_id = p2.package_id)
-    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, r3.version, r3.synopsis, r3.license
+    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license
     order by req.component_type, req.component_name desc
   |]
 
@@ -250,7 +368,8 @@ getAllRequirementsQuery =
 getRequirementsQuery :: Query
 getRequirementsQuery =
   [sql|
-    select distinct dependency.namespace, dependency.name, req.requirement from requirements as req
+    select distinct dependency.namespace, dependency.name, req.requirement
+    from requirements as req
     inner join packages as dependency on dependency.package_id = req.package_id
     inner join package_components as pc ON pc.package_component_id = req.package_component_id
           and (pc.component_type = 'library')
@@ -344,6 +463,40 @@ searchPackage (offset, limit) searchString =
         ;
         |]
       (searchString, searchString, offset, limit)
+
+searchPackageByNamespace
+  :: DB :> es
+  => (Word, Word)
+  -> Namespace
+  -> Text
+  -> Eff es (Vector PackageInfo)
+searchPackageByNamespace (offset, limit) namespace searchString =
+  dbtToEff $
+    query
+      Select
+      [sql|
+        SELECT  lv."namespace"
+              , lv."name"
+              , lv."synopsis"
+              , lv."version"
+              , lv."license"
+              , word_similarity(lv.name, ?) as rating
+        FROM latest_versions as lv
+        WHERE 
+        ? <% lv."name"
+        AND lv."namespace" = ?
+        GROUP BY
+            lv."namespace"
+          , lv."name"
+          , lv."synopsis"
+          , lv."version"
+          , lv."license"
+        ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
+        OFFSET ?
+        LIMIT ?
+        ;
+        |]
+      (searchString, searchString, namespace, offset, limit)
 
 -- | Returns a summary of packages
 listAllPackages

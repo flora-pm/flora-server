@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.13
+version:            1.0.14
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -12,7 +12,7 @@ extra-source-files:
   LICENSE
   README.md
 
-tested-with:        GHC ==9.4.5
+tested-with:        GHC ==9.4.7
 
 source-repository head
   type:     git
@@ -27,19 +27,18 @@ flag prod
 
 common common-extensions
   default-extensions:
-    NoStarIsType
     DataKinds
     DeriveAnyClass
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
     LambdaCase
+    NoStarIsType
     OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
     PackageImports
     PolyKinds
-    QuasiQuotes
     RecordWildCards
     StrictData
     TypeFamilies
@@ -81,6 +80,7 @@ library
     Data.Positive
     Data.Text.Display.Orphans
     Data.Time.Orphans
+    Database.PostgreSQL.Simple.Orphans
     Distribution.Orphans
     Distribution.Orphans.CompilerFlavor
     Distribution.Orphans.ConfVar
@@ -96,6 +96,12 @@ library
     Flora.Import.Types
     Flora.Logging
     Flora.Model.Admin.Report
+    Flora.Model.BlobIndex.Internal
+    Flora.Model.BlobIndex.Query
+    Flora.Model.BlobIndex.Types
+    Flora.Model.BlobIndex.Update
+    Flora.Model.BlobStore.API
+    Flora.Model.BlobStore.Types
     Flora.Model.Category
     Flora.Model.Category.Query
     Flora.Model.Category.Types
@@ -111,7 +117,9 @@ library
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
-    Flora.Model.PackageIndex
+    Flora.Model.PackageIndex.Query
+    Flora.Model.PackageIndex.Types
+    Flora.Model.PackageIndex.Update
     Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Query
@@ -123,14 +131,17 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.Publish
+    Flora.QRCode
     Flora.Search
     JSON
     Log.Backend.File
     Lucid.Orphans
+    Servant.API.ContentTypes.GZip
 
   build-depends:
     , aeson
     , base                   ^>=4.17
+    , base16-bytestring
     , base64
     , blaze-builder
     , bytestring
@@ -138,6 +149,7 @@ library
     , colourista
     , containers
     , cryptohash-md5
+    , cryptohash-sha256
     , cryptonite
     , cryptonite-conduit
     , deepseq
@@ -145,9 +157,12 @@ library
     , directory
     , effectful-core
     , envparse
+    , extra
     , filepath
     , http-api-data
+    , http-media
     , iso8601-time
+    , JuicyPixels
     , log-base
     , log-effectful
     , lucid
@@ -166,7 +181,11 @@ library
     , poolboy
     , postgresql-simple
     , pretty
+    , qrcode-core
+    , qrcode-juicypixels
     , resource-pool
+    , sel
+    , servant
     , servant-lucid
     , servant-server
     , slugify
@@ -178,6 +197,7 @@ library
     , text-display
     , time
     , unliftio
+    , utf8-string
     , uuid
     , vector
     , vector-algorithms
@@ -198,6 +218,7 @@ library flora-web
     FloraWeb.API.Server.Packages
     FloraWeb.Client
     FloraWeb.Common.Auth
+    FloraWeb.Common.Auth.TwoFactor
     FloraWeb.Common.Auth.Types
     FloraWeb.Common.Guards
     FloraWeb.Common.Metrics
@@ -205,13 +226,18 @@ library flora-web
     FloraWeb.Common.Pagination
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
+    FloraWeb.Components.Alert
+    FloraWeb.Components.Button
     FloraWeb.Components.CategoryCard
     FloraWeb.Components.Footer
     FloraWeb.Components.Header
+    FloraWeb.Components.Icons
+    FloraWeb.Components.MainSearchBar
     FloraWeb.Components.Navbar
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
+    FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
     FloraWeb.Embedded
@@ -222,12 +248,14 @@ library flora-web
     FloraWeb.Pages.Routes.Packages
     FloraWeb.Pages.Routes.Search
     FloraWeb.Pages.Routes.Sessions
+    FloraWeb.Pages.Routes.Settings
     FloraWeb.Pages.Server
     FloraWeb.Pages.Server.Admin
     FloraWeb.Pages.Server.Categories
     FloraWeb.Pages.Server.Packages
     FloraWeb.Pages.Server.Search
     FloraWeb.Pages.Server.Sessions
+    FloraWeb.Pages.Server.Settings
     FloraWeb.Pages.Templates
     FloraWeb.Pages.Templates.Admin
     FloraWeb.Pages.Templates.Admin.Packages
@@ -235,13 +263,14 @@ library flora-web
     FloraWeb.Pages.Templates.Error
     FloraWeb.Pages.Templates.Haddock
     FloraWeb.Pages.Templates.Packages
-    FloraWeb.Pages.Templates.Pages.Categories
-    FloraWeb.Pages.Templates.Pages.Categories.Index
-    FloraWeb.Pages.Templates.Pages.Categories.Show
-    FloraWeb.Pages.Templates.Pages.Home
-    FloraWeb.Pages.Templates.Pages.Packages
-    FloraWeb.Pages.Templates.Pages.Search
-    FloraWeb.Pages.Templates.Pages.Sessions
+    FloraWeb.Pages.Templates.Screens.Categories
+    FloraWeb.Pages.Templates.Screens.Categories.Index
+    FloraWeb.Pages.Templates.Screens.Categories.Show
+    FloraWeb.Pages.Templates.Screens.Home
+    FloraWeb.Pages.Templates.Screens.Packages
+    FloraWeb.Pages.Templates.Screens.Search
+    FloraWeb.Pages.Templates.Screens.Sessions
+    FloraWeb.Pages.Templates.Screens.Settings
     FloraWeb.Pages.Templates.Types
     FloraWeb.Routes
     FloraWeb.Servant.Common
@@ -253,8 +282,10 @@ library flora-web
     , aeson
     , async
     , base                       ^>=4.17
+    , base32
     , bytestring
     , Cabal-syntax
+    , chronos
     , clock
     , cmark-gfm
     , colourista
@@ -265,6 +296,7 @@ library flora-web
     , deriving-aeson
     , effectful
     , effectful-core
+    , extra
     , flora
     , flora-jobs
     , haddock-library
@@ -283,6 +315,7 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
+    , one-time-password
     , openapi3
     , optics-core
     , password
@@ -297,6 +330,7 @@ library flora-web
     , raven-haskell
     , resource-pool
     , safe-exceptions
+    , sel
     , servant
     , servant-client
     , servant-client-core
@@ -306,6 +340,7 @@ library flora-web
     , text
     , text-display
     , time
+    , torsor
     , uuid
     , vector
     , vector-algorithms
@@ -353,6 +388,7 @@ library flora-jobs
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
+    , req
     , resource-pool
     , servant
     , servant-client
@@ -360,7 +396,6 @@ library flora-jobs
     , text
     , text-display
     , time
-    , typed-process
     , vector
 
 executable flora-server
@@ -389,16 +424,20 @@ executable flora-cli
     , flora
     , flora-web
     , log-base
+    , log-effectful
     , lucid
+    , monad-time-effectful
     , optics-core
     , optparse-applicative
     , password-types
     , pg-transact-effectful
     , PyF
     , text
+    , text-display
     , transformers
     , uuid
     , vector
+    , zlib
 
 test-suite flora-test
   import:         common-extensions
@@ -410,10 +449,12 @@ test-suite flora-test
   build-depends:
     , aeson
     , base
+    , bytestring
     , Cabal-syntax
     , containers
     , effectful-core
     , exceptions
+    , filepath
     , flora
     , flora-web
     , hedgehog
@@ -423,6 +464,7 @@ test-suite flora-test
     , monad-time-effectful
     , optics-core
     , password
+    , password-types
     , pg-entity
     , pg-transact
     , pg-transact-effectful
@@ -432,20 +474,25 @@ test-suite flora-test
     , servant
     , servant-client
     , servant-server
+    , tar
     , tasty
     , tasty-hunit
     , text
     , time
     , transformers
+    , typed-process
     , uuid
     , vector
+    , zlib
 
   other-modules:
+    Flora.BlobSpec
     Flora.CabalSpec
     Flora.CategorySpec
     Flora.ImportSpec
     Flora.OddJobSpec
     Flora.PackageSpec
+    Flora.SearchSpec
     Flora.TemplateSpec
     Flora.TestUtils
     Flora.UserSpec

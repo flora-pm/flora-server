@@ -4,25 +4,34 @@ module FloraWeb.Pages.Server.Packages
   )
 where
 
+import Control.Monad (unless)
+import Data.ByteString.Lazy (ByteString)
 import Data.Foldable
 import Data.Function
 import Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Positive
+import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector qualified as Vector
 import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
+import Effectful.Error.Static (throwError)
+import Effectful.Reader.Static (ask)
 import Log (object, (.=))
 import Log qualified
 import Lucid
 import Lucid.Orphans ()
 import Servant (ServerT)
+import Servant.Server (err404)
 
-import Control.Monad.IO.Class
+import Flora.Environment (FeatureEnv (..))
 import Flora.Logging
+import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.PackageIndex.Query qualified as Query
+import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Search qualified as Search
@@ -33,9 +42,10 @@ import FloraWeb.Pages.Routes.Packages
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Error
 import FloraWeb.Pages.Templates.Packages qualified as Package
-import FloraWeb.Pages.Templates.Pages.Packages qualified as Packages
-import FloraWeb.Pages.Templates.Pages.Search qualified as Search
+import FloraWeb.Pages.Templates.Screens.Packages qualified as Packages
+import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Session
+import Network.HTTP.Types (notFound404)
 
 server :: ServerT Routes FloraPage
 server =
@@ -51,6 +61,7 @@ server =
     , showChangelog = showChangelogHandler
     , showVersionChangelog = showVersionChangelogHandler
     , listVersions = listVersionsHandler
+    , getTarball = getTarballHandler
     }
 
 listPackagesHandler :: Maybe (Positive Word) -> FloraPage (Html ())
@@ -66,13 +77,37 @@ showNamespaceHandler namespace pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
-  (count', results) <- Search.listAllPackagesInNamespace namespace (fromPage pageNumber)
-  render templateDefaults $
-    Search.showAllPackagesInNamespace namespace count' pageNumber results
+  (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) namespace
+  if extractNamespaceText namespace == "haskell"
+    then do
+      let description = "Core Haskell packages"
+      let templateEnv =
+            templateDefaults
+              { navbarSearchContent = Just $ "in:" <> display namespace <> " "
+              , description = description
+              }
+      render templateEnv $
+        Search.showAllPackagesInNamespace
+          namespace
+          description
+          count'
+          pageNumber
+          results
+    else do
+      mPackageIndex <- Query.getPackageIndexByName (extractNamespaceText namespace)
+      case mPackageIndex of
+        Nothing -> renderError templateDefaults notFound404
+        Just packageIndex -> do
+          let templateEnv =
+                templateDefaults
+                  { navbarSearchContent = Just $ "in:" <> display namespace <> " "
+                  , description = packageIndex.description
+                  }
+          render templateEnv $
+            Search.showAllPackagesInNamespace namespace packageIndex.description count' pageNumber results
 
 showPackageHandler :: Namespace -> PackageName -> FloraPage (Html ())
-showPackageHandler namespace packageName = do
-  showPackageVersion namespace packageName Nothing
+showPackageHandler namespace packageName = showPackageVersion namespace packageName Nothing
 
 showVersionHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
 showVersionHandler namespace packageName version =
@@ -83,19 +118,19 @@ showPackageVersion namespace packageName mversion = do
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
-  releases <- Query.getReleases (package.packageId)
-  liftIO $ putStrLn $ "Number of releases: " <> show (length releases)
+  packageIndex <- guardThatPackageIndexExists namespace $ const web404
+  releases <- Query.getReleases package.packageId
   let latestRelease =
         releases
-          & Vector.filter (\r -> not (fromMaybe False r.deprecated))
+          & Vector.filter (\r -> Just True /= r.deprecated)
           & maximumBy (compare `on` (.version))
       version = fromMaybe latestRelease.version mversion
   release <- guardThatReleaseExists package.packageId version $ const web404
   numberOfReleases <- Query.getNumberOfReleases package.packageId
   dependents <- Query.getPackageDependents namespace packageName
   releaseDependencies <- Query.getRequirements release.releaseId
-  categories <- Query.getPackageCategories (package.packageId)
-  numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName
+  categories <- Query.getPackageCategories package.packageId
+  numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName Nothing
   numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
 
   let templateEnv =
@@ -123,43 +158,68 @@ showPackageVersion namespace packageName mversion = do
       , "package" .= (display namespace <> "/" <> display packageName)
       ]
 
+  let packageIndexURL = packageIndex.url
+
   render templateEnv $
     Packages.showPackage
       release
       releases
       numberOfReleases
       package
+      packageIndexURL
       dependents
       numberOfDependents
       releaseDependencies
       numberOfDependencies
       categories
 
-showDependentsHandler :: Namespace -> PackageName -> Maybe (Positive Word) -> FloraPage (Html ())
-showDependentsHandler namespace packageName mPage = do
+showDependentsHandler
+  :: Namespace
+  -> PackageName
+  -> Maybe (Positive Word)
+  -> Maybe Text
+  -> FloraPage (Html ())
+showDependentsHandler namespace packageName mPage mSearch = do
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
-  releases <- Query.getAllReleases (package.packageId)
+  releases <- Query.getAllReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
-  showVersionDependentsHandler namespace packageName latestRelease.version mPage
+  showVersionDependentsHandler namespace packageName latestRelease.version mPage mSearch
 
-showVersionDependentsHandler :: Namespace -> PackageName -> Version -> Maybe (Positive Word) -> FloraPage (Html ())
-showVersionDependentsHandler namespace packageName version Nothing = showVersionDependentsHandler namespace packageName version (Just $ PositiveUnsafe 1)
-showVersionDependentsHandler namespace packageName version (Just pageNumber) = do
+showVersionDependentsHandler
+  :: Namespace
+  -> PackageName
+  -> Version
+  -> Maybe (Positive Word)
+  -> Maybe Text
+  -> FloraPage (Html ())
+showVersionDependentsHandler namespace packageName version Nothing mSearch =
+  showVersionDependentsHandler namespace packageName version (Just $ PositiveUnsafe 1) mSearch
+showVersionDependentsHandler namespace packageName version pageNumber (Just "") =
+  showVersionDependentsHandler namespace packageName version pageNumber Nothing
+showVersionDependentsHandler namespace packageName version (Just pageNumber) mSearch = do
   session <- getSession
   templateEnv' <- fromSession session defaultTemplateEnv
-  _ <- guardThatPackageExists namespace packageName (\_ _ -> web404)
+  package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
+  release <- guardThatReleaseExists package.packageId version (const web404)
   let templateEnv =
         templateEnv'
           { title = display namespace <> "/" <> display packageName
           , description = "Dependents of " <> display namespace <> display packageName
+          , navbarSearchContent = Just $ "depends:" <> display namespace <> "/" <> display packageName <> " "
           }
-  results <- Query.getAllPackageDependentsWithLatestVersion namespace packageName (fromPage pageNumber)
-  totalDependents <- Query.getNumberOfPackageDependents namespace packageName
+  results <-
+    Query.getAllPackageDependentsWithLatestVersion
+      namespace
+      packageName
+      (fromPage pageNumber)
+      mSearch
+
+  totalDependents <- Query.getNumberOfPackageDependents namespace packageName mSearch
   render templateEnv $
     Package.showDependents
       namespace
       packageName
-      version
+      release
       totalDependents
       results
       pageNumber
@@ -167,7 +227,7 @@ showVersionDependentsHandler namespace packageName version (Just pageNumber) = d
 showDependenciesHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showDependenciesHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
-  releases <- Query.getAllReleases (package.packageId)
+  releases <- Query.getAllReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
   showVersionDependenciesHandler namespace packageName latestRelease.version
 
@@ -184,7 +244,7 @@ showVersionDependenciesHandler namespace packageName version = do
           }
   (releaseDependencies, duration) <-
     timeAction $
-      Query.getAllRequirements (release.releaseId)
+      Query.getAllRequirements release.releaseId
 
   Log.logInfo "Retrieving all dependencies of the latest release of a package" $
     object
@@ -196,14 +256,14 @@ showVersionDependenciesHandler namespace packageName version = do
       ]
 
   render templateEnv $
-    Package.showDependencies namespace packageName version releaseDependencies
+    Package.showDependencies namespace packageName release releaseDependencies
 
 showChangelogHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showChangelogHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404)
-  releases <- Query.getAllReleases (package.packageId)
+  releases <- Query.getAllReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
-  showVersionChangelogHandler namespace packageName (latestRelease.version)
+  showVersionChangelogHandler namespace packageName latestRelease.version
 
 showVersionChangelogHandler :: Namespace -> PackageName -> Version -> FloraPage (Html ())
 showVersionChangelogHandler namespace packageName version = do
@@ -218,7 +278,7 @@ showVersionChangelogHandler namespace packageName version = do
           , description = "Changelog of @" <> display namespace <> display packageName
           }
 
-  render templateEnv $ Package.showChangelog namespace packageName version (release.changelog)
+  render templateEnv $ Package.showChangelog namespace packageName version release.changelog
 
 listVersionsHandler :: Namespace -> PackageName -> FloraPage (Html ())
 listVersionsHandler namespace packageName = do
@@ -230,5 +290,20 @@ listVersionsHandler namespace packageName = do
           { title = display namespace <> "/" <> display packageName
           , description = "Releases of " <> display namespace <> display packageName
           }
-  releases <- Query.getAllReleases (package.packageId)
+  releases <- Query.getAllReleases package.packageId
   render templateEnv $ Package.listVersions namespace packageName releases
+
+constructTarballPath :: PackageName -> Version -> Text
+constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
+
+getTarballHandler :: Namespace -> PackageName -> Version -> Text -> FloraPage ByteString
+getTarballHandler namespace packageName version tarballName = do
+  features <- ask @FeatureEnv
+  unless (isJust features.blobStoreImpl) $ throwError err404
+  package <- guardThatPackageExists namespace packageName $ \_ _ -> web404
+  release <- guardThatReleaseExists package.packageId version $ const web404
+  case release.tarballRootHash of
+    Just rootHash
+      | constructTarballPath packageName version == tarballName ->
+          Query.queryTar packageName version rootHash
+    _ -> throwError err404

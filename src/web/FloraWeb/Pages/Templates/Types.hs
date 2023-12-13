@@ -13,13 +13,16 @@ module FloraWeb.Pages.Templates.Types
 where
 
 import Control.Monad.Identity
-import Control.Monad.Reader
+import Control.Monad.Reader (ReaderT)
 import Data.Text (Text)
 import Data.UUID qualified as UUID
 import GHC.Generics
 import Lucid
 import Optics.Core
 
+import Data.Text.Display
+import Effectful
+import Effectful.Reader.Static (Reader, ask)
 import Flora.Environment
 import Flora.Environment.Config (Assets)
 import Flora.Model.PersistentSession (PersistentSessionId (..))
@@ -30,13 +33,13 @@ import FloraWeb.Types
 type FloraHTML = HtmlT (ReaderT TemplateEnv Identity) ()
 
 newtype FlashInfo = FlashInfo {getFlashInfo :: Text}
-  deriving (Show) via Text
+  deriving (Show, Display) via Text
 
 mkInfo :: Text -> FlashInfo
 mkInfo = FlashInfo
 
 newtype FlashError = FlashError {getFlashInfo :: Text}
-  deriving (Show) via Text
+  deriving (Show, Display) via Text
 
 mkError :: Text -> FlashError
 mkError = FlashError
@@ -51,9 +54,11 @@ data TemplateEnv = TemplateEnv
   , mUser :: Maybe User
   , sessionId :: PersistentSessionId
   , environment :: DeploymentEnv
+  , features :: FeatureEnv
   , activeElements :: ActiveElements
   , assets :: Assets
   , indexPage :: Bool
+  , navbarSearchContent :: Maybe Text
   }
   deriving stock (Show, Generic)
 
@@ -75,8 +80,10 @@ data TemplateDefaults = TemplateDefaults
   , description :: Text
   , mUser :: Maybe User
   , environment :: DeploymentEnv
+  , features :: FeatureEnv
   , activeElements :: ActiveElements
   , indexPage :: Bool
+  , navbarSearchContent :: Maybe Text
   }
   deriving stock (Show, Generic)
 
@@ -100,8 +107,10 @@ defaultTemplateEnv =
     , description = "Package index for the Haskell ecosystem"
     , mUser = Nothing
     , environment = Development
+    , features = FeatureEnv Nothing
     , activeElements = defaultActiveElements
     , indexPage = True
+    , navbarSearchContent = Nothing
     }
 
 -- | ⚠  DO NOT USE THIS FUNCTION IF YOU DON'T KNOW WHAT YOU'RE DOING
@@ -111,18 +120,20 @@ defaultsToEnv assets TemplateDefaults{..} =
    in TemplateEnv{..}
 
 fromSession
-  :: MonadIO m
+  :: (Reader FeatureEnv :> es, IOE :> es)
   => Session
   -> TemplateDefaults
-  -> m TemplateEnv
+  -> Eff es TemplateEnv
 fromSession session defaults = do
   let sessionId = session.sessionId
   let muser = session.mUser
   let webEnvStore = session.webEnvStore
   floraEnv <- liftIO $ fetchFloraEnv webEnvStore
+  featuresEnv <- ask @FeatureEnv
   let assets = floraEnv.assets
   let TemplateDefaults{..} =
         defaults
           & (#mUser .~ muser)
-          & (#environment .~ (floraEnv.environment))
+          & (#environment .~ floraEnv.environment)
+          & (#features .~ featuresEnv)
   pure TemplateEnv{..}

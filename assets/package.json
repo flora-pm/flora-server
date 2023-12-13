@@ -15,7 +15,7 @@
     "esbuild-copy-static-files": "^0.1.0",
     "esbuild-plugin-assets-manifest": "^1.0.7",
     "esbuild-style-plugin": "^1.6.0",
-    "postcss": "^8.4.20",
+    "postcss": "^8.4.31",
     "postcss-cli": "^9.0.2",
     "postcss-copy": "^7.1.0",
     "postcss-hash": "^3.0.0",

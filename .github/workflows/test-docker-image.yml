@@ -1,0 +1,17 @@
+name: Test Docker Image
+
+on: 
+  pull_request:
+    branches: ["main", "development"]
+    paths:
+      - Dockerfile 
+      - docker-compose.yml
+      - scripts/.zshrc
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the hello-docker Docker image
+        run: make docker-build

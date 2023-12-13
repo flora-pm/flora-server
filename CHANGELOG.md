@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 1.0.14 -- 2023-12-13
+* Colourise in red deprecation markers on the package page ([#438](https://github.com/flora-pm/flora-server/pull/439))
+* Added more matches to the natural language processing category ([#440](https://github.com/flora-pm/flora-server/pull/440))
+* Allow package imports from multiple repositories ([#444](https://github.com/flora-pm/flora-server/pull/444))
+* Add a page on namespaces in the documentation ([#451](https://github.com/flora-pm/flora-server/pull/451))
+* Add initial support for hosting package tarballs ([#452](https://github.com/flora-pm/flora-server/pull/452))
+* Show depended on components in dependencies page ([#464](https://github.com/flora-pm/flora-server/pull/464))
+* Add search bar for reverse dependencies ([#476](https://github.com/flora-pm/flora-server/pull/476))
+* Support non Hackage repo URLs ([#479](https://github.com/flora-pm/flora-server/pull/479))
+* Add description field in package index ([#486](https://github.com/flora-pm/flora-server/pull/486))
+* Introduce search bar modifiers ([#487](https://github.com/flora-pm/flora-server/pull/487))
+
 ## 1.0.13 -- 2023-09-17
 * Exclude deprecated releases from latest versions and search ([#373](https://github.com/flora-pm/flora-server/pull/373))
 * Add namespace browsing ([#375](https://github.com/flora-pm/flora-server/pull/375))
@@ -11,6 +23,7 @@
 * Fix the margins of the search bar in mobile view ([#430](https://github.com/flora-pm/flora-server/pull/430))
 * Have proper breadcrumbs for the package page title ([#431](https://github.com/flora-pm/flora-server/pull/431))
 * Configure the API gateway ([#432](https://github.com/flora-pm/flora-server/pull/432))
+* Store and show the latest revision date of releases ([#437](https://github.com/flora-pm/flora-server/pull/437))
 
 ## 1.0.12 -- 2023-04-04
 

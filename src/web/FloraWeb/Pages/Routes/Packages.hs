@@ -4,11 +4,14 @@ module FloraWeb.Pages.Routes.Packages
   )
 where
 
+import Data.ByteString.Lazy (ByteString)
 import Data.Positive
+import Data.Text (Text)
 import Distribution.Types.Version (Version)
 import Flora.Model.Package (Namespace, PackageName)
 import Lucid
 import Servant
+import Servant.API.ContentTypes.GZip
 import Servant.API.Generic
 import Servant.HTML.Lucid
 
@@ -35,6 +38,7 @@ data Routes' mode = Routes'
           :> Capture "package" PackageName
           :> "dependents"
           :> QueryParam "page" (Positive Word)
+          :> QueryParam "q" Text
           :> Get '[HTML] (Html ())
   , showVersionDependents
       :: mode
@@ -43,6 +47,7 @@ data Routes' mode = Routes'
           :> Capture "version" Version
           :> "dependents"
           :> QueryParam "page" (Positive Word)
+          :> QueryParam "q" Text
           :> Get '[HTML] (Html ())
   , showDependencies
       :: mode
@@ -82,5 +87,12 @@ data Routes' mode = Routes'
           :> Capture "package" PackageName
           :> "versions"
           :> Get '[HTML] (Html ())
+  , getTarball
+      :: mode
+        :- Capture "namespace" Namespace
+          :> Capture "package" PackageName
+          :> Capture "version" Version
+          :> Capture "tarball" Text
+          :> Get '[GZipped] ByteString
   }
   deriving stock (Generic)

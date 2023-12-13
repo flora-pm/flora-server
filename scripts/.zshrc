@@ -1,7 +1,5 @@
 #!/usr/bin/env zsh
 
-set -euo pipefail
-
 export SHELL="zsh"
 export ZSH="$HOME/.oh-my-zsh"
 export LANG=C.UTF-8

@@ -31,6 +31,15 @@
   --green-30: hsl(140 100% 30%);
   --green-40: hsl(140 100% 40%);
   --red-60: hsl(358 80% 60%);
+
+  /* Light backgrounds */
+  --light-blue-background: hsl(210 100% 96%);
+  --light-red-background: hsl(355 73% 97%);
+  --light-green: hsl(206 41% 97%);
+
+  /* Dark foregrounds to go with backgrounds */
+  --dark-blue: hsl(220 64% 33%);
+  --dark-red: hsl(0 69% 36%);
   --background-color: var(--gray-100);
   --brand-border: var(--gray-100);
   --category-card-name-color: var(--gray-30);
@@ -50,6 +59,7 @@
   --package-list-item-synopsis-color: black;
   --package-list-item-metadata-color: black;
   --package-list-item-version-color: var(--green-30);
+  --package-list-item-component-color: var(--gray-80);
   --search-bar-color: hsl(221 39% 11%);
   --search-bar-background-color: var(--gray-100);
   --search-bar-background-hover-color: white;

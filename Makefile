@@ -42,9 +42,15 @@ db-migrate: ## Apply database migrations
 
 db-reset: db-drop db-setup db-provision ## Reset the dev database
 
-db-provision: build ## Load the development data in the database
+db-provision: ## Create categories and repositories
 	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
 	@cabal run -- flora-cli provision categories
+	@cabal run -- flora-cli provision-repository --name "hackage" --url https://hackage.haskell.org \
+			--description "Central package repository"
+	@cabal run -- flora-cli provision-repository --name "cardano" --url https://input-output-hk.github.io/cardano-haskell-packages \
+			--description "Packages of the Cardano project"
+
+db-provision-test-packages: ## Load development data in the database
 	@cabal run -- flora-cli provision test-packages
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
@@ -102,6 +108,8 @@ tags: ## Generate ctags for the project with `ghc-tags`
 
 design-system: ## Generate the HTML components used by the design system
 	@cabal run -- flora-cli gen-design-system
+start-design-sysytem: ## Start storybook.js
+	@cd design; yarn storybook
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.* ?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

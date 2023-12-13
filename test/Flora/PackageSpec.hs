@@ -52,7 +52,7 @@ spec _fixtures =
 testCabalDeps :: TestEff ()
 testCabalDeps = do
   dependencies <- do
-    Just cabalPackage <- Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "Cabal")
+    cabalPackage <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "Cabal")
     releases <- Query.getReleases (cabalPackage ^. #packageId)
     let latestRelease = maximumBy (compare `on` (.version)) releases
     Query.getAllRequirements (latestRelease ^. #releaseId)
@@ -135,9 +135,9 @@ testCorrectNumberInHaskellNamespace = do
 
 testBytestringDependents :: TestEff ()
 testBytestringDependents = do
-  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") (0, 30)
+  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") (0, 30) Nothing
   assertEqual
-    22
+    23
     (Vector.length results)
 
 testNoSelfDependent :: TestEff ()
@@ -147,6 +147,7 @@ testNoSelfDependent = do
   assertEqual
     ( Set.fromList
         [ PackageName "Cabal"
+        , PackageName "co-log"
         , PackageName "flora"
         , PackageName "hashable"
         , PackageName "jose"
@@ -155,6 +156,7 @@ testNoSelfDependent = do
         , PackageName "relude"
         , PackageName "saturn"
         , PackageName "semigroups"
+        , PackageName "servant-server"
         , PackageName "text-display"
         , PackageName "xml"
         ]
@@ -209,7 +211,7 @@ testPackagesDeprecation = do
       [ DeprecatedPackage (PackageName "integer-gmp") alternative1
       , DeprecatedPackage (PackageName "mtl") alternative2
       ]
-  integerGmp <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
+  integerGmp <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
   assertEqual (Just alternative1) integerGmp.deprecationInfo
 
 testGetNonDeprecatedPackages :: TestEff ()
@@ -222,13 +224,13 @@ testGetNonDeprecatedPackages = do
 
 testReleaseDeprecation :: TestEff ()
 testReleaseDeprecation = do
-  result <- Query.getPackagesWithoutReleaseDeprecationInformation
-  assertEqual 64 (length result)
+  result <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
+  assertEqual 68 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
-  Just deprecatedBinaryVersion' <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
+  deprecatedBinaryVersion' <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
   Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
-  Just deprecatedBinaryVersion <- Query.getReleaseByVersion (binary.packageId) (mkVersion [0, 10, 0, 0])
+  deprecatedBinaryVersion <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
   assertEqual deprecatedBinaryVersion.deprecated (Just True)
 
 ---

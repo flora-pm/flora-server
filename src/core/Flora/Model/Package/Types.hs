@@ -11,6 +11,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi (Schema (..), ToParamSchema (..), ToSchema (..), genericDeclareNamedSchema)
+import Data.String (IsString (..))
 import Data.Text (Text, isPrefixOf, unpack)
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -79,11 +80,20 @@ instance FromHttpApiData PackageName where
       Nothing -> Left "Could not parse package name"
       Just a -> Right a
 
+extractPackageNameText :: PackageName -> Text
+extractPackageNameText (PackageName text) = text
+
 parsePackageName :: Text -> Maybe PackageName
 parsePackageName txt =
-  if matches "[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
+  if matches "^[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*$" txt
     then Just $ PackageName txt
     else Nothing
+
+instance IsString PackageName where
+  fromString =
+    fromMaybe (error "Bad package name")
+      . parsePackageName
+      . Text.pack
 
 instance ToSchema PackageName where
   declareNamedSchema proxy =
@@ -99,7 +109,7 @@ packageNameSchema :: Schema
 packageNameSchema =
   mempty
     & #description
-      ?~ "Name of a package\n It corresponds to the regular expression: `[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*`"
+      ?~ "Name of a package\n It corresponds to the regular expression: `^[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*$`"
 
 newtype Namespace = Namespace Text
   deriving stock (Show, Generic)
@@ -138,9 +148,13 @@ instance FromHttpApiData Namespace where
 
 parseNamespace :: Text -> Maybe Namespace
 parseNamespace txt =
-  if matches "@[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*" txt
+  if matches "^@[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*$" txt
     then Just $ Namespace txt
     else Nothing
+
+extractNamespaceText :: Namespace -> Text
+extractNamespaceText (Namespace text) =
+  fromMaybe text (Text.stripPrefix "@" text)
 
 instance ToSchema Namespace where
   declareNamedSchema proxy =
