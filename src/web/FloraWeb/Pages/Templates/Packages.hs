@@ -66,7 +66,7 @@ presentationHeaderForSubpage namespace packageName release target numberOfPackag
     span_ [class_ "headline"] $ do
       displayNamespace namespace
       chevronRightOutline
-      linkToPackageWithVersion namespace packageName (release.version)
+      linkToPackageWithVersion namespace packageName release.version
       chevronRightOutline
       toHtml (display target)
   p_ [class_ "synopsis"] $

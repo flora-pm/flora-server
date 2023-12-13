@@ -23,13 +23,20 @@ import Flora.Logging
 import Flora.Model.Package (Namespace (..), PackageInfo (..), PackageName (..), formatPackage)
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types qualified as Package
+import Flora.Model.Requirement
 
 data SearchAction
   = ListAllPackages
   | ListAllPackagesInNamespace Namespace
   | SearchPackages Text
-  | DependentsOf Namespace PackageName (Maybe Text)
-  | SearchPackage Namespace PackageName
+  | DependentsOf
+      Namespace
+      -- ^ Namespace
+      PackageName
+      -- ^ Package
+      (Maybe Text)
+      -- ^ Search within the package
+  | SearchInNamespace Namespace PackageName
   deriving (Eq, Ord, Show)
 
 instance Display SearchAction where
@@ -42,8 +49,22 @@ instance Display SearchAction where
       <> "/"
       <> displayBuilder packageName
       <> foldMap (\searchString -> " \"" <> Builder.fromText searchString <> "\"") mbSearchString
-  displayBuilder (SearchPackage namespace packageName) =
+  displayBuilder (SearchInNamespace namespace packageName) =
     "Package " <> displayBuilder namespace <> "/" <> displayBuilder packageName
+
+search
+  :: (DB :> es, Log :> es, Time :> es)
+  => (Word, Word)
+  -> Text
+  -> Eff es (Word, Vector PackageInfo)
+search pagination queryString =
+  case parseSearchQuery queryString of
+    Just (ListAllPackagesInNamespace namespace) -> listAllPackagesInNamespace pagination namespace
+    Just ListAllPackages -> listAllPackages pagination
+    Just (SearchInNamespace namespace (PackageName packageName)) -> searchPackageByNamespaceAndName pagination namespace packageName
+    Just (DependentsOf namespace packageName mSearchString) -> searchDependents pagination namespace packageName mSearchString
+    Just (SearchPackages _) -> searchPackageByName pagination queryString
+    Nothing -> searchPackageByName pagination queryString
 
 searchPackageByName
   :: (DB :> es, Log :> es, Time :> es)
@@ -72,13 +93,68 @@ searchPackageByName (offset, limit) queryString = do
   count <- Query.countPackagesByName queryString
   pure (count, results)
 
+searchPackageByNamespaceAndName
+  :: (DB :> es, Log :> es, Time :> es)
+  => (Word, Word)
+  -> Namespace
+  -> Text
+  -> Eff es (Word, Vector PackageInfo)
+searchPackageByNamespaceAndName (offset, limit) namespace queryString = do
+  (results, duration) <- timeAction $ Query.searchPackageByNamespace (offset, limit) namespace queryString
+
+  Log.logInfo "search-results" $
+    object
+      [ "search_string" .= queryString
+      , "duration" .= duration
+      , "results_count" .= Vector.length results
+      , "results"
+          .= List.map
+            ( \PackageInfo{name, rating} ->
+                object
+                  [ "package" .= formatPackage namespace name
+                  , "score" .= rating
+                  ]
+            )
+            (Vector.toList results)
+      ]
+
+  count <- Query.countPackagesByName queryString
+  pure (count, results)
+
+searchDependents
+  :: DB :> es
+  => (Word, Word)
+  -> Namespace
+  -> PackageName
+  -> Maybe Text
+  -> Eff es (Word, Vector PackageInfo)
+searchDependents pagination namespace packageName mSearchString = do
+  results <-
+    Query.getAllPackageDependentsWithLatestVersion
+      namespace
+      packageName
+      pagination
+      mSearchString
+  totalDependents <- Query.getNumberOfPackageDependents namespace packageName mSearchString
+  pure (totalDependents, fmap dependencyInfoToPackageInfo results)
+
+dependencyInfoToPackageInfo :: DependencyInfo -> PackageInfo
+dependencyInfoToPackageInfo dep =
+  PackageInfo
+    dep.namespace
+    dep.name
+    dep.latestSynopsis
+    dep.latestVersion
+    dep.latestLicense
+    Nothing
+
 listAllPackagesInNamespace
   :: (DB :> es, Time :> es, Log :> es)
-  => Namespace
-  -> (Word, Word)
+  => (Word, Word)
+  -> Namespace
   -> Eff es (Word, Vector PackageInfo)
-listAllPackagesInNamespace namespace (offset, limit) = do
-  (results, duration) <- timeAction $ Query.listAllPackagesInNamespace (offset, limit) namespace
+listAllPackagesInNamespace pagination namespace = do
+  (results, duration) <- timeAction $ Query.listAllPackagesInNamespace pagination namespace
 
   Log.logInfo "packages-in-namespace" $
     object
@@ -124,7 +200,7 @@ parseSearchQuery = \case
   (Text.stripPrefix "in:" -> Just rest) ->
     case parseNamespaceAndPackageSearch rest of
       (Just namespace, Just packageName) ->
-        Just $ SearchPackage namespace packageName
+        Just $ SearchInNamespace namespace packageName
       (Just namespace, Nothing) ->
         Just $ ListAllPackagesInNamespace namespace
       _ -> Just $ SearchPackages rest

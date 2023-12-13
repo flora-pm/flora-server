@@ -77,7 +77,7 @@ showNamespaceHandler namespace pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1
   session <- getSession
   templateDefaults <- fromSession session defaultTemplateEnv
-  (count', results) <- Search.listAllPackagesInNamespace namespace (fromPage pageNumber)
+  (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) namespace
   if extractNamespaceText namespace == "haskell"
     then
       render templateDefaults $
