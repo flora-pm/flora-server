@@ -10,7 +10,7 @@ import Flora.Model.Package.Types
 import Flora.Search qualified as Search
 import FloraWeb.Common.Pagination
 import FloraWeb.Pages.Routes.Search (Routes, Routes' (..))
-import FloraWeb.Pages.Templates (defaultTemplateEnv, fromSession, render)
+import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Session
 
@@ -25,7 +25,11 @@ searchHandler Nothing pageParam = searchHandler (Just "") pageParam
 searchHandler (Just searchString) pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1
   session <- getSession
-  templateEnv <- fromSession session defaultTemplateEnv
+  templateDefaults <- fromSession session defaultTemplateEnv
+  let templateEnv =
+        templateDefaults
+          { navbarSearchContent = Just searchString
+          }
   (count, results) <- Search.search (fromPage pageNumber) searchString
   let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
   render templateEnv $ Search.showResults searchString count pageNumber matchVector packagesInfo

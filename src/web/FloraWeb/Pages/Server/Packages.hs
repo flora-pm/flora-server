@@ -79,11 +79,17 @@ showNamespaceHandler namespace pageParam = do
   templateDefaults <- fromSession session defaultTemplateEnv
   (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) namespace
   if extractNamespaceText namespace == "haskell"
-    then
-      render templateDefaults $
+    then do
+      let description = "Core Haskell packages"
+      let templateEnv =
+            templateDefaults
+              { navbarSearchContent = Just $ "in:" <> display namespace <> " "
+              , description = description
+              }
+      render templateEnv $
         Search.showAllPackagesInNamespace
           namespace
-          "Core Haskell packages"
+          description
           count'
           pageNumber
           results
@@ -91,8 +97,13 @@ showNamespaceHandler namespace pageParam = do
       mPackageIndex <- Query.getPackageIndexByName (extractNamespaceText namespace)
       case mPackageIndex of
         Nothing -> renderError templateDefaults notFound404
-        Just packageIndex ->
-          render templateDefaults $
+        Just packageIndex -> do
+          let templateEnv =
+                templateDefaults
+                  { navbarSearchContent = Just $ "in:" <> display namespace <> " "
+                  , description = packageIndex.description
+                  }
+          render templateEnv $
             Search.showAllPackagesInNamespace namespace packageIndex.description count' pageNumber results
 
 showPackageHandler :: Namespace -> PackageName -> FloraPage (Html ())
@@ -194,6 +205,7 @@ showVersionDependentsHandler namespace packageName version (Just pageNumber) mSe
         templateEnv'
           { title = display namespace <> "/" <> display packageName
           , description = "Dependents of " <> display namespace <> display packageName
+          , navbarSearchContent = Just $ "depends:" <> display namespace <> "/" <> display packageName <> " "
           }
   results <-
     Query.getAllPackageDependentsWithLatestVersion
@@ -211,7 +223,6 @@ showVersionDependentsHandler namespace packageName version (Just pageNumber) mSe
       totalDependents
       results
       pageNumber
-      mSearch
 
 showDependenciesHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showDependenciesHandler namespace packageName = do

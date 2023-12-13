@@ -58,6 +58,7 @@ data TemplateEnv = TemplateEnv
   , activeElements :: ActiveElements
   , assets :: Assets
   , indexPage :: Bool
+  , navbarSearchContent :: Maybe Text
   }
   deriving stock (Show, Generic)
 
@@ -82,6 +83,7 @@ data TemplateDefaults = TemplateDefaults
   , features :: FeatureEnv
   , activeElements :: ActiveElements
   , indexPage :: Bool
+  , navbarSearchContent :: Maybe Text
   }
   deriving stock (Show, Generic)
 
@@ -108,6 +110,7 @@ defaultTemplateEnv =
     , features = FeatureEnv Nothing
     , activeElements = defaultActiveElements
     , indexPage = True
+    , navbarSearchContent = Nothing
     }
 
 -- | ⚠  DO NOT USE THIS FUNCTION IF YOU DON'T KNOW WHAT YOU'RE DOING

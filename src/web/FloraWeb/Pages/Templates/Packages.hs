@@ -6,7 +6,7 @@ import Control.Monad.Reader (ask)
 import Data.Foldable (fold, forM_)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromJust, fromMaybe, isJust)
+import Data.Maybe (fromJust, isJust)
 import Data.Positive
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -37,7 +37,6 @@ import Flora.Search (SearchAction (..))
 import FloraWeb.Components.Icons
 import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requirementListItem)
 import FloraWeb.Components.PaginationNav (paginationNav)
-import FloraWeb.Components.SlimSearchBar
 import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML, TemplateEnv (..))
@@ -101,15 +100,11 @@ showDependents
   -> Word
   -> Vector DependencyInfo
   -> Positive Word
-  -> Maybe Text
   -> FloraHTML
-showDependents namespace packageName release count packagesInfo currentPage mSearch =
+showDependents namespace packageName release count packagesInfo currentPage =
   div_ [class_ "container"] $ do
     presentationHeaderForSubpage namespace packageName release Dependents count
-    let placeholder = fromMaybe "Search dependents" mSearch
-    let value = fromMaybe "" mSearch
     ul_ [class_ "package-list"] $ do
-      slimSearchBar (SearchBarOptions{actionUrl = "", placeholder, value})
       Vector.forM_
         packagesInfo
         ( \dep ->
