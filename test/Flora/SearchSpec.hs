@@ -27,7 +27,7 @@ testParsingNamespacePackageModifier :: TestEff ()
 testParsingNamespacePackageModifier = do
   let result = parseSearchQuery "in:@haskell base"
   assertEqual
-    (Just $ SearchPackage (Namespace "@haskell") (PackageName "base"))
+    (Just $ SearchInNamespace (Namespace "@haskell") (PackageName "base"))
     result
 
 testParsingNamespaceModifier :: TestEff ()
