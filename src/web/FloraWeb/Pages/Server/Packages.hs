@@ -122,7 +122,7 @@ showPackageVersion namespace packageName mversion = do
   releases <- Query.getReleases package.packageId
   let latestRelease =
         releases
-          & Vector.filter (\r -> Just True /= r.deprecated)
+          & Vector.filter (\r -> r.deprecated /= Just True)
           & maximumBy (compare `on` (.version))
       version = fromMaybe latestRelease.version mversion
   release <- guardThatReleaseExists package.packageId version $ const web404
@@ -156,6 +156,7 @@ showPackageVersion namespace packageName mversion = do
             [ "count" .= numberOfDependents
             ]
       , "package" .= (display namespace <> "/" <> display packageName)
+      , "releases" .= numberOfReleases
       ]
 
   let packageIndexURL = packageIndex.url
