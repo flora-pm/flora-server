@@ -1,9 +1,9 @@
-{ src, pkgs, hsPkgs, pre-commit-check }: hsPkgs.shellFor {
+{ src, pkgs, hsPkgs, hsDev, pre-commit-check }: hsPkgs.shellFor {
   packages = p: [ p.flora ];
   nativeBuildInputs = [
-    hsPkgs.haskell-language-server
+    # hsDev.haskell-language-server
+    hsPkgs.cabal-install
     hsPkgs.postgresql-migration
-    pkgs.cabal-install
     pkgs.ghcid
     pkgs.postgresql_14
     pkgs.souffle
