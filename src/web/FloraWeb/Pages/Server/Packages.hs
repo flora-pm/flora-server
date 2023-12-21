@@ -128,7 +128,7 @@ showPackageVersion namespace packageName mversion = do
   release <- guardThatReleaseExists package.packageId version $ const web404
   numberOfReleases <- Query.getNumberOfReleases package.packageId
   dependents <- Query.getPackageDependents namespace packageName
-  releaseDependencies <- Query.getRequirements release.releaseId
+  releaseDependencies <- Query.getRequirements package.name release.releaseId
   categories <- Query.getPackageCategories package.packageId
   numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName Nothing
   numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId

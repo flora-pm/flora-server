@@ -44,6 +44,7 @@ main = do
     . runFailIO
     $ do
       Update.createPackageIndex "hackage" "" "" Nothing
+      Update.createPackageIndex "cardano" "" "" Nothing
       password <- hashPassword $ mkPassword "foobar2000"
       templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
       Update.insertUser templateUser

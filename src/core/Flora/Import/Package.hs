@@ -576,9 +576,9 @@ getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.rep
 chooseNamespace :: PackageName -> Text -> Set PackageName -> Namespace
 chooseNamespace name repo repositoryPackages =
   if
-      | name `Set.member` coreLibraries -> Namespace "haskell"
-      | name `Set.member` repositoryPackages -> Namespace repo
-      | otherwise -> Namespace "hackage"
+    | name `Set.member` coreLibraries -> Namespace "haskell"
+    | name `Set.member` repositoryPackages -> Namespace repo
+    | otherwise -> Namespace "hackage"
 
 extractTestedWith :: Vector (CompilerFlavor, VersionRange) -> Vector VersionRange
 extractTestedWith testedWithVector =

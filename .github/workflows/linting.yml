@@ -13,6 +13,7 @@ jobs:
 
     - uses: fourmolu/fourmolu-action@v8
       with:
+        version: "0.14.1.0"
         pattern: |
           src/**/*.hs
           test/**/*.hs

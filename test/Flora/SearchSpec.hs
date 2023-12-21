@@ -9,7 +9,7 @@ import Flora.TestUtils
 spec :: TestEff TestTree
 spec =
   testThese
-    "Search bar mdifiers"
+    "Search bar modifiers"
     [ testThis "Parsing of \"depends:<@namespace>/<packagename>\" search modifier" testParsingDependsSearchModifier
     , testThis "Parsing of \"in:<@namespace> <packagename>\" modifier" testParsingNamespacePackageModifier
     , testThis "Parsing of \"in:<@namespace>\" modifier" testParsingNamespaceModifier

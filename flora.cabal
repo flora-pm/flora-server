@@ -421,6 +421,7 @@ executable flora-cli
     , Cabal-syntax
     , effectful-core
     , envparse
+    , filepath
     , flora
     , flora-web
     , log-base
@@ -483,6 +484,7 @@ test-suite flora-test
     , typed-process
     , uuid
     , vector
+    , vector-algorithms
     , zlib
 
   other-modules:
