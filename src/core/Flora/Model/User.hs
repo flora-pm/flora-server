@@ -10,38 +10,31 @@ module Flora.Model.User
   , mkUser
   , mkAdmin
   , hashPassword
-  , validatePassword
   )
 where
 
-import Control.DeepSeq (NFData)
+import Control.DeepSeq (NFData (..))
 import Control.Monad.IO.Class
 import Data.Aeson
-import Data.Password.Argon2
-  ( Argon2
-  , Password
-  , PasswordCheck (PasswordCheckSuccess)
-  , PasswordHash
-  )
-import Data.Password.Argon2 qualified as Argon2
-import Data.Password.Orphans ()
 import Data.Text (Text)
-import Data.Text.Display (Display, ShowInstance (..), displayBuilder)
+import Data.Text.Display (Display, ShowInstance (..))
 import Data.Time (UTCTime)
 import Data.UUID
 import Data.UUID.V4 qualified as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)
+import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), fromJSONField, returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Orphans ()
-import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
+import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Effectful
 import Effectful.Time qualified as Time
 import GHC.Generics
 import GHC.TypeLits (ErrorMessage (..), TypeError)
 import Sel.HMAC.SHA256 qualified as HMAC
+import Sel.Hashing.Password
+import Sel.Hashing.Password qualified as Sel
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
 newtype UserId = UserId {getUserId :: UUID}
@@ -58,7 +51,7 @@ data User = User
   , username :: Text
   , email :: Text
   , displayName :: Text
-  , password :: PasswordHash Argon2
+  , password :: PasswordHash
   , userFlags :: UserFlags
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
@@ -90,7 +83,7 @@ instance ToField UserFlags where
 data UserCreationForm = UserCreationForm
   { username :: Text
   , email :: Text
-  , password :: PasswordHash Argon2
+  , password :: PasswordHash
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (NFData)
@@ -98,18 +91,14 @@ data UserCreationForm = UserCreationForm
 data AdminCreationForm = AdminCreationForm
   { username :: Text
   , email :: Text
-  , password :: PasswordHash Argon2
+  , password :: PasswordHash
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (NFData)
 
 -- | Type error! Do not use 'toJSON' on a 'Password'!
-instance TypeError (CannotDisplayPassword "JSON") => ToJSON Password where
+instance TypeError (CannotDisplayPassword "JSON") => ToJSON PasswordHash where
   toJSON = error "unreachable"
-
--- | Type error! Do not use 'display' on a 'Password'!
-instance TypeError (CannotDisplayPassword "Text") => Display Password where
-  displayBuilder = error "unreachable"
 
 type CannotDisplayPassword e =
   'Text "🚫 Tried to convert plain-text Password to "
@@ -120,8 +109,15 @@ type CannotDisplayPassword e =
     ':<>: 'Text e
     ':$$: 'Text ""
 
-deriving via Text instance ToField (PasswordHash a)
-deriving via Text instance FromField (PasswordHash a)
+instance ToField PasswordHash where
+  toField = Escape . Sel.passwordHashToByteString
+
+instance FromField PasswordHash where
+  fromField f Nothing = returnError UnexpectedNull f ""
+  fromField _ (Just bs) = pure $ Sel.asciiByteStringToPasswordHash bs
+
+instance NFData PasswordHash where
+  rnf a = seq a ()
 
 mkUser :: IOE :> es => UserCreationForm -> Eff es User
 mkUser UserCreationForm{username, email, password} = do
@@ -147,9 +143,5 @@ mkAdmin AdminCreationForm{username, email, password} = do
   let totpEnabled = False
   pure User{..}
 
-hashPassword :: IOE :> es => Password -> Eff es (PasswordHash Argon2)
-hashPassword = Argon2.hashPassword
-
-validatePassword :: Password -> PasswordHash Argon2 -> Bool
-validatePassword inputPassword hashedPassword =
-  Argon2.checkPassword inputPassword hashedPassword == PasswordCheckSuccess
+hashPassword :: IOE :> es => Text -> Eff es PasswordHash
+hashPassword = liftIO . Sel.hashText

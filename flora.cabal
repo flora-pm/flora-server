@@ -76,7 +76,6 @@ library
   -- cabal-fmt: expand src/datatypes
   exposed-modules:
     Data.Aeson.Orphans
-    Data.Password.Orphans
     Data.Positive
     Data.Text.Display.Orphans
     Data.Time.Orphans
@@ -127,7 +126,6 @@ library
     Flora.Model.Release.Update
     Flora.Model.Requirement
     Flora.Model.User
-    Flora.Model.User.Orphans
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.Publish
@@ -172,8 +170,6 @@ library
     , odd-jobs
     , openapi3
     , optics-core
-    , password
-    , password-types
     , pcre2
     , pg-entity
     , pg-transact
@@ -318,7 +314,6 @@ library flora-web
     , one-time-password
     , openapi3
     , optics-core
-    , password
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
@@ -430,7 +425,6 @@ executable flora-cli
     , monad-time-effectful
     , optics-core
     , optparse-applicative
-    , password-types
     , pg-transact-effectful
     , PyF
     , text
@@ -464,8 +458,6 @@ test-suite flora-test
     , log-effectful
     , monad-time-effectful
     , optics-core
-    , password
-    , password-types
     , pg-entity
     , pg-transact
     , pg-transact-effectful
