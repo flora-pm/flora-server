@@ -322,6 +322,9 @@ getAllRequirements
   -> Eff es ComponentDependencies
 getAllRequirements releaseId = dbtToEff $ toComponentDependencies <$> query Select getAllRequirementsQuery (Only releaseId)
 
+-- | This function has a bit of logic where if there exists a component with the same name as the package,
+-- this component's dependencies are chosen.
+-- Otherwise, requirements without discrimination by component are fetched.
 getRequirements
   :: (DB :> es, Log :> es, Time :> es)
   => PackageName
@@ -391,8 +394,6 @@ getRequirementsQuery singleComponentType =
     <> " "
     <> (if singleComponentType then tablesSingleType else tablesManyTypes)
     <> " "
-    <> whereClause
-    <> " "
     <> orderClause
   where
     selectors =
@@ -410,6 +411,8 @@ getRequirementsQuery singleComponentType =
                                               AND pc.component_type = ?
            INNER JOIN releases AS rel ON rel.release_id = pc.release_id
            INNER JOIN packages AS dependent ON rel.package_id = dependent.package_id
+      WHERE rel.release_id = ?
+        AND pc.component_name = dependent.name
       |]
     tablesManyTypes =
       [sql|
@@ -418,12 +421,7 @@ getRequirementsQuery singleComponentType =
            INNER JOIN package_components AS pc ON pc.package_component_id = req.package_component_id
            INNER JOIN releases AS rel ON rel.release_id = pc.release_id
            INNER JOIN packages AS dependent ON rel.package_id = dependent.package_id
-      |]
-
-    whereClause =
-      [sql|
       WHERE rel.release_id = ?
-        AND pc.component_name = dependent.name
       |]
 
     orderClause =

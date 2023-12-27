@@ -29,7 +29,6 @@ executable demo-chain-sync
                        ouroboros-network-framework,
                        ouroboros-network-mock,
                        ouroboros-network-protocols,
-                       ouroboros-network
 
   default-language:    Haskell2010
   ghc-options:         -Wall

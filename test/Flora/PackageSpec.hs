@@ -253,8 +253,16 @@ testExecutableOnlyPackage = do
   release <- assertJust =<< Query.getReleaseByVersion package.packageId (mkVersion [0, 10, 2, 2])
   requirements <- Query.getRequirements package.name release.releaseId
   assertEqual
-    Vector.empty
-    requirements
+    ( Set.fromList
+        [ PackageName "stm"
+        , PackageName "directory"
+        , PackageName "containers"
+        , PackageName "bytestring"
+        , PackageName "base"
+        , PackageName "random"
+        ]
+    )
+    (Set.fromList $ view _2 <$> Vector.toList requirements)
 
 ---
 
