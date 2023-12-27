@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 1.0.15 -- XXXX-XX-XX
+* Deduplicate dependencies listed in package overview ([#492](https://github.com/flora-pm/flora-server/pull/492))
+
 ## 1.0.14 -- 2023-12-13
 * Colourise in red deprecation markers on the package page ([#438](https://github.com/flora-pm/flora-server/pull/439))
 * Added more matches to the natural language processing category ([#440](https://github.com/flora-pm/flora-server/pull/440))

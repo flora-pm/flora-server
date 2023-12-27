@@ -257,6 +257,12 @@ notFoundPage assets _req =
 openApiHandler :: OpenApi
 openApiHandler =
   toOpenApi (Proxy @API.Routes)
-    & #info % #title .~ "Flora API"
-    & #info % #version .~ "v0"
-    & #info % #description ?~ "Flora API Documentation"
+    & #info
+    % #title
+    .~ "Flora API"
+    & #info
+    % #version
+    .~ "v0"
+    & #info
+    % #description
+    ?~ "Flora API Documentation"

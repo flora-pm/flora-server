@@ -41,7 +41,8 @@ userSettingsHandler = do
   templateEnv' <- fromSession session defaultTemplateEnv
   let templateEnv =
         templateEnv'
-          & #title .~ "Account settings"
+          & #title
+          .~ "Account settings"
   let user = fromJust session.mUser
   render templateEnv $
     Settings.dashboard user
@@ -52,7 +53,8 @@ userSecuritySettingsHandler = do
   templateEnv' <- fromSession session defaultTemplateEnv
   let templateEnv =
         templateEnv'
-          & #title .~ "Security settings"
+          & #title
+          .~ "Security settings"
   render
     templateEnv
     Settings.securitySettings
@@ -64,7 +66,8 @@ getTwoFactorSettingsHandler = do
   templateEnv' <- fromSession session defaultTemplateEnv
   let templateEnv =
         templateEnv'
-          & #title .~ "Security settings"
+          & #title
+          .~ "Security settings"
   let user = fromJust session.mUser
   case user.totpKey of
     Nothing -> do
@@ -109,8 +112,10 @@ postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
           Log.logAttention_ "Code validation failed"
           let templateEnv =
                 templateEnv'
-                  & #title .~ "Security settings"
-                  & #flashError ?~ mkError "Code validation failed, please retry"
+                  & #title
+                  .~ "Security settings"
+                  & #flashError
+                  ?~ mkError "Code validation failed, please retry"
           let uri = TwoFactor.uriFromKey "localhost" user.email userKey
           let qrCode =
                 QRCode.generateQRCode uri

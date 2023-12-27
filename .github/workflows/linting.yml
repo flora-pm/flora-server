@@ -11,8 +11,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: fourmolu/fourmolu-action@v8
+    - uses: haskell-actions/run-fourmolu@v9
       with:
+        version: "0.14.1.0"
         pattern: |
           src/**/*.hs
           test/**/*.hs

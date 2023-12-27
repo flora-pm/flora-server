@@ -20,6 +20,7 @@ import Log qualified
 import Log.Backend.StandardOutput qualified as Log
 import Optics.Core
 import Options.Applicative
+import System.FilePath ((</>))
 
 import Flora.Environment
 import Flora.Environment.Config (PoolConfig (..))
@@ -52,7 +53,7 @@ data Command
 
 data ProvisionTarget
   = Categories
-  | TestPackages
+  | TestPackages Text
   deriving stock (Show, Eq)
 
 data UserCreationOptions = UserCreationOptions
@@ -102,7 +103,11 @@ parseProvision :: Parser Command
 parseProvision =
   subparser $
     command "categories" (pure (Provision Categories) `withInfo` "Load the canonical categories in the system")
-      <> command "test-packages" (pure (Provision TestPackages) `withInfo` "Load the test packages in the database")
+      <> command "test-packages" (parseProvisionTestPackages `withInfo` "Load the test packages in the database")
+
+parseProvisionTestPackages :: Parser Command
+parseProvisionTestPackages =
+  Provision . TestPackages <$> option str (long "repository" <> metavar "<repository>" <> help "Which repository we're importing from (hackage, cardano…)")
 
 parseCreateUser :: Parser Command
 parseCreateUser =
@@ -155,7 +160,7 @@ runOptions
   => Options
   -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
-runOptions (Options (Provision TestPackages)) = importFolderOfCabalFiles "./test/fixtures/Cabal/" "hackage"
+runOptions (Options (Provision (TestPackages repository))) = importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
@@ -179,8 +184,7 @@ runOptions (Options (ProvisionRepository name url description)) = provisionRepos
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
 
 provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es ()
-provisionRepository name url description = do
-  Update.createPackageIndex name url description Nothing
+provisionRepository name url description = Update.createPackageIndex name url description Nothing
 
 importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
 importFolderOfCabalFiles path repository = Log.withStdOutLogger $ \appLogger -> do
@@ -189,7 +193,7 @@ importFolderOfCabalFiles path repository = Log.withStdOutLogger $ \appLogger -> 
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importAllFilesInRelativeDirectory appLogger (user ^. #userId) (repository, packageIndex.url) path True
+      importAllFilesInRelativeDirectory appLogger (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository) True
 
 importIndex :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
 importIndex path repository = Log.withStdOutLogger $ \logger -> do

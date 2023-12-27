@@ -60,9 +60,8 @@ RUN echo $PATH
 # package versions)
 RUN cabal update
 RUN cabal install -j postgresql-migration 
-RUN cabal install -j yaml-0.11.11.2
 RUN cabal install -j hlint apply-refact
-RUN cabal install -j fourmolu-0.12.0.0
+RUN cabal install -j fourmolu-0.14.1.0
 RUN cabal install -j cabal-fmt
 RUN cabal install -j ghcid
 RUN cabal install -j ghc-tags

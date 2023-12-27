@@ -124,16 +124,22 @@ importAllPackages :: Fixtures -> TestEff ()
 importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
   importAllFilesInRelativeDirectory
     appLogger
-    (fixtures ^. #hackageUser % #userId)
+    fixtures.hackageUser.userId
     ("hackage", "https://hackage.haskell.org")
-    "./test/fixtures/Cabal/"
+    "./test/fixtures/Cabal/hackage"
+    True
+
+  importAllFilesInRelativeDirectory
+    appLogger
+    fixtures.hackageUser.userId
+    ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
+    "./test/fixtures/Cabal/cardano"
     True
 
 runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
 runTestEff comp pool poolCfg = runEff $
   Log.withStdOutLogger $ \stdOutLogger ->
-    do
-      runTime
+    runTime
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
       . runReader poolCfg
@@ -274,8 +280,7 @@ genDisplayName :: MonadGen m => m Text
 genDisplayName = H.text (Range.constant 3 25) H.unicode
 
 genPassword :: MonadGen m => m (PasswordHash Argon2)
-genPassword = do
-  unsafePerformIO . runEff . hashPassword . mkPassword <$> H.text (Range.constant 20 30) H.unicode
+genPassword = unsafePerformIO . runEff . hashPassword . mkPassword <$> H.text (Range.constant 20 30) H.unicode
 
 genUserFlags :: MonadGen m => m UserFlags
 genUserFlags = UserFlags <$> H.bool <*> H.bool
