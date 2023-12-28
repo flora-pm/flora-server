@@ -13,8 +13,6 @@ allow-newer: type-errors-pretty:base
            , prometheus-proc:text
            , souffle-haskell:text
            , servant-lucid:text
-           , password-types:text
-           , password:text
            , lucid-svg:text
            , lucid-aria:text
            , lucid-alpine:text

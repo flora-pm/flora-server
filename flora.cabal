@@ -427,6 +427,7 @@ executable flora-cli
     , optparse-applicative
     , pg-transact-effectful
     , PyF
+    , sel
     , text
     , text-display
     , transformers
@@ -464,6 +465,7 @@ test-suite flora-test
     , postgresql-migration
     , postgresql-simple
     , resource-pool
+    , sel
     , servant
     , servant-client
     , servant-server
@@ -472,7 +474,6 @@ test-suite flora-test
     , tasty-hunit
     , text
     , time
-    , transformers
     , typed-process
     , uuid
     , vector

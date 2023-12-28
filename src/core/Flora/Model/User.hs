@@ -9,7 +9,6 @@ module Flora.Model.User
   , AdminCreationForm (..)
   , mkUser
   , mkAdmin
-  , hashPassword
   )
 where
 
@@ -114,7 +113,8 @@ instance ToField PasswordHash where
 
 instance FromField PasswordHash where
   fromField f Nothing = returnError UnexpectedNull f ""
-  fromField _ (Just bs) = pure $ Sel.asciiByteStringToPasswordHash bs
+  fromField _ (Just bs) =
+    pure $ Sel.asciiByteStringToPasswordHash bs
 
 instance NFData PasswordHash where
   rnf a = seq a ()
@@ -142,6 +142,3 @@ mkAdmin AdminCreationForm{username, email, password} = do
   let totpKey = Nothing
   let totpEnabled = False
   pure User{..}
-
-hashPassword :: IOE :> es => Text -> Eff es PasswordHash
-hashPassword = liftIO . Sel.hashText
