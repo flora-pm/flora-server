@@ -1,16 +1,17 @@
 module Main where
 
+import Control.Monad (void)
 import Data.Password.Types
+import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
 import Effectful
 import Effectful.Fail (runFailIO)
 import Effectful.Log qualified as Log
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff, runDB)
 import Effectful.Reader.Static (runReader)
 import Effectful.Time
 import Log.Backend.StandardOutput qualified as Log
 import Log.Data
 import System.IO
-import System.Process.Typed qualified as Process
 import Test.Tasty (defaultMain, testGroup)
 
 import Flora.BlobSpec qualified as BlobSpec
@@ -32,8 +33,6 @@ import Flora.UserSpec qualified as UserSpec
 main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
-  Process.runProcess "make db-drop"
-  Process.runProcess "make db-setup"
   env <- runEff getFloraTestEnv
   fixtures <- runEff $ Log.withStdOutLogger $ \stdOutLogger -> do
     runTime
@@ -43,6 +42,7 @@ main = do
     . runBlobStorePure
     . runFailIO
     $ do
+      cleanUp
       Update.createPackageIndex "hackage" "" "" Nothing
       Update.createPackageIndex "cardano" "" "" Nothing
       password <- hashPassword $ mkPassword "foobar2000"
@@ -66,3 +66,20 @@ specs fixtures =
   , BlobSpec.spec
   , SearchSpec.spec
   ]
+
+cleanUp :: DB :> es => Eff es ()
+cleanUp = dbtToEff $ do
+  void $ execute Delete "DELETE FROM blob_relations" ()
+  void $ execute Delete "DELETE FROM oddjobs" ()
+  void $ execute Delete "DELETE FROM package_categories" ()
+  void $ execute Delete "DELETE FROM categories" ()
+  void $ execute Delete "DELETE FROM persistent_sessions" ()
+  void $ execute Delete "DELETE FROM downloads" ()
+  void $ execute Delete "DELETE FROM requirements" ()
+  void $ execute Delete "DELETE FROM package_components" ()
+  void $ execute Delete "DELETE FROM releases" ()
+  void $ execute Delete "DELETE FROM packages" ()
+  void $ execute Delete "DELETE FROM package_indexes" ()
+  void $ execute Delete "DELETE FROM user_organisation" ()
+  void $ execute Delete "DELETE FROM package_publishers" ()
+  void $ execute Delete "DELETE FROM users" ()
