@@ -47,6 +47,7 @@ module Flora.TestUtils
 
     -- * HUnit re-exports
   , TestTree
+  , liftIO
   )
 where
 

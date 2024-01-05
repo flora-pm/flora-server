@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-orphans -Wno-unused-imports #-}
 
 module Flora.Model.User
   ( UserId (..)
@@ -25,7 +25,7 @@ import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), fromJSONField, returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Orphans ()
-import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..), toJSONField)
+import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Effectful
 import Effectful.Time qualified as Time
@@ -35,6 +35,7 @@ import Sel.HMAC.SHA256 qualified as HMAC
 import Sel.Hashing.Password
 import Sel.Hashing.Password qualified as Sel
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
+import Database.PostgreSQL.Simple (Binary(..))
 
 newtype UserId = UserId {getUserId :: UUID}
   deriving stock (Generic, Show)
@@ -109,7 +110,7 @@ type CannotDisplayPassword e =
     ':$$: 'Text ""
 
 instance ToField PasswordHash where
-  toField = Escape . Sel.passwordHashToByteString
+  toField = toField . Sel.passwordHashToText
 
 instance FromField PasswordHash where
   fromField f Nothing = returnError UnexpectedNull f ""

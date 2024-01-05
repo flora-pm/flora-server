@@ -1,3 +1,0 @@
-import: ./cabal.project
-
-profiling: True

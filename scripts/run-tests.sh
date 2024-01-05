@@ -2,8 +2,7 @@
 
 set -eao pipefail
 
-source ./environment.test.sh
-[ -f ./environment.test.local.sh ] && source ./environment.test.local.sh
+source ./environment.test.local.sh
 
 export DATALOG_DIR="cbits/"
 
