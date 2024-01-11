@@ -22,6 +22,7 @@ import Data.UUID
 import Data.UUID.V4 qualified as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
+import Database.PostgreSQL.Simple (Binary (..))
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), fromJSONField, returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Orphans ()
@@ -35,7 +36,6 @@ import Sel.HMAC.SHA256 qualified as HMAC
 import Sel.Hashing.Password
 import Sel.Hashing.Password qualified as Sel
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
-import Database.PostgreSQL.Simple (Binary(..))
 
 newtype UserId = UserId {getUserId :: UUID}
   deriving stock (Generic, Show)
