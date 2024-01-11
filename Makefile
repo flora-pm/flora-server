@@ -74,7 +74,7 @@ watch-test: soufflé ## Load the tests in ghcid and reload them on file change
 watch-server: soufflé ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
 
-lint: ## Run the code linter (HLint)
+lint-hs: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
 style-hs-quick: ## Run the haskell code formatters (fourmolu, cabal-fmt) 
@@ -85,9 +85,11 @@ style-hs: ## Run the haskell code formatters (fourmolu, cabal-fmt)
 	@cabal-fmt -i flora.cabal
 	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
-style-all: style-hs ## Run all the code formatters
+style-css: ## Run the CSS code formatters (prettier, stylelint)
 	@cd assets ; yarn prettier --write css
 	@cd assets ; yarn stylelint --fix css
+
+style: style-hs style-css ## Run all the code formatters
 
 nix-shell: ## Enter the Nix shell
 	@nix-shell
