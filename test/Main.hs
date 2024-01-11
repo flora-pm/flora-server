@@ -1,7 +1,6 @@
 module Main where
 
 import Control.Monad (void)
-import Data.Password.Types
 import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
 import Effectful
 import Effectful.Fail (runFailIO)
