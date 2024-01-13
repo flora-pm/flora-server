@@ -30,7 +30,7 @@ package warp
 source-repository-package
     type: git
     location: https://github.com/haskell-cryptography/libsodium-bindings
-    tag: 00900ca78f0a3101fe634224fd63b2c493bbdd34
+    tag: 86161d48
     subdir: ./sel
  
 source-repository-package
