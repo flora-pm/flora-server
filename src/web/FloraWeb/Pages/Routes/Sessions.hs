@@ -8,7 +8,6 @@ import Servant.HTML.Lucid
 import Web.FormUrlEncoded
 
 import Flora.Model.PersistentSession
-import Flora.Model.User.Orphans ()
 import Web.Cookie
 
 type Routes = NamedRoutes Routes'

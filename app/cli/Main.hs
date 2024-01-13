@@ -3,7 +3,6 @@ module Main where
 import Codec.Compression.GZip qualified as GZip
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Maybe
-import Data.Password.Types
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
@@ -20,6 +19,7 @@ import Log qualified
 import Log.Backend.StandardOutput qualified as Log
 import Optics.Core
 import Options.Applicative
+import Sel.Hashing.Password qualified as Sel
 import System.FilePath ((</>))
 
 import Flora.Environment
@@ -165,7 +165,7 @@ runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
       canLogin = opts ^. #canLogin
-  password <- hashPassword (mkPassword (opts ^. #password))
+  password <- liftIO $ Sel.hashText opts.password
   if opts ^. #isAdmin
     then
       addAdmin AdminCreationForm{..}

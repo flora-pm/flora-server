@@ -1,7 +1,6 @@
 module Main where
 
 import Control.Monad (void)
-import Data.Password.Types
 import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
 import Effectful
 import Effectful.Fail (runFailIO)
@@ -11,6 +10,7 @@ import Effectful.Reader.Static (runReader)
 import Effectful.Time
 import Log.Backend.StandardOutput qualified as Log
 import Log.Data
+import Sel.Hashing.Password qualified as Sel
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
@@ -21,7 +21,7 @@ import Flora.Environment
 import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.BlobStore.API
 import Flora.Model.PackageIndex.Update qualified as Update
-import Flora.Model.User (UserCreationForm (..), hashPassword, mkUser)
+import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
 import Flora.OddJobSpec qualified as OddJobSpec
 import Flora.PackageSpec qualified as PackageSpec
@@ -45,7 +45,7 @@ main = do
       cleanUp
       Update.createPackageIndex "hackage" "" "" Nothing
       Update.createPackageIndex "cardano" "" "" Nothing
-      password <- hashPassword $ mkPassword "foobar2000"
+      password <- liftIO $ Sel.hashText "foobar2000"
       templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
       Update.insertUser templateUser
       testMigrations
