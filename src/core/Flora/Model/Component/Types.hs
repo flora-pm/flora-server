@@ -145,7 +145,7 @@ instance Entity PackageComponent where
     , [field| component_name |]
     , [field| component_type |]
     , [field| component_metadata |]
-    , [field| extra_libraris |]
+    , [field| extra_libraries |]
     ]
 
 instance ToRow PackageComponent where
