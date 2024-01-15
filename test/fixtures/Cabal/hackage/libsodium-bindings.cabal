@@ -1,0 +1,89 @@
+cabal-version:      3.0
+name:               libsodium-bindings
+version:            0.0.1.1
+category:           Cryptography
+synopsis:           FFI bindings to libsodium
+description:
+  This library embeds FFI bindings to the stable version of libsodium 1.0.18.
+  The interface exposed by this library is kept close to the C library.
+
+homepage:           https://github.com/haskell-cryptography/libsodium-bindings
+bug-reports:
+  https://github.com/haskell-cryptography/libsodium-bindings/issues
+
+author:             Hécate Moonlight, Koz Ross
+maintainer:         The Haskell Cryptography contributors
+license:            BSD-3-Clause
+build-type:         Simple
+tested-with:
+  GHC ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.3
+
+extra-source-files:
+  LICENSE
+  README.md
+
+extra-doc-files:    CHANGELOG.md
+
+flag use-pkg-config
+  description: Use pkg-config to find Libsodium (macOS and linux only).
+  default:     False
+  manual:      True
+
+flag homebrew-libsodium
+  description: Use Homebrew version of Libsodium (macOS only).
+  default:     False
+  manual:      True
+
+source-repository head
+  type:     git
+  location: https://github.com/haskell-cryptography/libsodium-bindings
+
+common common
+  build-depends:    base >=4.14 && <5
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+    -fhide-source-paths -Wno-unused-do-bind -haddock
+
+  if (os(osx) && flag(homebrew-libsodium))
+    include-dirs:   /opt/local/include
+    extra-lib-dirs: /user/local/opt/libsodium/lib
+
+  if flag(use-pkg-config)
+    pkgconfig-depends: libsodium ==1.0.18
+
+  else
+    extra-libraries: sodium
+
+  default-language: Haskell2010
+
+common common-rts-options
+  ghc-options: -rtsopts -threaded -with-rtsopts=-N
+
+library
+  import:          common
+  hs-source-dirs:  src
+
+  -- cabal-fmt: expand src/
+  exposed-modules:
+    LibSodium.Bindings
+    LibSodium.Bindings.AEAD
+    LibSodium.Bindings.Comparison
+    LibSodium.Bindings.CryptoAuth
+    LibSodium.Bindings.CryptoBox
+    LibSodium.Bindings.CryptoSign
+    LibSodium.Bindings.GenericHashing
+    LibSodium.Bindings.KeyDerivation
+    LibSodium.Bindings.KeyExchange
+    LibSodium.Bindings.Main
+    LibSodium.Bindings.PasswordHashing
+    LibSodium.Bindings.Random
+    LibSodium.Bindings.Scrypt
+    LibSodium.Bindings.SealedBoxes
+    LibSodium.Bindings.Secretbox
+    LibSodium.Bindings.SecretStream
+    LibSodium.Bindings.SecureMemory
+    LibSodium.Bindings.SHA2
+    LibSodium.Bindings.ShortHashing
+    LibSodium.Bindings.Utils
+    LibSodium.Bindings.XChaCha20
