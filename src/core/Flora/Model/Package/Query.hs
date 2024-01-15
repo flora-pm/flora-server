@@ -26,9 +26,9 @@ module Flora.Model.Package.Query
   , numberOfPackageRequirementsQuery
   , searchPackage
   , unsafeGetComponent
-  , getComponentById
   , searchPackageByNamespace
   , getNumberOfPackageRequirements
+  , getExtraLibraries
   ) where
 
 import Data.Text (Text)
@@ -37,7 +37,6 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
   ( joinSelectOneByField
-  , selectById
   , selectManyByField
   , selectWhereNull
   , _select
@@ -71,6 +70,7 @@ import Flora.Model.Requirement
   , DependencyInfo
   , toComponentDependencies
   )
+import Control.Monad (join)
 
 getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do
@@ -290,9 +290,6 @@ FROM dependents AS d
 WHERE rank = 1
     |]
 
-getComponentById :: DB :> es => ComponentId -> Eff es (Maybe PackageComponent)
-getComponentById componentId = dbtToEff $ selectById @PackageComponent (Only componentId)
-
 getComponent :: DB :> es => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
 getComponent releaseId name componentType =
   dbtToEff $
@@ -331,7 +328,7 @@ getRequirements
   -> ReleaseId
   -> Eff es (Vector (Namespace, PackageName, Text))
 getRequirements (PackageName packageName) releaseId = do
-  components <- Query.getComponentsByReleaseId releaseId
+  components <- Query.getCanonicalComponentByReleaseId releaseId
   (result, duration) <-
     case Vector.find (\CanonicalComponent{componentName} -> componentName == packageName) components of
       Just (CanonicalComponent{componentType}) ->
@@ -344,6 +341,19 @@ getRequirements (PackageName packageName) releaseId = do
       , "release_id" .= releaseId
       ]
   pure result
+
+getExtraLibraries
+  :: (DB :> es)
+  => ReleaseId
+  -> Eff es (Maybe (Vector Text))
+getExtraLibraries releaseId = do
+  components' <- Query.getPackageComponentByReleaseId releaseId
+  let components = Vector.filter (\component -> component.canonicalForm.componentType == Library || component.canonicalForm.componentType == Executable) components'
+  let results = join $ Vector.mapMaybe (\component -> component.extraLibraries) components
+  if null results
+  then pure Nothing
+  else pure $ Just results
+
 
 -- | This query finds all the dependencies of a release,
 --  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.

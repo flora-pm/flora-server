@@ -104,7 +104,12 @@ showNamespaceHandler namespace pageParam = do
                   , description = packageIndex.description
                   }
           render templateEnv $
-            Search.showAllPackagesInNamespace namespace packageIndex.description count' pageNumber results
+            Search.showAllPackagesInNamespace
+              namespace
+              packageIndex.description
+              count'
+              pageNumber
+              results
 
 showPackageHandler :: Namespace -> PackageName -> FloraPage (Html ())
 showPackageHandler namespace packageName = showPackageVersion namespace packageName Nothing
@@ -132,6 +137,7 @@ showPackageVersion namespace packageName mversion = do
   categories <- Query.getPackageCategories package.packageId
   numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName Nothing
   numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+  extraLibraries <- Query.getExtraLibraries release.releaseId
 
   let templateEnv =
         templateEnv'
@@ -173,6 +179,7 @@ showPackageVersion namespace packageName mversion = do
       releaseDependencies
       numberOfDependencies
       categories
+      extraLibraries
 
 showDependentsHandler
   :: Namespace

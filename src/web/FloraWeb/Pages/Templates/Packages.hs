@@ -299,15 +299,21 @@ displayDependencies
   :: (Namespace, PackageName, Version)
   -- ^ The package namespace and name
   -> Word
-  -- ^ Number of dependenciesc
+  -- ^ Number of dependencies
   -> Vector (Namespace, PackageName, Text)
   -- ^ (Namespace, Name, Version requirement, Synopsis of the dependency)
+  -> Maybe (Vector Text)
   -> FloraHTML
-displayDependencies (namespace, packageName, version) numberOfDependencies dependencies =
+displayDependencies (namespace, packageName, version) numberOfDependencies dependencies mExtraLibraries =
   li_ [class_ ""] $ do
     h3_ [class_ "package-body-section"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
-    let deps = foldMap renderDependency dependencies
-    ul_ [class_ "dependencies"] $
+    whenJust mExtraLibraries $ \extraLibraries -> do
+      let libs = fold $ intercalateVec ", " extraLibraries
+      ul_
+        [class_ "system-dependencies divider"]
+        (toHtml $ "system libraries: " <> libs)
+    ul_ [class_ "dependencies"] $ do
+      let deps = foldMap renderDependency dependencies
       deps
         <> showAll Dependencies (Just version) namespace packageName
 

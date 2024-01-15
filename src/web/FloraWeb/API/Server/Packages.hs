@@ -35,7 +35,7 @@ getPackageHandler
   -> FloraAPI (PackageDTO 0)
 getPackageHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName packageNotFound
-  releases <- Query.getReleases (package.packageId)
+  releases <- Query.getReleases package.packageId
   let latestRelease =
         releases
           & Vector.filter (\r -> not (fromMaybe False r.deprecated))
@@ -46,7 +46,7 @@ getPackageHandler namespace packageName = do
       versionNotFound
         package.namespace
         package.name
-  components <- Query.getComponentsByReleaseId release.releaseId
+  components <- Query.getCanonicalComponentByReleaseId release.releaseId
   pure $ toPackageDTO package release components
 
 getVersionedPackageHandler
@@ -61,5 +61,5 @@ getVersionedPackageHandler namespace packageName version = do
       versionNotFound
         package.namespace
         package.name
-  components <- Query.getComponentsByReleaseId release.releaseId
+  components <- Query.getCanonicalComponentByReleaseId release.releaseId
   pure $ toPackageDTO package release components

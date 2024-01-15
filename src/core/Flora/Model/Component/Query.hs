@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Flora.Model.Component.Query (getComponentsByReleaseId) where
+module Flora.Model.Component.Query
+  ( getCanonicalComponentByReleaseId
+  , getPackageComponentByReleaseId
+  ) where
 
 import Data.Text
 import Data.Vector (Vector)
@@ -18,8 +21,8 @@ import Effectful.PostgreSQL.Transact.Effect
 import Flora.Model.Component.Types
 import Flora.Model.Release.Types (ReleaseId)
 
-getComponentsByReleaseId :: DB :> es => ReleaseId -> Eff es (Vector CanonicalComponent)
-getComponentsByReleaseId releaseId = do
+getCanonicalComponentByReleaseId :: DB :> es => ReleaseId -> Eff es (Vector CanonicalComponent)
+getCanonicalComponentByReleaseId releaseId = do
   (results :: Vector (Text, ComponentType)) <-
     dbtToEff $
       query
@@ -30,3 +33,6 @@ getComponentsByReleaseId releaseId = do
         )
         (Only releaseId)
   pure $ fmap (uncurry CanonicalComponent) results
+
+getPackageComponentByReleaseId :: DB :> es => ReleaseId -> Eff es (Vector PackageComponent)
+getPackageComponentByReleaseId releaseId = dbtToEff $ selectManyByField @PackageComponent [field| release_id |] (Only releaseId)
