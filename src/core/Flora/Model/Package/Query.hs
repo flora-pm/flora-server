@@ -58,6 +58,7 @@ import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Effectful.Time (Time)
 import Log qualified
 
+import Control.Monad (join)
 import Flora.Logging (timeAction)
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
@@ -70,7 +71,6 @@ import Flora.Model.Requirement
   , DependencyInfo
   , toComponentDependencies
   )
-import Control.Monad (join)
 
 getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do
@@ -343,7 +343,7 @@ getRequirements (PackageName packageName) releaseId = do
   pure result
 
 getExtraLibraries
-  :: (DB :> es)
+  :: DB :> es
   => ReleaseId
   -> Eff es (Maybe (Vector Text))
 getExtraLibraries releaseId = do
@@ -351,9 +351,8 @@ getExtraLibraries releaseId = do
   let components = Vector.filter (\component -> component.canonicalForm.componentType == Library || component.canonicalForm.componentType == Executable) components'
   let results = join $ Vector.mapMaybe (\component -> component.extraLibraries) components
   if null results
-  then pure Nothing
-  else pure $ Just results
-
+    then pure Nothing
+    else pure $ Just results
 
 -- | This query finds all the dependencies of a release,
 --  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.

@@ -24,6 +24,7 @@ import Control.DeepSeq (force)
 import Control.Exception
 import Control.Monad.Except
 import Data.ByteString qualified as BS
+import Data.List qualified as List
 import Data.Maybe
 import Data.Pool (Pool, withResource)
 import Data.Poolboy qualified as Poolboy
@@ -40,7 +41,7 @@ import Database.PostgreSQL.Simple (Connection)
 import Distribution.Compat.NonEmptySet (toList)
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
-import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName, BuildInfo)
+import Distribution.PackageDescription (BuildInfo, CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
 import Distribution.PackageDescription qualified as Cabal hiding (PackageName)
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Pretty
@@ -69,7 +70,6 @@ import OddJobs.Job (createJob)
 import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
-import qualified Data.List as List
 
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
@@ -550,7 +550,7 @@ genericComponentExtractor
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
         buildInfo = getBuildInfo rawComponent
-        extraLibraries = 
+        extraLibraries =
           case List.map Text.pack buildInfo.extraLibs of
             [] -> Nothing
             libs -> Just (Vector.fromList libs)
