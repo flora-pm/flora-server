@@ -128,6 +128,7 @@ data PackageComponent = PackageComponent
   , releaseId :: ReleaseId
   , canonicalForm :: CanonicalComponent
   , metadata :: ComponentMetadata
+  , extraLibraries :: Maybe (Vector Text)
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (NFData)
@@ -144,22 +145,24 @@ instance Entity PackageComponent where
     , [field| component_name |]
     , [field| component_type |]
     , [field| component_metadata |]
+    , [field| extra_libraris |]
     ]
 
 instance ToRow PackageComponent where
-  toRow PackageComponent{componentId, releaseId, canonicalForm, metadata} =
+  toRow PackageComponent{componentId, releaseId, canonicalForm, metadata, extraLibraries} =
     let componentId' = componentId
         releaseId' = releaseId
         componentMetadata' = metadata
         componentName' = canonicalForm.componentName
         componentType' = canonicalForm.componentType
+        extraLibraries' = extraLibraries
      in toRow PackageComponent'{..}
 
 instance FromRow PackageComponent where
   fromRow = do
     PackageComponent'{..} <- fromRow
     let canonicalForm = CanonicalComponent componentName' componentType'
-    pure $ PackageComponent componentId' releaseId' canonicalForm componentMetadata'
+    pure $ PackageComponent componentId' releaseId' canonicalForm componentMetadata' extraLibraries'
 
 -- | Data Access Object used to serialise to the DB
 data PackageComponent' = PackageComponent'
@@ -168,6 +171,7 @@ data PackageComponent' = PackageComponent'
   , componentName' :: Text
   , componentType' :: ComponentType
   , componentMetadata' :: ComponentMetadata
+  , extraLibraries' :: Maybe (Vector Text)
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (ToRow, FromRow)

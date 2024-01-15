@@ -539,6 +539,7 @@ genericComponentExtractor
         canonicalForm = CanonicalComponent{..}
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
+        extraLibraries = Nothing
         component = PackageComponent{..}
         dependencies = buildDependency package repository componentId <$> getDeps rawComponent
      in (component, dependencies)
