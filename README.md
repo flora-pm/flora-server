@@ -33,12 +33,12 @@
 <dl>
   <p>
   <dt>Flora.pm</dt>
-  <dd>A read-only mirror of hackage.haskell.org with an improved and lightweight interface.</dd>
+  <dd>A meta-index that gathers Haskell package from across the ecosystem.</dd>
  </p>
 
   <p>
   <dt>Flora Server</dt>
-  <dd>An alternative package index server for the Haskell ecosystem with mirroring capabilities.</dd>
+  <dd>An alternative package repository for your ecosystem.</dd>
   </p>
 </dl>
 
@@ -48,6 +48,10 @@
 * 🏛️ Package namespaces, so that packages with the same name can live without conflict
 * 🌓 Dark and light modes
 * 📱 Mobile user interface
+
+## 📖 Guides 
+
+Visit https://flora.pm/documentation for explanations on what Flora can do.
 
 ## 🤝 Contributing
 
@@ -59,5 +63,3 @@ To setup a local installation, see [CONTRIBUTING.md#project-setup](https://githu
 
 * [Code of Conduct](./CODE_OF_CONDUCT.md)
 * [Development Wiki](https://github.com/flora-pm/flora-server/wiki)
-
----
