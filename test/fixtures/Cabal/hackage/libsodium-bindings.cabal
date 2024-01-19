@@ -42,8 +42,9 @@ common common
 
   if (os(osx) || flag(use-pkg-config))
     pkgconfig-depends: libsodium ==1.0.18
+  else
+    extra-libraries: sodium
 
-  extra-libraries: sodium
   default-language: Haskell2010
 
 common common-rts-options

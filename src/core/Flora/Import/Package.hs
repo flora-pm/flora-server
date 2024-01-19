@@ -89,6 +89,7 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Model.User
+import Debug.Trace
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -492,7 +493,10 @@ extractCondTree
   -> Maybe UnqualComponentName
   -> CondTree ConfVar [Dependency] component
   -> [ImportComponent]
-extractCondTree extractor package repository release defaultComponentName = go []
+extractCondTree extractor package repository release defaultComponentName condTree = 
+  if package.name == PackageName "libsodium-bindings" 
+  then traceShowId $ go [] condTree
+  else go [] condTree
   where
     go cond tree =
       let treeComponent = extractor package repository release defaultComponentName cond tree.condTreeData
