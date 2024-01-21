@@ -17,8 +17,6 @@ allow-newer: type-errors-pretty:base
            , lucid-aria:text
            , lucid-alpine:text
 
-allow-older: pg-entity:time
-
 test-show-details: direct
 
 package *
