@@ -2,7 +2,11 @@ packages:
     ./
 
 -- profiling: True
+executable-dynamic: True
+
 with-compiler: ghc-9.4.7
+
+store-dir: _build/cabal-store
 
 tests: True
 
