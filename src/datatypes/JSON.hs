@@ -39,7 +39,7 @@ versionSchema :: Schema
 versionSchema =
   mempty
     & #description
-      ?~ "A package version"
+    ?~ "A package version"
 
 instance ToSchema SPDX.License where
   declareNamedSchema _ =
