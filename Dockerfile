@@ -5,7 +5,7 @@ FROM ubuntu@sha256:67211c14fa74f070d27cc59d69a7fa9aeff8e28ea118ef3babc295a0428a6
 ARG GID=1000
 ARG UID=1000
 
-ARG ghc_version=9.4.5
+ARG ghc_version=9.4.8
 ARG cabal_version=3.10.2.0
 
 # generate a working directory
