@@ -205,7 +205,7 @@ showVersionDependentsHandler namespace packageName version (Just pageNumber) mSe
   let templateEnv =
         templateEnv'
           { title = display namespace <> "/" <> display packageName
-          , description = "Dependents of " <> display namespace <> display packageName
+          , description = "Dependents of " <> display namespace <> "/" <> display packageName
           , navbarSearchContent = Just $ "depends:" <> display namespace <> "/" <> display packageName <> " "
           }
   results <-
