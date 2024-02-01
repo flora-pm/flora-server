@@ -4,7 +4,7 @@ packages:
 -- profiling: True
 executable-dynamic: True
 
-with-compiler: ghc-9.4.7
+with-compiler: ghc-9.4.8
 
 store-dir: _build/cabal-store
 
@@ -74,7 +74,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/saurabhnanda/odd-jobs
-    tag: 51c7443
+    tag: 411d5d0
 
 source-repository-package
     type: git

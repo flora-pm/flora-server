@@ -30,7 +30,7 @@ import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.Display (Display (..), display)
+import Data.Text.Display (Display (..))
 import Data.Time (NominalDiffTime)
 import Data.Typeable (Typeable)
 import Data.Word (Word16)
@@ -53,6 +53,7 @@ import Env
 import GHC.Generics (Generic)
 import System.FilePath (isValid)
 import Text.Read (readMaybe)
+import qualified Data.Base64.Types as B64
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
@@ -269,4 +270,4 @@ getAssetHash hashedAssetPath = do
 hashBundle :: IOE :> es => Text -> Eff es Text
 hashBundle path = do
   digest :: Digest SHA256 <- hashFile (Text.unpack path)
-  pure . display . B64.encodeBase64 . BA.convert $ digest
+  pure . B64.extractBase64 . B64.encodeBase64 . BA.convert $ digest
