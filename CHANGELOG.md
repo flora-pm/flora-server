@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.0.15 -- 2024-02-02
+
+* Show 3 digits in version if using 0x scheme. ([#490](https://github.com/flora-pm/flora-server/pull/490)
+
 ## 1.0.14 -- 2023-12-13
 * Colourise in red deprecation markers on the package page ([#438](https://github.com/flora-pm/flora-server/pull/439))
 * Added more matches to the natural language processing category ([#440](https://github.com/flora-pm/flora-server/pull/440))
