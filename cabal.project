@@ -2,6 +2,7 @@ packages:
     ./
 
 -- profiling: True
+active-repositories: hackage.haskell.org
 executable-dynamic: True
 
 with-compiler: ghc-9.4.8
