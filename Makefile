@@ -51,7 +51,8 @@ db-provision: ## Create categories and repositories
 			--description "Packages of the Cardano project"
 
 db-provision-test-packages: ## Load development data in the database
-	@cabal run -- flora-cli provision test-packages
+	@cabal run -- flora-cli provision test-packages --repository "hackage"
+	@cabal run -- flora-cli provision test-packages --repository "cardano"
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
 	@cabal run -- flora-cli import-packages ./01-index
@@ -73,14 +74,22 @@ watch-test: soufflé ## Load the tests in ghcid and reload them on file change
 watch-server: soufflé ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
 
-lint: ## Run the code linter (HLint)
+lint-hs: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
-style: ## Run the code formatters (stylish-haskell, cabal-fmt, prettier, stylelint)
+style-hs-quick: ## Run the haskell code formatters (fourmolu, cabal-fmt) 
+	@cabal-fmt -i flora.cabal
+	@git diff origin --name-only src test/**/*.hs app | xargs -P $(PROCS) -I {} fourmolu -q -i {}
+
+style-hs: ## Run the haskell code formatters (fourmolu, cabal-fmt) 
 	@cabal-fmt -i flora.cabal
 	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
+
+style-css: ## Run the CSS code formatters (prettier, stylelint)
 	@cd assets ; yarn prettier --write css
 	@cd assets ; yarn stylelint --fix css
+
+style: style-hs style-css ## Run all the code formatters
 
 nix-shell: ## Enter the Nix shell
 	@nix-shell
