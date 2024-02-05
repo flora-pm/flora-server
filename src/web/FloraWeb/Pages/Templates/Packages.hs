@@ -488,4 +488,7 @@ formatInstallString packageName Release{version} =
     rangedVersion :: Doc
     rangedVersion = "^>=" <> majMin
     majMin :: Doc
-    majMin = pretty $ mkVersion $ List.take 2 $ versionNumbers version
+    majMin =
+      if (List.head $ versionNumbers version) == 0
+        then pretty $ mkVersion $ List.take 3 $ versionNumbers version
+        else pretty $ mkVersion $ List.take 2 $ versionNumbers version

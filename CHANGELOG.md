@@ -1,7 +1,8 @@
 # CHANGELOG
 
 ## 1.0.15 -- XXXX-XX-XX
-* Deduplicate dependencies listed in package overview ([#492](https://github.com/flora-pm/flora-server/pull/492))
+* Show 3 digits in version if using 0x scheme. ([#490](https://github.com/flora-pm/flora-server/pull/490)
+* Deduplicate dependencies listed in package overview ([#492](https://github.com/flora-pm/flora-server/pull/492)
 
 ## 1.0.14 -- 2023-12-13
 * Colourise in red deprecation markers on the package page ([#438](https://github.com/flora-pm/flora-server/pull/439))
