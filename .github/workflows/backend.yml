@@ -55,7 +55,6 @@ jobs:
       uses: haskell-actions/setup@v2
       with:
         ghc-version: "${{ matrix.ghc }}"
-        cabal-version: "latest"
 
     - uses: actions/setup-node@v4
       with:
@@ -77,6 +76,8 @@ jobs:
         chmod 0600 ~/.pgpass
         echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
         cat ~/.pgpass
+        rm /home/runner/.ghcup/bin/cabal
+        ghcup install cabal -u https://github.com/haskell/cabal/releases/download/cabal-head/cabal-head-Linux-x86_64.tar.gz head
         cabal update
         cabal freeze
 
