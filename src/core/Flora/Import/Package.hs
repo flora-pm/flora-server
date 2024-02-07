@@ -21,7 +21,7 @@ module Flora.Import.Package where
 
 import Control.DeepSeq (force)
 import Control.Exception
-import Control.Monad.Except
+import Control.Monad
 import Data.ByteString qualified as BS
 import Data.Maybe
 import Data.Pool (Pool, withResource)

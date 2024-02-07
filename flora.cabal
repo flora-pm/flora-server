@@ -138,7 +138,7 @@ library
 
   build-depends:
     , aeson
-    , base                   ^>=4.17
+    , base                   >=4.17 && <4.19
     , base16-bytestring
     , base64
     , blaze-builder
@@ -185,7 +185,7 @@ library
     , servant-lucid
     , servant-server
     , slugify
-    , souffle-haskell        ==3.5.1
+    , souffle-haskell
     , streamly
     , streamly-core
     , tar
@@ -277,7 +277,7 @@ library flora-web
   build-depends:
     , aeson
     , async
-    , base                       ^>=4.17
+    , base                       >=4.17 && <4.19
     , base32
     , bytestring
     , Cabal-syntax
