@@ -97,7 +97,7 @@ makeConfig runnerEnv floraEnv logger pool runnerContinuation =
     pool
     (MaxConcurrentJobs 100)
     (runJobRunner pool runnerEnv floraEnv logger . runnerContinuation)
-    (\x -> x{cfgDeleteSuccessfulJobs = False, cfgDefaultMaxAttempts = 3})
+    (\x -> x{cfgDefaultMaxAttempts = 3})
 
 makeUIConfig :: FloraConfig -> Logger -> Pool PG.Connection -> UIConfig
 makeUIConfig cfg logger pool =
