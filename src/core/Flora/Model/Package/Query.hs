@@ -6,6 +6,7 @@ module Flora.Model.Package.Query
   , countPackagesByName
   , countPackagesInNamespace
   , getAllPackageDependents
+  , getRequirementsQuery
   , getAllPackageDependentsWithLatestVersion
   , getAllPackages
   , getAllRequirements
@@ -33,6 +34,7 @@ module Flora.Model.Package.Query
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
   ( joinSelectOneByField
   , selectById
@@ -60,12 +62,9 @@ import Log qualified
 import Flora.Logging (timeAction)
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
+import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Component.Types
-  ( ComponentId
-  , ComponentType
-  , PackageComponent
-  )
-import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName)
+import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName (..))
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
   ( ComponentDependencies
@@ -323,9 +322,22 @@ getAllRequirements
   -> Eff es ComponentDependencies
 getAllRequirements releaseId = dbtToEff $ toComponentDependencies <$> query Select getAllRequirementsQuery (Only releaseId)
 
-getRequirements :: (DB :> es, Log :> es, Time :> es) => ReleaseId -> Eff es (Vector (Namespace, PackageName, Text))
-getRequirements releaseId = do
-  (result, duration) <- timeAction $ dbtToEff $ query Select (getRequirementsQuery <> " LIMIT 6") (Only releaseId)
+-- | This function has a bit of logic where if there exists a component with the same name as the package,
+-- this component's dependencies are chosen.
+-- Otherwise, requirements without discrimination by component are fetched.
+getRequirements
+  :: (DB :> es, Log :> es, Time :> es)
+  => PackageName
+  -> ReleaseId
+  -> Eff es (Vector (Namespace, PackageName, Text))
+getRequirements (PackageName packageName) releaseId = do
+  components <- Query.getComponentsByReleaseId releaseId
+  (result, duration) <-
+    case Vector.find (\CanonicalComponent{componentName} -> componentName == packageName) components of
+      Just (CanonicalComponent{componentType}) ->
+        timeAction $ dbtToEff $ query Select (getRequirementsQuery True <> " LIMIT 6") (componentType, releaseId)
+      Nothing ->
+        timeAction $ dbtToEff $ query Select (getRequirementsQuery False <> " LIMIT 6") (Only releaseId)
   Log.logInfo "Retrieving limited dependencies of a release" $
     object
       [ "duration" .= duration
@@ -339,44 +351,83 @@ getRequirements releaseId = do
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
-    with requirements as (
-        select distinct p1.component_type, p1.component_name, p0.namespace, p0.name, r0.requirement, r0.components
-        from requirements as r0
-        inner join packages as p0 on p0.package_id = r0.package_id
-        inner join package_components as p1 on p1.package_component_id = r0.package_component_id
-        inner join releases as r1 on r1.release_id = p1.release_id
-        where r1.release_id = ?
-    )
-    select req.component_type
-         , req.component_name
-         , req.namespace
-         , req.name
-         , req.requirement
-         , req.components
-         , r3.version as "dependency_latest_version"
-         , r3.synopsis as "dependency_latest_synopsis"
-         , r3.license as "dependency_latest_license"
-    from requirements as req
-    inner join packages as p2 on p2.namespace = req.namespace and p2.name = req.name
-    inner join releases as r3 on r3.package_id = p2.package_id
-    where r3.version = (select max(version) from releases where package_id = p2.package_id)
-    group by req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license
-    order by req.component_type, req.component_name desc
-  |]
+WITH requirements AS (SELECT DISTINCT p1.component_type
+                                    , p1.component_name
+                                    , p0.namespace
+                                    , p0.name
+                                    , r0.requirement
+                                    , r0.components
+                      FROM requirements AS r0
+                           INNER JOIN packages AS p0 ON p0.package_id = r0.package_id
+                           INNER JOIN package_components AS p1 ON p1.package_component_id = r0.package_component_id
+                           INNER JOIN releases AS r1 ON r1.release_id = p1.release_id
+                      WHERE r1.release_id = ?)
+
+  SELECT req.component_type
+       , req.component_name
+       , req.namespace
+       , req.name
+       , req.requirement
+       , req.components
+       , r3.version AS dependency_latest_version
+       , r3.synopsis AS dependency_latest_synopsis
+       , r3.license AS dependency_latest_license
+  FROM requirements AS req
+       INNER JOIN packages AS p2 ON p2.namespace = req.namespace
+                                AND p2.name = req.name
+       INNER JOIN releases AS r3 ON r3.package_id = p2.package_id
+  WHERE r3.version = (SELECT max(version)
+                      FROM releases
+                      WHERE package_id = p2.package_id)
+  GROUP BY req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license
+  ORDER BY req.component_type
+         , req.component_name DESC
+|]
 
 -- | This query provides a limited view of the dependencies of a release.
-getRequirementsQuery :: Query
-getRequirementsQuery =
-  [sql|
-    select distinct dependency.namespace, dependency.name, req.requirement
-    from requirements as req
-    inner join packages as dependency on dependency.package_id = req.package_id
-    inner join package_components as pc ON pc.package_component_id = req.package_component_id
-          and (pc.component_type = 'library')
-    inner join releases as rel on rel.release_id = pc.release_id
-    where rel."release_id" = ?
-    order by dependency.namespace desc
-  |]
+getRequirementsQuery
+  :: Bool
+  -- Single component type?
+  -> Query
+getRequirementsQuery singleComponentType =
+  selectors
+    <> " "
+    <> (if singleComponentType then tablesSingleType else tablesManyTypes)
+    <> " "
+    <> orderClause
+  where
+    selectors =
+      [sql|
+      SELECT DISTINCT dependency.namespace
+                    , dependency.name
+                    , req.requirement
+              
+      |]
+    tablesSingleType =
+      [sql|
+      FROM requirements AS req
+           INNER JOIN packages AS dependency ON dependency.package_id = req.package_id
+           INNER JOIN package_components AS pc ON pc.package_component_id = req.package_component_id
+                                              AND pc.component_type = ?
+           INNER JOIN releases AS rel ON rel.release_id = pc.release_id
+           INNER JOIN packages AS dependent ON rel.package_id = dependent.package_id
+      WHERE rel.release_id = ?
+        AND pc.component_name = dependent.name
+      |]
+    tablesManyTypes =
+      [sql|
+      FROM requirements AS req
+           INNER JOIN packages AS dependency ON dependency.package_id = req.package_id
+           INNER JOIN package_components AS pc ON pc.package_component_id = req.package_component_id
+           INNER JOIN releases AS rel ON rel.release_id = pc.release_id
+           INNER JOIN packages AS dependent ON rel.package_id = dependent.package_id
+      WHERE rel.release_id = ?
+      |]
+
+    orderClause =
+      [sql|
+      ORDER BY dependency.namespace DESC
+      |]
 
 getNumberOfPackageRequirements :: DB :> es => ReleaseId -> Eff es Word
 getNumberOfPackageRequirements releaseId =
@@ -389,17 +440,15 @@ getNumberOfPackageRequirements releaseId =
 numberOfPackageRequirementsQuery :: Query
 numberOfPackageRequirementsQuery =
   [sql|
-    select distinct count(*)
-     from requirements as req
-     inner join packages as dependency
-        on dependency.package_id = req.package_id
-        and dependency.status = 'fully-imported'
-     inner join package_components as pc
-        on pc.package_component_id = req.package_component_id
-        and pc.component_type = 'library'
-     inner join releases as rel on rel.release_id = pc.release_id
-    where rel."release_id" = ?
-  |]
+SELECT DISTINCT count(*)
+FROM requirements AS req
+     INNER JOIN packages AS dependency ON dependency.package_id = req.package_id
+                                      AND dependency.status = 'fully-imported'
+     INNER JOIN package_components AS pc ON pc.package_component_id = req.package_component_id
+                                        AND pc.component_type = 'library'
+     INNER JOIN releases AS rel ON rel.release_id = pc.release_id
+WHERE rel.release_id = ?
+|]
 
 getPackageCategories
   :: DB :> es

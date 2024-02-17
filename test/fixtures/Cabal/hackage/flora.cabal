@@ -113,7 +113,6 @@ library
     Flora.Model.Release.Update
     Flora.Model.Requirement
     Flora.Model.User
-    Flora.Model.User.Orphans
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.Publish

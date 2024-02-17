@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.15 -- 2024-02-16
+* Show 3 digits in version if using 0x scheme. ([#490](https://github.com/flora-pm/flora-server/pull/490))
+* Deduplicate dependencies listed in package overview ([#492](https://github.com/flora-pm/flora-server/pull/492))
+* Use Sel for password hashing ([#493](https://github.com/flora-pm/flora-server/pull/493)
+* Delete data from test tables instead of dropping the DB ([#494](https://github.com/flora-pm/flora-server/pull/494))
+
 ## 1.0.14 -- 2023-12-13
 * Colourise in red deprecation markers on the package page ([#438](https://github.com/flora-pm/flora-server/pull/439))
 * Added more matches to the natural language processing category ([#440](https://github.com/flora-pm/flora-server/pull/440))

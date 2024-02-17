@@ -47,6 +47,7 @@ module Flora.TestUtils
 
     -- * HUnit re-exports
   , TestTree
+  , liftIO
   )
 where
 
@@ -57,7 +58,6 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Data.Kind
 import Data.List qualified as List
 import Data.Maybe (fromJust)
-import Data.Password.Argon2 (Argon2, PasswordHash, mkPassword)
 import Data.Pool hiding (PoolConfig)
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
@@ -87,6 +87,8 @@ import Log.Backend.StandardOutput qualified as Log
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import Optics.Core
+import Sel.Hashing.Password
+import Sel.Hashing.Password qualified as Sel
 import Servant.API ()
 import Servant.API.UVerb.Union
 import Servant.Client
@@ -124,16 +126,22 @@ importAllPackages :: Fixtures -> TestEff ()
 importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
   importAllFilesInRelativeDirectory
     appLogger
-    (fixtures ^. #hackageUser % #userId)
+    fixtures.hackageUser.userId
     ("hackage", "https://hackage.haskell.org")
-    "./test/fixtures/Cabal/"
+    "./test/fixtures/Cabal/hackage"
+    True
+
+  importAllFilesInRelativeDirectory
+    appLogger
+    fixtures.hackageUser.userId
+    ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
+    "./test/fixtures/Cabal/cardano"
     True
 
 runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
 runTestEff comp pool poolCfg = runEff $
   Log.withStdOutLogger $ \stdOutLogger ->
-    do
-      runTime
+    runTime
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
       . runReader poolCfg
@@ -271,11 +279,10 @@ genUsername :: MonadGen m => m Text
 genUsername = H.text (Range.constant 1 25) H.ascii
 
 genDisplayName :: MonadGen m => m Text
-genDisplayName = H.text (Range.constant 3 25) H.unicode
+genDisplayName = H.text (Range.constant 3 25) H.ascii
 
-genPassword :: MonadGen m => m (PasswordHash Argon2)
-genPassword = do
-  unsafePerformIO . runEff . hashPassword . mkPassword <$> H.text (Range.constant 20 30) H.unicode
+genPassword :: MonadGen m => m PasswordHash
+genPassword = unsafePerformIO . Sel.hashText <$> H.text (Range.constant 20 30) H.ascii
 
 genUserFlags :: MonadGen m => m UserFlags
 genUserFlags = UserFlags <$> H.bool <*> H.bool
@@ -299,7 +306,7 @@ data RandomUserTemplate m = RandomUserTemplate
   , username :: m Text
   , email :: m Text
   , displayName :: m Text
-  , password :: m (PasswordHash Argon2)
+  , password :: m PasswordHash
   , userFlags :: m UserFlags
   , createdAt :: m UTCTime
   , updatedAt :: m UTCTime

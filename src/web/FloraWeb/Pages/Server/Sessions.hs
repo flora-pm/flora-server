@@ -2,18 +2,17 @@
 
 module FloraWeb.Pages.Server.Sessions where
 
+import Control.Monad.IO.Class
 import Data.Maybe
-import Data.Password.Argon2
+import Data.Text (Text)
 import Data.Text.Display
 import Log qualified
 import Optics.Core
+import Sel.Hashing.Password qualified as Sel
 import Servant
 
-import Control.Monad.IO.Class
-import Data.Text (Text)
 import Flora.Model.PersistentSession
 import Flora.Model.User
-import Flora.Model.User.Orphans ()
 import Flora.Model.User.Query qualified as Query
 import FloraWeb.Common.Auth
 import FloraWeb.Common.Auth.TwoFactor qualified as TwoFactor
@@ -60,7 +59,7 @@ createSessionHandler LoginForm{email, password, totp} = do
     Just user ->
       if user.userFlags.canLogin
         then
-          if validatePassword (mkPassword password) user.password
+          if Sel.verifyText user.password password
             then do
               if user.totpEnabled
                 then guardThatUserHasProvidedTOTP totp $ \userCode -> do

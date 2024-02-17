@@ -297,7 +297,7 @@ persistImportOutput wq (ImportOutput package categories release components) = do
 withWorkerDbPool :: (Reader PoolConfig :> es, IOE :> es) => (Poolboy.WorkQueue -> Eff es a) -> Eff es a
 withWorkerDbPool f = do
   cfg <- ask @PoolConfig
-  withEffToIO $ \effIO ->
+  withEffToIO SeqUnlift $ \effIO ->
     Poolboy.withPoolboy
       (Poolboy.poolboySettingsWith cfg.connections)
       Poolboy.waitingStopFinishWorkers
@@ -576,9 +576,9 @@ getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.rep
 chooseNamespace :: PackageName -> Text -> Set PackageName -> Namespace
 chooseNamespace name repo repositoryPackages =
   if
-      | name `Set.member` coreLibraries -> Namespace "haskell"
-      | name `Set.member` repositoryPackages -> Namespace repo
-      | otherwise -> Namespace "hackage"
+    | name `Set.member` coreLibraries -> Namespace "haskell"
+    | name `Set.member` repositoryPackages -> Namespace repo
+    | otherwise -> Namespace "hackage"
 
 extractTestedWith :: Vector (CompilerFlavor, VersionRange) -> Vector VersionRange
 extractTestedWith testedWithVector =
