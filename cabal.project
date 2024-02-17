@@ -6,6 +6,8 @@ executable-dynamic: True
 
 with-compiler: ghc-9.4.7
 
+active-repositories: hackage.haskell.org
+
 store-dir: _build/cabal-store
 
 tests: True
