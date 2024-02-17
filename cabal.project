@@ -76,7 +76,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/saurabhnanda/odd-jobs
-    tag: 51c7443
+    tag: 411d5d0
 
 source-repository-package
     type: git
