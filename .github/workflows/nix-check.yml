@@ -4,6 +4,19 @@ on:
   push:
     branches: ["main", "development"]
 jobs:
+  free-disk-space:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: false
+        android: true
+        dotnet: true
+        haskell: false
+        large-packages: true
+        docker-images: true
+        swap-storage: true
   tests:
     runs-on: ubuntu-latest
     steps:
