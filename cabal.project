@@ -4,7 +4,7 @@ packages:
 -- profiling: True
 executable-dynamic: True
 
-with-compiler: ghc-9.4.7
+with-compiler: ghc-9.6.4
 
 active-repositories: hackage.haskell.org
 
