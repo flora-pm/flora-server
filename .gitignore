@@ -36,3 +36,4 @@ design/node_modules
 
 *.dump-timings
 _build/cabal-store
+storage/

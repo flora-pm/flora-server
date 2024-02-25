@@ -81,6 +81,7 @@ library
     Data.Time.Orphans
     Database.PostgreSQL.Simple.Orphans
     Distribution.Orphans
+    Distribution.Orphans.BuildType
     Distribution.Orphans.CompilerFlavor
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
@@ -230,6 +231,7 @@ library flora-web
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
+    FloraWeb.Components.Pill
     FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
