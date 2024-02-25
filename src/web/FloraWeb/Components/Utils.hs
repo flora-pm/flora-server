@@ -43,3 +43,7 @@ xId_ = makeAttribute "x-id"
 
 id'_ :: Text -> Attribute
 id'_ = makeAttribute ":id"
+
+-- | @datalist@ element
+dataText_ :: Text -> Attribute
+dataText_ = makeAttribute "data-text"

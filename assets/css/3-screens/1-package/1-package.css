@@ -1,5 +1,23 @@
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+#package-install-section {
+  p {
+    display: inline-block;
+  }
+
+  .package-build-type-custom {
+    background-color: #ffc107;
+    border-radius: 0.25rem;
+    color: white;
+    font-size: 50%;
+    font-weight: 700;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    margin-left: 0.5rem;
+  }
+}
+
 .package-install-string {
   background-color: transparent;
   border-color: var(--install-string-border);
@@ -46,7 +64,7 @@
   .package-body-section {
     font-size: 1.5rem;
     line-height: 2rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   .package-right-column {

@@ -19,6 +19,7 @@ import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.Orphans ()
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Types.Version (Version, mkVersion, versionNumbers)
@@ -37,6 +38,7 @@ import Flora.Search (SearchAction (..))
 import FloraWeb.Components.Icons
 import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requirementListItem)
 import FloraWeb.Components.PaginationNav (paginationNav)
+import FloraWeb.Components.Pill (customBuildType)
 import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML, TemplateEnv (..))
@@ -322,7 +324,9 @@ showAll target mVersion namespace packageName = do
 displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
 displayInstructions namespace packageName latestRelease =
   li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section"] "Installation"
+    h3_ [class_ "package-body-section", id_ "package-install-section"] $ do
+      p_ [] "Installation"
+      when (latestRelease.buildType == Custom) customBuildType
     div_ [class_ "items-top"] $ div_ [class_ ""] $ do
       label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
       input_
@@ -469,10 +473,6 @@ defaultMarker :: Bool -> FloraHTML
 defaultMarker True = em_ "(on by default)"
 defaultMarker False = em_ "(off by default)"
 
--- | @datalist@ element
-dataText_ :: Text -> Attribute
-dataText_ = makeAttribute "data-text"
-
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =
   if Vector.null vector
@@ -489,6 +489,6 @@ formatInstallString packageName Release{version} =
     rangedVersion = "^>=" <> majMin
     majMin :: Doc
     majMin =
-      if (List.head $ versionNumbers version) == 0
+      if List.head (versionNumbers version) == 0
         then pretty $ mkVersion $ List.take 3 $ versionNumbers version
         else pretty $ mkVersion $ List.take 2 $ versionNumbers version
