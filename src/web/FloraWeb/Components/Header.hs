@@ -2,12 +2,12 @@
 
 module FloraWeb.Components.Header where
 
+import Control.Monad (unless)
 import Control.Monad.Reader
 import Data.Text (Text)
 import Lucid
 import Lucid.Alpine
 import PyF
-import Control.Monad (unless)
 
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)

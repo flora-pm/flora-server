@@ -68,6 +68,7 @@ import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
 
+import Control.Monad (forM_, unless, void)
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
@@ -86,7 +87,6 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Model.User
-import Control.Monad (forM_, void, unless)
 
 coreLibraries :: Set PackageName
 coreLibraries =

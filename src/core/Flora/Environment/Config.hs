@@ -22,6 +22,7 @@ import Control.Monad ((>=>))
 import Crypto.Hash (Digest, SHA256)
 import Crypto.Hash.Conduit (hashFile)
 import Data.Aeson qualified as Aeson
+import Data.Base64.Types qualified as B64
 import Data.Bifunctor (Bifunctor (second))
 import Data.ByteArray qualified as BA
 import Data.ByteString (ByteString)
@@ -53,7 +54,6 @@ import Env
 import GHC.Generics (Generic)
 import System.FilePath (isValid)
 import Text.Read (readMaybe)
-import qualified Data.Base64.Types as B64
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text

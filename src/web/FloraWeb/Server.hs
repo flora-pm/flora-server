@@ -144,7 +144,7 @@ runServer appLogger floraEnv = do
             defaultSettings
   liftIO
     $ runSettings warpSettings
-    $   heartbeatMiddleware
+    $ heartbeatMiddleware
       . loggingMiddleware
       . const
     $ server
