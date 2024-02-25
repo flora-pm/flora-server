@@ -155,7 +155,6 @@ library
     , directory
     , effectful-core
     , envparse
-    , extra
     , filepath
     , http-api-data
     , http-media
@@ -166,7 +165,6 @@ library
     , lucid
     , memory
     , monad-time-effectful
-    , mtl
     , odd-jobs
     , openapi3
     , optics-core
@@ -281,7 +279,6 @@ library flora-web
     , bytestring
     , Cabal-syntax
     , chronos
-    , clock
     , cmark-gfm
     , colourista
     , containers
@@ -317,10 +314,7 @@ library flora-web
     , pg-transact-effectful
     , postgresql-simple
     , pretty
-    -- , prometheus-client
-    -- , prometheus-metrics-ghc
-    -- , prometheus-proc
-    , PyF
+    , PyF ==0.11.1.1
     , raven-haskell
     , resource-pool
     , safe-exceptions
@@ -342,7 +336,6 @@ library flora-web
     , wai-app-static
     , wai-log
     , wai-middleware-heartbeat
-    , wai-middleware-prometheus
     , warp
     , xml-conduit
     , xml-conduit-writer
@@ -473,7 +466,6 @@ test-suite flora-test
     , tasty-hunit
     , text
     , time
-    , typed-process
     , uuid
     , vector
     , vector-algorithms

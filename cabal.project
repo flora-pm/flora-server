@@ -15,15 +15,13 @@ tests: True
 documentation: True
 
 allow-newer: type-errors-pretty:base
-           , prometheus-proc:base
-           , prometheus-proc:text
            , souffle-haskell:text
            , servant-lucid:text
            , lucid-svg:text
            , lucid-svg:transformers
            , lucid-aria:text
            , lucid-alpine:text
-           , prometheus-proc:unix
+           , hashable:filepath
 
 allow-older: pg-entity:time
 
@@ -51,14 +49,6 @@ source-repository-package
     type: git
     location: https://github.com/supki/envparse
     tag: 503a699
-
-source-repository-package
-    type: git
-    location: https://github.com/fimad/prometheus-haskell
-    tag: 43f19da
-    subdir: ./prometheus-metrics-ghc
-            ./prometheus-client 
-            ./wai-middleware-prometheus
 
 source-repository-package
     type: git

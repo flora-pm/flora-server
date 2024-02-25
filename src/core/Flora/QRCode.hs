@@ -8,6 +8,7 @@ import Data.ByteString.Base64
 import Data.ByteString.Lazy qualified as BSL
 import Data.Function ((&))
 import Data.Text (Text)
+import Data.Base64.Types (extractBase64)
 
 generateQRCode :: Text -> StrictByteString
 generateQRCode uri =
@@ -18,3 +19,4 @@ generateQRCode uri =
         & encodePng
         & BSL.toStrict
         & encodeBase64'
+        & extractBase64

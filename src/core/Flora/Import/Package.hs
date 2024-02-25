@@ -21,7 +21,6 @@ module Flora.Import.Package where
 
 import Control.DeepSeq (force)
 import Control.Exception
-import Control.Monad.Except
 import Data.ByteString qualified as BS
 import Data.Maybe
 import Data.Pool (Pool, withResource)
@@ -87,6 +86,7 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Model.User
+import Control.Monad (forM_, void, unless)
 
 coreLibraries :: Set PackageName
 coreLibraries =

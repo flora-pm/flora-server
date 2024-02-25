@@ -7,6 +7,7 @@ import Data.Text (Text)
 import Lucid
 import Lucid.Alpine
 import PyF
+import Control.Monad (unless)
 
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)

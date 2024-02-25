@@ -53,6 +53,7 @@ import Env
 import GHC.Generics (Generic)
 import System.FilePath (isValid)
 import Text.Read (readMaybe)
+import qualified Data.Base64.Types as B64
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
@@ -269,4 +270,4 @@ getAssetHash hashedAssetPath = do
 hashBundle :: IOE :> es => Text -> Eff es Text
 hashBundle path = do
   digest :: Digest SHA256 <- hashFile (Text.unpack path)
-  pure . display . B64.encodeBase64 . BA.convert $ digest
+  pure . display . B64.extractBase64 . B64.encodeBase64 . BA.convert $ digest
