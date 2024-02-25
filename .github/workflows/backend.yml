@@ -89,11 +89,11 @@ jobs:
 
     - name: Build
       run: |
+        cabal install postgresql-migration
         make soufflé
         make assets-deps
         make build-assets
         make build
-        cabal install postgresql-migration
     - name: Test
       run: |
         set -x
