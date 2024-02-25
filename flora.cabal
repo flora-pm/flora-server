@@ -185,7 +185,7 @@ library
     , servant-lucid
     , servant-server
     , slugify
-    , souffle-haskell        ==3.5.1
+    , souffle-haskell        ==4.0.0
     , streamly
     , streamly-core
     , tar
@@ -217,7 +217,6 @@ library flora-web
     FloraWeb.Common.Auth.TwoFactor
     FloraWeb.Common.Auth.Types
     FloraWeb.Common.Guards
-    FloraWeb.Common.Metrics
     FloraWeb.Common.OpenSearch
     FloraWeb.Common.Pagination
     FloraWeb.Common.Tracing
@@ -318,9 +317,9 @@ library flora-web
     , pg-transact-effectful
     , postgresql-simple
     , pretty
-    , prometheus-client
-    , prometheus-metrics-ghc
-    , prometheus-proc
+    -- , prometheus-client
+    -- , prometheus-metrics-ghc
+    -- , prometheus-proc
     , PyF
     , raven-haskell
     , resource-pool

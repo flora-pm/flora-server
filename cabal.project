@@ -20,8 +20,10 @@ allow-newer: type-errors-pretty:base
            , souffle-haskell:text
            , servant-lucid:text
            , lucid-svg:text
+           , lucid-svg:transformers
            , lucid-aria:text
            , lucid-alpine:text
+           , prometheus-proc:unix
 
 allow-older: pg-entity:time
 
@@ -61,7 +63,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/flora-pm/wai-middleware-heartbeat
-    tag: 336523a
+    tag: 5b56e1d
 
 source-repository-package
     type: git
@@ -82,3 +84,8 @@ source-repository-package
     type: git
     location: https://github.com/haskell-cryptography/one-time-password
     tag: 2ca2313
+
+source-repository-package
+    type: git
+    location: https://github.com/tchoutri/souffle-haskell
+    tag: 3afe53f
