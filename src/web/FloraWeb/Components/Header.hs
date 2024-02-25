@@ -2,6 +2,7 @@
 
 module FloraWeb.Components.Header where
 
+import Control.Monad (unless)
 import Control.Monad.Reader
 import Data.Text (Text)
 import Lucid

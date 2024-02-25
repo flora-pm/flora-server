@@ -1,8 +1,4 @@
 name: "Flora nix check"
-on:
-  pull_request:
-  push:
-    branches: ["main", "development"]
 jobs:
   tests:
     runs-on: ubuntu-latest

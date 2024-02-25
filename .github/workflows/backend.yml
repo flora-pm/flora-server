@@ -78,22 +78,20 @@ jobs:
         echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
         cat ~/.pgpass
         cabal update
-        cabal freeze
-
     - name: Cache
       uses: actions/cache@v4.0.0
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('**/plan.json') }}
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
     - name: Build
       run: |
+        cabal install postgresql-migration
         make soufflé
         make assets-deps
         make build-assets
         make build
-        cabal install postgresql-migration
     - name: Test
       run: |
         set -x

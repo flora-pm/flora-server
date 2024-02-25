@@ -22,6 +22,7 @@ import Control.Monad ((>=>))
 import Crypto.Hash (Digest, SHA256)
 import Crypto.Hash.Conduit (hashFile)
 import Data.Aeson qualified as Aeson
+import Data.Base64.Types qualified as B64
 import Data.Bifunctor (Bifunctor (second))
 import Data.ByteArray qualified as BA
 import Data.ByteString (ByteString)
@@ -269,4 +270,4 @@ getAssetHash hashedAssetPath = do
 hashBundle :: IOE :> es => Text -> Eff es Text
 hashBundle path = do
   digest :: Digest SHA256 <- hashFile (Text.unpack path)
-  pure . display . B64.encodeBase64 . BA.convert $ digest
+  pure . display . B64.extractBase64 . B64.encodeBase64 . BA.convert $ digest

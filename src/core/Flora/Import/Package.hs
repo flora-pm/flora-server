@@ -21,7 +21,6 @@ module Flora.Import.Package where
 
 import Control.DeepSeq (force)
 import Control.Exception
-import Control.Monad.Except
 import Data.ByteString qualified as BS
 import Data.Maybe
 import Data.Pool (Pool, withResource)
@@ -69,6 +68,7 @@ import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
 
+import Control.Monad (forM_, unless, void)
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types

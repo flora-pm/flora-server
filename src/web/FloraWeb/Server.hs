@@ -36,9 +36,6 @@ import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Job (startJobRunner)
 import OddJobs.Types qualified as OddJobs
 import Optics.Core
-import Prometheus qualified
-import Prometheus.Metric.GHC (ghcMetrics)
-import Prometheus.Metric.Proc (procMetrics)
 import Sel
 import Servant
   ( Application
@@ -69,7 +66,6 @@ import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
 import FloraWeb.Common.Auth (OptionalAuthContext, StrictAuthContext, optionalAuthHandler, requestID, runVisitorSession, strictAuthHandler)
-import FloraWeb.Common.Metrics
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.Tracing
 import FloraWeb.Common.Utils
@@ -92,10 +88,6 @@ runFlora =
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
-            liftIO $ when env.logging.prometheusEnabled $ do
-              blueMessage $ "📋 Service Prometheus metrics on " <> baseURL <> "/metrics"
-              void $ Prometheus.register ghcMetrics
-              void $ Prometheus.register procMetrics
             let withLogger = Logging.makeLogger env.logging.logger
             withLogger
               ( \appLogger ->
@@ -152,8 +144,7 @@ runServer appLogger floraEnv = do
             defaultSettings
   liftIO
     $ runSettings warpSettings
-    $ prometheusMiddleware floraEnv.environment floraEnv.logging
-      . heartbeatMiddleware
+    $ heartbeatMiddleware
       . loggingMiddleware
       . const
     $ server
