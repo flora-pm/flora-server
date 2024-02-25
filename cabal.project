@@ -1,18 +1,11 @@
 packages:
     ./
 
--- profiling: True
-executable-dynamic: True
-
 with-compiler: ghc-9.6.4
 
 active-repositories: hackage.haskell.org
 
-store-dir: _build/cabal-store
-
 tests: True
-
-documentation: True
 
 allow-newer: type-errors-pretty:base
            , souffle-haskell:text
