@@ -78,7 +78,7 @@ jobs:
         echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
         cat ~/.pgpass
         cabal update
-        cabal freeze
+        echo "project-file: cabal.ci.project\nexecutable-dynamic: False" > cabal.project.local
 
     - name: Cache
       uses: actions/cache@v4.0.0
