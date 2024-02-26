@@ -12,7 +12,6 @@ import Data.Function ((&))
 import Data.List qualified as List
 import Data.Text (Text)
 import Data.UUID qualified as UUID
-import Debug.Trace
 import Effectful
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
 import Effectful.PostgreSQL.Transact.Effect (DB)
@@ -103,7 +102,6 @@ handler floraEnv req = do
   mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
   mUserInfo <- fetchUser mbPersistentSession
   requestID <- liftIO $ getRequestID req
-  traceM $ "User info: " <> show mUserInfo
   (user, sessionId) <- do
     case mUserInfo of
       Nothing -> do
