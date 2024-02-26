@@ -22,36 +22,35 @@ import FloraWeb.Pages.Routes.Sessions
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Screens.Sessions as Sessions
 import FloraWeb.Session
+import FloraWeb.Types (FloraEff)
 
-server :: ServerT Routes FloraPage
-server =
+server :: SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
+server s =
   Routes'
-    { new = newSessionHandler
-    , create = createSessionHandler
+    { new = newSessionHandler s
+    , create = createSessionHandler s
     , delete = deleteSessionHandler
     }
 
-newSessionHandler :: FloraPage (Union NewSessionResponses)
-newSessionHandler = do
-  session <- getSession
-  let mUser = session.mUser
+newSessionHandler :: SessionWithCookies (Maybe User) -> FloraEff (Union NewSessionResponses)
+newSessionHandler (Headers session _) = do
+  let mUser = session.user
   case mUser of
     Nothing -> do
       Log.logInfo_ "[+] No user logged-in"
-      templateDefaults <- fromSession session defaultTemplateEnv
+      templateDefaults <- templateFromSession session defaultTemplateEnv
       respond $ WithStatus @200 $ renderUVerb templateDefaults Sessions.newSession
     Just u -> do
       Log.logInfo_ $ "[+] User is already logged: " <> display u
       respond $ WithStatus @301 (redirect "/")
 
-createSessionHandler :: LoginForm -> FloraPage (Union CreateSessionResponses)
-createSessionHandler LoginForm{email, password, totp} = do
-  session <- getSession
+createSessionHandler :: SessionWithCookies (Maybe User) -> LoginForm -> FloraEff (Union CreateSessionResponses)
+createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
   mUser <- Query.getUserByEmail email
   case mUser of
     Nothing -> do
       Log.logInfo_ "[+] Couldn't find user"
-      templateDefaults <- fromSession session defaultTemplateEnv
+      templateDefaults <- templateFromSession session defaultTemplateEnv
       let templateEnv =
             templateDefaults
               & (#flashError ?~ mkError "Could not authenticate")
@@ -62,33 +61,33 @@ createSessionHandler LoginForm{email, password, totp} = do
           if Sel.verifyText user.password password
             then do
               if user.totpEnabled
-                then guardThatUserHasProvidedTOTP totp $ \userCode -> do
-                  checkTOTPIsValid userCode user
+                then guardThatUserHasProvidedTOTP session totp $ \userCode -> do
+                  checkTOTPIsValid session userCode user
                 else do
                   sessionId <- persistSession session.sessionId user.userId
                   let sessionCookie = craftSessionCookie sessionId True
                   respond $ WithStatus @301 $ redirectWithCookie "/" sessionCookie
             else do
               Log.logInfo_ "Invalid password"
-              templateDefaults <- fromSession session defaultTemplateEnv
+              templateDefaults <- templateFromSession session defaultTemplateEnv
               let templateEnv =
                     templateDefaults
                       & (#flashError ?~ mkError "Could not authenticate")
               respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
         else do
           Log.logInfo_ "User not allowed to log-in"
-          templateDefaults <- fromSession session defaultTemplateEnv
+          templateDefaults <- templateFromSession session defaultTemplateEnv
           let templateEnv =
                 templateDefaults
                   & (#flashError ?~ mkError "Could not authenticate")
           respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
 
 checkTOTPIsValid
-  :: Text
+  :: Session (Maybe User)
+  -> Text
   -> User
-  -> FloraPage (Union CreateSessionResponses)
-checkTOTPIsValid userCode user = do
-  session <- getSession
+  -> FloraEff (Union CreateSessionResponses)
+checkTOTPIsValid session userCode user = do
   validated <- liftIO $ TwoFactor.validateTOTP (fromJust user.totpKey) userCode
   if validated
     then do
@@ -98,13 +97,13 @@ checkTOTPIsValid userCode user = do
       respond $ WithStatus @301 $ redirectWithCookie "/" sessionCookie
     else do
       Log.logInfo_ "[+] Couldn't authenticate user's TOTP code"
-      templateDefaults <- fromSession session defaultTemplateEnv
+      templateDefaults <- templateFromSession session defaultTemplateEnv
       let templateEnv =
             templateDefaults
               & (#flashError ?~ mkError "Could not authenticate")
       respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
 
-deleteSessionHandler :: PersistentSessionId -> FloraPage DeleteSessionResponse
+deleteSessionHandler :: PersistentSessionId -> FloraEff DeleteSessionResponse
 deleteSessionHandler sessionId = do
   Log.logInfo_ $ "[+] Logging-off session " <> display sessionId
   deleteSession sessionId

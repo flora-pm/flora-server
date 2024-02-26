@@ -20,10 +20,11 @@ import Flora.Model.PackageIndex.Query as Query
 import Flora.Model.PackageIndex.Types (PackageIndex)
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types (Release)
-import FloraWeb.Common.Auth
+import Flora.Model.User (User)
 import FloraWeb.Pages.Routes.Sessions (CreateSessionResponses)
 import FloraWeb.Pages.Templates.Screens.Sessions qualified as Sessions
-import FloraWeb.Session (getSession)
+import FloraWeb.Session (Session)
+import FloraWeb.Types (FloraEff)
 
 guardThatPackageExists
   :: (DB :> es, Log :> es, Time :> es)
@@ -67,16 +68,16 @@ guardThatPackageIndexExists namespace action = do
     Nothing -> action namespace
 
 guardThatUserHasProvidedTOTP
-  :: Maybe Text
-  -> (Text -> FloraPage (Union CreateSessionResponses))
-  -> FloraPage (Union CreateSessionResponses)
-guardThatUserHasProvidedTOTP mTOTP action = do
+  :: Session (Maybe User)
+  -> Maybe Text
+  -> (Text -> FloraEff (Union CreateSessionResponses))
+  -> FloraEff (Union CreateSessionResponses)
+guardThatUserHasProvidedTOTP session mTOTP action = do
   case mTOTP of
     Just totp -> action totp
     Nothing -> do
-      session <- getSession
       Log.logInfo_ "User did not provide a TOTP code"
-      templateDefaults <- fromSession session defaultTemplateEnv
+      templateDefaults <- templateFromSession session defaultTemplateEnv
       let templateEnv =
             templateDefaults
               & (#flashError ?~ mkError "Must provide an OTP code")

@@ -4,28 +4,29 @@ import Data.Positive
 import Data.Text (Text)
 import Data.Vector qualified as Vector
 import Lucid (Html)
-import Servant (ServerT)
+import Servant (Headers (..), ServerT)
 
 import Flora.Model.Package.Types
+import Flora.Model.User (User)
 import Flora.Search qualified as Search
 import FloraWeb.Common.Pagination
 import FloraWeb.Pages.Routes.Search (Routes, Routes' (..))
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Session
+import FloraWeb.Types (FloraEff)
 
-server :: ServerT Routes FloraPage
-server =
+server :: SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
+server s =
   Routes'
-    { displaySearch = searchHandler
+    { displaySearch = searchHandler s
     }
 
-searchHandler :: Maybe Text -> Maybe (Positive Word) -> FloraPage (Html ())
-searchHandler Nothing pageParam = searchHandler (Just "") pageParam
-searchHandler (Just searchString) pageParam = do
+searchHandler :: SessionWithCookies (Maybe User) -> Maybe Text -> Maybe (Positive Word) -> FloraEff (Html ())
+searchHandler s Nothing pageParam = searchHandler s (Just "") pageParam
+searchHandler (Headers session _) (Just searchString) pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1
-  session <- getSession
-  templateDefaults <- fromSession session defaultTemplateEnv
+  templateDefaults <- templateFromSession session defaultTemplateEnv
   let templateEnv =
         templateDefaults
           { navbarSearchContent = Just searchString

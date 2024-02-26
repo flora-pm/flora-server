@@ -2,35 +2,27 @@
 
 module FloraWeb.Session
   ( module FloraWeb.Common.Auth.Types
-  , getSession
-  , getEnv
   , craftSessionCookie
   , emptySessionCookie
+  , getEnv
   , addCookie
   , deleteCookie
   )
 where
 
 import Data.UUID qualified as UUID
-import Servant (Header, Headers, addHeader, getResponse)
+import Effectful (Eff)
+import Effectful.Internal.Monad (unsafeEff_)
+import Servant (Header, Headers, addHeader)
 import Web.Cookie
 
-import Effectful (Eff, type (:>))
-import Effectful.Dispatch.Static (unsafeEff_)
-import Effectful.Reader.Static (Reader, asks)
-import Flora.Environment
+import Flora.Environment (FloraEnv)
 import Flora.Model.PersistentSession
 import FloraWeb.Common.Auth.Types
 import FloraWeb.Types (fetchFloraEnv)
 
-getSession
-  :: Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es
-  => Eff es Session
-getSession = asks (getResponse @'[Header "Set-Cookie" SetCookie])
-
-getEnv :: Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es => Eff es FloraEnv
-getEnv = do
-  Session{webEnvStore} <- getSession
+getEnv :: Session a -> Eff es FloraEnv
+getEnv Session{webEnvStore} = do
   unsafeEff_ $ fetchFloraEnv webEnvStore
 
 -- | This function builds a cookie with the provided content

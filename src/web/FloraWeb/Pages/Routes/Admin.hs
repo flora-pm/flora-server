@@ -18,11 +18,9 @@ type FetchMetadataResponse =
   Headers '[Header "Location" Text] NoContent
 
 data Routes' mode = Routes'
-  { index :: mode :- Get '[HTML] (Html ())
-  , fetchMetadata :: mode :- FetchMetadata
-  , oddJobs :: mode :- "odd-jobs" :> OddJobs.FinalAPI -- they compose :o
-  , users :: mode :- "users" :> AdminUsersRoutes
-  , packages :: mode :- "packages" :> PackagesAdminRoutes
+  { index :: mode :- AuthProtect "cookie-admin" :> Get '[HTML] (Html ())
+  , fetchMetadata :: mode :- AuthProtect "cookie-admin" :> FetchMetadata
+  , oddJobs :: mode :- AuthProtect "cookie-admin" :> "odd-jobs" :> OddJobs.FinalAPI -- they compose :o
   }
   deriving stock (Generic)
 

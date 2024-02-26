@@ -4,8 +4,13 @@ import Data.Function
 import Data.Maybe (fromMaybe)
 import Data.Vector qualified as Vector
 import Distribution.Version (Version)
-import Servant
+import Effectful (Eff, (:>))
+import Servant hiding ((:>))
 
+import Effectful.Error.Static (Error)
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Time (Time)
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
@@ -16,13 +21,13 @@ import FloraWeb.API.Routes.Packages.Types (PackageDTO, toPackageDTO)
 import FloraWeb.Common.Guards
 import FloraWeb.Types
 
-packagesServer :: ServerT Packages.API FloraAPI
+packagesServer :: ServerT Packages.API FloraEff
 packagesServer =
   Packages.API'
     { withPackage = withPackageServer
     }
 
-withPackageServer :: Namespace -> PackageName -> ServerT Packages.PackageAPI FloraAPI
+withPackageServer :: Namespace -> PackageName -> ServerT Packages.PackageAPI FloraEff
 withPackageServer namespace packageName =
   Packages.PackageAPI'
     { getPackage = getPackageHandler namespace packageName
@@ -30,12 +35,13 @@ withPackageServer namespace packageName =
     }
 
 getPackageHandler
-  :: Namespace
+  :: (Time :> es, Log :> es, DB :> es, Error ServerError :> es)
+  => Namespace
   -> PackageName
-  -> FloraAPI (PackageDTO 0)
+  -> (Eff es) (PackageDTO 0)
 getPackageHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName packageNotFound
-  releases <- Query.getReleases (package.packageId)
+  releases <- Query.getReleases package.packageId
   let latestRelease =
         releases
           & Vector.filter (\r -> not (fromMaybe False r.deprecated))
@@ -50,10 +56,11 @@ getPackageHandler namespace packageName = do
   pure $ toPackageDTO package release components
 
 getVersionedPackageHandler
-  :: Namespace
+  :: (Time :> es, Log :> es, DB :> es, Error ServerError :> es)
+  => Namespace
   -> PackageName
   -> Version
-  -> FloraAPI (PackageDTO 0)
+  -> (Eff es) (PackageDTO 0)
 getVersionedPackageHandler namespace packageName version = do
   package <- guardThatPackageExists namespace packageName packageNotFound
   release <-

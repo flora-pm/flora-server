@@ -21,7 +21,6 @@ module Flora.Import.Package where
 
 import Control.DeepSeq (force)
 import Control.Exception
-import Control.Monad.Except
 import Data.ByteString qualified as BS
 import Data.Maybe
 import Data.Pool (Pool, withResource)
@@ -69,6 +68,7 @@ import Optics.Core
 import System.Directory qualified as System
 import System.FilePath
 
+import Control.Monad (forM_, unless, void)
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
@@ -318,6 +318,7 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
+  let buildType = Cabal.buildType genericDesc.packageDescription
   let packageVersion = force packageDesc.package.pkgVersion
   let namespace = chooseNamespace packageName repositoryName repositoryPackages
   let packageId = deterministicPackageId namespace packageName
@@ -367,6 +368,7 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
           , testedWith = getVersions . extractTestedWith . Vector.fromList $ packageDesc.testedWith
           , deprecated = Nothing
           , revisedAt = Nothing
+          , buildType = buildType
           }
 
   let lib = extractLibrary package (repositoryName, repositoryPackages) release Nothing [] <$> allLibraries packageDesc

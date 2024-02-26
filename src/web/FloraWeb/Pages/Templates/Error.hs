@@ -14,10 +14,10 @@ import Effectful
 import Effectful.Error.Static (Error, throwError)
 import Effectful.Reader.Static (Reader)
 import Flora.Environment (FeatureEnv)
+import Flora.Model.User (User)
 import FloraWeb.Pages.Templates
 import FloraWeb.Session
-import Servant (Header, Headers, ServerError (..))
-import Web.Cookie (SetCookie)
+import Servant (ServerError (..))
 
 renderError
   :: forall (es :: [Effect]) (a :: Type)
@@ -39,13 +39,12 @@ renderError env status = do
 web404
   :: ( Error ServerError :> es
      , IOE :> es
-     , Reader (Headers '[Header "Set-Cookie" SetCookie] Session) :> es
      , Reader FeatureEnv :> es
      )
-  => Eff es a
-web404 = do
-  session <- getSession
-  templateEnv <- fromSession session defaultTemplateEnv
+  => Session (Maybe User)
+  -> Eff es a
+web404 session = do
+  templateEnv <- templateFromSession session defaultTemplateEnv
   renderError templateEnv notFound404
 
 showError :: Status -> FloraHTML

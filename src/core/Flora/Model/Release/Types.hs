@@ -40,8 +40,10 @@ import Control.DeepSeq
 import Data.Text.Lazy qualified as Text
 import Deriving.Aeson
 import Distribution.Orphans ()
+import Distribution.Orphans.BuildType ()
 import Distribution.Orphans.CompilerFlavor ()
 import Distribution.Orphans.PackageFlag ()
+import Distribution.Types.BuildType (BuildType)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Package
 
@@ -104,6 +106,7 @@ data Release = Release
   , deprecated :: Maybe Bool
   , repository :: Maybe Text
   , revisedAt :: Maybe UTCTime
+  , buildType :: BuildType
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)

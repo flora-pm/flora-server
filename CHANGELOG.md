@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.0.16 -- 2024-02-26
+
+* Add badge component for custom build type ([#517](https://github.com/flora-pm/flora-server/pull/517))
+
 ## 1.0.15 -- 2024-02-16
 * Show 3 digits in version if using 0x scheme. ([#490](https://github.com/flora-pm/flora-server/pull/490))
 * Deduplicate dependencies listed in package overview ([#492](https://github.com/flora-pm/flora-server/pull/492))

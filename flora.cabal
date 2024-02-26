@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.15
+version:            1.0.16
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -12,7 +12,7 @@ extra-source-files:
   LICENSE
   README.md
 
-tested-with:        GHC ==9.4.7
+tested-with:        GHC ==9.6.4
 
 source-repository head
   type:     git
@@ -81,6 +81,7 @@ library
     Data.Time.Orphans
     Database.PostgreSQL.Simple.Orphans
     Distribution.Orphans
+    Distribution.Orphans.BuildType
     Distribution.Orphans.CompilerFlavor
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
@@ -138,7 +139,7 @@ library
 
   build-depends:
     , aeson
-    , base                   ^>=4.17
+    , base                   ^>=4.18.2
     , base16-bytestring
     , base64
     , blaze-builder
@@ -155,7 +156,6 @@ library
     , directory
     , effectful-core
     , envparse
-    , extra
     , filepath
     , http-api-data
     , http-media
@@ -166,7 +166,6 @@ library
     , lucid
     , memory
     , monad-time-effectful
-    , mtl
     , odd-jobs
     , openapi3
     , optics-core
@@ -185,7 +184,7 @@ library
     , servant-lucid
     , servant-server
     , slugify
-    , souffle-haskell        ==3.5.1
+    , souffle-haskell        ==4.0.0
     , streamly
     , streamly-core
     , tar
@@ -217,7 +216,6 @@ library flora-web
     FloraWeb.Common.Auth.TwoFactor
     FloraWeb.Common.Auth.Types
     FloraWeb.Common.Guards
-    FloraWeb.Common.Metrics
     FloraWeb.Common.OpenSearch
     FloraWeb.Common.Pagination
     FloraWeb.Common.Tracing
@@ -233,6 +231,7 @@ library flora-web
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
+    FloraWeb.Components.Pill
     FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
@@ -277,12 +276,11 @@ library flora-web
   build-depends:
     , aeson
     , async
-    , base                       ^>=4.17
+    , base                      ^>=4.18.2
     , base32
     , bytestring
     , Cabal-syntax
     , chronos
-    , clock
     , cmark-gfm
     , colourista
     , containers
@@ -318,9 +316,6 @@ library flora-web
     , pg-transact-effectful
     , postgresql-simple
     , pretty
-    , prometheus-client
-    , prometheus-metrics-ghc
-    , prometheus-proc
     , PyF
     , raven-haskell
     , resource-pool
@@ -343,7 +338,6 @@ library flora-web
     , wai-app-static
     , wai-log
     , wai-middleware-heartbeat
-    , wai-middleware-prometheus
     , warp
     , xml-conduit
     , xml-conduit-writer
@@ -474,7 +468,6 @@ test-suite flora-test
     , tasty-hunit
     , text
     , time
-    , typed-process
     , uuid
     , vector
     , vector-algorithms

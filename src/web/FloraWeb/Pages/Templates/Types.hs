@@ -6,9 +6,9 @@ module FloraWeb.Pages.Templates.Types
   , mkError
   , TemplateEnv (..)
   , defaultsToEnv
-  , fromSession
   , ActiveElements (..)
   , defaultTemplateEnv
+  , FromSession (..)
   )
 where
 
@@ -119,21 +119,35 @@ defaultsToEnv assets TemplateDefaults{..} =
   let sessionId = PersistentSessionId UUID.nil
    in TemplateEnv{..}
 
-fromSession
-  :: (Reader FeatureEnv :> es, IOE :> es)
-  => Session
-  -> TemplateDefaults
-  -> Eff es TemplateEnv
-fromSession session defaults = do
-  let sessionId = session.sessionId
-  let muser = session.mUser
-  let webEnvStore = session.webEnvStore
-  floraEnv <- liftIO $ fetchFloraEnv webEnvStore
-  featuresEnv <- ask @FeatureEnv
-  let assets = floraEnv.assets
-  let TemplateDefaults{..} =
-        defaults
-          & (#mUser .~ muser)
-          & (#environment .~ floraEnv.environment)
-          & (#features .~ featuresEnv)
-  pure TemplateEnv{..}
+class FromSession a where
+  templateFromSession :: (Reader FeatureEnv :> es, IOE :> es) => a -> TemplateDefaults -> Eff es TemplateEnv
+
+instance FromSession (Session User) where
+  templateFromSession session defaults = do
+    let sessionId = session.sessionId
+    let muser = Just session.user
+    let webEnvStore = session.webEnvStore
+    floraEnv <- liftIO $ fetchFloraEnv webEnvStore
+    featuresEnv <- ask @FeatureEnv
+    let assets = floraEnv.assets
+    let TemplateDefaults{..} =
+          defaults
+            & (#mUser .~ muser)
+            & (#environment .~ floraEnv.environment)
+            & (#features .~ featuresEnv)
+    pure TemplateEnv{..}
+
+instance FromSession (Session (Maybe User)) where
+  templateFromSession session defaults = do
+    let sessionId = session.sessionId
+    let muser = session.user
+    let webEnvStore = session.webEnvStore
+    floraEnv <- liftIO $ fetchFloraEnv webEnvStore
+    featuresEnv <- ask @FeatureEnv
+    let assets = floraEnv.assets
+    let TemplateDefaults{..} =
+          defaults
+            & (#mUser .~ muser)
+            & (#environment .~ floraEnv.environment)
+            & (#features .~ featuresEnv)
+    pure TemplateEnv{..}

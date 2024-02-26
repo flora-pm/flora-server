@@ -6,6 +6,7 @@ import Lucid
 import Optics.Core
 import Servant
 
+import Flora.Model.User (User)
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes
 import FloraWeb.Pages.Server.Admin qualified as Admin
@@ -17,11 +18,11 @@ import FloraWeb.Pages.Server.Settings qualified as Settings
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Error (web404)
 import FloraWeb.Pages.Templates.Screens.Home qualified as Home
-import FloraWeb.Session
+import FloraWeb.Types (FloraEff)
 import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Types qualified as OddJobs
 
-server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraPage
+server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraEff
 server cfg env =
   Routes'
     { home = homeHandler
@@ -31,21 +32,19 @@ server cfg env =
     , packages = Packages.server
     , categories = Categories.server
     , search = Search.server
-    , settings = \_ -> hoistServerWithContext (Proxy @Settings.Routes) (Proxy @'[OptionalAuthContext]) id Settings.server
+    , settings = Settings.server
     , notFound = serveNotFound
     }
 
-homeHandler :: FloraPage (Html ())
-homeHandler = do
-  session <- getSession
-  templateDefaults <- fromSession session defaultTemplateEnv
+homeHandler :: Headers ls (Session (Maybe User)) -> FloraEff (Html ())
+homeHandler (Headers session _) = do
+  templateDefaults <- templateFromSession session defaultTemplateEnv
   let templateEnv = templateDefaults & #displayNavbarSearch .~ False
   render templateEnv Home.show
 
-aboutHandler :: FloraPage (Html ())
-aboutHandler = do
-  session <- getSession
-  templateDefaults <- fromSession session defaultTemplateEnv
+aboutHandler :: SessionWithCookies (Maybe User) -> FloraEff (Html ())
+aboutHandler (Headers session _) = do
+  templateDefaults <- templateFromSession session defaultTemplateEnv
   let (templateEnv :: TemplateEnv) =
         templateDefaults
           & #activeElements
@@ -53,5 +52,5 @@ aboutHandler = do
           .~ True
   render templateEnv Home.about
 
-serveNotFound :: FloraPage (Html ())
-serveNotFound = web404
+serveNotFound :: SessionWithCookies (Maybe User) -> FloraEff (Html ())
+serveNotFound (Headers session _) = web404 session
