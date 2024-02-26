@@ -192,23 +192,9 @@ naturalTransform floraEnv logger _webEnvStore app = do
                 _ -> runBlobStorePure
             )
           & runLog floraEnv.environment logger
-          & runErrorWith handleServerError
+          & runErrorWith (\ _callstack err -> pure $ Left err)
           & runEff
   either Except.throwError pure result
-
-handleServerError :: w
--- :: CallStack
--- -> ServerError
--- -> Either ServerError a
-handleServerError = undefined -- _cs err = Left err
-
--- & runReader webEnvStore
--- & runReader floraEnv.features
--- & ( case features.blobStoreImpl of
---       Just (BlobStoreFS fp) -> runBlobStoreFS fp
---       _ -> runBlobStorePure
---   )
--- & runLog deploymentEnv logger
 
 genAuthServerContext :: Logger -> FloraEnv -> Context FloraAuthContext
 genAuthServerContext logger floraEnv =
