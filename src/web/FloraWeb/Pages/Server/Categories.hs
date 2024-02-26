@@ -4,8 +4,9 @@ import Data.Text (Text)
 import Effectful (Eff, IOE, (:>))
 import Lucid (Html)
 import Network.HTTP.Types (notFound404)
-import Servant (Headers (..), ServerT, ServerError)
+import Servant (Headers (..), ServerError, ServerT)
 
+import Effectful.Error.Static (Error)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
 import Flora.Environment (FeatureEnv)
@@ -19,7 +20,6 @@ import FloraWeb.Pages.Templates (defaultTemplateEnv, render, templateFromSession
 import FloraWeb.Pages.Templates.Error
 import FloraWeb.Pages.Templates.Screens.Categories qualified as Template
 import FloraWeb.Types (FloraEff)
-import Effectful.Error.Static (Error)
 
 server :: SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
 server sessionWithCookies =
