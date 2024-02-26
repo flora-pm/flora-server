@@ -2,5 +2,5 @@
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
 #subheader {
-  align: right;
+  text-align: right;
 }
