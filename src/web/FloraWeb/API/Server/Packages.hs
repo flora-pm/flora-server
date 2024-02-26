@@ -4,8 +4,13 @@ import Data.Function
 import Data.Maybe (fromMaybe)
 import Data.Vector qualified as Vector
 import Distribution.Version (Version)
-import Servant
+import Effectful (Eff, (:>))
+import Servant hiding ((:>))
 
+import Effectful.Error.Static (Error)
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Time (Time)
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
@@ -30,9 +35,10 @@ withPackageServer namespace packageName =
     }
 
 getPackageHandler
-  :: Namespace
+  :: (Time :> es, Log :> es, DB :> es, Error ServerError :> es)
+  => Namespace
   -> PackageName
-  -> FloraEff (PackageDTO 0)
+  -> (Eff es) (PackageDTO 0)
 getPackageHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName packageNotFound
   releases <- Query.getReleases package.packageId
@@ -50,10 +56,11 @@ getPackageHandler namespace packageName = do
   pure $ toPackageDTO package release components
 
 getVersionedPackageHandler
-  :: Namespace
+  :: (Time :> es, Log :> es, DB :> es, Error ServerError :> es)
+  => Namespace
   -> PackageName
   -> Version
-  -> FloraEff (PackageDTO 0)
+  -> (Eff es) (PackageDTO 0)
 getVersionedPackageHandler namespace packageName version = do
   package <- guardThatPackageExists namespace packageName packageNotFound
   release <-

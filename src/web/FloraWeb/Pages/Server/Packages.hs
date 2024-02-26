@@ -16,18 +16,23 @@ import Data.Text.Display (display)
 import Data.Vector qualified as Vector
 import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
-import Effectful.Error.Static (throwError)
-import Effectful.Reader.Static (ask)
+import Effectful (Eff, IOE, (:>))
+import Effectful.Error.Static (Error, throwError)
+import Effectful.Reader.Static (Reader, ask)
 import Log (object, (.=))
 import Log qualified
 import Lucid
 import Lucid.Orphans ()
-import Servant (Headers (..), ServerT)
+import Servant (Headers (..), ServerError, ServerT)
 import Servant.Server (err404)
 
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Time (Time)
 import Flora.Environment (FeatureEnv (..))
 import Flora.Logging
 import Flora.Model.BlobIndex.Query qualified as Query
+import Flora.Model.BlobStore.API (BlobStoreAPI)
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -65,14 +70,23 @@ server =
     , getTarball = getTarballHandler
     }
 
-listPackagesHandler :: SessionWithCookies (Maybe User) -> Maybe (Positive Word) -> FloraEff (Html ())
+listPackagesHandler
+  :: (DB :> es, Reader FeatureEnv :> es, IOE :> es)
+  => SessionWithCookies (Maybe User)
+  -> Maybe (Positive Word)
+  -> Eff es (Html ())
 listPackagesHandler (Headers session _) pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1
   templateDefaults <- templateFromSession session defaultTemplateEnv
   (count', results) <- Search.listAllPackages (fromPage pageNumber)
   render templateDefaults $ Search.showAllPackages count' pageNumber results
 
-showNamespaceHandler :: SessionWithCookies (Maybe User) -> Namespace -> Maybe (Positive Word) -> FloraEff (Html ())
+showNamespaceHandler
+  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> Maybe (Positive Word)
+  -> Eff es (Html ())
 showNamespaceHandler (Headers session _) namespace pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1
   templateDefaults <- templateFromSession session defaultTemplateEnv
@@ -105,14 +119,31 @@ showNamespaceHandler (Headers session _) namespace pageParam = do
           render templateEnv $
             Search.showAllPackagesInNamespace namespace packageIndex.description count' pageNumber results
 
-showPackageHandler :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> FloraEff (Html ())
+showPackageHandler
+  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Eff es (Html ())
 showPackageHandler sessionWithCookies namespace packageName = showPackageVersion sessionWithCookies namespace packageName Nothing
 
-showVersionHandler :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Version -> FloraEff (Html ())
+showVersionHandler
+  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Version
+  -> Eff es (Html ())
 showVersionHandler sessionWithCookies namespace packageName version =
   showPackageVersion sessionWithCookies namespace packageName (Just version)
 
-showPackageVersion :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Maybe Version -> FloraEff (Html ())
+showPackageVersion
+  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Maybe Version
+  -> Eff es (Html ())
 showPackageVersion (Headers session _) namespace packageName mversion = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
@@ -173,12 +204,13 @@ showPackageVersion (Headers session _) namespace packageName mversion = do
       categories
 
 showDependentsHandler
-  :: SessionWithCookies (Maybe User)
+  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Maybe (Positive Word)
   -> Maybe Text
-  -> FloraEff (Html ())
+  -> Eff es (Html ())
 showDependentsHandler s@(Headers session _) namespace packageName mPage mSearch = do
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
   releases <- Query.getAllReleases package.packageId
@@ -186,13 +218,14 @@ showDependentsHandler s@(Headers session _) namespace packageName mPage mSearch 
   showVersionDependentsHandler s namespace packageName latestRelease.version mPage mSearch
 
 showVersionDependentsHandler
-  :: SessionWithCookies (Maybe User)
+  :: (DB :> es, Reader FeatureEnv :> es, Log :> es, Time :> es, Error ServerError :> es, IOE :> es)
+  => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Version
   -> Maybe (Positive Word)
   -> Maybe Text
-  -> FloraEff (Html ())
+  -> Eff es (Html ())
 showVersionDependentsHandler s namespace packageName version Nothing mSearch =
   showVersionDependentsHandler s namespace packageName version (Just $ PositiveUnsafe 1) mSearch
 showVersionDependentsHandler s namespace packageName version pageNumber (Just "") =
@@ -224,14 +257,14 @@ showVersionDependentsHandler (Headers session _) namespace packageName version (
       results
       pageNumber
 
-showDependenciesHandler :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> FloraEff (Html ())
+showDependenciesHandler :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Log :> es, Error ServerError :> es, IOE :> es) => SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Eff es (Html ())
 showDependenciesHandler s@(Headers session _) namespace packageName = do
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
   releases <- Query.getAllReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
   showVersionDependenciesHandler s namespace packageName latestRelease.version
 
-showVersionDependenciesHandler :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Version -> FloraEff (Html ())
+showVersionDependenciesHandler :: (DB :> es, Reader FeatureEnv :> es, IOE :> es, Log :> es, Time :> es, Error ServerError :> es) => SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Version -> Eff es (Html ())
 showVersionDependenciesHandler (Headers session _) namespace packageName version = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
@@ -257,14 +290,25 @@ showVersionDependenciesHandler (Headers session _) namespace packageName version
   render templateEnv $
     Package.showDependencies namespace packageName release releaseDependencies
 
-showChangelogHandler :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> FloraEff (Html ())
+showChangelogHandler
+  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Log :> es, Error ServerError :> es, IOE :> es)
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Eff es (Html ())
 showChangelogHandler s@(Headers session _) namespace packageName = do
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
   releases <- Query.getAllReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
   showVersionChangelogHandler s namespace packageName latestRelease.version
 
-showVersionChangelogHandler :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Version -> FloraEff (Html ())
+showVersionChangelogHandler
+  :: (DB :> es, Reader FeatureEnv :> es, Log :> es, Time :> es, IOE :> es, Error ServerError :> es)
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Version
+  -> Eff es (Html ())
 showVersionChangelogHandler (Headers session _) namespace packageName version = do
   Log.logInfo_ $ display namespace
   templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -278,7 +322,12 @@ showVersionChangelogHandler (Headers session _) namespace packageName version = 
 
   render templateEnv $ Package.showChangelog namespace packageName version release.changelog
 
-listVersionsHandler :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> FloraEff (Html ())
+listVersionsHandler
+  :: (DB :> es, Reader FeatureEnv :> es, IOE :> es, Log :> es, Time :> es, Error ServerError :> es)
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Eff es (Html ())
 listVersionsHandler (Headers session _) namespace packageName = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
@@ -293,7 +342,14 @@ listVersionsHandler (Headers session _) namespace packageName = do
 constructTarballPath :: PackageName -> Version -> Text
 constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
 
-getTarballHandler :: SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Version -> Text -> FloraEff ByteString
+getTarballHandler
+  :: (DB :> es, Reader FeatureEnv :> es, Log :> es, Time :> es, IOE :> es, Error ServerError :> es, BlobStoreAPI :> es)
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Version
+  -> Text
+  -> Eff es ByteString
 getTarballHandler (Headers session _) namespace packageName version tarballName = do
   features <- ask @FeatureEnv
   unless (isJust features.blobStoreImpl) $ throwError err404
