@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.0.16 -- 2024-XX-XX
+## 1.0.16 -- 2024-02-26
 
 * Add badge component for custom build type ([#517](https://github.com/flora-pm/flora-server/pull/517))
 
