@@ -4,11 +4,9 @@ module FloraWeb.Components.Navbar where
 
 import Control.Monad.Reader (ask, asks)
 import Data.Text (Text)
-import Data.Text.Display (display)
 import Lucid
 import Lucid.Alpine
 
-import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User (User (..), UserFlags (..))
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types
@@ -77,7 +75,6 @@ navbarDropdown aboutNav packagesNav = do
           navBarLink' "/about" "About" aboutNav
           navBarLink' "/categories" "Categories" packagesNav
           navBarLink' "/packages" "Packages" packagesNav
-          -- userMenu
           themeToggle
 
 navBarLink
@@ -102,10 +99,9 @@ navBarLink' = navBarLink ""
 userMenu :: FloraHTML
 userMenu = do
   ActiveElements{adminDashboard} <- asks activeElements
-  TemplateEnv{mUser, sessionId} <- ask
+  TemplateEnv{mUser} <- ask
   getUsernameOrLogin mUser
   adminLink adminDashboard mUser
-  logOff mUser sessionId
 
 navbarSearch :: FloraHTML
 navbarSearch = do
@@ -129,13 +125,6 @@ navbarSearch = do
             ]
               ++ contentValue
     else pure mempty
-
-logOff :: Maybe User -> PersistentSessionId -> FloraHTML
-logOff Nothing _ = ""
-logOff (Just _) sessionId =
-  form_ [action_ ("/sessions/delete/" <> display sessionId), method_ "post", id_ "logoff"] $ do
-    let btnClasses = "font-bold inline-flex items-center py-3 mx-4 text-white dark:text-gray-100 "
-    button_ [type_ "submit", class_ btnClasses] "Sign out"
 
 adminLink :: Bool -> Maybe User -> FloraHTML
 adminLink active (Just user)
@@ -167,8 +156,8 @@ themeToggle = do
   input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "theme"]
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
-getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login/Signup" False
-getUsernameOrLogin _ = "" -- navBarLink' "#" "Profile" False
+getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login" False
+getUsernameOrLogin _ = navBarLink' "/settings/" "Profile" False
 
 isActive :: Bool -> Text
 isActive True = " active"
