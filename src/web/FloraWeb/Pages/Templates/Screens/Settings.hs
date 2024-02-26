@@ -1,27 +1,35 @@
 module FloraWeb.Pages.Templates.Screens.Settings where
 
+import Data.Text (Text)
+import Data.Text.Display (display)
 import Lucid
 
-import Data.Text (Text)
+import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User
 import FloraWeb.Components.Button (button)
 import FloraWeb.Pages.Templates
 
--- import FloraWeb.Components.Button
-
-dashboard :: User -> FloraHTML
-dashboard user = main_ $
+dashboard :: PersistentSessionId -> User -> FloraHTML
+dashboard sessionId _user = main_ $
   div_ [class_ "container"] $ do
     div_ [class_ "divider"] $ do
       div_ [class_ "page-title"] $ do
         h1_ "Account settings"
+    header_ [id_ "subheader"] $ do
+      logOff sessionId
     section_ [class_ "settings_menu"] $ do
       ul_ [] $ do
         li_ $ a_ [href_ "/settings/profile"] "Profile"
         li_ $ a_ [href_ "/settings/security"] "Security"
 
+logOff :: PersistentSessionId -> FloraHTML
+logOff sessionId =
+  form_ [action_ ("/sessions/delete/" <> display sessionId), method_ "post", id_ "logoff"] $ do
+    let btnClasses = "font-bold inline-flex items-center py-3 mx-4 text-white dark:text-gray-100 "
+    button_ [type_ "submit", class_ btnClasses] "Sign out"
+
 profileSettings :: User -> FloraHTML
-profileSettings user = do
+profileSettings _user = do
   div_ [class_ "container"] $ do
     div_ [class_ "divider"] $ do
       div_ [class_ "page-title"] $ do

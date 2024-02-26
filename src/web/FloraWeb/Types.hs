@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module FloraWeb.Types
-  ( Flora
-  , FloraAPI
+  ( FloraEff
+  , RouteEffects
   , WebEnvStore
   , GetCookies (..)
   , WebEnv (..)
@@ -16,7 +16,6 @@ where
 import Control.Concurrent.MVar
 import Control.Monad.IO.Class
 import Control.Monad.Time (MonadTime (..))
-import Data.Kind (Type)
 import Data.Text.Encoding qualified as TE
 import Effectful
 import Effectful.Error.Static (Error)
@@ -32,30 +31,19 @@ import Web.Cookie
 import Flora.Environment
 import Flora.Model.BlobStore.API
 
-type Flora :: Type -> Type
-type Flora =
-  Eff
-    '[ Reader WebEnvStore
-     , Reader FeatureEnv
-     , BlobStoreAPI
-     , Log
-     , Error ServerError
-     , IOE
-     ]
-
-type FloraAPI =
-  Eff
-    '[ DB
-     , Time
-     , Reader ()
-     , Reader FeatureEnv
-     , BlobStoreAPI
-     , Log
-     , Error ServerError
-     , IOE
-     ]
-
 newtype WebEnvStore = WebEnvStore (MVar WebEnv)
+
+type FloraEff = Eff RouteEffects
+
+type RouteEffects =
+  '[ DB
+   , Time
+   , Reader FeatureEnv
+   , BlobStoreAPI
+   , Log
+   , Error ServerError
+   , IOE
+   ]
 
 data WebEnv = WebEnv
   { floraEnv :: FloraEnv
@@ -64,7 +52,7 @@ data WebEnv = WebEnv
 
 fetchFloraEnv :: WebEnvStore -> IO FloraEnv
 fetchFloraEnv (WebEnvStore mvar) =
-  readMVar mvar >>= \webEnv -> pure $ webEnv.floraEnv
+  readMVar mvar >>= \webEnv -> pure webEnv.floraEnv
 
 getWebEnv :: WebEnvStore -> IO WebEnv
 getWebEnv (WebEnvStore mvar) = readMVar mvar

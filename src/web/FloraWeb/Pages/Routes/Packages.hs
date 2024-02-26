@@ -20,21 +20,25 @@ type Routes = NamedRoutes Routes'
 data Routes' mode = Routes'
   { index
       :: mode
-        :- QueryParam "page" (Positive Word)
+        :- AuthProtect "optional-cookie-auth"
+          :> QueryParam "page" (Positive Word)
           :> Get '[HTML] (Html ())
   , showNamespace
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> QueryParam "page" (Positive Word)
           :> Get '[HTML] (Html ())
   , showPackage
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> Get '[HTML] (Html ())
   , showDependents
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> "dependents"
           :> QueryParam "page" (Positive Word)
@@ -42,7 +46,8 @@ data Routes' mode = Routes'
           :> Get '[HTML] (Html ())
   , showVersionDependents
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> Capture "version" Version
           :> "dependents"
@@ -51,45 +56,52 @@ data Routes' mode = Routes'
           :> Get '[HTML] (Html ())
   , showDependencies
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> "dependencies"
           :> Get '[HTML] (Html ())
   , showVersionDependencies
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> Capture "version" Version
           :> "dependencies"
           :> Get '[HTML] (Html ())
   , showChangelog
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> "changelog"
           :> Get '[HTML] (Html ())
   , showVersionChangelog
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> Capture "version" Version
           :> "changelog"
           :> Get '[HTML] (Html ())
   , showVersion
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> Capture "version" Version
           :> Get '[HTML] (Html ())
   , listVersions
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> "versions"
           :> Get '[HTML] (Html ())
   , getTarball
       :: mode
-        :- Capture "namespace" Namespace
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
           :> Capture "package" PackageName
           :> Capture "version" Version
           :> Capture "tarball" Text

@@ -20,14 +20,17 @@ type Routes =
   NamedRoutes Routes'
 
 type GetUserSettings =
-  Get '[HTML] (Html ())
+  AuthProtect "cookie-auth"
+    :> Get '[HTML] (Html ())
 
 type GetUserSecuritySettings =
-  "security"
+  AuthProtect "cookie-auth"
+    :> "security"
     :> Get '[HTML] (Html ())
 
 type GetTwoFactorSettingsPage =
-  "security"
+  AuthProtect "cookie-auth"
+    :> "security"
     :> "two-factor"
     :> Get '[HTML] (Html ())
 
@@ -43,14 +46,16 @@ data TwoFactorConfirmationForm = TwoFactorConfirmationForm
   deriving anyclass (FromForm, ToForm)
 
 type PostTwoFactorSetup =
-  "security"
+  AuthProtect "cookie-auth"
+    :> "security"
     :> "two-factor"
     :> "setup"
     :> ReqBody '[FormUrlEncoded] TwoFactorConfirmationForm
     :> UVerb 'POST '[HTML] TwoFactorSetupResponses
 
 type DeleteTwoFactorSetup =
-  "security"
+  AuthProtect "cookie-auth"
+    :> "security"
     :> "two-factor"
     :> "delete"
     :> Verb 'POST 301 '[HTML] DeleteTwoFactorSetupResponse

@@ -4,6 +4,7 @@ module FloraWeb.Common.Auth
   , StrictAuthContext
   , optionalAuthHandler
   , strictAuthHandler
+  , adminAuthHandler
   )
 where
 
@@ -11,9 +12,9 @@ import Data.Function ((&))
 import Data.List qualified as List
 import Data.Text (Text)
 import Data.UUID qualified as UUID
+import Debug.Trace
 import Effectful
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
-import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.PostgreSQL.Transact.Effect qualified as DB
 import Log (Logger)
@@ -39,17 +40,16 @@ import FloraWeb.Session
 import FloraWeb.Types
 import Servant qualified
 
-type OptionalAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
-type StrictAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] Session)
+type OptionalAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
+type StrictAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session User))
 
 optionalAuthHandler :: Logger -> FloraEnv -> OptionalAuthContext
 optionalAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
-        handler False floraEnv request
+        handler floraEnv request
           & Logging.runLog floraEnv.environment logger
           & DB.runDB floraEnv.pool
-          & runVisitorSession
           & effToHandler
     )
 
@@ -57,35 +57,81 @@ strictAuthHandler :: Logger -> FloraEnv -> StrictAuthContext
 strictAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
-        handler True floraEnv request
+        requireUserHandler floraEnv request
           & Logging.runLog floraEnv.environment logger
           & DB.runDB floraEnv.pool
-          & runVisitorSession
           & effToHandler
     )
 
-handler
-  :: Bool
-  -> FloraEnv
+adminAuthHandler :: Logger -> FloraEnv -> StrictAuthContext
+adminAuthHandler logger floraEnv =
+  mkAuthHandler
+    ( \request ->
+        requireAdminHandler floraEnv request
+          & Logging.runLog floraEnv.environment logger
+          & DB.runDB floraEnv.pool
+          & effToHandler
+    )
+
+requireUserHandler
+  :: (DB :> es, Error ServerError :> es, IOE :> es)
+  => FloraEnv
   -> Request
-  -> Eff
-      '[Log, DB, IsVisitor, Error ServerError, IOE]
-      (Headers '[Header "Set-Cookie" SetCookie] Session)
-handler mustBeConnected floraEnv req = do
+  -> Eff es (Headers '[Header "Set-Cookie" SetCookie] (Session User))
+requireUserHandler floraEnv req = do
   let cookies = getCookies req
   mbPersistentSessionId <- handlerToEff $ getSessionId cookies
   mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
   mUserInfo <- fetchUser mbPersistentSession
   requestID <- liftIO $ getRequestID req
-  (mUser, sessionId) <- do
+  (user, sessionId) <- do
     case mUserInfo of
-      Nothing ->
-        if mustBeConnected
-          then throwError $ err401{errBody = "Log-in first"}
-          else do
-            nSessionId <- liftIO newPersistentSessionId
-            pure (Nothing, nSessionId)
+      Nothing -> throwError $ err401{errBody = "Log-in first"}
+      Just (user, userSession) -> pure (user, userSession.persistentSessionId)
+  webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
+  let sessionCookie = craftSessionCookie sessionId False
+  pure $ addCookie sessionCookie (Session{..})
+
+handler
+  :: (DB :> es, Error ServerError :> es, IOE :> es)
+  => FloraEnv
+  -> Request
+  -> Eff es (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
+handler floraEnv req = do
+  let cookies = getCookies req
+  mbPersistentSessionId <- handlerToEff $ getSessionId cookies
+  mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
+  mUserInfo <- fetchUser mbPersistentSession
+  requestID <- liftIO $ getRequestID req
+  traceM $ "User info: " <> show mUserInfo
+  (user, sessionId) <- do
+    case mUserInfo of
+      Nothing -> do
+        nSessionId <- liftIO newPersistentSessionId
+        pure (Nothing, nSessionId)
       Just (user, userSession) -> pure (Just user, userSession.persistentSessionId)
+  webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
+  let sessionCookie = craftSessionCookie sessionId False
+  pure $ addCookie sessionCookie (Session{..})
+
+requireAdminHandler
+  :: (DB :> es, Error ServerError :> es, IOE :> es)
+  => FloraEnv
+  -> Request
+  -> Eff es (Headers '[Header "Set-Cookie" SetCookie] (Session User))
+requireAdminHandler floraEnv req = do
+  let cookies = getCookies req
+  mbPersistentSessionId <- handlerToEff $ getSessionId cookies
+  mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
+  mUserInfo <- fetchUser mbPersistentSession
+  requestID <- liftIO $ getRequestID req
+  (user, sessionId) <- do
+    case mUserInfo of
+      Nothing -> throwError $ err401{errBody = "Log-in first"}
+      Just (user, userSession) ->
+        if user.userFlags.isAdmin
+          then pure (user, userSession.persistentSessionId)
+          else throwError $ err404{errBody = "Not Found"}
   webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
   let sessionCookie = craftSessionCookie sessionId False
   pure $ addCookie sessionCookie (Session{..})

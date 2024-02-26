@@ -5,7 +5,6 @@ module FloraWeb.Pages.Server.Settings
 
 import Control.Monad.IO.Class
 import Data.ByteString.Base32 qualified as Base32
-import Data.Maybe (fromJust)
 import Data.Text.Encoding qualified as Text
 import Log qualified
 import Lucid
@@ -24,8 +23,9 @@ import FloraWeb.Pages.Templates (render, renderUVerb)
 import FloraWeb.Pages.Templates.Screens.Settings qualified as Settings
 import FloraWeb.Pages.Templates.Types
 import FloraWeb.Session
+import FloraWeb.Types (FloraEff)
 
-server :: ServerT Routes FloraPage
+server :: ServerT Routes FloraEff
 server =
   Routes'
     { index = userSettingsHandler
@@ -35,22 +35,20 @@ server =
     , deleteTwoFactorSetup = deleteTwoFactorSetupHandler
     }
 
-userSettingsHandler :: FloraPage (Html ())
-userSettingsHandler = do
-  session <- getSession
-  templateEnv' <- fromSession session defaultTemplateEnv
+userSettingsHandler :: SessionWithCookies User -> FloraEff (Html ())
+userSettingsHandler (Headers session _) = do
+  let user = session.user
+  templateEnv' <- templateFromSession session defaultTemplateEnv
   let templateEnv =
         templateEnv'
           & #title
           .~ "Account settings"
-  let user = fromJust session.mUser
   render templateEnv $
-    Settings.dashboard user
+    Settings.dashboard session.sessionId user
 
-userSecuritySettingsHandler :: FloraPage (Html ())
-userSecuritySettingsHandler = do
-  session <- getSession
-  templateEnv' <- fromSession session defaultTemplateEnv
+userSecuritySettingsHandler :: SessionWithCookies User -> FloraEff (Html ())
+userSecuritySettingsHandler (Headers session _) = do
+  templateEnv' <- templateFromSession session defaultTemplateEnv
   let templateEnv =
         templateEnv'
           & #title
@@ -59,16 +57,15 @@ userSecuritySettingsHandler = do
     templateEnv
     Settings.securitySettings
 
-getTwoFactorSettingsHandler :: FloraPage (Html ())
-getTwoFactorSettingsHandler = do
-  FloraEnv{domain} <- getEnv
-  session <- getSession
-  templateEnv' <- fromSession session defaultTemplateEnv
+getTwoFactorSettingsHandler :: SessionWithCookies User -> FloraEff (Html ())
+getTwoFactorSettingsHandler (Headers session _) = do
+  let user = session.user
+  FloraEnv{domain} <- getEnv session
+  templateEnv' <- templateFromSession session defaultTemplateEnv
   let templateEnv =
         templateEnv'
           & #title
           .~ "Security settings"
-  let user = fromJust session.mUser
   case user.totpKey of
     Nothing -> do
       userKey <- liftIO HMAC.newAuthenticationKey
@@ -94,11 +91,10 @@ getTwoFactorSettingsHandler = do
               qrCode
               (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
-postTwoFactorSetupHandler :: TwoFactorConfirmationForm -> FloraPage (Union TwoFactorSetupResponses)
-postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
-  session <- getSession
-  templateEnv' <- fromSession session defaultTemplateEnv
-  let user = fromJust session.mUser
+postTwoFactorSetupHandler :: SessionWithCookies User -> TwoFactorConfirmationForm -> FloraEff (Union TwoFactorSetupResponses)
+postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = userCode} = do
+  let user = session.user
+  templateEnv' <- templateFromSession session defaultTemplateEnv
   case user.totpKey of
     Nothing -> respond $ WithStatus @301 (redirect "/settings/security/two-factor")
     Just userKey -> do
@@ -127,9 +123,8 @@ postTwoFactorSetupHandler TwoFactorConfirmationForm{code = userCode} = do
                   qrCode
                   (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
-deleteTwoFactorSetupHandler :: FloraPage DeleteTwoFactorSetupResponse
-deleteTwoFactorSetupHandler = do
-  session <- getSession
-  let user = fromJust session.mUser
+deleteTwoFactorSetupHandler :: SessionWithCookies User -> FloraEff DeleteTwoFactorSetupResponse
+deleteTwoFactorSetupHandler (Headers session _) = do
+  let user = session.user
   Update.unSetTOTP user.userId
   pure $ redirect "/settings/security"

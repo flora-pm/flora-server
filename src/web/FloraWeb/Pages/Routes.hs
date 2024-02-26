@@ -14,14 +14,14 @@ import Servant.HTML.Lucid
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { home :: mode :- Get '[HTML] (Html ())
-  , about :: mode :- "about" :> Get '[HTML] (Html ())
+  { home :: mode :- AuthProtect "optional-cookie-auth" :> Get '[HTML] (Html ())
+  , about :: mode :- AuthProtect "optional-cookie-auth" :> "about" :> Get '[HTML] (Html ())
   , admin :: mode :- "admin" :> Admin.Routes
-  , sessions :: mode :- "sessions" :> Sessions.Routes
+  , sessions :: mode :- AuthProtect "optional-cookie-auth" :> "sessions" :> Sessions.Routes
   , packages :: mode :- "packages" :> Packages.Routes
-  , categories :: mode :- "categories" :> Categories.Routes
-  , search :: mode :- "search" :> Search.Routes
-  , settings :: mode :- AuthProtect "cookie-auth" :> "settings" :> Settings.Routes
-  , notFound :: mode :- Get '[HTML] (Html ())
+  , categories :: mode :- AuthProtect "optional-cookie-auth" :> "categories" :> Categories.Routes
+  , search :: mode :- AuthProtect "optional-cookie-auth" :> "search" :> Search.Routes
+  , settings :: mode :- "settings" :> Settings.Routes
+  , notFound :: mode :- AuthProtect "optional-cookie-auth" :> Get '[HTML] (Html ())
   }
   deriving stock (Generic)

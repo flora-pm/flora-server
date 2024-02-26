@@ -1,2 +1,6 @@
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+#subheader {
+  align: right;
+}

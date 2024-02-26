@@ -16,13 +16,13 @@ import FloraWeb.API.Routes.Packages.Types (PackageDTO, toPackageDTO)
 import FloraWeb.Common.Guards
 import FloraWeb.Types
 
-packagesServer :: ServerT Packages.API FloraAPI
+packagesServer :: ServerT Packages.API FloraEff
 packagesServer =
   Packages.API'
     { withPackage = withPackageServer
     }
 
-withPackageServer :: Namespace -> PackageName -> ServerT Packages.PackageAPI FloraAPI
+withPackageServer :: Namespace -> PackageName -> ServerT Packages.PackageAPI FloraEff
 withPackageServer namespace packageName =
   Packages.PackageAPI'
     { getPackage = getPackageHandler namespace packageName
@@ -32,10 +32,10 @@ withPackageServer namespace packageName =
 getPackageHandler
   :: Namespace
   -> PackageName
-  -> FloraAPI (PackageDTO 0)
+  -> FloraEff (PackageDTO 0)
 getPackageHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName packageNotFound
-  releases <- Query.getReleases (package.packageId)
+  releases <- Query.getReleases package.packageId
   let latestRelease =
         releases
           & Vector.filter (\r -> not (fromMaybe False r.deprecated))
@@ -53,7 +53,7 @@ getVersionedPackageHandler
   :: Namespace
   -> PackageName
   -> Version
-  -> FloraAPI (PackageDTO 0)
+  -> FloraEff (PackageDTO 0)
 getVersionedPackageHandler namespace packageName version = do
   package <- guardThatPackageExists namespace packageName packageNotFound
   release <-

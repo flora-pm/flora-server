@@ -78,7 +78,7 @@ newtype FeatureEnv = FeatureEnv {blobStoreImpl :: Maybe BlobStoreImpl}
 
 instance ToJSON FeatureEnv
 
--- In future we'll want to error for conflicting options
+-- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
 featureConfigToEnv FeatureConfig{..} =
   case blobStoreFS of
