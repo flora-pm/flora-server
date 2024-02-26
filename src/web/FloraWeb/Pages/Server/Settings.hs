@@ -6,12 +6,17 @@ module FloraWeb.Pages.Server.Settings
 import Control.Monad.IO.Class
 import Data.ByteString.Base32 qualified as Base32
 import Data.Text.Encoding qualified as Text
+import Effectful (Eff, IOE, (:>))
+import Effectful.Reader.Static (Reader)
 import Log qualified
 import Lucid
 import Optics.Core
 import Sel.HMAC.SHA256 qualified as HMAC
-import Servant
+import Servant (HasServer (..), Headers (..), Union, WithStatus (..), respond)
 
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Time (Time)
 import Flora.Environment
 import Flora.Model.User
 import Flora.Model.User.Update qualified as Update
@@ -35,7 +40,7 @@ server =
     , deleteTwoFactorSetup = deleteTwoFactorSetupHandler
     }
 
-userSettingsHandler :: SessionWithCookies User -> FloraEff (Html ())
+userSettingsHandler :: (Reader FeatureEnv :> es, IOE :> es) => SessionWithCookies User -> Eff es (Html ())
 userSettingsHandler (Headers session _) = do
   let user = session.user
   templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -46,7 +51,7 @@ userSettingsHandler (Headers session _) = do
   render templateEnv $
     Settings.dashboard session.sessionId user
 
-userSecuritySettingsHandler :: SessionWithCookies User -> FloraEff (Html ())
+userSecuritySettingsHandler :: (Reader FeatureEnv :> es, IOE :> es) => SessionWithCookies User -> Eff es (Html ())
 userSecuritySettingsHandler (Headers session _) = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   let templateEnv =
@@ -57,7 +62,14 @@ userSecuritySettingsHandler (Headers session _) = do
     templateEnv
     Settings.securitySettings
 
-getTwoFactorSettingsHandler :: SessionWithCookies User -> FloraEff (Html ())
+getTwoFactorSettingsHandler
+  :: ( Reader FeatureEnv :> es
+     , IOE :> es
+     , DB :> es
+     , Time :> es
+     )
+  => SessionWithCookies User
+  -> Eff es (Html ())
 getTwoFactorSettingsHandler (Headers session _) = do
   let user = session.user
   FloraEnv{domain} <- getEnv session
@@ -91,7 +103,16 @@ getTwoFactorSettingsHandler (Headers session _) = do
               qrCode
               (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
-postTwoFactorSetupHandler :: SessionWithCookies User -> TwoFactorConfirmationForm -> FloraEff (Union TwoFactorSetupResponses)
+postTwoFactorSetupHandler
+  :: ( Reader FeatureEnv :> es
+     , IOE :> es
+     , DB :> es
+     , Time :> es
+     , Log :> es
+     )
+  => SessionWithCookies User
+  -> TwoFactorConfirmationForm
+  -> Eff es (Union TwoFactorSetupResponses)
 postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = userCode} = do
   let user = session.user
   templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -123,7 +144,7 @@ postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = u
                   qrCode
                   (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
-deleteTwoFactorSetupHandler :: SessionWithCookies User -> FloraEff DeleteTwoFactorSetupResponse
+deleteTwoFactorSetupHandler :: (DB :> es, Time :> es) => SessionWithCookies User -> Eff es DeleteTwoFactorSetupResponse
 deleteTwoFactorSetupHandler (Headers session _) = do
   let user = session.user
   Update.unSetTOTP user.userId
