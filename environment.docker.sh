@@ -1,4 +1,3 @@
-set -euxo
 source environment.sh
 
 export FLORA_DB_HOST="database"
