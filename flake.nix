@@ -18,8 +18,6 @@
     # souffle > 2.3
     nixpkgs-souffle.url = "github:nixos/nixpkgs/a74a4a2f324fb54637a9e2597ef1fdca6ad869c8";
     flake-utils.url = "github:numtide/flake-utils";
-    horizon-devtools.url =
-      "git+https://gitlab.horizon-haskell.net/package-sets/horizon-devtools";
     horizon-platform.url =
       "git+https://gitlab.horizon-haskell.net/package-sets/horizon-platform?ref=lts/ghc-9.6.x";
     pre-commit-hooks = {
@@ -37,7 +35,7 @@
     poolboy.url = "github:blackheaven/poolboy/v0.2.1.0";
     poolboy.flake = false;
   };
-  outputs = inputs@{ self, flake-utils, horizon-platform, horizon-devtools, nixpkgs, pre-commit-hooks, ... }:
+  outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, pre-commit-hooks, ... }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system}.appendOverlays [
@@ -49,8 +47,7 @@
         hsPkgs = horizon-platform.legacyPackages.${system}.extend (
           import ./nix/hspkgs.nix { inherit src pkgs inputs; }
         );
-        hsDev = horizon-devtools.legacyPackages.${system};
-        floraShell = import ./nix/shell-config.nix { inherit src pkgs hsPkgs hsDev pre-commit-check; };
+        floraShell = import ./nix/shell-config.nix { inherit src pkgs hsPkgs pre-commit-check; };
       in
       {
         apps = rec {
