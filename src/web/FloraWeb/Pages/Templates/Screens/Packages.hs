@@ -44,6 +44,7 @@ showPackage
   -> Vector (Namespace, PackageName, Text)
   -> Word
   -> Vector Category
+  -> Maybe (Vector Text)
   -> FloraHTML
 showPackage
   latestRelease
@@ -55,7 +56,8 @@ showPackage
   numberOfDependents
   dependencies
   numberOfDependencies
-  categories =
+  categories
+  mExtraLibraries =
     div_ [class_ "larger-container"] $ do
       presentationHeader latestRelease namespace name latestRelease.synopsis
       packageBody
@@ -69,6 +71,7 @@ showPackage
         dependents
         numberOfDependents
         categories
+        mExtraLibraries
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
 presentationHeader release namespace name synopsis =
@@ -95,6 +98,7 @@ packageBody
   -> Vector Package
   -> Word
   -> Vector Category
+  -> Maybe (Vector Text)
   -> FloraHTML
 packageBody
   Package{namespace, name = packageName, deprecationInfo}
@@ -106,7 +110,8 @@ packageBody
   numberOfDependencies
   dependents
   numberOfDependents
-  categories =
+  categories
+  mExtraLibraries =
     div_ [class_ "package-body"] $ do
       div_ [class_ "package-left-column"] $ ul_ [class_ "package-left-rows"] $ do
         displayCategories categories
@@ -123,7 +128,7 @@ packageBody
               then displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
               else displayInstructions namespace packageName latestRelease
         displayTestedWith latestRelease.testedWith
-        displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
+        displayDependencies (namespace, packageName, version) numberOfDependencies dependencies mExtraLibraries
         displayDependents (namespace, packageName) numberOfDependents dependents
         displayPackageFlags flags
 

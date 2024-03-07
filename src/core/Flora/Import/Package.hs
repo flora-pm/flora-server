@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiWayIf #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- |
 -- Module: Flora.Import.Package
@@ -22,15 +23,16 @@ module Flora.Import.Package where
 import Control.DeepSeq (force)
 import Control.Exception
 import Data.ByteString qualified as BS
+import Data.List qualified as List
 import Data.Maybe
 import Data.Pool (Pool, withResource)
 import Data.Poolboy qualified as Poolboy
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
-import Data.Text qualified as T
+import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Text.IO qualified as T
+import Data.Text.IO qualified as Text
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -38,7 +40,7 @@ import Database.PostgreSQL.Simple (Connection)
 import Distribution.Compat.NonEmptySet (toList)
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
-import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
+import Distribution.PackageDescription (BuildInfo, CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
 import Distribution.PackageDescription qualified as Cabal hiding (PackageName)
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Pretty
@@ -87,6 +89,7 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Model.User
+import Debug.Trace
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -266,7 +269,7 @@ loadAndExtractCabalFile userId filePath repo =
 persistImportOutput :: (DB :> es, IOE :> es) => Poolboy.WorkQueue -> ImportOutput -> Eff es ()
 persistImportOutput wq (ImportOutput package categories release components) = do
   dbPool <- getPool
-  liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display release.version
+  liftIO . Text.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display release.version
   persistPackage
   Update.upsertRelease release
   parallelRun dbPool (persistComponent dbPool) components
@@ -281,7 +284,7 @@ persistImportOutput wq (ImportOutput package categories release components) = do
       forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
 
     persistComponent dbPool (packageComponent, deps) = do
-      liftIO . T.putStrLn $
+      liftIO . Text.putStrLn $
         "🧩  Persisting component: "
           <> display packageComponent.canonicalForm
           <> " with "
@@ -325,8 +328,8 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
-  let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
-  let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
+  let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to Text.pack
+  let categoryList = fmap (Tuning.UserPackageCategory . Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
   categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
   let package =
         Package
@@ -413,13 +416,14 @@ extractLibrary package repository =
   genericComponentExtractor
     Component.Library
     (^. #libName % to (getLibName package.name))
-    (^. #libBuildInfo % #targetBuildDepends)
+    (.libBuildInfo.targetBuildDepends)
+    (.libBuildInfo)
     package
     repository
 
 getLibName :: PackageName -> LibraryName -> Text
 getLibName pname LMainLibName = display pname
-getLibName _ (LSubLibName lname) = T.pack $ unUnqualComponentName lname
+getLibName _ (LSubLibName lname) = Text.pack $ unUnqualComponentName lname
 
 extractForeignLib
   :: Package
@@ -432,8 +436,9 @@ extractForeignLib
 extractForeignLib =
   genericComponentExtractor
     Component.ForeignLib
-    (^. #foreignLibName % to unUnqualComponentName % to T.pack)
-    (^. #foreignLibBuildInfo % #targetBuildDepends)
+    (^. #foreignLibName % to unUnqualComponentName % to Text.pack)
+    (.foreignLibBuildInfo.targetBuildDepends)
+    (.foreignLibBuildInfo)
 
 extractExecutable
   :: Package
@@ -446,8 +451,9 @@ extractExecutable
 extractExecutable =
   genericComponentExtractor
     Component.Executable
-    (^. #exeName % to unUnqualComponentName % to T.pack)
-    (^. #buildInfo % #targetBuildDepends)
+    (^. #exeName % to unUnqualComponentName % to Text.pack)
+    (.buildInfo.targetBuildDepends)
+    (.buildInfo)
 
 extractTestSuite
   :: Package
@@ -460,8 +466,9 @@ extractTestSuite
 extractTestSuite =
   genericComponentExtractor
     Component.TestSuite
-    (^. #testName % to unUnqualComponentName % to T.pack)
-    (^. #testBuildInfo % #targetBuildDepends)
+    (^. #testName % to unUnqualComponentName % to Text.pack)
+    (.testBuildInfo.targetBuildDepends)
+    (.testBuildInfo)
 
 extractBenchmark
   :: Package
@@ -474,8 +481,9 @@ extractBenchmark
 extractBenchmark =
   genericComponentExtractor
     Component.Benchmark
-    (^. #benchmarkName % to unUnqualComponentName % to T.pack)
-    (^. #benchmarkBuildInfo % #targetBuildDepends)
+    (^. #benchmarkName % to unUnqualComponentName % to Text.pack)
+    (.benchmarkBuildInfo.targetBuildDepends)
+    (.benchmarkBuildInfo)
 
 -- | Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
 --  to every node, returning a list of 'ImportComponent'
@@ -487,7 +495,10 @@ extractCondTree
   -> Maybe UnqualComponentName
   -> CondTree ConfVar [Dependency] component
   -> [ImportComponent]
-extractCondTree extractor package repository release defaultComponentName = go []
+extractCondTree extractor package repository release defaultComponentName condTree = 
+  if package.name == PackageName "libsodium-bindings" 
+  then traceShowId $ go [] condTree
+  else go [] condTree
   where
     go cond tree =
       let treeComponent = extractor package repository release defaultComponentName cond tree.condTreeData
@@ -519,6 +530,8 @@ genericComponentExtractor
   -- ^ Extract name from component
   -> (component -> [Dependency])
   -- ^ Extract dependencies
+  -> (component -> BuildInfo)
+  -- ^ Extract build information
   -> Package
   -> (Text, Set PackageName)
   -> Release
@@ -530,6 +543,7 @@ genericComponentExtractor
   componentType
   getName
   getDeps
+  getBuildInfo
   package
   repository
   release
@@ -541,6 +555,11 @@ genericComponentExtractor
         canonicalForm = CanonicalComponent{..}
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
+        buildInfo = getBuildInfo rawComponent
+        extraLibraries =
+          case List.map Text.pack buildInfo.extraLibs of
+            [] -> Nothing
+            libs -> Just (Vector.fromList libs)
         component = PackageComponent{..}
         dependencies = buildDependency package repository componentId <$> getDeps rawComponent
      in (component, dependencies)

@@ -117,7 +117,12 @@ showNamespaceHandler (Headers session _) namespace pageParam = do
                   , description = packageIndex.description
                   }
           render templateEnv $
-            Search.showAllPackagesInNamespace namespace packageIndex.description count' pageNumber results
+            Search.showAllPackagesInNamespace
+              namespace
+              packageIndex.description
+              count'
+              pageNumber
+              results
 
 showPackageHandler
   :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
@@ -161,6 +166,7 @@ showPackageVersion (Headers session _) namespace packageName mversion = do
   categories <- Query.getPackageCategories package.packageId
   numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName Nothing
   numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+  extraLibraries <- Query.getExtraLibraries release.releaseId
 
   let templateEnv =
         templateEnv'
@@ -202,6 +208,7 @@ showPackageVersion (Headers session _) namespace packageName mversion = do
       releaseDependencies
       numberOfDependencies
       categories
+      extraLibraries
 
 showDependentsHandler
   :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)

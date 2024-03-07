@@ -52,7 +52,7 @@ getPackageHandler namespace packageName = do
       versionNotFound
         package.namespace
         package.name
-  components <- Query.getComponentsByReleaseId release.releaseId
+  components <- Query.getCanonicalComponentByReleaseId release.releaseId
   pure $ toPackageDTO package release components
 
 getVersionedPackageHandler
@@ -68,5 +68,5 @@ getVersionedPackageHandler namespace packageName version = do
       versionNotFound
         package.namespace
         package.name
-  components <- Query.getComponentsByReleaseId release.releaseId
+  components <- Query.getCanonicalComponentByReleaseId release.releaseId
   pure $ toPackageDTO package release components
