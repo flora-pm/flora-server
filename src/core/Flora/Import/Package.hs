@@ -57,7 +57,7 @@ import Distribution.Utils.ShortText qualified as Cabal
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
-import Effectful.Log (Log)
+import Effectful.Log (Log, object, (.=))
 import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
 import Effectful.Reader.Static (Reader, ask)
 import Effectful.Time (Time)
@@ -263,30 +263,37 @@ loadAndExtractCabalFile userId filePath repo =
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
-persistImportOutput :: (DB :> es, IOE :> es) => Poolboy.WorkQueue -> ImportOutput -> Eff es ()
+persistImportOutput :: (DB :> es, IOE :> es, Log :> es) => Poolboy.WorkQueue -> ImportOutput -> Eff es ()
 persistImportOutput wq (ImportOutput package categories release components) = do
   dbPool <- getPool
-  liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display release.version
+  Log.logInfo "📦  Persisting package" $
+    object
+      [ "package_name" .= packageName
+      , "version" .= release.version
+      ]
   persistPackage
   Update.upsertRelease release
   parallelRun dbPool (persistComponent dbPool) components
   liftIO $ putStr "\n"
   where
-    parallelRun :: (MonadIO m, Foldable t) => Pool Connection -> (a -> Eff [DB, IOE] b) -> t a -> m ()
-    parallelRun pool f xs = liftIO $ forM_ xs $ Poolboy.enqueue wq . void . runEff . runDB pool . f
+    parallelRun :: (IOE :> es, DB :> es, Foldable t) => Pool Connection -> (a -> Eff es b) -> t a -> Eff es ()
+    parallelRun pool f xs =
+      liftIO $ forM_ xs $ Poolboy.enqueue wq . void . runEff . runDB pool . f
+
     packageName = display package.namespace <> "/" <> display package.name
+
+    persistPackage :: (DB :> es, Log :> es, IOE :> es) => Eff es ()
     persistPackage = do
       let packageId = package.packageId
       Update.upsertPackage package
       forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
 
+    persistComponent :: (DB :> es, Log :> es, IOE :> es) => Pool Connection -> (PackageComponent, [ImportDependency]) -> Eff es ()
     persistComponent dbPool (packageComponent, deps) = do
-      liftIO . T.putStrLn $
-        "🧩  Persisting component: "
-          <> display packageComponent.canonicalForm
-          <> " with "
-          <> display (length deps)
-          <> " dependencies."
+      Log.logInfo "🧩 Persisting component" $
+        object [ "component" .= display packageComponent.canonicalForm
+               , "dependencies_number" .= length deps
+               ]
       Update.upsertPackageComponent packageComponent
       parallelRun dbPool persistImportDependency deps
 
@@ -308,7 +315,7 @@ withWorkerDbPool f = do
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
-  :: (IOE :> es, Time :> es)
+  :: (IOE :> es, Time :> es, Log :> es)
   => UserId
   -> (Text, Set PackageName)
   -> UTCTime
@@ -327,7 +334,7 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
   let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
   let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
-  categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
+  categories <- Tuning.normalisedCategories <$> Tuning.normalise categoryList
   let package =
         Package
           { packageId

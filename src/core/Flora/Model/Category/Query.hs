@@ -2,14 +2,12 @@
 
 module Flora.Model.Category.Query where
 
-import Control.Monad.IO.Class
 import Data.Text (Text)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 
-import Data.Text.IO qualified as T
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT
 import Effectful
@@ -26,14 +24,12 @@ getCategoryBySlug slug = dbtToEff $ selectOneByField [field| slug |] (Only slug)
 getCategoryByName :: DB :> es => Text -> Eff es (Maybe Category)
 getCategoryByName categoryName = dbtToEff $ selectOneByField [field| name |] (Only categoryName)
 
-getPackagesFromCategorySlug :: (DB :> es, IOE :> es) => Text -> Eff es (Vector Package)
+getPackagesFromCategorySlug :: (DB :> es) => Text -> Eff es (Vector Package)
 getPackagesFromCategorySlug slug =
   do
     getCategoryBySlug slug
     >>= \case
-      Nothing -> do
-        liftIO $ T.putStrLn $ "Could not find category from slug: \"" <> slug <> "\""
-        pure Vector.empty
+      Nothing -> pure Vector.empty
       Just Category{categoryId} -> do
         dbtToEff $
           joinSelectOneByField @Package @PackageCategory

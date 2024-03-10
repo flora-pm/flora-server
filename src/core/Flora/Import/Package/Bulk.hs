@@ -37,6 +37,8 @@ import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
 
+import Data.Text.Display (display)
+import Effectful.Log (Log)
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Package
   ( enqueueImportJob
@@ -56,7 +58,7 @@ import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
-  :: (Reader PoolConfig :> es, DB :> es, IOE :> es)
+  :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
   => Logger
   -> UserId
   -> (Text, Text)
@@ -110,7 +112,7 @@ importFromIndex appLogger user (repositoryName, repositoryURL) index directImpor
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
 importAllFilesInDirectory
-  :: (Reader PoolConfig :> es, DB :> es, IOE :> es)
+  :: (Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
   => Logger
   -> UserId
   -> (Text, Text)
@@ -120,7 +122,7 @@ importAllFilesInDirectory
 importAllFilesInDirectory appLogger user (repositoryName, repositoryURL) dir directImport = do
   liftIO $ System.createDirectoryIfMissing True dir
   packages <- buildPackageListFromDirectory dir
-  liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
+  Log.logInfo_ $ "🔎 Searching cabal files in " <> display dir
   importFromStream appLogger user (repositoryName, repositoryURL, packages) directImport $ findAllCabalFilesInDirectory dir
 
 importFromStream

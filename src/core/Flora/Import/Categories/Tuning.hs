@@ -10,6 +10,9 @@ import Data.Text.Internal.Builder qualified as TB
 import GHC.Generics
 import Language.Souffle.Interpreted qualified as Souffle
 import System.IO (stderr)
+import Effectful.Log
+import Effectful
+import Log qualified
 
 type CName = Text
 
@@ -68,7 +71,8 @@ data CanonicalCategory = CanonicalCategory Text Text Text
     via Souffle.FactOptions CanonicalCategory "flora_category" 'Souffle.Output
 
 -- | Entrypoint to the Soufflé datalog engine.
-normalise :: [UserPackageCategory] -> IO Results
+normalise :: (IOE :> es,  Log :> es) => [UserPackageCategory] -> Eff es Results
+normalise [] = pure $ Results [] []
 normalise input = do
   result <-
     liftIO $
@@ -81,7 +85,7 @@ normalise input = do
           Results <$> Souffle.getFacts prog <*> Souffle.getFacts prog
   if (not . null) result.normalisationIssues
     then do
-      logStdErr $ "[!] Could not normalise these categories: " <> display result.normalisationIssues
+      Log.logInfo_ $ "[!] Could not normalise these categories: " <> display result.normalisationIssues
       pure result
     else pure result
 

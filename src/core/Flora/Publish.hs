@@ -2,12 +2,13 @@ module Flora.Publish where
 
 import Control.Monad
 import Data.Text.Display
-import Data.Text.IO qualified as T
 import Effectful
 import Effectful.Log
+import Log qualified
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time
 
+import Flora.Logging (timeAction)
 import Flora.Import.Categories.Tuning
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Model.Category.Update qualified as Update
@@ -33,59 +34,61 @@ publishPackage
   -> Package
   -> Eff es Package
 publishPackage requirements components release userPackageCategories package = do
-  liftIO $ T.putStrLn $ "[+] Package " <> display package.name <> ": "
   result <- Query.getPackageByNamespaceAndName package.namespace package.name
   case result of
     Just existingPackage -> do
-      liftIO $ T.putStrLn $ "[+] Package " <> display package.name <> " already exists."
+      Log.logAttention_ $ "[+] Package " <> display package.name <> " already exists."
       publishForExistingPackage requirements components release existingPackage
     Nothing -> do
-      liftIO $ T.putStrLn $ "[+] Package " <> display package.name <> " does not exist."
       publishForNewPackage requirements components release userPackageCategories package
 
-publishForExistingPackage :: (DB :> es, IOE :> es) => [Requirement] -> [PackageComponent] -> Release -> Package -> Eff es Package
+publishForExistingPackage :: (Time :> es, Log :> es, DB :> es) => [Requirement] -> [PackageComponent] -> Release -> Package -> Eff es Package
 publishForExistingPackage requirements components release package = do
   result <- Query.getReleaseByVersion package.packageId release.version
   case result of
     Nothing -> do
-      liftIO $
-        T.putStrLn $
-          "[+] Inserting the following components: "
-            <> display (fmap (.canonicalForm) components)
-            <> " of "
-            <> display package.name
-            <> " v"
-            <> display release.version
-      Update.insertRelease release
-      Update.bulkInsertPackageComponents components
-      Update.bulkInsertRequirements requirements
-      Update.refreshDependents
-      Update.refreshLatestVersions
+      Log.logTrace "Inserting components for existing package" $
+          object [ "package_name" .= display package.name
+                 , "version" .= display release.version
+                 , "components" .= display (fmap canonicalForm components)
+          ]
+      (_, duration) <- timeAction $ do 
+        Update.insertRelease release
+        Update.bulkInsertPackageComponents components
+        Update.bulkInsertRequirements requirements
+        Update.refreshDependents
+        Update.refreshLatestVersions
+      Log.logTrace "Inserted components for existing package " $
+          object [ "package_name" .= display package.name
+                 , "version" .= display release.version
+                 , "duration" .= duration
+          ]
       pure package
     Just r -> do
-      liftIO $ T.putStrLn $ "[+] Release " <> display package.name <> " v" <> display r.version <> " already exists."
-      liftIO $ T.putStrLn $ "[+] I am not inserting anything for " <> display package.name <> " v" <> display r.version
+      Log.logTrace_ ("Release " <> display package.name <> " v" <> display r.version <> " already exists.")
       pure package
 
-publishForNewPackage :: (DB :> es, IOE :> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
+publishForNewPackage :: (Time :> es, DB :> es, IOE :> es, Log :> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
 publishForNewPackage requirements components release userPackageCategories package = do
-  liftIO $ T.putStrLn $ "[+] Normalising user-supplied categories: " <> display userPackageCategories
-  newCategories <- liftIO $ (.normalisedCategories) <$> Tuning.normalise userPackageCategories
-  liftIO $ T.putStrLn $ "[+] Inserting package " <> display package.name
-  liftIO $
-    T.putStrLn $
-      "[+] Inserting the following components: of "
-        <> display package.name
-        <> " v"
-        <> display release.version
-        <> ": "
-        <> display (fmap canonicalForm components)
-  Update.insertPackage package
-  Update.insertRelease release
-  Update.bulkInsertPackageComponents components
-  Update.bulkInsertRequirements requirements
-  Update.refreshDependents
-  Update.refreshLatestVersions
+  Log.logTrace_ $ "Normalising user-supplied categories: " <> display userPackageCategories
+  newCategories <- (.normalisedCategories) <$> Tuning.normalise userPackageCategories
+  Log.logTrace "Inserting package " $
+      object [ "package_name" .= display package.name
+             , "version" .= display release.version
+             , "components" .= display (fmap canonicalForm components)
+      ]
+  (_, duration) <- timeAction $ do 
+    Update.insertPackage package
+    Update.insertRelease release
+    Update.bulkInsertPackageComponents components
+    Update.bulkInsertRequirements requirements
+    Update.refreshDependents
+    Update.refreshLatestVersions
+  Log.logTrace "Inserted package " $
+      object [ "package_name" .= display package.name
+             , "version" .= display release.version
+             , "duration" .= duration
+      ]
   forM_ newCategories $
     \(NormalisedPackageCategory categoryName) -> Update.addToCategoryByName package.packageId categoryName
   pure package

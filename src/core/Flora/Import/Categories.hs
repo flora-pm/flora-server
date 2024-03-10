@@ -1,17 +1,18 @@
 module Flora.Import.Categories where
 
 import Control.Monad.IO.Class
-import Data.Text.IO qualified as T
 import Effectful
+import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect
+import Log qualified
 
 import Flora.Import.Categories.Tuning as Tuning
 import Flora.Model.Category.Types (Category, mkCategory, mkCategoryId)
 import Flora.Model.Category.Update (insertCategory)
 
-importCategories :: (DB :> es, IOE :> es) => Eff es ()
+importCategories :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
 importCategories = do
-  liftIO $ T.putStrLn "Sourcing categories from Datalog"
+  Log.logInfo_ "Sourcing categories from Datalog"
   canonicalCategories <- liftIO Tuning.sourceCategories
   categories <- mapM fromCanonical canonicalCategories
   mapM_ insertCategory categories
