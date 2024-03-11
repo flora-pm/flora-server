@@ -47,4 +47,7 @@
 
   poolboy = dontCheck (hfinal.callCabal2nix "poolboy" inputs.poolboy { });
   resource-pool = hfinal.callHackage "resource-pool" "0.4.0.0" { };
+  streamly-core = hfinal.callCabal2nix "streamly-core" "${inputs.streamly}/core/" { };
+  streamly = hfinal.callCabal2nix "streamly" inputs.streamly { };
+  base64 = hfinal.callCabal2nix "base64" inputs.base64 { };
 })

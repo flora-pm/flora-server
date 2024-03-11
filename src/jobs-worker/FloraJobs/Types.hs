@@ -92,7 +92,7 @@ makeConfig
   -> Config
 makeConfig runnerEnv floraEnv logger pool runnerContinuation =
   mkConfig
-    (\level event -> structuredLogging (floraEnv.config) logger level event)
+    (\level event -> structuredLogging floraEnv.config logger level event)
     jobTableName
     pool
     (MaxConcurrentJobs 100)

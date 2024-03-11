@@ -139,7 +139,7 @@ library
 
   build-depends:
     , aeson
-    , base                   ^>=4.18.2
+    , base                   ^>=4.18
     , base16-bytestring
     , base64
     , blaze-builder
@@ -276,7 +276,7 @@ library flora-web
   build-depends:
     , aeson
     , async
-    , base                      ^>=4.18.2
+    , base                      ^>=4.18
     , base32
     , bytestring
     , Cabal-syntax
