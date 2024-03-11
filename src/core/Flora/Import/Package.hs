@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiWayIf #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 -- |
 -- Module: Flora.Import.Package
@@ -266,7 +267,7 @@ loadAndExtractCabalFile userId filePath repo =
 persistImportOutput :: (DB :> es, IOE :> es, Log :> es) => Poolboy.WorkQueue -> ImportOutput -> Eff es ()
 persistImportOutput wq (ImportOutput package categories release components) = do
   dbPool <- getPool
-  Log.logInfo "📦  Persisting package" $
+  Log.logInfo "📦 Persisting package" $
     object
       [ "package_name" .= packageName
       , "version" .= release.version
@@ -276,9 +277,9 @@ persistImportOutput wq (ImportOutput package categories release components) = do
   parallelRun dbPool (persistComponent dbPool) components
   liftIO $ putStr "\n"
   where
-    parallelRun :: (IOE :> es, DB :> es, Foldable t) => Pool Connection -> (a -> Eff es b) -> t a -> Eff es ()
+    parallelRun :: (IOE :> es, DB :> es, Foldable t) => Pool Connection -> (a -> Eff '[DB, IOE] b) -> t a -> Eff es ()
     parallelRun pool f xs =
-      liftIO $ forM_ xs $ Poolboy.enqueue wq . void . runEff . runDB pool . f
+      liftIO $ forM_ xs (\x -> Poolboy.enqueue wq . void . runEff . runDB pool $ f x)
 
     packageName = display package.namespace <> "/" <> display package.name
 
@@ -291,9 +292,10 @@ persistImportOutput wq (ImportOutput package categories release components) = do
     persistComponent :: (DB :> es, Log :> es, IOE :> es) => Pool Connection -> (PackageComponent, [ImportDependency]) -> Eff es ()
     persistComponent dbPool (packageComponent, deps) = do
       Log.logInfo "🧩 Persisting component" $
-        object [ "component" .= display packageComponent.canonicalForm
-               , "dependencies_number" .= length deps
-               ]
+        object
+          [ "component" .= display packageComponent.canonicalForm
+          , "dependencies_number" .= length deps
+          ]
       Update.upsertPackageComponent packageComponent
       parallelRun dbPool persistImportDependency deps
 

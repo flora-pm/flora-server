@@ -4,13 +4,13 @@ import Control.Monad
 import Data.Text.Display
 import Effectful
 import Effectful.Log
-import Log qualified
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time
+import Log qualified
 
-import Flora.Logging (timeAction)
 import Flora.Import.Categories.Tuning
 import Flora.Import.Categories.Tuning qualified as Tuning
+import Flora.Logging (timeAction)
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types
 import Flora.Model.Package
@@ -48,20 +48,22 @@ publishForExistingPackage requirements components release package = do
   case result of
     Nothing -> do
       Log.logTrace "Inserting components for existing package" $
-          object [ "package_name" .= display package.name
-                 , "version" .= display release.version
-                 , "components" .= display (fmap canonicalForm components)
+        object
+          [ "package_name" .= display package.name
+          , "version" .= display release.version
+          , "components" .= display (fmap canonicalForm components)
           ]
-      (_, duration) <- timeAction $ do 
+      (_, duration) <- timeAction $ do
         Update.insertRelease release
         Update.bulkInsertPackageComponents components
         Update.bulkInsertRequirements requirements
         Update.refreshDependents
         Update.refreshLatestVersions
       Log.logTrace "Inserted components for existing package " $
-          object [ "package_name" .= display package.name
-                 , "version" .= display release.version
-                 , "duration" .= duration
+        object
+          [ "package_name" .= display package.name
+          , "version" .= display release.version
+          , "duration" .= duration
           ]
       pure package
     Just r -> do
@@ -73,11 +75,12 @@ publishForNewPackage requirements components release userPackageCategories packa
   Log.logTrace_ $ "Normalising user-supplied categories: " <> display userPackageCategories
   newCategories <- (.normalisedCategories) <$> Tuning.normalise userPackageCategories
   Log.logTrace "Inserting package " $
-      object [ "package_name" .= display package.name
-             , "version" .= display release.version
-             , "components" .= display (fmap canonicalForm components)
+    object
+      [ "package_name" .= display package.name
+      , "version" .= display release.version
+      , "components" .= display (fmap canonicalForm components)
       ]
-  (_, duration) <- timeAction $ do 
+  (_, duration) <- timeAction $ do
     Update.insertPackage package
     Update.insertRelease release
     Update.bulkInsertPackageComponents components
@@ -85,9 +88,10 @@ publishForNewPackage requirements components release userPackageCategories packa
     Update.refreshDependents
     Update.refreshLatestVersions
   Log.logTrace "Inserted package " $
-      object [ "package_name" .= display package.name
-             , "version" .= display release.version
-             , "duration" .= duration
+    object
+      [ "package_name" .= display package.name
+      , "version" .= display release.version
+      , "duration" .= duration
       ]
   forM_ newCategories $
     \(NormalisedPackageCategory categoryName) -> Update.addToCategoryByName package.packageId categoryName

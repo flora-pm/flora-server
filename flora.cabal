@@ -86,6 +86,7 @@ library
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
     Distribution.Orphans.Version
+    Effectful.Poolboy
     Flora.Environment
     Flora.Environment.Config
     Flora.Import.Categories

@@ -7,12 +7,12 @@ import Data.Text (Text)
 import Data.Text.Display
 import Data.Text.Encoding qualified as T
 import Data.Text.Internal.Builder qualified as TB
+import Effectful
+import Effectful.Log
 import GHC.Generics
 import Language.Souffle.Interpreted qualified as Souffle
-import System.IO (stderr)
-import Effectful.Log
-import Effectful
 import Log qualified
+import System.IO (stderr)
 
 type CName = Text
 
@@ -71,7 +71,7 @@ data CanonicalCategory = CanonicalCategory Text Text Text
     via Souffle.FactOptions CanonicalCategory "flora_category" 'Souffle.Output
 
 -- | Entrypoint to the Soufflé datalog engine.
-normalise :: (IOE :> es,  Log :> es) => [UserPackageCategory] -> Eff es Results
+normalise :: (IOE :> es, Log :> es) => [UserPackageCategory] -> Eff es Results
 normalise [] = pure $ Results [] []
 normalise input = do
   result <-
