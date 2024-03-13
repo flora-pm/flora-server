@@ -21,7 +21,13 @@ showAllPackages count currentPage packagesInfo = do
     div_ [class_ ""] $ packageListing Nothing packagesInfo
     paginationNav count currentPage ListAllPackages
 
-showAllPackagesInNamespace :: Namespace -> Text -> Word -> Positive Word -> Vector PackageInfo -> FloraHTML
+showAllPackagesInNamespace
+  :: Namespace
+  -> Text
+  -> Word
+  -> Positive Word
+  -> Vector PackageInfo
+  -> FloraHTML
 showAllPackagesInNamespace namespace description count currentPage packagesInfo = do
   div_ [class_ "container"] $ do
     presentationHeader (display namespace) description count
@@ -43,3 +49,19 @@ showResults searchString count currentPage exactMatches results = do
     packageListing (Just exactMatches) results
     when (count > 30) $
       paginationNav count currentPage (SearchPackages searchString)
+
+showExecutableResults
+  :: Text
+  -> Word
+  -> Positive Word
+  -> Vector PackageInfo
+  -- ^ Exact matches
+  -> Vector PackageInfo
+  -- ^ Results
+  -> FloraHTML
+showExecutableResults executableName count currentPage exactMatches results = do
+  div_ [class_ "container"] $ do
+    presentationHeader executableName "" count
+    packageListing (Just exactMatches) results
+    when (count > 30) $
+      paginationNav count currentPage (SearchExecutable executableName)

@@ -59,16 +59,30 @@ search
   :: (DB :> es, Log :> es, Time :> es)
   => (Word, Word)
   -> Text
-  -> Eff es (Word, Vector PackageInfo)
+  -> Eff es (SearchAction, (Word, Vector PackageInfo))
 search pagination queryString =
   case parseSearchQuery queryString of
-    Just (ListAllPackagesInNamespace namespace) -> listAllPackagesInNamespace pagination namespace
-    Just ListAllPackages -> listAllPackages pagination
-    Just (SearchInNamespace namespace (PackageName packageName)) -> searchPackageByNamespaceAndName pagination namespace packageName
-    Just (DependentsOf namespace packageName mSearchString) -> searchDependents pagination namespace packageName mSearchString
-    Just (SearchPackages _) -> searchPackageByName pagination queryString
-    Just (SearchExecutable executableName) -> searchExecutable pagination executableName
-    Nothing -> searchPackageByName pagination queryString
+    Just (ListAllPackagesInNamespace namespace) -> do
+      result <- listAllPackagesInNamespace pagination namespace
+      pure (ListAllPackagesInNamespace namespace, result)
+    Just ListAllPackages -> do
+      result <- listAllPackages pagination
+      pure (ListAllPackages, result)
+    Just (SearchInNamespace namespace p@(PackageName packageName)) -> do
+      result <- searchPackageByNamespaceAndName pagination namespace packageName
+      pure (SearchInNamespace namespace p, result)
+    Just (DependentsOf namespace packageName mSearchString) -> do
+      result <- searchDependents pagination namespace packageName mSearchString
+      pure (DependentsOf namespace packageName mSearchString, result)
+    Just (SearchExecutable executableName) -> do
+      result <- searchExecutable pagination executableName
+      pure (SearchExecutable executableName, result)
+    Just (SearchPackages _) -> do
+      result <- searchPackageByName pagination queryString
+      pure (SearchPackages queryString, result)
+    Nothing -> do
+      result <- searchPackageByName pagination queryString
+      pure (SearchPackages queryString, result)
 
 searchPackageByName
   :: (DB :> es, Log :> es, Time :> es)
@@ -175,6 +189,7 @@ dependencyInfoToPackageInfo dep =
     dep.latestVersion
     dep.latestLicense
     Nothing
+    Vector.empty
 
 listAllPackagesInNamespace
   :: (DB :> es, Time :> es, Log :> es)

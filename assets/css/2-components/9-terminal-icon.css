@@ -1,0 +1,10 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+.terminal-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  display: inline;
+  margin-top: -0.25rem;
+}
+
