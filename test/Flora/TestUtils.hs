@@ -141,6 +141,7 @@ runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
 runTestEff comp pool poolCfg = runEff $
   Log.withStdOutLogger $ \stdOutLogger ->
     runTime
+      . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
       . runReader poolCfg
