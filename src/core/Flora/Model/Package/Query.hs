@@ -477,7 +477,7 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q 
                     , lv.version
                     , lv.license
                     , 1
-                    , array[]
+                    , array[]::text[]
       from latest_versions as lv
         inner join package_categories as p1 on p1.package_id = lv.package_id
         inner join categories as c2 on c2.category_id = p1.category_id
@@ -500,7 +500,7 @@ searchPackage (offset, limit) searchString =
               , lv."version"
               , lv."license"
               , word_similarity(lv.name, ?) as rating
-              , array[]
+              , array[]::text[]
         FROM latest_versions as lv
         WHERE ? <% lv.name
         GROUP BY
@@ -533,7 +533,7 @@ searchPackageByNamespace (offset, limit) namespace searchString =
               , lv."version"
               , lv."license"
               , word_similarity(lv.name, ?) as rating
-              , array[]
+              , array[]::text[]
         FROM latest_versions as lv
         WHERE 
         ? <% lv."name"
@@ -598,7 +598,7 @@ listAllPackages (offset, limit) =
           , lv."version"
           , lv."license"
           , (1.0::real) as rating
-          , array[]
+          , array[]::text[]
     FROM latest_versions as lv
     GROUP BY
         lv."namespace"
@@ -631,7 +631,7 @@ listAllPackagesInNamespace (offset, limit) namespace =
           , lv."version"
           , lv."license"
           , (1.0::real) as rating
-          , array[]
+          , array[]::text[]
     FROM latest_versions as lv
     WHERE lv."namespace" = ?
     GROUP BY

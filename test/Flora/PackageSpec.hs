@@ -153,7 +153,6 @@ testNoSelfDependent = do
         , PackageName "flora"
         , PackageName "hashable"
         , PackageName "jose"
-        , PackageName "ouroboros-network"
         , PackageName "parsec"
         , PackageName "pg-entity"
         , PackageName "relude"
