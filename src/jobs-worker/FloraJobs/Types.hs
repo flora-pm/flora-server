@@ -5,7 +5,9 @@ module FloraJobs.Types where
 import Commonmark qualified
 import Control.Exception (Exception)
 import Data.Aeson
+import Data.Function ((&))
 import Data.Pool hiding (PoolConfig)
+import Data.Poolboy (poolboySettingsWith)
 import Data.Text qualified as Text
 import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple (Connection)
@@ -14,6 +16,7 @@ import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Effectful
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
+import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Reader.Static (Reader, runReader)
 import Effectful.Time (Time, runTime)
@@ -34,7 +37,7 @@ import Flora.Model.Job ()
 type JobsRunner =
   Eff
     '[ DB
-     , Reader PoolConfig
+     , Poolboy
      , Reader JobsRunnerEnv
      , BlobStoreAPI
      , Log
@@ -44,17 +47,17 @@ type JobsRunner =
 
 runJobRunner :: Pool Connection -> JobsRunnerEnv -> FloraEnv -> Logger -> JobsRunner a -> IO a
 runJobRunner pool runnerEnv floraEnv logger jobRunner =
-  runEff
-    . runTime
-    . LogEff.runLog "flora-jobs" logger defaultLogLevel
-    . ( case floraEnv.features.blobStoreImpl of
+  jobRunner
+    & runDB pool
+    & runPoolboy (poolboySettingsWith floraEnv.dbConfig.connections)
+    & runReader runnerEnv
+    & ( case floraEnv.features.blobStoreImpl of
           Just (BlobStoreFS fp) -> runBlobStoreFS fp
           _ -> runBlobStorePure
       )
-    . runReader runnerEnv
-    . runReader floraEnv.config.dbConfig
-    . runDB pool
-    $ jobRunner
+    & LogEff.runLog "flora-jobs" logger defaultLogLevel
+    & runTime
+    & runEff
 
 data OddJobException where
   DecodeFailed :: HasCallStack => UnicodeException -> OddJobException

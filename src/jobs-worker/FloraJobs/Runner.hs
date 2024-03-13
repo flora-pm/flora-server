@@ -20,7 +20,7 @@ import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
-import Flora.Import.Package (coreLibraries, persistImportOutput, withWorkerDbPool)
+import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
@@ -44,8 +44,7 @@ runner job = localDomain "job-runner" $
       FetchUploadTime x -> fetchUploadTime x
       FetchChangelog x -> fetchChangeLog x
       ImportPackage x ->
-        withWorkerDbPool $ \wq ->
-          persistImportOutput wq x
+        persistImportOutput x
       FetchPackageDeprecationList -> fetchPackageDeprecationList
       FetchReleaseDeprecationList packageName releases ->
         fetchReleaseDeprecationList packageName releases

@@ -17,14 +17,22 @@
 -- any dependency that isn't yet known will be imported as an "unknown package", as indicated by its status field.
 -- If and when that package is fully imported later, we complete its data and change its status to "fully imported" without
 -- altering its id.
-module Flora.Import.Package where
+module Flora.Import.Package
+  ( coreLibraries
+  , versionList
+  , enqueueImportJob
+  , loadContent
+  , loadAndExtractCabalFile
+  , persistImportOutput
+  , extractPackageDataFromCabal
+  , chooseNamespace
+  ) where
 
 import Control.DeepSeq (force)
 import Control.Exception
 import Data.ByteString qualified as BS
 import Data.Maybe
-import Data.Pool (Pool, withResource)
-import Data.Poolboy qualified as Poolboy
+import Data.Pool (withResource)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -34,7 +42,6 @@ import Data.Text.IO qualified as T
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Database.PostgreSQL.Simple (Connection)
 import Distribution.Compat.NonEmptySet (toList)
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
@@ -58,18 +65,17 @@ import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Internal.Monad (unsafeEff_)
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB, getPool, runDB)
-import Effectful.Reader.Static (Reader, ask)
+import Effectful.Poolboy (Poolboy)
+import Effectful.Poolboy qualified as Poolboy
+import Effectful.PostgreSQL.Transact.Effect (DB, getPool)
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Log qualified
 import OddJobs.Job (createJob)
 import Optics.Core
 import System.Directory qualified as System
-import System.FilePath
 
 import Control.Monad (forM_, unless, void)
-import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
@@ -173,24 +179,6 @@ versionList =
     , Version.mkVersion [7, 10, 3]
     ]
 
--- | Imports a Cabal file into the database by:
---    * first, reading and parsing the file using 'loadFile'
---    * then, extracting relevant information using 'extractPackageDataFromCabal'
---    * finally, inserting that data into the database
-importFile
-  :: (Time :> es, Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
-  => UserId
-  -> FilePath
-  -- ^ The absolute path to the Cabal file
-  -> (Text, Set PackageName)
-  -- ^ The name of the repository
-  -> Eff es ()
-importFile userId path repo =
-  withWorkerDbPool $ \wq ->
-    loadFile path
-      >>= uncurry (extractPackageDataFromCabal userId repo)
-      >>= persistImportOutput wq
-
 enqueueImportJob :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 enqueueImportJob importOutput = do
   pool <- getPool
@@ -204,16 +192,6 @@ enqueueImportJob importOutput = do
               "oddjobs"
               (ImportPackage importOutput)
         )
-
-importRelFile
-  :: (Time :> es, Reader PoolConfig :> es, DB :> es, IOE :> es, Log :> es)
-  => UserId
-  -> FilePath
-  -> (Text, Set PackageName)
-  -> Eff es ()
-importRelFile user dir repo = do
-  workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importFile user workdir repo
 
 -- | Loads and parses a Cabal file
 loadFile
@@ -263,24 +241,24 @@ loadAndExtractCabalFile userId filePath repo =
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
-persistImportOutput :: (DB :> es, IOE :> es) => Poolboy.WorkQueue -> ImportOutput -> Eff es ()
-persistImportOutput wq (ImportOutput package categories release components) = do
-  dbPool <- getPool
+persistImportOutput :: forall es. (Poolboy :> es, DB :> es, IOE :> es) => ImportOutput -> Eff es ()
+persistImportOutput (ImportOutput package categories release components) = do
   liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display release.version
   persistPackage
   Update.upsertRelease release
-  parallelRun dbPool (persistComponent dbPool) components
+  parallelRun persistComponent components
   liftIO $ putStr "\n"
   where
-    parallelRun :: (MonadIO m, Foldable t) => Pool Connection -> (a -> Eff [DB, IOE] b) -> t a -> m ()
-    parallelRun pool f xs = liftIO $ forM_ xs $ Poolboy.enqueue wq . void . runEff . runDB pool . f
+    parallelRun :: (a -> Eff es ()) -> [a] -> Eff es ()
+    parallelRun f xs = forM_ xs (\x -> void $ Poolboy.enqueue (f x))
     packageName = display package.namespace <> "/" <> display package.name
     persistPackage = do
       let packageId = package.packageId
       Update.upsertPackage package
       forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
 
-    persistComponent dbPool (packageComponent, deps) = do
+    persistComponent :: (PackageComponent, [ImportDependency]) -> Eff es ()
+    persistComponent (packageComponent, deps) = do
       liftIO . T.putStrLn $
         "🧩  Persisting component: "
           <> display packageComponent.canonicalForm
@@ -288,21 +266,12 @@ persistImportOutput wq (ImportOutput package categories release components) = do
           <> display (length deps)
           <> " dependencies."
       Update.upsertPackageComponent packageComponent
-      parallelRun dbPool persistImportDependency deps
+      parallelRun persistImportDependency deps
 
+    persistImportDependency :: ImportDependency -> Eff es ()
     persistImportDependency dep = do
       Update.upsertPackage dep.package
       Update.upsertRequirement dep.requirement
-
-withWorkerDbPool :: (Reader PoolConfig :> es, IOE :> es) => (Poolboy.WorkQueue -> Eff es a) -> Eff es a
-withWorkerDbPool f = do
-  cfg <- ask @PoolConfig
-  withEffToIO SeqUnlift $ \effIO ->
-    Poolboy.withPoolboy
-      (Poolboy.poolboySettingsWith cfg.connections)
-      Poolboy.waitingStopFinishWorkers
-      $ \wq ->
-        effIO $ f wq
 
 -- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
