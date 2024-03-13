@@ -6,13 +6,14 @@ module Flora.Model.Package.Query
   , countPackagesByName
   , countPackagesInNamespace
   , getAllPackageDependents
-  , getRequirementsQuery
   , getAllPackageDependentsWithLatestVersion
   , getAllPackages
   , getAllRequirements
   , getComponent
+  , getComponentById
   , getNonDeprecatedPackages
   , getNumberOfPackageDependents
+  , getNumberOfPackageRequirements
   , getPackageByNamespaceAndName
   , getPackageCategories
   , getPackageDependents
@@ -21,14 +22,14 @@ module Flora.Model.Package.Query
   , getPackagesByNamespace
   , getPackagesFromCategoryWithLatestVersion
   , getRequirements
+  , getRequirementsQuery
   , listAllPackages
   , listAllPackagesInNamespace
   , numberOfPackageRequirementsQuery
+  , searchExecutable
   , searchPackage
-  , unsafeGetComponent
-  , getComponentById
   , searchPackageByNamespace
-  , getNumberOfPackageRequirements
+  , unsafeGetComponent
   ) where
 
 import Data.Text (Text)
@@ -546,6 +547,35 @@ searchPackageByNamespace (offset, limit) namespace searchString =
         ;
         |]
       (searchString, searchString, namespace, offset, limit)
+
+searchExecutable
+  :: DB :> es
+  => (Word, Word)
+  -> Text
+  -> Eff es (Vector PackageInfo)
+searchExecutable (offset, limit) searchString =
+  dbtToEff $
+    query
+      Select
+      [sql|
+      SELECT DISTINCT l2.namespace
+                    , l2.name
+                    , l2.synopsis
+                    , l2.version
+                    , l2.license
+                    , word_similarity(l2.name, ?) AS rating
+      FROM package_components AS p0
+           INNER JOIN releases AS r1 ON p0.release_id = r1.release_id
+           INNER JOIN latest_versions AS l2 ON r1.package_id = l2.package_id
+      WHERE p0.component_type = 'executable'
+        AND ? <% l2.name
+      ORDER BY rating DESC
+             , l2.name ASC
+      OFFSET ?
+      LIMIT ?
+        ;
+        |]
+      (searchString, searchString, offset, limit)
 
 -- | Returns a summary of packages
 listAllPackages
