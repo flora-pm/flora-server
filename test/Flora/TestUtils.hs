@@ -59,6 +59,7 @@ import Data.Kind
 import Data.List qualified as List
 import Data.Maybe (fromJust)
 import Data.Pool hiding (PoolConfig)
+import Data.Poolboy (poolboySettingsWith)
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
@@ -71,8 +72,10 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact ()
 import Effectful
 import Effectful.Fail (Fail, runFailIO)
+import Effectful.FileSystem
 import Effectful.Log (Log, Logger)
 import Effectful.Log qualified as Log
+import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
 import Effectful.Time
@@ -110,7 +113,7 @@ import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
 
-type TestEff = Eff '[Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
+type TestEff = Eff '[FileSystem, Poolboy, Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
@@ -123,30 +126,29 @@ getFixtures = do
   pure Fixtures{..}
 
 importAllPackages :: Fixtures -> TestEff ()
-importAllPackages fixtures = Log.withStdOutLogger $ \appLogger -> do
+importAllPackages fixtures = do
   importAllFilesInRelativeDirectory
-    appLogger
     fixtures.hackageUser.userId
     ("hackage", "https://hackage.haskell.org")
     "./test/fixtures/Cabal/hackage"
-    True
 
   importAllFilesInRelativeDirectory
-    appLogger
     fixtures.hackageUser.userId
     ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
     "./test/fixtures/Cabal/cardano"
-    True
 
 runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
 runTestEff comp pool poolCfg = runEff $
   Log.withStdOutLogger $ \stdOutLogger ->
     runTime
+      . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       . Log.runLog "flora-test" stdOutLogger LogAttention
       . runDB pool
       . runReader poolCfg
       . runBlobStorePure
       . runFailIO
+      . runPoolboy (poolboySettingsWith poolCfg.connections)
+      . runFileSystem
       $ comp
 
 testThis :: String -> TestEff () -> TestEff TestTree

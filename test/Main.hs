@@ -3,13 +3,7 @@ module Main where
 import Control.Monad (void)
 import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
 import Effectful
-import Effectful.Fail (runFailIO)
-import Effectful.Log qualified as Log
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff, runDB)
-import Effectful.Reader.Static (runReader)
-import Effectful.Time
-import Log.Backend.StandardOutput qualified as Log
-import Log.Data
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Sel.Hashing.Password qualified as Sel
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
@@ -19,7 +13,6 @@ import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
 import Flora.ImportSpec qualified as ImportSpec
-import Flora.Model.BlobStore.API
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
@@ -34,24 +27,22 @@ main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
   env <- runEff getFloraTestEnv
-  fixtures <- runEff $ Log.withStdOutLogger $ \stdOutLogger -> do
-    runTime
-    . Log.runLog "flora-test" stdOutLogger LogInfo
-    . runDB env.pool
-    . runReader env.dbConfig
-    . runBlobStorePure
-    . runFailIO
-    $ do
-      cleanUp
-      Update.createPackageIndex "hackage" "" "" Nothing
-      Update.createPackageIndex "cardano" "" "" Nothing
-      password <- liftIO $ Sel.hashText "foobar2000"
-      templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
-      Update.insertUser templateUser
-      testMigrations
-      f' <- getFixtures
-      importAllPackages f'
-      pure f'
+  fixtures <-
+    runTestEff
+      ( do
+          cleanUp
+          Update.createPackageIndex "hackage" "" "" Nothing
+          Update.createPackageIndex "cardano" "" "" Nothing
+          password <- liftIO $ Sel.hashText "foobar2000"
+          templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
+          Update.insertUser templateUser
+          testMigrations
+          f' <- getFixtures
+          importAllPackages f'
+          pure f'
+      )
+      env.pool
+      env.dbConfig
   spec <- traverse (\comp -> runTestEff comp env.pool env.dbConfig) (specs fixtures)
   defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 
