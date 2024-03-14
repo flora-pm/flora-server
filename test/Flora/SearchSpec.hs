@@ -14,6 +14,7 @@ spec =
     , testThis "Parsing of \"in:<@namespace> <packagename>\" modifier" testParsingNamespacePackageModifier
     , testThis "Parsing of \"in:<@namespace>\" modifier" testParsingNamespaceModifier
     , testThis "Parsing of a query containing a modifier" testParsingQueryContainingModifier
+    , testThis "Parsing of \"exe:flora-cli\" search modifier" testParsingExecutableSearch
     ]
 
 testParsingDependsSearchModifier :: TestEff ()
@@ -42,4 +43,11 @@ testParsingQueryContainingModifier = do
   let result = parseSearchQuery "bah blah blah depends:@haskell/base"
   assertEqual
     (Just (SearchPackages "bah blah blah depends:@haskell/base"))
+    result
+
+testParsingExecutableSearch :: TestEff ()
+testParsingExecutableSearch = do
+  let result = parseSearchQuery "exe:flora-cli"
+  assertEqual
+    (Just (SearchExecutable "flora-cli"))
     result

@@ -1,11 +1,14 @@
 module FloraWeb.Pages.Server.Search where
 
+import Data.List qualified as List
 import Data.Positive
 import Data.Text (Text)
+import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Lucid (Html)
 import Servant (Headers (..), ServerT)
 
+import Data.Function ((&))
 import Flora.Model.Package.Types
 import Flora.Model.User (User)
 import Flora.Search qualified as Search
@@ -31,6 +34,20 @@ searchHandler (Headers session _) (Just searchString) pageParam = do
         templateDefaults
           { navbarSearchContent = Just searchString
           }
-  (count, results) <- Search.search (fromPage pageNumber) searchString
+  (searchAction, (count, results)) <- Search.search (fromPage pageNumber) searchString
   let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
-  render templateEnv $ Search.showResults searchString count pageNumber matchVector packagesInfo
+  case searchAction of
+    Search.SearchExecutable _ ->
+      let packagesInfo' =
+            packagesInfo
+              & Vector.groupBy (\p1 p2 -> p1.name == p2.name && p1.namespace == p2.namespace)
+              & List.map accumulateExtraData
+              & Vector.fromList
+       in render templateEnv $
+            Search.showExecutableResults searchString count pageNumber matchVector packagesInfo'
+    _ ->
+      render templateEnv $
+        Search.showResults searchString count pageNumber matchVector packagesInfo
+
+accumulateExtraData :: Vector PackageInfo -> PackageInfo
+accumulateExtraData = Vector.foldl1' (\acc packageInfo -> acc{extraData = acc.extraData <> packageInfo.extraData})

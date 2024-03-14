@@ -35,8 +35,8 @@ import Flora.Model.Package
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
-import FloraWeb.Components.Icons
-import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requirementListItem)
+import FloraWeb.Components.Icons qualified as Icon
+import FloraWeb.Components.PackageListItem (packageListItem, requirementListItem)
 import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Components.Pill (customBuildType)
 import FloraWeb.Components.Utils
@@ -66,9 +66,9 @@ presentationHeaderForSubpage namespace packageName release target numberOfPackag
   div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
     span_ [class_ "headline"] $ do
       displayNamespace namespace
-      chevronRightOutline
+      Icon.chevronRightOutline
       linkToPackageWithVersion namespace packageName release.version
-      chevronRightOutline
+      Icon.chevronRightOutline
       toHtml (display target)
   p_ [class_ "synopsis"] $
     span_ [class_ "version"] $
@@ -85,9 +85,9 @@ presentationHeaderForVersions namespace packageName numberOfReleases = div_ [cla
   div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
     span_ [class_ "headline"] $ do
       displayNamespace namespace
-      chevronRightOutline
+      Icon.chevronRightOutline
       linkToPackage namespace packageName
-      chevronRightOutline
+      Icon.chevronRightOutline
       toHtml (display Versions)
   p_ [class_ "synopsis"] $
     span_ [class_ "version"] $
@@ -116,6 +116,7 @@ showDependents namespace packageName release count packagesInfo currentPage =
               , dep.latestSynopsis
               , dep.latestVersion
               , dep.latestLicense
+              , Vector.empty
               )
         )
     when (count > 30) $
@@ -157,7 +158,7 @@ versionListItem namespace packageName release = do
         div_ [class_ "package-list-item__metadata"] $
           span_ [class_ "package-list-item__license"] $
             do
-              licenseIcon
+              Icon.license
               toHtml release.license
 
 -- | Render a list of package informations
@@ -172,10 +173,10 @@ packageListing mExactMatchItems packages =
     whenJust mExactMatchItems $ \exactMatchItems ->
       forM_ exactMatchItems $ \em ->
         div_ [class_ "exact-match"] $
-          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license)
+          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license, em.extraData)
     Vector.forM_
       packages
-      ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license)
+      ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license, extraData)
       )
 
 requirementListing :: ComponentDependencies -> FloraHTML
@@ -295,7 +296,7 @@ displayVersions namespace packageName versions numberOfReleases =
                         ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
                     , class_ "revised-date"
                     ]
-                    pen
+                    Icon.pen
 
 displayDependencies
   :: (Namespace, PackageName, Version)
@@ -450,7 +451,7 @@ displayPackageFlags (ReleaseFlags packageFlags) =
         [ dataText_ "Use the -f option with cabal commands to enable flags"
         , class_ "instruction-tooltip"
         ]
-        usageInstructionTooltip
+        Icon.usageInstructionTooltip
       ul_ [class_ "package-flags"] $
         Vector.forM_ packageFlags displayPackageFlag
 

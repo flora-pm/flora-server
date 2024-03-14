@@ -6,13 +6,14 @@ module Flora.Model.Package.Query
   , countPackagesByName
   , countPackagesInNamespace
   , getAllPackageDependents
-  , getRequirementsQuery
   , getAllPackageDependentsWithLatestVersion
   , getAllPackages
   , getAllRequirements
   , getComponent
+  , getComponentById
   , getNonDeprecatedPackages
   , getNumberOfPackageDependents
+  , getNumberOfPackageRequirements
   , getPackageByNamespaceAndName
   , getPackageCategories
   , getPackageDependents
@@ -21,14 +22,14 @@ module Flora.Model.Package.Query
   , getPackagesByNamespace
   , getPackagesFromCategoryWithLatestVersion
   , getRequirements
+  , getRequirementsQuery
   , listAllPackages
   , listAllPackagesInNamespace
   , numberOfPackageRequirementsQuery
+  , searchExecutable
   , searchPackage
-  , unsafeGetComponent
-  , getComponentById
   , searchPackageByNamespace
-  , getNumberOfPackageRequirements
+  , unsafeGetComponent
   ) where
 
 import Data.Text (Text)
@@ -476,6 +477,7 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q 
                     , lv.version
                     , lv.license
                     , 1
+                    , array[]::text[]
       from latest_versions as lv
         inner join package_categories as p1 on p1.package_id = lv.package_id
         inner join categories as c2 on c2.category_id = p1.category_id
@@ -498,6 +500,7 @@ searchPackage (offset, limit) searchString =
               , lv."version"
               , lv."license"
               , word_similarity(lv.name, ?) as rating
+              , array[]::text[]
         FROM latest_versions as lv
         WHERE ? <% lv.name
         GROUP BY
@@ -530,6 +533,7 @@ searchPackageByNamespace (offset, limit) namespace searchString =
               , lv."version"
               , lv."license"
               , word_similarity(lv.name, ?) as rating
+              , array[]::text[]
         FROM latest_versions as lv
         WHERE 
         ? <% lv."name"
@@ -546,6 +550,36 @@ searchPackageByNamespace (offset, limit) namespace searchString =
         ;
         |]
       (searchString, searchString, namespace, offset, limit)
+
+searchExecutable
+  :: DB :> es
+  => (Word, Word)
+  -> Text
+  -> Eff es (Vector PackageInfo)
+searchExecutable (offset, limit) searchString =
+  dbtToEff $
+    query
+      Select
+      [sql|
+      SELECT DISTINCT l2.namespace
+                    , l2.name
+                    , l2.synopsis
+                    , l2.version
+                    , l2.license
+                    , word_similarity(p0.component_name, ?) AS rating
+                    , array(select p0.component_name)
+      FROM package_components AS p0
+           INNER JOIN releases AS r1 ON p0.release_id = r1.release_id
+           INNER JOIN latest_versions AS l2 ON r1.package_id = l2.package_id
+      WHERE p0.component_type = 'executable'
+        AND ? <% p0.component_name
+      ORDER BY rating DESC
+             , l2.name ASC
+      OFFSET ?
+      LIMIT ?
+        ;
+        |]
+      (searchString, searchString, offset, limit)
 
 -- | Returns a summary of packages
 listAllPackages
@@ -564,6 +598,7 @@ listAllPackages (offset, limit) =
           , lv."version"
           , lv."license"
           , (1.0::real) as rating
+          , array[]::text[]
     FROM latest_versions as lv
     GROUP BY
         lv."namespace"
@@ -596,6 +631,7 @@ listAllPackagesInNamespace (offset, limit) namespace =
           , lv."version"
           , lv."license"
           , (1.0::real) as rating
+          , array[]::text[]
     FROM latest_versions as lv
     WHERE lv."namespace" = ?
     GROUP BY

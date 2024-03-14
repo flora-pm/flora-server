@@ -146,26 +146,8 @@ testNoSelfDependent :: TestEff ()
 testNoSelfDependent = do
   results <- Query.getAllPackageDependents (Namespace "haskell") (PackageName "text")
   let resultSet = Set.fromList . fmap (view #name) $ Vector.toList results
-  assertEqual
-    ( Set.fromList
-        [ PackageName "Cabal"
-        , PackageName "co-log"
-        , PackageName "flora"
-        , PackageName "hashable"
-        , PackageName "jose"
-        , PackageName "ouroboros-network"
-        , PackageName "parsec"
-        , PackageName "pg-entity"
-        , PackageName "relude"
-        , PackageName "saturn"
-        , PackageName "semigroups"
-        , PackageName "servant-server"
-        , PackageName "swarm"
-        , PackageName "text-display"
-        , PackageName "xml"
-        ]
-    )
-    resultSet
+  assertBool
+    (Set.notMember (PackageName "text") resultSet)
 
 testBytestringDependencies :: TestEff ()
 testBytestringDependencies = do

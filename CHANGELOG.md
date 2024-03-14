@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.0.17 -- XXXX-XX-XX
+
+* Add `exe:` search modifier to look up packages by executable name ([#529](https://github.com/flora-pm/flora-server/pull/529))
+
 ## 1.0.16 -- 2024-02-26
 
 * Add badge component for custom build type ([#517](https://github.com/flora-pm/flora-server/pull/517))

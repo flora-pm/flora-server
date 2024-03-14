@@ -238,6 +238,7 @@ data PackageInfo = PackageInfo
   , version :: Version
   , license :: SPDX.License
   , rating :: Maybe Double
+  , extraData :: Vector Text
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, NFData)

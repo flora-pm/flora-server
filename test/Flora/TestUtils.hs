@@ -51,6 +51,7 @@ module Flora.TestUtils
   )
 where
 
+import Control.Concurrent (threadDelay)
 import Control.Exception (throw)
 import Control.Monad (void)
 import Control.Monad.Catch
@@ -131,11 +132,12 @@ importAllPackages fixtures = do
     fixtures.hackageUser.userId
     ("hackage", "https://hackage.haskell.org")
     "./test/fixtures/Cabal/hackage"
-
   importAllFilesInRelativeDirectory
     fixtures.hackageUser.userId
     ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
     "./test/fixtures/Cabal/cardano"
+
+  liftIO $ threadDelay 20000
 
 runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
 runTestEff comp pool poolCfg = runEff $
