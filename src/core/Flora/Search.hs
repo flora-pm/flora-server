@@ -163,6 +163,7 @@ searchExecutable (offset, limit) queryString = do
   (results, duration) <-
     timeAction $
       Query.searchExecutable (offset, limit) queryString
+  count <- Query.getNumberOfExecutablesByName queryString
   Log.logInfo "search-results" $
     object
       [ "search_string" .= queryString
@@ -178,7 +179,7 @@ searchExecutable (offset, limit) queryString = do
             )
             (Vector.toList results)
       ]
-  pure (fromIntegral (Vector.length results), results)
+  pure (count, results)
 
 dependencyInfoToPackageInfo :: DependencyInfo -> PackageInfo
 dependencyInfoToPackageInfo dep =

@@ -30,6 +30,7 @@ module Flora.Model.Package.Query
   , searchPackage
   , searchPackageByNamespace
   , unsafeGetComponent
+  , getNumberOfExecutablesByName
   ) where
 
 import Data.Text (Text)
@@ -561,25 +562,65 @@ searchExecutable (offset, limit) searchString =
     query
       Select
       [sql|
-      SELECT DISTINCT l2.namespace
-                    , l2.name
-                    , l2.synopsis
-                    , l2.version
-                    , l2.license
-                    , word_similarity(p0.component_name, ?) AS rating
-                    , array(select p0.component_name)
-      FROM package_components AS p0
-           INNER JOIN releases AS r1 ON p0.release_id = r1.release_id
-           INNER JOIN latest_versions AS l2 ON r1.package_id = l2.package_id
-      WHERE p0.component_type = 'executable'
-        AND ? <% p0.component_name
-      ORDER BY rating DESC
-             , l2.name ASC
-      OFFSET ?
-      LIMIT ?
-        ;
+WITH results AS (SELECT l2.namespace
+                      , l2.name
+                      , l2.synopsis
+                      , l2.version
+                      , l2.license
+                      , word_similarity(p0.component_name, ?) AS rating
+                      , p0.component_name
+                 FROM package_components AS p0
+                      INNER JOIN releases AS r1 ON p0.release_id = r1.release_id
+                      INNER JOIN latest_versions AS l2 ON r1.package_id = l2.package_id
+                 WHERE p0.component_type = 'executable'
+                   AND ? <% p0.component_name)
+
+  SELECT namespace
+       , name
+       , synopsis
+       , version
+       , license
+       , rating
+       , array_agg(DISTINCT component_name ORDER BY component_name)
+  FROM results
+  GROUP BY namespace, name, synopsis, version, license, rating
+  ORDER BY rating DESC
+         , name ASC
+  LIMIT ?
+  OFFSET ?
         |]
-      (searchString, searchString, offset, limit)
+      (searchString, searchString, limit, offset)
+
+getNumberOfExecutablesByName :: DB :> es => Text -> Eff es Word
+getNumberOfExecutablesByName queryString = do
+  dbtToEff $ do
+    (result :: Maybe (Only Int)) <-
+      queryOne
+        Select
+        [sql|
+WITH results AS (SELECT l2.namespace
+                      , l2.name
+                      , l2.synopsis
+                      , l2.version
+                      , l2.license
+                      , word_similarity(p0.component_name, ?) AS rating
+                      , p0.component_name
+                 FROM package_components AS p0
+                      INNER JOIN releases AS r1 ON p0.release_id = r1.release_id
+                      INNER JOIN latest_versions AS l2 ON r1.package_id = l2.package_id
+                 WHERE p0.component_type = 'executable'
+                   AND ? <% p0.component_name)
+
+  SELECT COUNT(*)
+  FROM results
+  GROUP BY namespace, name, rating, synopsis, version, license
+  ORDER BY rating DESC
+         , name ASC
+          |]
+        (queryString, queryString)
+    case result of
+      Just (Only n) -> pure $ fromIntegral n
+      Nothing -> pure 0
 
 -- | Returns a summary of packages
 listAllPackages
