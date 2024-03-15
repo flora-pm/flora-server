@@ -67,6 +67,7 @@ import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Component.Types
 import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName (..))
+import Flora.Model.Package.Types (PackageInfoWithExecutables (..))
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
   ( ComponentDependencies
@@ -478,7 +479,6 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q 
                     , lv.version
                     , lv.license
                     , 1
-                    , array[]::text[]
       from latest_versions as lv
         inner join package_categories as p1 on p1.package_id = lv.package_id
         inner join categories as c2 on c2.category_id = p1.category_id
@@ -501,7 +501,6 @@ searchPackage (offset, limit) searchString =
               , lv."version"
               , lv."license"
               , word_similarity(lv.name, ?) as rating
-              , array[]::text[]
         FROM latest_versions as lv
         WHERE ? <% lv.name
         GROUP BY
@@ -534,7 +533,6 @@ searchPackageByNamespace (offset, limit) namespace searchString =
               , lv."version"
               , lv."license"
               , word_similarity(lv.name, ?) as rating
-              , array[]::text[]
         FROM latest_versions as lv
         WHERE 
         ? <% lv."name"
@@ -546,23 +544,23 @@ searchPackageByNamespace (offset, limit) namespace searchString =
           , lv."version"
           , lv."license"
         ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
-        OFFSET ?
         LIMIT ?
+        OFFSET ?
         ;
         |]
-      (searchString, searchString, namespace, offset, limit)
+      (searchString, searchString, namespace, limit, offset)
 
 searchExecutable
   :: DB :> es
   => (Word, Word)
   -> Text
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Vector PackageInfoWithExecutables)
 searchExecutable (offset, limit) searchString =
   dbtToEff $
     query
       Select
       [sql|
-WITH results AS (SELECT l2.namespace
+WITH results AS (SELECT DISTINCT l2.namespace
                       , l2.name
                       , l2.synopsis
                       , l2.version
@@ -575,19 +573,21 @@ WITH results AS (SELECT l2.namespace
                  WHERE p0.component_type = 'executable'
                    AND ? <% p0.component_name)
 
-  SELECT namespace
-       , name
-       , synopsis
-       , version
-       , license
-       , rating
-       , array_agg(DISTINCT component_name ORDER BY component_name)
-  FROM results
-  GROUP BY namespace, name, synopsis, version, license, rating
-  ORDER BY rating DESC
-         , name ASC
-  LIMIT ?
-  OFFSET ?
+   , executables AS (SELECT DISTINCT r.namespace
+                      , r.name
+                      , r.synopsis
+                      , r.version
+                      , r.license
+                      , array_agg(((r.component_name, r.rating)::elem_rating) ORDER BY r.rating) AS execs
+                     FROM results AS r
+                     GROUP BY r.namespace, r.name, r.synopsis, r.version, r.license)
+
+  SELECT e.*
+  FROM executables AS e
+  ORDER BY (e.execs)[1].rating DESC
+
+LIMIT ?
+OFFSET ?
         |]
       (searchString, searchString, limit, offset)
 
@@ -598,11 +598,7 @@ getNumberOfExecutablesByName queryString = do
       queryOne
         Select
         [sql|
-WITH results AS (SELECT l2.namespace
-                      , l2.name
-                      , l2.synopsis
-                      , l2.version
-                      , l2.license
+WITH results AS (SELECT l2.name
                       , word_similarity(p0.component_name, ?) AS rating
                       , p0.component_name
                  FROM package_components AS p0
@@ -611,11 +607,13 @@ WITH results AS (SELECT l2.namespace
                  WHERE p0.component_type = 'executable'
                    AND ? <% p0.component_name)
 
-  SELECT COUNT(*)
-  FROM results
-  GROUP BY namespace, name, rating, synopsis, version, license
-  ORDER BY rating DESC
-         , name ASC
+   , executables AS (SELECT DISTINCT r.name
+                          , array_agg(CAST((r.component_name, r.rating) AS elem_rating) ORDER BY r.rating DESC) AS execs
+                     FROM results AS r
+                     GROUP BY r.name)
+
+  SELECT count(e.*)
+  FROM executables AS e
           |]
         (queryString, queryString)
     case result of
@@ -639,7 +637,6 @@ listAllPackages (offset, limit) =
           , lv."version"
           , lv."license"
           , (1.0::real) as rating
-          , array[]::text[]
     FROM latest_versions as lv
     GROUP BY
         lv."namespace"
@@ -672,7 +669,6 @@ listAllPackagesInNamespace (offset, limit) namespace =
           , lv."version"
           , lv."license"
           , (1.0::real) as rating
-          , array[]::text[]
     FROM latest_versions as lv
     WHERE lv."namespace" = ?
     GROUP BY

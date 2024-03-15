@@ -140,6 +140,7 @@ library
 
   build-depends:
     , aeson
+    , attoparsec
     , base                   ^>=4.18.2
     , base16-bytestring
     , base64

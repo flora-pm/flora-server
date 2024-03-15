@@ -2,6 +2,7 @@
 
 module FloraWeb.Components.PackageListItem
   ( packageListItem
+  , packageWithExecutableListItem
   , requirementListItem
   )
 where
@@ -11,7 +12,6 @@ import Data.List (intersperse, sortOn)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text.Display (display)
-import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid
@@ -19,7 +19,7 @@ import Lucid
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
 import Flora.Model.Component.Types (CanonicalComponent (..))
-import Flora.Model.Package (Namespace, PackageName (..))
+import Flora.Model.Package (ElemRating (..), Namespace, PackageInfoWithExecutables (..), PackageName (..))
 import Flora.Model.Requirement
   ( ComponentDependencies
   , DependencyInfo (..)
@@ -27,8 +27,8 @@ import Flora.Model.Requirement
 import FloraWeb.Components.Icons qualified as Icon
 import Lucid.Orphans ()
 
-packageListItem :: (Namespace, PackageName, Text, Version, SPDX.License, Vector Text) -> FloraHTML
-packageListItem (namespace, packageName, synopsis, version, license, extraData) = do
+packageListItem :: (Namespace, PackageName, Text, Version, SPDX.License) -> FloraHTML
+packageListItem (namespace, packageName, synopsis, version, license) = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
     a_ [href, class_ ""] $ do
@@ -41,10 +41,25 @@ packageListItem (namespace, packageName, synopsis, version, license, extraData) 
           Icon.license
           toHtml license
         span_ [class_ "package-list-item__version"] $ "v" <> toHtml version
-        Vector.forM_ extraData $ \ed ->
+
+packageWithExecutableListItem :: PackageInfoWithExecutables -> FloraHTML
+packageWithExecutableListItem PackageInfoWithExecutables{namespace, name, synopsis, version, license, executables} = do
+  let href = href_ ("/packages/" <> display namespace <> "/" <> display name)
+  li_ [class_ "package-list-item"] $
+    a_ [href, class_ ""] $ do
+      h4_ [class_ "package-list-item__name"] $
+        strong_ [class_ ""] . toHtml $
+          display namespace <> "/" <> display name
+      p_ [class_ "package-list-item__synopsis"] $ toHtml synopsis
+      div_ [class_ "package-list-item__metadata"] $ do
+        span_ [class_ "package-list-item__license"] $ do
+          Icon.license
+          toHtml license
+        span_ [class_ "package-list-item__version"] $ "v" <> toHtml version
+        Vector.forM_ executables $ \ElemRating{element} ->
           span_ [class_ "package-list-item__extra_data"] $ do
             Icon.terminal
-            toHtml ed
+            toHtml element
 
 requirementListItem :: ComponentDependencies -> FloraHTML
 requirementListItem allComponentDeps =
