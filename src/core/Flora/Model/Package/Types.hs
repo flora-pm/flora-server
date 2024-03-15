@@ -2,13 +2,13 @@
 
 module Flora.Model.Package.Types where
 
+import Control.Applicative (many, (<|>))
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.Aeson.TH
 import Data.Attoparsec.ByteString.Char8
-import Control.Applicative (many, (<|>))
 import Data.Attoparsec.ByteString.Char8 qualified as Attoparsec
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as B
@@ -17,11 +17,11 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi (Schema (..), ToParamSchema (..), ToSchema (..), genericDeclareNamedSchema)
 import Data.String (IsString (..))
 import Data.Text (Text, isPrefixOf, unpack)
-import Data.Typeable
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
+import Data.Typeable
 import Data.UUID
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
@@ -29,7 +29,7 @@ import Database.PostgreSQL.Simple.FromField
   ( Conversion (..)
   , Field
   , FromField (..)
-  , ResultError (ConversionFailed, UnexpectedNull, Incompatible)
+  , ResultError (ConversionFailed, Incompatible, UnexpectedNull)
   , returnError
   , typename
   )
