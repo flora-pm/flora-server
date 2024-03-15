@@ -1,16 +1,14 @@
 module FloraWeb.Pages.Server.Search where
 
-import Data.List qualified as List
 import Data.Positive
 import Data.Text (Text)
-import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Lucid (Html)
 import Servant (Headers (..), ServerT)
 
-import Data.Function ((&))
 import Flora.Model.Package.Types
 import Flora.Model.User (User)
+import Flora.Search (SearchAction (..))
 import Flora.Search qualified as Search
 import FloraWeb.Common.Pagination
 import FloraWeb.Pages.Routes.Search (Routes, Routes' (..))
@@ -34,20 +32,39 @@ searchHandler (Headers session _) (Just searchString) pageParam = do
         templateDefaults
           { navbarSearchContent = Just searchString
           }
-  (searchAction, (count, results)) <- Search.search (fromPage pageNumber) searchString
-  let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
-  case searchAction of
-    Search.SearchExecutable _ ->
-      let packagesInfo' =
-            packagesInfo
-              & Vector.groupBy (\p1 p2 -> p1.name == p2.name && p1.namespace == p2.namespace)
-              & List.map accumulateExtraData
-              & Vector.fromList
-       in render templateEnv $
-            Search.showExecutableResults searchString count pageNumber matchVector packagesInfo'
-    _ ->
+  let pagination = fromPage pageNumber
+  case Search.parseSearchQuery searchString of
+    Just (ListAllPackagesInNamespace namespace) -> do
+      (count, results) <- Search.listAllPackagesInNamespace pagination namespace
+      let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
       render templateEnv $
         Search.showResults searchString count pageNumber matchVector packagesInfo
-
-accumulateExtraData :: Vector PackageInfo -> PackageInfo
-accumulateExtraData = Vector.foldl1' (\acc packageInfo -> acc{extraData = acc.extraData <> packageInfo.extraData})
+    Just ListAllPackages -> do
+      (count, results) <- Search.listAllPackages pagination
+      let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
+      render templateEnv $
+        Search.showResults searchString count pageNumber matchVector packagesInfo
+    Just (SearchInNamespace namespace (PackageName packageName)) -> do
+      (count, results) <- Search.searchPackageByNamespaceAndName pagination namespace packageName
+      let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
+      render templateEnv $
+        Search.showResults searchString count pageNumber matchVector packagesInfo
+    Just (DependentsOf namespace packageName mSearchString) -> do
+      (count, results) <- Search.searchDependents pagination namespace packageName mSearchString
+      let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
+      render templateEnv $
+        Search.showResults searchString count pageNumber matchVector packagesInfo
+    Just (SearchPackages _) -> do
+      (count, results) <- Search.searchPackageByName pagination searchString
+      let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
+      render templateEnv $
+        Search.showResults searchString count pageNumber matchVector packagesInfo
+    Nothing -> do
+      (count, results) <- Search.searchPackageByName pagination searchString
+      let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
+      render templateEnv $
+        Search.showResults searchString count pageNumber matchVector packagesInfo
+    Just (SearchExecutable executableName) -> do
+      (count, results) <- Search.searchExecutable pagination executableName
+      render templateEnv $
+        Search.showExecutableResults searchString count pageNumber results

@@ -7,12 +7,12 @@ import Data.Text.Display (display)
 import Data.Vector (Vector)
 import Lucid
 
-import Flora.Model.Package (Namespace, PackageInfo (..))
+import Flora.Model.Package (Namespace, PackageInfo (..), PackageInfoWithExecutables (..))
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Pages.Templates
-import FloraWeb.Pages.Templates.Packages (packageListing)
+import FloraWeb.Pages.Templates.Packages (packageListing, packageWithExecutableListing)
 
 showAllPackages :: Word -> Positive Word -> Vector PackageInfo -> FloraHTML
 showAllPackages count currentPage packagesInfo = do
@@ -54,14 +54,12 @@ showExecutableResults
   :: Text
   -> Word
   -> Positive Word
-  -> Vector PackageInfo
-  -- ^ Exact matches
-  -> Vector PackageInfo
+  -> Vector PackageInfoWithExecutables
   -- ^ Results
   -> FloraHTML
-showExecutableResults executableName count currentPage exactMatches results = do
+showExecutableResults executableName count currentPage results = do
   div_ [class_ "container"] $ do
     presentationHeader executableName "" count
-    packageListing (Just exactMatches) results
+    packageWithExecutableListing results
     when (count > 30) $
       paginationNav count currentPage (SearchExecutable executableName)

@@ -104,3 +104,14 @@ packageVersions namespace packageName =
     // Web.listVersions
     /: namespace
     /: packageName
+
+packageWithExecutable
+  :: Positive Word
+  -> Text
+  -> Link
+packageWithExecutable pageNumber search =
+  links
+    // Web.search
+    // Search.displaySearch
+    /: Just search
+    /: Just pageNumber

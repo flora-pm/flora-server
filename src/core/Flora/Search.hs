@@ -20,7 +20,13 @@ import Effectful.Time (Time)
 import Log qualified
 
 import Flora.Logging
-import Flora.Model.Package (Namespace (..), PackageInfo (..), PackageName (..), formatPackage)
+import Flora.Model.Package
+  ( Namespace (..)
+  , PackageInfo (..)
+  , PackageInfoWithExecutables (..)
+  , PackageName (..)
+  , formatPackage
+  )
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types qualified as Package
 import Flora.Model.Requirement
@@ -54,35 +60,6 @@ instance Display SearchAction where
     "Package " <> displayBuilder namespace <> "/" <> displayBuilder packageName
   displayBuilder (SearchExecutable executableName) =
     "Executable " <> displayBuilder executableName
-
-search
-  :: (DB :> es, Log :> es, Time :> es)
-  => (Word, Word)
-  -> Text
-  -> Eff es (SearchAction, (Word, Vector PackageInfo))
-search pagination queryString =
-  case parseSearchQuery queryString of
-    Just (ListAllPackagesInNamespace namespace) -> do
-      result <- listAllPackagesInNamespace pagination namespace
-      pure (ListAllPackagesInNamespace namespace, result)
-    Just ListAllPackages -> do
-      result <- listAllPackages pagination
-      pure (ListAllPackages, result)
-    Just (SearchInNamespace namespace p@(PackageName packageName)) -> do
-      result <- searchPackageByNamespaceAndName pagination namespace packageName
-      pure (SearchInNamespace namespace p, result)
-    Just (DependentsOf namespace packageName mSearchString) -> do
-      result <- searchDependents pagination namespace packageName mSearchString
-      pure (DependentsOf namespace packageName mSearchString, result)
-    Just (SearchExecutable executableName) -> do
-      result <- searchExecutable pagination executableName
-      pure (SearchExecutable executableName, result)
-    Just (SearchPackages _) -> do
-      result <- searchPackageByName pagination queryString
-      pure (SearchPackages queryString, result)
-    Nothing -> do
-      result <- searchPackageByName pagination queryString
-      pure (SearchPackages queryString, result)
 
 searchPackageByName
   :: (DB :> es, Log :> es, Time :> es)
@@ -158,11 +135,12 @@ searchExecutable
   :: (DB :> es, Log :> es, Time :> es)
   => (Word, Word)
   -> Text
-  -> Eff es (Word, Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfoWithExecutables)
 searchExecutable (offset, limit) queryString = do
   (results, duration) <-
     timeAction $
       Query.searchExecutable (offset, limit) queryString
+  count <- Query.getNumberOfExecutablesByName queryString
   Log.logInfo "search-results" $
     object
       [ "search_string" .= queryString
@@ -170,15 +148,15 @@ searchExecutable (offset, limit) queryString = do
       , "results_count" .= Vector.length results
       , "results"
           .= List.map
-            ( \PackageInfo{namespace, name, rating} ->
+            ( \PackageInfoWithExecutables{namespace, name, executables} ->
                 object
                   [ "package" .= formatPackage namespace name
-                  , "score" .= rating
+                  , "executables" .= executables
                   ]
             )
             (Vector.toList results)
       ]
-  pure (fromIntegral (Vector.length results), results)
+  pure (count, results)
 
 dependencyInfoToPackageInfo :: DependencyInfo -> PackageInfo
 dependencyInfoToPackageInfo dep =
@@ -189,7 +167,6 @@ dependencyInfoToPackageInfo dep =
     dep.latestVersion
     dep.latestLicense
     Nothing
-    Vector.empty
 
 listAllPackagesInNamespace
   :: (DB :> es, Time :> es, Log :> es)

@@ -18,8 +18,7 @@ create materialized view latest_versions (
     from "packages" as p
     inner join "releases" as r on p."package_id" = r."package_id"
     where p.status = 'fully-imported' 
-      and ((r."deprecated" != true)
-        or (r."deprecated" is null)
+      and ((r."deprecated" is distinct from true)
       )
     group by p.namespace, p.name, synopsis, p.package_id, r.version, license
     order by p.package_id, version desc;

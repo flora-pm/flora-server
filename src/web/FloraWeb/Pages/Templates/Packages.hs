@@ -36,7 +36,11 @@ import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.Icons qualified as Icon
-import FloraWeb.Components.PackageListItem (packageListItem, requirementListItem)
+import FloraWeb.Components.PackageListItem
+  ( packageListItem
+  , packageWithExecutableListItem
+  , requirementListItem
+  )
 import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Components.Pill (customBuildType)
 import FloraWeb.Components.Utils
@@ -116,7 +120,6 @@ showDependents namespace packageName release count packagesInfo currentPage =
               , dep.latestSynopsis
               , dep.latestVersion
               , dep.latestLicense
-              , Vector.empty
               )
         )
     when (count > 30) $
@@ -161,7 +164,7 @@ versionListItem namespace packageName release = do
               Icon.license
               toHtml release.license
 
--- | Render a list of package informations
+-- | Render a list of package information
 packageListing
   :: Maybe (Vector PackageInfo)
   -- ^ Priority items that are highlighted,
@@ -173,11 +176,18 @@ packageListing mExactMatchItems packages =
     whenJust mExactMatchItems $ \exactMatchItems ->
       forM_ exactMatchItems $ \em ->
         div_ [class_ "exact-match"] $
-          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license, em.extraData)
+          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license)
     Vector.forM_
       packages
-      ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license, extraData)
+      ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license)
       )
+
+packageWithExecutableListing
+  :: Vector PackageInfoWithExecutables
+  -> FloraHTML
+packageWithExecutableListing packages =
+  ul_ [class_ "package-list"] $ do
+    Vector.forM_ packages packageWithExecutableListItem
 
 requirementListing :: ComponentDependencies -> FloraHTML
 requirementListing requirements =

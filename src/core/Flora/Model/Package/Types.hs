@@ -2,12 +2,16 @@
 
 module Flora.Model.Package.Types where
 
+import Control.Applicative (many, (<|>))
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.Aeson.TH
+import Data.Attoparsec.ByteString.Char8
+import Data.Attoparsec.ByteString.Char8 qualified as Attoparsec
 import Data.ByteString (ByteString)
+import Data.ByteString.Char8 qualified as B
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi (Schema (..), ToParamSchema (..), ToSchema (..), genericDeclareNamedSchema)
@@ -17,13 +21,17 @@ import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime)
+import Data.Typeable
 import Data.UUID
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
 import Database.PostgreSQL.Simple.FromField
-  ( FromField (..)
-  , ResultError (ConversionFailed, UnexpectedNull)
+  ( Conversion (..)
+  , Field
+  , FromField (..)
+  , ResultError (ConversionFailed, Incompatible, UnexpectedNull)
   , returnError
+  , typename
   )
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
@@ -36,7 +44,7 @@ import Distribution.Types.Version (Version)
 import JSON
 import Language.Souffle.Interpreted qualified as Souffle
 import Lucid
-import Optics.Core
+import Optics.Core hiding (element)
 import Servant (FromHttpApiData (..))
 import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
@@ -238,10 +246,60 @@ data PackageInfo = PackageInfo
   , version :: Version
   , license :: SPDX.License
   , rating :: Maybe Double
-  , extraData :: Vector Text
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, NFData)
+
+data ElemRating = ElemRating
+  { element :: Text
+  , rating :: Double
+  }
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData, ToJSON)
+
+instance FromField ElemRating where
+  fromField = fromPGRow "elem_rating" $ do
+    _ <- Attoparsec.char '('
+    element <- textContent
+    _ <- Attoparsec.char ','
+    rating <- Attoparsec.double
+    _ <- Attoparsec.char ')'
+    pure $ ElemRating element rating
+
+textContent :: Parser Text
+textContent = decodeUtf8 <$> (quoted <|> plain)
+
+-- | Recognizes a quoted string.
+quoted :: Parser ByteString
+quoted = char '"' *> option "" contents <* char '"'
+  where
+    esc = char '\\' *> (char '\\' <|> char '"')
+    unQ = takeWhile1 (notInClass "\"\\")
+    contents = mconcat <$> many (unQ <|> B.singleton <$> esc)
+
+plain :: Parser ByteString
+plain = takeWhile1 (notInClass ",\"()")
+
+fromPGRow :: Typeable a => String -> Parser a -> Field -> Maybe ByteString -> Conversion a
+fromPGRow _ _ f Nothing = returnError UnexpectedNull f ""
+fromPGRow fname parser f (Just bs) = do
+  typename' <- typename f
+  if typename' /= B.pack fname
+    then returnError Incompatible f ("Wanted " <> fname <> ", got " <> show typename')
+    else case parseOnly parser bs of
+      Left err -> returnError ConversionFailed f err
+      Right a -> pure a
+
+data PackageInfoWithExecutables = PackageInfoWithExecutables
+  { namespace :: Namespace
+  , name :: PackageName
+  , synopsis :: Text
+  , version :: Version
+  , license :: SPDX.License
+  , executables :: Vector ElemRating
+  }
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (FromRow, NFData, ToJSON)
 
 -- DTO that we get from Hackage
 data DeprecatedPackage' = DeprecatedPackage'

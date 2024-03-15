@@ -100,7 +100,6 @@ packageListItemExample =
     , "Basic libraries"
     , mkVersion [4, 16, 0, 0]
     , License (simpleLicenseExpression BSD_3_Clause)
-    , Vector.empty
     )
 
 categoryCardExample :: FloraHTML
