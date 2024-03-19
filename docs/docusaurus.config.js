@@ -46,6 +46,7 @@ const config = {
         logo: {
           alt: "Flora",
           src: "img/logo-dark-background.png",
+          href: "https://flora.pm"
         },
         items: [
           {

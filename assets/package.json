@@ -35,6 +35,9 @@
     "watch-static-files": "cpx \"**/*.{svg,png,jpg}\" ../static -w"
   },
   "dependencies": {
+    "@docusaurus/core": "^3.1.1",
+    "@docusaurus/module-type-aliases": "^3.1.1",
+    "@docusaurus/preset-classic": "^3.1.1",
     "csslint": "^1.0.5"
   }
 }

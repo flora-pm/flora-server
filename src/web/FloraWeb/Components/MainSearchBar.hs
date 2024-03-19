@@ -1,6 +1,7 @@
 module FloraWeb.Components.MainSearchBar where
 
 import FloraWeb.Components.Icons
+import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Pages.Templates.Types (FloraHTML)
 import Lucid
 
@@ -21,3 +22,6 @@ mainSearchBar =
         , autofocus_
         ]
       lookingGlass
+    p_ [class_ "search-hint"] $ do
+      Icons.lightbulb
+      "Use " <> a_ [href_ "/documentation/search-features"] "search modifiers" <> " to enhance your queries"
