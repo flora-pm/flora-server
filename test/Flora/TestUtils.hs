@@ -2,12 +2,12 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
 module Flora.TestUtils
-  ( -- * Test group functions
+  ( -- ** Test group functions
     testRequest
   , testThis
   , testThese
 
-    -- * Assertion functions
+    -- ** Assertion functions
   , assertBool
   , assertEqual
   , assertFailure
@@ -21,31 +21,44 @@ module Flora.TestUtils
   , assertClientLeft
   , assertClientLeft'
 
-    -- * Database migration
+    -- ** Database migration
   , testMigrations
 
-    -- * Random fixtures
-  , randomUser
-  , randomUserTemplate
+    -- ** Entity generators
+
+    -- *** User
   , RandomUserTemplate (..)
+  , randomUserFromTemplate
+  , randomUserTemplate
   , genUser
   , genPassword
   , genDisplayName
   , genUsername
   , genEmail
   , genUserId
+
+    -- *** Package
+  , RandomPackageTemplate (..)
+  , randomPackageFromTemplate
+  , randomPackageTemplate
+
+    -- *** Release
+  , RandomReleaseTemplate(..)
+  , randomReleaseTemplate
+
+    -- *** Misc
   , genUTCTime
   , genUUID
   , genWord32
 
-    -- * TestEff and helpers
+    -- ** TestEff and helpers
   , TestEff
   , Fixtures (..)
   , runTestEff
   , getFixtures
   , importAllPackages
 
-    -- * HUnit re-exports
+    -- ** HUnit re-exports
   , TestTree
   , liftIO
   )
@@ -53,7 +66,7 @@ where
 
 import Control.Concurrent (threadDelay)
 import Control.Exception (throw)
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Control.Monad.Catch
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Kind
@@ -71,6 +84,9 @@ import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
 import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact ()
+import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.BuildType (BuildType)
+import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
@@ -107,12 +123,19 @@ import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
+import Flora.Model.BlobStore.Types (Sha256Sum)
+import Flora.Model.Package (Namespace (..), Package (..), PackageAlternatives, PackageId (..), PackageName (..), PackageStatus)
+import Flora.Model.Release.Types (ReleaseId (..), TextHtml, ImportStatus, ReleaseFlags)
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
+import Data.Vector (Vector)
+import qualified Hedgehog.Range as R
+import qualified Distribution.Types.Version as Version
+import qualified Data.List.NonEmpty as NE
 
 type TestEff = Eff '[FileSystem, Poolboy, Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
 
@@ -330,8 +353,8 @@ randomUserTemplate =
     , updatedAt = H.sample genUTCTime
     }
 
-randomUser :: MonadIO m => RandomUserTemplate m -> m User
-randomUser
+randomUserFromTemplate :: MonadIO m => RandomUserTemplate m -> m User
+randomUserFromTemplate
   RandomUserTemplate
     { userId = generateUserId
     , username = generateUsername
@@ -353,3 +376,121 @@ randomUser
     let totpKey = Nothing
     let totpEnabled = False
     pure User{..}
+
+data RandomPackageTemplate m = RandomPackageTemplate
+  { packageId :: m PackageId
+  , namespace :: m Namespace
+  , name :: m PackageName
+  , ownerId :: m UserId
+  , createdAt :: m UTCTime
+  , updatedAt :: m UTCTime
+  , status :: m PackageStatus
+  , deprecationInfo :: m (Maybe PackageAlternatives)
+  }
+  deriving stock (Generic)
+
+randomPackageTemplate :: MonadIO m => RandomPackageTemplate m
+randomPackageTemplate =
+  RandomPackageTemplate
+    { packageId = PackageId <$> H.sample genUUID
+    , namespace = H.sample genPackageNamespace
+    , name = H.sample genPackageName
+    , ownerId = H.sample genUserId
+    , createdAt = H.sample genUTCTime
+    , updatedAt = H.sample genUTCTime
+    , status = H.sample genStatus
+    , deprecationInfo = pure Nothing
+    }
+
+randomPackageFromTemplate :: MonadIO m => RandomPackageTemplate m -> m Package
+randomPackageFromTemplate
+  RandomPackageTemplate
+    { packageId = generatePackageId
+    , namespace = generatePackageNamespace
+    , name = generatePackageName
+    , ownerId = generateUserId
+    , createdAt = generateCreatedAt
+    , updatedAt = generateUpdatedAt
+    , status = generatePackageStatus
+    , deprecationInfo = generatePackageDeprecationInfo
+    } = do
+    packageId <- generatePackageId
+    namespace <- generatePackageNamespace
+    name <- generatePackageName
+    ownerId <- generateUserId
+    createdAt <- generateCreatedAt
+    updatedAt <- generateUpdatedAt
+    status <- generatePackageStatus
+    deprecationInfo <- generatePackageDeprecationInfo
+    pure Package{..}
+
+genPackageName :: MonadGen m => m PackageName
+genPackageName = PackageName <$> H.text (Range.constant 3 10) H.ascii
+
+genPackageNamespace :: MonadGen m => m Namespace
+genPackageNamespace = Namespace <$> H.text (Range.constant 3 10) H.ascii
+
+genStatus :: MonadGen m => m PackageStatus
+genStatus = H.enumBounded
+
+data RandomReleaseTemplate m = RandomReleaseTemplate
+  { releaseId :: m ReleaseId
+  , packageId :: m PackageId
+  , version :: m Version
+  , archiveChecksum :: m Text
+  , uploadedAt :: m (Maybe UTCTime)
+  , createdAt :: m UTCTime
+  , updatedAt :: m UTCTime
+  , readme :: m (Maybe TextHtml)
+  , readmeStatus :: m ImportStatus
+  , changelog :: m (Maybe TextHtml)
+  , changelogStatus :: m ImportStatus
+  , tarballRootHash :: m (Maybe Sha256Sum)
+  , tarballArchiveHash :: m (Maybe Sha256Sum)
+  , license :: m SPDX.License
+  , sourceRepos :: m (Vector Text)
+  , homepage :: m (Maybe Text)
+  , documentation :: m Text
+  , bugTracker :: m (Maybe Text)
+  , maintainer :: m Text
+  , synopsis :: m Text
+  , description :: m Text
+  , flags :: m ReleaseFlags
+  , testedWith :: m (Vector Version)
+  , deprecated :: m (Maybe Bool)
+  , repository :: m (Maybe Text)
+  , revisedAt :: m (Maybe UTCTime)
+  , buildType :: m BuildType
+  }
+
+randomReleaseTemplate :: MonadIO m => RandomReleaseTemplate m
+randomReleaseTemplate =
+  RandomReleaseTemplate
+    { releaseId = ReleaseId <$> H.sample genUUID
+    , packageId = PackageId <$> H.sample genUUID
+    , version = Version.mkVersion . NE.toList <$> H.nonEmpty (R.singleton 4) (H.int (R.constant 0 10))
+    , archiveChecksum = H.text (Range.singleton 30) H.ascii
+    , uploadedAt = Just <$> H.sample genUTCTime
+    , updatedAt = H.sample genUTCTime
+    , createdAt = H.sample genUTCTime
+    , readme = undefined 
+    , readmeStatus = undefined 
+    , changelog = undefined 
+    , changelogStatus = undefined 
+    , tarballRootHash = undefined 
+    , tarballArchiveHash = undefined 
+    , license = undefined 
+    , sourceRepos = undefined 
+    , homepage = undefined 
+    , documentation = undefined 
+    , bugTracker = undefined 
+    , maintainer = undefined 
+    , synopsis = undefined 
+    , description = undefined 
+    , flags = undefined 
+    , testedWith = undefined 
+    , deprecated = undefined 
+    , repository = undefined 
+    , revisedAt = undefined 
+    , buildType = undefined 
+    }
