@@ -8,6 +8,7 @@ import Sel.Hashing.Password qualified as Sel
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
+import Control.Concurrent qualified as Concurrent
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
@@ -22,7 +23,6 @@ import Flora.SearchSpec qualified as SearchSpec
 import Flora.TemplateSpec qualified as TemplateSpec
 import Flora.TestUtils
 import Flora.UserSpec qualified as UserSpec
-import qualified Control.Concurrent as Concurrent
 
 main :: IO ()
 main = do

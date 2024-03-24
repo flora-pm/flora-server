@@ -158,7 +158,6 @@ import Flora.Model.Package
   )
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Types
-import Flora.Model.Release.Types
   ( ImportStatus (..)
   , Release (..)
   , ReleaseFlags (..)

@@ -108,5 +108,5 @@ testSearchExecutable hackageUser = do
   assertEqual 2 count
 
   assertEqual
-    (Vector.fromList [ElemRating {element = "turbulence", rating = 1.0},ElemRating {element = "turbulence42", rating = 0.7692308}])
+    (Vector.fromList [ElemRating{element = "turbulence", rating = 1.0}, ElemRating{element = "turbulence42", rating = 0.7692308}])
     (Vector.concatMap id $ fmap (.executables) results)
