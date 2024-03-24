@@ -8,6 +8,7 @@ import Sel.Hashing.Password qualified as Sel
 import System.IO
 import Test.Tasty (defaultMain, testGroup)
 
+import Control.Concurrent qualified as Concurrent
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
@@ -43,19 +44,20 @@ main = do
       )
       env.pool
       env.dbConfig
+  Concurrent.threadDelay 20000
   spec <- traverse (\comp -> runTestEff comp env.pool env.dbConfig) (specs fixtures)
   defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 
 specs :: Fixtures -> [TestEff TestTree]
 specs fixtures =
   [ UserSpec.spec fixtures
-  , PackageSpec.spec fixtures
+  , PackageSpec.spec
   , CategorySpec.spec
   , TemplateSpec.spec
   , CabalSpec.spec
   , ImportSpec.spec fixtures
   , BlobSpec.spec
-  , SearchSpec.spec
+  , SearchSpec.spec fixtures
   ]
 
 cleanUp :: DB :> es => Eff es ()

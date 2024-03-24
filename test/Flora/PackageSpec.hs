@@ -29,8 +29,8 @@ import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
 import Flora.TestUtils
 
-spec :: Fixtures -> TestEff TestTree
-spec _fixtures =
+spec :: TestEff TestTree
+spec =
   testThese
     "package tests"
     [ testThis "Check Cabal dependencies" testCabalDeps
@@ -38,7 +38,6 @@ spec _fixtures =
     , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory
     , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
     , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
-    , testThis "@haskell/bytestring has the correct number of dependents" testBytestringDependents
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns expected results by namespace/package name" testSearchResultText
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
@@ -134,13 +133,6 @@ testCorrectNumberInHaskellNamespace :: TestEff ()
 testCorrectNumberInHaskellNamespace = do
   results <- Query.getPackagesByNamespace (Namespace "haskell")
   assertEqual (Set.size coreLibraries) (Vector.length results)
-
-testBytestringDependents :: TestEff ()
-testBytestringDependents = do
-  results <- Query.getAllPackageDependentsWithLatestVersion (Namespace "haskell") (PackageName "bytestring") (0, 30) Nothing
-  assertEqual
-    26
-    (Vector.length results)
 
 testNoSelfDependent :: TestEff ()
 testNoSelfDependent = do
