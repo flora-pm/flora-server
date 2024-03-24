@@ -22,6 +22,7 @@ import Flora.SearchSpec qualified as SearchSpec
 import Flora.TemplateSpec qualified as TemplateSpec
 import Flora.TestUtils
 import Flora.UserSpec qualified as UserSpec
+import qualified Control.Concurrent as Concurrent
 
 main :: IO ()
 main = do
@@ -43,19 +44,20 @@ main = do
       )
       env.pool
       env.dbConfig
+  Concurrent.threadDelay 20000
   spec <- traverse (\comp -> runTestEff comp env.pool env.dbConfig) (specs fixtures)
   defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 
 specs :: Fixtures -> [TestEff TestTree]
 specs fixtures =
   [ UserSpec.spec fixtures
-  , PackageSpec.spec fixtures
+  , PackageSpec.spec
   , CategorySpec.spec
   , TemplateSpec.spec
   , CabalSpec.spec
   , ImportSpec.spec fixtures
   , BlobSpec.spec
-  , SearchSpec.spec
+  , SearchSpec.spec fixtures
   ]
 
 cleanUp :: DB :> es => Eff es ()

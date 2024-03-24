@@ -11,6 +11,7 @@ module Flora.Model.Release.Types
   )
 where
 
+import Control.DeepSeq
 import Data.Aeson
 import Data.Aeson.Orphans ()
 import Data.Aeson.TH
@@ -19,6 +20,7 @@ import Data.OpenApi.Schema (ToSchema)
 import Data.Text (Text, unpack)
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Data.Text.Lazy qualified as Text
 import Data.Time (UTCTime)
 import Data.Typeable (Typeable)
 import Data.UUID (UUID)
@@ -28,6 +30,7 @@ import Database.PostgreSQL.Simple (FromRow, ToRow)
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), returnError)
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
+import Deriving.Aeson
 import Distribution.Compiler (CompilerFlavor)
 import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
@@ -36,9 +39,6 @@ import Distribution.Types.Version
 import Distribution.Types.VersionRange (VersionRange)
 import Lucid qualified
 
-import Control.DeepSeq
-import Data.Text.Lazy qualified as Text
-import Deriving.Aeson
 import Distribution.Orphans ()
 import Distribution.Orphans.BuildType ()
 import Distribution.Orphans.CompilerFlavor ()

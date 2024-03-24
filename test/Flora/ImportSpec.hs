@@ -23,7 +23,7 @@ spec fixtures =
   testThese
     "Import tests"
     [ testThis "Import index" $ testImportIndex fixtures
-    , testThis "Namespace choosser" testNamespaceChooser
+    , testThis "Namespace chooser" testNamespaceChooser
     ]
 
 testIndex :: FilePath

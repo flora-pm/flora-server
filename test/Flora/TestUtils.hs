@@ -27,8 +27,8 @@ module Flora.TestUtils
     -- ** Entity generators
 
     -- *** User
-  , RandomUserTemplate (..)
-  , randomUserFromTemplate
+  , UserTemplate (..)
+  , instantiateUser
   , randomUserTemplate
   , genUser
   , genPassword
@@ -38,13 +38,24 @@ module Flora.TestUtils
   , genUserId
 
     -- *** Package
-  , RandomPackageTemplate (..)
-  , randomPackageFromTemplate
+  , PackageTemplate (..)
+  , instantiatePackage
   , randomPackageTemplate
 
     -- *** Release
-  , RandomReleaseTemplate(..)
+  , ReleaseTemplate (..)
+  , instantiateRelease
   , randomReleaseTemplate
+
+    -- *** Package Component
+  , PackageComponentTemplate (..)
+  , instantiatePackageComponent
+  , randomPackageComponentTemplate
+
+    -- *** Requirement
+  , RequirementTemplate (..)
+  , instantiateRequirement
+  , randomRequirementTemplate
 
     -- *** Misc
   , genUTCTime
@@ -71,22 +82,28 @@ import Control.Monad.Catch
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Kind
 import Data.List qualified as List
+import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromJust)
 import Data.Pool hiding (PoolConfig)
 import Data.Poolboy (poolboySettingsWith)
 import Data.Text (Text)
+import Data.Text.Lazy qualified as Text
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
 import Data.UUID qualified as UUID
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Data.Word
 import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
 import Database.PostgreSQL.Simple (Connection, SqlError (..), close)
 import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Transact ()
+import Distribution.SPDX qualified as SPDX
 import Distribution.SPDX.License qualified as SPDX
-import Distribution.Types.BuildType (BuildType)
+import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Version (Version)
+import Distribution.Types.Version qualified as Version
 import Effectful
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
@@ -124,18 +141,38 @@ import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromI
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
-import Flora.Model.Package (Namespace (..), Package (..), PackageAlternatives, PackageId (..), PackageName (..), PackageStatus)
-import Flora.Model.Release.Types (ReleaseId (..), TextHtml, ImportStatus, ReleaseFlags)
+import Flora.Model.Component.Types
+  ( CanonicalComponent (..)
+  , ComponentId (..)
+  , ComponentMetadata (..)
+  , ComponentType (..)
+  , PackageComponent (..)
+  )
+import Flora.Model.Package
+  ( Namespace (..)
+  , Package (..)
+  , PackageAlternatives
+  , PackageId (..)
+  , PackageName (..)
+  , PackageStatus
+  )
+import Flora.Model.Package.Update qualified as Update
+import Flora.Model.Release.Types
+import Flora.Model.Release.Types
+  ( ImportStatus (..)
+  , Release (..)
+  , ReleaseFlags (..)
+  , ReleaseId (..)
+  , TextHtml
+  )
+import Flora.Model.Release.Update qualified as Update
+import Flora.Model.Requirement
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
-import Data.Vector (Vector)
-import qualified Hedgehog.Range as R
-import qualified Distribution.Types.Version as Version
-import qualified Data.List.NonEmpty as NE
 
 type TestEff = Eff '[FileSystem, Poolboy, Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
 
@@ -323,12 +360,12 @@ genUser = do
   password <- genPassword
   userFlags <- genUserFlags
   createdAt <- genUTCTime
-  updatedAt <- genUTCTime
+  let updatedAt = createdAt
   let totpKey = Nothing
   let totpEnabled = False
   pure User{..}
 
-data RandomUserTemplate m = RandomUserTemplate
+data UserTemplate m = UserTemplate
   { userId :: m UserId
   , username :: m Text
   , email :: m Text
@@ -340,22 +377,22 @@ data RandomUserTemplate m = RandomUserTemplate
   }
   deriving stock (Generic)
 
-randomUserTemplate :: MonadIO m => RandomUserTemplate m
+randomUserTemplate :: MonadIO m => UserTemplate m
 randomUserTemplate =
-  RandomUserTemplate
-    { userId = H.sample genUserId
-    , username = H.sample genUsername
-    , email = H.sample genEmail
-    , displayName = H.sample genDisplayName
-    , password = H.sample genPassword
-    , userFlags = H.sample genUserFlags
-    , createdAt = H.sample genUTCTime
-    , updatedAt = H.sample genUTCTime
+  UserTemplate
+    { userId = liftIO $ H.sample genUserId
+    , username = liftIO $ H.sample genUsername
+    , email = liftIO $ H.sample genEmail
+    , displayName = liftIO $ H.sample genDisplayName
+    , password = liftIO $ H.sample genPassword
+    , userFlags = liftIO $ H.sample genUserFlags
+    , createdAt = liftIO $ H.sample genUTCTime
+    , updatedAt = liftIO $ H.sample genUTCTime
     }
 
-randomUserFromTemplate :: MonadIO m => RandomUserTemplate m -> m User
-randomUserFromTemplate
-  RandomUserTemplate
+instantiateUser :: DB :> es => UserTemplate (Eff es) -> Eff es User
+instantiateUser
+  UserTemplate
     { userId = generateUserId
     , username = generateUsername
     , email = generateEmail
@@ -363,7 +400,6 @@ randomUserFromTemplate
     , password = generatePassword
     , userFlags = generateUserFlags
     , createdAt = generateCreatedAt
-    , updatedAt = generateUpdatedAt
     } = do
     userId <- generateUserId
     username <- generateUsername
@@ -372,12 +408,14 @@ randomUserFromTemplate
     password <- generatePassword
     userFlags <- generateUserFlags
     createdAt <- generateCreatedAt
-    updatedAt <- generateUpdatedAt
+    let updatedAt = createdAt
     let totpKey = Nothing
     let totpEnabled = False
-    pure User{..}
+    let user = User{..}
+    Update.insertUser user
+    pure user
 
-data RandomPackageTemplate m = RandomPackageTemplate
+data PackageTemplate m = PackageTemplate
   { packageId :: m PackageId
   , namespace :: m Namespace
   , name :: m PackageName
@@ -389,28 +427,27 @@ data RandomPackageTemplate m = RandomPackageTemplate
   }
   deriving stock (Generic)
 
-randomPackageTemplate :: MonadIO m => RandomPackageTemplate m
+randomPackageTemplate :: MonadIO m => PackageTemplate m
 randomPackageTemplate =
-  RandomPackageTemplate
+  PackageTemplate
     { packageId = PackageId <$> H.sample genUUID
-    , namespace = H.sample genPackageNamespace
-    , name = H.sample genPackageName
-    , ownerId = H.sample genUserId
-    , createdAt = H.sample genUTCTime
-    , updatedAt = H.sample genUTCTime
-    , status = H.sample genStatus
+    , namespace = liftIO $ H.sample genPackageNamespace
+    , name = liftIO $ H.sample genPackageName
+    , ownerId = liftIO $ H.sample genUserId
+    , createdAt = liftIO $ H.sample genUTCTime
+    , updatedAt = liftIO $ H.sample genUTCTime
+    , status = liftIO $ H.sample genStatus
     , deprecationInfo = pure Nothing
     }
 
-randomPackageFromTemplate :: MonadIO m => RandomPackageTemplate m -> m Package
-randomPackageFromTemplate
-  RandomPackageTemplate
+instantiatePackage :: DB :> es => PackageTemplate (Eff es) -> Eff es Package
+instantiatePackage
+  PackageTemplate
     { packageId = generatePackageId
     , namespace = generatePackageNamespace
     , name = generatePackageName
     , ownerId = generateUserId
     , createdAt = generateCreatedAt
-    , updatedAt = generateUpdatedAt
     , status = generatePackageStatus
     , deprecationInfo = generatePackageDeprecationInfo
     } = do
@@ -419,10 +456,12 @@ randomPackageFromTemplate
     name <- generatePackageName
     ownerId <- generateUserId
     createdAt <- generateCreatedAt
-    updatedAt <- generateUpdatedAt
+    let updatedAt = createdAt
     status <- generatePackageStatus
     deprecationInfo <- generatePackageDeprecationInfo
-    pure Package{..}
+    let package = Package{..}
+    Update.insertPackage package
+    pure package
 
 genPackageName :: MonadGen m => m PackageName
 genPackageName = PackageName <$> H.text (Range.constant 3 10) H.ascii
@@ -433,7 +472,7 @@ genPackageNamespace = Namespace <$> H.text (Range.constant 3 10) H.ascii
 genStatus :: MonadGen m => m PackageStatus
 genStatus = H.enumBounded
 
-data RandomReleaseTemplate m = RandomReleaseTemplate
+data ReleaseTemplate m = ReleaseTemplate
   { releaseId :: m ReleaseId
   , packageId :: m PackageId
   , version :: m Version
@@ -462,35 +501,176 @@ data RandomReleaseTemplate m = RandomReleaseTemplate
   , revisedAt :: m (Maybe UTCTime)
   , buildType :: m BuildType
   }
+  deriving stock (Generic)
 
-randomReleaseTemplate :: MonadIO m => RandomReleaseTemplate m
+randomReleaseTemplate :: MonadIO m => ReleaseTemplate m
 randomReleaseTemplate =
-  RandomReleaseTemplate
+  ReleaseTemplate
     { releaseId = ReleaseId <$> H.sample genUUID
     , packageId = PackageId <$> H.sample genUUID
-    , version = Version.mkVersion . NE.toList <$> H.nonEmpty (R.singleton 4) (H.int (R.constant 0 10))
-    , archiveChecksum = H.text (Range.singleton 30) H.ascii
+    , version = do
+        result <- H.sample $ H.nonEmpty (Range.singleton 4) (H.int (Range.constant 0 10))
+        pure $ Version.mkVersion $ NE.toList result
+    , archiveChecksum = H.sample $ H.text (Range.singleton 30) H.ascii
     , uploadedAt = Just <$> H.sample genUTCTime
     , updatedAt = H.sample genUTCTime
     , createdAt = H.sample genUTCTime
-    , readme = undefined 
-    , readmeStatus = undefined 
-    , changelog = undefined 
-    , changelogStatus = undefined 
-    , tarballRootHash = undefined 
-    , tarballArchiveHash = undefined 
-    , license = undefined 
-    , sourceRepos = undefined 
-    , homepage = undefined 
-    , documentation = undefined 
-    , bugTracker = undefined 
-    , maintainer = undefined 
-    , synopsis = undefined 
-    , description = undefined 
-    , flags = undefined 
-    , testedWith = undefined 
-    , deprecated = undefined 
-    , repository = undefined 
-    , revisedAt = undefined 
-    , buildType = undefined 
+    , readme = pure Nothing
+    , readmeStatus = pure Inexistent
+    , changelog = pure Nothing
+    , changelogStatus = pure Inexistent
+    , tarballRootHash = pure Nothing
+    , tarballArchiveHash = pure Nothing
+    , license = pure $ SPDX.License (SPDX.ELicense (SPDX.ELicenseId SPDX.BSD_2_Clause) Nothing)
+    , sourceRepos = pure Vector.empty
+    , homepage = pure Nothing
+    , documentation = pure ""
+    , bugTracker = pure Nothing
+    , maintainer = pure ""
+    , synopsis = pure ""
+    , description = pure ""
+    , flags = pure $ ReleaseFlags Vector.empty
+    , testedWith = pure Vector.empty
+    , deprecated = pure Nothing
+    , repository = pure Nothing
+    , revisedAt = pure Nothing
+    , buildType = pure Simple
     }
+
+instantiateRelease :: DB :> es => ReleaseTemplate (Eff es) -> Eff es Release
+instantiateRelease
+  ReleaseTemplate
+    { releaseId = generateReleaseId
+    , packageId = generatePackageId
+    , version = generateVersion
+    , archiveChecksum = generateArchiveChecksum
+    , uploadedAt = generateUploadedAt
+    , createdAt = generateCreatedAt
+    , readme = generateReadme
+    , readmeStatus = generateReadmeStatus
+    , changelog = generateChangelog
+    , changelogStatus = generateChangelogStatus
+    , tarballRootHash = generateTarballRootHash
+    , tarballArchiveHash = generateTarballArchiveHash
+    , license = generateLicense
+    , sourceRepos = generateSourceRepos
+    , homepage = generateHomepage
+    , documentation = generateDocumentation
+    , bugTracker = generateBugTracker
+    , maintainer = generateMaintainer
+    , synopsis = generateSynopsis
+    , description = generateDescription
+    , flags = generateFlags
+    , testedWith = generateTestedWith
+    , deprecated = generateDeprecated
+    , repository = generateRepository
+    , revisedAt = generateRevisedAt
+    , buildType = generateBuildType
+    } = do
+    releaseId <- generateReleaseId
+    packageId <- generatePackageId
+    version <- generateVersion
+    archiveChecksum <- generateArchiveChecksum
+    uploadedAt <- generateUploadedAt
+    createdAt <- generateCreatedAt
+    let updatedAt = createdAt
+    readme <- generateReadme
+    readmeStatus <- generateReadmeStatus
+    changelog <- generateChangelog
+    changelogStatus <- generateChangelogStatus
+    license <- generateLicense
+    tarballRootHash <- generateTarballRootHash
+    tarballArchiveHash <- generateTarballArchiveHash
+    sourceRepos <- generateSourceRepos
+    homepage <- generateHomepage
+    documentation <- generateDocumentation
+    bugTracker <- generateBugTracker
+    maintainer <- generateMaintainer
+    synopsis <- generateSynopsis
+    description <- generateDescription
+    flags <- generateFlags
+    testedWith <- generateTestedWith
+    deprecated <- generateDeprecated
+    repository <- generateRepository
+    revisedAt <- generateRevisedAt
+    buildType <- generateBuildType
+    let release = Release{..}
+    Update.insertRelease release
+    Update.refreshLatestVersions
+    pure release
+
+data PackageComponentTemplate m = PackageComponentTemplate
+  { componentId :: m ComponentId
+  , releaseId :: m ReleaseId
+  , canonicalForm :: m CanonicalComponent
+  , metadata :: m ComponentMetadata
+  }
+  deriving stock (Generic)
+
+randomPackageComponentTemplate :: MonadIO m => PackageComponentTemplate m
+randomPackageComponentTemplate =
+  PackageComponentTemplate
+    { componentId = ComponentId <$> H.sample genUUID
+    , releaseId = ReleaseId <$> H.sample genUUID
+    , canonicalForm = pure $ CanonicalComponent "" Library
+    , metadata = pure $ ComponentMetadata []
+    }
+
+instantiatePackageComponent
+  :: DB :> es
+  => PackageComponentTemplate (Eff es)
+  -> Eff es PackageComponent
+instantiatePackageComponent
+  PackageComponentTemplate
+    { componentId = generateComponentId
+    , releaseId = generatereleaseId
+    , canonicalForm = generatecanonicalForm
+    , metadata = generatemetadata
+    } = do
+    componentId <- generateComponentId
+    releaseId <- generatereleaseId
+    canonicalForm <- generatecanonicalForm
+    metadata <- generatemetadata
+    let packageComponent = PackageComponent{..}
+    Update.insertPackageComponent packageComponent
+    pure packageComponent
+
+data RequirementTemplate m = RequirementTemplate
+  { requirementId :: m RequirementId
+  , packageComponentId :: m ComponentId
+  , packageId :: m PackageId
+  , requirement :: m Text
+  , components :: m (Vector Text)
+  }
+  deriving stock (Generic)
+
+randomRequirementTemplate :: MonadIO m => RequirementTemplate m
+randomRequirementTemplate =
+  RequirementTemplate
+    { requirementId = RequirementId <$> H.sample genUUID
+    , packageComponentId = ComponentId <$> H.sample genUUID
+    , packageId = PackageId <$> H.sample genUUID
+    , requirement = undefined
+    , components = undefined
+    }
+
+instantiateRequirement
+  :: DB :> es
+  => RequirementTemplate (Eff es)
+  -> Eff es Requirement
+instantiateRequirement
+  RequirementTemplate
+    { requirementId = generateRequirementId
+    , packageComponentId = generateComponentId
+    , packageId = generatePackageId
+    , requirement = generateRequirement
+    , components = generateComponents
+    } = do
+    requirementId <- generateRequirementId
+    packageComponentId <- generateComponentId
+    packageId <- generatePackageId
+    requirement <- generateRequirement
+    components <- generateComponents
+    let req = Requirement{..}
+    Update.insertRequirement req
+    pure req
