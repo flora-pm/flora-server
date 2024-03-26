@@ -1,0 +1,8 @@
+import: ./cabal.project
+
+tests: False
+documentation: False
+optimization: 2
+
+package *
+  flags: +prod

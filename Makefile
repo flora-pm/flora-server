@@ -4,8 +4,12 @@ init: ## Set up git hooks properly - needs calling once when cloning the repo
 start: ## Start flora-server
 	@cabal run exe:flora-server
 
-build: soufflé ## Build the backend
-	@cabal build -j -O1
+build: soufflé ## Build the server
+	@cabal build -O1
+
+build-release: soufflé ## Build the server for production
+	@cabal freeze --project-file cabal.project.release
+	@cabal build --project-file cabal.project.release 
 
 clean: ## Remove the cabal build artifacts
 	@rm cbits/*.cpp
