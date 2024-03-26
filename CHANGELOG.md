@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.17 -- 2024-03-2
+
+* Add `exe:` search modifier to look up packages by executable name ([#529](https://github.com/flora-pm/flora-server/pull/529))
+* Add a link to the search documentation under the main search bar ([#532](https://github.com/flora-pm/flora-server/pull/532))
+* Add a link to the general documentation in the navbar ([#537](https://github.com/flora-pm/flora-server/pull/537))
+
 ## 1.0.16 -- 2024-02-26
 
 * Add badge component for custom build type ([#517](https://github.com/flora-pm/flora-server/pull/517))

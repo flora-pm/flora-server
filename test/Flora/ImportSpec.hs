@@ -23,7 +23,7 @@ spec fixtures =
   testThese
     "Import tests"
     [ testThis "Import index" $ testImportIndex fixtures
-    , testThis "Namespace choosser" testNamespaceChooser
+    , testThis "Namespace chooser" testNamespaceChooser
     ]
 
 testIndex :: FilePath
@@ -40,17 +40,15 @@ defaultDescription = "test-description"
 
 testImportIndex :: Fixtures -> TestEff ()
 testImportIndex fixture = withStdOutLogger $
-  \logger -> do
+  \_ -> do
     mIndex <- Query.getPackageIndexByName defaultRepo
     case mIndex of
       Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
       Just _ -> pure ()
     importFromIndex
-      logger
       (fixture.hackageUser.userId)
       (defaultRepo, defaultRepoURL)
       testIndex
-      True
     -- check the packages have been imported
     tars <- traverse (Query.getPackageByNamespaceAndName (Namespace defaultRepo) . PackageName) ["tar-a", "tar-b"]
     releases <- fmap mconcat . traverse (\x -> Query.getReleases (x ^. #packageId)) $ catMaybes tars

@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.16
+version:            1.0.17
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -86,6 +86,7 @@ library
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
     Distribution.Orphans.Version
+    Effectful.Poolboy
     Flora.Environment
     Flora.Environment.Config
     Flora.Import.Categories
@@ -139,6 +140,7 @@ library
 
   build-depends:
     , aeson
+    , attoparsec
     , base                   ^>=4.18.2
     , base16-bytestring
     , base64
@@ -154,6 +156,7 @@ library
     , deepseq
     , deriving-aeson
     , directory
+    , effectful
     , effectful-core
     , envparse
     , filepath
@@ -376,6 +379,7 @@ library flora-jobs
     , odd-jobs
     , pg-entity
     , pg-transact-effectful
+    , poolboy
     , postgresql-simple
     , req
     , resource-pool
@@ -408,6 +412,7 @@ executable flora-cli
     , base
     , bytestring
     , Cabal-syntax
+    , effectful
     , effectful-core
     , envparse
     , filepath
@@ -420,6 +425,7 @@ executable flora-cli
     , optics-core
     , optparse-applicative
     , pg-transact-effectful
+    , poolboy
     , PyF
     , sel
     , text
@@ -442,6 +448,7 @@ test-suite flora-test
     , bytestring
     , Cabal-syntax
     , containers
+    , effectful
     , effectful-core
     , exceptions
     , filepath
@@ -456,6 +463,7 @@ test-suite flora-test
     , pg-entity
     , pg-transact
     , pg-transact-effectful
+    , poolboy
     , postgresql-migration
     , postgresql-simple
     , resource-pool

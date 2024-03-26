@@ -24,6 +24,7 @@ navbar = do
       div_ [class_ "navbar-right"] $ do
         navBarLink "navbar-menu-button" "/" "Search on Flora" False
         navBarLink' "/about" "About" aboutNav
+        a_ [href_ "/documentation", class_ "navbar-link", target_ "_blank"] (text "Documentation")
         navBarLink' "/categories" "Categories" packagesNav
         navBarLink' "/packages" "Packages" packagesNav
         userMenu
@@ -88,10 +89,9 @@ navBarLink
   -- ^ is the element active
   -> FloraHTML
 navBarLink additionalClasses href label isActive' =
-  let baseClasses = "navbar-link "
-   in a_
-        [href_ href, class_ (baseClasses <> " " <> additionalClasses <> " " <> isActive isActive')]
-        (text label)
+  a_
+    [href_ href, class_ ("navbar-link " <> additionalClasses <> " " <> isActive isActive')]
+    (text label)
 
 navBarLink' :: Text -> Text -> Bool -> FloraHTML
 navBarLink' = navBarLink ""

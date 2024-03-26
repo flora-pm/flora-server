@@ -192,7 +192,7 @@ naturalTransform floraEnv logger _webEnvStore app = do
                 _ -> runBlobStorePure
             )
           & runLog floraEnv.environment logger
-          & runErrorWith (\ _callstack err -> pure $ Left err)
+          & runErrorWith (\_callstack err -> pure $ Left err)
           & runEff
   either Except.throwError pure result
 

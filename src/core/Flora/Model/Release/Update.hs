@@ -6,7 +6,7 @@ module Flora.Model.Release.Update where
 import Control.Monad (void)
 import Data.Text.Display (display)
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
+import Database.PostgreSQL.Entity.DBT (QueryNature (Insert, Update), execute, executeMany)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
@@ -28,7 +28,7 @@ insertRelease :: DB :> es => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
 
 upsertRelease :: DB :> es => Release -> Eff es ()
-upsertRelease release = dbtToEff $ upsert @Release release [[field| updated_at |]]
+upsertRelease release = dbtToEff $ void $ execute Insert (_insert @Release <> " ON CONFLICT DO NOTHING") release
 
 refreshLatestVersions :: DB :> es => Eff es ()
 refreshLatestVersions = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()

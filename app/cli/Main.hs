@@ -3,6 +3,7 @@ module Main where
 import Codec.Compression.GZip qualified as GZip
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Maybe
+import Data.Poolboy (poolboySettingsWith)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
@@ -10,10 +11,11 @@ import DesignSystem (generateComponents)
 import Distribution.Version (Version)
 import Effectful
 import Effectful.Fail
+import Effectful.FileSystem
 import Effectful.Log
 import Effectful.PostgreSQL.Transact.Effect
-import Effectful.Reader.Static (Reader, runReader)
 import Effectful.Time (Time, runTime)
+import GHC.Conc (getNumCapabilities)
 import GHC.Generics (Generic)
 import Log qualified
 import Log.Backend.StandardOutput qualified as Log
@@ -22,8 +24,8 @@ import Options.Applicative
 import Sel.Hashing.Password qualified as Sel
 import System.FilePath ((</>))
 
+import Effectful.Poolboy
 import Flora.Environment
-import Flora.Environment.Config (PoolConfig (..))
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Model.BlobIndex.Update qualified as Update
@@ -66,18 +68,22 @@ data UserCreationOptions = UserCreationOptions
   deriving stock (Generic, Show, Eq)
 
 main :: IO ()
-main = do
+main = Log.withStdOutLogger $ \logger -> do
   result <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
+  capabilities <- getNumCapabilities
   env <- getFloraEnv & runFailIO & runEff
   runEff
-    . runReader env.dbConfig
+    . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     . runDB env.pool
     . runFailIO
     . runTime
+    . runPoolboy (poolboySettingsWith capabilities)
     . ( case env.features.blobStoreImpl of
           Just (BlobStoreFS fp) -> runBlobStoreFS fp
           _ -> runBlobStorePure
       )
+    . runFileSystem
+    . runLog "flora-cli" logger Log.LogTrace
     $ runOptions result
 
 parseOptions :: Parser Options
@@ -150,12 +156,14 @@ parseImportPackageTarball =
     <*> argument str (metavar "PATH")
 
 runOptions
-  :: ( Reader PoolConfig :> es
+  :: ( Log :> es
+     , FileSystem :> es
      , DB :> es
      , Time :> es
      , Fail :> es
      , IOE :> es
      , BlobStoreAPI :> es
+     , Poolboy :> es
      )
   => Options
   -> Eff es ()
@@ -186,37 +194,60 @@ runOptions (Options (ImportPackageTarball pname version path)) = importPackageTa
 provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es ()
 provisionRepository name url description = Update.createPackageIndex name url description Nothing
 
-importFolderOfCabalFiles :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
-importFolderOfCabalFiles path repository = Log.withStdOutLogger $ \appLogger -> do
+importFolderOfCabalFiles
+  :: ( FileSystem :> es
+     , Time :> es
+     , Log :> es
+     , Poolboy :> es
+     , DB :> es
+     , IOE :> es
+     )
+  => FilePath
+  -> Text
+  -> Eff es ()
+importFolderOfCabalFiles path repository = do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importAllFilesInRelativeDirectory appLogger (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository) True
+      importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
 
-importIndex :: (Reader PoolConfig :> es, DB :> es, IOE :> es) => FilePath -> Text -> Eff es ()
-importIndex path repository = Log.withStdOutLogger $ \logger -> do
+importIndex
+  :: ( Time :> es
+     , Log :> es
+     , Poolboy :> es
+     , DB :> es
+     , IOE :> es
+     )
+  => FilePath
+  -> Text
+  -> Eff es ()
+importIndex path repository = do
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importFromIndex logger (user ^. #userId) (repository, packageIndex.url) path True
+      importFromIndex (user ^. #userId) (repository, packageIndex.url) path
 
 importPackageTarball
-  :: (BlobStoreAPI :> es, Time :> es, IOE :> es, DB :> es)
+  :: ( Log :> es
+     , BlobStoreAPI :> es
+     , Time :> es
+     , IOE :> es
+     , DB :> es
+     )
   => PackageName
   -> Version
   -> FilePath
   -> Eff es ()
-importPackageTarball pname version path = Log.withStdOutLogger $ \logger -> do
+importPackageTarball pname version path = do
   contents <- liftIO $ GZip.decompress <$> BS.readFile path
-  runLog "flora-cli" logger Log.LogTrace $ do
-    res <- Update.insertTar pname version contents
-    case res of
-      Right hash -> Log.logInfo_ $ "Insert tarball with root hash: " <> display hash
-      Left err -> Log.logAttention_ $ display err
+  res <- Update.insertTar pname version contents
+  case res of
+    Right hash -> Log.logInfo_ $ "Insert tarball with root hash: " <> display hash
+    Left err -> Log.logAttention_ $ display err
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

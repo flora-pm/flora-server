@@ -35,8 +35,12 @@ import Flora.Model.Package
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
-import FloraWeb.Components.Icons
-import FloraWeb.Components.PackageListItem (licenseIcon, packageListItem, requirementListItem)
+import FloraWeb.Components.Icons qualified as Icon
+import FloraWeb.Components.PackageListItem
+  ( packageListItem
+  , packageWithExecutableListItem
+  , requirementListItem
+  )
 import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Components.Pill (customBuildType)
 import FloraWeb.Components.Utils
@@ -66,9 +70,9 @@ presentationHeaderForSubpage namespace packageName release target numberOfPackag
   div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
     span_ [class_ "headline"] $ do
       displayNamespace namespace
-      chevronRightOutline
+      Icon.chevronRightOutline
       linkToPackageWithVersion namespace packageName release.version
-      chevronRightOutline
+      Icon.chevronRightOutline
       toHtml (display target)
   p_ [class_ "synopsis"] $
     span_ [class_ "version"] $
@@ -85,9 +89,9 @@ presentationHeaderForVersions namespace packageName numberOfReleases = div_ [cla
   div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
     span_ [class_ "headline"] $ do
       displayNamespace namespace
-      chevronRightOutline
+      Icon.chevronRightOutline
       linkToPackage namespace packageName
-      chevronRightOutline
+      Icon.chevronRightOutline
       toHtml (display Versions)
   p_ [class_ "synopsis"] $
     span_ [class_ "version"] $
@@ -157,10 +161,10 @@ versionListItem namespace packageName release = do
         div_ [class_ "package-list-item__metadata"] $
           span_ [class_ "package-list-item__license"] $
             do
-              licenseIcon
+              Icon.license
               toHtml release.license
 
--- | Render a list of package informations
+-- | Render a list of package information
 packageListing
   :: Maybe (Vector PackageInfo)
   -- ^ Priority items that are highlighted,
@@ -177,6 +181,13 @@ packageListing mExactMatchItems packages =
       packages
       ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license)
       )
+
+packageWithExecutableListing
+  :: Vector PackageInfoWithExecutables
+  -> FloraHTML
+packageWithExecutableListing packages =
+  ul_ [class_ "package-list"] $ do
+    Vector.forM_ packages packageWithExecutableListItem
 
 requirementListing :: ComponentDependencies -> FloraHTML
 requirementListing requirements =
@@ -295,7 +306,7 @@ displayVersions namespace packageName versions numberOfReleases =
                         ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
                     , class_ "revised-date"
                     ]
-                    pen
+                    Icon.pen
 
 displayDependencies
   :: (Namespace, PackageName, Version)
@@ -450,7 +461,7 @@ displayPackageFlags (ReleaseFlags packageFlags) =
         [ dataText_ "Use the -f option with cabal commands to enable flags"
         , class_ "instruction-tooltip"
         ]
-        usageInstructionTooltip
+        Icon.usageInstructionTooltip
       ul_ [class_ "package-flags"] $
         Vector.forM_ packageFlags displayPackageFlag
 
