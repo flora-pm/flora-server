@@ -59,7 +59,6 @@ db-provision: ## Create categories and repositories
 db-provision-test-packages: ## Load development data in the database
 	@cabal run -- flora-cli provision test-packages --repository "hackage"
 	@cabal run -- flora-cli provision test-packages --repository "cardano"
-	@cabal run -- flora-cli provision test-packages --repository "horizon"
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
 	@cabal run -- flora-cli import-packages ./01-index
