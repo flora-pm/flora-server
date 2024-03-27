@@ -13,7 +13,7 @@ import Lucid.Orphans ()
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types (Release (..))
-import FloraWeb.Components.Icons
+import FloraWeb.Components.Icons (chevronRightOutline)
 import FloraWeb.Pages.Templates.Packages
   ( displayCategories
   , displayDependencies
@@ -27,7 +27,6 @@ import FloraWeb.Pages.Templates.Packages
   , displayPackageFlags
   , displayReadme
   , displayReleaseDeprecation
-  , displayReleaseVersion
   , displayTestedWith
   , displayVersions
   )
@@ -80,7 +79,7 @@ presentationHeader release namespace name synopsis =
           chevronRightOutline
           toHtml name
         let versionClass = "version" <> if Just True == release.deprecated then " release-deprecated" else ""
-        span_ [class_ versionClass] $ displayReleaseVersion release.version
+        span_ [class_ versionClass] $ toHtml release.version
     div_ [class_ "synopsis"] $
       p_ [class_ ""] (toHtml synopsis)
 

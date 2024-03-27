@@ -249,11 +249,13 @@ displayCategories categories =
     ul_ [class_ "categories"] $ foldMap renderCategory categories
 
 displayLinks :: Namespace -> PackageName -> Text -> Release -> FloraHTML
-displayLinks namespace packageName packageIndexURL release =
+displayLinks namespace packageName packageIndexURL release = do
   li_ [class_ ""] $ do
     h3_ [class_ "package-body-section links"] "Links"
     ul_ [class_ "links"] $ do
-      li_ [class_ "package-link"] $ a_ [href_ (getHomepage release)] "Homepage"
+      when (release.homepage /= Just "") $
+        li_ [class_ "package-link"] $
+          a_ [href_ (getHomepage release)] "Homepage"
       li_ [class_ "package-link"] $ a_ [href_ (packageIndexURL <> "/package/" <> display packageName <> "-" <> display release.version)] "Documentation"
 
       li_ [class_ "package-link"] $ displaySourceRepos release.sourceRepos
