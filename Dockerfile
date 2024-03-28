@@ -23,7 +23,7 @@ RUN chown -R $USER:$USER /home/$USER/.cabal
 WORKDIR /flora-server 
 
 RUN apt update && \
-    apt install -y build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 git
+    apt install -y build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 git libsodium-dev
 
 # install dependencies (pg_config, postgresql-client, yarn)
 ENV BOOTSTRAP_HASKELL_NONINTERACTIVE="YES"
