@@ -367,6 +367,7 @@ library flora-jobs
     , commonmark
     , commonmark-extensions
     , containers
+    , effectful
     , effectful-core
     , flora
     , http-client
@@ -389,6 +390,7 @@ library flora-jobs
     , text
     , text-display
     , time
+    , typed-process-effectful
     , vector
 
 executable flora-server
@@ -399,7 +401,19 @@ executable flora-server
   hs-source-dirs: app/server
   build-depends:
     , base
+    , containers
+    , effectful
+    , flora
+    , flora-jobs
     , flora-web
+    , log-base
+    , log-effectful
+    , pg-entity
+    , pg-transact-effectful
+    , postgresql-simple
+    , resource-pool
+    , text
+    , vector
 
 executable flora-cli
   import:         common-extensions

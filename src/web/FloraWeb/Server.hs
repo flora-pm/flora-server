@@ -4,6 +4,7 @@ import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
+import Control.Monad.Except qualified as Except
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
 import Data.Pool qualified as Pool
@@ -51,17 +52,28 @@ import Servant
 import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
 
-import Control.Monad.Except qualified as Except
-import Flora.Environment (BlobStoreImpl (..), DeploymentEnv, FeatureEnv (..), FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import Flora.Environment
+  ( BlobStoreImpl (..)
+  , DeploymentEnv
+  , FeatureEnv (..)
+  , FloraEnv (..)
+  , LoggingEnv (..)
+  , getFloraEnv
+  )
 import Flora.Environment.Config (Assets)
-import Flora.Logging (runLog)
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import FloraJobs.Runner (runner)
 import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
-import FloraWeb.Common.Auth (OptionalAuthContext, StrictAuthContext, adminAuthHandler, optionalAuthHandler, strictAuthHandler)
+import FloraWeb.Common.Auth
+  ( OptionalAuthContext
+  , StrictAuthContext
+  , adminAuthHandler
+  , optionalAuthHandler
+  , strictAuthHandler
+  )
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
@@ -85,7 +97,7 @@ runFlora =
       (getFloraEnv & runFailIO & runEff)
       (runEff . shutdownFlora)
       ( \env ->
-          runEff . runTime . runConcurrent $ do
+          runEff . withUnliftStrategy (ConcUnlift Ephemeral Unlimited) . runTime . runConcurrent $ do
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
@@ -191,7 +203,7 @@ naturalTransform floraEnv logger _webEnvStore app = do
                 Just (BlobStoreFS fp) -> runBlobStoreFS fp
                 _ -> runBlobStorePure
             )
-          & runLog floraEnv.environment logger
+          & Logging.runLog floraEnv.environment logger
           & runErrorWith (\_callstack err -> pure $ Left err)
           & runEff
   either Except.throwError pure result
