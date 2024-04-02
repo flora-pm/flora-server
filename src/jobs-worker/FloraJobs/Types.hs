@@ -14,10 +14,12 @@ import Database.PostgreSQL.Simple (Connection)
 import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Effectful
+import Effectful.FileSystem
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
 import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
+import Effectful.Process.Typed
 import Effectful.Reader.Static (Reader, runReader)
 import Effectful.Time (Time, runTime)
 import GHC.Generics (Generic)
@@ -42,12 +44,15 @@ type JobsRunner =
      , BlobStoreAPI
      , Log
      , Time
+     , TypedProcess
+     , FileSystem
      , IOE
      ]
 
 runJobRunner :: Pool Connection -> JobsRunnerEnv -> FloraEnv -> Logger -> JobsRunner a -> IO a
 runJobRunner pool runnerEnv floraEnv logger jobRunner =
   jobRunner
+    & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & runDB pool
     & runPoolboy (poolboySettingsWith floraEnv.dbConfig.connections)
     & runReader runnerEnv
@@ -57,6 +62,8 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
       )
     & LogEff.runLog "flora-jobs" logger defaultLogLevel
     & runTime
+    & runTypedProcess
+    & runFileSystem
     & runEff
 
 data OddJobException where
@@ -109,6 +116,7 @@ makeUIConfig cfg logger pool =
 structuredLogging :: FloraConfig -> Logger -> LogLevel -> LogEvent -> IO ()
 structuredLogging FloraConfig{..} logger level event =
   runEff
+    . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     . runTime
     . Logging.runLog environment logger
     $ localDomain "odd-jobs"
