@@ -23,6 +23,7 @@ import Optics.Core
 import Options.Applicative
 import Sel.Hashing.Password qualified as Sel
 import System.FilePath ((</>))
+import System.IO
 
 import Effectful.Poolboy
 import Flora.Environment
@@ -69,6 +70,7 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
+  hSetBuffering stdout LineBuffering
   result <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   capabilities <- getNumCapabilities
   env <- getFloraEnv & runFailIO & runEff
