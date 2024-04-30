@@ -1,4 +1,3 @@
-version: "3"
 services:
   server:
     image: ghcr.io/flora-pm/flora-server:latest
