@@ -1,4 +1,28 @@
-module FloraWeb.Pages.Templates.Packages where
+module FloraWeb.Pages.Templates.Packages
+  ( displayCategories
+  , displayDependencies
+  , displayDependents
+  , displayInstructions
+  , displayLicense
+  , displayLinks
+  , displayMaintainer
+  , displayNamespace
+  , displayPackageDeprecation
+  , displayPackageFlags
+  , displayReadme
+  , displayReleaseDeprecation
+  , displayReleaseVersion
+  , displayTestedWith
+  , displayVersions
+  , listVersions
+  , packageListing
+  , packageWithExecutableListing
+  , presentationHeaderForSubpage
+  , presentationHeaderForVersions
+  , showChangelog
+  , showDependencies
+  , showDependents
+  ) where
 
 import Control.Monad (when)
 import Control.Monad.Extra (whenJust)
@@ -153,11 +177,20 @@ versionListItem namespace packageName release = do
     a_ [href, class_ ""] $
       do
         h4_ [class_ "package-list-item__name"]
-          $ strong_ [class_ ""]
+          $ strong_ [class_ (if Just True == release.deprecated then " release-deprecated" else "")]
             . toHtml
           $ "v"
             <> toHtml release.version
         uploadedAt
+        case release.revisedAt of
+          Nothing -> span_ [] ""
+          Just revisionDate ->
+            span_
+              [ dataText_
+                  ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
+              , class_ "revised-date"
+              ]
+              Icon.pen
         div_ [class_ "package-list-item__metadata"] $
           span_ [class_ "package-list-item__license"] $
             do
