@@ -136,7 +136,6 @@ import Test.Tasty.HUnit qualified as Test
 
 import Flora.Environment
 import Flora.Environment.Config (LoggingDestination (..), PoolConfig (..))
-import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
@@ -311,7 +310,6 @@ testMigrations = do
   pool <- getPool
   liftIO $ withResource pool $ \conn ->
     void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
-  importCategories
 
 genWord32 :: MonadGen m => m Word32
 genWord32 = H.word32 (Range.constant minBound maxBound)

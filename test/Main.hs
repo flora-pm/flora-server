@@ -13,6 +13,7 @@ import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
+import Flora.Import.Categories (importCategories)
 import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)
@@ -31,13 +32,14 @@ main = do
   fixtures <-
     runTestEff
       ( do
+          testMigrations
           cleanUp
+          importCategories
           Update.createPackageIndex "hackage" "" "" Nothing
           Update.createPackageIndex "cardano" "" "" Nothing
           password <- liftIO $ Sel.hashText "foobar2000"
           templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
           Update.insertUser templateUser
-          testMigrations
           f' <- getFixtures
           importAllPackages f'
           pure f'
