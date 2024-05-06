@@ -50,7 +50,41 @@
   justify-content: center;
   display: grid;
   grid-template-columns: 25% 1fr 25%;
-  grid-gap: 10px;
+  gap: 10px;
+
+  > * {
+    grid-row-start: 1;
+  }
+
+  .package-left-column {
+    grid-column: 1 / 2;
+  }
+
+  .release-readme-column {
+    grid-column: 2 / 3;
+  }
+
+  .package-right-column {
+    grid-column: 3 / 4;
+  }
+
+  .package-right-rows {
+    position: sticky;
+    top: 7rem;
+  }
+
+  .package-right-rows > * {
+    margin-bottom: 1.25rem;
+  }
+
+  .package-left-rows {
+    position: sticky;
+    top: 7rem;
+  }
+
+  .package-left-rows > * {
+    margin-bottom: 1.25rem;
+  }
 
   a {
     font-weight: 500;
@@ -65,32 +99,6 @@
     font-size: 1.5rem;
     line-height: 2rem;
     margin-bottom: 0.5rem;
-  }
-
-  .package-right-column {
-    order: 3;
-  }
-
-  .package-right-rows {
-    position: sticky;
-    top: 7rem;
-  }
-
-  .package-right-rows > * {
-    margin-bottom: 1.25rem;
-  }
-
-  .package-left-column {
-    order: 1;
-  }
-
-  .package-left-rows {
-    position: sticky;
-    top: 7rem;
-  }
-
-  .package-left-rows > * {
-    margin-bottom: 1.25rem;
   }
 
   .package-flags-section {
@@ -272,23 +280,20 @@ a.breadcrumb-segment:hover {
 
 @media (max-width: 47rem) {
   .package-body {
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: 1fr;
 
-    .package-left-column {
-      order: 1;
+    > *:nth-child(n) {
+      grid-row-start: auto;
+      grid-column: 1 / 2;
     }
 
     .package-right-column {
-      order: 2;
-
       .package-right-rows .dependents {
         margin-bottom: 2rem;
       }
     }
 
     .release-readme-column {
-      order: 3;
-      grid-column: 1;
       overflow: auto;
     }
   }

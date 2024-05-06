@@ -15,7 +15,7 @@ import FloraWeb.Pages.Templates.Types
 show :: FloraHTML
 show = do
   banner
-  div_ [class_ "container-small"] $ do
+  div_ [class_ "container container-small"] $ do
     mainSearchBar
     buttons
 
@@ -40,7 +40,7 @@ buttons =
 about :: FloraHTML
 about = do
   TemplateEnv{environment} <- ask
-  div_ [class_ "about-page"] $ do
+  div_ [class_ "container about-page"] $ do
     div_ [class_ "divider about-page__banner"] $ do
       p_ [class_ "about-page__title"] "Flora.pm"
       p_ [class_ "about-page__subtitle"] "An index for the Haskell ecosystem"
