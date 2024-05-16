@@ -1,3 +1,9 @@
+name: Make sure PR has FLORA or NO-ISSUE issue in title or has one commit with FLORA/NO-ISSUE issue
+on:
+  pull_request:
+    types:
+      - synchronize
+      - edited
 jobs:
   make-sure-titles-contain-flora-issue:
     runs-on: ubuntu-latest
@@ -15,9 +21,3 @@ jobs:
           PULL_REQUEST_AUTHOR: "${{ github.event.pull_request.user.login }}"
         run: |
           ./.github/workflows/check-ticket-in-prs.sh
-name: Make sure PR has FLORA or NO-ISSUE issue in title or has one commit with FLORA/NO-ISSUE issue
-on:
-  pull_request:
-    types:
-      - synchronize
-      - edited

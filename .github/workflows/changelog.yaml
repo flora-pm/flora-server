@@ -1,0 +1,19 @@
+name: "Lint the changelog entries"
+on:
+  pull_request:
+    types:
+      - synchronize
+jobs:
+  lint-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v4"
+      - name: Install changelog-d
+        run: |
+          mkdir -p ~/.local/bin
+          wget https://codeberg.org/fgaz/changelog-d/releases/download/v1.0/changelog-d-v1.0-x86_64-linux -O ~/.local/bin/changelog-d
+          chmod +x ~/.local/bin/changelog-d
+          echo "~/.local/bin" >> $GITHUB_PATH
+      - name: Run changelog-d check
+        run: changelog-d changelog.d
