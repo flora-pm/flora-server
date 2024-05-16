@@ -1,0 +1,16 @@
+name: "Lint the changelog entries"
+on:
+  pull_request:
+    types:
+      - synchronize
+jobs:
+  lint-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: "actions/checkout@v4"
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Run changelog-d check
+        run: ./scripts/generate-changelog.sh

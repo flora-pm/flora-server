@@ -18,10 +18,11 @@ The following Haskell command-line tools will have to be installed:
 
 (Some of the above packages have incompatible dependencies, so don't try to install them all at once with `cabal install`)
 
-* [Soufflé datalog engine v2.3](https://github.com/souffle-lang/souffle/releases/tag/2.3): The datalog engine for package classification
+* [Soufflé datalog engine v2.2](https://github.com/souffle-lang/souffle/releases/tag/2.2): The datalog engine for package classification
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
+* `changelog-d` v1.0: https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0
 
 ### Questions 
 
@@ -45,6 +46,22 @@ PR title and commit message:
 [NO-ISSUE] Update dependencies for Storybook.js
 ```
 
+* Insert a changelog entry in the `changelog.d` directory, based on this template:
+
+```cabal
+synopsis: Add feature xyz
+prs: #102
+issues: #100 #101
+significance: significant -- Only if this is important enough to be put at the top of the changelog.
+
+description: {
+
+- Detail number 1
+- Detail number 2
+
+}
+```
+
 ### Feature request
 
 Open a thread in the [Feature Request][Feature Request board] discussion board.
@@ -56,7 +73,9 @@ Here is the procedure to follow when making a release:
 
 1. Create a PR to prepare the release of the next version targeting `development`. It must include:
     * Bump the version in the flora.cabal file
+    * Generate the changelog with ./scripts/generate-changelog.sh
     * Write down the date in the CHANGELOG
+
 2. Once the PR is merged into `development`, merge `development` into `main`
 3. Create a [new release](https://github.com/flora-pm/flora-server/releases/new).
 
