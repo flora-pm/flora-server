@@ -9,8 +9,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: "actions/checkout@v4"
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Install changelog-d
+        run: |
+          mkdir -p ~/.local/bin
+          wget https://codeberg.org/fgaz/changelog-d/releases/download/v1.0/changelog-d-v1.0-x86_64-linux -O ~/.local/bin/changelog-d
+          chmod +x ~/.local/bin/changelog-d
+          echo "~/.local/bin" >> $GITHUB_PATH
       - name: Run changelog-d check
-        run: ./scripts/generate-changelog.sh
+        run: changelog-d changelog.d
