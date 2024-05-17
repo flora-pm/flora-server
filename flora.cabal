@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.17
+version:            1.0.18
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -8,8 +8,10 @@ maintainer:         Théophile Choutri
 license:            BSD-3-Clause
 build-type:         Simple
 extra-source-files:
-  CHANGELOG.md
   LICENSE
+
+extra-doc-files:
+  CHANGELOG.md
   README.md
 
 tested-with:        GHC ==9.6.4
