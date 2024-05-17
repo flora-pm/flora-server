@@ -72,7 +72,7 @@ COPY --chown=${USER} scripts/shell-welcome.txt /etc/motd
 COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 
 # build Haskell dependencies
-COPY --chown=${USER} cabal.project flora.cabal ./
+COPY --chown=${USER} cabal.project flora.cabal cabal.project.freeze ./
 RUN cabal build --only-dependencies -j
 
 # compile Souffle source files
