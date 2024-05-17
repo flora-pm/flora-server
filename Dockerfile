@@ -49,8 +49,8 @@ ENV PATH="$PATH:/home/$USER/.ghcup/bin"
 
 # install soufflé
 USER "root"
-RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.3/x86_64-ubuntu-2004-souffle-2.3-Linux.deb
-RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.3-Linux.deb
+RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
+RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb
 USER ${USER}
 
 RUN echo $PATH
