@@ -7,9 +7,7 @@ author:             Théophile Choutri
 maintainer:         Théophile Choutri
 license:            BSD-3-Clause
 build-type:         Simple
-extra-source-files:
-  LICENSE
-
+extra-source-files: LICENSE
 extra-doc-files:
   CHANGELOG.md
   README.md
