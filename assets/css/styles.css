@@ -13,6 +13,7 @@
 @import "2-components/7-button.css";
 @import "2-components/8-alert.css";
 @import "2-components/9-terminal-icon.css";
+@import "2-components/10-error.css";
 
 @import "3-screens/1-package/1-package.css";
 @import "3-screens/1-package/2-release-changelog.css";
@@ -215,25 +216,6 @@
 
 [data-theme="dark"] .theme-button--dark {
   display: none;
-}
-
-.error-code {
-  color: var(--error-code);
-  font-size: 3rem;
-  line-height: 1;
-  font-weight: 800;
-}
-
-.error-message {
-  letter-spacing: -0.025rem;
-  font-weight: 800;
-  font-size: 3rem;
-  line-height: 1;
-  color: var(--error-code);
-}
-
-.error-page-button {
-  background-color: var(--error-button);
 }
 
 /* Dark mode-specific rules */

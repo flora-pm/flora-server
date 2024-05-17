@@ -5,5 +5,5 @@ wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-
 sudo apt -y update
 sudo apt -y install postgresql-14 g++ mcpp libffi7 llvm
 
-wget https://github.com/souffle-lang/souffle/releases/download/2.3/x86_64-ubuntu-2004-souffle-2.3-Linux.deb
-sudo dpkg -i ./x86_64-ubuntu-2004-souffle-2.3-Linux.deb
+wget https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
+sudo dpkg -i ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb

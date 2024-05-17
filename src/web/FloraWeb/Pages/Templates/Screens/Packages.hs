@@ -55,7 +55,7 @@ showPackage
   dependencies
   numberOfDependencies
   categories =
-    div_ [class_ "larger-container"] $ do
+    div_ [class_ "container"] $ do
       presentationHeader latestRelease namespace name latestRelease.synopsis
       packageBody
         package
@@ -113,7 +113,6 @@ packageBody
         displayMaintainer maintainer
         displayLinks namespace packageName packageIndexURL latestRelease
         displayVersions namespace packageName packageReleases numberOfReleases
-      div_ [class_ "release-readme-column"] $ div_ [class_ "release-readme"] $ displayReadme latestRelease
       div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows"] $ do
         case deprecationInfo of
           Just inFavourOf -> displayPackageDeprecation inFavourOf
@@ -125,6 +124,7 @@ packageBody
         displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
         displayDependents (namespace, packageName) numberOfDependents dependents
         displayPackageFlags flags
+      div_ [class_ "release-readme-column"] $ div_ [class_ "release-readme"] $ displayReadme latestRelease
 
 getLatestViableRelease
   :: Namespace

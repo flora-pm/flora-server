@@ -79,12 +79,18 @@
   }
 
   .navbar-search {
-    @apply rounded-full w-full mr-3 pl-3 py-1 px-1;
-    @apply leading-tight focus:outline-none border border-2;
-
-    border-color: var(--navbar-search-border-color);
-    color: var(--navbar-search-color);
     background-color: var(--navbar-search-background-color);
+    border-color: var(--navbar-search-border-color);
+    border-radius: 9999px;
+    border-width: 2px;
+    color: var(--navbar-search-color);
+    line-height: 1.25;
+    margin-right: 0.75rem;
+    padding-bottom: 0.25rem;
+    padding-left: 0.75rem;
+    padding-right: 0.25rem;
+    padding-top: 0.25rem;
+    width: 100%;
   }
 
   .navbar-search:focus {
