@@ -1,7 +1,7 @@
 packages:
     ./
 
-with-compiler: ghc-9.6.4
+with-compiler: ghc-9.6.5
 
 active-repositories: hackage.haskell.org
 
