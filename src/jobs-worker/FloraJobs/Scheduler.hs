@@ -9,7 +9,8 @@ module FloraJobs.Scheduler
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
   , scheduleRefreshLatestVersions
-  , checkIfIndexImportJobIsNotRunning
+  , scheduleRefreshIndexes
+  , checkIfIndexRefreshJobIsPlanned
   , jobTableName
   --   prefer using smart constructors.
   , ReadmeJobPayload (..)
@@ -20,15 +21,18 @@ where
 
 import Data.Aeson (ToJSON)
 import Data.Pool
+import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
+import Effectful
+import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect
 import Log
-import OddJobs.Job (Job (..), createJob)
+import OddJobs.Job (Job (..), createJob, scheduleJob)
 
 import Flora.Model.Job
 import Flora.Model.Package
@@ -72,13 +76,22 @@ scheduleReleaseDeprecationListJob pool (package, releaseIds) =
 scheduleRefreshLatestVersions :: Pool PG.Connection -> IO Job
 scheduleRefreshLatestVersions pool = createJobWithResource pool RefreshLatestVersions
 
+scheduleRefreshIndexes :: Pool PG.Connection -> IO Job
+scheduleRefreshIndexes pool = withResource pool $ \conn -> do
+  now <- Time.getCurrentTime
+  scheduleJob conn jobTableName RefreshIndexes (Time.addUTCTime Time.nominalDay now)
+
 createJobWithResource :: ToJSON p => Pool PG.Connection -> p -> IO Job
 createJobWithResource pool job =
   withResource pool $ \conn -> createJob conn jobTableName job
 
-checkIfIndexImportJobIsNotRunning :: JobsRunner Bool
-checkIfIndexImportJobIsNotRunning = do
-  Log.logInfo_ "Checking if the index import job is not running…"
+checkIfIndexRefreshJobIsPlanned
+  :: ( DB :> es
+     , Log :> es
+     )
+  => Eff es Bool
+checkIfIndexRefreshJobIsPlanned = do
+  Log.logInfo_ "Checking if the index refresh job is planned…"
   (result :: Maybe (Only Int)) <-
     dbtToEff $
       queryOne_
@@ -86,18 +99,13 @@ checkIfIndexImportJobIsNotRunning = do
         [sql|
               select count(*)
               from "oddjobs"
-              where payload ->> 'tag' = 'ImportHackageIndex'
+              where payload ->> 'tag' = 'RefreshIndexes'
+              and status = 'queued'
       |]
   case result of
-    Nothing -> do
-      Log.logInfo_ "Index import job is running"
-      pure True
-    Just (Only 0) -> do
-      Log.logInfo_ "Index import job is running"
-      pure True
     Just (Only 1) -> do
-      Log.logInfo_ "Index import job is running"
+      Log.logInfo_ "Index refresh job is planned"
       pure True
     _ -> do
-      Log.logInfo_ "Index import job not running"
+      Log.logInfo_ "Index refresh job not not planned"
       pure False

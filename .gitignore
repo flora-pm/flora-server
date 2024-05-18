@@ -38,3 +38,4 @@ design/node_modules
 _build/cabal-store
 storage/
 cabal.project.release.freeze
+prlog

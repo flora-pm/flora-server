@@ -12,7 +12,7 @@ import Distribution.Version (Version)
 import Effectful
 import Effectful.Fail
 import Effectful.FileSystem
-import Effectful.Log
+import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time (Time, runTime)
 import GHC.Conc (getNumCapabilities)
@@ -173,18 +173,22 @@ runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
       canLogin = opts ^. #canLogin
-  password <- liftIO $ Sel.hashText opts.password
-  if opts ^. #isAdmin
-    then
-      addAdmin AdminCreationForm{..}
-        >>= \admin ->
-          if canLogin
-            then pure ()
-            else lockAccount (admin ^. #userId)
-    else do
-      templateUser <- mkUser UserCreationForm{..}
-      let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
-      insertUser user
+  mUser <- Query.getUserByEmail email
+  case mUser of
+    Just _ -> pure ()
+    Nothing -> do
+      password <- liftIO $ Sel.hashText opts.password
+      if opts ^. #isAdmin
+        then
+          addAdmin AdminCreationForm{..}
+            >>= \admin ->
+              if canLogin
+                then pure ()
+                else lockAccount (admin ^. #userId)
+        else do
+          templateUser <- mkUser UserCreationForm{..}
+          let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
+          insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportPackages path repository)) = importFolderOfCabalFiles path repository
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
@@ -192,7 +196,7 @@ runOptions (Options (ProvisionRepository name url description)) = provisionRepos
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
 
 provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es ()
-provisionRepository name url description = Update.createPackageIndex name url description Nothing
+provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
 
 importFolderOfCabalFiles
   :: ( FileSystem :> es

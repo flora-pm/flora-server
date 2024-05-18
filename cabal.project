@@ -1,7 +1,7 @@
 packages:
     ./
 
-with-compiler: ghc-9.6.4
+with-compiler: ghc-9.6.5
 
 active-repositories: hackage.haskell.org
 
@@ -21,10 +21,13 @@ allow-older: pg-entity:time
 test-show-details: direct
 
 package *
-  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
+  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j -haddock
 
 package warp
   flags: -x509
+
+package zlib
+  flags: -pkg-config
 
 source-repository-package
     type: git
@@ -70,5 +73,5 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/tchoutri/souffle-haskell
-    tag: 3afe53f
+    location: https://github.com/luc-tielen/souffle-haskell
+    tag: 268a112

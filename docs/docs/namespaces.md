@@ -36,9 +36,27 @@ repository cardano
 ```
 and run `cabal update`.
 
+## @horizon Packages
+
+Additionally, Flora also indexes the packages from the [Horizon](https://packages.horizon-haskell.net/) project.
+These packages live under the [`@horizon`] namespace.
+
+To use them in your own project, insert the following configuration in your `cabal.project` file:
+```
+repository horizon
+  url: https://packages.horizon-haskell.net/
+  secure: True
+  root-keys:
+    272e995c7a74de109518100e1422193fe5e5971e52c92b98147c9355b47d7bb6
+    ea5c1bc0944dabe64d9d68c6813a8141d747cda042b870576d7af63a2326c31b
+    eb47482ddf51da1d3610094f5c57a626d42cfd7d9c248f53e23420b02b21c695
+```
+and run `cabal update`.
+
 [`@haskell`]: https://flora.pm/packages/@haskell
 [`@cardano`]: https://flora.pm/packages/@cardano
 [`@hackage`]: https://flora.pm/packages/@hackage
+[`@horizon`]: https://flora.pm/packages/@horizon
 [`@hackage/servant-server`]: https://flora.pm/packages/@hackage/servant-server
 [`@haskell/text`]: https://flora.pm/packages/@haskell/text
 [CHaP]: https://input-output-hk.github.io/cardano-haskell-packages

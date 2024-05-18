@@ -62,7 +62,7 @@ toPackageDTO package release releaseComponents =
       synopsis = release.synopsis
       description = release.description
       releaseDeprecated =
-        fromMaybe False (release.deprecated)
+        fromMaybe False release.deprecated
       repository = release.repository
       uploadedAt = fromJust release.uploadedAt
       flags = release.flags

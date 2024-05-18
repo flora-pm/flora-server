@@ -10,8 +10,12 @@ import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful (Eff, IOE, type (:>))
+import Effectful.FileSystem (FileSystem)
+import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log
+import Effectful.Poolboy (Poolboy)
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Process.Typed
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
 import Log
@@ -20,17 +24,28 @@ import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
+import Data.Maybe (fromJust)
+import Data.Text qualified as Text
 import Flora.Import.Package (coreLibraries, persistImportOutput)
+import Flora.Import.Package.Bulk qualified as Import
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
+import Flora.Model.PackageIndex.Query qualified as Query
+import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
+import Flora.Model.User (User (..))
+import Flora.Model.User.Query qualified as Query
 import FloraJobs.Render (renderMarkdown)
-import FloraJobs.ThirdParties.Hackage.API (HackagePackageInfo (..), HackagePreferredVersions (..), VersionedPackage (..))
+import FloraJobs.ThirdParties.Hackage.API
+  ( HackagePackageInfo (..)
+  , HackagePreferredVersions (..)
+  , VersionedPackage (..)
+  )
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
 
@@ -50,6 +65,7 @@ runner job = localDomain "job-runner" $
         fetchReleaseDeprecationList packageName releases
       RefreshLatestVersions ->
         Update.refreshLatestVersions
+      RefreshIndexes -> refreshIndexes
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -203,3 +219,31 @@ assignNamespace =
             then PackageAlternative (Namespace "haskell") p
             else PackageAlternative (Namespace "hackage") p
       )
+
+refreshIndexes
+  :: ( Time :> es
+     , DB :> es
+     , TypedProcess :> es
+     , Log :> es
+     , Poolboy :> es
+     , IOE :> es
+     , FileSystem :> es
+     )
+  => Eff es ()
+refreshIndexes = do
+  runProcess_ $ shell "cabal update"
+  let packageIndexes =
+        [ ("hackage", "hackage.haskell.org")
+        , ("cardano", "cardano")
+        , ("horizon", "horizon")
+        ]
+  user <- fromJust <$> Query.getUserByUsername "hackage-user"
+  forM_ packageIndexes $ \(indexName, repoPath) -> do
+    homeDir <- FileSystem.getHomeDirectory
+    let path = homeDir <> "/.cabal/packages/" <> repoPath <> "/01-index.tar.gz"
+    mPackageIndex <- Query.getPackageIndexByName indexName
+    case mPackageIndex of
+      Nothing ->
+        error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
+      Just packageIndex ->
+        Import.importFromIndex user.userId (indexName, packageIndex.url) path

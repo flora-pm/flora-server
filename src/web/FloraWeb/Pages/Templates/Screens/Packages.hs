@@ -13,7 +13,7 @@ import Lucid.Orphans ()
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types (Release (..))
-import FloraWeb.Components.Icons
+import FloraWeb.Components.Icons (chevronRightOutline)
 import FloraWeb.Pages.Templates.Packages
   ( displayCategories
   , displayDependencies
@@ -27,7 +27,6 @@ import FloraWeb.Pages.Templates.Packages
   , displayPackageFlags
   , displayReadme
   , displayReleaseDeprecation
-  , displayReleaseVersion
   , displayTestedWith
   , displayVersions
   )
@@ -56,7 +55,7 @@ showPackage
   dependencies
   numberOfDependencies
   categories =
-    div_ [class_ "larger-container"] $ do
+    div_ [class_ "container"] $ do
       presentationHeader latestRelease namespace name latestRelease.synopsis
       packageBody
         package
@@ -80,7 +79,7 @@ presentationHeader release namespace name synopsis =
           chevronRightOutline
           toHtml name
         let versionClass = "version" <> if Just True == release.deprecated then " release-deprecated" else ""
-        span_ [class_ versionClass] $ displayReleaseVersion release.version
+        span_ [class_ versionClass] $ toHtml release.version
     div_ [class_ "synopsis"] $
       p_ [class_ ""] (toHtml synopsis)
 
@@ -114,7 +113,6 @@ packageBody
         displayMaintainer maintainer
         displayLinks namespace packageName packageIndexURL latestRelease
         displayVersions namespace packageName packageReleases numberOfReleases
-      div_ [class_ "release-readme-column"] $ div_ [class_ "release-readme"] $ displayReadme latestRelease
       div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows"] $ do
         case deprecationInfo of
           Just inFavourOf -> displayPackageDeprecation inFavourOf
@@ -126,6 +124,7 @@ packageBody
         displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
         displayDependents (namespace, packageName) numberOfDependents dependents
         displayPackageFlags flags
+      div_ [class_ "release-readme-column"] $ div_ [class_ "release-readme"] $ displayReadme latestRelease
 
 getLatestViableRelease
   :: Namespace

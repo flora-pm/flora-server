@@ -5,8 +5,8 @@ FROM ubuntu@sha256:67211c14fa74f070d27cc59d69a7fa9aeff8e28ea118ef3babc295a0428a6
 ARG GID=1000
 ARG UID=1000
 
-ARG ghc_version=9.6.4
-ARG cabal_version=3.10.2.0
+ARG ghc_version=9.6.5
+ARG cabal_version=3.10.3.0
 
 # generate a working directory
 USER "root"
@@ -23,7 +23,7 @@ RUN chown -R $USER:$USER /home/$USER/.cabal
 WORKDIR /flora-server 
 
 RUN apt update && \
-    apt install -y build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 git
+    apt install -y build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 git libsodium-dev
 
 # install dependencies (pg_config, postgresql-client, yarn)
 ENV BOOTSTRAP_HASKELL_NONINTERACTIVE="YES"
@@ -49,8 +49,8 @@ ENV PATH="$PATH:/home/$USER/.ghcup/bin"
 
 # install soufflé
 USER "root"
-RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.3/x86_64-ubuntu-2004-souffle-2.3-Linux.deb
-RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.3-Linux.deb
+RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
+RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb
 USER ${USER}
 
 RUN echo $PATH
@@ -72,7 +72,7 @@ COPY --chown=${USER} scripts/shell-welcome.txt /etc/motd
 COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 
 # build Haskell dependencies
-COPY --chown=${USER} cabal.project flora.cabal ./
+COPY --chown=${USER} cabal.project flora.cabal cabal.project.freeze ./
 RUN cabal build --only-dependencies -j
 
 # compile Souffle source files
