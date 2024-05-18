@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.0.18 -- 2024-03-26
+## 1.0.18 -- 2024-05-18
 
 * Add @horizon namespace ([#498](https://github.com/flora-pm/flora-server/issues/498))
 * Signal deprecations and revision dates in version listing page ([#548](https://github.com/flora-pm/flora-server/pull/548))
