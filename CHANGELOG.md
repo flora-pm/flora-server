@@ -6,6 +6,7 @@
 * Signal deprecations and revision dates in version listing page ([#548](https://github.com/flora-pm/flora-server/pull/548))
 * Introduce [changelog-d](https://codeberg.org/fgaz/changelog-d) in the release process.
 * Remove the last @apply from tailwind ([#550](https://github.com/flora-pm/flora-server/pulls/550))
+* Use GHC 9.6.5 and Souffle Datalog 2.2 for development ([#552](https://github.com/flora-pm/flora-server/pull/552))
 
 ## 1.0.17 -- 2024-03-26
 
