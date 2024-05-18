@@ -75,6 +75,7 @@ Here is the procedure to follow when making a release:
     * Bump the version in the flora.cabal file
     * Generate the changelog with ./scripts/generate-changelog.sh
     * Write down the date in the CHANGELOG
+    * Remove the changelog.d entries
 
 2. Once the PR is merged into `development`, merge `development` into `main`
 3. Create a [new release](https://github.com/flora-pm/flora-server/releases/new).
