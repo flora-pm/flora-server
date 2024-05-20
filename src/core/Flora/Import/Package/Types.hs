@@ -2,15 +2,17 @@ module Flora.Import.Package.Types where
 
 import Control.DeepSeq
 import Data.Aeson
+import Data.List.NonEmpty (NonEmpty)
+import GHC.Generics
+import GHC.List (List)
+
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
-import GHC.Generics
 
-type ImportComponent = (PackageComponent, [ImportDependency])
-
+-- | Package being depended on and its requirement constraint.
 data ImportDependency = ImportDependency
   { package :: Package
   -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
@@ -28,7 +30,7 @@ data ImportOutput = ImportOutput
   { package :: Package
   , categories :: [Tuning.NormalisedPackageCategory]
   , release :: Release
-  , components :: [ImportComponent]
+  , components :: NonEmpty (PackageComponent, List ImportDependency)
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
