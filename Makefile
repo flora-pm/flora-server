@@ -5,7 +5,7 @@ start: ## Start flora-server
 	@cabal run exe:flora-server
 
 build: soufflé ## Build the server
-	@cabal build -O1
+	@cabal build
 
 build-release: soufflé ## Build the server for production
 	@cabal freeze --project-file cabal.project.release

@@ -4,5 +4,8 @@ tests: False
 documentation: False
 optimization: 2
 
-package *
+package flora
+  flags: +prod
+
+package pg-entity
   flags: +prod
