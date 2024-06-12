@@ -231,7 +231,7 @@ refreshIndexes
      )
   => Eff es ()
 refreshIndexes = do
-  runProcess_ $ shell "cabal update"
+  runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
   let packageIndexes =
         [ ("hackage", "hackage.haskell.org")
         , ("cardano", "cardano")
