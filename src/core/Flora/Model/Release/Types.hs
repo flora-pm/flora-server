@@ -83,7 +83,7 @@ data Release = Release
   { releaseId :: ReleaseId
   , packageId :: PackageId
   , version :: Version
-  , archiveChecksum :: Text
+  , archiveChecksum :: Maybe Text
   , uploadedAt :: Maybe UTCTime
   , createdAt :: UTCTime
   , updatedAt :: UTCTime

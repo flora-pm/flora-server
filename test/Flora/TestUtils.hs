@@ -473,7 +473,7 @@ data ReleaseTemplate m = ReleaseTemplate
   { releaseId :: m ReleaseId
   , packageId :: m PackageId
   , version :: m Version
-  , archiveChecksum :: m Text
+  , archiveChecksum :: m (Maybe Text)
   , uploadedAt :: m (Maybe UTCTime)
   , createdAt :: m UTCTime
   , updatedAt :: m UTCTime
@@ -508,7 +508,7 @@ randomReleaseTemplate =
     , version = do
         result <- H.sample $ H.nonEmpty (Range.singleton 4) (H.int (Range.constant 0 10))
         pure $ Version.mkVersion $ NE.toList result
-    , archiveChecksum = H.sample $ H.text (Range.singleton 30) H.ascii
+    , archiveChecksum = pure Nothing
     , uploadedAt = Just <$> H.sample genUTCTime
     , updatedAt = H.sample genUTCTime
     , createdAt = H.sample genUTCTime
