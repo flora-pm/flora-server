@@ -20,7 +20,6 @@
 module Flora.Import.Package
   ( coreLibraries
   , versionList
-  , enqueueImportJob
   , loadContent
   , loadAndExtractCabalFile
   , persistImportOutput
@@ -32,7 +31,6 @@ import Control.DeepSeq (force)
 import Control.Exception
 import Data.ByteString qualified as BS
 import Data.Maybe
-import Data.Pool (withResource)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -67,16 +65,15 @@ import Effectful.Internal.Monad (unsafeEff_)
 import Effectful.Log (Log)
 import Effectful.Poolboy (Poolboy)
 import Effectful.Poolboy qualified as Poolboy
-import Effectful.PostgreSQL.Transact.Effect (DB, getPool)
+import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import GHC.List (List)
 import Log qualified
-import OddJobs.Job (createJob)
 import Optics.Core
 import System.Directory qualified as System
 
-import Control.Monad (forM_, unless, void)
+import Control.Monad (forM_, unless)
 import Data.Aeson (object, (.=))
 import Data.List.NonEmpty qualified as NE
 import Flora.Import.Categories.Tuning qualified as Tuning
@@ -84,7 +81,6 @@ import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
-import Flora.Model.Job (FloraOddJobs (..))
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
@@ -184,20 +180,6 @@ versionList =
     , Version.mkVersion [8, 0, 2]
     , Version.mkVersion [7, 10, 3]
     ]
-
-enqueueImportJob :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
-enqueueImportJob importOutput = do
-  pool <- getPool
-  void $
-    liftIO $
-      withResource
-        pool
-        ( \conn ->
-            createJob
-              conn
-              "oddjobs"
-              (ImportPackage importOutput)
-        )
 
 -- | Loads and parses a Cabal file
 loadFile
