@@ -317,7 +317,7 @@ showVersionChangelogHandler (Headers session _) namespace packageName version = 
   let templateEnv =
         templateEnv'
           { title = display namespace <> "/" <> display packageName
-          , description = "Changelog of @" <> display namespace <> display packageName
+          , description = "Changelog of " <> display namespace <> "/" <> display packageName
           }
 
   render templateEnv $ Package.showChangelog namespace packageName version release.changelog
