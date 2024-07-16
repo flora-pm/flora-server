@@ -12,7 +12,7 @@ extra-doc-files:
   CHANGELOG.md
   README.md
 
-tested-with:        GHC ==9.6.5
+tested-with:        GHC ==9.6.6
 
 source-repository head
   type:     git
