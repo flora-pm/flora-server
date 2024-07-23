@@ -1,8 +1,16 @@
 # CHANGELOG
 
+## 1.0.19 -- 2024-07-23
+
+- Log and re-import packages with zero dependencies [#553](https://github.com/flora-pm/flora-server/pull/553)
+- Have explicit version ARGS in docker for tools [#557](https://github.com/flora-pm/flora-server/pull/557)
+- Remove the enqueueImportJob function [#558](https://github.com/flora-pm/flora-server/pull/558)
+- Store archive hashes [#560](https://github.com/flora-pm/flora-server/pull/560)
+- Implement tracing with zipkin [#564](https://github.com/flora-pm/flora-server/pull/564)
+
 ## 1.0.18 -- 2024-05-18
 
-* Add @horizon namespace ([#498](https://github.com/flora-pm/flora-server/issues/498))
+* Add `@horizon` namespace ([#498](https://github.com/flora-pm/flora-server/issues/498))
 * Signal deprecations and revision dates in version listing page ([#548](https://github.com/flora-pm/flora-server/pull/548))
 * Introduce [changelog-d](https://codeberg.org/fgaz/changelog-d) in the release process.
 * Remove the last @apply from tailwind ([#550](https://github.com/flora-pm/flora-server/pulls/550))
