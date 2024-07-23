@@ -4,9 +4,7 @@ import Control.Monad
 import Data.Text.Display
 import Data.Text.IO qualified as T
 import Effectful
-import Effectful.Log
 import Effectful.PostgreSQL.Transact.Effect
-import Effectful.Time
 
 import Flora.Import.Categories.Tuning
 import Flora.Import.Categories.Tuning qualified as Tuning
@@ -25,7 +23,7 @@ import Flora.Model.Requirement (Requirement)
 -}
 
 publishPackage
-  :: (DB :> es, Log :> es, Time :> es, IOE :> es)
+  :: (DB :> es, IOE :> es)
   => [Requirement]
   -> [PackageComponent]
   -> Release

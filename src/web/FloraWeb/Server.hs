@@ -17,8 +17,10 @@ import Effectful.Fail (runFailIO)
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
+import Effectful.Trace qualified as Trace
 import Log (Logger)
 import Log qualified
+import Monitor.Tracing.Zipkin (Zipkin (..))
 import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types (notFound404)
@@ -60,9 +62,10 @@ import Flora.Environment
   , LoggingEnv (..)
   , getFloraEnv
   )
-import Flora.Environment.Config (Assets)
+import Flora.Environment.Config (Assets, DeploymentEnv (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
+import Flora.Tracing qualified as Tracing
 import FloraJobs.Runner (runner)
 import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
 import FloraWeb.API.Routes qualified as API
@@ -101,6 +104,7 @@ runFlora =
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
+            liftIO $ when (env.environment == Production) (blueMessage "🖊️ Connected to Zipkin endpoint")
             let withLogger = Logging.makeLogger env.logging.logger
             withLogger
               ( \appLogger ->
@@ -127,6 +131,7 @@ logException env logger exception =
 runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
+  zipkin <- liftIO $ Tracing.newZipkin "localhost" "flora-server-local"
   let runnerEnv = JobsRunnerEnv httpManager
   let oddjobsUiCfg = makeUIConfig floraEnv.config appLogger floraEnv.jobsPool
       oddJobsCfg =
@@ -145,7 +150,7 @@ runServer appLogger floraEnv = do
   oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
-  let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv
+  let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv zipkin
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -168,12 +173,13 @@ mkServer
   -> FloraEnv
   -> OddJobs.UIConfig
   -> OddJobs.Env
+  -> Zipkin
   -> Application
-mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv =
+mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv zipkin =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
-    (naturalTransform floraEnv logger webEnvStore)
+    (naturalTransform floraEnv logger webEnvStore zipkin)
     (floraServer cfg jobsRunnerEnv)
 
 floraServer
@@ -190,12 +196,17 @@ floraServer cfg jobsRunnerEnv =
     , docs = serveDirectoryWith docsBundler
     }
 
-naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> FloraEff a -> Handler a
-naturalTransform floraEnv logger _webEnvStore app = do
+naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> Zipkin -> FloraEff a -> Handler a
+naturalTransform floraEnv logger _webEnvStore zipkin app = do
+  let runTrace =
+        if floraEnv.environment == Development
+          then Trace.runTrace zipkin.zipkinTracer
+          else Trace.runNoTrace
   result <-
     liftIO $
       Right
         <$> app
+          & runTrace
           & runDB floraEnv.pool
           & runTime
           & runReader floraEnv.features

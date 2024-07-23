@@ -23,6 +23,7 @@ import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
+import Effectful.Trace
 import GHC.Clock (getMonotonicTime)
 import GHC.Generics
 import Servant (FromHttpApiData (..), Handler, ServerError)
@@ -36,7 +37,8 @@ newtype WebEnvStore = WebEnvStore (MVar WebEnv)
 type FloraEff = Eff RouteEffects
 
 type RouteEffects =
-  '[ DB
+  '[ Trace
+   , DB
    , Time
    , Reader FeatureEnv
    , BlobStoreAPI

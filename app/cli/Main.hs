@@ -238,7 +238,6 @@ importIndex path repository = do
 importPackageTarball
   :: ( Log :> es
      , BlobStoreAPI :> es
-     , Time :> es
      , IOE :> es
      , DB :> es
      )

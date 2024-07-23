@@ -10,7 +10,6 @@ import Data.Text.Display (display)
 import Effectful (Eff, type (:>))
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
-import Effectful.Time (Time)
 import Log qualified
 
 import Database.PostgreSQL.Entity (Entity, _insert)
@@ -31,7 +30,7 @@ import Flora.Model.Release.Types (Release (..), ReleaseId (..))
 import Flora.Model.Release.Update qualified as Update
 
 insertTar
-  :: (Log :> es, DB :> es, BlobStoreAPI :> es, Time :> es)
+  :: (Log :> es, DB :> es, BlobStoreAPI :> es)
   => PackageName
   -> Version
   -> LazyByteString
