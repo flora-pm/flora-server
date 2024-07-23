@@ -1,5 +1,5 @@
 organization: flora-pm
 repository: flora-server
-issue-url-template: https://github.com/{organization}/{repository}/issues/{index}
-pr-url-template: https://github.com/{organization}/{repository}/pulls/{index}
+issue-url-template: https://github.com/{organization}/{repository}/issue/{index}
+pr-url-template: https://github.com/{organization}/{repository}/pull/{index}
 required-fields: synopsis prs
