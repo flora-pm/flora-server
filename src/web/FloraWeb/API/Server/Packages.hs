@@ -5,12 +5,11 @@ import Data.Maybe (fromMaybe)
 import Data.Vector qualified as Vector
 import Distribution.Version (Version)
 import Effectful (Eff, (:>))
+import Effectful.Error.Static (Error)
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Trace
 import Servant hiding ((:>))
 
-import Effectful.Error.Static (Error)
-import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
-import Effectful.Time (Time)
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
@@ -35,7 +34,10 @@ withPackageServer namespace packageName =
     }
 
 getPackageHandler
-  :: (Time :> es, Log :> es, DB :> es, Error ServerError :> es)
+  :: ( DB :> es
+     , Error ServerError :> es
+     , Trace :> es
+     )
   => Namespace
   -> PackageName
   -> (Eff es) (PackageDTO 0)
@@ -56,7 +58,10 @@ getPackageHandler namespace packageName = do
   pure $ toPackageDTO package release components
 
 getVersionedPackageHandler
-  :: (Time :> es, Log :> es, DB :> es, Error ServerError :> es)
+  :: ( DB :> es
+     , Error ServerError :> es
+     , Trace :> es
+     )
   => Namespace
   -> PackageName
   -> Version

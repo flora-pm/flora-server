@@ -13,5 +13,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build the hello-docker Docker image
+      - name: Build the Docker image
         run: make docker-build

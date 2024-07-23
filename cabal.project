@@ -1,7 +1,7 @@
 packages:
     ./
 
-with-compiler: ghc-9.6.5
+with-compiler: ghc-9.6
 
 active-repositories: hackage.haskell.org
 
@@ -31,9 +31,19 @@ package zlib
 
 source-repository-package
     type: git
+    location: https://github.com/scrive/tracing
+    tag: e49720d
+    subdir: 
+        .
+        ./tracing-effectful
+
+source-repository-package
+    type: git
     location: https://github.com/haskell-cryptography/libsodium-bindings
-    tag: c9265c0
-    subdir: ./sel
+    tag: 6bc69bf
+    subdir: 
+        ./sel
+        ./libsodium-bindings
 
 source-repository-package
     type: git

@@ -20,34 +20,55 @@
 module Flora.Import.Package
   ( coreLibraries
   , versionList
-  , enqueueImportJob
   , loadContent
-  , loadAndExtractCabalFile
   , persistImportOutput
   , extractPackageDataFromCabal
   , chooseNamespace
+  , loadJSONContent
+  , persistHashes
   ) where
 
 import Control.DeepSeq (force)
 import Control.Exception
+import Control.Monad (forM_)
+import Data.Aeson (object, (.=))
+import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
+import Data.IORef (IORef)
+import Data.IORef qualified as IORef
+import Data.IORef qualified as IOref
+import Data.List.NonEmpty qualified as NE
+import Data.Map (Map)
+import Data.Map.Strict qualified as Map
 import Data.Maybe
-import Data.Pool (withResource)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
-import Data.Text qualified as T
+import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Text.IO qualified as T
+import Data.Text.Encoding qualified as Text
+import Data.Text.IO qualified as Text
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Compat.NonEmptySet (toList)
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
-import Distribution.PackageDescription (CondBranch (..), CondTree (condTreeData), Condition (CNot), ConfVar, UnqualComponentName, allLibraries, unPackageName, unUnqualComponentName)
+import Distribution.PackageDescription
+  ( CondBranch (..)
+  , CondTree (condTreeData)
+  , Condition (CNot)
+  , ConfVar
+  , UnqualComponentName
+  , allLibraries
+  , unPackageName
+  , unUnqualComponentName
+  )
 import Distribution.PackageDescription qualified as Cabal hiding (PackageName)
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
+import Distribution.Parsec qualified as Parsec
 import Distribution.Pretty
 import Distribution.Types.Benchmark
 import Distribution.Types.Dependency
@@ -63,29 +84,29 @@ import Distribution.Types.VersionRange (VersionRange, withinRange)
 import Distribution.Utils.ShortText qualified as Cabal
 import Distribution.Version qualified as Version
 import Effectful
-import Effectful.Internal.Monad (unsafeEff_)
 import Effectful.Log (Log)
 import Effectful.Poolboy (Poolboy)
 import Effectful.Poolboy qualified as Poolboy
-import Effectful.PostgreSQL.Transact.Effect (DB, getPool)
+import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
+import GHC.List (List)
 import Log qualified
-import OddJobs.Job (createJob)
 import Optics.Core
-import System.Directory qualified as System
+import System.Exit (exitFailure)
+import System.FilePath qualified as FilePath
 
-import Control.Monad (forM_, unless, void)
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
-import Flora.Model.Job (FloraOddJobs (..))
 import Flora.Model.Package.Orphans ()
+import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release (deterministicReleaseId)
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
@@ -182,39 +203,52 @@ versionList =
     , Version.mkVersion [7, 10, 3]
     ]
 
-enqueueImportJob :: (DB :> es, IOE :> es) => ImportOutput -> Eff es ()
-enqueueImportJob importOutput = do
-  pool <- getPool
-  void $
-    liftIO $
-      withResource
-        pool
-        ( \conn ->
-            createJob
-              conn
-              "oddjobs"
-              (ImportPackage importOutput)
-        )
-
--- | Loads and parses a Cabal file
-loadFile
-  :: (IOE :> es, Log :> es)
-  => FilePath
-  -- ^ The absolute path to the Cabal file
-  -> Eff es (UTCTime, GenericPackageDescription)
-loadFile path = do
-  exists <- liftIO $ System.doesFileExist path
-  unless exists $
-    unsafeEff_ $
-      throwIO $
-        CabalFileNotFound path
-  content <- liftIO $ BS.readFile path
-  timestamp <- liftIO $ System.getModificationTime path
-  descr <- loadContent path content
-  pure (timestamp, descr)
-
-loadContent :: Log :> es => String -> BS.ByteString -> Eff es GenericPackageDescription
+loadContent :: Log :> es => FilePath -> BS.ByteString -> Eff es GenericPackageDescription
 loadContent = parseString parseGenericPackageDescription
+
+loadJSONContent
+  :: (Log :> es, IOE :> es)
+  => FilePath
+  -> BS.ByteString
+  -> (Text, Set PackageName)
+  -> Eff es (PackageName, Namespace, Version, Target)
+loadJSONContent path content (repositoryName, repositoryPackages) = do
+  case getNameAndVersionFromPath path of
+    Nothing -> do
+      Log.logAttention "parse error" $
+        object ["path" .= path]
+      error "Parse error"
+    Just (name, versionText) -> do
+      let (mReleaseJSON :: Maybe ReleaseJSONFile) = Aeson.decodeStrict' content
+      let field = "<repo>/package/" <> name <> "-" <> versionText <> ".tar.gz"
+      case mReleaseJSON of
+        Nothing -> do
+          Log.logAttention "Could not parse JSON" $
+            object ["json" .= Text.decodeUtf8 content]
+          liftIO exitFailure
+        Just releaseJSON -> do
+          let mTarget = KeyMap.lookup (Key.fromText field) releaseJSON.signed.targets
+          case mTarget of
+            Nothing -> do
+              Log.logAttention ("Could not find field: " <> field) $
+                object ["json" .= releaseJSON]
+              liftIO exitFailure
+            Just target -> do
+              case Parsec.simpleParsec $ Text.unpack versionText of
+                Nothing -> do
+                  Log.logAttention "Could not parse version" $
+                    object ["version" .= versionText, "package" .= name]
+                  error ":("
+                Just version -> do
+                  let packageName = PackageName name
+                  let chosenNamespace = chooseNamespace packageName repositoryName repositoryPackages
+                  pure (packageName, chosenNamespace, version, target)
+
+getNameAndVersionFromPath :: FilePath -> Maybe (Text, Text)
+getNameAndVersionFromPath path =
+  case Text.split (== '/') $ Text.pack $ FilePath.takeDirectory path of
+    [name, versionText] -> Just (name, versionText)
+    _ -> Nothing
 
 parseString
   :: Log :> es
@@ -232,37 +266,27 @@ parseString parser name bs = do
       Log.logAttention_ (display $ show err)
       throw $ CabalFileCouldNotBeParsed name
 
-loadAndExtractCabalFile
-  :: (IOE :> es, Log :> es, Time :> es)
-  => UserId
-  -> FilePath
-  -> (Text, Set PackageName)
-  -> Eff es ImportOutput
-loadAndExtractCabalFile userId filePath repo =
-  loadFile filePath
-    >>= uncurry (extractPackageDataFromCabal userId repo)
-
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 persistImportOutput :: forall es. (Poolboy :> es, DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = do
-  liftIO . T.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display release.version
+  liftIO . Text.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display release.version
   persistPackage
   Update.upsertRelease release
   parallelRun persistComponent components
   liftIO $ putStr "\n"
   where
-    parallelRun :: (a -> Eff es ()) -> [a] -> Eff es ()
-    parallelRun f xs = forM_ xs (\x -> void $ Poolboy.enqueue (f x))
+    parallelRun :: Foldable t => (a -> Eff es ()) -> t a -> Eff es ()
+    parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
     packageName = display package.namespace <> "/" <> display package.name
     persistPackage = do
       let packageId = package.packageId
       Update.upsertPackage package
       forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
 
-    persistComponent :: (PackageComponent, [ImportDependency]) -> Eff es ()
+    persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
-      liftIO . T.putStrLn $
+      liftIO . Text.putStrLn $
         "🧩  Persisting component: "
           <> display packageComponent.canonicalForm
           <> " with "
@@ -276,17 +300,49 @@ persistImportOutput (ImportOutput package categories release components) = do
       Update.upsertPackage dep.package
       Update.upsertRequirement dep.requirement
 
+persistHashes
+  :: (DB :> es, IOE :> es, Log :> es)
+  => IORef (Map (Namespace, PackageName) Text)
+  -> (PackageName, Namespace, Version, Target)
+  -> Eff es ()
+persistHashes tarballHashIORef (packageName, namespace, version, target) = do
+  mPackage <- Query.getPackageByNamespaceAndName namespace packageName
+  case mPackage of
+    Just package -> do
+      mRelease <- Query.getReleaseByVersion package.packageId version
+      case mRelease of
+        Nothing -> do
+          Log.logInfo_ "Release does not exist, putting the hash in an ioref"
+          persisHashInMemory tarballHashIORef (namespace, packageName) target.hashes.sha256
+        Just release -> Update.setArchiveChecksum release.releaseId target.hashes.sha256
+    Nothing -> do
+      Log.logInfo_ "Package does not exist, putting the hash in an ioref"
+      persisHashInMemory tarballHashIORef (namespace, packageName) target.hashes.sha256
+
+persisHashInMemory
+  :: IOE :> es
+  => IORef (Map (Namespace, PackageName) Text)
+  -> (Namespace, PackageName)
+  -> Text
+  -> Eff es ()
+persisHashInMemory tarballHashIORef key hash =
+  liftIO $
+    IOref.atomicModifyIORef'
+      tarballHashIORef
+      (\m -> (Map.insert key hash m, ()))
+
 -- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
-  :: (IOE :> es, Time :> es)
-  => UserId
+  :: (IOE :> es, Time :> es, Log :> es)
+  => IORef (Map (Namespace, PackageName) Text)
+  -> UserId
   -> (Text, Set PackageName)
   -> UTCTime
   -> GenericPackageDescription
   -> Eff es ImportOutput
-extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc = do
+extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryPackages) uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -297,9 +353,16 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
-  let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to T.pack
-  let categoryList = fmap (Tuning.UserPackageCategory . T.stripStart . T.stripEnd) (T.splitOn "," rawCategoryField)
+  let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to Text.pack
+  let categoryList = fmap (Tuning.UserPackageCategory . Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
   categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
+  (mTarballHash :: Maybe Text) <- liftIO $ IORef.atomicModifyIORef' tarballHashIORef $ \m ->
+    let result = Map.lookup (namespace, packageName) m
+     in case result of
+          Nothing -> (m, Nothing)
+          Just hash ->
+            let newMap = Map.delete (namespace, packageName) m
+             in (newMap, Just hash)
   let package =
         Package
           { packageId
@@ -317,7 +380,7 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
           { releaseId
           , packageId
           , version = packageVersion
-          , archiveChecksum = mempty
+          , archiveChecksum = mTarballHash
           , uploadedAt = Just uploadTime
           , createdAt = timestamp
           , updatedAt = timestamp
@@ -359,7 +422,7 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
   let benchmarks = extractBenchmark package (repositoryName, repositoryPackages) release Nothing [] <$> packageDesc.benchmarks
   let condBenchmarks = extractCondTrees extractBenchmark package (repositoryName, repositoryPackages) release genericDesc.condBenchmarks
 
-  let components =
+  let components' =
         lib
           <> condLib
           <> condSubLibs
@@ -371,40 +434,43 @@ extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTi
           <> condTestSuites
           <> benchmarks
           <> condBenchmarks
-  pure ImportOutput{..}
+  case NE.nonEmpty components' of
+    Nothing -> do
+      Log.logAttention "Empty dependencies" $ object ["package" .= package]
+      extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryPackages) uploadTime genericDesc
+    Just components -> pure ImportOutput{..}
 
 extractLibrary
   :: Package
   -> (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
-  -> [Condition ConfVar]
+  -> List (Condition ConfVar)
   -> Library
-  -> ImportComponent
-extractLibrary package repository =
+  -> (PackageComponent, List ImportDependency)
+extractLibrary package =
   genericComponentExtractor
     Component.Library
     (^. #libName % to (getLibName package.name))
     (^. #libBuildInfo % #targetBuildDepends)
     package
-    repository
 
 getLibName :: PackageName -> LibraryName -> Text
 getLibName pname LMainLibName = display pname
-getLibName _ (LSubLibName lname) = T.pack $ unUnqualComponentName lname
+getLibName _ (LSubLibName lname) = Text.pack $ unUnqualComponentName lname
 
 extractForeignLib
   :: Package
   -> (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
-  -> [Condition ConfVar]
+  -> List (Condition ConfVar)
   -> ForeignLib
-  -> ImportComponent
+  -> (PackageComponent, List ImportDependency)
 extractForeignLib =
   genericComponentExtractor
     Component.ForeignLib
-    (^. #foreignLibName % to unUnqualComponentName % to T.pack)
+    (^. #foreignLibName % to unUnqualComponentName % to Text.pack)
     (^. #foreignLibBuildInfo % #targetBuildDepends)
 
 extractExecutable
@@ -412,13 +478,13 @@ extractExecutable
   -> (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
-  -> [Condition ConfVar]
+  -> List (Condition ConfVar)
   -> Executable
-  -> ImportComponent
+  -> (PackageComponent, List ImportDependency)
 extractExecutable =
   genericComponentExtractor
     Component.Executable
-    (^. #exeName % to unUnqualComponentName % to T.pack)
+    (^. #exeName % to unUnqualComponentName % to Text.pack)
     (^. #buildInfo % #targetBuildDepends)
 
 extractTestSuite
@@ -426,13 +492,13 @@ extractTestSuite
   -> (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
-  -> [Condition ConfVar]
+  -> List (Condition ConfVar)
   -> TestSuite
-  -> ImportComponent
+  -> (PackageComponent, List ImportDependency)
 extractTestSuite =
   genericComponentExtractor
     Component.TestSuite
-    (^. #testName % to unUnqualComponentName % to T.pack)
+    (^. #testName % to unUnqualComponentName % to Text.pack)
     (^. #testBuildInfo % #targetBuildDepends)
 
 extractBenchmark
@@ -440,25 +506,25 @@ extractBenchmark
   -> (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
-  -> [Condition ConfVar]
+  -> List (Condition ConfVar)
   -> Benchmark
-  -> ImportComponent
+  -> (PackageComponent, List ImportDependency)
 extractBenchmark =
   genericComponentExtractor
     Component.Benchmark
-    (^. #benchmarkName % to unUnqualComponentName % to T.pack)
+    (^. #benchmarkName % to unUnqualComponentName % to Text.pack)
     (^. #benchmarkBuildInfo % #targetBuildDepends)
 
 -- | Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
---  to every node, returning a list of 'ImportComponent'
+--  to every node, returning a list of '(PackageComponent, List ImportDependency)'
 extractCondTree
-  :: (Package -> (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> component -> ImportComponent)
+  :: (Package -> (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
   -> Package
   -> (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
-  -> CondTree ConfVar [Dependency] component
-  -> [ImportComponent]
+  -> CondTree ConfVar (List Dependency) component
+  -> List (PackageComponent, List ImportDependency)
 extractCondTree extractor package repository release defaultComponentName = go []
   where
     go cond tree =
@@ -474,12 +540,12 @@ extractCondTree extractor package repository release defaultComponentName = go [
 --  This function builds upon 'extractCondTree' to make it easier to extract fields such as 'condExecutables', 'condTestSuites' etc.
 --  from a 'GenericPackageDescription'
 extractCondTrees
-  :: (Package -> (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> [Condition ConfVar] -> component -> ImportComponent)
+  :: (Package -> (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
   -> Package
   -> (Text, Set PackageName)
   -> Release
-  -> [(UnqualComponentName, CondTree ConfVar [Dependency] component)]
-  -> [ImportComponent]
+  -> List (UnqualComponentName, CondTree ConfVar (List Dependency) component)
+  -> List (PackageComponent, List ImportDependency)
 extractCondTrees extractor package repository release trees =
   trees >>= \case (name, tree) -> extractCondTree extractor package repository release (Just name) tree
 
@@ -489,15 +555,15 @@ genericComponentExtractor
   => ComponentType
   -> (component -> Text)
   -- ^ Extract name from component
-  -> (component -> [Dependency])
+  -> (component -> List Dependency)
   -- ^ Extract dependencies
   -> Package
   -> (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
-  -> [Condition ConfVar]
+  -> List (Condition ConfVar)
   -> component
-  -> (PackageComponent, [ImportDependency])
+  -> (PackageComponent, List ImportDependency)
 genericComponentExtractor
   componentType
   getName
@@ -543,7 +609,7 @@ buildDependency package (repository, repositoryPackages) packageComponentId (Cab
           }
    in ImportDependency{package = dependencyPackage, requirement}
 
-getRepoURL :: PackageName -> [Cabal.SourceRepo] -> Vector Text
+getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty
 getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.repoLocation
 

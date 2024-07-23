@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.18
+version:            1.0.19
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -12,7 +12,7 @@ extra-doc-files:
   CHANGELOG.md
   README.md
 
-tested-with:        GHC ==9.6.5
+tested-with:        GHC ==9.6.6
 
 source-repository head
   type:     git
@@ -133,6 +133,7 @@ library
     Flora.Publish
     Flora.QRCode
     Flora.Search
+    Flora.Tracing
     JSON
     Log.Backend.File
     Lucid.Orphans
@@ -194,6 +195,7 @@ library
     , text
     , text-display
     , time
+    , tracing
     , unliftio
     , utf8-string
     , uuid
@@ -334,6 +336,8 @@ library flora-web
     , text-display
     , time
     , torsor
+    , tracing
+    , tracing-effectful
     , uuid
     , vector
     , vector-algorithms

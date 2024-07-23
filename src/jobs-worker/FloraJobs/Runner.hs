@@ -105,7 +105,6 @@ makeReadme pay@ReadmeJobPayload{..} =
 
 fetchTarball
   :: ( IOE :> es
-     , Time :> es
      , DB :> es
      , Reader JobsRunnerEnv :> es
      , Log :> es

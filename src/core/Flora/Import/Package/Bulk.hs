@@ -28,24 +28,33 @@ import Effectful
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.FileSystem.IO.ByteString qualified as FileSystem
+import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
+import GHC.Conc (numCapabilities)
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
+import Streamly.Data.Stream.Prelude (maxThreads, ordered)
 import Streamly.Data.Stream.Prelude qualified as Streamly
 import System.Directory
 import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
 
-import Effectful.Log (Log)
+import Data.IORef (IORef)
+import Data.IORef qualified as IORef
+import Data.Map (Map)
+import Data.Map.Strict qualified as Map
 import Flora.Import.Package
   ( extractPackageDataFromCabal
   , loadContent
+  , loadJSONContent
+  , persistHashes
   , persistImportOutput
   )
+import Flora.Import.Types (ImportFileType (..))
 import Flora.Model.Package
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -54,8 +63,6 @@ import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
-import GHC.Conc (numCapabilities)
-import Streamly.Data.Stream.Prelude (maxThreads, ordered)
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
@@ -97,16 +104,18 @@ importFromIndex user (repositoryName, repositoryURL) index = do
   where
     buildContentStream
       :: UTCTime
-      -> Stream (Eff es) (FilePath, UTCTime, StrictByteString)
+      -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
       -> Tar.GenEntry Tar.TarPath linkTarget
-      -> Stream (Eff es) (FilePath, UTCTime, StrictByteString)
+      -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
     buildContentStream time acc entry =
       let entryPath = Tar.entryPath entry
           entryTime = posixSecondsToUTCTime . fromIntegral $ Tar.entryTime entry
        in Tar.entryContent entry & \case
             Tar.NormalFile bs _
               | ".cabal" `isSuffixOf` entryPath && entryTime > time ->
-                  (entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
+                  (CabalFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
+              | ".json" `isSuffixOf` entryPath && entryTime > time ->
+                  (JSONFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
             _ -> acc
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
@@ -127,14 +136,15 @@ importFromStream
    . (Time :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
   => UserId
   -> (Text, Text, Set PackageName)
-  -> Stream (Eff es) (String, UTCTime, StrictByteString)
+  -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
   -> Eff es ()
 importFromStream user (repositoryName, _repositoryURL, repositoryPackages) stream = do
+  tarballHashIORef <- liftIO $ IORef.newIORef Map.empty
   let cfg = maxThreads numCapabilities . ordered True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
-          Streamly.parMapM cfg processFile stream
+          Streamly.parMapM cfg (processFile tarballHashIORef) stream
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
@@ -155,12 +165,22 @@ importFromStream user (repositoryName, _repositoryURL, repositoryPackages) strea
                 when (currentCount `mod` 400 == 0) $
                   displayStats currentCount
                 pure currentCount
-    processFile :: (String, UTCTime, StrictByteString) -> Eff es ()
-    processFile (path, timestamp, content) =
-      loadContent path content
-        >>= ( extractPackageDataFromCabal user (repositoryName, repositoryPackages) timestamp
-                >=> \importedPackage -> persistImportOutput importedPackage
-            )
+    processFile
+      :: IORef (Map (Namespace, PackageName) Text)
+      -> (ImportFileType, UTCTime, StrictByteString)
+      -> Eff es ()
+    processFile tarballHashIORef importSubject =
+      case importSubject of
+        (CabalFile path, timestamp, content) ->
+          loadContent path content
+            >>= ( extractPackageDataFromCabal tarballHashIORef user (repositoryName, repositoryPackages) timestamp
+                    >=> \importedPackage -> persistImportOutput importedPackage
+                )
+        (JSONFile path, _, content) ->
+          do
+            loadJSONContent path content (repositoryName, repositoryPackages)
+            >>= persistHashes tarballHashIORef
+
     displayStats :: Int -> Eff es ()
     displayStats currentCount =
       liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
@@ -169,10 +189,10 @@ findAllCabalFilesInDirectory
   :: forall es
    . FileSystem :> es
   => FilePath
-  -> Stream (Eff es) (String, UTCTime, StrictByteString)
+  -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
 findAllCabalFilesInDirectory workdir = Streamly.concatMapM traversePath $ Streamly.fromList [workdir]
   where
-    traversePath :: FilePath -> Eff es (Stream (Eff es) (FilePath, UTCTime, StrictByteString))
+    traversePath :: FilePath -> Eff es (Stream (Eff es) (ImportFileType, UTCTime, StrictByteString))
     traversePath p = do
       isDir <- FileSystem.doesDirectoryExist p
       case isDir of
@@ -182,7 +202,7 @@ findAllCabalFilesInDirectory workdir = Streamly.concatMapM traversePath $ Stream
         False | ".cabal" `isSuffixOf` p -> do
           content <- FileSystem.readFile p
           timestamp <- FileSystem.getModificationTime p
-          pure $ Streamly.fromPure (p, timestamp, content)
+          pure $ Streamly.fromPure (CabalFile p, timestamp, content)
         _ -> pure Streamly.nil
 
 buildPackageListFromArchive :: Entries e -> Either e (Set PackageName)

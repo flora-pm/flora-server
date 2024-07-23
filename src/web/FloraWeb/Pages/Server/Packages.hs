@@ -8,7 +8,6 @@ import Control.Monad (unless)
 import Data.ByteString.Lazy (ByteString)
 import Data.Foldable
 import Data.Function
-import Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Positive
 import Data.Text (Text)
@@ -19,10 +18,12 @@ import Distribution.Types.Version (Version)
 import Effectful (Eff, IOE, (:>))
 import Effectful.Error.Static (Error, throwError)
 import Effectful.Reader.Static (Reader, ask)
+import Effectful.Trace
 import Log (object, (.=))
 import Log qualified
 import Lucid
 import Lucid.Orphans ()
+import Monitor.Tracing qualified as Tracing
 import Servant (Headers (..), ServerError, ServerT)
 import Servant.Server (err404)
 
@@ -30,7 +31,6 @@ import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import Flora.Environment (FeatureEnv (..))
-import Flora.Logging
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobStore.API (BlobStoreAPI)
 import Flora.Model.Package
@@ -71,154 +71,218 @@ server =
     }
 
 listPackagesHandler
-  :: (DB :> es, Reader FeatureEnv :> es, IOE :> es)
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Maybe (Positive Word)
   -> Eff es (Html ())
 listPackagesHandler (Headers session _) pageParam = do
-  let pageNumber = pageParam ?: PositiveUnsafe 1
-  templateDefaults <- templateFromSession session defaultTemplateEnv
-  (count', results) <- Search.listAllPackages (fromPage pageNumber)
-  render templateDefaults $ Search.showAllPackages count' pageNumber results
+  Tracing.rootSpan alwaysSampled "list-all-packages" $ do
+    let pageNumber = pageParam ?: PositiveUnsafe 1
+    templateDefaults <- templateFromSession session defaultTemplateEnv
+    (count', results) <- Search.listAllPackages (fromPage pageNumber)
+    render templateDefaults $ Search.showAllPackages count' pageNumber results
 
 showNamespaceHandler
-  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Time :> es
+     , Error ServerError :> es
+     , Log :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> Maybe (Positive Word)
   -> Eff es (Html ())
-showNamespaceHandler (Headers session _) namespace pageParam = do
-  let pageNumber = pageParam ?: PositiveUnsafe 1
-  templateDefaults <- templateFromSession session defaultTemplateEnv
-  (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) namespace
-  if extractNamespaceText namespace == "haskell"
-    then do
-      let description = "Core Haskell packages"
-      let templateEnv =
-            templateDefaults
-              { navbarSearchContent = Just $ "in:" <> display namespace <> " "
-              , description = description
-              }
-      render templateEnv $
-        Search.showAllPackagesInNamespace
-          namespace
-          description
-          count'
-          pageNumber
-          results
-    else do
-      mPackageIndex <- Query.getPackageIndexByName (extractNamespaceText namespace)
-      case mPackageIndex of
-        Nothing -> renderError templateDefaults notFound404
-        Just packageIndex -> do
-          let templateEnv =
-                templateDefaults
-                  { navbarSearchContent = Just $ "in:" <> display namespace <> " "
-                  , description = packageIndex.description
-                  }
-          render templateEnv $
-            Search.showAllPackagesInNamespace namespace packageIndex.description count' pageNumber results
+showNamespaceHandler (Headers session _) packageNamespace pageParam =
+  Tracing.rootSpan alwaysSampled "show-namespace" $ do
+    let pageNumber = pageParam ?: PositiveUnsafe 1
+    templateDefaults <- templateFromSession session defaultTemplateEnv
+    (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) packageNamespace
+    if extractNamespaceText packageNamespace == "haskell"
+      then do
+        let description = "Core Haskell packages"
+        let templateEnv =
+              templateDefaults
+                { navbarSearchContent = Just $ "in:" <> display packageNamespace <> " "
+                , description = description
+                }
+        render templateEnv $
+          Search.showAllPackagesInNamespace
+            packageNamespace
+            description
+            count'
+            pageNumber
+            results
+      else do
+        mPackageIndex <- Query.getPackageIndexByName (extractNamespaceText packageNamespace)
+        case mPackageIndex of
+          Nothing -> renderError templateDefaults notFound404
+          Just packageIndex -> do
+            let templateEnv =
+                  templateDefaults
+                    { navbarSearchContent = Just $ "in:" <> display packageNamespace <> " "
+                    , description = packageIndex.description
+                    }
+            render templateEnv $
+              Search.showAllPackagesInNamespace packageNamespace packageIndex.description count' pageNumber results
 
 showPackageHandler
-  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Time :> es
+     , Error ServerError :> es
+     , Log :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Eff es (Html ())
-showPackageHandler sessionWithCookies namespace packageName = showPackageVersion sessionWithCookies namespace packageName Nothing
+showPackageHandler sessionWithCookies packageNamespace packageName =
+  showPackageVersion sessionWithCookies packageNamespace packageName Nothing
 
 showVersionHandler
-  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Time :> es
+     , Error ServerError :> es
+     , Log :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Version
   -> Eff es (Html ())
-showVersionHandler sessionWithCookies namespace packageName version =
-  showPackageVersion sessionWithCookies namespace packageName (Just version)
+showVersionHandler sessionWithCookies packageNamespace packageName version =
+  showPackageVersion sessionWithCookies packageNamespace packageName (Just version)
 
 showPackageVersion
-  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Time :> es
+     , Error ServerError :> es
+     , Log :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Maybe Version
   -> Eff es (Html ())
-showPackageVersion (Headers session _) namespace packageName mversion = do
-  templateEnv' <- templateFromSession session defaultTemplateEnv
-  package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
-  packageIndex <- guardThatPackageIndexExists namespace $ const (web404 session)
-  releases <- Query.getReleases package.packageId
-  let latestRelease =
-        releases
-          & Vector.filter (\r -> r.deprecated /= Just True)
-          & maximumBy (compare `on` (.version))
-      version = fromMaybe latestRelease.version mversion
-  release <- guardThatReleaseExists package.packageId version $ const (web404 session)
-  numberOfReleases <- Query.getNumberOfReleases package.packageId
-  dependents <- Query.getPackageDependents namespace packageName
-  releaseDependencies <- Query.getRequirements package.name release.releaseId
-  categories <- Query.getPackageCategories package.packageId
-  numberOfDependents <- Query.getNumberOfPackageDependents namespace packageName Nothing
-  numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+showPackageVersion (Headers session _) packageNamespace packageName mversion =
+  Tracing.rootSpan alwaysSampled "show-package-with-version" $ do
+    templateEnv' <- templateFromSession session defaultTemplateEnv
+    package <-
+      Tracing.childSpan "guardThatPackageExists " $
+        guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
+    packageIndex <-
+      Tracing.childSpan "guardThatPackageIndexExists " $
+        guardThatPackageIndexExists packageNamespace $
+          const (web404 session)
+    releases <-
+      Tracing.childSpan "Query.getReleases" $
+        Query.getReleases package.packageId
+    let latestRelease =
+          releases
+            & Vector.filter (\r -> r.deprecated /= Just True)
+            & maximumBy (compare `on` (.version))
+        version = fromMaybe latestRelease.version mversion
+    release <- guardThatReleaseExists package.packageId version $ const (web404 session)
+    numberOfReleases <- Query.getNumberOfReleases package.packageId
+    dependents <-
+      Tracing.childSpan "Query.getPackageDependents" $
+        Query.getPackageDependents packageNamespace packageName
+    releaseDependencies <-
+      Tracing.childSpan "Query.getRequirements" $
+        Query.getRequirements package.name release.releaseId
+    categories <- Query.getPackageCategories package.packageId
+    numberOfDependents <-
+      Tracing.childSpan "Query.getNumberOfPackageDependents" $
+        Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+    numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
 
-  let templateEnv =
-        templateEnv'
-          { title = display namespace <> "/" <> display packageName
-          , description = release.synopsis
-          , indexPage = isNothing mversion
-          }
+    let templateEnv =
+          templateEnv'
+            { title = display packageNamespace <> "/" <> display packageName
+            , description = release.synopsis
+            , indexPage = isNothing mversion
+            }
 
-  Log.logInfo "displaying a package" $
-    object
-      [ "release"
-          .= object
-            [ "id" .= release.releaseId
-            , "version" .= display release.version
-            ]
-      , "dependencies"
-          .= object
-            [ "count" .= numberOfDependencies
-            ]
-      , "dependents"
-          .= object
-            [ "count" .= numberOfDependents
-            ]
-      , "package" .= (display namespace <> "/" <> display packageName)
-      , "releases" .= numberOfReleases
-      ]
+    Log.logInfo "displaying a package" $
+      object
+        [ "release"
+            .= object
+              [ "id" .= release.releaseId
+              , "version" .= display release.version
+              ]
+        , "dependencies"
+            .= object
+              [ "count" .= numberOfDependencies
+              ]
+        , "dependents"
+            .= object
+              [ "count" .= numberOfDependents
+              ]
+        , "package" .= (display packageNamespace <> "/" <> display packageName)
+        , "releases" .= numberOfReleases
+        ]
 
-  let packageIndexURL = packageIndex.url
+    let packageIndexURL = packageIndex.url
 
-  render templateEnv $
-    Packages.showPackage
-      release
-      releases
-      numberOfReleases
-      package
-      packageIndexURL
-      dependents
-      numberOfDependents
-      releaseDependencies
-      numberOfDependencies
-      categories
+    Tracing.childSpan "render showPackage" $
+      render templateEnv $
+        Packages.showPackage
+          release
+          releases
+          numberOfReleases
+          package
+          packageIndexURL
+          dependents
+          numberOfDependents
+          releaseDependencies
+          numberOfDependencies
+          categories
 
 showDependentsHandler
-  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Error ServerError :> es, Log :> es, IOE :> es)
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Time :> es
+     , Error ServerError :> es
+     , Log :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Maybe (Positive Word)
   -> Maybe Text
   -> Eff es (Html ())
-showDependentsHandler s@(Headers session _) namespace packageName mPage mSearch = do
-  package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
+showDependentsHandler s@(Headers session _) packageNamespace packageName mPage mSearch = do
+  package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
   releases <- Query.getAllReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
-  showVersionDependentsHandler s namespace packageName latestRelease.version mPage mSearch
+  showVersionDependentsHandler s packageNamespace packageName latestRelease.version mPage mSearch
 
 showVersionDependentsHandler
-  :: (DB :> es, Reader FeatureEnv :> es, Log :> es, Time :> es, Error ServerError :> es, IOE :> es)
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Log :> es
+     , Time :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
@@ -226,134 +290,176 @@ showVersionDependentsHandler
   -> Maybe (Positive Word)
   -> Maybe Text
   -> Eff es (Html ())
-showVersionDependentsHandler s namespace packageName version Nothing mSearch =
-  showVersionDependentsHandler s namespace packageName version (Just $ PositiveUnsafe 1) mSearch
-showVersionDependentsHandler s namespace packageName version pageNumber (Just "") =
-  showVersionDependentsHandler s namespace packageName version pageNumber Nothing
-showVersionDependentsHandler (Headers session _) namespace packageName version (Just pageNumber) mSearch = do
-  templateEnv' <- templateFromSession session defaultTemplateEnv
-  package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
-  release <- guardThatReleaseExists package.packageId version (const (web404 session))
-  let templateEnv =
-        templateEnv'
-          { title = display namespace <> "/" <> display packageName
-          , description = "Dependents of " <> display namespace <> "/" <> display packageName
-          , navbarSearchContent = Just $ "depends:" <> display namespace <> "/" <> display packageName <> " "
-          }
-  results <-
-    Query.getAllPackageDependentsWithLatestVersion
-      namespace
-      packageName
-      (fromPage pageNumber)
-      mSearch
+showVersionDependentsHandler s packageNamespace packageName version Nothing mSearch =
+  showVersionDependentsHandler s packageNamespace packageName version (Just $ PositiveUnsafe 1) mSearch
+showVersionDependentsHandler s packageNamespace packageName version pageNumber (Just "") =
+  showVersionDependentsHandler s packageNamespace packageName version pageNumber Nothing
+showVersionDependentsHandler (Headers session _) packageNamespace packageName version (Just pageNumber) mSearch = do
+  Tracing.rootSpan alwaysSampled "show-package-version-dependents" $ do
+    templateEnv' <- templateFromSession session defaultTemplateEnv
+    package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
+    release <- guardThatReleaseExists package.packageId version (const (web404 session))
+    let templateEnv =
+          templateEnv'
+            { title = display packageNamespace <> "/" <> display packageName
+            , description = "Dependents of " <> display packageNamespace <> "/" <> display packageName
+            , navbarSearchContent = Just $ "depends:" <> display packageNamespace <> "/" <> display packageName <> " "
+            }
+    results <-
+      Tracing.childSpan "Query.getPackageDependents" $
+        Query.getAllPackageDependentsWithLatestVersion
+          packageNamespace
+          packageName
+          (fromPage pageNumber)
+          mSearch
 
-  totalDependents <- Query.getNumberOfPackageDependents namespace packageName mSearch
-  render templateEnv $
-    Package.showDependents
-      namespace
-      packageName
-      release
-      totalDependents
-      results
-      pageNumber
+    totalDependents <- Query.getNumberOfPackageDependents packageNamespace packageName mSearch
+    Tracing.childSpan "render showDependents" $
+      render templateEnv $
+        Package.showDependents
+          packageNamespace
+          packageName
+          release
+          totalDependents
+          results
+          pageNumber
 
-showDependenciesHandler :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Log :> es, Error ServerError :> es, IOE :> es) => SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Eff es (Html ())
-showDependenciesHandler s@(Headers session _) namespace packageName = do
-  package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
-  releases <- Query.getAllReleases package.packageId
-  let latestRelease = maximumBy (compare `on` (.version)) releases
-  showVersionDependenciesHandler s namespace packageName latestRelease.version
-
-showVersionDependenciesHandler :: (DB :> es, Reader FeatureEnv :> es, IOE :> es, Log :> es, Time :> es, Error ServerError :> es) => SessionWithCookies (Maybe User) -> Namespace -> PackageName -> Version -> Eff es (Html ())
-showVersionDependenciesHandler (Headers session _) namespace packageName version = do
-  templateEnv' <- templateFromSession session defaultTemplateEnv
-  package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
-  release <- guardThatReleaseExists package.packageId version $ const (web404 session)
-  let templateEnv =
-        templateEnv'
-          { title = display namespace <> "/" <> display packageName
-          , description = "Dependencies of " <> display namespace <> display packageName
-          }
-  (releaseDependencies, duration) <-
-    timeAction $
-      Query.getAllRequirements release.releaseId
-
-  Log.logInfo "Retrieving all dependencies of the latest release of a package" $
-    object
-      [ "duration" .= duration
-      , "package" .= (display namespace <> "/" <> display packageName)
-      , "release_id" .= release.releaseId
-      , "component_count" .= Map.size releaseDependencies
-      , "dependencies_count" .= Map.foldl' (\acc ds -> acc + Vector.length ds) 0 releaseDependencies
-      ]
-
-  render templateEnv $
-    Package.showDependencies namespace packageName release releaseDependencies
-
-showChangelogHandler
-  :: (DB :> es, Reader FeatureEnv :> es, Time :> es, Log :> es, Error ServerError :> es, IOE :> es)
+showDependenciesHandler
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Eff es (Html ())
-showChangelogHandler s@(Headers session _) namespace packageName = do
-  package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
+showDependenciesHandler s@(Headers session _) packageNamespace packageName = do
+  package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
   releases <- Query.getAllReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
-  showVersionChangelogHandler s namespace packageName latestRelease.version
+  showVersionDependenciesHandler s packageNamespace packageName latestRelease.version
 
-showVersionChangelogHandler
-  :: (DB :> es, Reader FeatureEnv :> es, Log :> es, Time :> es, IOE :> es, Error ServerError :> es)
+showVersionDependenciesHandler
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , IOE :> es
+     , Error ServerError :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Version
   -> Eff es (Html ())
-showVersionChangelogHandler (Headers session _) namespace packageName version = do
-  Log.logInfo_ $ display namespace
-  templateEnv' <- templateFromSession session defaultTemplateEnv
-  package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
-  release <- guardThatReleaseExists package.packageId version $ const (web404 session)
-  let templateEnv =
-        templateEnv'
-          { title = display namespace <> "/" <> display packageName
-          , description = "Changelog of @" <> display namespace <> display packageName
-          }
+showVersionDependenciesHandler (Headers session _) packageNamespace packageName version = do
+  Tracing.rootSpan alwaysSampled "show-version-dependencies" $ do
+    templateEnv' <- templateFromSession session defaultTemplateEnv
+    package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
+    release <- guardThatReleaseExists package.packageId version $ const (web404 session)
+    let templateEnv =
+          templateEnv'
+            { title = display packageNamespace <> "/" <> display packageName
+            , description = "Dependencies of " <> display packageNamespace <> display packageName
+            }
+    releaseDependencies <-
+      Tracing.childSpan "Query.getAllRequirements" $
+        Query.getAllRequirements release.releaseId
 
-  render templateEnv $ Package.showChangelog namespace packageName version release.changelog
+    Tracing.childSpan "render showDependencies" $
+      render templateEnv $
+        Package.showDependencies packageNamespace packageName release releaseDependencies
 
-listVersionsHandler
-  :: (DB :> es, Reader FeatureEnv :> es, IOE :> es, Log :> es, Time :> es, Error ServerError :> es)
+showChangelogHandler
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Eff es (Html ())
-listVersionsHandler (Headers session _) namespace packageName = do
+showChangelogHandler s@(Headers session _) packageNamespace packageName = do
+  Tracing.rootSpan alwaysSampled "show-changelog" $ do
+    package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
+    releases <-
+      Tracing.childSpan "Query.getAllReleases" $
+        Query.getAllReleases package.packageId
+    let latestRelease = maximumBy (compare `on` (.version)) releases
+    showVersionChangelogHandler s packageNamespace packageName latestRelease.version
+
+showVersionChangelogHandler
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , IOE :> es
+     , Error ServerError :> es
+     , Trace :> es
+     )
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Version
+  -> Eff es (Html ())
+showVersionChangelogHandler (Headers session _) packageNamespace packageName version = do
+  Tracing.rootSpan alwaysSampled "show-version-changelog" $ do
+    templateEnv' <- templateFromSession session defaultTemplateEnv
+    package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
+    release <- guardThatReleaseExists package.packageId version $ const (web404 session)
+    let templateEnv =
+          templateEnv'
+            { title = display packageNamespace <> "/" <> display packageName
+            , description = "Changelog of " <> display packageNamespace <> "/" <> display packageName
+            }
+
+    render templateEnv $ Package.showChangelog packageNamespace packageName version release.changelog
+
+listVersionsHandler
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , IOE :> es
+     , Error ServerError :> es
+     , Trace :> es
+     )
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Eff es (Html ())
+listVersionsHandler (Headers session _) packageNamespace packageName = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
-  package <- guardThatPackageExists namespace packageName (\_ _ -> web404 session)
+  package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
   let templateEnv =
         templateEnv'
-          { title = display namespace <> "/" <> display packageName
-          , description = "Releases of " <> display namespace <> display packageName
+          { title = display packageNamespace <> "/" <> display packageName
+          , description = "Releases of " <> display packageNamespace <> display packageName
           }
   releases <- Query.getAllReleases package.packageId
-  render templateEnv $ Package.listVersions namespace packageName releases
+  render templateEnv $ Package.listVersions packageNamespace packageName releases
 
 constructTarballPath :: PackageName -> Version -> Text
 constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
 
 getTarballHandler
-  :: (DB :> es, Reader FeatureEnv :> es, Log :> es, Time :> es, IOE :> es, Error ServerError :> es, BlobStoreAPI :> es)
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , Log :> es
+     , IOE :> es
+     , Error ServerError :> es
+     , BlobStoreAPI :> es
+     , Trace :> es
+     )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Version
   -> Text
   -> Eff es ByteString
-getTarballHandler (Headers session _) namespace packageName version tarballName = do
+getTarballHandler (Headers session _) packageNamespace packageName version tarballName = do
   features <- ask @FeatureEnv
   unless (isJust features.blobStoreImpl) $ throwError err404
-  package <- guardThatPackageExists namespace packageName $ \_ _ -> web404 session
+  package <- guardThatPackageExists packageNamespace packageName $ \_ _ -> web404 session
   release <- guardThatReleaseExists package.packageId version $ const (web404 session)
   case release.tarballRootHash of
     Just rootHash

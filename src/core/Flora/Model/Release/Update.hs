@@ -17,6 +17,7 @@ import Crypto.Hash.SHA256 qualified as SHA
 import Data.ByteString (toStrict)
 import Data.ByteString.Lazy (LazyByteString)
 import Data.Function ((&))
+import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -108,3 +109,12 @@ setReleasesDeprecationMarker releaseVersions =
     FROM (VALUES (?,?)) as upd(x,y)
     WHERE r0.release_id = (upd.y :: uuid)
     |]
+
+setArchiveChecksum :: DB :> es => ReleaseId -> Text -> Eff es ()
+setArchiveChecksum releaseId sha256Hash =
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+        [[field| archive_checksum |]]
+        ([field| release_id |], releaseId)
+        (Only sha256Hash)
