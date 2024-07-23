@@ -133,6 +133,7 @@ library
     Flora.Publish
     Flora.QRCode
     Flora.Search
+    Flora.Tracing
     JSON
     Log.Backend.File
     Lucid.Orphans
@@ -194,6 +195,7 @@ library
     , text
     , text-display
     , time
+    , tracing
     , unliftio
     , utf8-string
     , uuid
@@ -334,6 +336,8 @@ library flora-web
     , text-display
     , time
     , torsor
+    , tracing
+    , tracing-effectful
     , uuid
     , vector
     , vector-algorithms
