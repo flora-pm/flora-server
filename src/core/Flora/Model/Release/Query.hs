@@ -20,23 +20,22 @@ module Flora.Model.Release.Query
 where
 
 import Control.Monad (join)
+import Data.ByteString (fromStrict)
+import Data.ByteString.Lazy (LazyByteString)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Data.Vector.Algorithms.Intro as MVector
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne, queryOne_, query_)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (In (..), Only (..), Query)
-import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Database.PostgreSQL.Simple.SqlQQ
+import Distribution.Orphans.Version ()
 import Distribution.Version (Version)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
-import Data.ByteString (fromStrict)
-import Data.ByteString.Lazy (LazyByteString)
-import Distribution.Orphans.Version ()
 import Flora.Model.BlobStore.API (BlobStoreAPI, get)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Component.Types
@@ -44,15 +43,14 @@ import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
 packageReleasesQuery :: Query
-packageReleasesQuery = _selectWhere @Release [[field| package_id |]]
+packageReleasesQuery =
+  _selectWhere @Release [[field| package_id |]]
+    <> " ORDER BY releases.version DESC "
 
 getReleases :: DB :> es => PackageId -> Eff es (Vector Release)
 getReleases pid =
   dbtToEff $ do
-    results <- query Select packageReleasesQuery (Only pid)
-    if Vector.null results
-      then pure results
-      else pure $ Vector.take 6 $ Vector.reverse $ Vector.modify MVector.sort results
+    query Select (packageReleasesQuery <> " LIMIT 6") (Only pid)
 
 getLatestReleaseTime :: DB :> es => Maybe Text -> Eff es (Maybe UTCTime)
 getLatestReleaseTime repo =
@@ -79,10 +77,7 @@ getReleaseTarballArchive releaseId = do
 getAllReleases :: DB :> es => PackageId -> Eff es (Vector Release)
 getAllReleases pid =
   dbtToEff $ do
-    results <- query Select packageReleasesQuery (Only pid)
-    if Vector.null results
-      then pure results
-      else pure $ Vector.reverse $ Vector.modify MVector.sort results
+    query Select packageReleasesQuery (Only pid)
 
 getVersionFromManyReleaseIds
   :: DB :> es
