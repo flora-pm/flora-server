@@ -7,6 +7,7 @@
 - Remove the enqueueImportJob function [#558](https://github.com/flora-pm/flora-server/pull/558)
 - Store archive hashes [#560](https://github.com/flora-pm/flora-server/pull/560)
 - Implement tracing with zipkin [#564](https://github.com/flora-pm/flora-server/pull/564)
+- Parametrise tracing options [#566](https://github.com/flora-pm/flora-server/pull/566)
 
 ## 1.0.18 -- 2024-05-18
 
