@@ -3,7 +3,7 @@
 module Flora.Environment
   ( FloraEnv (..)
   , DeploymentEnv (..)
-  , LoggingEnv (..)
+  , MLTP (..)
   , FeatureEnv (..)
   , BlobStoreImpl (..)
   , TestEnv (..)
@@ -38,7 +38,7 @@ data FloraEnv = FloraEnv
   , jobsPool :: Pool PG.Connection
   , httpPort :: Word16
   , domain :: Text
-  , logging :: LoggingEnv
+  , mltp :: MLTP
   , environment :: DeploymentEnv
   , features :: FeatureEnv
   , config :: FloraConfig
@@ -102,7 +102,7 @@ configToEnv floraConfig = do
       , jobsPool = jobsPool
       , httpPort = floraConfig.httpPort
       , domain = floraConfig.domain
-      , logging = floraConfig.logging
+      , mltp = floraConfig.mltp
       , environment = floraConfig.environment
       , features = featureEnv
       , assets = assets

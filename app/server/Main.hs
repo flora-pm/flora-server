@@ -26,7 +26,7 @@ import System.IO
 
 import Data.Text qualified as Text
 import Database.PostgreSQL.Simple qualified as PG
-import Flora.Environment (FloraEnv (..), LoggingEnv (..), getFloraEnv)
+import Flora.Environment (FloraEnv (..), MLTP (..), getFloraEnv)
 import Flora.Logging qualified as Logging
 import Flora.Model.PackageIndex.Types
 import FloraJobs.Scheduler (checkIfIndexRefreshJobIsPlanned, scheduleRefreshIndexes)
@@ -37,7 +37,7 @@ main = do
   hSetBuffering stdout LineBuffering
   env <- getFloraEnv & runFailIO & runEff
   runEff $ do
-    let withLogger = Logging.makeLogger env.logging.logger
+    let withLogger = Logging.makeLogger env.mltp.logger
     withLogger $ \appLogger ->
       runDB env.pool
         . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
