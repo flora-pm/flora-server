@@ -7,7 +7,6 @@ import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 (unpack)
 import Data.Maybe (isJust)
 import Data.Text.Display (display)
-import Flora.Environment
 import GHC.IO.Exception (IOErrorType (..))
 import Log (LogLevel (..), Logger, logAttention, runLogT)
 import Network.Wai
@@ -17,10 +16,12 @@ import System.Log.Raven (initRaven, register, silentFallback)
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))
 
-onException :: Logger -> DeploymentEnv -> LoggingEnv -> Maybe Request -> SomeException -> IO ()
-onException logger environment tracingEnv mRequest exception =
+import Flora.Environment
+
+onException :: Logger -> DeploymentEnv -> MLTP -> Maybe Request -> SomeException -> IO ()
+onException logger environment mltp mRequest exception =
   Log.runLogT "flora" logger LogAttention $ do
-    case tracingEnv.sentryDSN of
+    case mltp.sentryDSN of
       Nothing -> do
         logAttention "Unhandled exception" $
           Aeson.object ["exception" .= display (show exception)]
