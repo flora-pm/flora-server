@@ -162,7 +162,7 @@ parseMLTP =
     <*> var loggingDestination "FLORA_LOGGING_DESTINATION" (help "Where do the logs go")
     <*> switch "FLORA_ZIPKIN_ENABLED" (help "Is Zipkin trace collection enabled? (default false)")
     <*> var (pure . Just <=< nonempty) "FLORA_ZIPKIN_AGENT_HOST" (help "The hostname of the Zipkin collection agent" <> def Nothing)
-    <*> var auto "FLORA_ZIPKIN_AGENT_PORT" (help "The port of the Zipkin collection agent")
+    <*> var (pure . Just <=< auto) "FLORA_ZIPKIN_AGENT_PORT" (help "The port of the Zipkin collection agent" <> def Nothing)
 
 parseFeatures :: Parser Error FeatureConfig
 parseFeatures =
