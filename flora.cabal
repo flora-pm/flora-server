@@ -170,6 +170,7 @@ library
     , lucid
     , memory
     , monad-time-effectful
+    , network
     , odd-jobs
     , openapi3
     , optics-core

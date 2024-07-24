@@ -1,7 +1,7 @@
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
   ( FloraConfig (..)
-  , LoggingEnv (..)
+  , MLTP (..)
   , FeatureConfig (..)
   , ConnectionInfo (..)
   , TestConfig (..)
@@ -42,6 +42,7 @@ import Env
   , Error (..)
   , Parser
   , Reader
+  , auto
   , def
   , help
   , nonempty
@@ -52,6 +53,7 @@ import Env
   , (<=<)
   )
 import GHC.Generics (Generic)
+import Network.Socket (HostName, PortNumber)
 import System.FilePath (isValid)
 import Text.Read (readMaybe)
 
@@ -97,10 +99,14 @@ data AssetBundle = AssetBundle
   }
   deriving stock (Show, Generic)
 
-data LoggingEnv = LoggingEnv
+-- | MLTP stands for Metrics, Logs, Traces and Profiles
+data MLTP = MLTP
   { sentryDSN :: Maybe String
   , prometheusEnabled :: Bool
   , logger :: LoggingDestination
+  , zipkinEnabled :: Bool
+  , zipkinHost :: Maybe HostName
+  , zipkinPort :: Maybe PortNumber
   }
   deriving stock (Show, Generic)
 
@@ -116,7 +122,7 @@ data FloraConfig = FloraConfig
   , connectionInfo :: ByteString
   , domain :: Text
   , httpPort :: Word16
-  , logging :: LoggingEnv
+  , mltp :: MLTP
   , features :: FeatureConfig
   , environment :: DeploymentEnv
   }
@@ -148,12 +154,15 @@ parsePoolConfig =
       "FLORA_DB_POOL_CONNECTIONS"
       (help "Number of connections across all sub-pools")
 
-parseLoggingEnv :: Parser Error LoggingEnv
-parseLoggingEnv =
-  LoggingEnv
+parseMLTP :: Parser Error MLTP
+parseMLTP =
+  MLTP
     <$> var (pure . Just <=< nonempty) "FLORA_SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
-    <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Whether or not Prometheus is enabled")
+    <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Is Prometheus metrics export enabled (default false)")
     <*> var loggingDestination "FLORA_LOGGING_DESTINATION" (help "Where do the logs go")
+    <*> switch "FLORA_ZIPKIN_ENABLED" (help "Is Zipkin trace collection enabled? (default false)")
+    <*> var (pure . Just <=< nonempty) "FLORA_ZIPKIN_AGENT_HOST" (help "The hostname of the Zipkin collection agent" <> def Nothing)
+    <*> var auto "FLORA_ZIPKIN_AGENT_PORT" (help "The port of the Zipkin collection agent")
 
 parseFeatures :: Parser Error FeatureConfig
 parseFeatures =
@@ -181,7 +190,7 @@ parseConfig =
     <*> parseConnectionInfo
     <*> parseDomain
     <*> parsePort
-    <*> parseLoggingEnv
+    <*> parseMLTP
     <*> parseFeatures
     <*> parseDeploymentEnv
 

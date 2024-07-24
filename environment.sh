@@ -33,4 +33,6 @@ export FLORA_COMPATIBILITY_MODE="True"
 # Set these variables in `environment.local.sh`, which is not tracked by git.
 #export SENTRY_DSN="" # Set this variable to connect to to your Sentry instance
 #export FLORA_PROMETHEUS_ENABLED="true" # Set this variable to true or false to enable Prometheus metrics export
-
+#export FLORA_ZIPKIN_ENABLED="true" # Set this variable to true to enable Zipkin traces export
+#export FLORA_ZIPKIN_AGENT_HOST="localhost" # Set this variable to true to set the hostname of the agent to which the traces are shipped
+#export FLORA_ZIPKIN_AGENT_PORT="localhost" # Set this variable to true to set the port of the agent to which the traces are shipped

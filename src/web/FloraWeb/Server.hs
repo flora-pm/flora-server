@@ -59,7 +59,7 @@ import Flora.Environment
   , DeploymentEnv
   , FeatureEnv (..)
   , FloraEnv (..)
-  , LoggingEnv (..)
+  , MLTP (..)
   , getFloraEnv
   )
 import Flora.Environment.Config (Assets, DeploymentEnv (..))
@@ -103,9 +103,9 @@ runFlora =
           runEff . withUnliftStrategy (ConcUnlift Ephemeral Unlimited) . runTime . runConcurrent $ do
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
-            liftIO $ when (isJust env.logging.sentryDSN) (blueMessage "📋 Connected to Sentry endpoint")
-            liftIO $ when (env.environment == Production) (blueMessage "🖊️ Connected to Zipkin endpoint")
-            let withLogger = Logging.makeLogger env.logging.logger
+            liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
+            liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
+            let withLogger = Logging.makeLogger env.mltp.logger
             withLogger
               ( \appLogger ->
                   runServer appLogger env
@@ -131,7 +131,7 @@ logException env logger exception =
 runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
-  zipkin <- liftIO $ Tracing.newZipkin "localhost" "flora-server-local"
+  zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-server"
   let runnerEnv = JobsRunnerEnv httpManager
   let oddjobsUiCfg = makeUIConfig floraEnv.config appLogger floraEnv.jobsPool
       oddJobsCfg =
@@ -157,7 +157,7 @@ runServer appLogger floraEnv = do
             ( onException
                 appLogger
                 floraEnv.environment
-                floraEnv.logging
+                floraEnv.mltp
             )
             defaultSettings
   liftIO
@@ -199,7 +199,7 @@ floraServer cfg jobsRunnerEnv =
 naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> Zipkin -> FloraEff a -> Handler a
 naturalTransform floraEnv logger _webEnvStore zipkin app = do
   let runTrace =
-        if floraEnv.environment == Development
+        if floraEnv.environment == Production
           then Trace.runTrace zipkin.zipkinTracer
           else Trace.runNoTrace
   result <-
