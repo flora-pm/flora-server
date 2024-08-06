@@ -57,8 +57,7 @@ fetchMetadataHandler (Headers session _) = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutReadme
-          ( \(releaseId, version, packagename) -> scheduleReadmeJob jobsPool releaseId packagename version
-          )
+          (\(releaseId, version, packagename) -> scheduleReadmeJob jobsPool releaseId packagename version)
 
   releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
   liftIO $
@@ -66,8 +65,7 @@ fetchMetadataHandler (Headers session _) = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutUploadTime
-          ( \(releaseId, version, packagename) -> scheduleUploadTimeJob jobsPool releaseId packagename version
-          )
+          (\(releaseId, version, packagename) -> scheduleUploadTimeJob jobsPool releaseId packagename version)
 
   releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
   liftIO $
@@ -75,8 +73,7 @@ fetchMetadataHandler (Headers session _) = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutChangelog
-          ( \(releaseId, version, packagename) -> scheduleChangelogJob jobsPool releaseId packagename version
-          )
+          (\(releaseId, version, packagename) -> scheduleChangelogJob jobsPool releaseId packagename version)
 
   features <- ask @FeatureEnv
   Log.logAttention "features" features
@@ -97,8 +94,7 @@ fetchMetadataHandler (Headers session _) = do
       forkIO $ do
         Async.forConcurrently_
           packagesWithoutDeprecationInformation
-          ( \a -> scheduleReleaseDeprecationListJob jobsPool a
-          )
+          (\a -> scheduleReleaseDeprecationListJob jobsPool a)
         void $ scheduleRefreshLatestVersions jobsPool
 
   pure $ redirect "/admin"
