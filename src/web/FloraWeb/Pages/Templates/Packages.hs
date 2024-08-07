@@ -163,8 +163,7 @@ listVersions namespace packageName releases =
     ul_ [class_ "package-list"] $
       Vector.forM_
         releases
-        ( versionListItem namespace packageName
-        )
+        (versionListItem namespace packageName)
 
 versionListItem :: Namespace -> PackageName -> Release -> FloraHTML
 versionListItem namespace packageName release = do
@@ -212,8 +211,7 @@ packageListing mExactMatchItems packages =
           packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license)
     Vector.forM_
       packages
-      ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license)
-      )
+      (\PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license))
 
 packageWithExecutableListing
   :: Vector PackageInfoWithExecutables
@@ -430,8 +428,7 @@ displayTestedWith compilersVersions'
         ul_ [class_ "compiler-badges"] $
           Vector.forM_
             compilersVersions
-            ( li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display
-            )
+            (li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display)
 
 displayMaintainer :: Text -> FloraHTML
 displayMaintainer maintainerInfo =
