@@ -30,3 +30,7 @@
   /* offset-x | offset-y | blur-radius | spread-radius | color */
   box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
 }
+
+.theme-button {
+
+}
