@@ -228,7 +228,6 @@ library flora-web
     FloraWeb.Components.Alert
     FloraWeb.Components.Button
     FloraWeb.Components.CategoryCard
-    FloraWeb.Components.Footer
     FloraWeb.Components.Header
     FloraWeb.Components.Icons
     FloraWeb.Components.MainSearchBar
@@ -242,6 +241,7 @@ library flora-web
     FloraWeb.Components.VersionListHeader
     FloraWeb.Embedded
     FloraWeb.Links
+    FloraWeb.LiveReload
     FloraWeb.Pages.Routes
     FloraWeb.Pages.Routes.Admin
     FloraWeb.Pages.Routes.Categories
@@ -332,6 +332,7 @@ library flora-web
     , servant-lucid
     , servant-openapi3
     , servant-server
+    , servant-websockets
     , text
     , text-display
     , time
@@ -346,6 +347,7 @@ library flora-web
     , wai-log
     , wai-middleware-heartbeat
     , warp
+    , websockets
     , xml-conduit
     , xml-conduit-writer
 

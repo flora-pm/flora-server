@@ -6,6 +6,7 @@ module FloraWeb.Pages.Templates
   )
 where
 
+import Control.Monad (when)
 import Control.Monad.Extra (whenJust)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.Reader (ask, runReaderT)
@@ -15,7 +16,7 @@ import Lucid
 
 import Flora.Environment (DeploymentEnv (..))
 import FloraWeb.Components.Alert qualified as Alert
-import FloraWeb.Components.Header (header)
+import FloraWeb.Components.Header (header, liveReloadLink)
 import FloraWeb.Pages.Templates.Types as Types
 
 render :: Monad m => TemplateEnv -> FloraHTML -> m (Html ())
@@ -32,14 +33,14 @@ mkErrorPage env template =
    in runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
 
 rendered :: DeploymentEnv -> FloraHTML -> FloraHTML
-rendered _deploymentEnv target = do
+rendered deploymentEnv target = do
   TemplateEnv{flashInfo, flashError} <- ask
   header
   whenJust flashInfo $ \msg -> do
     Alert.info (display msg)
   whenJust flashError $ \msg -> do
     Alert.exception (display msg)
-  main_ [] target
-
--- when (deploymentEnv == Development) $
---   script_ [src_ "/static/js/autoreload.js", type_ "module"] ("" :: Text)
+  main_ [class_ "container-fluid"] target
+  when
+    (deploymentEnv == Development)
+    liveReloadLink

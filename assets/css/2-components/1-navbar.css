@@ -34,6 +34,13 @@
         width: 100%;
         display: inline-flex;
         margin-left: 1.25rem;
+
+        div {
+          padding-top: 0.5rem;
+          padding-bottom: 0.5rem;
+          align-items: center;
+          display: flex;
+        }
       }
     }
 

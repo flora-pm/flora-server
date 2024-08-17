@@ -114,7 +114,7 @@ navbarSearch = do
               Nothing -> []
               Just content -> [value_ content]
       form_ [action_ "/search", method_ "GET"] $ do
-        div_ [class_ "flex items-center py-2"] $ do
+        div_ [class_ ""] $ do
           label_ [for_ "search"] ""
           input_ $
             [ class_ "navbar-search"
@@ -134,22 +134,20 @@ adminLink _ _ = ""
 themeToggle :: FloraHTML
 themeToggle = do
   let sunIcon = do
-        img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 invert"]
+        img_ [src_ "/static/icons/sun.svg", class_ "sun-icon"]
 
   let moonIcon = do
-        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6"]
-
-  let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
+        img_ [src_ "/static/icons/moon.svg", class_ "moon-icon"]
 
   button_
     [ xOn_ "click" "theme = 'light'; menuOpen = false"
-    , class_ $ "theme-button--light " <> buttonBaseClasses
+    , class_ "theme-button theme-button--light"
     ]
     sunIcon
 
   button_
     [ xOn_ "click" "theme = 'dark'; menuOpen = false"
-    , class_ $ "theme-button--dark " <> buttonBaseClasses
+    , class_ "theme-button theme-button--dark"
     ]
     moonIcon
 

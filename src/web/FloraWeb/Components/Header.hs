@@ -56,6 +56,7 @@ header = do
 
         jsLink
         cssLink
+        meta_ [name_ "color-scheme", content_ "light dark"]
         link_
           [ rel_ "search"
           , type_ "application/opensearchdescription+xml"
@@ -78,6 +79,16 @@ jsLink = do
   case environment of
     Production ->
       script_ [src_ jsURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsBundle.hash)] ("" :: Text)
+    _ ->
+      script_ [src_ jsURL, type_ "module", defer_ ""] ("" :: Text)
+
+liveReloadLink :: FloraHTML
+liveReloadLink = do
+  TemplateEnv{assets, environment} <- ask
+  let jsURL = "/static/" <> assets.livereload.name
+  case environment of
+    Production ->
+      script_ [src_ jsURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.livereload.hash)] ("" :: Text)
     _ ->
       script_ [src_ jsURL, type_ "module", defer_ ""] ("" :: Text)
 

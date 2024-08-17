@@ -1,7 +1,7 @@
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
-@import "1-core/1-core.css";
+@import "1-core/1-core.sass";
 @import "1-core/2-variables.css";
 
 @import "2-components/1-navbar.css";
@@ -207,7 +207,6 @@
 
 [data-theme="dark"] .theme-button--light {
   display: inline-flex;
-  background-color: hsl(294 40% 30%);
 }
 
 .theme-button--dark {

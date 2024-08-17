@@ -74,8 +74,8 @@ data DeploymentEnv
   deriving stock (Show, Eq, Generic, Enum, Bounded)
 
 instance Display DeploymentEnv where
-  displayBuilder Production = "prod"
-  displayBuilder Development = "dev"
+  displayBuilder Production = "production"
+  displayBuilder Development = "development"
   displayBuilder Test = "test"
 
 data LoggingDestination
@@ -89,6 +89,7 @@ data LoggingDestination
 
 data Assets = Assets
   { jsBundle :: AssetBundle
+  , livereload :: AssetBundle
   , cssBundle :: AssetBundle
   }
   deriving stock (Show, Generic)
@@ -243,10 +244,12 @@ getAssets environment =
     Production -> do
       Assets
         <$> getAsset "app.js"
+        <*> getAsset "livereload.js"
         <*> getAsset "styles.css"
     _ -> do
       Assets
         <$> getStaticAsset "app.js"
+        <*> getStaticAsset "livereload.js"
         <*> getStaticAsset "styles.css"
 
 getStaticAsset :: Text -> Eff es AssetBundle

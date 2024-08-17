@@ -2,14 +2,15 @@
 
 module FloraWeb.Routes where
 
+import Data.OpenApi (OpenApi)
 import Servant
 import Servant.API.Generic
 import Text.XML
 
-import Data.OpenApi (OpenApi)
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Pages.Routes qualified as Pages
+import Servant.API.WebSocket (WebSocket)
 
 type ServerRoutes = NamedRoutes Routes
 
@@ -24,5 +25,6 @@ data Routes mode = Routes
           :> "openapi.json"
           :> Get '[JSON] OpenApi
   , docs :: mode :- "documentation" :> Raw
+  , livereload :: mode :- "livereload" :> WebSocket
   }
   deriving stock (Generic)

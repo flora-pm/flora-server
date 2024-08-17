@@ -20,7 +20,8 @@ The following Haskell command-line tools will have to be installed:
 
 * [Soufflé datalog engine v2.2](https://github.com/souffle-lang/souffle/releases/tag/2.2): The datalog engine for package classification
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
-* `yarn`: The tool that handles the JavaScript code bases
+* NodeJS v20.16.0 (latest LTS version)
+* `yarn` v1.22 or higher: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
 * `changelog-d` v1.0: https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0
 

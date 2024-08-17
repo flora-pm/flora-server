@@ -4,6 +4,7 @@ const postcssPlugin = require("@deanc/esbuild-plugin-postcss");
 const fs = require("fs");
 const chokidar = require('chokidar');
 const path = require("path");
+const {sassPlugin} = require("esbuild-sass-plugin")
 
 // PostCSS plugins
 const postcssImport = require("postcss-import");   
@@ -29,6 +30,7 @@ const mkProdPlugins = () => {
         console.log(assets);
         const orderAssets = {
           "app.js": assets.app.js,
+          "livereload.js": assets.livereload.js,
           "styles.css": assets[''].css[0]
         }
         return JSON.stringify(orderAssets, null, "  ");
@@ -39,6 +41,7 @@ const mkProdPlugins = () => {
 
 const pluginsList = () => {
   let plugins = [
+    sassPlugin(),
     postcssPlugin({
       plugins: [
         postcssImport,
@@ -63,6 +66,7 @@ const config = {
   color: true,
   entryPoints: {
     "app": "./js/app.js",
+    "livereload": "./js/livereload.js",
     "styles": "./css/styles.css",
   },
   outdir: "../static",

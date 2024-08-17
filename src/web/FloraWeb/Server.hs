@@ -80,6 +80,7 @@ import FloraWeb.Common.Auth
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
+import FloraWeb.LiveReload qualified as LiveReload
 import FloraWeb.Pages.Server qualified as Pages
 import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
 import FloraWeb.Pages.Templates.Error (renderError)
@@ -105,6 +106,7 @@ runFlora =
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
+            liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             let withLogger = Logging.makeLogger env.mltp.logger
             withLogger
               ( \appLogger ->
@@ -194,6 +196,7 @@ floraServer cfg jobsRunnerEnv =
     , api = API.apiServer
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
+    , livereload = LiveReload.livereloadHandler
     }
 
 naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> Zipkin -> FloraEff a -> Handler a
