@@ -47,10 +47,14 @@
 }
 
 .package-body {
+  --package-layout-gap: 10px;
+
   justify-content: center;
   display: grid;
-  grid-template-columns: 25% 1fr 25%;
-  gap: 10px;
+  grid-template-columns:
+    25% minmax(calc(50% - (var(--package-layout-gap) * 2)), 1fr)
+    25%;
+  gap: var(--package-layout-gap);
 
   > * {
     grid-row-start: 1;

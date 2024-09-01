@@ -1,7 +1,10 @@
 ul.compiler-badges {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(3, 80px);
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(calc(1.2em + 6ch), 80px), 1fr)
+  ); /* FIXME: Kinda magic numbers soup. Should be improved */
 
   li {
     margin-left: 4px;
