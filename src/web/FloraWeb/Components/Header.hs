@@ -5,15 +5,14 @@ module FloraWeb.Components.Header where
 import Control.Monad (unless)
 import Control.Monad.Reader
 import Data.Text (Text)
+import Htmx.Lucid.Core (hxGet_, hxTrigger_)
 import Lucid
-import Lucid.Alpine
 import PyF
 
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
-import FloraWeb.Components.Utils (property_, text)
+import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
-import Lucid.Svg.Attributes (color_)
 
 header :: FloraHTML
 header = do
@@ -56,6 +55,7 @@ header = do
 
         jsLink
         cssLink
+        meta_ [name_ "color-scheme", content_ "light dark"]
         link_
           [ rel_ "search"
           , type_ "application/opensearchdescription+xml"
@@ -69,6 +69,7 @@ header = do
         meta_ [name_ "twitter:dnt", content_ "on"]
 
       body_ [] $ do
+        div_ [hxGet_ "/livereload", hxTrigger_ "every 2s"] mempty
         navbar
 
 jsLink :: FloraHTML

@@ -8,8 +8,8 @@ import FloraWeb.Pages.Routes.Sessions qualified as Sessions
 import FloraWeb.Pages.Routes.Settings qualified as Settings
 import Lucid
 import Servant
+import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
-import Servant.HTML.Lucid
 
 type Routes = NamedRoutes Routes'
 

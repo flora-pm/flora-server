@@ -44,7 +44,10 @@ newSessionHandler (Headers session _) = do
       Log.logInfo_ $ "[+] User is already logged: " <> display u
       respond $ WithStatus @301 (redirect "/")
 
-createSessionHandler :: SessionWithCookies (Maybe User) -> LoginForm -> FloraEff (Union CreateSessionResponses)
+createSessionHandler
+  :: SessionWithCookies (Maybe User)
+  -> LoginForm
+  -> FloraEff (Union CreateSessionResponses)
 createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
   mUser <- Query.getUserByEmail email
   case mUser of

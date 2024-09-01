@@ -48,7 +48,6 @@ import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Types.Version (Version, mkVersion, versionNumbers)
 import Lucid
-import Lucid.Base
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
@@ -236,7 +235,7 @@ showChangelog namespace packageName version mChangelog = div_ [class_ "container
   section_ [class_ "release-changelog"] $ do
     case mChangelog of
       Nothing -> toHtml @Text "This release does not have a Changelog"
-      Just (MkTextHtml changelogText) -> relaxHtmlT changelogText
+      Just changelogText -> toHtml changelogText
 
 displayReleaseVersion :: Version -> FloraHTML
 displayReleaseVersion = toHtml
@@ -307,7 +306,7 @@ displayReadme :: Release -> FloraHTML
 displayReadme release =
   case readme release of
     Nothing -> renderHaddock release.description
-    Just (MkTextHtml readme) -> relaxHtmlT readme
+    Just readme -> toHtml readme
 
 displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
 displayVersions namespace packageName versions numberOfReleases =

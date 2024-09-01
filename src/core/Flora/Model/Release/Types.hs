@@ -2,7 +2,7 @@
 
 module Flora.Model.Release.Types
   ( ReleaseId (..)
-  , TextHtml (..)
+  , TextHtml
   , Release (..)
   , ImportStatus (..)
   , SupportedCompilers (..)
@@ -20,7 +20,6 @@ import Data.OpenApi.Schema (ToSchema)
 import Data.Text (Text, unpack)
 import Data.Text.Display
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Data.Text.Lazy qualified as Text
 import Data.Time (UTCTime)
 import Data.Typeable (Typeable)
 import Data.UUID (UUID)
@@ -37,8 +36,8 @@ import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Flag (PackageFlag)
 import Distribution.Types.Version
 import Distribution.Types.VersionRange (VersionRange)
-import Lucid qualified
 
+import Data.Text.HTML
 import Distribution.Orphans ()
 import Distribution.Orphans.BuildType ()
 import Distribution.Orphans.CompilerFlavor ()
@@ -54,30 +53,6 @@ newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
     (Display)
     via ShowInstance UUID
-
--- | a wrapper that attaches from and tofield instances
---  for a text db row for LucidHtml
-newtype TextHtml = MkTextHtml (Lucid.Html ())
-  deriving stock (Show, Generic)
-
-instance ToJSON TextHtml where
-  toJSON (MkTextHtml a) = String $ Text.toStrict $ Lucid.renderText a
-
-instance FromJSON TextHtml where
-  parseJSON = withText "TextHtml" (pure . MkTextHtml . Lucid.toHtmlRaw @Text)
-
-instance NFData TextHtml where
-  rnf a = seq a ()
-
-instance Eq TextHtml where
-  (==) (MkTextHtml a) (MkTextHtml b) = Lucid.renderText a == Lucid.renderText b
-
---
-instance FromField TextHtml where
-  fromField field bs = MkTextHtml . Lucid.toHtmlRaw @Text <$> fromField field bs
-
-instance ToField TextHtml where
-  toField (MkTextHtml x) = toField $ Lucid.renderText x
 
 data Release = Release
   { releaseId :: ReleaseId

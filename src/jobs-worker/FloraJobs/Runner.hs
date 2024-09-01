@@ -5,7 +5,9 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
+import Data.Maybe (fromJust)
 import Data.Set qualified as Set
+import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -24,8 +26,7 @@ import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
-import Data.Maybe (fromJust)
-import Data.Text qualified as Text
+import Data.Text.HTML qualified as HTML
 import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Import.Package.Bulk qualified as Import
 import Flora.Model.BlobIndex.Update qualified as Update
@@ -82,8 +83,8 @@ fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseI
       Left e -> throw e
       Right bodyText -> do
         logInfo ("got a changelog for package " <> display packageName) (object ["release_id" .= releaseId])
-        let changelogBody = renderMarkdown ("CHANGELOG" <> show packageName) bodyText
-        Update.updateChangelog releaseId (Just $ MkTextHtml changelogBody) Imported
+        changelogBody <- renderMarkdown ("CHANGELOG" <> show packageName) bodyText
+        Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
 
 makeReadme :: ReadmeJobPayload -> JobsRunner ()
 makeReadme pay@ReadmeJobPayload{..} =
@@ -100,8 +101,8 @@ makeReadme pay@ReadmeJobPayload{..} =
       Left e -> throw e
       Right bodyText -> do
         logInfo ("got a readme for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
-        let readmeBody = renderMarkdown ("README" <> show mpPackage) bodyText
-        Update.updateReadme mpReleaseId (Just $ MkTextHtml readmeBody) Imported
+        readmeBody <- renderMarkdown ("README" <> show mpPackage) bodyText
+        Update.updateReadme mpReleaseId (Just $ HTML.fromText readmeBody) Imported
 
 fetchTarball
   :: ( IOE :> es

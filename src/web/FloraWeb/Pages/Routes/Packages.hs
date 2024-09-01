@@ -12,8 +12,8 @@ import Flora.Model.Package (Namespace, PackageName)
 import Lucid
 import Servant
 import Servant.API.ContentTypes.GZip
+import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
-import Servant.HTML.Lucid
 
 type Routes = NamedRoutes Routes'
 

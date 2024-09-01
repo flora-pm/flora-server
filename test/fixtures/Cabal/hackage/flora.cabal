@@ -255,7 +255,6 @@ library flora-web
     , log-base
     , log-effectful
     , lucid
-    , lucid-alpine
     , lucid-svg
     , monad-time
     , monad-time-effectful

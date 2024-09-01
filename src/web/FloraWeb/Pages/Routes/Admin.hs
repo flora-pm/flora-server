@@ -5,8 +5,8 @@ import Flora.Model.User
 import Lucid
 import OddJobs.Endpoints qualified as OddJobs
 import Servant
+import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
-import Servant.HTML.Lucid
 
 type Routes = NamedRoutes Routes'
 

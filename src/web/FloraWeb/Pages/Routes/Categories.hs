@@ -7,8 +7,8 @@ where
 import Data.Text
 import Lucid
 import Servant
+import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
-import Servant.HTML.Lucid
 
 type Routes = NamedRoutes Routes'
 
