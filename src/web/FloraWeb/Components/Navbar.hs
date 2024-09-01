@@ -139,7 +139,7 @@ themeToggle = do
   let moonIcon = do
         img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6"]
 
-  let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
+  let buttonBaseClasses = "navbar-themeBtn p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
 
   button_
     [ xOn_ "click" "theme = 'light'; menuOpen = false"

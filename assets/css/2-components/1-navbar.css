@@ -100,6 +100,10 @@
   #navbar-search-package-name {
     padding-left: 20px;
   }
+
+  .navbar-themeBtn {
+    flex-shrink: 0;
+  }
 }
 
 @media (max-width: 48rem) {
