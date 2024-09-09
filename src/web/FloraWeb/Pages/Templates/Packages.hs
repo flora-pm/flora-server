@@ -144,6 +144,8 @@ showDependents namespace packageName release count packagesInfo currentPage =
               , dep.latestSynopsis
               , dep.latestVersion
               , dep.latestLicense
+              , Nothing
+              , Nothing
               )
         )
     when (count > 30) $
@@ -163,8 +165,7 @@ listVersions namespace packageName releases =
     ul_ [class_ "package-list"] $
       Vector.forM_
         releases
-        ( versionListItem namespace packageName
-        )
+        (versionListItem namespace packageName)
 
 versionListItem :: Namespace -> PackageName -> Release -> FloraHTML
 versionListItem namespace packageName release = do
@@ -209,11 +210,10 @@ packageListing mExactMatchItems packages =
     whenJust mExactMatchItems $ \exactMatchItems ->
       forM_ exactMatchItems $ \em ->
         div_ [class_ "exact-match"] $
-          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license)
+          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license, em.uploadedAt, em.revisedAt)
     Vector.forM_
       packages
-      ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license)
-      )
+      (\PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license, uploadedAt, revisedAt))
 
 packageWithExecutableListing
   :: Vector PackageInfoWithExecutables
@@ -430,8 +430,7 @@ displayTestedWith compilersVersions'
         ul_ [class_ "compiler-badges"] $
           Vector.forM_
             compilersVersions
-            ( li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display
-            )
+            (li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display)
 
 displayMaintainer :: Text -> FloraHTML
 displayMaintainer maintainerInfo =

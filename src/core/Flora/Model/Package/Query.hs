@@ -238,6 +238,8 @@ WITH dependents AS (
        , r.version
        , r.synopsis
        , r.license
+       , r.uploaded_at
+       , r.revised_at
   FROM packages AS p
        INNER JOIN dependents AS dep ON p.package_id = dep.dependent_id
        INNER JOIN releases AS r ON r.package_id = p.package_id
@@ -252,6 +254,8 @@ SELECT d.namespace
      , d.version
      , d.synopsis
      , d.license
+     , d.uploaded_at
+     , d.revised_at
 FROM dependents AS d
 WHERE rank = 1
     |]
@@ -268,6 +272,8 @@ WITH dependents AS (
        , r.version
        , r.synopsis
        , r.license
+       , r.uploaded_at
+       , r.revised_at
   FROM packages AS p
        INNER JOIN dependents AS dep ON p.package_id = dep.dependent_id
        INNER JOIN releases AS r ON r.package_id = p.package_id
@@ -281,6 +287,8 @@ SELECT d.namespace
      , d.version
      , d.synopsis
      , d.license
+     , d.uploaded_at
+     , d.revised_at
 FROM dependents AS d
 WHERE rank = 1
     |]
@@ -367,6 +375,8 @@ WITH requirements AS (SELECT DISTINCT p1.component_type
        , r3.version AS dependency_latest_version
        , r3.synopsis AS dependency_latest_synopsis
        , r3.license AS dependency_latest_license
+       , r3.uploaded_at
+       , r3.revised_at
   FROM requirements AS req
        INNER JOIN packages AS p2 ON p2.namespace = req.namespace
                                 AND p2.name = req.name
@@ -374,7 +384,7 @@ WITH requirements AS (SELECT DISTINCT p1.component_type
   WHERE r3.version = (SELECT max(version)
                       FROM releases
                       WHERE package_id = p2.package_id)
-  GROUP BY req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license
+  GROUP BY req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license, r3.uploaded_at, r3.revised_at
   ORDER BY req.component_type
          , req.component_name DESC
 |]
@@ -471,6 +481,8 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q 
                     , lv.version
                     , lv.license
                     , 1
+                    , lv.uploaded_at
+                    , lv.revised_at
       from latest_versions as lv
         inner join package_categories as p1 on p1.package_id = lv.package_id
         inner join categories as c2 on c2.category_id = p1.category_id
@@ -493,6 +505,8 @@ searchPackage (offset, limit) searchString =
               , lv."version"
               , lv."license"
               , word_similarity(lv.name, ?) as rating
+              , lv."uploaded_at"
+              , lv."revised_at"
         FROM latest_versions as lv
         WHERE ? <% lv.name
         GROUP BY
@@ -501,6 +515,8 @@ searchPackage (offset, limit) searchString =
           , lv."synopsis"
           , lv."version"
           , lv."license"
+          , lv."uploaded_at"
+          , lv."revised_at"
         ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
         OFFSET ?
         LIMIT ?
@@ -525,6 +541,8 @@ searchPackageByNamespace (offset, limit) namespace searchString =
               , lv."version"
               , lv."license"
               , word_similarity(lv.name, ?) as rating
+              , lv."uploaded_at"
+              , lv."revised_at"
         FROM latest_versions as lv
         WHERE 
         ? <% lv."name"
@@ -535,6 +553,8 @@ searchPackageByNamespace (offset, limit) namespace searchString =
           , lv."synopsis"
           , lv."version"
           , lv."license"
+          , lv."uploaded_at"
+          , lv."revised_at"
         ORDER BY rating desc, count(lv."namespace") desc, lv.name asc
         LIMIT ?
         OFFSET ?
@@ -629,6 +649,8 @@ listAllPackages (offset, limit) =
           , lv."version"
           , lv."license"
           , (1.0::real) as rating
+          , lv."uploaded_at"
+          , lv."revised_at"
     FROM latest_versions as lv
     GROUP BY
         lv."namespace"
@@ -636,6 +658,8 @@ listAllPackages (offset, limit) =
       , lv."synopsis"
       , lv."version"
       , lv."license"
+      , lv."uploaded_at"
+      , lv."revised_at"
     ORDER BY rating DESC
            , COUNT(lv."namespace") DESC
            , lv.name ASC
@@ -661,6 +685,8 @@ listAllPackagesInNamespace (offset, limit) namespace =
           , lv."version"
           , lv."license"
           , (1.0::real) as rating
+          , lv."uploaded_at"
+          , lv."revised_at"
     FROM latest_versions as lv
     WHERE lv."namespace" = ?
     GROUP BY
@@ -669,6 +695,8 @@ listAllPackagesInNamespace (offset, limit) namespace =
       , lv."synopsis"
       , lv."version"
       , lv."license"
+      , lv."uploaded_at"
+      , lv."revised_at"
     ORDER BY rating desc, lv."name" asc
     OFFSET ?
     LIMIT ?

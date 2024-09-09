@@ -174,12 +174,12 @@ span.revised-date::before {
   color: #fff;
   padding: 5px;
   text-align: center;
-  width: 200px;
   display: none; /* hide by default */
 }
 
 span.revised-date:hover::before {
   display: block;
+  width: 200px;
 }
 
 .revised-date {

@@ -167,6 +167,8 @@ dependencyInfoToPackageInfo dep =
     dep.latestVersion
     dep.latestLicense
     Nothing
+    dep.uploadedAt
+    dep.revisedAt
 
 listAllPackagesInNamespace
   :: (DB :> es, Time :> es, Log :> es)

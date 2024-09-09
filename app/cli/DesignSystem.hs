@@ -9,6 +9,8 @@ import Data.Foldable (forM_)
 import Data.Functor.Identity (runIdentity)
 import Data.Text (Text)
 import Data.Text.Lazy qualified as TL
+import Data.Time.Calendar.OrdinalDate as Time
+import Data.Time.Clock (UTCTime (..))
 import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -100,6 +102,8 @@ packageListItemExample =
     , "Basic libraries"
     , mkVersion [4, 16, 0, 0]
     , License (simpleLicenseExpression BSD_3_Clause)
+    , Just $ UTCTime (Time.fromMondayStartWeek 2024 32 1) 0
+    , Just $ UTCTime (Time.fromMondayStartWeek 2024 60 15) 0
     )
 
 categoryCardExample :: FloraHTML

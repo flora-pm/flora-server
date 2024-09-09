@@ -12,12 +12,15 @@ import Data.List (intersperse, sortOn)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text.Display (display)
+import Data.Time (UTCTime, defaultTimeLocale)
+import Data.Time qualified as Time
 import Data.Vector qualified as Vector
-import FloraWeb.Pages.Templates (FloraHTML)
-import Lucid
-
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
+import FloraWeb.Pages.Templates (FloraHTML)
+import Lucid
+import Lucid.Orphans ()
+
 import Flora.Model.Component.Types (CanonicalComponent (..))
 import Flora.Model.Package (ElemRating (..), Namespace, PackageInfoWithExecutables (..), PackageName (..))
 import Flora.Model.Requirement
@@ -25,10 +28,19 @@ import Flora.Model.Requirement
   , DependencyInfo (..)
   )
 import FloraWeb.Components.Icons qualified as Icon
-import Lucid.Orphans ()
+import FloraWeb.Components.Utils
 
-packageListItem :: (Namespace, PackageName, Text, Version, SPDX.License) -> FloraHTML
-packageListItem (namespace, packageName, synopsis, version, license) = do
+packageListItem
+  :: ( Namespace
+     , PackageName
+     , Text
+     , Version
+     , SPDX.License
+     , Maybe UTCTime
+     , Maybe UTCTime
+     )
+  -> FloraHTML
+packageListItem (namespace, packageName, synopsis, version, license, mUploadedAt, mRevisedAt) = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
   li_ [class_ "package-list-item"] $
     a_ [href, class_ ""] $ do
@@ -41,6 +53,20 @@ packageListItem (namespace, packageName, synopsis, version, license) = do
           Icon.license
           toHtml license
         span_ [class_ "package-list-item__version"] $ "v" <> toHtml version
+        case mUploadedAt of
+          Nothing -> ""
+          Just ts ->
+            span_ [] $ do
+              toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts
+              case mRevisedAt of
+                Nothing -> span_ [] ""
+                Just revisionDate ->
+                  span_
+                    [ dataText_
+                        ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
+                    , class_ "revised-date"
+                    ]
+                    Icon.pen
 
 packageWithExecutableListItem :: PackageInfoWithExecutables -> FloraHTML
 packageWithExecutableListItem PackageInfoWithExecutables{namespace, name, synopsis, version, license, executables} = do

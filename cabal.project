@@ -21,7 +21,7 @@ allow-older: pg-entity:time
 test-show-details: direct
 
 package *
-  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j -haddock
+  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
 
 package warp
   flags: -x509
@@ -32,7 +32,7 @@ package zlib
 source-repository-package
     type: git
     location: https://github.com/scrive/tracing
-    tag: e49720d
+    tag: 9c2baa1
     subdir: 
         .
         ./tracing-effectful

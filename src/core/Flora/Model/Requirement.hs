@@ -20,6 +20,7 @@ import Control.DeepSeq
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust)
 import Data.Text.Encoding (encodeUtf8)
+import Data.Time (UTCTime)
 import Deriving.Aeson
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
@@ -68,6 +69,8 @@ data DependencyInfo = DependencyInfo
   , latestVersion :: Version
   , latestSynopsis :: Text
   , latestLicense :: SPDX.License
+  , uploadedAt :: Maybe UTCTime
+  , revisedAt :: Maybe UTCTime
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, NFData)
@@ -83,6 +86,8 @@ data ComponentDependency' = ComponentDependency'
   , latestVersion :: Version
   , latestSynopsis :: Text
   , latestLicense :: SPDX.License
+  , uploadedAt :: Maybe UTCTime
+  , revisedAt :: Maybe UTCTime
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromRow, NFData)
