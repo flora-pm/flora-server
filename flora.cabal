@@ -448,6 +448,7 @@ executable flora-cli
     , sel
     , text
     , text-display
+    , time
     , transformers
     , uuid
     , vector
