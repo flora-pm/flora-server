@@ -2,303 +2,303 @@
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
 #package-install-section {
-  p {
-    display: inline-block;
-  }
+	p {
+		display: inline-block;
+	}
 
-  .package-build-type-custom {
-    background-color: #ffc107;
-    border-radius: 0.25rem;
-    color: white;
-    font-size: 50%;
-    font-weight: 700;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    margin-left: 0.5rem;
-  }
+	.package-build-type-custom {
+		background-color: #ffc107;
+		border-radius: 0.25rem;
+		color: white;
+		font-size: 50%;
+		font-weight: 700;
+		padding-left: 0.5rem;
+		padding-right: 0.5rem;
+		margin-left: 0.5rem;
+	}
 }
 
 .package-install-string {
-  background-color: transparent;
-  border-color: var(--install-string-border);
-  border-radius: 6px;
-  display: block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1.5rem;
-  width: 100%;
+	background-color: transparent;
+	border-color: var(--install-string-border);
+	border-radius: 6px;
+	display: block;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+		"Liberation Mono", "Courier New", monospace;
+	font-size: 1rem;
+	font-weight: 500;
+	line-height: 1.5rem;
+	width: 100%;
 }
 
 .package-alternatives {
-  list-style-type: disc;
-  list-style-position: inside;
+	list-style-type: disc;
+	list-style-position: inside;
 }
 
 .synopsis {
-  text-align: center;
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+	text-align: center;
+	font-size: 1.25rem;
+	line-height: 1.75rem;
 }
 
 .release-deprecated {
-  color: var(--deprecated-version);
+	color: var(--deprecated-version);
 }
 
 .package-body {
-  --package-layout-gap: 10px;
+	--package-layout-gap: 10px;
 
-  justify-content: center;
-  display: grid;
-  grid-template-columns:
-    25% minmax(calc(50% - (var(--package-layout-gap) * 2)), 1fr)
-    25%;
-  gap: var(--package-layout-gap);
+	justify-content: center;
+	display: grid;
+	grid-template-columns:
+		25% minmax(calc(50% - (var(--package-layout-gap) * 2)), 1fr)
+		25%;
+	gap: var(--package-layout-gap);
 
-  > * {
-    grid-row-start: 1;
-  }
+	> * {
+		grid-row-start: 1;
+	}
 
-  .package-left-column {
-    grid-column: 1 / 2;
-  }
+	.package-left-column {
+		grid-column: 1 / 2;
+	}
 
-  .release-readme-column {
-    grid-column: 2 / 3;
-  }
+	.release-readme-column {
+		grid-column: 2 / 3;
+	}
 
-  .package-right-column {
-    grid-column: 3 / 4;
-  }
+	.package-right-column {
+		grid-column: 3 / 4;
+	}
 
-  .package-right-rows {
-    position: sticky;
-    top: 7rem;
-  }
+	.package-right-rows {
+		position: sticky;
+		top: 7rem;
+	}
 
-  .package-right-rows > * {
-    margin-bottom: 1.25rem;
-  }
+	.package-right-rows > * {
+		margin-bottom: 1.25rem;
+	}
 
-  .package-left-rows {
-    position: sticky;
-    top: 7rem;
-  }
+	.package-left-rows {
+		position: sticky;
+		top: 7rem;
+	}
 
-  .package-left-rows > * {
-    margin-bottom: 1.25rem;
-  }
+	.package-left-rows > * {
+		margin-bottom: 1.25rem;
+	}
 
-  a {
-    font-weight: 500;
-  }
+	a {
+		font-weight: 500;
+	}
 
-  .maintainer-info {
-    font-weight: 500;
-    flex-wrap: wrap;
-  }
+	.maintainer-info {
+		font-weight: 500;
+		flex-wrap: wrap;
+	}
 
-  .package-body-section {
-    font-size: 1.5rem;
-    line-height: 2rem;
-    margin-bottom: 0.5rem;
-  }
+	.package-body-section {
+		font-size: 1.5rem;
+		line-height: 2rem;
+		margin-bottom: 0.5rem;
+	}
 
-  .package-flags-section {
-    display: inline;
-  }
+	.package-flags-section {
+		display: inline;
+	}
 
-  .package-flags {
-    .package-flag-description {
-      padding-left: 0.5rem;
-      margin-bottom: 0.5em;
-    }
+	.package-flags {
+		.package-flag-description {
+			padding-left: 0.5rem;
+			margin-bottom: 0.5em;
+		}
 
-    .package-flag-name {
-      display: inline;
-    }
-  }
+		.package-flag-name {
+			display: inline;
+		}
+	}
 
-  .package-flags > * {
-    pre {
-      margin: 0;
-      font-size: 85%;
-      background-color: var(--readme-code-background-color);
-      border-radius: 6px;
-      padding-top: 0.2em;
-      padding-right: 0.4em;
-      padding-bottom: 0.2em;
-      padding-left: 0.4em;
-    }
+	.package-flags > * {
+		pre {
+			margin: 0;
+			font-size: 85%;
+			background-color: var(--readme-code-background-color);
+			border-radius: 6px;
+			padding-top: 0.2em;
+			padding-right: 0.4em;
+			padding-bottom: 0.2em;
+			padding-left: 0.4em;
+		}
 
-    code {
-      margin: 0;
-      font-size: 85%;
-      background-color: var(--readme-code-background-color);
-      border-radius: 6px;
-      padding-top: 0.2em;
-      padding-right: 0.4em;
-      padding-bottom: 0.2em;
-      padding-left: 0.4em;
-    }
-  }
+		code {
+			margin: 0;
+			font-size: 85%;
+			background-color: var(--readme-code-background-color);
+			border-radius: 6px;
+			padding-top: 0.2em;
+			padding-right: 0.4em;
+			padding-bottom: 0.2em;
+			padding-left: 0.4em;
+		}
+	}
 
-  .package-body-section__license {
-    font-weight: 500;
-  }
+	.package-body-section__license {
+		font-weight: 500;
+	}
 }
 
 .release {
-  a:hover {
-    text-decoration: underline;
-  }
+	a:hover {
+		text-decoration: underline;
+	}
 }
 
 span.revised-date::before {
-  content: attr(data-text); /* here's the magic */
-  position: absolute;
-  font-size: 0.85em;
+	content: attr(data-text); /* here's the magic */
+	position: absolute;
+	font-size: 0.85em;
 
-  /* vertically center */
-  top: 50%;
-  transform: translateY(-50%);
+	/* vertically center */
+	top: 50%;
+	transform: translateY(-50%);
 
-  /* move to right */
-  left: 100%;
+	/* move to right */
+	left: 100%;
 
-  /* basic styles */
-  background: #000;
-  border-radius: 10px;
-  box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
-  color: #fff;
-  padding: 5px;
-  text-align: center;
-  display: none; /* hide by default */
+	/* basic styles */
+	background: #000;
+	border-radius: 10px;
+	box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
+	color: #fff;
+	padding: 5px;
+	text-align: center;
+	display: none; /* hide by default */
 }
 
 span.revised-date:hover::before {
-  display: block;
-  width: 200px;
+	display: block;
+	width: 200px;
 }
 
 .revised-date {
-  svg {
-    display: inline;
-    width: 1rem;
-    height: 1rem;
-  }
+	svg {
+		display: inline;
+		width: 1rem;
+		height: 1rem;
+	}
 
-  position: relative; /* making the .tooltip span a container for the tooltip text */
-  border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
+	position: relative; /* making the .tooltip span a container for the tooltip text */
+	border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
 }
 
 .instruction-tooltip {
-  svg {
-    display: inline;
-    width: 1rem;
-    height: 1rem;
-  }
+	svg {
+		display: inline;
+		width: 1rem;
+		height: 1rem;
+	}
 
-  position: relative; /* making the .tooltip span a container for the tooltip text */
-  border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
+	position: relative; /* making the .tooltip span a container for the tooltip text */
+	border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
 }
 
 .instruction-tooltip::before {
-  content: attr(data-text); /* here's the magic */
-  position: absolute;
+	content: attr(data-text); /* here's the magic */
+	position: absolute;
 
-  /* vertically center */
-  top: 50%;
-  transform: translateY(-50%);
+	/* vertically center */
+	top: 50%;
+	transform: translateY(-50%);
 
-  /* move to right */
-  left: 100%;
+	/* move to right */
+	left: 100%;
 
-  /* basic styles */
-  background: #000;
-  border-radius: 10px;
-  box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
-  color: #fff;
-  padding: 10px;
-  text-align: center;
-  width: 250px;
-  display: none; /* hide by default */
+	/* basic styles */
+	background: #000;
+	border-radius: 10px;
+	box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
+	color: #fff;
+	padding: 10px;
+	text-align: center;
+	width: 250px;
+	display: none; /* hide by default */
 }
 
 .instruction-tooltip:hover::before {
-  display: block;
+	display: block;
 }
 
 .pagination-area {
-  display: flex;
-  padding-bottom: 40px;
+	display: flex;
+	padding-bottom: 40px;
 }
 
 .pagination-footer {
-  margin-left: auto;
-  margin-right: auto;
-  display: flex;
-  align-items: center;
+	margin-left: auto;
+	margin-right: auto;
+	display: flex;
+	align-items: center;
 
-  .pagination-footer__page {
-    padding-bottom: 0.5rem;
-    padding-top: 0.5rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    border-width: 1px;
-    border-collapse: collapse;
-    height: 40px;
-  }
+	.pagination-footer__page {
+		padding-bottom: 0.5rem;
+		padding-top: 0.5rem;
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+		border-width: 1px;
+		border-collapse: collapse;
+		height: 40px;
+	}
 
-  .pagination-footer__previous {
-    border-bottom-left-radius: 0.5rem;
-    border-top-left-radius: 0.5rem;
-  }
+	.pagination-footer__previous {
+		border-bottom-left-radius: 0.5rem;
+		border-top-left-radius: 0.5rem;
+	}
 
-  .pagination-footer__next {
-    border-bottom-right-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
-  }
+	.pagination-footer__next {
+		border-bottom-right-radius: 0.5rem;
+		border-top-right-radius: 0.5rem;
+	}
 }
 
 .package-title {
-  .version {
-    font-size: medium;
-    line-height: 1.3rem;
-    padding-left: 4px;
-  }
+	.version {
+		font-size: medium;
+		line-height: 1.3rem;
+		padding-left: 4px;
+	}
 
-  a:hover {
-    text-decoration: underline;
-  }
+	a:hover {
+		text-decoration: underline;
+	}
 }
 
 a.breadcrumb-segment {
-  color: var(--breadcrumb-color);
+	color: var(--breadcrumb-color);
 }
 
 a.breadcrumb-segment:hover {
-  text-decoration: underline;
+	text-decoration: underline;
 }
 
 @media (max-width: 47rem) {
-  .package-body {
-    grid-template-columns: 1fr;
+	.package-body {
+		grid-template-columns: 1fr;
 
-    > *:nth-child(n) {
-      grid-row-start: auto;
-      grid-column: 1 / 2;
-    }
+		> *:nth-child(n) {
+			grid-row-start: auto;
+			grid-column: 1 / 2;
+		}
 
-    .package-right-column {
-      .package-right-rows .dependents {
-        margin-bottom: 2rem;
-      }
-    }
+		.package-right-column {
+			.package-right-rows .dependents {
+				margin-bottom: 2rem;
+			}
+		}
 
-    .release-readme-column {
-      overflow: auto;
-    }
-  }
+		.release-readme-column {
+			overflow: auto;
+		}
+	}
 }

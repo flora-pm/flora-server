@@ -2,31 +2,31 @@
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
 .button {
-  background-color: var(--main-page-button-background);
-  border-radius: 50rem;
-  border-width: 1px;
-  color: var(--text-color);
-  font-weight: bolder;
-  padding-bottom: 1rem;
-  padding-left: 2rem;
-  padding-right: 2rem;
-  padding-top: 1rem;
+	background-color: var(--main-page-button-background);
+	border-radius: 50rem;
+	border-width: 1px;
+	color: var(--text-color);
+	font-weight: bolder;
+	padding-bottom: 1rem;
+	padding-left: 2rem;
+	padding-right: 2rem;
+	padding-top: 1rem;
 }
 
 .button:hover {
-  border-color: var(--main-page-button-focus-border-color);
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
+	border-color: var(--main-page-button-focus-border-color);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-duration: 200ms;
 
-  /* offset-x | offset-y | blur-radius | spread-radius | color */
-  box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
+	/* offset-x | offset-y | blur-radius | spread-radius | color */
+	box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
 }
 
 .button:active {
-  border-color: var(--main-page-button-focus-border-color);
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
+	border-color: var(--main-page-button-focus-border-color);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-duration: 200ms;
 
-  /* offset-x | offset-y | blur-radius | spread-radius | color */
-  box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
+	/* offset-x | offset-y | blur-radius | spread-radius | color */
+	box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
 }

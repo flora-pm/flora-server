@@ -1,27 +1,27 @@
 .alert {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  align-items: center;
-  display: flex;
-  margin-bottom: 1rem;
+	padding: 1rem;
+	border-radius: 0.5rem;
+	align-items: center;
+	display: flex;
+	margin-bottom: 1rem;
 }
 
 .alert-info {
-  color: var(--dark-blue);
-  background-color: var(--light-blue-background);
+	color: var(--dark-blue);
+	background-color: var(--light-blue-background);
 }
 
 .alert-error {
-  color: var(--dark-red);
-  background-color: var(--light-red-background);
+	color: var(--dark-red);
+	background-color: var(--light-red-background);
 }
 
 svg.alert-icon {
-  flex-shrink: 0;
-  width: 1em;
-  height: 1em;
+	flex-shrink: 0;
+	width: 1em;
+	height: 1em;
 }
 
 .alert-message {
-  margin-inline-start: 0.75rem;
+	margin-inline-start: 0.75rem;
 }
