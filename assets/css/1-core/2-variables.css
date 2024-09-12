@@ -1,7 +1,8 @@
-/* stylelint-disable selector-class-pattern */
-/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties, selector-class-pattern, at-rule-no-unknown */
 
 :root {
+	@design-token-utils (custom-properties);
+
 	/* Primary Blue */
 	--blue-15: hsl(221 30% 15%);
 	--blue-20: hsl(221 30% 20%);
