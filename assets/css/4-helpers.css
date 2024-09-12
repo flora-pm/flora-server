@@ -2,21 +2,21 @@
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
 .hidden {
-  display: none;
+	display: none;
 }
 
 .font-light {
-  font-weight: 300;
+	font-weight: 300;
 }
 
 .divider {
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid hsl(0 0% 80%);
+	padding-bottom: 1rem;
+	margin-bottom: 1rem;
+	border-bottom: 1px solid hsl(0 0% 80%);
 }
 
 .divider-with-margin {
-  padding-bottom: 1rem;
-  margin-bottom: 4rem;
-  border-bottom: 1px solid hsl(0 0% 80%);
+	padding-bottom: 1rem;
+	margin-bottom: 4rem;
+	border-bottom: 1px solid hsl(0 0% 80%);
 }

@@ -6,24 +6,24 @@
 @import "tailwindcss/utilities";
 
 body {
-  background-color: var(--background-color);
-  color: var(--text-color);
+	background-color: var(--background-color);
+	color: var(--text-color);
 }
 
 .container {
-  width: calc(100% - 2rem);
-  max-width: 1300px;
-  padding-right: 1rem;
-  padding-left: 1rem;
-  margin-right: auto;
-  margin-left: auto;
+	width: calc(100% - 2rem);
+	max-width: 1300px;
+	padding-right: 1rem;
+	padding-left: 1rem;
+	margin-right: auto;
+	margin-left: auto;
 }
 
 .container-small {
-  max-width: 28rem;
+	max-width: 28rem;
 }
 
 a {
-  text-decoration: none;
-  color: var(--link-color);
+	text-decoration: none;
+	color: var(--link-color);
 }
