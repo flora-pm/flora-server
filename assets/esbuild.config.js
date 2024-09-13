@@ -8,20 +8,19 @@ const path = require("path");
 // PostCSS plugins
 const postcssImport = require("postcss-import");
 const postcssNesting = require("postcss-nesting");
-const tailwind = require("tailwindcss");
 const autoprefixer = require("autoprefixer");
 const postcssCopy = require("postcss-copy")({
     dest: "../assets/fonts",
 });
 const postcssDesignTokenUtils = require("postcss-design-token-utils");
-const designTokensConfig = require("./design-tokens.json");
+const designTokensConfig = require("./style-tokens/tokens.js");
 
 
 let minify = false;
 let sourcemap = true;
 let entryNames = "[name]";
 
-const watchDirectories = [  "./css", "./js"];
+const watchDirectories = [  "./css", "./js", "./style-tokens"];
 
 const mkProdPlugins = () => {
   return [
@@ -49,7 +48,6 @@ const pluginsList = () => {
 			}),
 			postcssImport,
 			postcssNesting,
-			tailwind,
 			autoprefixer,
 			postcssCopy,
       ],

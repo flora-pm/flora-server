@@ -2,8 +2,9 @@
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
 /* Core (careful before touching the foundations) */
-@import "1-core/1-core.css";
-@import "1-core/2-variables.css";
+@import "1-core/1-reset.css";
+@import "1-core/2-core.css";
+@import "1-core/3-variables.css";
 
 /* Atomic (small) reusable components */
 @import "2-components/1-navbar.css";
@@ -28,7 +29,11 @@
 @import "3-screens/5-settings/1-dashboard.css";
 
 /* Helpers/Utility classes */
-@import "4-helpers.css";
+@import "4-helpers/1-globals.css";
+@import "4-helpers/2-colors.css";
+@import "4-helpers/3-spacing.css";
+@import "4-helpers/4-typography.css";
+@import "4-helpers/5-state.css";
 
 /* Used for the sessions page */
 .login-form {

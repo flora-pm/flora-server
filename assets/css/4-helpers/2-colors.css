@@ -1,0 +1,13 @@
+/* stylelint-disable selector-class-pattern */
+
+/* Background */
+.bg-slate-200 { background-color: rgb(226 232 240 / 100%); }
+
+/* Text */
+
+.text-black { color: rgb(0 0 0 / 100%); }
+.text-white { color: rgb(255 255 255 / 100%); }
+.text-gray-400 { color: rgb(156 163 175 / 100%); }
+
+:is(.dark .dark\:text-gray-100) { color: rgb(243 244 246 / 100%); }
+:is(.dark .dark\:text-gray-400) { color: rgb(156 163 175 / 100%); }

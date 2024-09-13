@@ -1,10 +1,6 @@
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
-
 html {
 	font-family: var(--font-sans);
 }
@@ -23,7 +19,33 @@ body {
 	margin-left: auto;
 }
 
-.container-small {
+@media (min-width: 640px) {
+	.container {
+		max-width: 640px;
+	}
+}
+@media (min-width: 768px) {
+	.container {
+		max-width: 768px;
+	}
+}
+@media (min-width: 1024px) {
+	.container {
+		max-width: 1024px;
+	}
+}
+@media (min-width: 1280px) {
+	.container {
+		max-width: 1280px;
+	}
+}
+@media (min-width: 1536px) {
+	.container {
+		max-width: 1536px;
+	}
+}
+
+.container--small {
 	max-width: 28rem;
 }
 
