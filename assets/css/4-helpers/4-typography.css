@@ -37,6 +37,7 @@
 		line-height: 2rem;
 	}
 }
+
 @media (--viewport-smmd) {
 	.lg\:text-xl {
 		font-size: 1.25rem;
