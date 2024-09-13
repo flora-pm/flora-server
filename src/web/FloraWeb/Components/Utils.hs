@@ -31,6 +31,10 @@ defaultLinkOptions =
     , childNode = mempty
     }
 
+-- Standard WAI-ARIA attributes for accessibility purpose
+ariaLabel_ :: Text -> Attribute
+ariaLabel_ = makeAttribute "aria-label"
+
 -- Prefer these ones as they are integrated with AlpineJS
 ariaControls_ :: Text -> Attribute
 ariaControls_ = makeAttribute ":aria-controls"
