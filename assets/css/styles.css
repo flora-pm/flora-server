@@ -1,7 +1,7 @@
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
-/* Core (careful before touching at the fundations) */
+/* Core (careful before touching the foundations) */
 @import "1-core/1-core.css";
 @import "1-core/2-variables.css";
 
