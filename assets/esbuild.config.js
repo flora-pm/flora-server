@@ -8,6 +8,7 @@ const path = require("path");
 // PostCSS plugins
 const postcssImport = require("postcss-import");
 const postcssNesting = require("postcss-nesting");
+const postcssCustomMedia = require('postcss-custom-media');
 const autoprefixer = require("autoprefixer");
 const postcssCopy = require("postcss-copy")({
     dest: "../assets/fonts",
@@ -48,6 +49,7 @@ const pluginsList = () => {
 			}),
 			postcssImport,
 			postcssNesting,
+			postcssCustomMedia,
 			autoprefixer,
 			postcssCopy,
       ],

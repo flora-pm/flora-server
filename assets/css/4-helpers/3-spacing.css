@@ -25,16 +25,16 @@
 .space-x-6 > :not([hidden]) ~ :not([hidden]) { margin-inline: var(--space-6) 0; }
 
 
-@media (min-width: 640px) {
+@media (--viewport-sm) {
 	.sm\:-mx-6 { margin-inline: calc((var(--space-6) * -1)); }
 	.sm\:px-6 { padding-inline: var(--space-6); }
 	.sm\:pl-6 { padding-left: var(--space-6); }
 }
-@media (min-width: 768px) {
+@media (--viewport-md) {
 	.md\:m-0 { margin: var(--space-0); }
 	.md\:mt-0 { margin-top: var(--space-0); }
 }
-@media (min-width: 1024px) {
+@media (--viewport-lg) {
 	.lg\:-mx-8 { margin-inline: calc(var(--space-8) * -1); }
 	.lg\:px-8 { padding-inline: var(--space-8); }
 }

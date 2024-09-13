@@ -31,13 +31,13 @@
 }
 
 
-@media (min-width: 640px) {
+@media (--viewport-sm) {
 	.sm\:text-2xl {
 		font-size: 1.5rem;
 		line-height: 2rem;
 	}
 }
-@media (min-width: 1024px) {
+@media (--viewport-smmd) {
 	.lg\:text-xl {
 		font-size: 1.25rem;
 		line-height: 1.75rem;

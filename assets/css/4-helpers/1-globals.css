@@ -42,7 +42,7 @@
 	justify-content: center;
 }
 
-@media (min-width: 768px) {
+@media (--viewport-sm) {
 	.md\:flex {
 		display: flex;
 	}
@@ -118,7 +118,7 @@
 	background-color: rgb(226 232 240 / 100%);
 }
 
-@media (min-width: 640px) {
+@media (--viewport-sm) {
 	.sm\:rounded-lg {
 		border-radius: var(--space-lg);
 	}

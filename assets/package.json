@@ -17,6 +17,7 @@
     "postcss": "^8.4.31",
     "postcss-cli": "^9.0.2",
     "postcss-copy": "^7.1.0",
+    "postcss-custom-media": "^11.0.1",
     "postcss-design-token-utils": "^3.0.1",
     "postcss-hash": "^3.0.0",
     "postcss-import": "^14.0.2",
