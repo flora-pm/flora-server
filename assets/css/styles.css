@@ -1,9 +1,11 @@
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
+/* Core (careful before touching at the fundations) */
 @import "1-core/1-core.css";
 @import "1-core/2-variables.css";
 
+/* Atomic (small) reusable components */
 @import "2-components/1-navbar.css";
 @import "2-components/2-package-component.css";
 @import "2-components/3-breadcrumb.css";
@@ -15,6 +17,7 @@
 @import "2-components/9-terminal-icon.css";
 @import "2-components/10-error.css";
 
+/* Screens/Pages specific style */
 @import "3-screens/1-package/1-package.css";
 @import "3-screens/1-package/2-release-changelog.css";
 @import "3-screens/1-package/3-release-readme.css";
@@ -24,6 +27,7 @@
 @import "3-screens/4-front-page.css";
 @import "3-screens/5-settings/1-dashboard.css";
 
+/* Helpers/Utility classes */
 @import "4-helpers.css";
 
 /* Used for the sessions page */
