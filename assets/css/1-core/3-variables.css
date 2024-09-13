@@ -1,4 +1,4 @@
-/* stylelint-disable declaration-block-no-redundant-longhand-properties, selector-class-pattern, at-rule-no-unknown */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties, selector-class-pattern */
 
 :root {
 	@design-token-utils (custom-properties);
