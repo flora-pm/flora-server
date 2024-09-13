@@ -88,12 +88,13 @@
 	--deprecated-version: var(--red-60);
 	--breadcrumb-color: var(--gray-30);
 
-	/* TailwindCSS variables (TODO: Needs to be replaced) */
+	/* Focus ring (aka outline) */
+	--outline-offset-shadow: 0 0 #0000;
+	--outline-shadow: 0 0 #0000;
 
-	--tw-ring-offset-shadow: 0 0 #0000;
-	--tw-ring-shadow: 0 0 #0000;
-	--tw-shadow: 0 0 #0000;
-	--tw-shadow-colored: 0 0 #0000;
+	/* Shadows */
+	--shadow-simple: 0 1px 3px 0 rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
+	--shadow-colored: 0 1px 3px 0 var(--purple-30), 0 1px 2px -1px var(--purple-30);
 }
 
 html[data-theme="dark"] {
