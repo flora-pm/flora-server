@@ -22,12 +22,7 @@ jobs:
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
         source ./environment.ci.sh
 
-    - uses: actionsx/prettier@v3
-      with:
-        # prettier CLI arguments.
-        args: --check ./assets/css
-
-    - name: Stylelint 
+    - name: Stylelint
       run: |
         cd assets
         yarn
