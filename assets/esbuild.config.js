@@ -6,19 +6,22 @@ const chokidar = require('chokidar');
 const path = require("path");
 
 // PostCSS plugins
-const postcssImport = require("postcss-import");   
-const tailwindNesting = require("@tailwindcss/nesting");
-const tailwind = require("tailwindcss");      
-const autoprefixer = require("autoprefixer");     
-const postcssCopy = require("postcss-copy")({      
-    dest: "../assets/fonts",      
+const postcssImport = require("postcss-import");
+const postcssNesting = require("postcss-nesting");
+const postcssCustomMedia = require('postcss-custom-media');
+const autoprefixer = require("autoprefixer");
+const postcssCopy = require("postcss-copy")({
+    dest: "../assets/fonts",
 });
+const postcssDesignTokenUtils = require("postcss-design-token-utils");
+const designTokensConfig = require("./style-tokens/tokens.js");
+
 
 let minify = false;
 let sourcemap = true;
 let entryNames = "[name]";
 
-const watchDirectories = [  "./css", "./js"];
+const watchDirectories = [  "./css", "./js", "./style-tokens"];
 
 const mkProdPlugins = () => {
   return [
@@ -40,16 +43,19 @@ const mkProdPlugins = () => {
 const pluginsList = () => {
   let plugins = [
     postcssPlugin({
-      plugins: [
-        postcssImport,
-        tailwindNesting,
-        tailwind,
-        autoprefixer,
-        postcssCopy,
+      	plugins: [
+			postcssDesignTokenUtils({
+				tokens: designTokensConfig,
+			}),
+			postcssImport,
+			postcssNesting,
+			postcssCustomMedia,
+			autoprefixer,
+			postcssCopy,
       ],
     })];
   let prodPlugins = process.env.NODE_ENV === "prod" ? mkProdPlugins() : [];
-  return plugins.concat(prodPlugins); 
+  return plugins.concat(prodPlugins);
 }
 
 if (process.env.NODE_ENV === "prod") {

@@ -1,0 +1,165 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+/* Position */
+.static {
+	position: static;
+}
+
+.absolute {
+	position: absolute;
+}
+
+.relative {
+	position: relative;
+}
+
+.block {
+	display: block;
+}
+
+.inline-block {
+	display: inline-block;
+}
+
+.flex {
+	display: flex;
+}
+
+.inline-flex {
+	display: inline-flex;
+}
+
+.flex-col {
+	flex-direction: column;
+}
+
+.items-center {
+	align-items: center;
+}
+
+.justify-center {
+	justify-content: center;
+}
+
+@media (--viewport-sm) {
+	.md\:flex {
+		display: flex;
+	}
+
+	.md\:items-center {
+		align-items: center;
+	}
+
+	.md\:justify-between {
+		justify-content: space-between;
+	}
+
+	.md\:order-1 {
+		order: 1;
+	}
+
+	.md\:order-2 {
+		order: 2;
+	}
+}
+
+/* Sizes */
+
+.h-5 {
+	height: 1.25rem;
+}
+
+.h-6 {
+	height: 1.5rem;
+}
+
+.w-5 {
+	width: 1.25rem;
+}
+
+.w-6 {
+	width: 1.5rem;
+}
+
+.min-w-full {
+	min-width: 100%;
+}
+
+.max-w-7xl {
+	max-width: 80rem;
+}
+
+/* Overflow */
+
+.overflow-hidden {
+	overflow: hidden;
+}
+
+.overflow-x-auto {
+	overflow-x: auto;
+}
+
+/* Borders */
+
+.rounded-md {
+	border-radius: var(--space-md);
+}
+
+.border-b {
+	border-bottom-width: 1px;
+}
+
+.border-gray-200 {
+	border-color: rgb(229 231 235 / 100%);
+}
+
+.bg-slate-200 {
+	background-color: rgb(226 232 240 / 100%);
+}
+
+@media (--viewport-sm) {
+	.sm\:rounded-lg {
+		border-radius: var(--space-lg);
+	}
+
+	.sm\:border-l {
+		border-left-width: 1px;
+	}
+
+	.sm\:border-transparent {
+		border-color: transparent;
+	}
+}
+
+/* Content */
+
+.divider {
+	padding-bottom: 1rem;
+	margin-bottom: 1rem;
+	border-bottom: 1px solid hsl(0 0% 80%);
+}
+
+.divider-with-margin {
+	padding-bottom: 1rem;
+	margin-bottom: 4rem;
+	border-bottom: 1px solid hsl(0 0% 80%);
+}
+
+.divide-y > :not([hidden]) ~ :not([hidden]) {
+	border-top-width: 1px;
+	border-bottom-width: 0;
+}
+
+.divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+	border-color: rgb(229 231 235 / 100%);
+}
+
+/* Effects */
+
+.shadow {
+	box-shadow: var(--outline-offset-shadow, 0 0 #0000),
+		var(--outline-shadow, 0 0 #0000), var(--shadow-simple);
+}
+
+.invert { filter: invert(100%); }

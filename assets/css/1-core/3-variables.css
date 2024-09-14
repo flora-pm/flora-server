@@ -1,7 +1,16 @@
-/* stylelint-disable selector-class-pattern */
-/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties, selector-class-pattern */
 
 :root {
+	@design-token-utils (custom-properties);
+
+
+	/* Responsive breaking points */
+	@custom-media --viewport-sm (min-width: 640px);
+	@custom-media --viewport-md (min-width: 768px);
+	@custom-media --viewport-lg (min-width: 1024px);
+	@custom-media --viewport-xl (min-width: 1280px);
+	@custom-media --viewport-2xl (min-width: 1536px);
+
 	/* Primary Blue */
 	--blue-15: hsl(221 30% 15%);
 	--blue-20: hsl(221 30% 20%);
@@ -78,6 +87,14 @@
 	--main-page-button-divider: var(--purple-20);
 	--deprecated-version: var(--red-60);
 	--breadcrumb-color: var(--gray-30);
+
+	/* Focus ring (aka outline) */
+	--outline-offset-shadow: 0 0 #0000;
+	--outline-shadow: 0 0 #0000;
+
+	/* Shadows */
+	--shadow-simple: 0 1px 3px 0 rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
+	--shadow-colored: 0 1px 3px 0 var(--purple-30), 0 1px 2px -1px var(--purple-30);
 }
 
 html[data-theme="dark"] {

@@ -15,7 +15,7 @@ import FloraWeb.Pages.Templates.Types
 show :: FloraHTML
 show = do
   banner
-  div_ [class_ "container container-small"] $ do
+  div_ [class_ "container container--small"] $ do
     mainSearchBar
     buttons
 

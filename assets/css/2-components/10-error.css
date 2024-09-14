@@ -24,7 +24,7 @@ p.error-zone {
 	font-size: 3rem;
 	line-height: 1;
 	font-weight: 800;
-	border-color: rgb(229 231 235 / var(--tw-border-opacity));
+	border-color: rgb(229 231 235 / 100%);
 	border-right-width: 1px;
 	margin-right: 1.5rem;
 	padding-right: 1.5rem;

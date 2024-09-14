@@ -3,6 +3,15 @@
   "rules": {
     "hue-degree-notation": "number",
     "media-feature-range-notation": "prefix",
-    "import-notation": "string"
+    "import-notation": "string",
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "/^design-token-utils/",
+          "/^custom-media/"
+        ]
+      }
+    ]
   }
 }
