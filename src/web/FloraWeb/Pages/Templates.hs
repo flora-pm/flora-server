@@ -39,7 +39,4 @@ rendered _deploymentEnv target = do
     Alert.info (display msg)
   whenJust flashError $ \msg -> do
     Alert.exception (display msg)
-  main_ [] target
-
--- when (deploymentEnv == Development) $
---   script_ [src_ "/static/js/autoreload.js", type_ "module"] ("" :: Text)
+  main_ [class_ "container-fluid"] target

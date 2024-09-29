@@ -78,6 +78,7 @@ library
     Data.Aeson.Orphans
     Data.Positive
     Data.Text.Display.Orphans
+    Data.Text.HTML
     Data.Time.Orphans
     Database.PostgreSQL.Simple.Orphans
     Distribution.Orphans
@@ -145,7 +146,6 @@ library
     , base                   ^>=4.18.2
     , base16-bytestring
     , base64
-    , blaze-builder
     , bytestring
     , Cabal-syntax
     , colourista
@@ -154,6 +154,7 @@ library
     , cryptohash-sha256
     , cryptonite
     , cryptonite-conduit
+    , dani-servant-lucid2
     , deepseq
     , deriving-aeson
     , directory
@@ -167,7 +168,7 @@ library
     , JuicyPixels
     , log-base
     , log-effectful
-    , lucid
+    , lucid2
     , memory
     , monad-time-effectful
     , network
@@ -186,7 +187,6 @@ library
     , resource-pool
     , sel
     , servant
-    , servant-lucid
     , servant-server
     , slugify
     , souffle-haskell        ==4.0.0
@@ -228,7 +228,6 @@ library flora-web
     FloraWeb.Components.Alert
     FloraWeb.Components.Button
     FloraWeb.Components.CategoryCard
-    FloraWeb.Components.Footer
     FloraWeb.Components.Header
     FloraWeb.Components.Icons
     FloraWeb.Components.MainSearchBar
@@ -242,6 +241,7 @@ library flora-web
     FloraWeb.Components.VersionListHeader
     FloraWeb.Embedded
     FloraWeb.Links
+    FloraWeb.LiveReload
     FloraWeb.Pages.Routes
     FloraWeb.Pages.Routes.Admin
     FloraWeb.Pages.Routes.Categories
@@ -290,6 +290,7 @@ library flora-web
     , colourista
     , containers
     , cookie
+    , dani-servant-lucid2
     , data-default
     , deepseq
     , deriving-aeson
@@ -299,6 +300,7 @@ library flora-web
     , flora
     , flora-jobs
     , haddock-library
+    , htmx-lucid
     , http-api-data
     , http-client
     , http-client-tls
@@ -306,9 +308,7 @@ library flora-web
     , http-types
     , log-base
     , log-effectful
-    , lucid
-    , lucid-alpine
-    , lucid-svg
+    , lucid2
     , monad-time
     , monad-time-effectful
     , mtl
@@ -329,7 +329,6 @@ library flora-web
     , servant
     , servant-client
     , servant-client-core
-    , servant-lucid
     , servant-openapi3
     , servant-server
     , text
@@ -379,7 +378,6 @@ library flora-jobs
     , http-types
     , log-base
     , log-effectful
-    , lucid
     , monad-time-effectful
     , odd-jobs
     , pg-entity
@@ -438,7 +436,7 @@ executable flora-cli
     , flora-web
     , log-base
     , log-effectful
-    , lucid
+    , lucid2
     , monad-time-effectful
     , optics-core
     , optparse-applicative

@@ -3,8 +3,8 @@ module FloraWeb.Pages.Routes.Sessions where
 import Data.Text
 import Lucid
 import Servant
+import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
-import Servant.HTML.Lucid
 import Web.FormUrlEncoded
 
 import Flora.Model.PersistentSession

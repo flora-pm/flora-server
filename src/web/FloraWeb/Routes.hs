@@ -2,11 +2,12 @@
 
 module FloraWeb.Routes where
 
-import Servant
+import Data.OpenApi (OpenApi)
+import Data.Text (Text)
+import Servant.API
 import Servant.API.Generic
 import Text.XML
 
-import Data.OpenApi (OpenApi)
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Pages.Routes qualified as Pages
@@ -24,5 +25,6 @@ data Routes mode = Routes
           :> "openapi.json"
           :> Get '[JSON] OpenApi
   , docs :: mode :- "documentation" :> Raw
+  , livereload :: mode :- "livereload" :> Get '[PlainText] (Headers '[Header "HX-Refresh" Text] NoContent)
   }
   deriving stock (Generic)
