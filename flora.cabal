@@ -300,7 +300,6 @@ library flora-web
     , flora
     , flora-jobs
     , haddock-library
-    , htmx
     , htmx-lucid
     , http-api-data
     , http-client
@@ -330,7 +329,6 @@ library flora-web
     , servant
     , servant-client
     , servant-client-core
-    , servant-event-stream
     , servant-openapi3
     , servant-server
     , text
@@ -344,7 +342,6 @@ library flora-web
     , vector-algorithms
     , wai
     , wai-app-static
-    , wai-extra
     , wai-log
     , wai-middleware-heartbeat
     , warp
