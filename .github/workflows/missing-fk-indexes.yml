@@ -1,4 +1,4 @@
-name: Backend tests
+name: Missing FK Indexes
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     branches: ["main", "development"]
 
 concurrency:
-  group: backend-${{ github.ref_name }}
+  group: missing-kf-indexes-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
           ubuntu-version: "latest"
           version: 0.1.7.1
 
-  Backend_tests:
+  index-check:
     needs: generateMatrix
     runs-on: ${{ matrix.os }}
     strategy:
@@ -56,12 +56,6 @@ jobs:
         ghc-version: "${{ matrix.ghc }}"
         cabal-version: "latest"
 
-    - uses: actions/setup-node@v4
-      with:
-        node-version: "18"
-        cache: "yarn"
-        cache-dependency-path: assets/yarn.lock
-
     - name: Configure environment
       run: |
         ./.github/workflows/setup.sh
@@ -77,6 +71,7 @@ jobs:
         echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
         cat ~/.pgpass
         cabal update
+
     - name: Cache
       uses: actions/cache@v4.0.2
       with:
@@ -84,21 +79,19 @@ jobs:
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
-    - name: Build
+
+    - name: Migrate
       run: |
         cabal install postgresql-migration
-        make soufflé
-        make assets-deps
-        make build-assets
-        make build
-    - name: Test
-      run: |
         set -x
         source ./environment.ci.sh
         createdb -h "${FLORA_DB_HOST}" -p "${FLORA_DB_PORT}" -U "${FLORA_DB_USER}" -w "${FLORA_DB_DATABASE}"
         migrate init "${FLORA_DB_CONNSTRING}"
         migrate migrate "${FLORA_DB_CONNSTRING}" migrations
-        cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
-        make test
       env:
         PGPASSWORD: "postgres"
+
+    - name: Check
+      run: |
+        source ./environment.ci.sh
+        .github/workflows/check-missing-fk-indexes.sh
