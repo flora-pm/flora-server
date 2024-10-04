@@ -32,7 +32,7 @@ buttons =
       h2_
         [class_ "category-card__name"]
         "Install Haskell"
-    a_ [class_ "button", href_ "https://cabal.readthedocs.io/en/stable/intro.html"] $ do
+    a_ [class_ "button", href_ "https://cabal.readthedocs.io/en/stable/getting-started.html"] $ do
       h2_
         [class_ "category-card__name"]
         "Start with Cabal"
