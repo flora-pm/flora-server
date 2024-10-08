@@ -1,4 +1,4 @@
-name: Missing FK Indexes
+name: Duplicate Indexes
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     branches: ["main", "development"]
 
 concurrency:
-  group: missing-kf-indexes-${{ github.ref_name }}
+  group: duplicate-indexes-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
           ubuntu-version: "latest"
           version: 0.1.7.1
 
-  missing-fk-index-check:
+  duplicate-index-check:
     needs: generateMatrix
     runs-on: ${{ matrix.os }}
     strategy:
@@ -94,4 +94,4 @@ jobs:
     - name: Check
       run: |
         source ./environment.ci.sh
-        .github/workflows/check-missing-fk-indexes.sh
+        .github/workflows/check-duplicate-indexes.sh
