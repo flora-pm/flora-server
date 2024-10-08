@@ -2,10 +2,9 @@
 WITH -- get predicates (WHERE clause) definition in text format (ugly but the parsed version can differ even if the predicate is the same)
      -- ignore functional indexes at the same time, that would make this query very ugly
      indexdata1 AS (SELECT *
-                         , ((regexp_match(pg_get_indexdef(indexrelid)
-                                        , 'WHERE (.*)$')))[1] AS preddef
+                         , ((regexp_match(pg_get_indexdef(indexrelid), 'WHERE (.*)$')))[1] AS preddef
                     FROM pg_index
-                    WHERE indexprs IS NULL)
+                    WHERE indexprs IS NULL AND indisprimary = 'false')
      -- add the rest of metadata and do the join
    , indexdata2 AS (SELECT t1.*
                          , pg_get_indexdef(t1.indexrelid) AS contained
