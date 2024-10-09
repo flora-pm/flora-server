@@ -37,14 +37,6 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/haskell-cryptography/libsodium-bindings
-    tag: b11a72bc20990ba81bf4875c372f719fb2da24fc
-    subdir:
-        ./sel
-        ./libsodium-bindings
-
-source-repository-package
-    type: git
     location: https://gitlab.com/dpwiz/raven-haskell.git/
     tag: 37434cb1b2515a9aa74a0544da9716bfbabea7ca
     subdir: ./raven-haskell
@@ -68,11 +60,6 @@ source-repository-package
     type: git
     location: https://github.com/saurabhnanda/odd-jobs
     tag: a159d7a
-
-source-repository-package
-    type: git
-    location: https://github.com/haskell-cryptography/one-time-password
-    tag: 66d5422a32ef7e5dc085b40b63e8630b916f9a74
 
 source-repository-package
     type: git

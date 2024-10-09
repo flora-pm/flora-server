@@ -314,7 +314,7 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
-    , one-time-password
+    , one-time-password ==3.0.0.0
     , openapi3
     , optics-core
     , pg-entity
