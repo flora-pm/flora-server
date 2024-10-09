@@ -2,9 +2,10 @@
 WITH -- get predicates (WHERE clause) definition in text format (ugly but the parsed version can differ even if the predicate is the same)
      -- ignore functional indexes at the same time, that would make this query very ugly
      indexdata1 AS (SELECT *
-                         , ((regexp_match(pg_get_indexdef(indexrelid), 'WHERE (.*)$')))[1] AS preddef
+                         , ((regexp_match(pg_get_indexdef(indexrelid)
+                                        , 'WHERE (.*)$')))[1] AS preddef
                     FROM pg_index
-                    WHERE indexprs IS NULL AND indisprimary = 'false')
+                    WHERE indexprs IS NULL)
      -- add the rest of metadata and do the join
    , indexdata2 AS (SELECT t1.*
                          , pg_get_indexdef(t1.indexrelid) AS contained
@@ -27,7 +28,10 @@ WITH -- get predicates (WHERE clause) definition in text format (ugly but the pa
       OR colotherindex LIKE colindex || '+%')
     -- and we have the same predicate
     AND other_preddef IS NOT DISTINCT FROM preddef
-    -- and either the other is unique (so better than us) or none of us is unique
-    AND (other_indisunique
-      OR (NOT other_indisunique
-      AND NOT indisunique));
+    -- and either the index is not unique, or we're both unique with the same definition
+    AND (NOT indisunique)
+      OR (
+              indisunique
+          AND other_indisunique
+          AND colindex = colotherindex
+      );
