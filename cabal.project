@@ -13,6 +13,8 @@ allow-newer: type-errors-pretty:base
            , hashable:filepath
            , qrcode-juicypixels:text
            , qrcode-core:text
+           , qrcode-juicypixels:bytestring
+           , qrcode-core:bytestring
 
 allow-older: pg-entity:time
 
