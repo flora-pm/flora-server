@@ -46,5 +46,11 @@
   });
 
   poolboy = dontCheck (hfinal.callCabal2nix "poolboy" inputs.poolboy { });
+  tracing = hfinal.callCabal2nix "tracing" inputs.tracing { };
+  tracing-effectful = hfinal.callCabal2nix "tracing-effectful" "${inputs.tracing}/tracing-effectful" { };
+  dani-servant-lucid2 = hfinal.callHackage "dani-servant-lucid2" "0.1.0.0" {};
+  lucid2 = doJailbreak (hfinal.callHackage "lucid2" "0.0.20240424" {});
+  htmx = hfinal.callHackageDirect { pkg = "htmx"; ver = "0.1.0.2"; sha256 = "sha256-eCdYwjwtduzct5JFV7AifZdzYZZGPIMs6k/GBPvSivw="; } {};
+  htmx-lucid = hfinal.callHackageDirect {pkg = "htmx-lucid"; ver = "0.2.0.1"; sha256 = "sha256-an5Ju+PrOuSZT0dQuqV+LrsjR+AA5I3RyPQ4U5jel5Y=";} {};
   resource-pool = hfinal.callHackage "resource-pool" "0.4.0.0" { };
 })
