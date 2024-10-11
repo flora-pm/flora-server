@@ -28,7 +28,7 @@
     tracing.flake = false;
   };
   outputs = inputs@{ self, flake-utils, horizon-platform, nixpkgs, pre-commit-hooks, ... }:
-    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
+    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system}.appendOverlays [
           (self: _super: { souffle = self.callPackage ./nix/souffle {}; })
