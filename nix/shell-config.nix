@@ -3,6 +3,7 @@
   nativeBuildInputs = [
     pkgs.haskell-language-server
     hsPkgs.postgresql-migration
+    pkgs.ghcid
     pkgs.cabal-install
     pkgs.ghcid
     pkgs.postgresql_14
