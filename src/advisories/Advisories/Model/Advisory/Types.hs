@@ -1,0 +1,52 @@
+module Advisories.Model.Advisory.Types where
+
+import Control.DeepSeq
+import Data.Aeson
+import Data.Text
+import Data.Time
+import Data.UUID
+import Data.Vector
+import Database.PostgreSQL.Entity.Types
+import Database.PostgreSQL.Simple (FromRow, ToRow)
+import Database.PostgreSQL.Simple.FromField (FromField (..))
+import Database.PostgreSQL.Simple.ToField (ToField (..))
+import GHC.Generics
+import Security.Advisories.Core.Advisory
+import Security.Advisories.Core.HsecId
+import Security.OSV
+import Text.Pandoc.Definition
+
+import Advisories.CAPEC.Orphans ()
+import Advisories.CWE.Orphans ()
+import Advisories.HsecId.Orphans ()
+import Advisories.Keyword.Orphans ()
+import OSV.Reference.Orphans ()
+import Pandoc.Orphans ()
+
+newtype AdvisoryId = AdvisoryId {getAdvisoryId :: UUID}
+  deriving stock (Generic, Show)
+  deriving
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, NFData)
+    via UUID
+
+data AdvisoryDAO = AdvisoryDAO
+  { securityAdvisoryId :: AdvisoryId
+  , hsecId :: HsecId
+  , modified :: UTCTime
+  , published :: UTCTime
+  , capecs :: Vector CAPEC
+  , cwes :: Vector CWE
+  , keywords :: Vector Keyword
+  , aliases :: Vector Text
+  , related :: Vector Text
+  , references :: Vector Reference
+  , pandoc :: Pandoc
+  , html :: Text
+  , summary :: Text
+  , details :: Text
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (FromRow, ToRow, NFData)
+  deriving
+    (Entity)
+    via (GenericEntity '[TableName "security_advisories"] AdvisoryDAO)

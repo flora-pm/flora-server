@@ -75,6 +75,10 @@ library
   -- cabal-fmt: expand src/core
   -- cabal-fmt: expand src/datatypes
   exposed-modules:
+    Advisories.CAPEC.Orphans
+    Advisories.CWE.Orphans
+    Advisories.HsecId.Orphans
+    Advisories.Keyword.Orphans
     Data.Aeson.Orphans
     Data.Positive
     Data.Text.Display.Orphans
@@ -138,6 +142,8 @@ library
     JSON
     Log.Backend.File
     Lucid.Orphans
+    OSV.Reference.Orphans
+    Pandoc.Orphans
     Servant.API.ContentTypes.GZip
 
   build-depends:
@@ -162,6 +168,8 @@ library
     , effectful-core
     , envparse
     , filepath
+    , hsec-core
+    , hsec-sync
     , http-api-data
     , http-media
     , iso8601-time
@@ -175,6 +183,8 @@ library
     , odd-jobs
     , openapi3
     , optics-core
+    , osv
+    , pandoc-types
     , pcre2
     , pg-entity
     , pg-transact
@@ -202,6 +212,30 @@ library
     , uuid
     , vector
     , zlib
+
+library flora-advisories
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  ./src/advisories
+
+  -- cabal-fmt: expand src/advisories
+  exposed-modules: Advisories.Model.Advisory.Types
+  build-depends:
+    , aeson
+    , base
+    , deepseq
+    , flora
+    , hsec-core
+    , hsec-sync
+    , osv
+    , pandoc-types
+    , pg-entity
+    , pg-transact-effectful
+    , postgresql-simple
+    , text
+    , time
+    , uuid
+    , vector
 
 library flora-web
   import:          common-extensions
@@ -314,7 +348,7 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
-    , one-time-password ==3.0.0.0
+    , one-time-password         ==3.0.0.0
     , openapi3
     , optics-core
     , pg-entity
