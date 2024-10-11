@@ -7,16 +7,18 @@ active-repositories: hackage.haskell.org
 
 tests: True
 
-allow-newer: type-errors-pretty:base
-           , souffle-haskell:text
-           , servant-lucid:text
-           , hashable:filepath
-           , qrcode-juicypixels:text
+allow-newer: hashable:filepath
+           , hsec-sync:lens
+           , hsec-tools:pandoc
+           , qrcode-core:bytestring
            , qrcode-core:text
            , qrcode-juicypixels:bytestring
-           , qrcode-core:bytestring
+           , qrcode-juicypixels:text
+           , servant-lucid:text
+           , souffle-haskell:text
            , tasty-test-reporter:ansi-terminal
            , tasty-test-reporter:tasty
+           , type-errors-pretty:base
 
 allow-older: pg-entity:time
 
@@ -30,6 +32,17 @@ package warp
 
 package zlib
   flags: -pkg-config
+
+source-repository-package
+    type: git
+    location: https://github.com/haskell/security-advisories/
+    tag: b6eca11d65ab18fce60030d1dba7793789157292
+    subdir:
+      ./code/cvss
+      ./code/osv
+      ./code/hsec-core
+      ./code/hsec-sync
+      ./code/hsec-tools
 
 source-repository-package
     type: git

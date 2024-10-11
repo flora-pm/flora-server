@@ -11,6 +11,7 @@ import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Lazy.Builder qualified as Builder
 import Database.PostgreSQL.Simple.FromField
+import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Simple.Types (PGArray (..))
 import Distribution.Parsec
@@ -66,3 +67,7 @@ instance FromJSON VersionRange where
       ( \s ->
           maybe (fail "Invalid version range") pure (simpleParsec $ Text.unpack s)
       )
+
+deriving via (Aeson VersionRange) instance ToField VersionRange
+
+deriving via (Aeson VersionRange) instance FromField VersionRange
