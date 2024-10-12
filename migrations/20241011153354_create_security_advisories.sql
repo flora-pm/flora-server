@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS security_advisories (
   keywords text[] not null,
   aliases text[] not null,
   related text[] not null,
-  references jsonb not null,
+  advisory_references jsonb not null,
   pandoc jsonb not null,
   html text not null,
   summary text not null,
