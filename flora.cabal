@@ -219,11 +219,19 @@ library flora-advisories
   hs-source-dirs:  ./src/advisories
 
   -- cabal-fmt: expand src/advisories
-  exposed-modules: Advisories.Model.Advisory.Types
+  exposed-modules:
+    Advisories.Model.Advisory.Query
+    Advisories.Model.Advisory.Types
+    Advisories.Model.Advisory.Update
+    Advisories.Model.Affected.Query
+    Advisories.Model.Affected.Types
+    Advisories.Model.Affected.Update
+
   build-depends:
     , aeson
     , base
     , deepseq
+    , effectful
     , flora
     , hsec-core
     , hsec-sync

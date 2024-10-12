@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS affected_packages (
   cvss text not null,
   introduced_version uuid references releases not null,
   fixed_version uuid references releases,
-  architecture text[],
-  os text[],
+  architectures text[],
+  operating_systems text[],
   declarations text[][]
 );
 

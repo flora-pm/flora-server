@@ -30,7 +30,7 @@ newtype AdvisoryId = AdvisoryId {getAdvisoryId :: UUID}
     via UUID
 
 data AdvisoryDAO = AdvisoryDAO
-  { securityAdvisoryId :: AdvisoryId
+  { advisoryId :: AdvisoryId
   , hsecId :: HsecId
   , modified :: UTCTime
   , published :: UTCTime

@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS security_advisories (
-  security_advisory_id uuid primary key,
+  advisory_id uuid primary key,
   hsec_id text not null,
   modified timestamptz not null,
   published timestamptz not null,
