@@ -105,7 +105,10 @@ docker-build: ## Build and start the container cluster
 docker-up: ## Start the container cluster
 	@docker compose up -d
 
-docker-down: ## Start the container cluster
+docker-stop: ## Stop the container cluster without removing the containers
+	@docker compose stop
+
+docker-down: ## Stop and remove the container cluster
 	@docker compose down
 
 docker-enter: ## Enter the docker environment
