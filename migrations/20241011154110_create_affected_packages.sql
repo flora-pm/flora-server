@@ -8,4 +8,9 @@ CREATE TABLE IF NOT EXISTS affected_packages (
   architecture text[],
   os text[],
   declarations text[][]
-)
+);
+
+CREATE INDEX affected_packages_advisory_id_fkey ON affected_packages(advisory_id);
+CREATE INDEX affected_packages_package_id_fkey ON affected_packages(package_id);
+CREATE INDEX affected_packages_introduced_version_fkey ON affected_packages(introduced_version);
+CREATE INDEX affected_packages_fixed_version_fkey ON affected_packages(fixed_version);
