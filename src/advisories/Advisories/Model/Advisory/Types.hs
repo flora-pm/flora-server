@@ -25,9 +25,7 @@ import Pandoc.Orphans ()
 
 newtype AdvisoryId = AdvisoryId {getAdvisoryId :: UUID}
   deriving stock (Generic, Show)
-  deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, NFData)
-    via UUID
+  deriving newtype (Eq, Ord, FromJSON, ToJSON, FromField, ToField, NFData)
 
 data AdvisoryDAO = AdvisoryDAO
   { advisoryId :: AdvisoryId
