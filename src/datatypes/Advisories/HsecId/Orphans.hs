@@ -10,8 +10,7 @@ import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), r
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Security.Advisories.Core.HsecId
 
-instance Display HsecId where
-  displayBuilder = displayBuilder . show
+deriving via ShowInstance HsecId instance Display HsecId
 
 instance ToField HsecId where
   toField = Escape . Text.encodeUtf8 . display
