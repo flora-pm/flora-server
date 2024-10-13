@@ -41,6 +41,7 @@ main = do
           Update.insertUser templateUser
           f' <- getFixtures
           importAllPackages f'
+          Advisories.importAdvisories "./test/fixtures/Advisories"
           pure f'
       )
       env.pool

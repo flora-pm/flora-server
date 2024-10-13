@@ -16,6 +16,7 @@ allow-newer: type-errors-pretty:base
            , qrcode-juicypixels:bytestring
            , qrcode-core:bytestring
            , hsec-sync:lens
+           , hsec-tools:pandoc
 
 allow-older: pg-entity:time
 
