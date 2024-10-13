@@ -75,10 +75,13 @@ library
   -- cabal-fmt: expand src/core
   -- cabal-fmt: expand src/datatypes
   exposed-modules:
+    Advisories.AffectedVersionRange.Orphans
     Advisories.CAPEC.Orphans
+    Advisories.CVSS.Orphans
     Advisories.CWE.Orphans
     Advisories.HsecId.Orphans
     Advisories.Keyword.Orphans
+    Advisories.System.Orphans
     Data.Aeson.Orphans
     Data.Positive
     Data.Text.Display.Orphans
@@ -118,6 +121,7 @@ library
     Flora.Model.Job
     Flora.Model.Organisation
     Flora.Model.Package
+    Flora.Model.Package.Guard
     Flora.Model.Package.Orphans
     Flora.Model.Package.Publisher
     Flora.Model.Package.Query
@@ -160,6 +164,7 @@ library
     , cryptohash-sha256
     , cryptonite
     , cryptonite-conduit
+    , cvss
     , dani-servant-lucid2
     , deepseq
     , deriving-aeson
@@ -207,6 +212,7 @@ library
     , text-display
     , time
     , tracing
+    , tracing-effectful
     , unliftio
     , utf8-string
     , uuid
@@ -220,6 +226,8 @@ library flora-advisories
 
   -- cabal-fmt: expand src/advisories
   exposed-modules:
+    Advisories.Import
+    Advisories.Import.Error
     Advisories.Model.Advisory.Query
     Advisories.Model.Advisory.Types
     Advisories.Model.Advisory.Update
@@ -230,11 +238,14 @@ library flora-advisories
   build-depends:
     , aeson
     , base
+    , Cabal-syntax
+    , cvss
     , deepseq
     , effectful
     , flora
     , hsec-core
     , hsec-sync
+    , hsec-tools
     , osv
     , pandoc-types
     , pg-entity
@@ -242,7 +253,10 @@ library flora-advisories
     , postgresql-simple
     , text
     , time
+    , tracing
+    , tracing-effectful
     , uuid
+    , validation-selective
     , vector
 
 library flora-web

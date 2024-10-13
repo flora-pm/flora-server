@@ -11,6 +11,7 @@ import Effectful.Trace
 import Servant hiding ((:>))
 
 import Flora.Model.Component.Query qualified as Query
+import Flora.Model.Package.Guard
 import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types

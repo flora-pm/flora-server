@@ -22,7 +22,7 @@ instance FromField HsecId where
   fromField f (Just bs) =
     returnError ConversionFailed f $
       Text.unpack $
-        "Conversion error: Expected parsable HsecId but instead got "
+        "Conversion error: Expected parseable HsecId but instead got "
           <> Text.decodeUtf8 bs
 
 instance NFData HsecId where

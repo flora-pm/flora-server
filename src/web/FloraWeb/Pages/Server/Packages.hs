@@ -34,6 +34,7 @@ import Flora.Environment (FeatureEnv (..))
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobStore.API (BlobStoreAPI)
 import Flora.Model.Package
+import Flora.Model.Package.Guard
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
