@@ -4,6 +4,7 @@ import Data.Foldable (forM_, traverse_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Set qualified as Set
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -21,8 +22,12 @@ import Advisories.Model.Advisory.Types
 import Advisories.Model.Advisory.Update qualified as Update
 import Advisories.Model.Affected.Types
 import Advisories.Model.Affected.Update qualified as Update
+import Flora.Import.Package
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types
+import Flora.Model.Release.Guard (guardThatReleaseExists)
+import Flora.Model.Release.Types
+import OSV.Reference.Orphans
 
 -- | List deduplicated parsed Advisories
 importAdvisories
@@ -74,7 +79,7 @@ processAdvisory advisoryId advisory =
     , keywords = Vector.fromList advisory.advisoryKeywords
     , aliases = Vector.fromList advisory.advisoryAliases
     , related = Vector.fromList advisory.advisoryRelated
-    , references = Vector.fromList advisory.advisoryReferences
+    , advisoryReferences = References $ Vector.fromList advisory.advisoryReferences
     , pandoc = advisory.advisoryPandoc
     , html = advisory.advisoryHtml
     , summary = advisory.advisorySummary
@@ -91,8 +96,7 @@ processAffectedPackages
   -> Vector Affected
   -> Eff es ()
 processAffectedPackages advisoryId affectedPackages = do
-  affectedPackageDAOs <- traverse (processAffectedPackage advisoryId) affectedPackages
-  traverse_ (\p -> Update.insertAffectedPackage p) affectedPackageDAOs
+  forM_ affectedPackages (processAffectedPackage advisoryId)
 
 processAffectedPackage
   :: ( IOE :> es
@@ -102,28 +106,65 @@ processAffectedPackage
      )
   => AdvisoryId
   -> Affected
-  -> Eff es AffectedPackageDAO
+  -> Eff es ()
 processAffectedPackage advisoryId affected = do
   affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
-  let namespace = Namespace "hackage"
   let packageName =
         case affected.affectedComponentIdentifier of
           Hackage affectedPackageName -> PackageName affectedPackageName
           GHC _ -> PackageName "ghc"
+  let namespace = chooseNamespace packageName "hackage" Set.empty
   package <- guardThatPackageExists namespace packageName $ \_ _ ->
     throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
   let declarations =
         affected.affectedDeclarations
-          & fmap (\(canonicalPath, affectedRange) -> AffectedDeclaration canonicalPath affectedRange)
+          & fmap (uncurry AffectedDeclaration)
           & Vector.fromList
-  pure $
-    AffectedPackageDAO
-      { affectedPackageId = affectedPackageId
-      , advisoryId = advisoryId
-      , packageId = package.packageId
-      , cvss = affected.affectedCVSS
-      , versionRanges = Vector.fromList affected.affectedVersions
-      , architectures = fmap Vector.fromList affected.affectedArchitectures
-      , operatingSystems = fmap Vector.fromList affected.affectedOS
-      , declarations = declarations
-      }
+  let affectedPackageDAO =
+        AffectedPackageDAO
+          { affectedPackageId = affectedPackageId
+          , advisoryId = advisoryId
+          , packageId = package.packageId
+          , cvss = affected.affectedCVSS
+          , architectures = fmap Vector.fromList affected.affectedArchitectures
+          , operatingSystems = fmap Vector.fromList affected.affectedOS
+          , declarations = declarations
+          }
+  Update.insertAffectedPackage affectedPackageDAO
+  processAffectedVersionRanges affectedPackageId package.packageId affected.affectedVersions
+
+processAffectedVersionRanges
+  :: ( IOE :> es
+     , DB :> es
+     , Trace :> es
+     , Error (NonEmpty AdvisoryImportError) :> es
+     )
+  => AffectedPackageId
+  -> PackageId
+  -> [AffectedVersionRange]
+  -> Eff es ()
+processAffectedVersionRanges affectedPackageId packageId affectedVersions = do
+  traverse_
+    ( \affectedVersion -> do
+        affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
+        introducedReleaseId <- do
+          release <- guardThatReleaseExists packageId affectedVersion.affectedVersionRangeIntroduced $ \version ->
+            throwError (NonEmpty.singleton $ AffectedVersionNotFound packageId version)
+          pure release.releaseId
+        mFixedReleaseId <- case affectedVersion.affectedVersionRangeFixed of
+          Nothing -> pure Nothing
+          Just version -> do
+            release <- guardThatReleaseExists packageId version $ \version ->
+              throwError (NonEmpty.singleton $ AffectedVersionNotFound packageId version)
+            pure $ Just release.releaseId
+        let versionRangeDAO =
+              AffectedVersionRangeDAO
+                { affectedVersionId = affectedVersionId
+                , affectedPackageId = affectedPackageId
+                , introducedVersion = introducedReleaseId
+                , fixedVersion = mFixedReleaseId
+                }
+
+        Update.insertAffectedVersionRange versionRangeDAO
+    )
+    affectedVersions

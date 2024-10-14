@@ -22,6 +22,7 @@ import Advisories.System.Orphans ()
 import Distribution.Orphans.ConfVar ()
 import Distribution.Orphans.Version ()
 import Flora.Model.Package.Types
+import Flora.Model.Release.Types
 
 newtype AffectedPackageId = AffectedPackageId {getAffectedPackageId :: UUID}
   deriving stock (Generic, Show)
@@ -34,7 +35,6 @@ data AffectedPackageDAO = AffectedPackageDAO
   , advisoryId :: AdvisoryId
   , packageId :: PackageId
   , cvss :: CVSS
-  , versionRanges :: Vector AffectedVersionRange
   , architectures :: Maybe (Vector Architecture)
   , operatingSystems :: Maybe (Vector OS)
   , declarations :: Vector AffectedDeclaration
@@ -55,3 +55,21 @@ data AffectedDeclaration = AffectedDeclaration
 deriving via (Aeson AffectedDeclaration) instance ToField AffectedDeclaration
 
 deriving via (Aeson AffectedDeclaration) instance FromField AffectedDeclaration
+
+newtype AffectedVersionId = AffectedVersionId {getAffectedVersionId :: UUID}
+  deriving stock (Generic, Show)
+  deriving
+    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, NFData)
+    via UUID
+
+data AffectedVersionRangeDAO = AffectedVersionRangeDAO
+  { affectedVersionId :: AffectedVersionId
+  , affectedPackageId :: AffectedPackageId
+  , introducedVersion :: ReleaseId
+  , fixedVersion :: Maybe ReleaseId
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (FromRow, ToRow, NFData)
+  deriving
+    (Entity)
+    via (GenericEntity '[TableName "affected_version_ranges"] AffectedVersionRangeDAO)

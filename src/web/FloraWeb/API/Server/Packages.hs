@@ -13,12 +13,12 @@ import Servant hiding ((:>))
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Package.Guard
 import Flora.Model.Package.Types
+import Flora.Model.Release.Guard (guardThatReleaseExists)
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import FloraWeb.API.Errors
 import FloraWeb.API.Routes.Packages qualified as Packages
 import FloraWeb.API.Routes.Packages.Types (PackageDTO, toPackageDTO)
-import FloraWeb.Common.Guards
 import FloraWeb.Types
 
 packagesServer :: ServerT Packages.API FloraEff

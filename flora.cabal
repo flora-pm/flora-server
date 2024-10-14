@@ -132,6 +132,7 @@ library
     Flora.Model.PackageIndex.Update
     Flora.Model.PersistentSession
     Flora.Model.Release
+    Flora.Model.Release.Guard
     Flora.Model.Release.Query
     Flora.Model.Release.Types
     Flora.Model.Release.Update
@@ -239,6 +240,7 @@ library flora-advisories
     , aeson
     , base
     , Cabal-syntax
+    , containers
     , cvss
     , deepseq
     , effectful
@@ -526,6 +528,7 @@ test-suite flora-test
     , exceptions
     , filepath
     , flora
+    , flora-advisories
     , flora-web
     , hedgehog
     , http-client
@@ -549,12 +552,14 @@ test-suite flora-test
     , tasty-hunit
     , text
     , time
+    , tracing-effectful
     , uuid
     , vector
     , vector-algorithms
     , zlib
 
   other-modules:
+    Flora.AdvisorySpec
     Flora.BlobSpec
     Flora.CabalSpec
     Flora.CategorySpec

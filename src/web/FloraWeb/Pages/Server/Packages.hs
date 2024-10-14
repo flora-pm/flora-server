@@ -38,6 +38,7 @@ import Flora.Model.Package.Guard
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
+import Flora.Model.Release.Guard
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.User (User)

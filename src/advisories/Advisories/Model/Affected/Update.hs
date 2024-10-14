@@ -11,3 +11,9 @@ insertAffectedPackage
   => AffectedPackageDAO
   -> Eff es ()
 insertAffectedPackage = dbtToEff . insert @AffectedPackageDAO
+
+insertAffectedVersionRange
+  :: DB :> es
+  => AffectedVersionRangeDAO
+  -> Eff es ()
+insertAffectedVersionRange = dbtToEff . insert @AffectedVersionRangeDAO

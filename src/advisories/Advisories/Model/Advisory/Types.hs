@@ -13,14 +13,13 @@ import Database.PostgreSQL.Simple.ToField (ToField (..))
 import GHC.Generics
 import Security.Advisories.Core.Advisory
 import Security.Advisories.Core.HsecId
-import Security.OSV
 import Text.Pandoc.Definition
 
 import Advisories.CAPEC.Orphans ()
 import Advisories.CWE.Orphans ()
 import Advisories.HsecId.Orphans ()
 import Advisories.Keyword.Orphans ()
-import OSV.Reference.Orphans ()
+import OSV.Reference.Orphans (References (..))
 import Pandoc.Orphans ()
 
 newtype AdvisoryId = AdvisoryId {getAdvisoryId :: UUID}
@@ -37,7 +36,7 @@ data AdvisoryDAO = AdvisoryDAO
   , keywords :: Vector Keyword
   , aliases :: Vector Text
   , related :: Vector Text
-  , references :: Vector Reference
+  , advisoryReferences :: References
   , pandoc :: Pandoc
   , html :: Text
   , summary :: Text
