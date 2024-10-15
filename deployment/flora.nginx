@@ -8,6 +8,8 @@ server {
     listen xxxx:443 ssl http2;
     server_name xxxx;
 
+    server_tokens off;
+
     ssl_certificate /etc/letsencrypt/live/xxxx/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/xxxx/privkey.pem;
 
@@ -76,6 +78,8 @@ server {
 server {
     listen api.xxxx:443 ssl http2;
     server_name api.xxxx;
+
+    server_tokens off;
 
     ssl_certificate /etc/letsencrypt/live/api.xxxx/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/api.xxxx/privkey.pem;
