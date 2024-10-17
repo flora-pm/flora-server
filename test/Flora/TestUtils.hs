@@ -113,6 +113,8 @@ import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
 import Effectful.Time
+import Effectful.Trace (Trace)
+import Effectful.Trace qualified as Trace
 import GHC.Generics
 import GHC.IO (mkUserError)
 import GHC.Stack
@@ -172,7 +174,7 @@ import Flora.Model.User.Update qualified as Update
 import Flora.Publish
 import FloraWeb.Client
 
-type TestEff = Eff '[FileSystem, Poolboy, Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
+type TestEff = Eff '[Trace, FileSystem, Poolboy, Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
@@ -209,6 +211,7 @@ runTestEff comp pool poolCfg = runEff $
       . runFailIO
       . runPoolboy (poolboySettingsWith poolCfg.connections)
       . runFileSystem
+      . Trace.runNoTrace
       $ comp
 
 testThis :: String -> TestEff () -> TestEff TestTree
