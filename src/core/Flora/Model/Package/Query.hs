@@ -406,7 +406,6 @@ getRequirementsQuery singleComponentType =
       SELECT DISTINCT dependency.namespace
                     , dependency.name
                     , req.requirement
-              
       |]
     tablesSingleType =
       [sql|
@@ -544,7 +543,7 @@ searchPackageByNamespace (offset, limit) namespace searchString =
               , lv."uploaded_at"
               , lv."revised_at"
         FROM latest_versions as lv
-        WHERE 
+        WHERE
         ? <% lv."name"
         AND lv."namespace" = ?
         GROUP BY
