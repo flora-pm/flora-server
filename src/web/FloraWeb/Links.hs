@@ -2,6 +2,7 @@ module FloraWeb.Links where
 
 import Data.Positive
 import Data.Text (Text)
+import Data.Text.Display (display)
 import Distribution.Orphans ()
 import Distribution.Version (Version)
 import Flora.Model.Package (Namespace (..), PackageName (..))
@@ -115,3 +116,31 @@ packageWithExecutable pageNumber search =
     // Search.displaySearch
     /: Just search
     /: Just pageNumber
+
+namespacePage :: Namespace -> Positive Word -> Text
+namespacePage namespace pageNumber =
+  "/packages/" <> display namespace <> "?page=" <> toUrlPiece pageNumber
+
+packageResource :: Namespace -> PackageName -> Text
+packageResource namespace name = "/packages/" <> display namespace <> "/" <> display name
+
+versionResource :: Namespace -> PackageName -> Version -> Text
+versionResource namespace name version =
+  packageResource namespace name
+    <> "/"
+    <> display version
+
+dependentsPage :: Namespace -> PackageName -> Positive Word -> Text
+dependentsPage namespace packageName pageNum =
+  packageResource namespace packageName
+    <> "/dependents?page="
+    <> toUrlPiece pageNum
+
+dependenciesPage :: Namespace -> PackageName -> Version -> Text
+dependenciesPage namespace packageName version =
+  versionResource namespace packageName version
+    <> "/dependencies"
+
+versionsPage :: Namespace -> PackageName -> Text
+versionsPage namespace packageName =
+  packageResource namespace packageName <> "/versions"

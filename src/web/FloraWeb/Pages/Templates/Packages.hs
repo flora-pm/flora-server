@@ -47,11 +47,6 @@ import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Types.Version (Version, mkVersion, versionNumbers)
-import Lucid
-import Servant (ToHttpApiData (..))
-import Text.PrettyPrint (Doc, hcat, render)
-import Text.PrettyPrint qualified as PP
-
 import Flora.Environment (FeatureEnv (..))
 import Flora.Model.Category.Types
 import Flora.Model.Package
@@ -70,6 +65,10 @@ import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML, TemplateEnv (..))
 import FloraWeb.Pages.Templates.Haddock (renderHaddock)
+import Lucid
+import Servant (ToHttpApiData (..))
+import Text.PrettyPrint (Doc, hcat, render)
+import Text.PrettyPrint qualified as PP
 
 data Target
   = Dependents
@@ -246,7 +245,7 @@ displayNamespace namespace =
   a_
     [ class_ "breadcrumb-segment"
     , href_
-        ("/" <> toUrlPiece (Links.namespaceLink namespace 1))
+        ("/packages/" <> display namespace <> "?page=1")
     ]
     (toHtml $ display namespace)
 
@@ -324,7 +323,7 @@ displayVersions namespace packageName versions numberOfReleases =
         let versionClass = "release-version" <> if Just True == release.deprecated then " release-deprecated" else ""
         let dataText = ([dataText_ "This release is deprecated, pick another one" | Just True == release.deprecated])
         a_
-          ([class_ versionClass, href_ ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName release.version))] <> dataText)
+          ([class_ versionClass, href_ $ Links.versionResource namespace packageName release.version] <> dataText)
           (toHtml $ display release.version)
         " "
         case release.uploadedAt of
@@ -361,10 +360,10 @@ displayDependencies (namespace, packageName, version) numberOfDependencies depen
 showAll :: Target -> Maybe Version -> Namespace -> PackageName -> FloraHTML
 showAll target mVersion namespace packageName = do
   let resource = case target of
-        Dependents -> Links.packageDependents namespace packageName (PositiveUnsafe 1) Nothing
-        Dependencies -> Links.packageDependencies namespace packageName (fromJust mVersion)
-        Versions -> Links.packageVersions namespace packageName
-  a_ [class_ "dependency", href_ ("/" <> toUrlPiece resource)] "Show all…"
+        Dependents -> Links.dependentsPage namespace packageName (PositiveUnsafe 1)
+        Dependencies -> Links.dependenciesPage namespace packageName (fromJust mVersion)
+        Versions -> Links.versionsPage namespace packageName
+  a_ [class_ "dependency", href_ resource] "Show all…"
 
 displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
 displayInstructions namespace packageName latestRelease =
@@ -404,7 +403,7 @@ displayPackageDeprecation (PackageAlternatives inFavourOf) =
                 \PackageAlternative{namespace, package} ->
                   li_ [] $
                     a_
-                      [href_ ("/packages/" <> display namespace <> "/" <> display package)]
+                      [href_ $ Links.packageResource namespace package]
                       (text $ display namespace <> "/" <> display package)
 
 displayReleaseDeprecation :: Maybe (Namespace, PackageName, Version) -> FloraHTML
@@ -416,7 +415,7 @@ displayReleaseDeprecation mLatestViableRelease =
       Just (namespace, package, version) -> do
         label_ [for_ "install-string", class_ "font-light"] (text "This release has been deprecated in favour of: ")
         a_
-          [href_ ("/packages/" <> display namespace <> "/" <> display package <> "/" <> display version)]
+          [href_ $ Links.versionResource namespace package version]
           (text $ display namespace <> "/" <> display package <> "-" <> display version)
 
 displayTestedWith :: Vector Version -> FloraHTML
@@ -456,15 +455,13 @@ displayDependents (namespace, packageName) numberOfDependents dependents =
 renderDependent :: Package -> FloraHTML
 renderDependent Package{name, namespace} = do
   let qualifiedName = toHtml $ display namespace <> "/" <> display name
-  let resource = "/packages/" <> display namespace <> "/" <> display name
 
-  a_ [class_ "dependent", href_ resource] qualifiedName
+  a_ [class_ "dependent", href_ $ Links.packageResource namespace name] qualifiedName
 
 renderDependency :: (Namespace, PackageName, Text) -> FloraHTML
 renderDependency (namespace, name, version) = do
-  let resource = "/packages/" <> display namespace <> "/" <> display name
   li_ [class_ "dependency"] $ do
-    a_ [href_ resource] (toHtml name)
+    a_ [href_ $ Links.packageResource namespace name] (toHtml name)
     toHtmlRaw @Text "&nbsp;"
     if version == ">=0"
       then ""
