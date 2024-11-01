@@ -42,6 +42,7 @@ import System.Directory
 import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
+import Data.Aeson
 
 import Data.IORef (IORef)
 import Data.IORef qualified as IORef
@@ -84,6 +85,10 @@ importFromIndex
 importFromIndex user (repositoryName, repositoryURL) index = do
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
   let Right repositoryPackages = buildPackageListFromArchive entries
+  Log.logInfo "packages" $
+    object [ "repository" .= repositoryName
+           , "packages" .= repositoryPackages
+           ]
   mPackageIndex <- Query.getPackageIndexByName repositoryName
   time <- case mPackageIndex of
     Nothing -> pure $ posixSecondsToUTCTime 0
@@ -171,7 +176,9 @@ importFromStream user (repositoryName, _repositoryURL, repositoryPackages) strea
       -> Eff es ()
     processFile tarballHashIORef importSubject =
       case importSubject of
-        (CabalFile path, timestamp, content) ->
+        (CabalFile path, timestamp, content) -> do
+          Log.logInfo "importing-package" $
+            object [ "file_path" .= path]
           loadContent path content
             >>= ( extractPackageDataFromCabal tarballHashIORef user (repositoryName, repositoryPackages) timestamp
                     >=> \importedPackage -> persistImportOutput importedPackage

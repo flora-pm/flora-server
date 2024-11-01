@@ -312,11 +312,11 @@ persistHashes tarballHashIORef (packageName, namespace, version, target) = do
       mRelease <- Query.getReleaseByVersion package.packageId version
       case mRelease of
         Nothing -> do
-          Log.logInfo_ "Release does not exist, putting the hash in an ioref"
+          Log.logAttention_ "Release does not exist, putting the hash in an ioref"
           persisHashInMemory tarballHashIORef (namespace, packageName) target.hashes.sha256
         Just release -> Update.setArchiveChecksum release.releaseId target.hashes.sha256
     Nothing -> do
-      Log.logInfo_ "Package does not exist, putting the hash in an ioref"
+      Log.logAttention_ "Package does not exist, putting the hash in an ioref"
       persisHashInMemory tarballHashIORef (namespace, packageName) target.hashes.sha256
 
 persisHashInMemory
