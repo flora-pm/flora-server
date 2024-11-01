@@ -10,5 +10,4 @@ export FLORA_DB_USER="postgres"
 export FLORA_LOGGING_DESTINATION="stdout"
 export FLORA_HTTP_PORT=8083
 
-export FLORA_DB_CONNSTRING="host=${FLORA_DB_HOST} dbname=${FLORA_DB_DATABASE}\
-  user=${FLORA_DB_USER} password=${FLORA_DB_PASSWORD}"
+export FLORA_DB_CONNSTRING="host=${FLORA_DB_HOST} dbname=${FLORA_DB_DATABASE} user=${FLORA_DB_USER} password=${FLORA_DB_PASSWORD}"

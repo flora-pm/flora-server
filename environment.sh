@@ -12,7 +12,7 @@ export FLORA_DB_TIMEOUT="10"
 export FLORA_DB_SSLMODE="allow"
 export FLORA_DB_PARAMETERS="?sslmode=verify-ca"
 
-export FLORA_DB_CONNSTRING="host=${FLORA_DB_HOST} dbname=${FLORA_DB_DATABASE} \
+export FLORA_DB_CONNSTRING="host=${FLORA_DB_HOST} dbname=${FLORA_DB_DATABASE} port=${FLORA_DB_PORT} \
   user=${FLORA_DB_USER} password=${FLORA_DB_PASSWORD} \
   sslmode=${FLORA_DB_SSLMODE:-allow}"
 

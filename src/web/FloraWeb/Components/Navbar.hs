@@ -5,7 +5,6 @@ module FloraWeb.Components.Navbar where
 import Control.Monad.Reader (ask, asks)
 import Data.Text (Text)
 import Lucid
-import Lucid.Alpine
 
 import Flora.Model.User (User (..), UserFlags (..))
 import FloraWeb.Components.Utils
@@ -134,22 +133,24 @@ adminLink _ _ = ""
 themeToggle :: FloraHTML
 themeToggle = do
   let sunIcon = do
-        img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 invert"]
+        img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 invert", alt_ ""]
 
   let moonIcon = do
-        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6"]
+        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6", alt_ ""]
 
-  let buttonBaseClasses = "p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
+  let buttonBaseClasses = "navbar-themeBtn p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
 
   button_
     [ xOn_ "click" "theme = 'light'; menuOpen = false"
     , class_ $ "theme-button--light " <> buttonBaseClasses
+    , ariaLabel_ "Switch to light theme"
     ]
     sunIcon
 
   button_
     [ xOn_ "click" "theme = 'dark'; menuOpen = false"
     , class_ $ "theme-button--dark " <> buttonBaseClasses
+    , ariaLabel_ "Switch to dark theme"
     ]
     moonIcon
 

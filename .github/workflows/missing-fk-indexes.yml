@@ -1,0 +1,97 @@
+name: Missing FK Indexes
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "development"]
+
+concurrency:
+  group: missing-kf-indexes-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  generateMatrix:
+    name: "Generate matrix from cabal"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Extract the tested GHC versions
+        id: set-matrix
+        uses: kleidukos/get-tested@v0.1.7.1
+        with:
+          cabal-file: flora.cabal
+          ubuntu-version: "latest"
+          version: 0.1.7.1
+
+  missing-fk-index-check:
+    needs: generateMatrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{ fromJSON(needs.generateMatrix.outputs.matrix) }}
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Haskell
+      id: setup-haskell
+      uses: haskell-actions/setup@v2
+      with:
+        ghc-version: "${{ matrix.ghc }}"
+        cabal-version: "latest"
+
+    - name: Configure environment
+      run: |
+        ./.github/workflows/setup.sh
+        echo "/usr/lib/postgresql/14/bin/" >> $GITHUB_PATH
+        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
+        sudo apt install libsodium-dev
+        source ./environment.ci.sh
+        touch ~/.pgpass
+        chmod 0600 ~/.pgpass
+        echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
+        cat ~/.pgpass
+        cabal update
+
+    - name: Cache
+      uses: actions/cache@v4.1.2
+      with:
+        path: ${{ steps.setup-haskell.outputs.cabal-store }}
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}
+        restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
+
+
+    - name: Migrate
+      run: |
+        cabal install postgresql-migration
+        set -x
+        source ./environment.ci.sh
+        createdb -h "${FLORA_DB_HOST}" -p "${FLORA_DB_PORT}" -U "${FLORA_DB_USER}" -w "${FLORA_DB_DATABASE}"
+        migrate init "${FLORA_DB_CONNSTRING}"
+        migrate migrate "${FLORA_DB_CONNSTRING}" migrations
+      env:
+        PGPASSWORD: "postgres"
+
+    - name: Check
+      run: |
+        source ./environment.ci.sh
+        .github/workflows/check-missing-fk-indexes.sh

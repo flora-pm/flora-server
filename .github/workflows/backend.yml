@@ -16,14 +16,13 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout base repo
-        uses: actions/checkout@v4
       - name: Extract the tested GHC versions
         id: set-matrix
-        run: |
-          wget https://github.com/Kleidukos/get-tested/releases/download/v0.1.4.0/get-tested-0.1.4.0-linux-amd64 -O get-tested
-          chmod +x get-tested
-          ./get-tested --ubuntu *.cabal >> $GITHUB_OUTPUT
+        uses: kleidukos/get-tested@v0.1.7.1
+        with:
+          cabal-file: flora.cabal
+          ubuntu-version: "latest"
+          version: 0.1.7.1
 
   Backend_tests:
     needs: generateMatrix
@@ -79,7 +78,7 @@ jobs:
         cat ~/.pgpass
         cabal update
     - name: Cache
-      uses: actions/cache@v4.0.2
+      uses: actions/cache@v4.1.2
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}

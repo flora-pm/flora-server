@@ -1,0 +1,67 @@
+/* stylelint-disable selector-class-pattern */
+.whitespace-nowrap {
+	white-space: nowrap;
+}
+
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
+
+/* Text sizes */
+
+.text-base {
+	font-size: 1rem;
+	line-height: 1.5rem;
+}
+
+.text-sm {
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+}
+
+.text-xs {
+	font-size: 0.75rem;
+	line-height: 1rem;
+}
+
+.text-2xl {
+	font-size: 1.5rem;
+	line-height: 2rem;
+}
+
+
+@media (--viewport-sm) {
+	.sm\:text-2xl {
+		font-size: 1.5rem;
+		line-height: 2rem;
+	}
+}
+
+@media (--viewport-smmd) {
+	.lg\:text-xl {
+		font-size: 1.25rem;
+		line-height: 1.75rem;
+	}
+
+	.lg\:text-5xl {
+		font-size: 3rem;
+		line-height: 1;
+	}
+}
+
+
+.align-top { vertical-align: top; }
+.align-middle { vertical-align: middle; }
+.align-baseline { vertical-align: baseline; }
+.align-bottom { vertical-align: bottom; }
+
+.font-bold { font-weight: 700; }
+.font-light { font-weight: 300; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+
+.uppercase { text-transform: uppercase; }
+
+.tracking-tight { letter-spacing: var(--space-relative-tight);}
+.tracking-wider { letter-spacing: var(--space-relative-wider); }

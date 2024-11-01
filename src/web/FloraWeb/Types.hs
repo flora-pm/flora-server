@@ -29,6 +29,7 @@ import GHC.Generics
 import Servant (FromHttpApiData (..), Handler, ServerError)
 import Web.Cookie
 
+import Effectful.Concurrent (Concurrent)
 import Flora.Environment
 import Flora.Model.BlobStore.API
 
@@ -44,6 +45,7 @@ type RouteEffects =
    , BlobStoreAPI
    , Log
    , Error ServerError
+   , Concurrent
    , IOE
    ]
 

@@ -1,0 +1,53 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+html {
+	font-family: var(--font-sans);
+}
+
+body {
+	background-color: var(--background-color);
+	color: var(--text-color);
+}
+
+.container {
+	width: calc(100% - 2rem);
+	max-width: 1300px;
+	padding-right: 1rem;
+	padding-left: 1rem;
+	margin-right: auto;
+	margin-left: auto;
+}
+
+@media (--viewport-sm) {
+	.container {
+		max-width: 640px;
+	}
+}
+
+@media (--viewport-md) {
+	.container {
+		max-width: 768px;
+	}
+}
+
+@media (--viewport-lg) {
+	.container {
+		max-width: 1024px;
+	}
+}
+
+@media (--viewport-xl) {
+	.container {
+		max-width: 1280px;
+	}
+}
+
+.container--small {
+	max-width: 28rem;
+}
+
+a {
+	text-decoration: none;
+	color: var(--link-color);
+}

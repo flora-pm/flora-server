@@ -10,18 +10,18 @@ tests: True
 allow-newer: type-errors-pretty:base
            , souffle-haskell:text
            , servant-lucid:text
-           , lucid-svg:text
-           , lucid-svg:transformers
-           , lucid-aria:text
-           , lucid-alpine:text
            , hashable:filepath
+           , qrcode-juicypixels:text
+           , qrcode-core:text
+           , qrcode-juicypixels:bytestring
+           , qrcode-core:bytestring
 
 allow-older: pg-entity:time
 
 test-show-details: direct
 
 package *
-  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j -haddock
+  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
 
 package warp
   flags: -x509
@@ -32,29 +32,16 @@ package zlib
 source-repository-package
     type: git
     location: https://github.com/scrive/tracing
-    tag: e49720d
-    subdir: 
+    tag: 9c2baa1
+    subdir:
         .
         ./tracing-effectful
 
 source-repository-package
     type: git
-    location: https://github.com/haskell-cryptography/libsodium-bindings
-    tag: 6bc69bf
-    subdir: 
-        ./sel
-        ./libsodium-bindings
-
-source-repository-package
-    type: git
     location: https://gitlab.com/dpwiz/raven-haskell.git/
-    tag: 180088b26fb79515627644545955aed5c50d804a
+    tag: 37434cb1b2515a9aa74a0544da9716bfbabea7ca
     subdir: ./raven-haskell
- 
-source-repository-package
-    type: git
-    location: https://github.com/supki/envparse
-    tag: 503a699
 
 source-repository-package
     type: git
@@ -74,12 +61,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/saurabhnanda/odd-jobs
-    tag: 411d5d0
-
-source-repository-package
-    type: git
-    location: https://github.com/haskell-cryptography/one-time-password
-    tag: 2ca2313
+    tag: a159d7a
 
 source-repository-package
     type: git

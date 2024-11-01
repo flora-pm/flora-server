@@ -1,45 +1,45 @@
 .error {
-  margin-left: auto;
-  margin-right: auto;
-  max-width: max-content;
-  padding-top: 6rem;
-  text-wrap: nowrap;
+	margin-left: auto;
+	margin-right: auto;
+	max-width: max-content;
+	padding-top: 6rem;
+	text-wrap: nowrap;
 }
 
 p.error-zone {
-  display: flex;
-  flex-flow: row wrap;
-  color: var(--error-code);
+	display: flex;
+	flex-flow: row wrap;
+	color: var(--error-code);
 
-  > * {
-    font-size: 3rem;
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.025rem;
-  }
+	> * {
+		font-size: 3rem;
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: -0.025rem;
+	}
 }
 
 .error-code {
-  color: var(--error-code);
-  font-size: 3rem;
-  line-height: 1;
-  font-weight: 800;
-  border-color: rgb(229 231 235 / var(--tw-border-opacity));
-  border-right-width: 1px;
-  margin-right: 1.5rem;
-  padding-right: 1.5rem;
+	color: var(--error-code);
+	font-size: 3rem;
+	line-height: 1;
+	font-weight: 800;
+	border-color: rgb(229 231 235 / 100%);
+	border-right-width: 1px;
+	margin-right: 1.5rem;
+	padding-right: 1.5rem;
 }
 
 .error-message {
-  color: var(--error-code);
-  font-size: 3rem;
-  font-weight: 800;
-  letter-spacing: -0.025rem;
-  line-height: 1;
+	color: var(--error-code);
+	font-size: 3rem;
+	font-weight: 800;
+	letter-spacing: -0.025rem;
+	line-height: 1;
 }
 
 .error-page-button {
-  background-color: var(--error-button);
-  border-color: transparent;
-  margin-top: 2.5rem;
+	background-color: var(--error-button);
+	border-color: transparent;
+	margin-top: 2.5rem;
 }

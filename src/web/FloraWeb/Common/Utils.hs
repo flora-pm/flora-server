@@ -23,6 +23,12 @@ redirectWithCookie :: Text -> SetCookie -> Headers '[Header "Location" Text, Hea
 redirectWithCookie destination cookie =
   addHeader destination (addHeader cookie NoContent)
 
+refresh :: a -> Headers '[Header "HX-Refresh" Text] a
+refresh a = addHeader ("true" :: Text) a
+
+doNotRefresh :: a -> Headers '[Header "HX-Refresh" Text] a
+doNotRefresh a = addHeader ("false" :: Text) a
+
 handlerToEff
   :: forall (es :: [Effect]) (a :: Type)
    . Error ServerError :> es

@@ -49,7 +49,6 @@ import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding qualified as Text
-import Data.Text.IO qualified as Text
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -268,13 +267,16 @@ parseString parser name bs = do
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
-persistImportOutput :: forall es. (Poolboy :> es, DB :> es, IOE :> es) => ImportOutput -> Eff es ()
+persistImportOutput :: forall es. (Log :> es, Poolboy :> es, DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = do
-  liftIO . Text.putStrLn $ "📦  Persisting package: " <> packageName <> ", 🗓  Release v" <> display release.version
+  Log.logInfo "Persisting package" $
+    object
+      [ "package_name" .= packageName
+      , "version" .= display release.version
+      ]
   persistPackage
   Update.upsertRelease release
   parallelRun persistComponent components
-  liftIO $ putStr "\n"
   where
     parallelRun :: Foldable t => (a -> Eff es ()) -> t a -> Eff es ()
     parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
@@ -286,12 +288,12 @@ persistImportOutput (ImportOutput package categories release components) = do
 
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
-      liftIO . Text.putStrLn $
-        "🧩  Persisting component: "
-          <> display packageComponent.canonicalForm
-          <> " with "
-          <> display (length deps)
-          <> " dependencies."
+      Log.logInfo
+        "Persisting component"
+        $ object
+          [ "component" .= display packageComponent.canonicalForm
+          , "number_of_dependencies" .= display (length deps)
+          ]
       Update.upsertPackageComponent packageComponent
       parallelRun persistImportDependency deps
 
@@ -312,11 +314,11 @@ persistHashes tarballHashIORef (packageName, namespace, version, target) = do
       mRelease <- Query.getReleaseByVersion package.packageId version
       case mRelease of
         Nothing -> do
-          Log.logInfo_ "Release does not exist, putting the hash in an ioref"
+          Log.logAttention_ "Release does not exist, putting the hash in an ioref"
           persisHashInMemory tarballHashIORef (namespace, packageName) target.hashes.sha256
         Just release -> Update.setArchiveChecksum release.releaseId target.hashes.sha256
     Nothing -> do
-      Log.logInfo_ "Package does not exist, putting the hash in an ioref"
+      Log.logAttention_ "Package does not exist, putting the hash in an ioref"
       persisHashInMemory tarballHashIORef (namespace, packageName) target.hashes.sha256
 
 persisHashInMemory

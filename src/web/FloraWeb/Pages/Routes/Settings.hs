@@ -9,8 +9,8 @@ where
 
 import Lucid
 import Servant
+import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
-import Servant.HTML.Lucid
 
 import Data.Text (Text)
 import FloraWeb.Common.Auth ()

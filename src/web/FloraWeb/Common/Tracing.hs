@@ -49,11 +49,11 @@ onException logger environment mltp mRequest exception =
 shouldDisplayException :: SomeException -> Bool
 shouldDisplayException exception
   | Just ThreadKilled <- fromException exception = False
+  | Just ConnectionClosedByPeer <- fromException exception = False
   | Just (_ :: InvalidRequest) <- fromException exception = False
   | Just (ioeGetErrorType -> et) <- fromException exception
   , et == ResourceVanished || et == InvalidArgument =
       False
-  | Just ConnectionClosedByPeer <- fromException exception = False
   | otherwise = True
 
 formatMessage :: Maybe Request -> SomeException -> String

@@ -48,7 +48,6 @@ import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Types.Version (Version, mkVersion, versionNumbers)
 import Lucid
-import Lucid.Base
 import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
@@ -144,6 +143,8 @@ showDependents namespace packageName release count packagesInfo currentPage =
               , dep.latestSynopsis
               , dep.latestVersion
               , dep.latestLicense
+              , Nothing
+              , Nothing
               )
         )
     when (count > 30) $
@@ -163,8 +164,7 @@ listVersions namespace packageName releases =
     ul_ [class_ "package-list"] $
       Vector.forM_
         releases
-        ( versionListItem namespace packageName
-        )
+        (versionListItem namespace packageName)
 
 versionListItem :: Namespace -> PackageName -> Release -> FloraHTML
 versionListItem namespace packageName release = do
@@ -209,11 +209,10 @@ packageListing mExactMatchItems packages =
     whenJust mExactMatchItems $ \exactMatchItems ->
       forM_ exactMatchItems $ \em ->
         div_ [class_ "exact-match"] $
-          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license)
+          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license, em.uploadedAt, em.revisedAt)
     Vector.forM_
       packages
-      ( \PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license)
-      )
+      (\PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license, uploadedAt, revisedAt))
 
 packageWithExecutableListing
   :: Vector PackageInfoWithExecutables
@@ -236,7 +235,7 @@ showChangelog namespace packageName version mChangelog = div_ [class_ "container
   section_ [class_ "release-changelog"] $ do
     case mChangelog of
       Nothing -> toHtml @Text "This release does not have a Changelog"
-      Just (MkTextHtml changelogText) -> relaxHtmlT changelogText
+      Just changelogText -> toHtml changelogText
 
 displayReleaseVersion :: Version -> FloraHTML
 displayReleaseVersion = toHtml
@@ -307,7 +306,7 @@ displayReadme :: Release -> FloraHTML
 displayReadme release =
   case readme release of
     Nothing -> renderHaddock release.description
-    Just (MkTextHtml readme) -> relaxHtmlT readme
+    Just readme -> toHtml readme
 
 displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
 displayVersions namespace packageName versions numberOfReleases =
@@ -430,8 +429,7 @@ displayTestedWith compilersVersions'
         ul_ [class_ "compiler-badges"] $
           Vector.forM_
             compilersVersions
-            ( li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display
-            )
+            (li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display)
 
 displayMaintainer :: Text -> FloraHTML
 displayMaintainer maintainerInfo =

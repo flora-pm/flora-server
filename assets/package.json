@@ -4,7 +4,6 @@
     "@deanc/esbuild-plugin-postcss": "^1.0.2",
     "@fullhuman/postcss-purgecss": "^4.0.3",
     "@ryangjchandler/alpine-clipboard": "^2.1.0",
-    "@tailwindcss/nesting": "^0.0.0-insiders.565cd3e",
     "alpinejs": "^3.12.0",
     "autoprefixer": "^10.4.0",
     "chokidar": "^3.5.3",
@@ -14,17 +13,21 @@
     "esbuild": "^0.13.13",
     "esbuild-copy-static-files": "^0.1.0",
     "esbuild-plugin-assets-manifest": "^1.0.7",
+    "esbuild-sass-plugin": "^3.3.1",
     "esbuild-style-plugin": "^1.6.0",
+    "htmx-ext-sse": "^2.2.2",
+    "htmx.org": "^2.0.2",
+    "livereload-js": "^4.0.2",
     "postcss": "^8.4.31",
     "postcss-cli": "^9.0.2",
     "postcss-copy": "^7.1.0",
+    "postcss-custom-media": "^11.0.1",
+    "postcss-design-token-utils": "^3.0.1",
     "postcss-hash": "^3.0.0",
     "postcss-import": "^14.0.2",
-    "prettier": "^2.7.1",
-    "stylelint": "^15.10.1",
-    "stylelint-config-prettier": "^9.0.3",
-    "stylelint-config-standard": "^26.0.0",
-    "tailwindcss": "^3.0.0"
+    "postcss-nesting": "^13.0.0",
+    "stylelint": "^16.9.0",
+    "stylelint-config-standard": "^36.0.1"
   },
   "scripts": {
     "watch": "concurrently \"yarn:watch-assets\" \"yarn:watch-static-files\"",
@@ -39,5 +42,6 @@
     "@docusaurus/module-type-aliases": "^3.1.1",
     "@docusaurus/preset-classic": "^3.1.1",
     "csslint": "^1.0.5"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

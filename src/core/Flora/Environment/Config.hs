@@ -74,8 +74,8 @@ data DeploymentEnv
   deriving stock (Show, Eq, Generic, Enum, Bounded)
 
 instance Display DeploymentEnv where
-  displayBuilder Production = "prod"
-  displayBuilder Development = "dev"
+  displayBuilder Production = "production"
+  displayBuilder Development = "development"
   displayBuilder Test = "test"
 
 data LoggingDestination

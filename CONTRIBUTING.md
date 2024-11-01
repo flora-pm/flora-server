@@ -24,7 +24,7 @@ The following Haskell command-line tools will have to be installed:
 * `esbuild`: The tool that handles asset bundling
 * `changelog-d` v1.0: https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0
 
-### Questions 
+### Questions
 
 Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
 
@@ -174,7 +174,7 @@ postgres=# alter role postgres with password 'postgres';
 
 And you are good to go.
 
-#### Setup project 
+#### Setup project
 
 To create the database and apply the migrations, type:
 
@@ -190,17 +190,23 @@ A docker-based workflow is provided. The idea is to develop from within a contai
 and communicates with another container for the PostgreSQL database.
 
 ```bash
-# You need to build the container first. It's gonna take around 13 minutes the first time you build
-$ make docker-build
+# Start the containers for the database and the server
+$ make docker-up
 # Once the containers are running, you can enter the development environment and start hacking
 $ make docker-enter
-$ source environment.docker.sh
-# You'll be in the docker container. Environment variables are automatically set 
+# You'll be in the docker container. Environment variables are automatically set
 # so you should be able to start Flora
 (docker)$ make start-tmux
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.
 ```
+
+If you need to rebuild the container, run the following command:
+
+```bash
+$ make docker-build
+```
+
 ### Provisioning the database
 
 After everything is set up, (locally or via Docker), you can start populating the database:
@@ -209,7 +215,7 @@ After everything is set up, (locally or via Docker), you can start populating th
 $ make db-setup
 $ make db-provision
 $ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
-    --email "admin@localhost" --password "password123" 
+    --email "admin@localhost" --password "password123"
 $ make db-provision-test-packages
 ```
 
@@ -263,7 +269,7 @@ Direnv can drastically reduce development cycles by reducing the amount of times
 this repository, which is a drastic improvement, especially with `IFD` (which this repo uses due to `callCabal2nix`).
 
 Devshell startup times will be instant if you didn't change anything in the configuration and as long as usual if you
-need to re-evaluate the `nix`-expressions (i.e. on cabal config changes or `nix` changes). 
+need to re-evaluate the `nix`-expressions (i.e. on cabal config changes or `nix` changes).
 
 Find out how to install `direnv` on your machine by visiting [their github](https://github.com/direnv/direnv/).o
 After installing, add a `.envrc` file to the root of the project containing:
@@ -344,12 +350,12 @@ nix run .#server
 Contributions to our `nix` infrastructures are always appreciated, however, there are a couple of guidelines
 - don't forget to run formatting and linting (see above for `pre-commit-hooks`)
 - prefer cached derivations, that means:
-  - prefer upstream haskell packages over custom versions- 
+  - prefer upstream haskell packages over custom versions-
   - prefer frameworks that have reliable and trusted binary caches
 - prefer versions with less IFD:
   - prefer realized `nix` derivations over `callHackage` over `callCabal2nix`
   - don't use custom packages if not absolutely necessary
-- locking happens in the `nix` flake 
+- locking happens in the `nix` flake
   - `nix` provides a native locking mechanism with flakes, we only use that mechanism
   - if we need a source of a package, we add it as a flake input with `flake = false;`
   - we don't use any fetcher, if not absolutely needed (e.g. if you need a tarball which is

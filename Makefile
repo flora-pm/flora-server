@@ -9,7 +9,7 @@ build: soufflé ## Build the server
 
 build-release: soufflé ## Build the server for production
 	@cabal freeze --project-file cabal.project.release
-	@cabal build --project-file cabal.project.release 
+	@cabal build --project-file cabal.project.release
 
 clean: ## Remove the cabal build artifacts
 	@rm cbits/*.cpp
@@ -39,7 +39,7 @@ db-drop: ## Drop the database
 db-setup: db-create db-init db-migrate ## Setup the dev database
 
 db-init: ## Create the database schema
-	@migrate init "$(FLORA_DB_CONNSTRING)" 
+	@migrate init "$(FLORA_DB_CONNSTRING)"
 
 db-migrate: ## Apply database migrations
 	@migrate migrate "$(FLORA_DB_CONNSTRING)" migrations
@@ -83,16 +83,15 @@ watch-server: soufflé ## Start flora-server in ghcid
 lint-hs: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
-style-hs-quick: ## Run the haskell code formatters (fourmolu, cabal-fmt) 
+style-hs-quick: ## Run the haskell code formatters (fourmolu, cabal-fmt)
 	@cabal-fmt -i flora.cabal
 	@git diff origin --name-only src test/**/*.hs app | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
-style-hs: ## Run the haskell code formatters (fourmolu, cabal-fmt) 
+style-hs: ## Run the haskell code formatters (fourmolu, cabal-fmt)
 	@cabal-fmt -i flora.cabal
 	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
-style-css: ## Run the CSS code formatters (prettier, stylelint)
-	@cd assets ; yarn prettier --write css
+style-css: ## Run the CSS code formatter (stylelint)
 	@cd assets ; yarn stylelint --fix css
 
 style: style-hs style-css ## Run all the code formatters
@@ -106,7 +105,10 @@ docker-build: ## Build and start the container cluster
 docker-up: ## Start the container cluster
 	@docker compose up -d
 
-docker-down: ## Start the container cluster
+docker-stop: ## Stop the container cluster without removing the containers
+	@docker compose stop
+
+docker-down: ## Stop and remove the container cluster
 	@docker compose down
 
 docker-enter: ## Enter the docker environment

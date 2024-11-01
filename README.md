@@ -63,3 +63,7 @@ To setup a local installation, see [CONTRIBUTING.md#project-setup](https://githu
 
 * [Code of Conduct](./CODE_OF_CONDUCT.md)
 * [Development Wiki](https://github.com/flora-pm/flora-server/wiki)
+
+## 🫶 Special Collaborations
+
+We would like to thank our dear friends at Guérilla Studio ([www](https://guerilla.studio/), [GitHub](https://github.com/GuerillaStudio)) for help with accessibility and CSS integration.

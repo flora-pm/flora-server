@@ -1,0 +1,42 @@
+/* stylelint-disable selector-class-pattern */
+
+.inset-x-0 { inset-inline: var(--space-0); }
+
+.bottom-0 { bottom: var(--space-0); }
+
+.m-4 { margin: var(--space-4); }
+.mx-auto { margin-inline: auto; }
+.mx-4 { margin-inline: var(--space-4); }
+.-my-2 { margin-block: calc(var(--space-2) * -1); }
+.mt-10 { margin-top: var(--space-10); }
+.mt-2 { margin-top: var(--space-2); }
+.mt-8 { margin-top: 2rem; }
+
+.p-2 { padding: var(--space-2); }
+.px-4 { padding-inline: var(--space-4); }
+.px-6 { padding-inline: var(--space-6); }
+.py-2 { padding-block: var(--space-2); }
+.py-3 { padding-block: var(--space-3); }
+.py-4 { padding-block: var(--space-4); }
+.py-5 { padding-block: var(--space-5); }
+.pt-12 { padding-top: var(--space-12); }
+
+.space-x-3 > :not([hidden]) ~ :not([hidden]) { margin-inline: var(--space-3) 0; }
+.space-x-6 > :not([hidden]) ~ :not([hidden]) { margin-inline: var(--space-6) 0; }
+
+
+@media (--viewport-sm) {
+	.sm\:-mx-6 { margin-inline: calc((var(--space-6) * -1)); }
+	.sm\:px-6 { padding-inline: var(--space-6); }
+	.sm\:pl-6 { padding-left: var(--space-6); }
+}
+
+@media (--viewport-md) {
+	.md\:m-0 { margin: var(--space-0); }
+	.md\:mt-0 { margin-top: var(--space-0); }
+}
+
+@media (--viewport-lg) {
+	.lg\:-mx-8 { margin-inline: calc(var(--space-8) * -1); }
+	.lg\:px-8 { padding-inline: var(--space-8); }
+}

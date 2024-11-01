@@ -246,6 +246,8 @@ data PackageInfo = PackageInfo
   , version :: Version
   , license :: SPDX.License
   , rating :: Maybe Double
+  , uploadedAt :: Maybe UTCTime
+  , revisedAt :: Maybe UTCTime
   }
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (FromRow, NFData)

@@ -5,6 +5,7 @@ import Control.Exception (bracket)
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
 import Control.Monad.Except qualified as Except
+import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
 import Data.Pool qualified as Pool
@@ -80,6 +81,7 @@ import FloraWeb.Common.Auth
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
+import FloraWeb.LiveReload qualified as LiveReload
 import FloraWeb.Pages.Server qualified as Pages
 import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
 import FloraWeb.Pages.Templates.Error (renderError)
@@ -105,6 +107,7 @@ runFlora =
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
+            liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             let withLogger = Logging.makeLogger env.mltp.logger
             withLogger
               ( \appLogger ->
@@ -150,7 +153,8 @@ runServer appLogger floraEnv = do
   oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
-  let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv zipkin
+  ioref <- liftIO $ newIORef True
+  let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv zipkin ioref
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -174,19 +178,22 @@ mkServer
   -> OddJobs.UIConfig
   -> OddJobs.Env
   -> Zipkin
+  -> IORef Bool
   -> Application
-mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv zipkin =
+mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv zipkin ioref =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
     (naturalTransform floraEnv logger webEnvStore zipkin)
-    (floraServer cfg jobsRunnerEnv)
+    (floraServer cfg jobsRunnerEnv floraEnv.environment ioref)
 
 floraServer
   :: OddJobs.UIConfig
   -> OddJobs.Env
+  -> DeploymentEnv
+  -> IORef Bool
   -> Routes (AsServerT FloraEff)
-floraServer cfg jobsRunnerEnv =
+floraServer cfg jobsRunnerEnv environment ioref =
   Routes
     { assets = serveDirectoryWebApp "./static"
     , openSearch = openSearchHandler
@@ -194,6 +201,7 @@ floraServer cfg jobsRunnerEnv =
     , api = API.apiServer
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
+    , livereload = LiveReload.livereloadHandler environment ioref
     }
 
 naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> Zipkin -> FloraEff a -> Handler a
@@ -216,6 +224,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
             )
           & Logging.runLog floraEnv.environment logger
           & runErrorWith (\_callstack err -> pure $ Left err)
+          & runConcurrent
           & runEff
   either Except.throwError pure result
 

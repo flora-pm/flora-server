@@ -1,6 +1,17 @@
 {
-  "extends": ["stylelint-config-standard", "stylelint-config-prettier"],
+  "extends": ["stylelint-config-standard"],
   "rules": {
-    "hue-degree-notation": "number"
+    "hue-degree-notation": "number",
+    "media-feature-range-notation": "prefix",
+    "import-notation": "string",
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "/^design-token-utils/",
+          "/^custom-media/"
+        ]
+      }
+    ]
   }
 }
