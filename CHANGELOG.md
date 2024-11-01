@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.0.21 -- 2024-11-01
+
+- Add htmx polling for page reload [#579](https://github.com/flora-pm/flora-server/pull/579)
+- Show last upload or revision date in packsge listings [#580](https://github.com/flora-pm/flora-server/pull/580)
+- Add CI check for missing FK indexes [#605](https://github.com/flora-pm/flora-server/pull/605)
+- Add more logging statements when importing packages [#778](https://github.com/flora-pm/flora-server/pull/778)
+
 ## 1.0.20 Hotfix release -- 2024-07-24
 
 - Sort and limit the amount of releases in the DB instead of Flora [#567](https://github.com/flora-pm/flora-server/pull/567)
