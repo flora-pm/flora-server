@@ -4,8 +4,11 @@ import Control.Monad
 import Data.Text.Display
 import Data.Text.IO qualified as T
 import Effectful
+import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect
+import Log qualified
 
+import Data.Aeson
 import Flora.Import.Categories.Tuning
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Model.Category.Update qualified as Update
@@ -23,7 +26,7 @@ import Flora.Model.Requirement (Requirement)
 -}
 
 publishPackage
-  :: (DB :> es, IOE :> es)
+  :: (Log :> es, DB :> es, IOE :> es)
   => [Requirement]
   -> [PackageComponent]
   -> Release
@@ -35,25 +38,30 @@ publishPackage requirements components release userPackageCategories package = d
   result <- Query.getPackageByNamespaceAndName package.namespace package.name
   case result of
     Just existingPackage -> do
-      liftIO $ T.putStrLn $ "[+] Package " <> display package.name <> " already exists."
+      Log.logAttention_ $ "Package " <> display package.name <> " already exists."
       publishForExistingPackage requirements components release existingPackage
     Nothing -> do
-      liftIO $ T.putStrLn $ "[+] Package " <> display package.name <> " does not exist."
+      Log.logAttention_ $ "Package " <> display package.name <> " does not exist."
       publishForNewPackage requirements components release userPackageCategories package
 
-publishForExistingPackage :: (DB :> es, IOE :> es) => [Requirement] -> [PackageComponent] -> Release -> Package -> Eff es Package
+publishForExistingPackage
+  :: (Log :> es, DB :> es)
+  => [Requirement]
+  -> [PackageComponent]
+  -> Release
+  -> Package
+  -> Eff es Package
 publishForExistingPackage requirements components release package = do
   result <- Query.getReleaseByVersion package.packageId release.version
   case result of
     Nothing -> do
-      liftIO $
-        T.putStrLn $
-          "[+] Inserting the following components: "
-            <> display (fmap (.canonicalForm) components)
-            <> " of "
-            <> display package.name
-            <> " v"
-            <> display release.version
+      Log.logInfo
+        "Inserting components"
+        $ object
+          [ "components" .= display (fmap (.canonicalForm) components)
+          , "package" .= display package.name
+          , "version" .= display release.version
+          ]
       Update.insertRelease release
       Update.bulkInsertPackageComponents components
       Update.bulkInsertRequirements requirements
@@ -61,8 +69,8 @@ publishForExistingPackage requirements components release package = do
       Update.refreshLatestVersions
       pure package
     Just r -> do
-      liftIO $ T.putStrLn $ "[+] Release " <> display package.name <> " v" <> display r.version <> " already exists."
-      liftIO $ T.putStrLn $ "[+] I am not inserting anything for " <> display package.name <> " v" <> display r.version
+      Log.logAttention_ $ "Release " <> display package.name <> " v" <> display r.version <> " already exists."
+      Log.logAttention_ $ "I am not inserting anything for " <> display package.name <> " v" <> display r.version
       pure package
 
 publishForNewPackage :: (DB :> es, IOE :> es) => [Requirement] -> [PackageComponent] -> Release -> [UserPackageCategory] -> Package -> Eff es Package
