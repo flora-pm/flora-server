@@ -79,10 +79,10 @@ importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
 importFromIndex
   :: (Time :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
   => UserId
-  -> (Text, Text)
+  -> Text
   -> FilePath
   -> Eff es ()
-importFromIndex user (repositoryName, repositoryURL) index = do
+importFromIndex user repositoryName index = do
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
   let Right repositoryPackages = buildPackageListFromArchive entries
   Log.logInfo "packages" $
@@ -102,7 +102,7 @@ importFromIndex user (repositoryName, repositoryURL) index = do
     Right stream ->
       importFromStream
         user
-        (repositoryName, repositoryURL, repositoryPackages)
+        (repositoryName, repositoryPackages)
         stream
     Left (err, _) ->
       Log.logAttention_ $
@@ -135,16 +135,16 @@ importAllFilesInDirectory user (repositoryName, repositoryURL) dir = do
   liftIO $ System.createDirectoryIfMissing True dir
   packages <- buildPackageListFromDirectory dir
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
-  importFromStream user (repositoryName, repositoryURL, packages) (findAllCabalFilesInDirectory dir)
+  importFromStream user (repositoryName, packages) (findAllCabalFilesInDirectory dir)
 
 importFromStream
   :: forall es
    . (Time :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
   => UserId
-  -> (Text, Text, Set PackageName)
+  -> (Text, Set PackageName)
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
   -> Eff es ()
-importFromStream user (repositoryName, _repositoryURL, repositoryPackages) stream = do
+importFromStream user (repositoryName, repositoryPackages) stream = do
   tarballHashIORef <- liftIO $ IORef.newIORef Map.empty
   let cfg = maxThreads numCapabilities . ordered True
   processedPackageCount <-
