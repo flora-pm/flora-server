@@ -38,10 +38,18 @@ publishPackage requirements components release userPackageCategories package = d
   result <- Query.getPackageByNamespaceAndName package.namespace package.name
   case result of
     Just existingPackage -> do
-      Log.logAttention_ $ "Package " <> display package.name <> " already exists."
+      Log.logInfo "Package Already Exists " $
+        object
+          [ "package_name" .= display package.name
+          , "namespace" .= display package.namespace
+          ]
       publishForExistingPackage requirements components release existingPackage
     Nothing -> do
-      Log.logAttention_ $ "Package " <> display package.name <> " does not exist."
+      Log.logAttention "Package Does Not Exist" $
+        object
+          [ "package_name" .= display package.name
+          , "namespace" .= display package.namespace
+          ]
       publishForNewPackage requirements components release userPackageCategories package
 
 publishForExistingPackage
