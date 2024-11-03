@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Flora.Import.Package.Bulk
@@ -67,14 +68,20 @@ import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
-  :: (Log :> es, Time :> es, FileSystem :> es, Poolboy :> es, DB :> es, IOE :> es)
+  :: ( Log :> es
+     , Time :> es
+     , FileSystem :> es
+     , Poolboy :> es
+     , DB :> es
+     , IOE :> es
+     )
   => UserId
-  -> (Text, Text)
+  -> Text
   -> FilePath
   -> Eff es ()
-importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
+importAllFilesInRelativeDirectory user repositoryName dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importAllFilesInDirectory user (repositoryName, repositoryURL) workdir
+  importAllFilesInDirectory user repositoryName workdir
 
 importFromIndex
   :: (Time :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
@@ -119,19 +126,26 @@ importFromIndex user repositoryName index = do
        in Tar.entryContent entry & \case
             Tar.NormalFile bs _
               | ".cabal" `isSuffixOf` entryPath && entryTime > time ->
-                  (CabalFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
+                  (CabalFile entryPath, entryTime, BL.toStrict bs)
+                    `Streamly.cons` acc
               | ".json" `isSuffixOf` entryPath && entryTime > time ->
                   (JSONFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
             _ -> acc
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
 importAllFilesInDirectory
-  :: (Time :> es, Log :> es, FileSystem :> es, Poolboy :> es, DB :> es, IOE :> es)
+  :: ( Time :> es
+     , Log :> es
+     , FileSystem :> es
+     , Poolboy :> es
+     , DB :> es
+     , IOE :> es
+     )
   => UserId
-  -> (Text, Text)
+  -> Text
   -> FilePath
   -> Eff es ()
-importAllFilesInDirectory user (repositoryName, repositoryURL) dir = do
+importAllFilesInDirectory user repositoryName dir = do
   liftIO $ System.createDirectoryIfMissing True dir
   packages <- buildPackageListFromDirectory dir
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
@@ -182,7 +196,8 @@ importFromStream user (repositoryName, repositoryPackages) stream = do
             object ["file_path" .= path]
           loadContent path content
             >>= ( extractPackageDataFromCabal tarballHashIORef user (repositoryName, repositoryPackages) timestamp
-                    >=> \importedPackage -> persistImportOutput importedPackage
+                    >=> \importedPackage -> do
+                      persistImportOutput importedPackage
                 )
         (JSONFile path, _, content) ->
           do

@@ -67,7 +67,7 @@ import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Component.Types
 import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName (..))
-import Flora.Model.Package.Types (PackageInfoWithExecutables (..))
+import Flora.Model.Package.Types (PackageInfoWithExecutables (..), PackageStatus (..))
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
   ( ComponentDependencies
@@ -91,8 +91,8 @@ getPackageByNamespaceAndName namespace name = do
   dbtToEff $
     queryOne
       Select
-      (_selectWhere @Package [[field| namespace |], [field| name |]])
-      (namespace, name)
+      (_selectWhere @Package [[field| namespace |], [field| name |], [field| status |]])
+      (namespace, name, FullyImportedPackage)
 
 getNonDeprecatedPackages :: DB :> es => Eff es (Vector Package)
 getNonDeprecatedPackages = dbtToEff $ selectWhereNull @Package [[field| deprecation_info |]]
@@ -406,7 +406,7 @@ getRequirementsQuery singleComponentType =
       SELECT DISTINCT dependency.namespace
                     , dependency.name
                     , req.requirement
-              
+
       |]
     tablesSingleType =
       [sql|
@@ -544,7 +544,7 @@ searchPackageByNamespace (offset, limit) namespace searchString =
               , lv."uploaded_at"
               , lv."revised_at"
         FROM latest_versions as lv
-        WHERE 
+        WHERE
         ? <% lv."name"
         AND lv."namespace" = ?
         GROUP BY
@@ -711,7 +711,7 @@ countPackages =
       queryOne_
         Select
         [sql|
-    SELECT DISTINCT COUNT(*)
+    SELECT COUNT(*)
     FROM packages
     WHERE status = 'fully-imported'
     |]

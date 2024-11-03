@@ -32,7 +32,6 @@ import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Package (PackageName)
 import Flora.Model.PackageIndex.Query qualified as Query
-import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
@@ -214,8 +213,8 @@ importFolderOfCabalFiles path repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
-    Just packageIndex ->
-      importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
+    Just _ ->
+      importAllFilesInRelativeDirectory user.userId repository (path </> Text.unpack repository)
 
 importIndex
   :: ( Time :> es
@@ -233,7 +232,7 @@ importIndex path repository = do
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just _ ->
-      importFromIndex (user ^. #userId) repository path
+      importFromIndex user.userId repository path
 
 importPackageTarball
   :: ( Log :> es

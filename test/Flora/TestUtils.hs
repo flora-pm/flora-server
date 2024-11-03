@@ -188,11 +188,11 @@ importAllPackages :: Fixtures -> TestEff ()
 importAllPackages fixtures = do
   importAllFilesInRelativeDirectory
     fixtures.hackageUser.userId
-    ("hackage", "https://hackage.haskell.org")
+    "hackage"
     "./test/fixtures/Cabal/hackage"
   importAllFilesInRelativeDirectory
     fixtures.hackageUser.userId
-    ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
+    "cardano"
     "./test/fixtures/Cabal/cardano"
 
   liftIO $ threadDelay 20000
