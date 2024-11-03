@@ -16,7 +16,7 @@ import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
 
 header :: FloraHTML
 header = do
-  TemplateEnv{title, indexPage} <- ask
+  TemplateEnv{environment, title, indexPage} <- ask
   doctype_
   html_
     [ lang_ "en"
@@ -69,7 +69,10 @@ header = do
         meta_ [name_ "twitter:dnt", content_ "on"]
 
       body_ [] $ do
-        div_ [hxGet_ "/livereload", hxTrigger_ "every 2s"] mempty
+        case environment of
+          Development ->
+            div_ [hxGet_ "/livereload", hxTrigger_ "every 2s"] mempty
+          _ -> mempty
         navbar
 
 jsLink :: FloraHTML
