@@ -138,6 +138,7 @@ data TestConfig = TestConfig
   { httpPort :: Word16
   , dbConfig :: PoolConfig
   , connectionInfo :: ByteString
+  , mltp :: MLTP
   }
   deriving stock (Generic)
 
@@ -200,6 +201,7 @@ parseTestConfig =
     <$> parsePort
     <*> parsePoolConfig
     <*> parseConnectionInfo
+    <*> parseMLTP
 
 -- Env parser helpers
 

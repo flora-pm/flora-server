@@ -50,6 +50,7 @@ data TestEnv = TestEnv
   { pool :: Pool PG.Connection
   , dbConfig :: PoolConfig
   , httpPort :: Word16
+  , mltp :: MLTP
   }
   deriving stock (Generic)
 

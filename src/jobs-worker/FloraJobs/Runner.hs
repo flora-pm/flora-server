@@ -27,7 +27,7 @@ import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
 import Data.Text.HTML qualified as HTML
-import Flora.Import.Package (coreLibraries, persistImportOutput)
+import Flora.Import.Package (coreLibraries)
 import Flora.Import.Package.Bulk qualified as Import
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
@@ -58,14 +58,14 @@ runner job = localDomain "job-runner" $
       FetchTarball x -> fetchTarball x
       FetchUploadTime x -> fetchUploadTime x
       FetchChangelog x -> fetchChangeLog x
-      ImportPackage x ->
-        persistImportOutput x
       FetchPackageDeprecationList -> fetchPackageDeprecationList
       FetchReleaseDeprecationList packageName releases ->
         fetchReleaseDeprecationList packageName releases
       RefreshLatestVersions ->
         Update.refreshLatestVersions
-      RefreshIndexes -> refreshIndexes
+      RefreshIndexes -> do
+        -- re-schedule me!
+        refreshIndexes
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =

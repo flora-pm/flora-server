@@ -169,10 +169,9 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Model.User.Update qualified as Update
-import Flora.Publish
 import FloraWeb.Client
 
-type TestEff = Eff '[FileSystem, Poolboy, Fail, BlobStoreAPI, Reader PoolConfig, DB, Log, Time, IOE]
+type TestEff = Eff '[FileSystem, Poolboy, Fail, BlobStoreAPI, Reader TestEnv, DB, Log, Time, IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
@@ -197,25 +196,25 @@ importAllPackages fixtures = do
 
   liftIO $ threadDelay 20000
 
-runTestEff :: TestEff a -> Pool Connection -> PoolConfig -> IO a
-runTestEff comp pool poolCfg = runEff $
-  Log.withStdOutLogger $ \stdOutLogger ->
+runTestEff :: TestEff a -> TestEnv -> IO a
+runTestEff comp env = runEff $ do
+  let withLogger = Logging.makeLogger env.mltp.logger
+  withLogger $ \logger ->
     runTime
       . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      . Log.runLog "flora-test" stdOutLogger LogAttention
-      . runDB pool
-      . runReader poolCfg
+      . Log.runLog "flora-test" logger LogInfo
+      . runDB env.pool
+      . runReader env
       . runBlobStorePure
       . runFailIO
-      . runPoolboy (poolboySettingsWith poolCfg.connections)
+      . runPoolboy (poolboySettingsWith env.dbConfig.connections)
       . runFileSystem
       $ comp
 
 testThis :: String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
-  pool <- getPool
-  poolCfg <- ask @PoolConfig
-  let test = runTestEff assertion pool poolCfg
+  env <- ask @TestEnv
+  let test = runTestEff assertion env
   pure $ Test.testCase name test
 
 testThese :: String -> [TestEff TestTree] -> TestEff TestTree

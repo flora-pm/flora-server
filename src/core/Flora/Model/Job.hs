@@ -17,7 +17,6 @@ import Servant (ToHttpApiData)
 import Data.Vector (Vector)
 import Deriving.Aeson
 import Distribution.Orphans.Version ()
-import Flora.Import.Package.Types (ImportOutput)
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Release.Types (ReleaseId (..))
 
@@ -82,7 +81,6 @@ data FloraOddJobs
   | FetchTarball TarballJobPayload
   | FetchUploadTime UploadTimeJobPayload
   | FetchChangelog ChangelogJobPayload
-  | ImportPackage ImportOutput
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions

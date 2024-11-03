@@ -131,7 +131,6 @@ library
     Flora.Model.User
     Flora.Model.User.Query
     Flora.Model.User.Update
-    Flora.Publish
     Flora.QRCode
     Flora.Search
     Flora.Tracing

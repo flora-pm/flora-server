@@ -30,7 +30,7 @@ module Flora.Import.Package
 
 import Control.DeepSeq (force)
 import Control.Exception
-import Control.Monad (forM_)
+import Control.Monad (forM_, when)
 import Data.Aeson (object, (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
@@ -95,6 +95,7 @@ import Optics.Core
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
+import Data.List qualified as List
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
@@ -272,7 +273,7 @@ persistImportOutput (ImportOutput package categories release components) = do
   Log.logInfo "Persisting package" $
     object
       [ "package_name" .= packageName
-      , "version" .= display release.version
+      , "version" .= release.version
       ]
   persistPackage
   Update.upsertRelease release
@@ -282,17 +283,19 @@ persistImportOutput (ImportOutput package categories release components) = do
     parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
     packageName = display package.namespace <> "/" <> display package.name
     persistPackage = do
-      let packageId = package.packageId
       Update.upsertPackage package
-      forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
+      forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName package.packageId cat)
 
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo
         "Persisting component"
         $ object
-          [ "component" .= display packageComponent.canonicalForm
+          [ "component" .= packageComponent.canonicalForm
+          , "component_id" .= packageComponent.componentId
+          , "release_id" .= packageComponent.releaseId
           , "number_of_dependencies" .= display (length deps)
+          , "package_name" .= package.name
           ]
       Update.upsertPackageComponent packageComponent
       parallelRun persistImportDependency deps
@@ -436,9 +439,30 @@ extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryP
           <> condTestSuites
           <> benchmarks
           <> condBenchmarks
+  when (package.name == PackageName "Win32") $
+    Log.logInfo "Components for package" $
+      object
+        [ "package_name" .= package.name
+        , "components" .= components'
+        ]
+  let totalDependencies =
+        List.foldl'
+          ( \acc component ->
+              if List.null $ snd component
+                then acc
+                else acc + 1
+          )
+          (0 :: Int)
+          components'
+  when (totalDependencies == 0) $
+    Log.logAttention "Components with no dependencies" $
+      object
+        [ "package" .= package
+        , "all_components" .= components'
+        ]
   case NE.nonEmpty components' of
     Nothing -> do
-      Log.logAttention "Empty dependencies" $ object ["package" .= package]
+      Log.logAttention "Empty components" $ object ["package_name" .= package.name, "namespace" .= package.namespace]
       extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryPackages) uploadTime genericDesc
     Just components -> pure ImportOutput{..}
 
