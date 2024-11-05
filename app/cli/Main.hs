@@ -232,8 +232,8 @@ importIndex path repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
-    Just packageIndex ->
-      importFromIndex (user ^. #userId) (repository, packageIndex.url) path
+    Just _ ->
+      importFromIndex (user ^. #userId) repository path
 
 importPackageTarball
   :: ( Log :> es

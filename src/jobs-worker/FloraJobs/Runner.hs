@@ -35,7 +35,6 @@ import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Query qualified as Query
-import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
@@ -245,5 +244,5 @@ refreshIndexes = do
     case mPackageIndex of
       Nothing ->
         error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
-      Just packageIndex ->
-        Import.importFromIndex user.userId (indexName, packageIndex.url) path
+      Just _ ->
+        Import.importFromIndex user.userId indexName path
