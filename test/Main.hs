@@ -43,9 +43,8 @@ main = do
           importAllPackages f'
           pure f'
       )
-      env.pool
-      env.dbConfig
-  spec <- traverse (\comp -> runTestEff comp env.pool env.dbConfig) (specs fixtures)
+      env
+  spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
   defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
 
 specs :: Fixtures -> [TestEff TestTree]

@@ -31,7 +31,6 @@ import Effectful.FileSystem qualified as FileSystem
 import Effectful.FileSystem.IO.ByteString qualified as FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import GHC.Conc (numCapabilities)
@@ -67,7 +66,12 @@ import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
-  :: (Log :> es, Time :> es, FileSystem :> es, Poolboy :> es, DB :> es, IOE :> es)
+  :: ( Log :> es
+     , Time :> es
+     , FileSystem :> es
+     , DB :> es
+     , IOE :> es
+     )
   => UserId
   -> (Text, Text)
   -> FilePath
@@ -77,7 +81,7 @@ importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
   importAllFilesInDirectory user (repositoryName, repositoryURL) workdir
 
 importFromIndex
-  :: (Time :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
+  :: (Time :> es, Log :> es, DB :> es, IOE :> es)
   => UserId
   -> Text
   -> FilePath
@@ -126,7 +130,12 @@ importFromIndex user repositoryName index = do
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
 importAllFilesInDirectory
-  :: (Time :> es, Log :> es, FileSystem :> es, Poolboy :> es, DB :> es, IOE :> es)
+  :: ( Time :> es
+     , Log :> es
+     , FileSystem :> es
+     , DB :> es
+     , IOE :> es
+     )
   => UserId
   -> (Text, Text)
   -> FilePath
@@ -139,7 +148,7 @@ importAllFilesInDirectory user (repositoryName, repositoryURL) dir = do
 
 importFromStream
   :: forall es
-   . (Time :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
+   . (Time :> es, Log :> es, DB :> es, IOE :> es)
   => UserId
   -> (Text, Set PackageName)
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
