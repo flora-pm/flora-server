@@ -207,7 +207,7 @@ runTestEff comp env = runEff $ do
       . runReader env
       . runBlobStorePure
       . runFailIO
-      . runPoolboy (poolboySettingsWith env.dbConfig.connections)
+      . runPoolboy (poolboySettingsWith 1)--env.dbConfig.connections)
       . runFileSystem
       $ comp
 

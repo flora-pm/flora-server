@@ -95,7 +95,6 @@ import Optics.Core
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
-import Data.List qualified as List
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
@@ -274,6 +273,7 @@ persistImportOutput (ImportOutput package categories release components) = do
     object
       [ "package_name" .= packageName
       , "version" .= release.version
+      , "number_of_components" .= length components
       ]
   persistPackage
   Update.upsertRelease release
@@ -291,7 +291,9 @@ persistImportOutput (ImportOutput package categories release components) = do
       Log.logInfo
         "Persisting component"
         $ object
-          [ "component" .= packageComponent.canonicalForm
+          [ "package_name" .= packageName
+          , "version" .= release.version
+          , "component" .= packageComponent.canonicalForm
           , "component_id" .= packageComponent.componentId
           , "release_id" .= packageComponent.releaseId
           , "number_of_dependencies" .= display (length deps)
@@ -444,21 +446,6 @@ extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryP
       object
         [ "package_name" .= package.name
         , "components" .= components'
-        ]
-  let totalDependencies =
-        List.foldl'
-          ( \acc component ->
-              if List.null $ snd component
-                then acc
-                else acc + 1
-          )
-          (0 :: Int)
-          components'
-  when (totalDependencies == 0) $
-    Log.logAttention "Components with no dependencies" $
-      object
-        [ "package" .= package
-        , "all_components" .= components'
         ]
   case NE.nonEmpty components' of
     Nothing -> do

@@ -1,6 +1,6 @@
 module Effectful.Poolboy where
 
-import Data.Poolboy (PoolboySettings, WorkQueue)
+import Data.Poolboy (PoolboySettings (..), WorkQueue)
 import Data.Poolboy qualified as Poolboy
 import Effectful
 import Effectful.Dispatch.Static
@@ -20,7 +20,12 @@ runPoolboy
   -> Eff (Poolboy : es) a
   -> Eff es a
 runPoolboy settings action = do
-  workQueue <- liftIO $ Poolboy.newPoolboy settings
+  workQueue <-
+    liftIO $
+      Poolboy.newPoolboy
+        settings
+          { log = putStrLn
+          }
   evalStaticRep (Poolboy workQueue) action
 
 enqueue

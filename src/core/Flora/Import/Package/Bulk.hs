@@ -35,7 +35,7 @@ import Effectful.Log qualified as Log
 import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
-import GHC.Conc (numCapabilities)
+-- import GHC.Conc (numCapabilities)
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude (maxThreads, ordered)
@@ -160,7 +160,7 @@ importFromStream
   -> Eff es ()
 importFromStream user (repositoryName, repositoryPackages) stream = do
   tarballHashIORef <- liftIO $ IORef.newIORef Map.empty
-  let cfg = maxThreads numCapabilities . ordered True
+  let cfg = maxThreads 1 . ordered True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
