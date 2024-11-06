@@ -15,7 +15,6 @@ import Effectful (Eff, IOE, type (:>))
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log
-import Effectful.Poolboy (Poolboy)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Process.Typed
 import Effectful.Reader.Static (Reader)
@@ -224,7 +223,6 @@ refreshIndexes
      , DB :> es
      , TypedProcess :> es
      , Log :> es
-     , Poolboy :> es
      , IOE :> es
      , FileSystem :> es
      )

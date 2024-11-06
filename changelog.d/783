@@ -1,0 +1,5 @@
+synopsis: Disable poolboy when inserting components
+description: {
+  The queueing for parallel insertion seems to be at the source of problems when inserting large numbers of packages
+}
+prs: #783

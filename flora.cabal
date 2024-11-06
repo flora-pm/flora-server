@@ -441,7 +441,6 @@ executable flora-cli
     , optics-core
     , optparse-applicative
     , pg-transact-effectful
-    , poolboy
     , PyF
     , sel
     , text
@@ -480,7 +479,6 @@ test-suite flora-test
     , pg-entity
     , pg-transact
     , pg-transact-effectful
-    , poolboy
     , postgresql-migration
     , postgresql-simple
     , resource-pool
