@@ -12,7 +12,6 @@ import Codec.Archive.Tar qualified as Tar
 import Codec.Archive.Tar.Entry qualified as Tar
 import Codec.Archive.Tar.Index qualified as Tar
 import Codec.Compression.GZip qualified as GZip
-import GHC.Conc (numCapabilities )
 import Control.Monad (when, (>=>))
 import Data.Aeson
 import Data.ByteString (StrictByteString)
@@ -34,6 +33,7 @@ import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
+import GHC.Conc (numCapabilities)
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude (maxThreads, ordered)
