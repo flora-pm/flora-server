@@ -84,8 +84,6 @@ import Distribution.Utils.ShortText qualified as Cabal
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Log (Log)
-import Effectful.Poolboy (Poolboy)
-import Effectful.Poolboy qualified as Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
@@ -267,7 +265,7 @@ parseString parser name bs = do
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
-persistImportOutput :: forall es. (Log :> es, Poolboy :> es, DB :> es, IOE :> es) => ImportOutput -> Eff es ()
+persistImportOutput :: forall es. (Log :> es, DB :> es, IOE :> es) => ImportOutput -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = do
   Log.logInfo "Persisting package" $
     object
@@ -276,10 +274,8 @@ persistImportOutput (ImportOutput package categories release components) = do
       ]
   persistPackage
   Update.upsertRelease release
-  parallelRun persistComponent components
+  forM_ components persistComponent
   where
-    parallelRun :: Foldable t => (a -> Eff es ()) -> t a -> Eff es ()
-    parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
     packageName = display package.namespace <> "/" <> display package.name
     persistPackage = do
       let packageId = package.packageId
@@ -295,7 +291,7 @@ persistImportOutput (ImportOutput package categories release components) = do
           , "number_of_dependencies" .= display (length deps)
           ]
       Update.upsertPackageComponent packageComponent
-      parallelRun persistImportDependency deps
+      forM_ deps persistImportDependency
 
     persistImportDependency :: ImportDependency -> Eff es ()
     persistImportDependency dep = do
