@@ -36,9 +36,6 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
-import Data.IORef (IORef)
-import Data.IORef qualified as IORef
-import Data.IORef qualified as IOref
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
@@ -84,6 +81,8 @@ import Distribution.Utils.ShortText qualified as Cabal
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Log (Log)
+import Effectful.Poolboy (Poolboy)
+import Effectful.Poolboy qualified as Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
@@ -93,6 +92,8 @@ import Optics.Core
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
@@ -204,48 +205,65 @@ loadContent :: Log :> es => FilePath -> BS.ByteString -> Eff es GenericPackageDe
 loadContent = parseString parseGenericPackageDescription
 
 loadJSONContent
-  :: (Log :> es, IOE :> es)
+  :: (Log :> es, IOE :> es, State (Map (Namespace, PackageName, Version) Text) :> es)
   => FilePath
   -> BS.ByteString
   -> (Text, Set PackageName)
-  -> Eff es (PackageName, Namespace, Version, Target)
+  -> Eff es (Namespace, PackageName, Version, Target)
 loadJSONContent path content (repositoryName, repositoryPackages) = do
   case getNameAndVersionFromPath path of
-    Nothing -> do
-      Log.logAttention "parse error" $
-        object ["path" .= path]
+    Left (name, versionText) -> do
+      Log.logAttention "Could not parse version" $
+        object ["version" .= versionText, "package" .= name]
       error "Parse error"
-    Just (name, versionText) -> do
-      let (mReleaseJSON :: Maybe ReleaseJSONFile) = Aeson.decodeStrict' content
-      let field = "<repo>/package/" <> name <> "-" <> versionText <> ".tar.gz"
-      case mReleaseJSON of
-        Nothing -> do
-          Log.logAttention "Could not parse JSON" $
-            object ["json" .= Text.decodeUtf8 content]
-          liftIO exitFailure
-        Just releaseJSON -> do
-          let mTarget = KeyMap.lookup (Key.fromText field) releaseJSON.signed.targets
-          case mTarget of
-            Nothing -> do
-              Log.logAttention ("Could not find field: " <> field) $
-                object ["json" .= releaseJSON]
-              liftIO exitFailure
-            Just target -> do
-              case Parsec.simpleParsec $ Text.unpack versionText of
-                Nothing -> do
-                  Log.logAttention "Could not parse version" $
-                    object ["version" .= versionText, "package" .= name]
-                  error ":("
-                Just version -> do
-                  let packageName = PackageName name
-                  let chosenNamespace = chooseNamespace packageName repositoryName repositoryPackages
-                  pure (packageName, chosenNamespace, version, target)
+    Right (name, version) -> do
+      let packageName = PackageName name
+      let chosenNamespace = chooseNamespace packageName (repositoryName, repositoryPackages)
+      let field = "<repo>/package/" <> display packageName <> "-" <> display version <> ".tar.gz"
+      mHashFromCache <- State.state $ \m ->
+        case Map.lookup (chosenNamespace, packageName, version) m of
+          Nothing -> (Nothing, m)
+          Just (hash :: Text) -> (Just hash, Map.delete (chosenNamespace, packageName, version) m)
+      case mHashFromCache of
+        Nothing -> processJSONContent field chosenNamespace packageName version content
+        Just hash -> do
+          let target = Target (Hashes hash)
+          pure (chosenNamespace, packageName, version, target)
 
-getNameAndVersionFromPath :: FilePath -> Maybe (Text, Text)
+processJSONContent
+  :: (Log :> es, IOE :> es)
+  => Text
+  -> a
+  -> b
+  -> c
+  -> BS.ByteString
+  -> Eff es (a, b, c, Target)
+processJSONContent field namespace packageName version content = do
+  let (mReleaseJSON :: Maybe ReleaseJSONFile) = Aeson.decodeStrict' content
+  case mReleaseJSON of
+    Nothing -> do
+      Log.logAttention "Could not parse JSON" $
+        object ["json" .= Text.decodeUtf8 content]
+      liftIO exitFailure
+    Just releaseJSON -> do
+      let mTarget = KeyMap.lookup (Key.fromText field) releaseJSON.signed.targets
+      case mTarget of
+        Nothing -> do
+          Log.logAttention ("Could not find field: " <> field) $
+            object ["json" .= releaseJSON]
+          liftIO exitFailure
+        Just target -> do
+          pure (namespace, packageName, version, target)
+
+getNameAndVersionFromPath :: FilePath -> Either (Text, Text) (Text, Version)
 getNameAndVersionFromPath path =
   case Text.split (== '/') $ Text.pack $ FilePath.takeDirectory path of
-    [name, versionText] -> Just (name, versionText)
-    _ -> Nothing
+    [name, versionText] ->
+      case Parsec.simpleParsec $ Text.unpack versionText of
+        Nothing -> Left (name, versionText)
+        Just version ->
+          Right (name, version)
+    _ -> Left ("", "")
 
 parseString
   :: Log :> es
@@ -265,17 +283,34 @@ parseString parser name bs = do
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
-persistImportOutput :: forall es. (Log :> es, DB :> es, IOE :> es) => ImportOutput -> Eff es ()
-persistImportOutput (ImportOutput package categories release components) = do
+persistImportOutput
+  :: forall es
+   . (State (Set (Namespace, PackageName, Version)) :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
+  => ImportOutput
+  -> Eff es ()
+persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
   Log.logInfo "Persisting package" $
     object
       [ "package_name" .= packageName
       , "version" .= display release.version
       ]
   persistPackage
-  Update.upsertRelease release
-  forM_ components persistComponent
+  if Set.member (package.namespace, package.name, release.version) packageCache
+    then do
+      Log.logInfo "Release already present" $
+        object
+          [ "namespace" .= package.namespace
+          , "package" .= package.name
+          , "version" .= release.version
+          ]
+      pure packageCache
+    else do
+      Update.upsertRelease release
+      parallelRun persistComponent components
+      pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
+    parallelRun :: Foldable t => (a -> Eff es ()) -> t a -> Eff es ()
+    parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
     packageName = display package.namespace <> "/" <> display package.name
     persistPackage = do
       let packageId = package.packageId
@@ -291,7 +326,7 @@ persistImportOutput (ImportOutput package categories release components) = do
           , "number_of_dependencies" .= display (length deps)
           ]
       Update.upsertPackageComponent packageComponent
-      forM_ deps persistImportDependency
+      parallelRun persistImportDependency deps
 
     persistImportDependency :: ImportDependency -> Eff es ()
     persistImportDependency dep = do
@@ -299,54 +334,60 @@ persistImportOutput (ImportOutput package categories release components) = do
       Update.upsertRequirement dep.requirement
 
 persistHashes
-  :: (DB :> es, IOE :> es, Log :> es)
-  => IORef (Map (Namespace, PackageName) Text)
-  -> (PackageName, Namespace, Version, Target)
+  :: ( DB :> es
+     , Log :> es
+     , State (Map (Namespace, PackageName, Version) Text) :> es
+     )
+  => (Namespace, PackageName, Version, Target)
   -> Eff es ()
-persistHashes tarballHashIORef (packageName, namespace, version, target) = do
+persistHashes (namespace, packageName, version, target) = do
   mPackage <- Query.getPackageByNamespaceAndName namespace packageName
   case mPackage of
     Just package -> do
       mRelease <- Query.getReleaseByVersion package.packageId version
       case mRelease of
         Nothing -> do
-          Log.logAttention_ "Release does not exist, putting the hash in an ioref"
-          persisHashInMemory tarballHashIORef (namespace, packageName) target.hashes.sha256
-        Just release -> Update.setArchiveChecksum release.releaseId target.hashes.sha256
+          Log.logAttention "Release does not exist, saving the hash for later" $
+            object
+              [ "package" .= packageName
+              , "namespace" .= namespace
+              , "version" .= version
+              , "hash" .= target.hashes.sha256
+              ]
+          State.modify (\m -> Map.insert (namespace, packageName, version) target.hashes.sha256 m)
+        Just release -> do
+          Update.setArchiveChecksum release.releaseId target.hashes.sha256
     Nothing -> do
-      Log.logAttention_ "Package does not exist, putting the hash in an ioref"
-      persisHashInMemory tarballHashIORef (namespace, packageName) target.hashes.sha256
-
-persisHashInMemory
-  :: IOE :> es
-  => IORef (Map (Namespace, PackageName) Text)
-  -> (Namespace, PackageName)
-  -> Text
-  -> Eff es ()
-persisHashInMemory tarballHashIORef key hash =
-  liftIO $
-    IOref.atomicModifyIORef'
-      tarballHashIORef
-      (\m -> (Map.insert key hash m, ()))
+      Log.logAttention "Package does not exist, saving the hash for later" $
+        object
+          [ "package" .= packageName
+          , "namespace" .= namespace
+          , "version" .= version
+          , "hash" .= target.hashes.sha256
+          ]
+      State.modify (\m -> Map.insert (namespace, packageName, version) target.hashes.sha256 m)
 
 -- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
-  :: (IOE :> es, Time :> es, Log :> es)
-  => IORef (Map (Namespace, PackageName) Text)
-  -> UserId
+  :: ( IOE :> es
+     , Time :> es
+     , Log :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     )
+  => UserId
   -> (Text, Set PackageName)
   -> UTCTime
   -> GenericPackageDescription
   -> Eff es ImportOutput
-extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryPackages) uploadTime genericDesc = do
+extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
   let buildType = Cabal.buildType genericDesc.packageDescription
   let packageVersion = force packageDesc.package.pkgVersion
-  let namespace = chooseNamespace packageName repositoryName repositoryPackages
+  let namespace = chooseNamespace packageName repository
   let packageId = deterministicPackageId namespace packageName
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
@@ -354,13 +395,6 @@ extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryP
   let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to Text.pack
   let categoryList = fmap (Tuning.UserPackageCategory . Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
   categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
-  (mTarballHash :: Maybe Text) <- liftIO $ IORef.atomicModifyIORef' tarballHashIORef $ \m ->
-    let result = Map.lookup (namespace, packageName) m
-     in case result of
-          Nothing -> (m, Nothing)
-          Just hash ->
-            let newMap = Map.delete (namespace, packageName) m
-             in (newMap, Just hash)
   let package =
         Package
           { packageId
@@ -378,7 +412,7 @@ extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryP
           { releaseId
           , packageId
           , version = packageVersion
-          , archiveChecksum = mTarballHash
+          , archiveChecksum = Nothing
           , uploadedAt = Just uploadTime
           , createdAt = timestamp
           , updatedAt = timestamp
@@ -435,7 +469,7 @@ extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryP
   case NE.nonEmpty components' of
     Nothing -> do
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
-      extractPackageDataFromCabal tarballHashIORef userId (repositoryName, repositoryPackages) uploadTime genericDesc
+      extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc
     Just components -> pure ImportOutput{..}
 
 extractLibrary
@@ -587,9 +621,9 @@ buildDependency
   -> ComponentId
   -> Cabal.Dependency
   -> ImportDependency
-buildDependency package (repository, repositoryPackages) packageComponentId (Cabal.Dependency depName versionRange libs) =
+buildDependency package repository packageComponentId (Cabal.Dependency depName versionRange libs) =
   let name = depName & unPackageName & pack & PackageName
-      namespace = chooseNamespace name repository repositoryPackages
+      namespace = chooseNamespace name repository
       packageId = deterministicPackageId namespace name
       ownerId = package.ownerId
       createdAt = package.createdAt
@@ -611,8 +645,8 @@ getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty
 getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.repoLocation
 
-chooseNamespace :: PackageName -> Text -> Set PackageName -> Namespace
-chooseNamespace name repo repositoryPackages =
+chooseNamespace :: PackageName -> (Text, Set PackageName) -> Namespace
+chooseNamespace name (repo, repositoryPackages) =
   if
     | name `Set.member` coreLibraries -> Namespace "haskell"
     | name `Set.member` repositoryPackages -> Namespace repo

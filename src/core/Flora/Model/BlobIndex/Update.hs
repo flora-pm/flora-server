@@ -40,14 +40,14 @@ insertTar pname version contents = do
   case mpackage of
     Nothing -> pure . Left $ NoPackage pname
     Just package -> do
-      mrelease <- Query.getReleaseByVersion (package.packageId) version
+      mrelease <- Query.getReleaseByVersion package.packageId version
       case mrelease of
         Nothing -> pure . Left $ NoRelease pname version
         Just release -> do
           Update.updateTarballArchiveHash release.releaseId contents
           case hashTree <$> tarballToTree pname version contents of
             Left err -> pure . Left $ BlobStoreTarError pname version err
-            Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree (release.releaseId) t
+            Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree release.releaseId t
 
 insertTree
   :: (Log :> es, DB :> es, BlobStoreAPI :> es)

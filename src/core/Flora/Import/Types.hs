@@ -50,4 +50,5 @@ data Hashes = Hashes
 
 data ImportFileType
   = CabalFile FilePath
-  | JSONFile FilePath
+
+-- \| JSONFile FilePath

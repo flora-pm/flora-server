@@ -31,7 +31,9 @@ import Effectful.FileSystem qualified as FileSystem
 import Effectful.FileSystem.IO.ByteString qualified as FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
+import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import GHC.Conc (numCapabilities)
 import Streamly.Data.Fold qualified as SFold
@@ -43,15 +45,10 @@ import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
 
-import Data.IORef (IORef)
-import Data.IORef qualified as IORef
-import Data.Map (Map)
-import Data.Map.Strict qualified as Map
+import Distribution.Types.Version (Version)
 import Flora.Import.Package
   ( extractPackageDataFromCabal
   , loadContent
-  , loadJSONContent
-  , persistHashes
   , persistImportOutput
   )
 import Flora.Import.Types (ImportFileType (..))
@@ -71,6 +68,8 @@ importAllFilesInRelativeDirectory
      , FileSystem :> es
      , DB :> es
      , IOE :> es
+     , Poolboy :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      )
   => UserId
   -> (Text, Text)
@@ -81,7 +80,13 @@ importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
   importAllFilesInDirectory user (repositoryName, repositoryURL) workdir
 
 importFromIndex
-  :: (Time :> es, Log :> es, DB :> es, IOE :> es)
+  :: ( Poolboy :> es
+     , Time :> es
+     , Log :> es
+     , DB :> es
+     , IOE :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     )
   => UserId
   -> Text
   -> FilePath
@@ -124,8 +129,8 @@ importFromIndex user repositoryName index = do
             Tar.NormalFile bs _
               | ".cabal" `isSuffixOf` entryPath && entryTime > time ->
                   (CabalFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
-              | ".json" `isSuffixOf` entryPath && entryTime > time ->
-                  (JSONFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
+            -- \| ".json" `isSuffixOf` entryPath && entryTime > time ->
+            --     (JSONFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
             _ -> acc
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
@@ -135,12 +140,14 @@ importAllFilesInDirectory
      , FileSystem :> es
      , DB :> es
      , IOE :> es
+     , Poolboy :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      )
   => UserId
   -> (Text, Text)
   -> FilePath
   -> Eff es ()
-importAllFilesInDirectory user (repositoryName, repositoryURL) dir = do
+importAllFilesInDirectory user (repositoryName, _repositoryURL) dir = do
   liftIO $ System.createDirectoryIfMissing True dir
   packages <- buildPackageListFromDirectory dir
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
@@ -148,18 +155,23 @@ importAllFilesInDirectory user (repositoryName, repositoryURL) dir = do
 
 importFromStream
   :: forall es
-   . (Time :> es, Log :> es, DB :> es, IOE :> es)
+   . ( Time :> es
+     , Log :> es
+     , DB :> es
+     , IOE :> es
+     , Poolboy :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     )
   => UserId
   -> (Text, Set PackageName)
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
   -> Eff es ()
-importFromStream user (repositoryName, repositoryPackages) stream = do
-  tarballHashIORef <- liftIO $ IORef.newIORef Map.empty
+importFromStream userId repository@(repositoryName, _) stream = do
   let cfg = maxThreads numCapabilities . ordered True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
-          Streamly.parMapM cfg (processFile tarballHashIORef) stream
+          Streamly.parMapM cfg (processFile userId repository) stream
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
@@ -180,27 +192,40 @@ importFromStream user (repositoryName, repositoryPackages) stream = do
                 when (currentCount `mod` 400 == 0) $
                   displayStats currentCount
                 pure currentCount
-    processFile
-      :: IORef (Map (Namespace, PackageName) Text)
-      -> (ImportFileType, UTCTime, StrictByteString)
-      -> Eff es ()
-    processFile tarballHashIORef importSubject =
-      case importSubject of
-        (CabalFile path, timestamp, content) -> do
-          Log.logInfo "importing-package" $
-            object ["file_path" .= path]
-          loadContent path content
-            >>= ( extractPackageDataFromCabal tarballHashIORef user (repositoryName, repositoryPackages) timestamp
-                    >=> \importedPackage -> persistImportOutput importedPackage
-                )
-        (JSONFile path, _, content) ->
-          do
-            loadJSONContent path content (repositoryName, repositoryPackages)
-            >>= persistHashes tarballHashIORef
 
-    displayStats :: Int -> Eff es ()
-    displayStats currentCount =
-      liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
+displayStats
+  :: IOE :> es
+  => Int
+  -> Eff es ()
+displayStats currentCount = do
+  liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
+
+processFile
+  :: ( State (Set (Namespace, PackageName, Version)) :> es
+     , Log :> es
+     , IOE :> es
+     , DB :> es
+     , Time :> es
+     , Poolboy :> es
+     )
+  => UserId
+  -> (Text, Set PackageName)
+  -> (ImportFileType, UTCTime, StrictByteString)
+  -> Eff es ()
+processFile userId repository importSubject =
+  case importSubject of
+    (CabalFile path, timestamp, content) -> do
+      Log.logInfo "importing-package" $
+        object ["file_path" .= path]
+      loadContent path content
+        >>= ( extractPackageDataFromCabal userId repository timestamp
+                >=> \importedPackage -> persistImportOutput importedPackage
+            )
+
+-- (JSONFile path, _, content) ->
+--   do
+--     loadJSONContent path content repository
+--     >>= persistHashes
 
 findAllCabalFilesInDirectory
   :: forall es

@@ -59,5 +59,5 @@ testImportIndex fixture = withStdOutLogger $
 testNamespaceChooser :: TestEff ()
 testNamespaceChooser = do
   assertEqual
-    (chooseNamespace (PackageName "tar-a") defaultRepo (Set.fromList [PackageName "tar-a", PackageName "tar-b"]))
+    (chooseNamespace (PackageName "tar-a") (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"]))
     (Namespace defaultRepo)
