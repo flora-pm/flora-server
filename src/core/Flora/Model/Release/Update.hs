@@ -3,33 +3,54 @@
 
 module Flora.Model.Release.Update where
 
-import Control.Monad (void)
-import Data.Text.Display (display)
-import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
-import Database.PostgreSQL.Entity.Types (field)
-import Database.PostgreSQL.Simple (Only (..))
-import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Effectful
-import Effectful.PostgreSQL.Transact.Effect
-
+import Control.Monad (void, when)
 import Crypto.Hash.SHA256 qualified as SHA
+import Data.Aeson
 import Data.ByteString (toStrict)
 import Data.ByteString.Lazy (LazyByteString)
 import Data.Function ((&))
 import Data.Text (Text)
+import Data.Text.Display (display)
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Entity.DBT (QueryNature (..), execute, executeMany)
+import Database.PostgreSQL.Entity.Types (field)
+import Database.PostgreSQL.Simple (Only (..))
+import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Distribution.Types.Version (Version)
+import Effectful
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect
+import Log qualified
+
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 
 insertRelease :: DB :> es => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
 
-upsertRelease :: DB :> es => Release -> Eff es ()
-upsertRelease release = dbtToEff $ upsert @Release release [[field| updated_at |], [field| tested_with |]]
+upsertRelease :: (Log :> es, DB :> es) => Release -> Eff es ()
+upsertRelease newRelease = do
+  mReleaseFromDB <- Query.getReleaseById newRelease.releaseId
+  case mReleaseFromDB of
+    Just releaseFromDB ->
+      when (releaseFromDB.testedWith == newRelease.testedWith) $ do
+        Log.logAttention "Duplicate releases found" $
+          object
+            [ "new_release" .= newRelease
+            , "release_from_db" .= releaseFromDB
+            ]
+        updateTestedWith
+          newRelease.releaseId
+          newRelease.testedWith
+          newRelease.updatedAt
+    Nothing -> do
+      Log.logInfo "Inserting new release" $ object ["new_release" .= newRelease]
+      insertRelease newRelease
 
 refreshLatestVersions :: DB :> es => Eff es ()
 refreshLatestVersions = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
@@ -82,6 +103,20 @@ updateTarballRootHash releaseId hash =
         [[field| tarball_root_hash |]]
         ([field| release_id |], releaseId)
         (Only $ Just $ display hash)
+
+updateTestedWith
+  :: DB :> es
+  => ReleaseId
+  -> Vector Version
+  -> UTCTime
+  -> Eff es ()
+updateTestedWith releaseId testedCompilers timestamp =
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+        [[field| tested_with |], [field| updated_at |]]
+        ([field| release_id |], releaseId)
+        (Just testedCompilers, timestamp)
 
 updateTarballArchiveHash
   :: (BlobStoreAPI :> es, DB :> es)
