@@ -3,6 +3,7 @@ module Main where
 import Codec.Compression.GZip qualified as GZip
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Maybe
+import Data.Poolboy (poolboySettingsWith)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
@@ -14,7 +15,7 @@ import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time (Time, runTime)
-import GHC.Conc (getNumCapabilities)
+import GHC.Conc
 import GHC.Generics (Generic)
 import Log qualified
 import Log.Backend.StandardOutput qualified as Log
@@ -23,12 +24,16 @@ import Options.Applicative
 import Sel.Hashing.Password qualified as Sel
 import System.FilePath ((</>))
 
+import Data.Set (Set)
+import Effectful.Poolboy
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
-import Flora.Model.Package (PackageName)
+import Flora.Model.Package (Namespace, PackageName)
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
@@ -71,10 +76,12 @@ main = Log.withStdOutLogger $ \logger -> do
   capabilities <- getNumCapabilities
   env <- getFloraEnv & runFailIO & runEff
   runEff
+    . State.evalState (mempty @(Set (Namespace, PackageName, Version)))
     . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     . runDB env.pool
     . runFailIO
     . runTime
+    . runPoolboy (poolboySettingsWith capabilities)
     . ( case env.features.blobStoreImpl of
           Just (BlobStoreFS fp) -> runBlobStoreFS fp
           _ -> runBlobStorePure
@@ -160,6 +167,8 @@ runOptions
      , Fail :> es
      , IOE :> es
      , BlobStoreAPI :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Poolboy :> es
      )
   => Options
   -> Eff es ()
@@ -198,8 +207,10 @@ importFolderOfCabalFiles
   :: ( FileSystem :> es
      , Time :> es
      , Log :> es
+     , Poolboy :> es
      , DB :> es
      , IOE :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      )
   => FilePath
   -> Text
@@ -215,8 +226,10 @@ importFolderOfCabalFiles path repository = do
 importIndex
   :: ( Time :> es
      , Log :> es
+     , Poolboy :> es
      , DB :> es
      , IOE :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      )
   => FilePath
   -> Text

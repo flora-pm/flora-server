@@ -5,6 +5,7 @@ module Flora.Model.Release.Query
   ( getReleases
   , getReleaseTarballRootHash
   , getReleaseTarballArchive
+  , getReleaseById
   , getReleaseByVersion
   , getHackagePackageReleasesWithoutReadme
   , getHackagePackageReleasesWithoutChangelog
@@ -181,6 +182,13 @@ getHackagePackagesWithoutReleaseDeprecationInformation =
            or p1.namespace = 'haskell'
         group by p1.name;
         |]
+
+getReleaseById
+  :: DB :> es
+  => ReleaseId
+  -> Eff es (Maybe Release)
+getReleaseById releaseId =
+  dbtToEff $ selectById @Release (Only releaseId)
 
 getReleaseByVersion
   :: DB :> es

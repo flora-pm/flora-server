@@ -13,6 +13,7 @@ import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple (Connection)
 import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
+import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.FileSystem
 import Effectful.Log hiding (LogLevel)
@@ -21,6 +22,8 @@ import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Process.Typed
 import Effectful.Reader.Static (Reader, runReader)
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
@@ -30,11 +33,13 @@ import OddJobs.ConfigBuilder
 import OddJobs.Job (Config (..), Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
 
+import Data.Set (Set)
 import Flora.Environment
 import Flora.Environment.Config
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job ()
+import Flora.Model.Package.Types (Namespace, PackageName)
 
 type JobsRunner =
   Eff
@@ -46,6 +51,7 @@ type JobsRunner =
      , Time
      , TypedProcess
      , FileSystem
+     , State (Set (Namespace, PackageName, Version))
      , IOE
      ]
 
@@ -64,6 +70,7 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
     & runTime
     & runTypedProcess
     & runFileSystem
+    & State.evalState mempty
     & runEff
 
 data OddJobException where
@@ -102,12 +109,12 @@ makeConfig
   -> Config
 makeConfig runnerEnv floraEnv logger pool runnerContinuation =
   mkConfig
-    (\level event -> structuredLogging (floraEnv.config) logger level event)
+    (\level event -> structuredLogging floraEnv.config logger level event)
     jobTableName
     pool
     (MaxConcurrentJobs 100)
     (runJobRunner pool runnerEnv floraEnv logger . runnerContinuation)
-    (\x -> x{cfgDefaultMaxAttempts = 3})
+    (\x -> x{cfgDefaultMaxAttempts = 3, cfgDefaultJobTimeout = 36000})
 
 makeUIConfig :: FloraConfig -> Logger -> Pool PG.Connection -> UIConfig
 makeUIConfig cfg logger pool =
