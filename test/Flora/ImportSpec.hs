@@ -46,8 +46,8 @@ testImportIndex fixture = withStdOutLogger $
       Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
       Just _ -> pure ()
     importFromIndex
-      (fixture.hackageUser.userId)
-      (defaultRepo, defaultRepoURL)
+      fixture.hackageUser.userId
+      defaultRepo
       testIndex
     -- check the packages have been imported
     tars <- traverse (Query.getPackageByNamespaceAndName (Namespace defaultRepo) . PackageName) ["tar-a", "tar-b"]
@@ -59,5 +59,5 @@ testImportIndex fixture = withStdOutLogger $
 testNamespaceChooser :: TestEff ()
 testNamespaceChooser = do
   assertEqual
-    (chooseNamespace (PackageName "tar-a") defaultRepo (Set.fromList [PackageName "tar-a", PackageName "tar-b"]))
+    (chooseNamespace (PackageName "tar-a") (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"]))
     (Namespace defaultRepo)

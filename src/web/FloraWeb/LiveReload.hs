@@ -17,7 +17,6 @@ livereloadHandler deploymentEnv ioref = do
   case deploymentEnv of
     Development -> do
       needsReload <- liftIO $ readIORef ioref
-      liftIO $ print needsReload
       if needsReload
         then do
           liftIO $ writeIORef ioref False

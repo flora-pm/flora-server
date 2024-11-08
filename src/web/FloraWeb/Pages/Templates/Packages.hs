@@ -235,7 +235,7 @@ showChangelog namespace packageName version mChangelog = div_ [class_ "container
   section_ [class_ "release-changelog"] $ do
     case mChangelog of
       Nothing -> toHtml @Text "This release does not have a Changelog"
-      Just changelogText -> toHtml changelogText
+      Just changelogText -> toHtmlRaw changelogText
 
 displayReleaseVersion :: Version -> FloraHTML
 displayReleaseVersion = toHtml
@@ -306,7 +306,7 @@ displayReadme :: Release -> FloraHTML
 displayReadme release =
   case readme release of
     Nothing -> renderHaddock release.description
-    Just readme -> toHtml readme
+    Just readme -> toHtmlRaw readme
 
 displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
 displayVersions namespace packageName versions numberOfReleases =

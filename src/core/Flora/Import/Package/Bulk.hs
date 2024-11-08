@@ -13,6 +13,7 @@ import Codec.Archive.Tar.Entry qualified as Tar
 import Codec.Archive.Tar.Index qualified as Tar
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad (when, (>=>))
+import Data.Aeson
 import Data.ByteString (StrictByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.Function ((&))
@@ -32,6 +33,7 @@ import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import GHC.Conc (numCapabilities)
 import Streamly.Data.Fold qualified as SFold
@@ -43,15 +45,10 @@ import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
 
-import Data.IORef (IORef)
-import Data.IORef qualified as IORef
-import Data.Map (Map)
-import Data.Map.Strict qualified as Map
+import Distribution.Types.Version (Version)
 import Flora.Import.Package
   ( extractPackageDataFromCabal
   , loadContent
-  , loadJSONContent
-  , persistHashes
   , persistImportOutput
   )
 import Flora.Import.Types (ImportFileType (..))
@@ -66,7 +63,14 @@ import Flora.Model.User
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
-  :: (Log :> es, Time :> es, FileSystem :> es, Poolboy :> es, DB :> es, IOE :> es)
+  :: ( Log :> es
+     , Time :> es
+     , FileSystem :> es
+     , DB :> es
+     , IOE :> es
+     , Poolboy :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     )
   => UserId
   -> (Text, Text)
   -> FilePath
@@ -76,14 +80,25 @@ importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
   importAllFilesInDirectory user (repositoryName, repositoryURL) workdir
 
 importFromIndex
-  :: (Time :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
+  :: ( Poolboy :> es
+     , Time :> es
+     , Log :> es
+     , DB :> es
+     , IOE :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     )
   => UserId
-  -> (Text, Text)
+  -> Text
   -> FilePath
   -> Eff es ()
-importFromIndex user (repositoryName, repositoryURL) index = do
+importFromIndex user repositoryName index = do
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
   let Right repositoryPackages = buildPackageListFromArchive entries
+  Log.logInfo "packages" $
+    object
+      [ "repository" .= repositoryName
+      , "packages" .= repositoryPackages
+      ]
   mPackageIndex <- Query.getPackageIndexByName repositoryName
   time <- case mPackageIndex of
     Nothing -> pure $ posixSecondsToUTCTime 0
@@ -96,7 +111,7 @@ importFromIndex user (repositoryName, repositoryURL) index = do
     Right stream ->
       importFromStream
         user
-        (repositoryName, repositoryURL, repositoryPackages)
+        (repositoryName, repositoryPackages)
         stream
     Left (err, _) ->
       Log.logAttention_ $
@@ -114,37 +129,49 @@ importFromIndex user (repositoryName, repositoryURL) index = do
             Tar.NormalFile bs _
               | ".cabal" `isSuffixOf` entryPath && entryTime > time ->
                   (CabalFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
-              | ".json" `isSuffixOf` entryPath && entryTime > time ->
-                  (JSONFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
+            -- \| ".json" `isSuffixOf` entryPath && entryTime > time ->
+            --     (JSONFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
             _ -> acc
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
 importAllFilesInDirectory
-  :: (Time :> es, Log :> es, FileSystem :> es, Poolboy :> es, DB :> es, IOE :> es)
+  :: ( Time :> es
+     , Log :> es
+     , FileSystem :> es
+     , DB :> es
+     , IOE :> es
+     , Poolboy :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     )
   => UserId
   -> (Text, Text)
   -> FilePath
   -> Eff es ()
-importAllFilesInDirectory user (repositoryName, repositoryURL) dir = do
+importAllFilesInDirectory user (repositoryName, _repositoryURL) dir = do
   liftIO $ System.createDirectoryIfMissing True dir
   packages <- buildPackageListFromDirectory dir
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
-  importFromStream user (repositoryName, repositoryURL, packages) (findAllCabalFilesInDirectory dir)
+  importFromStream user (repositoryName, packages) (findAllCabalFilesInDirectory dir)
 
 importFromStream
   :: forall es
-   . (Time :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
+   . ( Time :> es
+     , Log :> es
+     , DB :> es
+     , IOE :> es
+     , Poolboy :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     )
   => UserId
-  -> (Text, Text, Set PackageName)
+  -> (Text, Set PackageName)
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
   -> Eff es ()
-importFromStream user (repositoryName, _repositoryURL, repositoryPackages) stream = do
-  tarballHashIORef <- liftIO $ IORef.newIORef Map.empty
+importFromStream userId repository@(repositoryName, _) stream = do
   let cfg = maxThreads numCapabilities . ordered True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
-          Streamly.parMapM cfg (processFile tarballHashIORef) stream
+          Streamly.parMapM cfg (processFile userId repository) stream
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
@@ -165,25 +192,40 @@ importFromStream user (repositoryName, _repositoryURL, repositoryPackages) strea
                 when (currentCount `mod` 400 == 0) $
                   displayStats currentCount
                 pure currentCount
-    processFile
-      :: IORef (Map (Namespace, PackageName) Text)
-      -> (ImportFileType, UTCTime, StrictByteString)
-      -> Eff es ()
-    processFile tarballHashIORef importSubject =
-      case importSubject of
-        (CabalFile path, timestamp, content) ->
-          loadContent path content
-            >>= ( extractPackageDataFromCabal tarballHashIORef user (repositoryName, repositoryPackages) timestamp
-                    >=> \importedPackage -> persistImportOutput importedPackage
-                )
-        (JSONFile path, _, content) ->
-          do
-            loadJSONContent path content (repositoryName, repositoryPackages)
-            >>= persistHashes tarballHashIORef
 
-    displayStats :: Int -> Eff es ()
-    displayStats currentCount =
-      liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
+displayStats
+  :: IOE :> es
+  => Int
+  -> Eff es ()
+displayStats currentCount = do
+  liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
+
+processFile
+  :: ( State (Set (Namespace, PackageName, Version)) :> es
+     , Log :> es
+     , IOE :> es
+     , DB :> es
+     , Time :> es
+     , Poolboy :> es
+     )
+  => UserId
+  -> (Text, Set PackageName)
+  -> (ImportFileType, UTCTime, StrictByteString)
+  -> Eff es ()
+processFile userId repository importSubject =
+  case importSubject of
+    (CabalFile path, timestamp, content) -> do
+      Log.logInfo "importing-package" $
+        object ["file_path" .= path]
+      loadContent path content
+        >>= ( extractPackageDataFromCabal userId repository timestamp
+                >=> \importedPackage -> persistImportOutput importedPackage
+            )
+
+-- (JSONFile path, _, content) ->
+--   do
+--     loadJSONContent path content repository
+--     >>= persistHashes
 
 findAllCabalFilesInDirectory
   :: forall es

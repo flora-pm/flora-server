@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.20
+version:            1.0.21
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -131,7 +131,6 @@ library
     Flora.Model.User
     Flora.Model.User.Query
     Flora.Model.User.Update
-    Flora.Publish
     Flora.QRCode
     Flora.Search
     Flora.Tracing
@@ -160,6 +159,7 @@ library
     , directory
     , effectful
     , effectful-core
+    , effectful-plugin
     , envparse
     , filepath
     , http-api-data
@@ -202,6 +202,8 @@ library
     , uuid
     , vector
     , zlib
+
+  ghc-options:     -fplugin=Effectful.Plugin
 
 library flora-web
   import:          common-extensions
@@ -296,6 +298,7 @@ library flora-web
     , deriving-aeson
     , effectful
     , effectful-core
+    , effectful-plugin
     , extra
     , flora
     , flora-jobs
@@ -314,7 +317,7 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
-    , one-time-password ==3.0.0.0
+    , one-time-password         ==3.0.0.0
     , openapi3
     , optics-core
     , pg-entity
@@ -348,6 +351,8 @@ library flora-web
     , xml-conduit
     , xml-conduit-writer
 
+  ghc-options:     -fplugin=Effectful.Plugin
+
 library flora-jobs
   import:          common-extensions
   import:          common-ghc-options
@@ -372,6 +377,7 @@ library flora-jobs
     , containers
     , effectful
     , effectful-core
+    , effectful-plugin
     , flora
     , http-client
     , http-media
@@ -394,6 +400,8 @@ library flora-jobs
     , time
     , typed-process-effectful
     , vector
+
+  ghc-options:     -fplugin=Effectful.Plugin
 
 executable flora-server
   import:         common-extensions
@@ -428,8 +436,10 @@ executable flora-cli
     , base
     , bytestring
     , Cabal-syntax
+    , containers
     , effectful
     , effectful-core
+    , effectful-plugin
     , envparse
     , filepath
     , flora
@@ -467,6 +477,7 @@ test-suite flora-test
     , containers
     , effectful
     , effectful-core
+    , effectful-plugin
     , exceptions
     , filepath
     , flora
@@ -498,6 +509,7 @@ test-suite flora-test
     , vector-algorithms
     , zlib
 
+  ghc-options:    -fplugin=Effectful.Plugin
   other-modules:
     Flora.BlobSpec
     Flora.CabalSpec

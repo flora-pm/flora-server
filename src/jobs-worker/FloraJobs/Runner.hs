@@ -26,7 +26,10 @@ import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
+import Data.Set (Set)
 import Data.Text.HTML qualified as HTML
+import Distribution.Types.Version (Version)
+import Effectful.State.Static.Shared (State)
 import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Import.Package.Bulk qualified as Import
 import Flora.Model.BlobIndex.Update qualified as Update
@@ -35,7 +38,6 @@ import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Query qualified as Query
-import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
@@ -228,6 +230,7 @@ refreshIndexes
      , Poolboy :> es
      , IOE :> es
      , FileSystem :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      )
   => Eff es ()
 refreshIndexes = do
@@ -243,7 +246,9 @@ refreshIndexes = do
     let path = homeDir <> "/.cabal/packages/" <> repoPath <> "/01-index.tar.gz"
     mPackageIndex <- Query.getPackageIndexByName indexName
     case mPackageIndex of
-      Nothing ->
+      Nothing -> do
+        Log.logAttention "Package index not found" $
+          object ["package_index" .= indexName]
         error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
-      Just packageIndex ->
-        Import.importFromIndex user.userId (indexName, packageIndex.url) path
+      Just _ ->
+        Import.importFromIndex user.userId indexName path

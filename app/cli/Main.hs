@@ -15,7 +15,7 @@ import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Time (Time, runTime)
-import GHC.Conc (getNumCapabilities)
+import GHC.Conc
 import GHC.Generics (Generic)
 import Log qualified
 import Log.Backend.StandardOutput qualified as Log
@@ -24,13 +24,16 @@ import Options.Applicative
 import Sel.Hashing.Password qualified as Sel
 import System.FilePath ((</>))
 
+import Data.Set (Set)
 import Effectful.Poolboy
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
-import Flora.Model.Package (PackageName)
+import Flora.Model.Package (Namespace, PackageName)
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
@@ -73,6 +76,7 @@ main = Log.withStdOutLogger $ \logger -> do
   capabilities <- getNumCapabilities
   env <- getFloraEnv & runFailIO & runEff
   runEff
+    . State.evalState (mempty @(Set (Namespace, PackageName, Version)))
     . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     . runDB env.pool
     . runFailIO
@@ -163,6 +167,7 @@ runOptions
      , Fail :> es
      , IOE :> es
      , BlobStoreAPI :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      , Poolboy :> es
      )
   => Options
@@ -205,6 +210,7 @@ importFolderOfCabalFiles
      , Poolboy :> es
      , DB :> es
      , IOE :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      )
   => FilePath
   -> Text
@@ -223,6 +229,7 @@ importIndex
      , Poolboy :> es
      , DB :> es
      , IOE :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      )
   => FilePath
   -> Text
@@ -232,8 +239,8 @@ importIndex path repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
-    Just packageIndex ->
-      importFromIndex (user ^. #userId) (repository, packageIndex.url) path
+    Just _ ->
+      importFromIndex (user ^. #userId) repository path
 
 importPackageTarball
   :: ( Log :> es
