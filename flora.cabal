@@ -27,13 +27,13 @@ flag prod
 
 common common-extensions
   default-extensions:
+    NoStarIsType
     DataKinds
     DeriveAnyClass
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
     LambdaCase
-    NoStarIsType
     OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
@@ -119,6 +119,9 @@ library
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
+    Flora.Model.PackageGroup.Query
+    Flora.Model.PackageGroup.Types
+    Flora.Model.PackageGroup.Update
     Flora.Model.PackageIndex.Query
     Flora.Model.PackageIndex.Types
     Flora.Model.PackageIndex.Update
