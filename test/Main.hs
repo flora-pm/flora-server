@@ -78,5 +78,5 @@ cleanUp = dbtToEff $ do
   void $ execute Delete "DELETE FROM user_organisation" ()
   void $ execute Delete "DELETE FROM package_publishers" ()
   void $ execute Delete "DELETE FROM users" ()
-  void $ execute Delete "DELETE FROM package_groups"
-  void $ execute Delete "DELETE FROM package_group_packages"
+  void $ execute Delete "DELETE FROM package_groups" ()
+  void $ execute Delete "DELETE FROM package_group_packages" ()
