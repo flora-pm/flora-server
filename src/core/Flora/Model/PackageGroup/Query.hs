@@ -33,4 +33,4 @@ getPackagesByPackageGroupId packageGroupId = dbtToEff $ query Select q (Only pac
       |]
 
 getPackageGroupByPackageGroupName :: DB :> es => Text -> Eff es (Maybe PackageGroup)
-getPackageGroupByPackageGroupName packageGroupName = dbtToEff $ selectOneByField [field| packageGroupName |] (Only packageGroupName)
+getPackageGroupByPackageGroupName groupName = dbtToEff $ selectOneByField [field| group_name |] (Only groupName)

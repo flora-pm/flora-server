@@ -122,6 +122,8 @@ library
     Flora.Model.PackageGroup.Query
     Flora.Model.PackageGroup.Types
     Flora.Model.PackageGroup.Update
+    Flora.Model.PackageGroupPackage.Types
+    Flora.Model.PackageGroupPackage.Update
     Flora.Model.PackageIndex.Query
     Flora.Model.PackageIndex.Types
     Flora.Model.PackageIndex.Update
@@ -520,6 +522,8 @@ test-suite flora-test
     Flora.CategorySpec
     Flora.ImportSpec
     Flora.OddJobSpec
+    Flora.PackageGroupSpec
+    Flora.PackageGroupTestUtils
     Flora.PackageSpec
     Flora.SearchSpec
     Flora.TemplateSpec

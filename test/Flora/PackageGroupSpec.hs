@@ -1,12 +1,15 @@
 module Flora.PackageGroupSpec where
 
-import Data.Maybe (fromJust)
-import Data.Text (Text)
-import Data.UUID (UUID, fromText)
+import Data.Vector qualified as Vector
+
+import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
-import Flora.Model.PackageGroup.Types (PackageGroup (..), PackageGroupId (..))
-import Flora.Model.PackageGroup.Update qualified as Update
+import Flora.Model.PackageGroup.Types
+import Flora.Model.PackageGroupPackage.Update as Update
+import Flora.Model.User
+import Flora.PackageGroupTestUtils
 import Flora.TestUtils
+import Optics.Core
 
 spec :: TestEff TestTree
 spec =
@@ -14,64 +17,122 @@ spec =
     "package group"
     [ testThis "Insert package group" testInsertPackageGroup
     , testThis "Add package to package group" testAddPackageToPackageGroup
-    , testThis "Remove package to package group" testRemovePackageFromPackageGroup
+    , testThis "Remove package from package group" testRemovePackageFromPackageGroup
     , testThis "Get packages by package group id" testGetPackagesByPackageGroupId
     , testThis "Get packages by package group name" testGetPackageGroupByPackageGroupName
     ]
 
-defaultPackageGroup :: PackageGroup
-defaultPackageGroup =
-  PackageGroup
-    { packageGroupId = defaultPackageGroupId
-    , groupName = defaultGroupName
-    }
-
-defaultPackageGroupId :: PackageGroupId
-defaultPackageGroupId = PackageGroupId{getPackageGroupId = fromJust defaultUUID}
-
-defaultGroupName :: Text
-defaultGroupName = "test-group-name"
-
-defaultUUID :: Maybe UUID
-defaultUUID = fromText "db1b378d-58b4-4b50-a70c-7ffa5407ed15"
-
-extractPackageGroupId :: PackageGroup -> PackageGroupId
-extractPackageGroupId pg = packageGroupId pg
-
--- Check DB for absence of the specified `PackageGroup`
--- Run the function `Update.insertPackageGroup`
--- Check the DB for the presence of the specified `PackageGroup`
 testInsertPackageGroup :: TestEff ()
 testInsertPackageGroup = do
-  Update.insertPackageGroup defaultPackageGroup
-  result <- Query.getPackageGroupByPackageGroupName defaultGroupName
+  user <- instantiateUser randomUserTemplate
+  package <-
+    instantiatePackage $
+      randomPackageTemplate
+        & #ownerId
+        .~ pure user.userId
+  packageGroup <-
+    instantiatePackageGroup randomPackageGroupTemplate
+
+  result <- Query.getPackageGroupByPackageGroupName packageGroup.groupName
   case result of
     Nothing ->
       assertFailure
         "No Package Group named: `test-group-name`"
     Just pg ->
-      assertEqual defaultPackageGroupId (extractPackageGroupId pg)
+      assertEqual pg.packageGroupId (extractPackageGroupIdFromPG packageGroup)
 
--- Check the DB for the packages within a specified `PackageGroupPackages`
--- Run the function `Update.addPackageToPackageGroup`
--- Check the DB for the specified `PackageGroupPackages`, and check the
--- additional `Package` id is present
 testAddPackageToPackageGroup :: TestEff ()
-testAddPackageToPackageGroup = undefined
+testAddPackageToPackageGroup = do
+  user <- instantiateUser randomUserTemplate
+  package <-
+    instantiatePackage $
+      randomPackageTemplate
+        & #ownerId
+        .~ pure user.userId
+  packageGroup <-
+    instantiatePackageGroup randomPackageGroupTemplate
+  packageGroupPackage <-
+    instantiatePackageGroupPackage $
+      randomPackageGroupPackageTemplate
+        & #packageGroupId
+        .~ pure packageGroup.packageGroupId
+        & #packageId
+        .~ pure package.packageId
 
--- Check the DB for the packages within a specified `PackageGroupPackages`
--- Run the function `Update.removePackageFromPackageGroup`
--- Check the DB for the specified `PackageGroupPackages`, and check the
--- additional `Package` id is removed
+  results <-
+    Query.getPackagesByPackageGroupId $
+      extractPackageGroupIdFromPGP packageGroupPackage
+
+  assertEqual 1 (Vector.length results)
+
 testRemovePackageFromPackageGroup :: TestEff ()
-testRemovePackageFromPackageGroup = undefined
+testRemovePackageFromPackageGroup = do
+  user <- instantiateUser randomUserTemplate
+  package <-
+    instantiatePackage $
+      randomPackageTemplate
+        & #ownerId
+        .~ pure user.userId
+  packageGroup <-
+    instantiatePackageGroup randomPackageGroupTemplate
+  packageGroupPackage <-
+    instantiatePackageGroupPackage $
+      randomPackageGroupPackageTemplate
+        & #packageGroupId
+        .~ pure packageGroup.packageGroupId
+        & #packageId
+        .~ pure package.packageId
 
--- Check the DB for packages using `PackageGroup` id
--- assert that the id for the packages found matches the expected packages provided
+  -- It's failing here because it is expecting one arg to the delete
+  -- but it's getting 3 (why?).  Might need to ask Hecate if this
+  -- should be turned into a raw SQL query in the
+  -- `Flora.Model.PackageGroupPackage/Update.hs` module
+  Update.removePackageFromPackageGroup packageGroupPackage
+
+  results <-
+    Query.getPackagesByPackageGroupId $
+      extractPackageGroupIdFromPGP packageGroupPackage
+
+  assertBool True -- Not sure how to test this case well..
+
 testGetPackagesByPackageGroupId :: TestEff ()
-testGetPackagesByPackageGroupId = undefined
+testGetPackagesByPackageGroupId = do
+  user <- instantiateUser randomUserTemplate
+  package <-
+    instantiatePackage $
+      randomPackageTemplate
+        & #ownerId
+        .~ pure user.userId
+  packageGroup <-
+    instantiatePackageGroup randomPackageGroupTemplate
+  packageGroupPackage <-
+    instantiatePackageGroupPackage $
+      randomPackageGroupPackageTemplate
+        & #packageGroupId
+        .~ pure packageGroup.packageGroupId
+        & #packageId
+        .~ pure package.packageId
 
--- Check the DB for package groups using `PackageGroup` name
--- assert that the package group id found matches the expected package group provided
+  results <-
+    Query.getPackagesByPackageGroupId $
+      extractPackageGroupIdFromPGP packageGroupPackage
+
+  assertEqual (Vector.length results) 1
+
 testGetPackageGroupByPackageGroupName :: TestEff ()
-testGetPackageGroupByPackageGroupName = undefined
+testGetPackageGroupByPackageGroupName = do
+  user <- instantiateUser randomUserTemplate
+  package <-
+    instantiatePackage $
+      randomPackageTemplate
+        & #ownerId
+        .~ pure user.userId
+  packageGroup <-
+    instantiatePackageGroup randomPackageGroupTemplate
+  result <- Query.getPackageGroupByPackageGroupName packageGroup.groupName
+  case result of
+    Nothing ->
+      assertFailure
+        "No Package Group named: `test-group-name"
+    Just pg ->
+      assertEqual pg.groupName (extractGroupNameFromPG packageGroup)

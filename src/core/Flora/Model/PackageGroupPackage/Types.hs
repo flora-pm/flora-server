@@ -1,10 +1,9 @@
-module Flora.Model.PackageGroup.Types where
+module Flora.Model.PackageGroupPackage.Types where
 
 import GHC.Generics
 
 import Control.DeepSeq (NFData)
 import Data.Aeson
-import Data.Text (Text)
 import Data.Text.Display
 import Data.UUID
 import Database.PostgreSQL.Entity
@@ -13,8 +12,10 @@ import Database.PostgreSQL.Simple (FromRow)
 import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow)
+import Flora.Model.Package.Types (PackageId)
+import Flora.Model.PackageGroup.Types (PackageGroupId)
 
-newtype PackageGroupId = PackageGroupId {getPackageGroupId :: UUID}
+newtype PackageGroupPackageId = PackageGroupPackageId {getPackageGroupPackageId :: UUID}
   deriving
     (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, NFData)
     via UUID
@@ -22,10 +23,10 @@ newtype PackageGroupId = PackageGroupId {getPackageGroupId :: UUID}
     (Display)
     via ShowInstance UUID
 
-data PackageGroup
-  = PackageGroup
-  { packageGroupId :: PackageGroupId
-  , groupName :: Text
+data PackageGroupPackage = PackageGroupPackage
+  { packageGroupPackageId :: PackageGroupPackageId
+  , packageId :: PackageId
+  , packageGroupId :: PackageGroupId
   }
   deriving stock
     (Eq, Ord, Show, Generic)
@@ -33,4 +34,4 @@ data PackageGroup
     (FromRow, ToRow, FromJSON, ToJSON, NFData)
   deriving
     (Entity)
-    via (GenericEntity '[TableName "package_groups"] PackageGroup)
+    via (GenericEntity '[TableName "package_group_packages"] PackageGroupPackage)
