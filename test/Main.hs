@@ -6,7 +6,8 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Sel.Hashing.Password qualified as Sel
 import System.IO
-import Test.Tasty (defaultMain, testGroup)
+import Test.Tasty
+import Test.Tasty.Runners.Reporter qualified as Reporter
 
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
@@ -45,7 +46,9 @@ main = do
       )
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
-  defaultMain . testGroup "Flora Tests" $ OddJobSpec.spec : spec
+  defaultMainWithIngredients [Reporter.ingredient] $
+    testGroup "Flora Tests" $
+      OddJobSpec.spec : spec
 
 specs :: Fixtures -> [TestEff TestTree]
 specs fixtures =

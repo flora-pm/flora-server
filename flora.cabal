@@ -502,6 +502,7 @@ test-suite flora-test
     , tar
     , tasty
     , tasty-hunit
+    , tasty-test-reporter
     , text
     , time
     , uuid
