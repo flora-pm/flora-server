@@ -1,0 +1,239 @@
+Name: git-annex
+Version: 5.20140919
+Cabal-Version: >= 1.8
+License: GPL-3
+Maintainer: Joey Hess <joey@kitenet.net>
+Author: Joey Hess
+Stability: Stable
+Copyright: 2010-2014 Joey Hess
+License-File: COPYRIGHT
+Extra-Source-Files: CHANGELOG
+Homepage: http://git-annex.branchable.com/
+Build-type: Custom
+Category: Utility
+Synopsis: manage files with git, without checking their contents into git
+Description:
+ git-annex allows managing files with git, without checking the file
+ contents into git. While that may seem paradoxical, it is useful when
+ dealing with files larger than git can currently easily handle, whether due
+ to limitations in memory, time, or disk space.
+ .
+ Even without file content tracking, being able to manage files with git,
+ move files around and delete files with versioned directory trees, and use
+ branches and distributed clones, are all very handy reasons to use git. And
+ annexed files can co-exist in the same git repository with regularly
+ versioned files, which is convenient for maintaining documents, Makefiles,
+ etc that are associated with annexed files but that benefit from full
+ revision control.
+
+Flag S3
+  Description: Enable S3 support
+
+Flag WebDAV
+  Description: Enable WebDAV support
+
+Flag Inotify
+  Description: Enable inotify support
+
+Flag Dbus
+  Description: Enable dbus support
+
+Flag Assistant
+  Description: Enable git-annex assistant and watch command
+
+Flag Webapp
+  Description: Enable git-annex webapp
+
+Flag Webapp-secure
+  Description: Secure webapp
+
+Flag Pairing
+  Description: Enable pairing
+
+Flag XMPP
+  Description: Enable notifications using XMPP
+
+Flag DNS
+  Description: Enable the haskell DNS library for DNS lookup
+
+Flag Production
+  Description: Enable production build (slower build; faster binary)
+
+Flag Android
+  Description: Cross building for Android
+  Default: False
+
+Flag AndroidSplice
+  Description: Building to get TH splices for Android
+  Default: False
+
+Flag TestSuite
+  Description: Embed the test suite into git-annex
+
+Flag TDFA
+  Description: Use regex-tdfa for wildcards
+
+Flag Feed
+  Description: Enable podcast feed support
+
+Flag Quvi
+  Description: Enable use of quvi to download videos
+
+Flag Tahoe
+  Description: Enable the tahoe special remote
+
+Flag CryptoHash
+  Description: Enable use of cryptohash for checksumming
+
+Flag DesktopNotify
+  Description: Enable desktop environment notifications
+
+Flag EKG
+  Description: Enable use of EKG to monitor git-annex as it runs (at http://localhost:4242/)
+  Default: False
+
+Flag network-uri
+  Description: Get Network.URI from the network-uri package
+  Default: True
+
+Executable git-annex
+  Main-Is: git-annex.hs
+  Build-Depends: MissingH, hslogger, directory, filepath,
+   containers, utf8-string, mtl (>= 2),
+   bytestring, old-locale, time, dataenc, SHA, process, json,
+   base (>= 4.5 && < 4.9), monad-control, exceptions (>= 0.6), transformers,
+   IfElse, text, QuickCheck >= 2.1, bloomfilter, edit-distance, process,
+   SafeSemaphore, uuid, random, dlist, unix-compat, async, stm (>= 2.3),
+   data-default, case-insensitive, http-conduit, http-types
+  CC-Options: -Wall
+  GHC-Options: -Wall
+  Extensions: PackageImports
+  -- Some things don't work with the non-threaded RTS.
+  GHC-Options: -threaded
+
+  if flag(network-uri)
+    Build-Depends: network-uri (>= 2.6), network (>= 2.6)
+  else
+    Build-Depends: network (< 2.6), network (>= 2.0)
+
+  if flag(Production)
+    GHC-Options: -O2
+
+  if (os(windows))
+    Build-Depends: Win32, Win32-extras, unix-compat (>= 0.4.1.3)
+    C-Sources: Utility/winprocess.c
+  else
+    Build-Depends: unix
+    -- Need to list these because they're generated from .hsc files.
+    Other-Modules: Utility.Touch Utility.Mounts
+    Include-Dirs: Utility
+    C-Sources: Utility/libdiskfree.c Utility/libmounts.c
+    CPP-Options: -DWITH_CLIBS
+
+  if flag(TestSuite)
+    Build-Depends: tasty (>= 0.7), tasty-hunit, tasty-quickcheck, tasty-rerun,
+     optparse-applicative (>= 0.9.1), crypto-api
+    CPP-Options: -DWITH_TESTSUITE
+
+  if flag(TDFA)
+    Build-Depends: regex-tdfa
+    CPP-Options: -DWITH_TDFA
+  else
+    Build-Depends: regex-compat
+  
+  if flag(CryptoHash)
+    Build-Depends: cryptohash (>= 0.10.0)
+    CPP-Options: -DWITH_CRYPTOHASH
+
+  if flag(S3)
+    Build-Depends: hS3
+    CPP-Options: -DWITH_S3
+
+  if flag(WebDAV)
+    Build-Depends: DAV (>= 1.0), http-client
+    CPP-Options: -DWITH_WEBDAV
+
+  if flag(Assistant) && ! os(solaris)
+    CPP-Options: -DWITH_ASSISTANT
+
+  if flag(Assistant)
+    if os(linux) && flag(Inotify)
+      Build-Depends: hinotify
+      CPP-Options: -DWITH_INOTIFY
+    else
+      if os(darwin)
+        Build-Depends: hfsevents
+        CPP-Options: -DWITH_FSEVENTS
+      else
+        if os(windows)
+          Build-Depends: Win32-notify
+          CPP-Options: -DWITH_WIN32NOTIFY
+        else
+          if (! os(solaris) && ! os(linux))
+            if flag(Android)
+              Build-Depends: hinotify
+              CPP-Options: -DWITH_INOTIFY
+            else
+              CPP-Options: -DWITH_KQUEUE
+              C-Sources: Utility/libkqueue.c
+
+  if (os(linux))
+    if flag(Dbus)
+      Build-Depends: dbus (>= 0.10.3)
+      CPP-Options: -DWITH_DBUS
+  
+    if flag(DesktopNotify)
+      if flag(Dbus)
+        Build-Depends: dbus (>= 0.10.3), fdo-notify (>= 0.3)
+        CPP-Options: -DWITH_DESKTOP_NOTIFY -DWITH_DBUS_NOTIFICATIONS
+
+  if flag(Android)
+    Build-Depends: data-endian
+    CPP-Options: -D__ANDROID__ -DANDROID_SPLICES -D__NO_TH__
+  if flag(AndroidSplice)
+    CPP-Options: -DANDROID_SPLICES
+
+  if flag(Webapp)
+    Build-Depends:
+     yesod, yesod-default, yesod-static, yesod-form, yesod-core,
+     wai, wai-extra, warp, warp-tls,
+     blaze-builder, crypto-api, hamlet, clientsession,
+     template-haskell, data-default, aeson, path-pieces,
+     shakespeare
+    CPP-Options: -DWITH_WEBAPP
+  if flag(Webapp) && flag (Webapp-secure)
+    Build-Depends: warp-tls (>= 1.4), securemem, byteable
+    CPP-Options: -DWITH_WEBAPP_SECURE
+
+  if flag(Pairing)
+    Build-Depends: network-multicast, network-info
+    CPP-Options: -DWITH_PAIRING
+
+  if flag(XMPP) && (! os(windows))
+    Build-Depends: network-protocol-xmpp, gnutls (>= 0.1.4), xml-types
+    CPP-Options: -DWITH_XMPP
+
+  if flag(DNS)
+    Build-Depends: dns
+    CPP-Options: -DWITH_DNS
+
+  if flag(Feed)
+    Build-Depends: feed
+    CPP-Options: -DWITH_FEED
+  
+  if flag(Quvi)
+    Build-Depends: aeson
+    CPP-Options: -DWITH_QUVI
+  
+  if flag(Tahoe)
+    Build-Depends: aeson
+    CPP-Options: -DWITH_TAHOE
+
+  if flag(EKG)
+    Build-Depends: ekg
+    GHC-Options: -with-rtsopts=-T
+    CPP-Options: -DWITH_EKG
+
+source-repository head
+  type: git
+  location: git://git-annex.branchable.com/
