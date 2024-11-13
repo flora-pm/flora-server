@@ -1,0 +1,36 @@
+name:         process
+version:      1.0.0.0
+x-revision: 1
+license:      BSD3
+license-file: LICENSE
+maintainer:   libraries@haskell.org
+synopsis:     Process libraries
+description:
+    This package contains libraries for dealing with system processes.
+extra-tmp-files:
+    config.log config.status autom4te.cache
+    include/HsProcessConfig.h
+build-type:    Configure
+cabal-version: >=1.2
+
+Library {
+    exposed-modules:
+        System.Cmd
+        System.Process.Internals
+    if impl(ghc)
+        exposed-modules:
+          System.Process
+    c-sources:
+        cbits/runProcess.c
+    include-dirs: include
+    includes:
+        runProcess.h
+    install-includes:
+        runProcess.h
+        HsProcessConfig.h
+    extensions: CPP
+    build-depends: base < 4.3, directory >= 1.0 && < 1.1, filepath  >= 1.1 && < 1.2
+
+    if !os(windows)
+        build-depends: unix
+}

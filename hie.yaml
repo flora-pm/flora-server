@@ -1,12 +1,15 @@
 cradle:
   cabal:
-    - path: "././src/core"
+    - path: "./src/core"
       component: "lib:flora"
 
-    - path: "././src/datatypes"
+    - path: "./src/datatypes"
       component: "lib:flora"
 
-    - path: "././src/web"
+    - path: "./src/advisories"
+      component: "lib:flora"
+
+    - path: "./src/web"
       component: "flora:lib:flora-web"
 
     - path: "./src/jobs-worker"

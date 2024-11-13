@@ -1,0 +1,427 @@
+Name:            pandoc
+Version:         1.13
+Cabal-Version:   >= 1.10
+Build-Type:      Custom
+License:         GPL
+License-File:    COPYING
+Copyright:       (c) 2006-2014 John MacFarlane
+Author:          John MacFarlane <jgm@berkeley.edu>
+Maintainer:      John MacFarlane <jgm@berkeley.edu>
+Bug-Reports:     https://github.com/jgm/pandoc/issues
+Stability:       alpha
+Homepage:        http://johnmacfarlane.net/pandoc
+Category:        Text
+Tested-With:     GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.2
+Synopsis:        Conversion between markup formats
+Description:     Pandoc is a Haskell library for converting from one markup
+                 format to another, and a command-line tool that uses
+                 this library. It can read markdown and (subsets of) HTML,
+                 reStructuredText, LaTeX, DocBook, MediaWiki markup, Haddock
+                 markup, OPML, Emacs Org-Mode, txt2tags and Textile, and it can write
+                 markdown, reStructuredText, HTML, LaTeX, ConTeXt, Docbook,
+                 OPML, OpenDocument, ODT, Word docx, RTF, MediaWiki, DokuWiki,
+                 Textile, groff man pages, plain text, Emacs Org-Mode, AsciiDoc,
+                 Haddock markup, EPUB (v2 and v3), FictionBook2,
+                 InDesign ICML, and several kinds of HTML/javascript
+                 slide shows (S5, Slidy, Slideous, DZSlides, reveal.js).
+                 .
+                 Pandoc extends standard markdown syntax with footnotes,
+                 embedded LaTeX, definition lists, tables, and other
+                 features. A compatibility mode is provided for those
+                 who need a drop-in replacement for Markdown.pl.
+                 .
+                 In contrast to existing tools for converting markdown
+                 to HTML, which use regex substitutions, pandoc has
+                 a modular design: it consists of a set of readers,
+                 which parse text in a given format and produce a native
+                 representation of the document, and a set of writers,
+                 which convert this native representation into a target
+                 format. Thus, adding an input or output format requires
+                 only adding a reader or writer.
+Data-Files:
+                 -- templates
+                 data/templates/default.html
+                 data/templates/default.html5
+                 data/templates/default.docbook
+                 data/templates/default.beamer
+                 data/templates/default.opendocument
+                 data/templates/default.icml
+                 data/templates/default.opml
+                 data/templates/default.latex
+                 data/templates/default.context
+                 data/templates/default.texinfo
+                 data/templates/default.man
+                 data/templates/default.markdown
+                 data/templates/default.rst
+                 data/templates/default.plain
+                 data/templates/default.mediawiki
+                 data/templates/default.dokuwiki
+                 data/templates/default.rtf
+                 data/templates/default.s5
+                 data/templates/default.slidy
+                 data/templates/default.slideous
+                 data/templates/default.revealjs
+                 data/templates/default.dzslides
+                 data/templates/default.asciidoc
+                 data/templates/default.haddock
+                 data/templates/default.textile
+                 data/templates/default.org
+                 data/templates/default.epub
+                 data/templates/default.epub3
+                 -- data for ODT writer
+                 data/reference.odt
+                 -- data for docx writer
+                 data/reference.docx
+                 -- stylesheet for EPUB writer
+                 data/epub.css
+                 -- data for LaTeXMathML writer
+                 data/LaTeXMathML.js
+                 data/MathMLinHTML.js
+                 -- data for dzslides writer
+                 data/dzslides/template.html
+                 -- sample lua custom writer
+                 data/sample.lua
+                 -- documentation
+                 README, COPYRIGHT
+Extra-Source-Files:
+                 -- documentation
+                 INSTALL, BUGS, CONTRIBUTING.md, changelog
+                 -- code to create pandoc.1 man page
+                 Makefile
+                 man/man1/pandoc.1.template
+                 man/man5/pandoc_markdown.5.template
+                 -- generated man pages (produced post-build)
+                 man/man1/pandoc.1
+                 man/man5/pandoc_markdown.5
+                 -- tests
+                 tests/bodybg.gif
+                 tests/*.native
+                 tests/docbook-reader.docbook
+                 tests/html-reader.html
+                 tests/opml-reader.opml
+                 tests/haddock-reader.haddock
+                 tests/insert
+                 tests/lalune.jpg
+                 tests/movie.jpg
+                 tests/latex-reader.latex
+                 tests/textile-reader.textile
+                 tests/markdown-reader-more.txt
+                 tests/markdown-citations.txt
+                 tests/textile-reader.textile
+                 tests/mediawiki-reader.wiki
+                 tests/rst-reader.rst
+                 tests/s5-basic.html
+                 tests/s5-fancy.html
+                 tests/s5-fragment.html
+                 tests/s5-inserts.html
+                 tests/tables.context
+                 tests/tables.docbook
+                 tests/tables.html
+                 tests/tables.latex
+                 tests/tables.man
+                 tests/tables.plain
+                 tests/tables.markdown
+                 tests/tables.mediawiki
+                 tests/tables.textile
+                 tests/tables.opendocument
+                 tests/tables.org
+                 tests/tables.asciidoc
+                 tests/tables.haddock
+                 tests/tables.texinfo
+                 tests/tables.rst
+                 tests/tables.rtf
+                 tests/tables.txt
+                 tests/tables.fb2
+                 tests/testsuite.txt
+                 tests/writer.latex
+                 tests/writer.context
+                 tests/writer.docbook
+                 tests/writer.html
+                 tests/writer.man
+                 tests/writer.markdown
+                 tests/writer.plain
+                 tests/writer.mediawiki
+                 tests/writer.textile
+                 tests/writer.opendocument
+                 tests/writer.org
+                 tests/writer.asciidoc
+                 tests/writer.haddock
+                 tests/writer.rst
+                 tests/writer.icml
+                 tests/writer.rtf
+                 tests/writer.texinfo
+                 tests/writer.fb2
+                 tests/writer.opml
+                 tests/writer.dokuwiki
+                 tests/dokuwiki_inline_formatting.dokuwiki
+                 tests/lhs-test.markdown
+                 tests/lhs-test.markdown+lhs
+                 tests/lhs-test.rst
+                 tests/lhs-test.rst+lhs
+                 tests/lhs-test.latex
+                 tests/lhs-test.latex+lhs
+                 tests/lhs-test.html
+                 tests/lhs-test.html+lhs
+                 tests/lhs-test.fragment.html+lhs
+                 tests/pipe-tables.txt
+                 tests/fb2/*.markdown
+                 tests/fb2/*.fb2
+                 tests/fb2/images-embedded.html
+                 tests/fb2/images-embedded.fb2
+                 tests/fb2/test-small.png
+                 tests/fb2/test.jpg
+                 tests/docx/*.docx
+                 tests/docx/*.native
+                 tests/epub/*.epub
+                 tests/epub/*.native
+                 tests/txt2tags.t2t
+
+Source-repository head
+  type:          git
+  location:      git://github.com/jgm/pandoc.git
+
+Flag embed_data_files
+  Description:   Embed data files in binary for relocatable executable.
+  Default:       False
+
+Flag https
+  Description:   Enable support for downloading of resources over https.
+  Default:       True
+
+Flag make-pandoc-man-pages
+  Description:   Build program to regenerate pandoc man pages from README.
+  Default:       False
+
+Library
+  Build-Depends: base >= 4.2 && <5,
+                 syb >= 0.1 && < 0.5,
+                 containers >= 0.1 && < 0.6,
+                 unordered-containers >= 0.2 && < 0.3,
+                 array >= 0.3 && < 0.6,
+                 parsec >= 3.1 && < 3.2,
+                 mtl >= 1.1 && < 2.3,
+                 network >= 2 && < 2.6,
+                 filepath >= 1.1 && < 1.4,
+                 process >= 1 && < 1.3,
+                 directory >= 1 && < 1.3,
+                 bytestring >= 0.9 && < 0.11,
+                 text >= 0.11 && < 1.2,
+                 zip-archive >= 0.2.3.4 && < 0.3,
+                 old-locale >= 1 && < 1.1,
+                 time >= 1.2 && < 1.5,
+                 HTTP >= 4000.0.5 && < 4000.3,
+                 texmath >= 0.8 && < 0.9,
+                 xml >= 1.3.12 && < 1.4,
+                 random >= 1 && < 1.1,
+                 extensible-exceptions >= 0.1 && < 0.2,
+                 pandoc-types >= 1.12.4 && < 1.13,
+                 aeson >= 0.7 && < 0.9,
+                 tagsoup >= 0.13.1 && < 0.14,
+                 base64-bytestring >= 0.1 && < 1.1,
+                 zlib >= 0.5 && < 0.6,
+                 highlighting-kate >= 0.5.8.5 && < 0.6,
+                 data-default >= 0.4 && < 0.6,
+                 temporary >= 1.1 && < 1.3,
+                 blaze-html >= 0.5 && < 0.8,
+                 blaze-markup >= 0.5.1 && < 0.7,
+                 yaml >= 0.8.8.2 && < 0.9,
+                 scientific >= 0.2 && < 0.4,
+                 vector >= 0.10 && < 0.11,
+                 hslua >= 0.3 && < 0.4,
+                 binary >= 0.5 && < 0.8,
+                 SHA >= 1.6 && < 1.7,
+                 haddock-library >= 1.1 && < 1.2,
+                 old-time,
+                 deepseq-generics >= 0.1 && < 0.2,
+                 JuicyPixels >= 3.1.6.1 && < 3.2
+  if flag(https)
+     Build-Depends: http-client >= 0.3.2 && < 0.4,
+                    http-client-tls >= 0.2 && < 0.3,
+                    http-types >= 0.8 && < 0.9
+     cpp-options:   -DHTTP_CLIENT
+  if flag(embed_data_files)
+     cpp-options:   -DEMBED_DATA_FILES
+     -- Build-Tools:   hsb2hs -- not yet recognized by cabal
+     other-modules: Text.Pandoc.Data
+  if os(windows)
+    Cpp-options:      -D_WINDOWS
+  Ghc-Options:   -rtsopts -Wall -fno-warn-unused-do-bind
+  Ghc-Prof-Options: -auto-all -caf-all -rtsopts
+  Default-Language: Haskell98
+  Other-Extensions:   PatternGuards, OverloadedStrings,
+                      ScopedTypeVariables, GeneralizedNewtypeDeriving,
+                      RelaxedPolyRec, DeriveDataTypeable, TypeSynonymInstances,
+                      FlexibleInstances
+  Hs-Source-Dirs:  src
+
+  Exposed-Modules: Text.Pandoc,
+                   Text.Pandoc.Options,
+                   Text.Pandoc.Pretty,
+                   Text.Pandoc.Shared,
+                   Text.Pandoc.MediaBag,
+                   Text.Pandoc.Readers.HTML,
+                   Text.Pandoc.Readers.LaTeX,
+                   Text.Pandoc.Readers.Markdown,
+                   Text.Pandoc.Readers.MediaWiki,
+                   Text.Pandoc.Readers.RST,
+                   Text.Pandoc.Readers.Org,
+                   Text.Pandoc.Readers.DocBook,
+                   Text.Pandoc.Readers.OPML,
+                   Text.Pandoc.Readers.TeXMath,
+                   Text.Pandoc.Readers.Textile,
+                   Text.Pandoc.Readers.Native,
+                   Text.Pandoc.Readers.Haddock,
+                   Text.Pandoc.Readers.Docx,
+                   Text.Pandoc.Readers.EPUB,
+                   Text.Pandoc.Writers.Native,
+                   Text.Pandoc.Writers.Docbook,
+                   Text.Pandoc.Writers.OPML,
+                   Text.Pandoc.Writers.HTML,
+                   Text.Pandoc.Writers.ICML,
+                   Text.Pandoc.Writers.LaTeX,
+                   Text.Pandoc.Writers.ConTeXt,
+                   Text.Pandoc.Writers.OpenDocument,
+                   Text.Pandoc.Writers.Texinfo,
+                   Text.Pandoc.Writers.Man,
+                   Text.Pandoc.Writers.Markdown,
+                   Text.Pandoc.Writers.Haddock,
+                   Text.Pandoc.Writers.RST,
+                   Text.Pandoc.Writers.Org,
+                   Text.Pandoc.Writers.AsciiDoc,
+                   Text.Pandoc.Writers.Custom,
+                   Text.Pandoc.Writers.Textile,
+                   Text.Pandoc.Writers.MediaWiki,
+                   Text.Pandoc.Writers.DokuWiki,
+                   Text.Pandoc.Writers.RTF,
+                   Text.Pandoc.Writers.ODT,
+                   Text.Pandoc.Writers.Docx,
+                   Text.Pandoc.Writers.EPUB,
+                   Text.Pandoc.Writers.FB2,
+                   Text.Pandoc.PDF,
+                   Text.Pandoc.UTF8,
+                   Text.Pandoc.Templates,
+                   Text.Pandoc.XML,
+                   Text.Pandoc.SelfContained,
+                   Text.Pandoc.Process,
+                   Text.Pandoc.Readers.Txt2Tags
+  Other-Modules:   Text.Pandoc.Readers.Docx.Lists,
+                   Text.Pandoc.Readers.Docx.Reducible,
+                   Text.Pandoc.Readers.Docx.Parse,
+                   Text.Pandoc.Readers.Docx.Fonts
+                   Text.Pandoc.Writers.Shared,
+                   Text.Pandoc.Asciify,
+                   Text.Pandoc.MIME,
+                   Text.Pandoc.Parsing,
+                   Text.Pandoc.UUID,
+                   Text.Pandoc.ImageSize,
+                   Text.Pandoc.Slides,
+                   Text.Pandoc.Highlighting,
+                   Text.Pandoc.Compat.Monoid,
+                   Text.Pandoc.Compat.Except,
+                   Text.Pandoc.Compat.TagSoupEntity,
+                   Text.Pandoc.Compat.Directory
+                   Paths_pandoc
+
+  Buildable:       True
+
+Executable pandoc
+  Build-Depends: pandoc,
+                 pandoc-types >= 1.12.4 && < 1.13,
+                 base >= 4.2 && <5,
+                 directory >= 1 && < 1.3,
+                 filepath >= 1.1 && < 1.4,
+                 network >= 2 && < 2.6,
+                 text >= 0.11 && < 1.2,
+                 bytestring >= 0.9 && < 0.11,
+                 extensible-exceptions >= 0.1 && < 0.2,
+                 highlighting-kate >= 0.5.8.5 && < 0.6,
+                 aeson >= 0.7.0.5 && < 0.9,
+                 yaml >= 0.8.8.2 && < 0.9,
+                 containers >= 0.1 && < 0.6,
+                 HTTP >= 4000.0.5 && < 4000.3
+  Ghc-Options:   -rtsopts -with-rtsopts=-K16m -Wall -fno-warn-unused-do-bind
+  Ghc-Prof-Options: -auto-all -caf-all -rtsopts -with-rtsopts=-K16m
+  if os(windows)
+    Cpp-options:      -D_WINDOWS
+  Default-Language: Haskell98
+  Other-Extensions: PatternGuards, OverloadedStrings,
+                    ScopedTypeVariables, GeneralizedNewtypeDeriving,
+                    RelaxedPolyRec, DeriveDataTypeable, TypeSynonymInstances,
+                    FlexibleInstances
+  Hs-Source-Dirs:  .
+  Main-Is:         pandoc.hs
+  Buildable:       True
+
+-- NOTE:  A trick in Setup.hs makes sure this won't be installed:
+Executable make-pandoc-man-pages
+  Main-Is:       make-pandoc-man-pages.hs
+  Hs-Source-Dirs: man
+  Build-Depends: pandoc,
+                 base >= 4.2 && < 5,
+                 directory >= 1 && < 1.3,
+                 filepath >= 1.1 && < 1.4,
+                 old-time >= 1.0 && < 1.2,
+                 time >= 1.2 && < 1.5
+  Default-Language: Haskell98
+  if flag(make-pandoc-man-pages)
+    Buildable:   True
+  else
+    Buildable:   False
+
+Test-Suite test-pandoc
+  Type:           exitcode-stdio-1.0
+  Main-Is:        test-pandoc.hs
+  Hs-Source-Dirs: tests
+  Build-Depends:  base >= 4.2 && < 5,
+                  syb >= 0.1 && < 0.5,
+                  pandoc,
+                  pandoc-types >= 1.12.4 && < 1.13,
+                  bytestring >= 0.9 && < 0.11,
+                  text >= 0.11 && < 1.2,
+                  directory >= 1 && < 1.3,
+                  filepath >= 1.1 && < 1.4,
+                  process >= 1 && < 1.3,
+                  highlighting-kate >= 0.5.8.5 && < 0.6,
+                  Diff >= 0.2 && < 0.4,
+                  test-framework >= 0.3 && < 0.9,
+                  test-framework-hunit >= 0.2 && < 0.4,
+                  test-framework-quickcheck2 >= 0.2.9 && < 0.4,
+                  QuickCheck >= 2.4 && < 2.8,
+                  HUnit >= 1.2 && < 1.3,
+                  containers >= 0.1 && < 0.6,
+                  ansi-terminal >= 0.5 && < 0.7,
+                  executable-path >= 0.0 && < 0.1,
+                  zip-archive >= 0.2.3.4 && < 0.3
+  Other-Modules:  Tests.Old
+                  Tests.Helpers
+                  Tests.Arbitrary
+                  Tests.Shared
+                  Tests.Walk
+                  Tests.Readers.LaTeX
+                  Tests.Readers.Markdown
+                  Tests.Readers.Org
+                  Tests.Readers.RST
+                  Tests.Readers.Docx
+                  Tests.Readers.Txt2Tags
+                  Tests.Readers.EPUB
+                  Tests.Writers.Native
+                  Tests.Writers.ConTeXt
+                  Tests.Writers.Docbook
+                  Tests.Writers.HTML
+                  Tests.Writers.Markdown
+                  Tests.Writers.Plain
+                  Tests.Writers.AsciiDoc
+                  Tests.Writers.LaTeX
+  Ghc-Options:  -rtsopts -Wall -fno-warn-unused-do-bind
+  Default-Language: Haskell98
+
+benchmark benchmark-pandoc
+  Type:            exitcode-stdio-1.0
+  Main-Is:         benchmark-pandoc.hs
+  Hs-Source-Dirs:  benchmark
+  Build-Depends:   pandoc,
+                   base >= 4.2 && < 5,
+                   syb >= 0.1 && < 0.5,
+                   criterion >= 0.5 && < 0.9
+  Ghc-Options:   -rtsopts -Wall -fno-warn-unused-do-bind
+  Default-Language: Haskell98
