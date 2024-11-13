@@ -9,6 +9,5 @@ import Flora.Model.Package.Types
 data AdvisoryImportError
   = AffectedPackageNotFound Namespace PackageName
   | AdvisoryParsingError (FilePath, ParseAdvisoryError)
-  | AffectedVersionNotFound PackageId Version
-  | FackinHell
+  | AffectedVersionNotFound Namespace PackageName Version
   deriving stock (Eq, Show, Generic)

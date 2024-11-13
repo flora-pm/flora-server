@@ -1,0 +1,144 @@
+cabal-version:      2.0
+name:               bz2
+version:            1.0.1.1
+license:            BSD3
+license-file:       LICENSE
+copyright:          Copyright: (c) 2020 Vanessa McHale
+maintainer:         vamchale@gmail.com
+author:             Vanessa McHale
+bug-reports:        https://hub.darcs.net/vmchale/bz2/issues
+synopsis:           Bindings to libbz2
+description:        High-level bindings to libbz2 via ByteString
+category:           Compression
+build-type:         Simple
+data-files:
+    test/data/sample1.ref
+    test/data/sample2.ref
+    test/data/sample3.ref
+    test/data/sample1.bz2
+    test/data/sample2.bz2
+    test/data/sample3.bz2
+
+extra-source-files:
+    Makefile
+
+extra-doc-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+    type:     darcs
+    location: https://hub.darcs.net/vmchale/bz2
+
+flag cross
+    description: Set this flag if cross-compiling
+    default:     False
+    manual:      True
+
+flag with-bzlib
+    description:
+        Bench against [bzlib](http://hackage.haskell.org/package/bzlib)
+
+library
+    exposed-modules:  Codec.Compression.BZip
+    cc-options:       -O3
+
+    hs-source-dirs:   src
+    other-modules:
+        Codec.Compression.BZip.Common
+        Codec.Compression.BZip.Foreign.Common
+        Codec.Compression.BZip.Foreign.Compress
+        Codec.Compression.BZip.Foreign.Decompress
+        Codec.Compression.BZip.Unpack
+        Codec.Compression.BZip.Pack
+
+    default-language: Haskell2010
+    other-extensions: DeriveDataTypeable TupleSections
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.7 && <5,
+        bytestring -any,
+        bzip2-clib
+
+
+    if !flag(cross)
+        build-tool-depends: c2hs:c2hs >=0.26.1
+
+    if impl(ghc >=8.0)
+        ghc-options:
+            -Wincomplete-uni-patterns -Wincomplete-record-updates
+            -Wredundant-constraints
+
+    if impl(ghc >=8.4)
+        ghc-options: -Wmissing-export-lists
+
+    if impl(ghc >=8.10)
+        ghc-options: -Wunused-packages
+
+test-suite bz2-test
+    type:             exitcode-stdio-1.0
+    main-is:          Spec.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:      -threaded -rtsopts "-with-rtsopts=-N -K1K" -Wall
+    build-depends:
+        base >=4.8,
+        bz2 -any,
+        bytestring -any,
+        filepath >=1.4.0.0,
+        tasty -any,
+        tasty-golden -any,
+        tasty-hunit -any,
+        deepseq -any,
+        directory -any
+
+    if impl(ghc >=8.0)
+        ghc-options:
+            -Wincomplete-uni-patterns -Wincomplete-record-updates
+            -Wredundant-constraints -Widentities
+
+    if impl(ghc >=8.4)
+        ghc-options: -Wmissing-export-lists
+
+    if impl(ghc >=8.2)
+        ghc-options: -Wcpp-undef
+
+    if impl(ghc >=8.10)
+        ghc-options: -Wunused-packages
+
+benchmark bz2-bench
+    type:               exitcode-stdio-1.0
+    main-is:            Bench.hs
+    build-tool-depends: cpphs:cpphs -any
+    hs-source-dirs:     bench
+    other-modules:      BZip.Dump
+    default-language:   Haskell2010
+    other-extensions:   PackageImports
+    ghc-options:        -threaded -rtsopts -with-rtsopts=-N -O3 -Wall
+    build-depends:
+        base -any,
+        bz2 -any,
+        criterion -any,
+        temporary -any,
+        filepath -any,
+        bytestring -any
+
+    if flag(with-bzlib)
+        build-depends: bzlib -any
+
+    if flag(with-bzlib)
+        cpp-options: -DWITH_BZLIB
+
+    if impl(ghc >=8.0)
+        ghc-options:
+            -Wincomplete-uni-patterns -Wincomplete-record-updates
+            -Wredundant-constraints -Widentities
+
+    if impl(ghc >=8.4)
+        ghc-options: -Wmissing-export-lists
+
+    if impl(ghc >=8.2)
+        ghc-options: -Wcpp-undef
+
+    if impl(ghc >=8.10)
+        ghc-options: -Wunused-packages

@@ -1,0 +1,64 @@
+name:            bzlib
+version:         0.5.2.0
+copyright:       (c) 2006-2015 Duncan Coutts
+license:         BSD3
+license-file:    LICENSE
+author:          Duncan Coutts <duncan@community.haskell.org>
+maintainer:      Duncan Coutts <duncan@community.haskell.org>
+bug-reports:     https://github.com/haskell/bzlib/issues
+category:        Codec
+synopsis:        Compression and decompression in the bzip2 format
+description:     This package provides a pure interface for compressing and 
+                 decompressing streams of data represented as lazy 
+                 'ByteString's. It uses the bz2 C library so it has high
+                 performance.
+                 .
+                 It provides a convenient high level API suitable for most
+                 tasks and for the few cases where more control is needed it
+                 provides access to the full bzip2 feature set.
+build-type:      Simple
+cabal-version:   2.0
+extra-doc-files: README.md CHANGELOG.md
+extra-source-files: cbits-extra/hs-bzlib.h
+
+tested-with: GHC==9.8.2, GHC==9.6.4, GHC==9.4.8, GHC==9.2.8, GHC==9.0.2, GHC==8.10.7, GHC==8.8.4, GHC==8.6.5, GHC==8.4.4, GHC==8.2.2, GHC==8.0.2, GHC==7.10.3, GHC==7.8.4, GHC==7.6.3, GHC==7.4.2, GHC==7.2.2, GHC==7.0.4
+
+source-repository head
+  type: git
+  location: https://github.com/haskell/bzlib.git
+
+library
+  default-language: Haskell2010
+  exposed-modules: Codec.Compression.BZip,
+                   Codec.Compression.BZip.Internal
+  other-modules:   Codec.Compression.BZip.Stream
+  build-depends:   base >= 3 && < 5,
+                   bytestring >= 0.9 && < 0.13
+  if impl(ghc < 8.0)
+    build-depends: fail < 5
+  if os(windows)
+    build-depends: base >= 4.11
+  includes:        bzlib.h
+  ghc-options:     -Wall
+  if !(os(windows) || impl(ghcjs) || os(ghcjs) || arch(wasm32))
+    -- Normally we use the the standard system bz2 lib:
+    extra-libraries: bz2
+  else
+    build-depends:   bzip2-clib < 1.1
+  include-dirs:    cbits-extra
+  c-sources:       cbits-extra/hs-bzlib.c
+
+test-suite tests
+  type: exitcode-stdio-1.0
+  main-is:         Test.hs
+  other-modules:   Utils,
+                   Test.Codec.Compression.BZip.Internal,
+                   Test.Codec.Compression.BZip.Stream
+  hs-source-dirs:  test
+  default-language: Haskell2010
+  build-depends:   base, bytestring, bzlib,
+                   QuickCheck       == 2.*,
+                   tasty            >= 0.8 && < 1.6,
+                   tasty-quickcheck >= 0.8 && < 0.11,
+                   tasty-hunit      >= 0.8 && < 0.11
+  ghc-options:     -Wall

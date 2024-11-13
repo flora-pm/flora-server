@@ -1,0 +1,41 @@
+Name:                x509-validation
+Version:             1.4.8
+Description:         X.509 Certificate and CRL validation
+License:             BSD3
+License-file:        LICENSE
+Copyright:           Vincent Hanquez <vincent@snarc.org>
+Author:              Vincent Hanquez <vincent@snarc.org>
+Maintainer:          Vincent Hanquez <vincent@snarc.org>
+Synopsis:            X.509 Certificate and CRL validation
+Build-Type:          Simple
+Category:            Data
+stability:           experimental
+Homepage:            http://github.com/vincenthz/hs-certificate
+Cabal-Version:       >=1.6
+
+Library
+  Build-Depends:     base >= 3 && < 5
+                   , bytestring
+                   , mtl
+                   , containers
+                   , directory
+                   , filepath
+                   , process
+                   , time
+                   , pem >= 0.1 && < 0.3
+                   , asn1-types >= 0.2 && < 0.3
+                   , asn1-encoding >= 0.8 && < 0.9
+                   , x509 >= 1.4.7 && < 1.5
+                   , x509-store >= 1.4 && < 1.5
+                   , crypto-pubkey >= 0.1.4 && < 0.3
+                   , crypto-pubkey-types >= 0.4 && < 0.5
+                   , cryptohash >= 0.9 && < 0.12
+  Exposed-modules:   Data.X509.Validation
+  Other-modules:     Data.X509.Validation.Signature
+                     Data.X509.Validation.Fingerprint
+  ghc-options:       -Wall
+
+source-repository head
+  type:     git
+  location: git://github.com/vincenthz/hs-certificate
+  subdir:   x509-validation
