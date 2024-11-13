@@ -17,12 +17,14 @@
 @import "2-components/8-alert.css";
 @import "2-components/9-terminal-icon.css";
 @import "2-components/10-error.css";
+@import "2-components/11-advisory-list-item.css";
 
 /* Screens/Pages specific style */
 @import "3-screens/1-package/1-package.css";
 @import "3-screens/1-package/2-release-changelog.css";
 @import "3-screens/1-package/3-release-readme.css";
 @import "3-screens/1-package/4-compiler-badge.css";
+@import "3-screens/1-package/5-security.css";
 @import "3-screens/2-categories.css";
 @import "3-screens/3-about.css";
 @import "3-screens/4-front-page.css";

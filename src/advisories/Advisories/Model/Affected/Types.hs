@@ -3,6 +3,7 @@ module Advisories.Model.Affected.Types where
 import Control.DeepSeq
 import Data.Aeson
 import Data.Text (Text)
+import Data.Time (UTCTime)
 import Data.UUID (UUID)
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity.Types
@@ -10,9 +11,11 @@ import Database.PostgreSQL.Simple (FromRow, ToRow)
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField
-import Distribution.Version
+import Distribution.Types.Version
+import Distribution.Types.VersionRange (VersionRange)
 import GHC.Generics
 import Security.Advisories.Core.Advisory
+import Security.Advisories.Core.HsecId
 import Security.CVSS (CVSS)
 
 import Advisories.AffectedVersionRange.Orphans ()
@@ -72,3 +75,13 @@ data AffectedVersionRangeDAO = AffectedVersionRangeDAO
   deriving
     (Entity)
     via (GenericEntity '[TableName "affected_version_ranges"] AffectedVersionRangeDAO)
+
+data PackageAdvisoryPreview = PackageAdvisoryPreview
+  { hsecId :: HsecId
+  , summary :: Text
+  , fixed :: Bool
+  , published :: UTCTime
+  , cvss :: CVSS
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (FromRow, NFData)

@@ -1,33 +1,41 @@
 module Main where
 
 import Codec.Compression.GZip qualified as GZip
+import Control.Monad.Extra (unlessM)
 import Data.ByteString.Lazy.Char8 qualified as BS
+import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe
 import Data.Poolboy (poolboySettingsWith)
+import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
 import DesignSystem (generateComponents)
 import Distribution.Version (Version)
 import Effectful
+import Effectful.Error.Static (Error, runErrorNoCallStack)
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
+import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
+import Effectful.Trace (Trace)
+import Effectful.Trace qualified as Trace
 import GHC.Conc
 import GHC.Generics (Generic)
 import Log qualified
 import Log.Backend.StandardOutput qualified as Log
+import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
 import Options.Applicative
 import Sel.Hashing.Password qualified as Sel
 import System.FilePath ((</>))
 
-import Data.Set (Set)
-import Effectful.Poolboy
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
+import Advisories.Import (importAdvisories)
+import Advisories.Import.Error (AdvisoryImportError)
 import Flora.Environment
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
@@ -40,6 +48,8 @@ import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
+import Flora.Tracing qualified as Tracing
+import System.Exit (exitFailure)
 
 data Options = Options
   { cliCommand :: Command
@@ -59,6 +69,7 @@ data Command
 data ProvisionTarget
   = Categories
   | TestPackages Text
+  | Advisories
   deriving stock (Show, Eq)
 
 data UserCreationOptions = UserCreationOptions
@@ -72,23 +83,36 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
-  result <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
+  cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   capabilities <- getNumCapabilities
   env <- getFloraEnv & runFailIO & runEff
-  runEff
-    . State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-    . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-    . runDB env.pool
-    . runFailIO
-    . runTime
-    . runPoolboy (poolboySettingsWith capabilities)
-    . ( case env.features.blobStoreImpl of
-          Just (BlobStoreFS fp) -> runBlobStoreFS fp
-          _ -> runBlobStorePure
-      )
-    . runFileSystem
-    . runLog "flora-cli" logger Log.LogTrace
-    $ runOptions result
+  runTrace <-
+    if env.environment == Production
+      then do
+        zipkin <- liftIO $ Tracing.newZipkin env.mltp.zipkinHost "flora-cli"
+        pure $ Trace.runTrace zipkin.zipkinTracer
+      else pure Trace.runNoTrace
+  result <-
+    runEff
+      . runTrace
+      . runErrorNoCallStack
+      . State.evalState (mempty @(Set (Namespace, PackageName, Version)))
+      . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+      . runDB env.pool
+      . runFailIO
+      . runTime
+      . runPoolboy (poolboySettingsWith capabilities)
+      . ( case env.features.blobStoreImpl of
+            Just (BlobStoreFS fp) -> runBlobStoreFS fp
+            _ -> runBlobStorePure
+        )
+      . runFileSystem
+      . runLog "flora-cli" logger Log.LogTrace
+      $ runOptions cliArgs
+  case result of
+    Right _ -> pure ()
+    Left errors ->
+      error $ show errors
 
 parseOptions :: Parser Options
 parseOptions =
@@ -114,6 +138,7 @@ parseProvision =
   subparser $
     command "categories" (pure (Provision Categories) `withInfo` "Load the canonical categories in the system")
       <> command "test-packages" (parseProvisionTestPackages `withInfo` "Load the test packages in the database")
+      <> command "advisories" (pure (Provision Advisories) `withInfo` "Load the security advisories database")
 
 parseProvisionTestPackages :: Parser Command
 parseProvisionTestPackages =
@@ -169,10 +194,19 @@ runOptions
      , BlobStoreAPI :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Poolboy :> es
+     , Error (NonEmpty AdvisoryImportError) :> es
+     , Trace :> es
      )
   => Options
   -> Eff es ()
 runOptions (Options (Provision Categories)) = importCategories
+runOptions (Options (Provision Advisories)) = do
+  dataDir <- getXdgDirectory XdgData ""
+  let advisoriesDirectory = dataDir </> "security-advisories"
+  unlessM (doesDirectoryExist advisoriesDirectory) $ do
+    Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
+    liftIO exitFailure
+  importAdvisories advisoriesDirectory
 runOptions (Options (Provision (TestPackages repository))) = importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
@@ -189,7 +223,7 @@ runOptions (Options (CreateUser opts)) = do
             >>= \admin ->
               if canLogin
                 then pure ()
-                else lockAccount (admin ^. #userId)
+                else lockAccount admin.userId
         else do
           templateUser <- mkUser UserCreationForm{..}
           let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False

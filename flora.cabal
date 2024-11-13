@@ -291,6 +291,7 @@ library flora-web
     FloraWeb.Common.Pagination
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
+    FloraWeb.Components.AdvisoryListItem
     FloraWeb.Components.Alert
     FloraWeb.Components.Button
     FloraWeb.Components.CategoryCard
@@ -356,6 +357,7 @@ library flora-web
     , colourista
     , containers
     , cookie
+    , cvss
     , dani-servant-lucid2
     , data-default
     , deepseq
@@ -365,6 +367,7 @@ library flora-web
     , effectful-plugin
     , extra
     , flora
+    , flora-advisories
     , flora-jobs
     , haddock-library
     , htmx-lucid
@@ -505,13 +508,17 @@ executable flora-cli
     , bytestring
     , Cabal-syntax
     , containers
+    , cvss
     , effectful
     , effectful-core
     , effectful-plugin
     , envparse
+    , extra
     , filepath
     , flora
+    , flora-advisories
     , flora-web
+    , hsec-core
     , log-base
     , log-effectful
     , lucid2
@@ -525,10 +532,14 @@ executable flora-cli
     , text
     , text-display
     , time
+    , tracing
+    , tracing-effectful
     , transformers
     , uuid
     , vector
     , zlib
+
+  ghc-options:    -fplugin=Effectful.Plugin
 
 test-suite flora-test
   import:         common-extensions
@@ -547,6 +558,7 @@ test-suite flora-test
     , effectful-core
     , effectful-plugin
     , exceptions
+    , extra
     , filepath
     , flora
     , flora-advisories

@@ -19,9 +19,11 @@ module FloraWeb.Pages.Templates.Packages
   , packageWithExecutableListing
   , presentationHeaderForSubpage
   , presentationHeaderForVersions
+  , presentationHeaderForAdvisories
   , showChangelog
   , showDependencies
   , showDependents
+  , showPackageSecurityPage
   ) where
 
 import Control.Monad (when)
@@ -52,12 +54,14 @@ import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
+import Advisories.Model.Affected.Types
 import Flora.Environment (FeatureEnv (..))
 import Flora.Model.Category.Types
 import Flora.Model.Package
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
+import FloraWeb.Components.AdvisoryListItem
 import FloraWeb.Components.Icons qualified as Icon
 import FloraWeb.Components.PackageListItem
   ( packageListItem
@@ -75,12 +79,14 @@ data Target
   = Dependents
   | Dependencies
   | Versions
+  | Security
   deriving stock (Eq, Ord)
 
 instance Display Target where
   displayBuilder Dependents = "dependents"
   displayBuilder Dependencies = "dependencies"
   displayBuilder Versions = "versions"
+  displayBuilder Security = "security"
 
 presentationHeaderForSubpage
   :: Namespace
@@ -121,6 +127,19 @@ presentationHeaderForVersions namespace packageName numberOfReleases = div_ [cla
       toHtml $
         display numberOfReleases
           <> " results"
+
+presentationHeaderForAdvisories
+  :: Namespace
+  -> PackageName
+  -> FloraHTML
+presentationHeaderForAdvisories namespace packageName = div_ [class_ "divider"] $ do
+  div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
+    span_ [class_ "headline"] $ do
+      displayNamespace namespace
+      Icon.chevronRightOutline
+      linkToPackage namespace packageName
+      Icon.chevronRightOutline
+      toHtml (display Security)
 
 showDependents
   :: Namespace
@@ -534,3 +553,20 @@ formatInstallString packageName Release{version} =
       if List.head (versionNumbers version) == 0
         then pretty $ mkVersion $ List.take 3 $ versionNumbers version
         else pretty $ mkVersion $ List.take 2 $ versionNumbers version
+
+showPackageSecurityPage
+  :: Namespace
+  -> PackageName
+  -> Vector PackageAdvisoryPreview
+  -> FloraHTML
+showPackageSecurityPage namespace packageName advisoryPreviews = do
+  div_ [class_ "container"] $ do
+    presentationHeaderForAdvisories namespace packageName
+    div_ [class_ "advisory-list"] $ do
+      div_ [class_ "advisory-list__head"] $ do
+        div_ [class_ "advisory-list__header"] "ID"
+        div_ [class_ "advisory-list__header"] "Summary"
+        div_ [class_ "advisory-list__header"] "Published"
+        div_ [class_ "advisory-list__header"] "Attributes"
+      div_ [class_ "advisory-list__body"] $
+        Vector.forM_ advisoryPreviews (\preview -> advisoryListRow preview)

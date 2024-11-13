@@ -56,12 +56,6 @@ jobs:
         ghc-version: "${{ matrix.ghc }}"
         cabal-version: "latest"
 
-    - uses: actions/setup-node@v4
-      with:
-        node-version: "18"
-        cache: "yarn"
-        cache-dependency-path: assets/yarn.lock
-
     - name: Configure environment
       run: |
         ./.github/workflows/setup.sh
@@ -77,20 +71,28 @@ jobs:
         echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
         cat ~/.pgpass
         cabal update
+        mkdir -p ~/.local/share
+        git clone https://github.com/haskell/security-advisories.git ~/.local/share/security-advisories
+        cd ~/.local/share/security-advisories
+        git checkout df64e86a39668c057031fe7e2c679b1003090e03
+        cd -
+
+    - name: "Create freeze file"
+      run: |
+        cabal freeze --enable-tests
     - name: Cache
-      uses: actions/cache@v4.2.0
+      uses: actions/cache@v4
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
     - name: Build
       run: |
         cabal install postgresql-migration
         make soufflé
-        make assets-deps
-        make build-assets
         make build
+
     - name: Test
       run: |
         set -x
