@@ -10,7 +10,7 @@ import Database.PostgreSQL.Simple (FromRow, ToRow)
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField
-import Distribution.Types.VersionRange (VersionRange)
+import Distribution.Version
 import GHC.Generics
 import Security.Advisories.Core.Advisory
 import Security.CVSS (CVSS)
@@ -22,7 +22,6 @@ import Advisories.System.Orphans ()
 import Distribution.Orphans.ConfVar ()
 import Distribution.Orphans.Version ()
 import Flora.Model.Package.Types
-import Flora.Model.Release.Types
 
 newtype AffectedPackageId = AffectedPackageId {getAffectedPackageId :: UUID}
   deriving stock (Generic, Show)
@@ -65,8 +64,8 @@ newtype AffectedVersionId = AffectedVersionId {getAffectedVersionId :: UUID}
 data AffectedVersionRangeDAO = AffectedVersionRangeDAO
   { affectedVersionId :: AffectedVersionId
   , affectedPackageId :: AffectedPackageId
-  , introducedVersion :: ReleaseId
-  , fixedVersion :: Maybe ReleaseId
+  , introducedVersion :: Version
+  , fixedVersion :: Maybe Version
   }
   deriving stock (Show, Generic)
   deriving anyclass (FromRow, ToRow, NFData)
