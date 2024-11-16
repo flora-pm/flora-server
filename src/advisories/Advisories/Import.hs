@@ -25,8 +25,6 @@ import Advisories.Model.Affected.Update qualified as Update
 import Flora.Import.Package
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types
-import Flora.Model.Release.Guard (guardThatReleaseExists)
-import Flora.Model.Release.Types
 import OSV.Reference.Orphans
 
 -- | List deduplicated parsed Advisories
@@ -131,40 +129,26 @@ processAffectedPackage advisoryId affected = do
           , declarations = declarations
           }
   Update.insertAffectedPackage affectedPackageDAO
-  processAffectedVersionRanges affectedPackageId package.packageId affected.affectedVersions
+  processAffectedVersionRanges affectedPackageId affected.affectedVersions
 
 processAffectedVersionRanges
   :: ( IOE :> es
      , DB :> es
-     , Trace :> es
-     , Error (NonEmpty AdvisoryImportError) :> es
      )
   => AffectedPackageId
-  -> PackageId
   -> [AffectedVersionRange]
   -> Eff es ()
-processAffectedVersionRanges affectedPackageId packageId affectedVersions = do
+processAffectedVersionRanges affectedPackageId affectedVersions = do
   traverse_
     ( \affectedVersion -> do
         affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
-        introducedReleaseId <- do
-          release <- guardThatReleaseExists packageId affectedVersion.affectedVersionRangeIntroduced $ \version ->
-            throwError (NonEmpty.singleton $ AffectedVersionNotFound packageId version)
-          pure release.releaseId
-        mFixedReleaseId <- case affectedVersion.affectedVersionRangeFixed of
-          Nothing -> pure Nothing
-          Just version -> do
-            release <- guardThatReleaseExists packageId version $ \releaseVersion ->
-              throwError (NonEmpty.singleton $ AffectedVersionNotFound packageId releaseVersion)
-            pure $ Just release.releaseId
         let versionRangeDAO =
               AffectedVersionRangeDAO
                 { affectedVersionId = affectedVersionId
                 , affectedPackageId = affectedPackageId
-                , introducedVersion = introducedReleaseId
-                , fixedVersion = mFixedReleaseId
+                , introducedVersion = affectedVersion.affectedVersionRangeIntroduced
+                , fixedVersion = affectedVersion.affectedVersionRangeFixed
                 }
-
         Update.insertAffectedVersionRange versionRangeDAO
     )
     affectedVersions
