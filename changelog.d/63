@@ -1,0 +1,19 @@
+synopsis: Membership data model for packages
+prs: #785
+issues: #556
+
+description: {
+
+- Migration for `create_package_groups` & `create_package_group_packages`
+- Updates to various files as a result of the work done
+- Created:
+    - `Flora/Model/PackageGroup/Query.hs`
+    - `Flora/Model/PackageGroup/Types.hs`
+    - `Flora/Model/PackageGroup/Update.hs`
+- Created:
+    - `Flora/Model/PackageGroupPackage/Query.hs`
+    - `Flora/Model/PackageGroupPackage/Types.hs`
+    - `Flora/Model/PackageGroupPackage/Update.hs`
+- Created:
+    - test/Flora/PackageGroupSpec.hs`
+}

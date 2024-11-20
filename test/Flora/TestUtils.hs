@@ -673,8 +673,7 @@ instantiateRequirement
     Update.insertRequirement req
     pure req
 
-data PackageGroupTemplate m
-  = PackageGroupTemplate
+data PackageGroupTemplate m = PackageGroupTemplate
   { packageGroupId :: m PackageGroupId
   , groupName :: m Text
   }
@@ -702,8 +701,7 @@ instantiatePackageGroup
     Update.insertPackageGroup pg
     pure pg
 
-data PackageGroupPackageTemplate m
-  = PackageGroupPackageTemplate
+data PackageGroupPackageTemplate m = PackageGroupPackageTemplate
   { packageGroupPackageId :: m PackageGroupPackageId
   , packageId :: m PackageId
   , packageGroupId :: m PackageGroupId

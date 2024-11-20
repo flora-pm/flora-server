@@ -22,8 +22,7 @@ newtype PackageGroupId = PackageGroupId {getPackageGroupId :: UUID}
     (Display)
     via ShowInstance UUID
 
-data PackageGroup
-  = PackageGroup
+data PackageGroup = PackageGroup
   { packageGroupId :: PackageGroupId
   , groupName :: Text
   }

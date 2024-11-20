@@ -2,12 +2,12 @@ module Flora.PackageGroupSpec where
 
 import Data.Vector qualified as Vector
 
+import Control.Monad (void)
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroupPackage.Update as Update
 import Flora.Model.User
-import Flora.PackageGroupTestUtils
 import Flora.TestUtils
 import Optics.Core
 
@@ -25,7 +25,7 @@ spec =
 testInsertPackageGroup :: TestEff ()
 testInsertPackageGroup = do
   user <- instantiateUser randomUserTemplate
-  package <-
+  void $
     instantiatePackage $
       randomPackageTemplate
         & #ownerId
@@ -34,12 +34,13 @@ testInsertPackageGroup = do
     instantiatePackageGroup randomPackageGroupTemplate
 
   result <- Query.getPackageGroupByPackageGroupName packageGroup.groupName
+
   case result of
     Nothing ->
       assertFailure
-        "No Package Group named: `test-group-name`"
+        "No Package Group Found in `testInsertPackageGroup`"
     Just pg ->
-      assertEqual pg.packageGroupId (extractPackageGroupIdFromPG packageGroup)
+      assertEqual pg.packageGroupId packageGroup.packageGroupId
 
 testAddPackageToPackageGroup :: TestEff ()
 testAddPackageToPackageGroup = do
@@ -60,8 +61,7 @@ testAddPackageToPackageGroup = do
         .~ pure package.packageId
 
   results <-
-    Query.getPackagesByPackageGroupId $
-      extractPackageGroupIdFromPGP packageGroupPackage
+    Query.getPackagesByPackageGroupId packageGroup.packageGroupId
 
   assertEqual 1 (Vector.length results)
 
@@ -83,17 +83,11 @@ testRemovePackageFromPackageGroup = do
         & #packageId
         .~ pure package.packageId
 
-  -- It's failing here because it is expecting one arg to the delete
-  -- but it's getting 3 (why?).  Might need to ask Hecate if this
-  -- should be turned into a raw SQL query in the
-  -- `Flora.Model.PackageGroupPackage/Update.hs` module
-  Update.removePackageFromPackageGroup packageGroupPackage
+  Update.removePackageFromPackageGroup package.packageId packageGroup.packageGroupId
 
-  results <-
-    Query.getPackagesByPackageGroupId $
-      extractPackageGroupIdFromPGP packageGroupPackage
+  results <- Query.getPackagesByPackageGroupId packageGroup.packageGroupId
 
-  assertBool True -- Not sure how to test this case well..
+  assertBool (Vector.notElem package results)
 
 testGetPackagesByPackageGroupId :: TestEff ()
 testGetPackagesByPackageGroupId = do
@@ -114,25 +108,26 @@ testGetPackagesByPackageGroupId = do
         .~ pure package.packageId
 
   results <-
-    Query.getPackagesByPackageGroupId $
-      extractPackageGroupIdFromPGP packageGroupPackage
+    Query.getPackagesByPackageGroupId packageGroup.packageGroupId
 
   assertEqual (Vector.length results) 1
 
 testGetPackageGroupByPackageGroupName :: TestEff ()
 testGetPackageGroupByPackageGroupName = do
   user <- instantiateUser randomUserTemplate
-  package <-
+  void $
     instantiatePackage $
       randomPackageTemplate
         & #ownerId
         .~ pure user.userId
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
+
   result <- Query.getPackageGroupByPackageGroupName packageGroup.groupName
+
   case result of
     Nothing ->
       assertFailure
-        "No Package Group named: `test-group-name"
+        "No Package Group Name found in `testGetPackageGroupByPackageGroupName"
     Just pg ->
-      assertEqual pg.groupName (extractGroupNameFromPG packageGroup)
+      assertEqual pg.groupName packageGroup.groupName
