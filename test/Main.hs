@@ -1,14 +1,20 @@
 module Main where
 
 import Control.Monad (void)
+import Data.List.NonEmpty
 import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
 import Effectful
+import Effectful.Error.Static
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Sel.Hashing.Password qualified as Sel
+import System.Exit
 import System.IO
 import Test.Tasty
 import Test.Tasty.Runners.Reporter qualified as Reporter
 
+import Advisories.Import qualified as Advisories
+import Advisories.Import.Error
+import Flora.AdvisorySpec qualified as AdvisorySpec
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
@@ -43,7 +49,12 @@ main = do
           Update.insertUser templateUser
           f' <- getFixtures
           importAllPackages f'
-          pure f'
+          result <- runErrorNoCallStack @(NonEmpty AdvisoryImportError) (Advisories.importAdvisories "./test/fixtures/Advisories")
+          case result of
+            Left errors -> do
+              liftIO $ print errors
+              liftIO exitFailure
+            Right _ -> pure f'
       )
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
@@ -62,6 +73,7 @@ specs fixtures =
   , BlobSpec.spec
   , SearchSpec.spec fixtures
   , PackageGroupSpec.spec
+  , AdvisorySpec.spec
   ]
 
 cleanUp :: DB :> es => Eff es ()
@@ -74,6 +86,9 @@ cleanUp = dbtToEff $ do
   void $ execute Delete "DELETE FROM downloads" ()
   void $ execute Delete "DELETE FROM requirements" ()
   void $ execute Delete "DELETE FROM package_components" ()
+  void $ execute Delete "DELETE FROM affected_version_ranges" ()
+  void $ execute Delete "DELETE FROM affected_packages" ()
+  void $ execute Delete "DELETE FROM security_advisories" ()
   void $ execute Delete "DELETE FROM releases" ()
   void $ execute Delete "DELETE FROM package_group_packages" ()
   void $ execute Delete "DELETE FROM package_groups" ()

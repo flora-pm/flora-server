@@ -3,12 +3,11 @@
 
 module Distribution.Orphans.ConfVar where
 
+import Data.Aeson (camelTo2)
 import Data.Aeson.TH
 import Distribution.System (Arch, OS)
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
-
-import Data.Aeson (camelTo2)
 
 import Distribution.Orphans.CompilerFlavor ()
 import Distribution.Orphans.PackageFlag ()

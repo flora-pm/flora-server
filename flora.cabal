@@ -75,6 +75,13 @@ library
   -- cabal-fmt: expand src/core
   -- cabal-fmt: expand src/datatypes
   exposed-modules:
+    Advisories.AffectedVersionRange.Orphans
+    Advisories.CAPEC.Orphans
+    Advisories.CVSS.Orphans
+    Advisories.CWE.Orphans
+    Advisories.HsecId.Orphans
+    Advisories.Keyword.Orphans
+    Advisories.System.Orphans
     Data.Aeson.Orphans
     Data.Positive
     Data.Text.Display.Orphans
@@ -114,6 +121,7 @@ library
     Flora.Model.Job
     Flora.Model.Organisation
     Flora.Model.Package
+    Flora.Model.Package.Guard
     Flora.Model.Package.Orphans
     Flora.Model.Package.Publisher
     Flora.Model.Package.Query
@@ -130,6 +138,7 @@ library
     Flora.Model.PackageIndex.Update
     Flora.Model.PersistentSession
     Flora.Model.Release
+    Flora.Model.Release.Guard
     Flora.Model.Release.Query
     Flora.Model.Release.Types
     Flora.Model.Release.Update
@@ -143,6 +152,8 @@ library
     JSON
     Log.Backend.File
     Lucid.Orphans
+    OSV.Reference.Orphans
+    Pandoc.Orphans
     Servant.API.ContentTypes.GZip
 
   build-depends:
@@ -159,6 +170,7 @@ library
     , cryptohash-sha256
     , cryptonite
     , cryptonite-conduit
+    , cvss
     , dani-servant-lucid2
     , deepseq
     , deriving-aeson
@@ -168,6 +180,8 @@ library
     , effectful-plugin
     , envparse
     , filepath
+    , hsec-core
+    , hsec-sync
     , http-api-data
     , http-media
     , iso8601-time
@@ -181,6 +195,8 @@ library
     , odd-jobs
     , openapi3
     , optics-core
+    , osv
+    , pandoc-types
     , pcre2
     , pg-entity
     , pg-transact
@@ -203,6 +219,7 @@ library
     , text-display
     , time
     , tracing
+    , tracing-effectful
     , unliftio
     , utf8-string
     , uuid
@@ -210,6 +227,47 @@ library
     , zlib
 
   ghc-options:     -fplugin=Effectful.Plugin
+
+library flora-advisories
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  ./src/advisories
+
+  -- cabal-fmt: expand src/advisories
+  exposed-modules:
+    Advisories.Import
+    Advisories.Import.Error
+    Advisories.Model.Advisory.Query
+    Advisories.Model.Advisory.Types
+    Advisories.Model.Advisory.Update
+    Advisories.Model.Affected.Query
+    Advisories.Model.Affected.Types
+    Advisories.Model.Affected.Update
+
+  build-depends:
+    , aeson
+    , base
+    , Cabal-syntax
+    , containers
+    , cvss
+    , deepseq
+    , effectful
+    , flora
+    , hsec-core
+    , hsec-sync
+    , hsec-tools
+    , osv
+    , pandoc-types
+    , pg-entity
+    , pg-transact-effectful
+    , postgresql-simple
+    , text
+    , time
+    , tracing
+    , tracing-effectful
+    , uuid
+    , validation-selective
+    , vector
 
 library flora-web
   import:          common-extensions
@@ -487,6 +545,7 @@ test-suite flora-test
     , exceptions
     , filepath
     , flora
+    , flora-advisories
     , flora-web
     , hedgehog
     , http-client
@@ -511,6 +570,7 @@ test-suite flora-test
     , tasty-test-reporter
     , text
     , time
+    , tracing-effectful
     , uuid
     , vector
     , vector-algorithms
@@ -518,6 +578,7 @@ test-suite flora-test
 
   ghc-options:    -fplugin=Effectful.Plugin
   other-modules:
+    Flora.AdvisorySpec
     Flora.BlobSpec
     Flora.CabalSpec
     Flora.CategorySpec
