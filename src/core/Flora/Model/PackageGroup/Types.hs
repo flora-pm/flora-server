@@ -1,7 +1,5 @@
 module Flora.Model.PackageGroup.Types where
 
-import GHC.Generics
-
 import Control.DeepSeq (NFData)
 import Data.Aeson
 import Data.Text (Text)
@@ -13,6 +11,7 @@ import Database.PostgreSQL.Simple (FromRow)
 import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow)
+import GHC.Generics
 
 newtype PackageGroupId = PackageGroupId {getPackageGroupId :: UUID}
   deriving

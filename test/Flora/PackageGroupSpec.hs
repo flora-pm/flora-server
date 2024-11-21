@@ -52,7 +52,7 @@ testAddPackageToPackageGroup = do
         .~ pure user.userId
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
-  packageGroupPackage <-
+  void $
     instantiatePackageGroupPackage $
       randomPackageGroupPackageTemplate
         & #packageGroupId
@@ -75,7 +75,7 @@ testRemovePackageFromPackageGroup = do
         .~ pure user.userId
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
-  packageGroupPackage <-
+  void $
     instantiatePackageGroupPackage $
       randomPackageGroupPackageTemplate
         & #packageGroupId
@@ -99,7 +99,7 @@ testGetPackagesByPackageGroupId = do
         .~ pure user.userId
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
-  packageGroupPackage <-
+  void $
     instantiatePackageGroupPackage $
       randomPackageGroupPackageTemplate
         & #packageGroupId
