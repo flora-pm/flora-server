@@ -1,0 +1,7 @@
+synopsis: Membership data model for packages
+prs: #785
+issues: #556
+
+description: {
+  Migration for `create_package_groups` & `create_package_group_packages`
+}
