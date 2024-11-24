@@ -24,7 +24,7 @@ flora_category("algorithms", "Algorithms", "Algorithms implemented in Haskell, l
 flora_category("audio", "Audio", "Process digital signal, make music").
 flora_category("bioinformatics", "Bioinformatics", "Methods and software for the analysis of biological data").
 flora_category("cloud", "Cloud Computing", "Bindings to Cloud Computing platforms").
-flora_category("command-line", "CLI & TUI tooling", "Libraries to develope command-line interfaces").
+flora_category("command-line", "CLI & TUI tooling", "Libraries to develop command-line interfaces").
 flora_category("compilers-interpreters", "Compilers and Interpreters", "Tooling to create compilers and interpreters").
 flora_category("compression", "Data compression", "Reducing the size of things").
 flora_category("concurrency", "Concurrency", "Concurrent programming techniques and tools").
