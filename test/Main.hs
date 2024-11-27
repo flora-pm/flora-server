@@ -29,6 +29,7 @@ import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
 import Flora.OddJobSpec qualified as OddJobSpec
+import Flora.PackageGroupSpec qualified as PackageGroupSpec
 import Flora.PackageSpec qualified as PackageSpec
 import Flora.SearchSpec qualified as SearchSpec
 import Flora.TemplateSpec qualified as TemplateSpec
@@ -81,6 +82,7 @@ specs fixtures =
   , ImportSpec.spec fixtures
   , BlobSpec.spec
   , SearchSpec.spec fixtures
+  , PackageGroupSpec.spec
   , AdvisorySpec.spec
   ]
 
@@ -98,6 +100,8 @@ cleanUp = dbtToEff $ do
   void $ execute Delete "DELETE FROM affected_packages" ()
   void $ execute Delete "DELETE FROM security_advisories" ()
   void $ execute Delete "DELETE FROM releases" ()
+  void $ execute Delete "DELETE FROM package_group_packages" ()
+  void $ execute Delete "DELETE FROM package_groups" ()
   void $ execute Delete "DELETE FROM packages" ()
   void $ execute Delete "DELETE FROM package_indexes" ()
   void $ execute Delete "DELETE FROM user_organisation" ()
