@@ -1,0 +1,252 @@
+Name: git-annex
+Version: 6.20160419
+Cabal-Version: >= 1.8
+License: GPL-3
+Maintainer: Joey Hess <id@joeyh.name>
+Author: Joey Hess
+Stability: Stable
+Copyright: 2010-2014 Joey Hess
+License-File: COPYRIGHT
+Extra-Source-Files: CHANGELOG
+Homepage: http://git-annex.branchable.com/
+Build-type: Custom
+Category: Utility
+Synopsis: manage files with git, without checking their contents into git
+Description:
+ git-annex allows managing files with git, without checking the file
+ contents into git. While that may seem paradoxical, it is useful when
+ dealing with files larger than git can currently easily handle, whether due
+ to limitations in memory, time, or disk space.
+ .
+ It can store large files in many places, from local hard drives, to a
+ large number of cloud storage services, including S3, WebDAV,
+ and rsync, with a dozen cloud storage providers usable via plugins.
+ Files can be stored encrypted with gpg, so that the cloud storage
+ provider cannot see your data. git-annex keeps track of where each file
+ is stored, so it knows how many copies are available, and has many
+ facilities to ensure your data is preserved.
+ .
+ git-annex can also be used to keep a folder in sync between computers,
+ noticing when files are changed, and automatically committing them
+ to git and transferring them to other computers. The git-annex webapp
+ makes it easy to set up and use git-annex this way.
+
+Flag S3
+  Description: Enable S3 support
+
+Flag WebDAV
+  Description: Enable WebDAV support
+
+Flag Assistant
+  Description: Enable git-annex assistant and watch command
+
+Flag Webapp
+  Description: Enable git-annex webapp
+
+Flag Pairing
+  Description: Enable pairing
+
+Flag Production
+  Description: Enable production build (slower build; faster binary)
+
+Flag Android
+  Description: Cross building for Android
+  Default: False
+
+Flag AndroidSplice
+  Description: Building to get TH splices for Android
+  Default: False
+
+Flag TestSuite
+  Description: Embed the test suite into git-annex
+
+Flag TorrentParser
+  Description: Use haskell torrent library to parse torrent files
+
+Flag MagicMime
+  Description: Use libmagic to determine file MIME types
+
+Flag ConcurrentOutput
+  Description: Use concurrent-output library
+
+Flag EKG
+  Description: Enable use of EKG to monitor git-annex as it runs (at http://localhost:4242/)
+  Default: False
+
+Flag Benchmark
+  Description: Enable benchmarking
+  Default: False
+
+Flag network-uri
+  Description: Get Network.URI from the network-uri package
+  Default: True
+
+Flag Cryptonite
+  Description: Use the cryptonite library, instead of the older cryptohash
+
+Flag Dbus
+  Description: Enable dbus support
+
+Flag XMPP
+  Description: Enable notifications using XMPP
+
+Executable git-annex
+  Main-Is: git-annex.hs
+  Build-Depends:
+   base (>= 4.5 && < 4.9),
+   optparse-applicative (>= 0.11.0), 
+   containers (>= 0.5.0.0), 
+   exceptions (>= 0.6),
+   QuickCheck (>= 2.1),
+   stm (>= 2.3),
+   mtl (>= 2),
+   process, data-default, case-insensitive, uuid, random, dlist,
+   unix-compat, SafeSemaphore, async, directory, filepath, IfElse,
+   MissingH, hslogger, monad-logger,
+   utf8-string, bytestring, text, sandi, json,
+   monad-control, transformers,
+   bloomfilter, edit-distance,
+   resourcet, http-conduit, http-client, http-types,
+   time, old-locale,
+   esqueleto, persistent-sqlite, persistent, persistent-template,
+   aeson,
+   feed,
+   regex-tdfa
+  CC-Options: -Wall
+  GHC-Options: -Wall -fno-warn-tabs
+  Extensions: PackageImports
+  -- Some things don't work with the non-threaded RTS.
+  GHC-Options: -threaded
+
+  -- Fully optimize for production.
+  if flag(Production)
+    GHC-Options: -O2
+
+  -- Avoid linking with unused dynamic libaries.
+  -- (Only tested on Linux).
+  if os(Linux)
+    GHC-Options: -optl-Wl,--as-needed
+
+  if flag(network-uri)
+    Build-Depends: network-uri (>= 2.6), network (>= 2.6)
+  else
+    Build-Depends: network (< 2.6), network (>= 2.4)
+
+  if flag(Cryptonite)
+    Build-Depends: cryptonite
+    CPP-Options: -DWITH_CRYPTONITE
+  else
+    Build-Depends: cryptohash (>= 0.11.0)
+
+  if (os(windows))
+    Build-Depends: Win32, Win32-extras, unix-compat (>= 0.4.1.3), setenv,
+      process (>= 1.3.0.0)
+  else
+    Build-Depends: unix
+    if impl(ghc <= 7.6.3)
+      Other-Modules: Utility.Touch.Old
+
+  if flag(TestSuite)
+    Build-Depends: tasty (>= 0.7), tasty-hunit, tasty-quickcheck, tasty-rerun,
+     crypto-api
+    CPP-Options: -DWITH_TESTSUITE
+
+  if flag(S3)
+    Build-Depends: conduit, conduit-extra, aws (>= 0.9.2)
+    CPP-Options: -DWITH_S3
+
+  if flag(WebDAV)
+    Build-Depends: DAV (>= 1.0)
+    CPP-Options: -DWITH_WEBDAV
+
+  if flag(Assistant) && ! os(solaris)
+    Build-Depends: dns, mountpoints
+    CPP-Options: -DWITH_ASSISTANT
+
+  if flag(Assistant)
+    if os(linux)
+      Build-Depends: hinotify
+      CPP-Options: -DWITH_INOTIFY
+    else
+      if os(darwin)
+        Build-Depends: hfsevents
+        CPP-Options: -DWITH_FSEVENTS
+      else
+        if os(windows)
+          Build-Depends: Win32-notify
+          CPP-Options: -DWITH_WIN32NOTIFY
+        else
+          if (! os(solaris) && ! os(linux))
+            if flag(Android)
+              Build-Depends: hinotify
+              CPP-Options: -DWITH_INOTIFY
+            else
+              CPP-Options: -DWITH_KQUEUE
+              C-Sources: Utility/libkqueue.c
+
+  if flag(Dbus)
+    if (os(linux))
+      Build-Depends: dbus (>= 0.10.7), fdo-notify (>= 0.3)
+      CPP-Options: -DWITH_DBUS -DWITH_DESKTOP_NOTIFY -DWITH_DBUS_NOTIFICATIONS
+
+  if flag(Android)
+    Build-Depends: data-endian
+    CPP-Options: -D__ANDROID__ -DANDROID_SPLICES -D__NO_TH__
+  else
+    Build-Depends: disk-free-space
+
+  if flag(AndroidSplice)
+    CPP-Options: -DANDROID_SPLICES
+
+  if flag(Webapp)
+    Build-Depends:
+     yesod (>= 1.2.6), 
+     yesod-default (>= 1.2.0),
+     yesod-static (>= 1.2.4),
+     yesod-form (>= 1.3.15),
+     yesod-core (>= 1.2.19),
+     path-pieces (>= 0.1.4),
+     warp (>= 3.0.0.5),
+     warp-tls (>= 1.4),
+     wai, wai-extra,
+     blaze-builder, crypto-api, clientsession,
+     template-haskell,
+     shakespeare (>= 2.0.0),
+     securemem,
+     byteable
+    CPP-Options: -DWITH_WEBAPP
+
+  if flag(Pairing)
+    Build-Depends: network-multicast, network-info
+    CPP-Options: -DWITH_PAIRING
+
+  if flag(XMPP)
+    if (! os(windows))
+      Build-Depends: network-protocol-xmpp, gnutls (>= 0.1.4), xml-types
+      CPP-Options: -DWITH_XMPP
+  
+  if flag(TorrentParser)
+    Build-Depends: torrent (>= 10000.0.0)
+    CPP-Options: -DWITH_TORRENTPARSER
+
+  if flag(MagicMime)
+    if (! os(windows))
+      Build-Depends: magic
+      CPP-Options: -DWITH_MAGICMIME
+
+  if flag(ConcurrentOutput)
+    Build-Depends: concurrent-output (>= 1.6)
+    CPP-Options: -DWITH_CONCURRENTOUTPUT
+
+  if flag(EKG)
+    Build-Depends: ekg
+    GHC-Options: -with-rtsopts=-T
+    CPP-Options: -DWITH_EKG
+  
+  if flag(Benchmark)
+    Build-Depends: criterion, deepseq
+    CPP-Options: -DWITH_BENCHMARK
+
+source-repository head
+  type: git
+  location: git://git-annex.branchable.com/

@@ -42,7 +42,7 @@ importAdvisories root = Tracing.rootSpan alwaysSampled "import-advisories" $ do
     Failure failures ->
       let errors = case NonEmpty.nonEmpty failures of
             Just nonEmptyFailures -> fmap AdvisoryParsingError nonEmptyFailures
-            Nothing -> NonEmpty.singleton FackinHell
+            Nothing -> error "Impossible: Only one error caught."
        in throwError errors
     Success advisoryList -> do
       forM_ advisoryList $ \advisory -> importAdvisory advisory

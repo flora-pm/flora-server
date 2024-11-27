@@ -1,0 +1,1104 @@
+Name: git-annex
+Version: 6.20180626
+Cabal-Version: >= 1.8
+License: GPL-3
+Maintainer: Joey Hess <id@joeyh.name>
+Author: Joey Hess
+Stability: Stable
+Copyright: 2010-2017 Joey Hess
+License-File: COPYRIGHT
+Homepage: http://git-annex.branchable.com/
+Build-type: Custom
+Category: Utility
+Synopsis: manage files with git, without checking their contents into git
+Description:
+ git-annex allows managing files with git, without checking the file
+ contents into git. While that may seem paradoxical, it is useful when
+ dealing with files larger than git can currently easily handle, whether due
+ to limitations in memory, time, or disk space.
+ .
+ It can store large files in many places, from local hard drives, to a
+ large number of cloud storage services, including S3, WebDAV,
+ and rsync, with a dozen cloud storage providers usable via plugins.
+ Files can be stored encrypted with gpg, so that the cloud storage
+ provider cannot see your data. git-annex keeps track of where each file
+ is stored, so it knows how many copies are available, and has many
+ facilities to ensure your data is preserved.
+ .
+ git-annex can also be used to keep a folder in sync between computers,
+ noticing when files are changed, and automatically committing them
+ to git and transferring them to other computers. The git-annex webapp
+ makes it easy to set up and use git-annex this way.
+-- The tarball uploaded to hackage does not include every non-haskell
+-- file in the git repo. The website is left out, so is build machinary for
+-- standalone apps, and packages. Include only files that are needed
+-- make cabal install git-annex work.
+Extra-Source-Files:
+  stack.yaml
+  README
+  CHANGELOG
+  NEWS
+  doc/license/GPL
+  doc/license/AGPL
+  doc/git-annex.mdwn
+  doc/git-annex-add.mdwn
+  doc/git-annex-addunused.mdwn
+  doc/git-annex-addurl.mdwn
+  doc/git-annex-adjust.mdwn
+  doc/git-annex-assistant.mdwn
+  doc/git-annex-calckey.mdwn
+  doc/git-annex-checkpresentkey.mdwn
+  doc/git-annex-contentlocation.mdwn
+  doc/git-annex-copy.mdwn
+  doc/git-annex-dead.mdwn
+  doc/git-annex-describe.mdwn
+  doc/git-annex-diffdriver.mdwn
+  doc/git-annex-direct.mdwn
+  doc/git-annex-drop.mdwn
+  doc/git-annex-dropkey.mdwn
+  doc/git-annex-dropunused.mdwn
+  doc/git-annex-edit.mdwn
+  doc/git-annex-enableremote.mdwn
+  doc/git-annex-enable-tor.mdwn
+  doc/git-annex-examinekey.mdwn
+  doc/git-annex-expire.mdwn
+  doc/git-annex-export.mdwn
+  doc/git-annex-find.mdwn
+  doc/git-annex-findref.mdwn
+  doc/git-annex-fix.mdwn
+  doc/git-annex-forget.mdwn
+  doc/git-annex-fromkey.mdwn
+  doc/git-annex-fsck.mdwn
+  doc/git-annex-fuzztest.mdwn
+  doc/git-annex-get.mdwn
+  doc/git-annex-group.mdwn
+  doc/git-annex-groupwanted.mdwn
+  doc/git-annex-import.mdwn
+  doc/git-annex-importfeed.mdwn
+  doc/git-annex-indirect.mdwn
+  doc/git-annex-info.mdwn
+  doc/git-annex-init.mdwn
+  doc/git-annex-initremote.mdwn
+  doc/git-annex-inprogress.mdwn
+  doc/git-annex-list.mdwn
+  doc/git-annex-lock.mdwn
+  doc/git-annex-log.mdwn
+  doc/git-annex-lookupkey.mdwn
+  doc/git-annex-map.mdwn
+  doc/git-annex-matchexpression.mdwn
+  doc/git-annex-matching-options.mdwn
+  doc/git-annex-merge.mdwn
+  doc/git-annex-metadata.mdwn
+  doc/git-annex-migrate.mdwn
+  doc/git-annex-mirror.mdwn
+  doc/git-annex-move.mdwn
+  doc/git-annex-multicast.mdwn
+  doc/git-annex-numcopies.mdwn
+  doc/git-annex-p2p.mdwn
+  doc/git-annex-pre-commit.mdwn
+  doc/git-annex-preferred-content.mdwn
+  doc/git-annex-proxy.mdwn
+  doc/git-annex-readpresentkey.mdwn
+  doc/git-annex-registerurl.mdwn
+  doc/git-annex-reinit.mdwn
+  doc/git-annex-reinject.mdwn
+  doc/git-annex-rekey.mdwn
+  doc/git-annex-remotedaemon.mdwn
+  doc/git-annex-repair.mdwn
+  doc/git-annex-required.mdwn
+  doc/git-annex-resolvemerge.mdwn
+  doc/git-annex-rmurl.mdwn
+  doc/git-annex-schedule.mdwn
+  doc/git-annex-semitrust.mdwn
+  doc/git-annex-setkey.mdwn
+  doc/git-annex-setpresentkey.mdwn
+  doc/git-annex-shell.mdwn
+  doc/git-annex-smudge.mdwn
+  doc/git-annex-status.mdwn
+  doc/git-annex-sync.mdwn
+  doc/git-annex-test.mdwn
+  doc/git-annex-testremote.mdwn
+  doc/git-annex-transferkey.mdwn
+  doc/git-annex-transferkeys.mdwn
+  doc/git-annex-trust.mdwn
+  doc/git-annex-unannex.mdwn
+  doc/git-annex-undo.mdwn
+  doc/git-annex-ungroup.mdwn
+  doc/git-annex-uninit.mdwn
+  doc/git-annex-unlock.mdwn
+  doc/git-annex-untrust.mdwn
+  doc/git-annex-unused.mdwn
+  doc/git-annex-upgrade.mdwn
+  doc/git-annex-vadd.mdwn
+  doc/git-annex-vcycle.mdwn
+  doc/git-annex-version.mdwn
+  doc/git-annex-vfilter.mdwn
+  doc/git-annex-vicfg.mdwn
+  doc/git-annex-view.mdwn
+  doc/git-annex-vpop.mdwn
+  doc/git-annex-wanted.mdwn
+  doc/git-annex-watch.mdwn
+  doc/git-annex-webapp.mdwn
+  doc/git-annex-whereis.mdwn
+  doc/git-remote-tor-annex.mdwn
+  doc/logo.svg
+  doc/logo_16x16.png
+  Build/mdwn2man
+  Assistant/WebApp/routes
+  static/activityicon.gif
+  static/css/bootstrap.css
+  static/css/bootstrap-theme.css
+  static/js/jquery.ui.core.js
+  static/js/longpolling.js
+  static/js/jquery.full.js
+  static/js/jquery.ui.sortable.js
+  static/js/jquery.ui.mouse.js
+  static/js/jquery.ui.widget.js
+  static/js/bootstrap.js
+  static/syncicon.gif
+  static/favicon.ico
+  static/fonts/glyphicons-halflings-regular.woff
+  static/fonts/glyphicons-halflings-regular.eot
+  static/fonts/glyphicons-halflings-regular.svg
+  static/fonts/glyphicons-halflings-regular.ttf
+  templates/sidebar/main.hamlet
+  templates/sidebar/alert.hamlet
+  templates/bootstrap.hamlet
+  templates/error.cassius
+  templates/README
+  templates/error.hamlet
+  templates/documentation/license.hamlet
+  templates/documentation/repogroup.hamlet
+  templates/documentation/about.hamlet
+  templates/dashboard/main.hamlet
+  templates/dashboard/transfers.cassius
+  templates/dashboard/transfers.hamlet
+  templates/dashboard/metarefresh.hamlet
+  templates/page.cassius
+  templates/page.hamlet
+  templates/control/repairrepository.hamlet
+  templates/control/repairrepository/done.hamlet
+  templates/control/notrunning.julius
+  templates/control/notrunning.hamlet
+  templates/control/repositoryswitcher.hamlet
+  templates/control/shutdown.hamlet
+  templates/control/log.hamlet
+  templates/page.julius
+  templates/repolist.julius
+  templates/configurators/adddrive/combine.hamlet
+  templates/configurators/adddrive/setupmodal.hamlet
+  templates/configurators/adddrive/encrypt.hamlet
+  templates/configurators/newrepository.hamlet
+  templates/configurators/needglaciercli.hamlet
+  templates/configurators/adds3.hamlet
+  templates/configurators/genkeymodal.hamlet
+  templates/configurators/main.hamlet
+  templates/configurators/needconnection.hamlet
+  templates/configurators/newrepository/form.hamlet
+  templates/configurators/newrepository/first.hamlet
+  templates/configurators/newrepository/combine.hamlet
+  templates/configurators/enablewebdav.hamlet
+  templates/configurators/pairing/local/inprogress.hamlet
+  templates/configurators/pairing/local/prompt.hamlet
+  templates/configurators/pairing/wormhole/prompt.hamlet
+  templates/configurators/pairing/wormhole/start.hamlet
+  templates/configurators/pairing/disabled.hamlet
+  templates/configurators/addglacier.hamlet
+  templates/configurators/fsck.cassius
+  templates/configurators/edit/nonannexremote.hamlet
+  templates/configurators/edit/webrepository.hamlet
+  templates/configurators/edit/repository.hamlet
+  templates/configurators/unused.hamlet
+  templates/configurators/addbox.com.hamlet
+  templates/configurators/ssh/testmodal.hamlet
+  templates/configurators/ssh/expiredpassword.hamlet
+  templates/configurators/ssh/error.hamlet
+  templates/configurators/ssh/combine.hamlet
+  templates/configurators/ssh/enable.hamlet
+  templates/configurators/ssh/add.hamlet
+  templates/configurators/ssh/setupmodal.hamlet
+  templates/configurators/ssh/confirm.hamlet
+  templates/configurators/upgrade/android.hamlet
+  templates/configurators/enableia.hamlet
+  templates/configurators/fsck.hamlet
+  templates/configurators/addrepository/archive.hamlet
+  templates/configurators/addrepository/cloud.hamlet
+  templates/configurators/addrepository/connection.hamlet
+  templates/configurators/addrepository/ssh.hamlet
+  templates/configurators/addrepository/misc.hamlet
+  templates/configurators/addrepository/wormholepairing.hamlet
+  templates/configurators/rsync.net/add.hamlet
+  templates/configurators/rsync.net/encrypt.hamlet
+  templates/configurators/gitlab.com/add.hamlet
+  templates/configurators/needgcrypt.hamlet
+  templates/configurators/needtor.hamlet
+  templates/configurators/needmagicwormhole.hamlet
+  templates/configurators/enabledirectory.hamlet
+  templates/configurators/fsck/status.hamlet
+  templates/configurators/fsck/form.hamlet
+  templates/configurators/fsck/preferencesform.hamlet
+  templates/configurators/fsck/formcontent.hamlet
+  templates/configurators/delete/finished.hamlet
+  templates/configurators/delete/start.hamlet
+  templates/configurators/delete/currentrepository.hamlet
+  templates/configurators/unused/form.hamlet
+  templates/configurators/adddrive.hamlet
+  templates/configurators/preferences.hamlet
+  templates/configurators/addia.hamlet
+  templates/configurators/enableaws.hamlet
+  templates/configurators/addrepository.hamlet
+  templates/actionbutton.hamlet
+  templates/repolist.hamlet
+  templates/controlmenu.hamlet
+  templates/notifications/longpolling.julius
+
+Flag S3
+  Description: Enable S3 support
+
+Flag WebDAV
+  Description: Enable WebDAV support
+
+Flag Assistant
+  Description: Enable git-annex assistant and watch command
+
+Flag Webapp
+  Description: Enable git-annex webapp
+
+Flag Pairing
+  Description: Enable pairing
+
+Flag Production
+  Description: Enable production build (slower build; faster binary)
+
+Flag Android
+  Description: Cross building for Android
+  Default: False
+
+Flag AndroidSplice
+  Description: Building to get TH splices for Android
+  Default: False
+
+Flag TorrentParser
+  Description: Use haskell torrent library to parse torrent files
+
+Flag MagicMime
+  Description: Use libmagic to determine file MIME types
+
+Flag ConcurrentOutput
+  Description: Use concurrent-output library
+
+Flag Benchmark
+  Description: Enable benchmarking
+  Default: False
+
+Flag network-uri
+  Description: Get Network.URI from the network-uri package
+  Default: True
+
+Flag Dbus
+  Description: Enable dbus support
+
+source-repository head
+  type: git
+  location: git://git-annex.branchable.com/
+
+custom-setup
+  Setup-Depends: base (>= 4.6), hslogger, split, unix-compat, process,
+    filepath, exceptions, bytestring, directory, IfElse, data-default,
+    utf8-string, Cabal
+
+Executable git-annex
+  Main-Is: git-annex.hs
+  Build-Depends:
+   base (>= 4.6 && < 5.0),
+   optparse-applicative (>= 0.11.0), 
+   containers (>= 0.5.0.0),
+   exceptions (>= 0.6),
+   stm (>= 2.3),
+   mtl (>= 2),
+   uuid (>= 1.2.6),
+   process,
+   data-default,
+   case-insensitive,
+   random,
+   dlist,
+   unix-compat,
+   SafeSemaphore,
+   async,
+   directory (>= 1.2),
+   filepath,
+   IfElse,
+   hslogger,
+   monad-logger,
+   free,
+   utf8-string,
+   bytestring,
+   text,
+   sandi,
+   monad-control,
+   transformers,
+   bloomfilter,
+   edit-distance,
+   resourcet,
+   connection (>= 0.2.6),
+   http-client (>= 0.4.31),
+   http-client-tls,
+   http-types (>= 0.7),
+   http-conduit (>= 2.0),
+   conduit,
+   time,
+   old-locale,
+   esqueleto,
+   persistent-sqlite, 
+   persistent,
+   persistent-template,
+   aeson,
+   vector,
+   tagsoup,
+   unordered-containers,
+   feed (>= 0.3.9),
+   regex-tdfa,
+   socks,
+   byteable,
+   stm-chans,
+   securemem,
+   crypto-api,
+   cryptonite,
+   memory,
+   split,
+   QuickCheck (>= 2.1),
+   tasty (>= 0.7),
+   tasty-hunit,
+   tasty-quickcheck,
+   tasty-rerun
+  CC-Options: -Wall
+  GHC-Options: -Wall -fno-warn-tabs
+  Extensions: PackageImports, LambdaCase
+  -- Some things don't work with the non-threaded RTS.
+  GHC-Options: -threaded
+  Other-Extensions: TemplateHaskell
+
+  -- Fully optimize for production.
+  if flag(Production)
+    -- Lower memory systems can run out of memory with -O2, so
+    -- optimise slightly less.
+    -- This needs -O1 before the -optlo, due to this bug:
+    -- https://ghc.haskell.org/trac/ghc/ticket/14821
+    -- But unfortunately, hackage currently refuses to accept -O1
+    if arch(arm)
+      GHC-Options: -optlo-O2
+    else
+      GHC-Options: -O2
+
+  -- Avoid linking with unused dynamic libaries.
+  -- (Only tested on Linux).
+  if os(Linux)
+    GHC-Options: -optl-Wl,--as-needed
+
+  if flag(network-uri)
+    Build-Depends: network-uri (>= 2.6), network (>= 2.6)
+  else
+    Build-Depends: network (< 2.6), network (>= 2.4)
+
+  if (os(windows))
+    Build-Depends:
+      Win32 (>= 2.6.1.0),
+      unix-compat (>= 0.5),
+      setenv,
+      process (>= 1.6.2.0)
+  else
+    Build-Depends: unix
+    if impl(ghc <= 7.6.3)
+      Other-Modules: Utility.Touch.Old
+
+  if flag(S3)
+    Build-Depends: aws (>= 0.9.2)
+    CPP-Options: -DWITH_S3
+    Other-Modules: Remote.S3
+
+  if flag(WebDAV)
+    Build-Depends: DAV (>= 1.0)
+    CPP-Options: -DWITH_WEBDAV
+    Other-Modules:
+      Remote.WebDAV
+      Remote.WebDAV.DavLocation
+
+  if flag(Assistant) && ! os(solaris) && ! os(gnu)
+    Build-Depends: dns (>= 1.0.0), mountpoints
+    CPP-Options: -DWITH_ASSISTANT
+
+  if flag(Assistant)
+    if os(linux) || flag(Android)
+      Build-Depends: hinotify
+      CPP-Options: -DWITH_INOTIFY
+      Other-Modules: Utility.DirWatcher.INotify
+    else
+      if os(darwin)
+        Build-Depends: hfsevents
+        CPP-Options: -DWITH_FSEVENTS
+        Other-Modules: Utility.DirWatcher.FSEvents
+      else
+        if os(windows)
+          Build-Depends: Win32-notify
+          CPP-Options: -DWITH_WIN32NOTIFY
+          Other-Modules: Utility.DirWatcher.Win32Notify
+        else
+          if (! os(solaris) && ! os(gnu) && ! os(linux))
+            CPP-Options: -DWITH_KQUEUE
+            C-Sources: Utility/libkqueue.c
+            Includes: Utility/libkqueue.h
+            Other-Modules: Utility.DirWatcher.Kqueue
+
+  if flag(Dbus)
+    if (os(linux))
+      Build-Depends: dbus (>= 0.10.7), fdo-notify (>= 0.3)
+      CPP-Options: -DWITH_DBUS -DWITH_DESKTOP_NOTIFY -DWITH_DBUS_NOTIFICATIONS
+      Other-Modules: Utility.DBus
+
+  if flag(Android)
+    Build-Depends: data-endian
+    CPP-Options: -D__ANDROID__ -DANDROID_SPLICES -D__NO_TH__
+  else
+    Build-Depends: disk-free-space
+
+  if flag(AndroidSplice)
+    CPP-Options: -DANDROID_SPLICES
+
+  if flag(Webapp)
+    Build-Depends:
+     yesod (>= 1.2.6), 
+     yesod-static (>= 1.2.4),
+     yesod-form (>= 1.3.15),
+     yesod-core (>= 1.2.19),
+     path-pieces (>= 0.1.4),
+     warp (>= 3.0.0.5),
+     warp-tls (>= 1.4),
+     wai,
+     wai-extra,
+     blaze-builder,
+     clientsession,
+     template-haskell,
+     shakespeare (>= 2.0.0)
+    CPP-Options: -DWITH_WEBAPP
+    Other-Modules:
+      Command.WebApp
+      Assistant.Threads.WebApp
+      Assistant.Threads.PairListener
+      Assistant.WebApp
+      Assistant.WebApp.Common
+      Assistant.WebApp.Configurators
+      Assistant.WebApp.Configurators.AWS
+      Assistant.WebApp.Configurators.Delete
+      Assistant.WebApp.Configurators.Edit
+      Assistant.WebApp.Configurators.Fsck
+      Assistant.WebApp.Configurators.IA
+      Assistant.WebApp.Configurators.Local
+      Assistant.WebApp.Configurators.Pairing
+      Assistant.WebApp.Configurators.Preferences
+      Assistant.WebApp.Configurators.Ssh
+      Assistant.WebApp.Configurators.Unused
+      Assistant.WebApp.Configurators.Upgrade
+      Assistant.WebApp.Configurators.WebDAV
+      Assistant.WebApp.Control
+      Assistant.WebApp.DashBoard
+      Assistant.WebApp.Documentation
+      Assistant.WebApp.Form
+      Assistant.WebApp.Gpg
+      Assistant.WebApp.MakeRemote
+      Assistant.WebApp.Notifications
+      Assistant.WebApp.OtherRepos
+      Assistant.WebApp.Page
+      Assistant.WebApp.Pairing
+      Assistant.WebApp.Repair
+      Assistant.WebApp.RepoId
+      Assistant.WebApp.RepoList
+      Assistant.WebApp.SideBar
+      Assistant.WebApp.Types
+      Annex.MakeRepo
+      Utility.Yesod
+      Utility.WebApp
+
+  if flag(Pairing)
+    Build-Depends: network-multicast, network-info
+    CPP-Options: -DWITH_PAIRING
+
+  if flag(TorrentParser)
+    Build-Depends: torrent (>= 10000.0.0)
+    CPP-Options: -DWITH_TORRENTPARSER
+
+  if flag(MagicMime)
+    if (! os(windows))
+      Build-Depends: magic
+      CPP-Options: -DWITH_MAGICMIME
+
+  if flag(ConcurrentOutput)
+    Build-Depends: concurrent-output (>= 1.6)
+    CPP-Options: -DWITH_CONCURRENTOUTPUT
+
+  if flag(Benchmark)
+    Build-Depends: criterion, deepseq
+    CPP-Options: -DWITH_BENCHMARK
+    Other-Modules: Command.Benchmark
+
+  Other-Modules:
+    Annex
+    Annex.Action
+    Annex.AdjustedBranch
+    Annex.AutoMerge
+    Annex.BloomFilter
+    Annex.Branch
+    Annex.Branch.Transitions
+    Annex.BranchState
+    Annex.CatFile
+    Annex.ChangedRefs
+    Annex.CheckAttr
+    Annex.CheckIgnore
+    Annex.Common
+    Annex.Concurrent
+    Annex.Content
+    Annex.Content.Direct
+    Annex.Difference
+    Annex.DirHashes
+    Annex.Direct
+    Annex.Drop
+    Annex.Environment
+    Annex.Export
+    Annex.FileMatcher
+    Annex.Fixup
+    Annex.GitOverlay
+    Annex.HashObject
+    Annex.Hook
+    Annex.Ingest
+    Annex.Init
+    Annex.InodeSentinal
+    Annex.Journal
+    Annex.Link
+    Annex.Locations
+    Annex.LockFile
+    Annex.LockPool
+    Annex.LockPool.PosixOrPid
+    Annex.MetaData
+    Annex.MetaData.StandardFields
+    Annex.Multicast
+    Annex.Notification
+    Annex.NumCopies
+    Annex.Path
+    Annex.Perms
+    Annex.Queue
+    Annex.ReplaceFile
+    Annex.SpecialRemote
+    Annex.Ssh
+    Annex.TaggedPush
+    Annex.Transfer
+    Annex.UpdateInstead
+    Annex.UUID
+    Annex.Url
+    Annex.VectorClock
+    Annex.VariantFile
+    Annex.Version
+    Annex.View
+    Annex.View.ViewedFile
+    Annex.Wanted
+    Annex.WorkTree
+    Annex.YoutubeDl
+    Assistant
+    Assistant.Alert
+    Assistant.Alert.Utility
+    Assistant.BranchChange
+    Assistant.Changes
+    Assistant.Commits
+    Assistant.Common
+    Assistant.CredPairCache
+    Assistant.DaemonStatus
+    Assistant.DeleteRemote
+    Assistant.Drop
+    Assistant.Fsck
+    Assistant.Gpg
+    Assistant.Install
+    Assistant.Install.AutoStart
+    Assistant.Install.Menu
+    Assistant.MakeRemote
+    Assistant.Monad
+    Assistant.NamedThread
+    Assistant.Pairing
+    Assistant.Pairing.MakeRemote
+    Assistant.Pairing.Network
+    Assistant.Pushes
+    Assistant.RemoteControl
+    Assistant.Repair
+    Assistant.RepoProblem
+    Assistant.Restart
+    Assistant.ScanRemotes
+    Assistant.Ssh
+    Assistant.Sync
+    Assistant.Threads.Committer
+    Assistant.Threads.ConfigMonitor
+    Assistant.Threads.Cronner
+    Assistant.Threads.DaemonStatus
+    Assistant.Threads.Exporter
+    Assistant.Threads.Glacier
+    Assistant.Threads.Merger
+    Assistant.Threads.MountWatcher
+    Assistant.Threads.NetWatcher
+    Assistant.Threads.ProblemFixer
+    Assistant.Threads.Pusher
+    Assistant.Threads.RemoteControl
+    Assistant.Threads.SanityChecker
+    Assistant.Threads.TransferPoller
+    Assistant.Threads.TransferScanner
+    Assistant.Threads.TransferWatcher
+    Assistant.Threads.Transferrer
+    Assistant.Threads.UpgradeWatcher
+    Assistant.Threads.Upgrader
+    Assistant.Threads.Watcher
+    Assistant.TransferQueue
+    Assistant.TransferSlots
+    Assistant.TransferrerPool
+    Assistant.Types.Alert
+    Assistant.Types.BranchChange
+    Assistant.Types.Changes
+    Assistant.Types.Commits
+    Assistant.Types.CredPairCache
+    Assistant.Types.DaemonStatus
+    Assistant.Types.NamedThread
+    Assistant.Types.Pushes
+    Assistant.Types.RemoteControl
+    Assistant.Types.RepoProblem
+    Assistant.Types.ScanRemotes
+    Assistant.Types.ThreadName
+    Assistant.Types.ThreadedMonad
+    Assistant.Types.TransferQueue
+    Assistant.Types.TransferSlots
+    Assistant.Types.TransferrerPool
+    Assistant.Types.UrlRenderer
+    Assistant.Unused
+    Assistant.Upgrade
+    Backend
+    Backend.Hash
+    Backend.URL
+    Backend.Utilities
+    Backend.WORM
+    Build.BundledPrograms
+    Build.Configure
+    Build.DesktopFile
+    Build.Mans
+    Build.TestConfig
+    Build.Version
+    BuildInfo
+    BuildFlags
+    CmdLine
+    CmdLine.Action
+    CmdLine.Batch
+    CmdLine.GitAnnex
+    CmdLine.GitAnnex.Options
+    CmdLine.GitAnnexShell
+    CmdLine.GitAnnexShell.Checks
+    CmdLine.GitAnnexShell.Fields
+    CmdLine.GlobalSetter
+    CmdLine.Option
+    CmdLine.GitRemoteTorAnnex
+    CmdLine.Seek
+    CmdLine.Usage
+    Command
+    Command.Add
+    Command.AddUnused
+    Command.AddUrl
+    Command.Adjust
+    Command.Assistant
+    Command.CalcKey
+    Command.CheckPresentKey
+    Command.Commit
+    Command.Config
+    Command.ConfigList
+    Command.ContentLocation
+    Command.Copy
+    Command.Dead
+    Command.Describe
+    Command.DiffDriver
+    Command.Direct
+    Command.Drop
+    Command.DropKey
+    Command.DropUnused
+    Command.EnableRemote
+    Command.EnableTor
+    Command.ExamineKey
+    Command.Expire
+    Command.Export
+    Command.Find
+    Command.FindRef
+    Command.Fix
+    Command.Forget
+    Command.FromKey
+    Command.Fsck
+    Command.FuzzTest
+    Command.GCryptSetup
+    Command.Get
+    Command.Group
+    Command.GroupWanted
+    Command.Help
+    Command.Import
+    Command.ImportFeed
+    Command.InAnnex
+    Command.Indirect
+    Command.Info
+    Command.Init
+    Command.InitRemote
+    Command.Inprogress
+    Command.List
+    Command.Lock
+    Command.LockContent
+    Command.Log
+    Command.LookupKey
+    Command.Map
+    Command.MatchExpression
+    Command.Merge
+    Command.MetaData
+    Command.Migrate
+    Command.Mirror
+    Command.Move
+    Command.Multicast
+    Command.NotifyChanges
+    Command.NumCopies
+    Command.P2P
+    Command.P2PStdIO
+    Command.PostReceive
+    Command.PreCommit
+    Command.Proxy
+    Command.ReKey
+    Command.ReadPresentKey
+    Command.RecvKey
+    Command.RegisterUrl
+    Command.Reinit
+    Command.Reinject
+    Command.RemoteDaemon
+    Command.Repair
+    Command.Required
+    Command.ResolveMerge
+    Command.RmUrl
+    Command.Schedule
+    Command.Semitrust
+    Command.SendKey
+    Command.SetKey
+    Command.SetPresentKey
+    Command.Smudge
+    Command.Status
+    Command.Sync
+    Command.Test
+    Command.TestRemote
+    Command.TransferInfo
+    Command.TransferKey
+    Command.TransferKeys
+    Command.Trust
+    Command.Unannex
+    Command.Undo
+    Command.Ungroup
+    Command.Uninit
+    Command.Unlock
+    Command.Untrust
+    Command.Unused
+    Command.Upgrade
+    Command.VAdd
+    Command.VCycle
+    Command.VFilter
+    Command.VPop
+    Command.Version
+    Command.Vicfg
+    Command.View
+    Command.Wanted
+    Command.Watch
+    Command.Whereis
+    Common
+    Config
+    Config.Cost
+    Config.Files
+    Config.DynamicConfig
+    Config.GitConfig
+    Creds
+    Crypto
+    Database.Export
+    Database.Fsck
+    Database.Handle
+    Database.Init
+    Database.Keys
+    Database.Keys.Handle
+    Database.Keys.SQL
+    Database.Queue
+    Database.Types
+    Git
+    Git.AutoCorrect
+    Git.Branch
+    Git.BuildVersion
+    Git.CatFile
+    Git.CheckAttr
+    Git.CheckIgnore
+    Git.Command
+    Git.Command.Batch
+    Git.Config
+    Git.ConfigTypes
+    Git.Construct
+    Git.CurrentRepo
+    Git.DiffTree
+    Git.DiffTreeItem
+    Git.Env
+    Git.FileMode
+    Git.FilePath
+    Git.Filename
+    Git.Fsck
+    Git.GCrypt
+    Git.HashObject
+    Git.Hook
+    Git.Index
+    Git.LockFile
+    Git.LsFiles
+    Git.LsTree
+    Git.Merge
+    Git.Objects
+    Git.Queue
+    Git.Ref
+    Git.RefLog
+    Git.Remote
+    Git.Remote.Remove
+    Git.Repair
+    Git.Sha
+    Git.Ssh
+    Git.Status
+    Git.Tree
+    Git.Types
+    Git.UnionMerge
+    Git.UpdateIndex
+    Git.Url
+    Git.Version
+    Key
+    Limit
+    Limit.Wanted
+    Logs
+    Logs.Activity
+    Logs.Chunk
+    Logs.Chunk.Pure
+    Logs.Config
+    Logs.Difference
+    Logs.Difference.Pure
+    Logs.Export
+    Logs.File
+    Logs.FsckResults
+    Logs.Group
+    Logs.Line
+    Logs.Location
+    Logs.MapLog
+    Logs.MetaData
+    Logs.Multicast
+    Logs.NumCopies
+    Logs.PreferredContent
+    Logs.PreferredContent.Raw
+    Logs.Presence
+    Logs.Presence.Pure
+    Logs.Remote
+    Logs.RemoteState
+    Logs.Schedule
+    Logs.SingleValue
+    Logs.TimeStamp
+    Logs.Transfer
+    Logs.Transitions
+    Logs.Trust
+    Logs.Trust.Basic
+    Logs.Trust.Pure
+    Logs.UUID
+    Logs.UUIDBased
+    Logs.Unused
+    Logs.View
+    Logs.Web
+    Messages
+    Messages.Concurrent
+    Messages.Internal
+    Messages.JSON
+    Messages.Progress
+    P2P.Address
+    P2P.Annex
+    P2P.Auth
+    P2P.IO
+    P2P.Protocol
+    Remote
+    Remote.Adb
+    Remote.BitTorrent
+    Remote.Bup
+    Remote.Ddar
+    Remote.Directory
+    Remote.Directory.LegacyChunked
+    Remote.External
+    Remote.External.Types
+    Remote.GCrypt
+    Remote.Git
+    Remote.Glacier
+    Remote.Helper.AWS
+    Remote.Helper.Chunked
+    Remote.Helper.Chunked.Legacy
+    Remote.Helper.Encryptable
+    Remote.Helper.Export
+    Remote.Helper.Git
+    Remote.Helper.Hooks
+    Remote.Helper.Http
+    Remote.Helper.Messages
+    Remote.Helper.P2P
+    Remote.Helper.ReadOnly
+    Remote.Helper.Special
+    Remote.Helper.Ssh
+    Remote.Hook
+    Remote.List
+    Remote.P2P
+    Remote.Rsync
+    Remote.Rsync.RsyncUrl
+    Remote.Tahoe
+    Remote.Web
+    RemoteDaemon.Common
+    RemoteDaemon.Core
+    RemoteDaemon.Transport
+    RemoteDaemon.Transport.GCrypt
+    RemoteDaemon.Transport.Tor
+    RemoteDaemon.Transport.Ssh
+    RemoteDaemon.Transport.Ssh.Types
+    RemoteDaemon.Types
+    Test
+    Test.Framework
+    Types
+    Types.ActionItem
+    Types.Availability
+    Types.Backend
+    Types.BranchState
+    Types.CleanupActions
+    Types.Command
+    Types.Concurrency
+    Types.Creds
+    Types.Crypto
+    Types.DeferredParse
+    Types.DesktopNotify
+    Types.Difference
+    Types.Distribution
+    Types.Export
+    Types.FileMatcher
+    Types.GitConfig
+    Types.Group
+    Types.Key
+    Types.KeySource
+    Types.LockCache
+    Types.Messages
+    Types.MetaData
+    Types.NumCopies
+    Types.RefSpec
+    Types.Remote
+    Types.ScheduledActivity
+    Types.StandardGroups
+    Types.StoreRetrieve
+    Types.Test
+    Types.Transfer
+    Types.TrustLevel
+    Types.UUID
+    Types.UrlContents
+    Types.View
+    Upgrade
+    Upgrade.V0
+    Upgrade.V1
+    Upgrade.V2
+    Upgrade.V3
+    Upgrade.V4
+    Upgrade.V5
+    Utility.Aeson
+    Utility.Android
+    Utility.Applicative
+    Utility.AuthToken
+    Utility.Base64
+    Utility.Batch
+    Utility.Bloom
+    Utility.CoProcess
+    Utility.CopyFile
+    Utility.Daemon
+    Utility.Data
+    Utility.DataUnits
+    Utility.DirWatcher
+    Utility.DirWatcher.Types
+    Utility.Directory
+    Utility.Directory.Stream
+    Utility.DiskFree
+    Utility.Dot
+    Utility.DottedVersion
+    Utility.Env
+    Utility.Env.Basic
+    Utility.Env.Set
+    Utility.Exception
+    Utility.ExternalSHA
+    Utility.FileMode
+    Utility.FileSize
+    Utility.FileSystemEncoding
+    Utility.Format
+    Utility.FreeDesktop
+    Utility.Glob
+    Utility.Gpg
+    Utility.Hash
+    Utility.HtmlDetect
+    Utility.HttpManagerRestricted
+    Utility.HumanNumber
+    Utility.HumanTime
+    Utility.InodeCache
+    Utility.IPAddress
+    Utility.LinuxMkLibs
+    Utility.LockFile
+    Utility.LockFile.LockStatus
+    Utility.LockFile.PidLock
+    Utility.LockPool
+    Utility.LockPool.LockHandle
+    Utility.LockPool.PidLock
+    Utility.LockPool.STM
+    Utility.LogFile
+    Utility.Lsof
+    Utility.MagicWormhole
+    Utility.Matcher
+    Utility.Metered
+    Utility.Misc
+    Utility.Monad
+    Utility.Mounts
+    Utility.Network
+    Utility.NotificationBroadcaster
+    Utility.OSX
+    Utility.OptParse
+    Utility.PID
+    Utility.Parallel
+    Utility.PartialPrelude
+    Utility.Path
+    Utility.Path.Max
+    Utility.Percentage
+    Utility.Process
+    Utility.Process.Shim
+    Utility.Process.Transcript
+    Utility.QuickCheck
+    Utility.Rsync
+    Utility.SRV
+    Utility.SafeCommand
+    Utility.Scheduled
+    Utility.Scheduled.QuickCheck
+    Utility.Shell
+    Utility.SimpleProtocol
+    Utility.Split
+    Utility.SshConfig
+    Utility.SshHost
+    Utility.Su
+    Utility.SystemDirectory
+    Utility.TList
+    Utility.Tense
+    Utility.ThreadLock
+    Utility.ThreadScheduler
+    Utility.Tmp
+    Utility.Tmp.Dir
+    Utility.Tor
+    Utility.Touch
+    Utility.Tuple
+    Utility.Url
+    Utility.UserInfo
+    Utility.Verifiable
+
+  if (os(windows))
+    Other-Modules:
+      Utility.LockFile.Windows
+      Utility.LockPool.Windows
+  else
+    Other-Modules:
+      Utility.LockFile.Posix
+      Utility.LockPool.Posix

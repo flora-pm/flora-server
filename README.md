@@ -49,7 +49,7 @@
 * 🌓 Dark and light modes
 * 📱 Mobile user interface
 
-## 📖 Guides 
+## 📖 Guides
 
 Visit https://flora.pm/documentation for explanations on what Flora can do.
 
@@ -66,4 +66,4 @@ To setup a local installation, see [CONTRIBUTING.md#project-setup](https://githu
 
 ## 🫶 Special Collaborations
 
-We would like to thank our dear friends at Guérilla Studio ([www](https://guerilla.studio/), [GitHub](https://github.com/GuerillaStudio)) for help with accessibility and CSS integration.
+We would like to thank our dear friends at Guérilla.Studio ([www](https://guerilla.studio/), [GitHub](https://github.com/GuerillaStudio)) for help with accessibility and CSS integration.
