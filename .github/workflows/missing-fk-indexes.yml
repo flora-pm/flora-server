@@ -73,7 +73,7 @@ jobs:
         cabal update
 
     - name: Cache
-      uses: actions/cache@v4.1.2
+      uses: actions/cache@v4.2.0
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}
