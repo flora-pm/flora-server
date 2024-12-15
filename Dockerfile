@@ -27,7 +27,7 @@ RUN chown $USER:$USER /flora-server
 
 RUN mkdir /home/$USER/.cabal
 RUN chown -R $USER:$USER /home/$USER/.cabal
-WORKDIR /flora-server 
+WORKDIR /flora-server
 
 RUN apt update && \
     apt install -y build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 git libsodium-dev pkg-config
@@ -39,7 +39,7 @@ ENV BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK="YES"
 ENV PATH="$PATH:/home/$USER/.ghcup/bin"
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list 
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 RUN apt install -y nodejs libpq-dev mcpp wget zsh tmux postgresql-client
 RUN corepack enable
 USER ${USER}
@@ -92,6 +92,11 @@ RUN make souffle
 COPY --chown=${USER} assets ./assets
 COPY --chown=${USER} docs ./docs
 RUN make build-assets
+
+# security advisories
+RUN mkdir -p ~/.local/share
+RUN git clone https://github.com/haskell/security-advisories.git ~/.local/share/security-advisories
+RUN cd ~/.local/share/security-advisories
 
 USER root
 RUN echo 'export PATH="$PATH:/home/$USER/.cabal/bin"' > /etc/profile
