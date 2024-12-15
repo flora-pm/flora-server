@@ -45,6 +45,8 @@
 	--light-blue-background: hsl(210 100% 96%);
 	--light-red-background: hsl(355 73% 97%);
 	--light-green: hsl(206 41% 97%);
+	--pale-blue: hsl(184 55% 77%);
+	--pale-green: hsl(120 93% 79%);
 
 	/* Dark foregrounds to go with backgrounds */
 	--dark-blue: hsl(220 64% 33%);
@@ -87,6 +89,12 @@
 	--main-page-button-divider: var(--purple-20);
 	--deprecated-version: var(--red-60);
 	--breadcrumb-color: var(--gray-30);
+	--severity-critical: var(--red-60);
+	--severity-high: orange;
+	--severity-medium: gold;
+	--severity-low: var(--pale-blue);
+	--severity-none: hsl(156 100% 99%);
+	--severity-rating-colour: black;
 
 	/* Focus ring (aka outline) */
 	--outline-offset-shadow: 0 0 #0000;
@@ -135,4 +143,10 @@ html[data-theme="dark"] {
 	--main-page-button-divider: var(--blue-15);
 	--deprecated-version: var(--red-60);
 	--breadcrumb-color: hsl(221 9% 60%);
+	--severity-critical: var(--red-60);
+	--severity-high: orange;
+	--severity-medium: gold;
+	--severity-low: var(--pale-blue);
+	--severity-none: hsl(156 100% 99%);
+	--severity-rating-colour: black;
 }

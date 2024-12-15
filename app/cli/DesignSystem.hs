@@ -5,8 +5,10 @@ module DesignSystem where
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.ByteString.Lazy (ByteString)
 import Data.ByteString.Lazy qualified as ByteString
+import Data.Either.Extra
 import Data.Foldable (forM_)
 import Data.Functor.Identity (runIdentity)
+import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Data.Text.Lazy qualified as TL
 import Data.Time.Calendar.OrdinalDate as Time
@@ -20,13 +22,17 @@ import Effectful.Fail
 import Env
 import Lucid
 import PyF (fmt)
+import Security.Advisories.Core.HsecId qualified as HsecId
+import Security.CVSS
 
+import Advisories.Model.Affected.Types
 import Distribution.SPDX
 import Flora.Environment.Config
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category
 import Flora.Model.Package
 import Flora.Search
+import FloraWeb.Components.AdvisoryListItem qualified as Component
 import FloraWeb.Components.Alert qualified as Component
 import FloraWeb.Components.CategoryCard qualified as Component
 import FloraWeb.Components.PackageListItem qualified as Component
@@ -73,6 +79,7 @@ components =
     , ("category-card", ComponentTitle "Category", ComponentName "CategoryCard", categoryCardExample)
     , ("pagination-area", ComponentTitle "Pagination Area", ComponentName "Pagination", paginationExample)
     , ("alerts", ComponentTitle "Alerts", ComponentName "Alert", alertsExample)
+    , ("advisory-preview", ComponentTitle "Advisories", ComponentName "AdvisoryPreviews", packageAdvisoriesExample)
     ]
 
 -----------------------
@@ -133,9 +140,50 @@ paginationExample = div_ $ do
     Component.paginationNav 32 1 (SearchPackages "text")
 
 alertsExample :: FloraHTML
-alertsExample = div_ $ do
-  div_ $ do
-    h4_ "Info alert"
-    Component.info "Info alert"
-    h4_ "Error alert"
-    Component.exception "Error alert!"
+alertsExample = div_ $ div_ $ do
+  h4_ "Info alert"
+  Component.info "Info alert"
+  h4_ "Error alert"
+  Component.exception "Error alert!"
+
+packageAdvisoriesExample :: FloraHTML
+packageAdvisoriesExample = do
+  let advisoryPreviews =
+        Vector.fromList
+          [ PackageAdvisoryPreview
+              { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0009"
+              , summary = "git-annex command injection via malicious SSH hostname"
+              , fixed = True
+              , published = read "2023-07-25 13:25:42 UTC"
+              , cvss = fromRight' $ parseCVSS "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+              }
+          , PackageAdvisoryPreview
+              { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0010"
+              , summary = "git-annex private data exfiltration to compromised remote"
+              , fixed = True
+              , published = read "2023-07-25 13:25:42 UTC"
+              , cvss = fromRight' $ parseCVSS "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+              }
+          , PackageAdvisoryPreview
+              { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0012"
+              , summary = "git-annex checksum exposure to encrypted special remotes"
+              , fixed = True
+              , published = read "2023-07-25 13:25:42 UTC"
+              , cvss = fromRight' $ parseCVSS "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N"
+              }
+          , PackageAdvisoryPreview
+              { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0013"
+              , summary = "git-annex plaintext storage of embedded credentials on encrypted remotes"
+              , fixed = True
+              , published = read "2023-07-25 13:25:42 UTC"
+              , cvss = fromRight' $ parseCVSS "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H"
+              }
+          , PackageAdvisoryPreview
+              { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0011"
+              , summary = "git-annex GPG decryption attack via compromised remote"
+              , fixed = True
+              , published = read "2023-07-25 13:25:42 UTC"
+              , cvss = fromRight' $ parseCVSS "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+              }
+          ]
+  ul_ [class_ "advisory-list"] $ Vector.forM_ advisoryPreviews (\preview -> Component.advisoryListRow preview)

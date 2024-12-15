@@ -1,13 +1,17 @@
 module Main where
 
-import Control.Monad (void)
+import Control.Monad.Extra
 import Data.List.NonEmpty
+import Data.Text qualified as Text
 import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
 import Effectful
 import Effectful.Error.Static
+import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Log qualified
 import Sel.Hashing.Password qualified as Sel
 import System.Exit
+import System.FilePath ((</>))
 import System.IO
 import Test.Tasty
 import Test.Tasty.Runners.Reporter qualified as Reporter
@@ -49,7 +53,13 @@ main = do
           Update.insertUser templateUser
           f' <- getFixtures
           importAllPackages f'
-          result <- runErrorNoCallStack @(NonEmpty AdvisoryImportError) (Advisories.importAdvisories "./test/fixtures/Advisories")
+          result <- runErrorNoCallStack @(NonEmpty AdvisoryImportError) $ do
+            dataDir <- getXdgDirectory XdgData ""
+            let advisoriesDirectory = dataDir </> "security-advisories"
+            unlessM (doesDirectoryExist advisoriesDirectory) $ do
+              Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
+              liftIO exitFailure
+            Advisories.importAdvisories advisoriesDirectory
           case result of
             Left errors -> do
               liftIO $ print errors
