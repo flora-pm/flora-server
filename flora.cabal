@@ -396,6 +396,7 @@ library flora-web
     , servant
     , servant-client
     , servant-client-core
+    , servant-effectful
     , servant-openapi3
     , servant-server
     , text

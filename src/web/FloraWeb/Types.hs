@@ -44,8 +44,8 @@ type RouteEffects =
    , Reader FeatureEnv
    , BlobStoreAPI
    , Log
-   , Error ServerError
    , Concurrent
+   , Error ServerError
    , IOE
    ]
 
