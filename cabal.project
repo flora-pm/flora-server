@@ -71,7 +71,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/kleidukos/servant-effectful
-    tag: cec4d54
+    tag: 02e7fe0ab9fa0af06b1e2ec21cecfae405d39fc5
 
 source-repository-package
     type: git

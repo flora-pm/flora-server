@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
@@ -13,10 +14,11 @@ import Data.Text.Display (display)
 import Effectful
 import Effectful.Concurrent
 import Effectful.Dispatch.Static
-import Effectful.Error.Static (runErrorNoCallStack, runErrorWith)
+import Effectful.Error.Static (Error, runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Effectful.Reader.Static (runReader)
+import Effectful.Servant
 import Effectful.Time (runTime)
 import Effectful.Trace qualified as Trace
 import Log (Logger)
@@ -27,7 +29,6 @@ import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
   ( defaultSettings
-  , runSettings
   , setOnException
   , setPort
   )
@@ -43,6 +44,7 @@ import Servant
   , Context (..)
   , ErrorFormatters
   , Handler
+  , HasServer (ServerT)
   , NotFoundErrorFormatter
   , Proxy (Proxy)
   , defaultErrorFormatters
@@ -87,6 +89,7 @@ import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
 import FloraWeb.Pages.Templates.Error (renderError)
 import FloraWeb.Routes
 import FloraWeb.Types
+import Servant.Server (ServerError, ServerContext)
 
 type FloraAuthContext =
   '[ OptionalAuthContext
@@ -150,11 +153,16 @@ runServer appLogger floraEnv = do
       unsafeEff_ $
         Safe.withException (startJobRunner oddJobsCfg) (logException floraEnv.environment appLogger)
   loggingMiddleware <- Logging.runLog floraEnv.environment appLogger WaiLog.mkLogMiddleware
-  oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
+  jobsRunnerEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   ioref <- liftIO $ newIORef True
-  let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv zipkin ioref
+  -- let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv zipkin ioref
+  let middleware =
+        heartbeatMiddleware
+          . loggingMiddleware
+          . const
+
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -164,28 +172,15 @@ runServer appLogger floraEnv = do
                 floraEnv.mltp
             )
             defaultSettings
-  liftIO
-    $ runSettings warpSettings
-    $ heartbeatMiddleware
-      . loggingMiddleware
-      . const
-    $ server
 
-mkServer
-  :: Logger
-  -> WebEnvStore
-  -> FloraEnv
-  -> OddJobs.UIConfig
-  -> OddJobs.Env
-  -> Zipkin
-  -> IORef Bool
-  -> Application
-mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv zipkin ioref =
-  serveWithContextT
-    (Proxy @ServerRoutes)
-    (genAuthServerContext logger floraEnv)
-    (naturalTransform floraEnv logger webEnvStore zipkin)
-    (floraServer cfg jobsRunnerEnv floraEnv.environment ioref)
+  runWarpServerSettingsContext @ServerRoutes
+      warpSettings
+      (genAuthServerContext appLogger floraEnv)
+      middleware
+      ( naturalTransform floraEnv appLogger webEnvStore zipkin $
+          floraServer oddjobsUiCfg jobsRunnerEnv floraEnv.environment ioref
+      )
+  pure ()
 
 floraServer
   :: OddJobs.UIConfig
@@ -204,29 +199,29 @@ floraServer cfg jobsRunnerEnv environment ioref =
     , livereload = LiveReload.livereloadHandler environment ioref
     }
 
-naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> Zipkin -> FloraEff a -> Handler a
-naturalTransform floraEnv logger _webEnvStore zipkin app = do
+naturalTransform
+  :: (HasServer api context, ServerContext context)
+  => FloraEnv
+  -> Logger
+  -> Zipkin
+  -> FloraEff a
+  -> ServerT api (Eff (Error ServerError : es))
+naturalTransform floraEnv logger zipkin app = do
   let runTrace =
         if floraEnv.environment == Production
           then Trace.runTrace zipkin.zipkinTracer
           else Trace.runNoTrace
-  result <-
-    liftIO $
-      Right
-        <$> app
-          & runTrace
-          & runDB floraEnv.pool
-          & runTime
-          & runReader floraEnv.features
-          & ( case floraEnv.features.blobStoreImpl of
-                Just (BlobStoreFS fp) -> runBlobStoreFS fp
-                _ -> runBlobStorePure
-            )
-          & Logging.runLog floraEnv.environment logger
-          & runErrorWith (\_callstack err -> pure $ Left err)
-          & runConcurrent
-          & runEff
-  either Except.throwError pure result
+  liftIO $ app
+    & runTrace
+    & runDB floraEnv.pool
+    & runTime
+    & runReader floraEnv.features
+    & ( case floraEnv.features.blobStoreImpl of
+          Just (BlobStoreFS fp) -> runBlobStoreFS fp
+          _ -> runBlobStorePure
+      )
+    & Logging.runLog floraEnv.environment logger
+    & runConcurrent
 
 genAuthServerContext :: Logger -> FloraEnv -> Context FloraAuthContext
 genAuthServerContext logger floraEnv =
