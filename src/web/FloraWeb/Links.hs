@@ -117,6 +117,14 @@ packageWithExecutable pageNumber search =
     /: Just search
     /: Just pageNumber
 
+packageSecurity :: Namespace -> PackageName -> Link
+packageSecurity namespace packageName =
+  links
+    // Web.packages
+    // Web.showPackageSecurity
+    /: namespace
+    /: packageName
+
 namespacePage :: Namespace -> Positive Word -> Text
 namespacePage namespace pageNumber =
   "/packages/" <> display namespace <> "?page=" <> toUrlPiece pageNumber

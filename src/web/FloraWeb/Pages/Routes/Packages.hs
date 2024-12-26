@@ -106,5 +106,12 @@ data Routes' mode = Routes'
           :> Capture "version" Version
           :> Capture "tarball" Text
           :> Get '[GZipped] ByteString
+  , showPackageSecurity
+      :: mode
+        :- AuthProtect "optional-cookie-auth"
+          :> Capture "namespace" Namespace
+          :> Capture "package" PackageName
+          :> "security"
+          :> Get '[HTML] (Html ())
   }
   deriving stock (Generic)

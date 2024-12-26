@@ -2,7 +2,6 @@
 
 module Advisories.Model.Advisory.Query where
 
-import Advisories.Model.Affected.Types
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
@@ -12,6 +11,7 @@ import Effectful.PostgreSQL.Transact.Effect
 import Security.Advisories.Core.HsecId
 
 import Advisories.Model.Advisory.Types
+import Advisories.Model.Affected.Types
 import Flora.Model.Package.Types
 
 getAdvisoryById :: DB :> es => AdvisoryId -> Eff es (Maybe AdvisoryDAO)

@@ -13,11 +13,15 @@ import Data.Positive
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector qualified as Vector
+import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
 import Effectful (Eff, IOE, (:>))
 import Effectful.Error.Static (Error, throwError)
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader, ask)
+import Effectful.Time (Time)
 import Effectful.Trace
 import Log (object, (.=))
 import Log qualified
@@ -27,9 +31,8 @@ import Monitor.Tracing qualified as Tracing
 import Servant (Headers (..), ServerError, ServerT)
 import Servant.Server (err404)
 
-import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
-import Effectful.Time (Time)
+import Advisories.Model.Affected.Query qualified as Query
+import Advisories.Model.Affected.Types
 import Flora.Environment (FeatureEnv (..))
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobStore.API (BlobStoreAPI)
@@ -70,6 +73,7 @@ server =
     , showVersionChangelog = showVersionChangelogHandler
     , listVersions = listVersionsHandler
     , getTarball = getTarballHandler
+    , showPackageSecurity = showPackageSecurityHandler
     }
 
 listPackagesHandler
@@ -184,13 +188,8 @@ showPackageVersion
 showPackageVersion (Headers session _) packageNamespace packageName mversion =
   Tracing.rootSpan alwaysSampled "show-package-with-version" $ do
     templateEnv' <- templateFromSession session defaultTemplateEnv
-    package <-
-      Tracing.childSpan "guardThatPackageExists " $
-        guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-    packageIndex <-
-      Tracing.childSpan "guardThatPackageIndexExists " $
-        guardThatPackageIndexExists packageNamespace $
-          const (web404 session)
+    package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
+    packageIndex <- guardThatPackageIndexExists packageNamespace $ const (web404 session)
     releases <-
       Tracing.childSpan "Query.getReleases" $
         Query.getReleases package.packageId
@@ -468,3 +467,32 @@ getTarballHandler (Headers session _) packageNamespace packageName version tarba
       | constructTarballPath packageName version == tarballName ->
           Query.queryTar packageName version rootHash
     _ -> throwError err404
+
+showPackageSecurityHandler
+  :: ( DB :> es
+     , Reader FeatureEnv :> es
+     , IOE :> es
+     , Error ServerError :> es
+     , Trace :> es
+     )
+  => SessionWithCookies (Maybe User)
+  -> Namespace
+  -> PackageName
+  -> Eff es (Html ())
+showPackageSecurityHandler (Headers session _) packageNamespace packageName =
+  Tracing.rootSpan alwaysSampled "show-package-security" $ do
+    templateEnv' <- templateFromSession session defaultTemplateEnv
+    package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
+    advisoryPreviews <-
+      Tracing.childSpan "Query.getAdvisoryPreviewsByPackageId" $
+        Query.getAdvisoryPreviewsByPackageId package.packageId
+    let templateEnv =
+          templateEnv'
+            { title = display packageNamespace <> "/" <> display packageName
+            , description = "Releases of " <> display packageNamespace <> display packageName
+            }
+    render templateEnv $
+      Package.showPackageSecurityPage
+        packageNamespace
+        packageName
+        (Vector.reverse $ Vector.modify (MVector.sortBy (\v1 v2 -> compare v1.hsecId v2.hsecId)) advisoryPreviews)

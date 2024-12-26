@@ -5,8 +5,10 @@ module FloraWeb.Common.Guards where
 import Data.Text (Text)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Trace (Trace)
 import FloraWeb.Pages.Templates
 import Log qualified
+import Monitor.Tracing qualified as Tracing
 import Optics.Core
 import Servant (respond)
 import Servant.API.UVerb
@@ -21,16 +23,19 @@ import FloraWeb.Session (Session)
 import FloraWeb.Types (FloraEff)
 
 guardThatPackageIndexExists
-  :: DB :> es
+  :: (DB :> es, Trace :> es)
   => Namespace
   -> (Namespace -> Eff es PackageIndex)
   -- ^ Action to run if the package index does not exist
   -> Eff es PackageIndex
-guardThatPackageIndexExists namespace action = do
-  result <- Query.getPackageIndexByName (extractNamespaceText namespace)
-  case result of
-    Just packageIndex -> pure packageIndex
-    Nothing -> action namespace
+guardThatPackageIndexExists namespace action =
+  Tracing.childSpan "guardThatPackageIndexExists " $ do
+    result <-
+      Tracing.childSpan "Query.getPackageIndexByName" $
+        Query.getPackageIndexByName (extractNamespaceText namespace)
+    case result of
+      Just packageIndex -> pure packageIndex
+      Nothing -> action namespace
 
 guardThatUserHasProvidedTOTP
   :: Session (Maybe User)
