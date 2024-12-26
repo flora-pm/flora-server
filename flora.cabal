@@ -27,13 +27,13 @@ flag prod
 
 common common-extensions
   default-extensions:
-    NoStarIsType
     DataKinds
     DeriveAnyClass
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
     LambdaCase
+    NoStarIsType
     OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
@@ -347,7 +347,7 @@ library flora-web
   build-depends:
     , aeson
     , async
-    , base                      ^>=4.18.2
+    , base                       ^>=4.18.2
     , base32
     , bytestring
     , Cabal-syntax
@@ -381,13 +381,16 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
-    , one-time-password         ==3.0.0.0
+    , one-time-password          ==3.0.0.0
     , openapi3
     , optics-core
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
     , pretty
+    , prometheus-client
+    , prometheus-metrics-ghc
+    , prometheus-proc
     , PyF
     , raven-haskell
     , resource-pool
@@ -411,6 +414,7 @@ library flora-web
     , wai-app-static
     , wai-log
     , wai-middleware-heartbeat
+    , wai-middleware-prometheus
     , warp
     , xml-conduit
     , xml-conduit-writer
