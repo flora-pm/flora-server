@@ -8,13 +8,18 @@
 	display: table-header-group;
 	border-inline: solid;
 	font-size: 1.25rem;
-
 }
 
 .advisory-list__body {
 	display: table-row-group;
 }
 
+@media only screen and (--viewport-md) {
+	.advisory-list__header {
+		display: table-cell;
+	}
+}
+
 .advisory-list__header {
-	display: table-cell;
+		display: none;
 }

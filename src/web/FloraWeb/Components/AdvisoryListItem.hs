@@ -27,8 +27,11 @@ advisoryListRow preview = do
         High -> ratingHigh score
         Critical -> ratingCritical score
   div_ [class_ "package-advisory-list-item"] $ do
-    div_ [class_ "package-advisory-list-item__hsec-id"] $
+    div_ [class_ "package-advisory-list-item__hsec-id md:order-1"] $ do
       a_ [href_ href] (toHtml $ display preview.hsecId)
+      span_ [class_ "package-advisory-list-item__inline-published"] $
+        toHtml $
+          Time.formatTime Time.defaultTimeLocale "%_d %b %Y" preview.published
     div_ [class_ "package-advisory-list-item__summary"] (toHtml preview.summary)
     div_ [class_ "package-advisory-list-item__published"] $
       toHtml $

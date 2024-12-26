@@ -1,74 +1,100 @@
 .package-advisory-list-item {
-  display: table-row;
-  font-size: 1.10rem;
-  line-height: 2rem;
+	display: grid;
+	align-items: center;
+	padding: 1rem;
 }
 
-.package-advisory-list-item__hsec-id {
-  display: table-cell;
+.package-advisory-list-item__inline-published {
+	margin-left: 1rem;
+	display: inline;
 }
 
-.package-advisory-list-item__summary {
-  display: table-cell;
-  font-weight: bolder;
+.package-advisory-list-item__hsec_id {
+	order: 1;
 }
 
 .package-advisory-list-item__published {
-  display: table-cell;
+	order: 2;
+	display: none;
 }
 
 .package-advisory-list-item__attributes {
-  display: table-cell;
-	font-size: 0.90em;
+	order: 3;
+}
 
-  .advisory-list-item__severity-none {
-    background-color: var(--severity-none);
-    border-radius: 0.5rem;
-    color: var(--severity-rating-colour);
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
+.package-advisory-list-item__summary {
+	font-weight: bolder;
+	order: 4;
+}
 
-  .advisory-list-item__severity-low {
-    background-color: var(--severity-low);
-    border-radius: 0.5rem;
-    color: var(--severity-rating-colour);
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
+.advisory-list-item__severity-pill {
+	border-radius: 0.5rem;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+}
 
-  .advisory-list-item__severity-medium {
-    background-color: var(--severity-medium);
-    border-radius: 0.5rem;
-    color: var(--severity-rating-colour);
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
+.advisory-list-item__severity-none {
+	background-color: var(--severity-none);
+	color: var(--severity-rating-colour);
+}
 
-  .advisory-list-item__severity-high {
-    background-color: var(--severity-high);
-    border-radius: 0.5rem;
-    color: var(--severity-rating-colour);
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
+.advisory-list-item__severity-low {
+	background-color: var(--severity-low);
+	color: var(--severity-rating-colour);
+	padding-right: 0.5rem;
+}
 
-  .advisory-list-item__severity-critical {
-    background-color: var(--severity-critical);
-    border-radius: 0.5rem;
-    color: var(--severity-rating-colour);
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
+.advisory-list-item__severity-medium {
+	background-color: var(--severity-medium);
+	color: var(--severity-rating-colour);
+}
 
-	.advisory-list-item__fix-available {
-    background-color: var(--pale-green);
-    border-radius: 0.5rem;
-    color: var(--severity-rating-colour);
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-		margin-left: 0.5rem;
+.advisory-list-item__severity-high {
+	background-color: var(--severity-high);
+	color: var(--severity-rating-colour);
+}
 
+.advisory-list-item__severity-critical {
+	background-color: var(--severity-critical);
+	color: var(--severity-rating-colour);
+}
+
+.advisory-list-item__fix-available {
+	background-color: var(--pale-green);
+	color: var(--severity-rating-colour);
+	margin-left: 0.5rem;
+
+}
+
+@media only screen and (--viewport-md) {
+	.package-advisory-list-item {
+		display: table-row;
+		font-size: 1.10rem;
+		line-height: 2rem;
 	}
 
+	.package-advisory-list-item__hsec-id {
+		order: initial;
+		display: table-cell;
+
+		.package-advisory-list-item__inline-published {
+			display: none;
+		}
+	}
+
+	.package-advisory-list-item__summary {
+		order: initial;
+		display: table-cell;
+	}
+
+	.package-advisory-list-item__published {
+		order: initial;
+		display: table-cell;
+	}
+
+	.package-advisory-list-item__attributes {
+		order: initial;
+		display: table-cell;
+		font-size: 0.90em;
+	}
 }

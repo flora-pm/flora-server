@@ -18,6 +18,7 @@
 @import "2-components/9-terminal-icon.css";
 @import "2-components/10-error.css";
 @import "2-components/11-advisory-list-item.css";
+@import "2-components/12-headline.css";
 
 /* Screens/Pages specific style */
 @import "3-screens/1-package/1-package.css";
