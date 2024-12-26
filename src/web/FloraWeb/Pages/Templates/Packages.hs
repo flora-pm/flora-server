@@ -311,6 +311,7 @@ displayLinks namespace packageName packageIndexURL release = do
 
       li_ [class_ "package-link"] $ displaySourceRepos release.sourceRepos
       li_ [class_ "package-link"] $ displayChangelog namespace packageName release.version release.changelog
+      li_ [class_ "package-link"] $ displaySecurity namespace packageName
 
 displaySourceRepos :: Vector Text -> FloraHTML
 displaySourceRepos x
@@ -320,6 +321,9 @@ displaySourceRepos x
 displayChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 displayChangelog _ _ _ Nothing = toHtml @Text ""
 displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> toUrlPiece (Links.packageVersionChangelog namespace packageName version))] "Changelog"
+
+displaySecurity :: Namespace -> PackageName -> FloraHTML
+displaySecurity namespace packageName = a_ [href_ ("/" <> toUrlPiece (Links.packageSecurity namespace packageName))] "Security"
 
 displayReadme :: Release -> FloraHTML
 displayReadme release =
@@ -562,11 +566,13 @@ showPackageSecurityPage
 showPackageSecurityPage namespace packageName advisoryPreviews = do
   div_ [class_ "container"] $ do
     presentationHeaderForAdvisories namespace packageName
-    div_ [class_ "advisory-list"] $ do
-      div_ [class_ "advisory-list__head"] $ do
-        div_ [class_ "advisory-list__header"] "ID"
-        div_ [class_ "advisory-list__header"] "Summary"
-        div_ [class_ "advisory-list__header"] "Published"
-        div_ [class_ "advisory-list__header"] "Attributes"
-      div_ [class_ "advisory-list__body"] $
-        Vector.forM_ advisoryPreviews (\preview -> advisoryListRow preview)
+    if Vector.null advisoryPreviews
+      then p_ [] "No advisories found for this package."
+      else div_ [class_ "advisory-list"] $ do
+        div_ [class_ "advisory-list__head"] $ do
+          div_ [class_ "advisory-list__header"] "ID"
+          div_ [class_ "advisory-list__header"] "Summary"
+          div_ [class_ "advisory-list__header"] "Published"
+          div_ [class_ "advisory-list__header"] "Attributes"
+        div_ [class_ "advisory-list__body"] $
+          Vector.forM_ advisoryPreviews (\preview -> advisoryListRow preview)
