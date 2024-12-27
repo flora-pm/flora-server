@@ -13,7 +13,7 @@ import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Pages.Templates
-import FloraWeb.Pages.Templates.Packages (advisoriesListing, packageListing, packageWithExecutableListing)
+import FloraWeb.Pages.Templates.Packages (packageAdvisoriesListing, packageListing, packageWithExecutableListing)
 
 showAllPackages :: Word -> Positive Word -> Vector PackageInfo -> FloraHTML
 showAllPackages count currentPage packagesInfo = do
@@ -75,6 +75,6 @@ showAdvisorySearchResults
 showAdvisorySearchResults searchTerm count currentPage results = do
   div_ [class_ "container"] $ do
     presentationHeader searchTerm "" count
-    advisoriesListing results
+    packageAdvisoriesListing True results
     when (count > 30) $
       paginationNav count currentPage (SearchInAdvisories searchTerm)
