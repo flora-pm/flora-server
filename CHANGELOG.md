@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 1.0.22 -- 2024-12-27
+
+### Significant changes
+
+- Start the data model for security advisories [#762](https://github.com/flora-pm/flora-server/pull/762)
+- Search in security advisories with the `hsec:` qualifier [#805](https://github.com/flora-pm/flora-server/pull/805)
+- Display the advisories linked to a package in their `/security` sub-page [#790](https://github.com/flora-pm/flora-server/pull/790)
+
+### Other changes
+
+- Membership data model for packages [#556](https://github.com/flora-pm/flora-server/issue/556) [#785](https://github.com/flora-pm/flora-server/pull/785)
+
+  Migration for `create_package_groups` & `create_package_group_packages`
+
+- Render the HTML of READMEs and Changelogs [#781](https://github.com/flora-pm/flora-server/pull/781)
+
+  There was a regression, likely due to the switch to lucid2, that escaped the HTML from READMEs and Changelogs
+
+- Re-enable prometheus metrics for http & process resources [#802](https://github.com/flora-pm/flora-server/pull/802)
+
 ## 1.0.21 -- 2024-11-01
 
 - Add htmx polling for page reload [#579](https://github.com/flora-pm/flora-server/pull/579)
