@@ -572,7 +572,7 @@ showPackageSecurityPage namespace packageName advisoryPreviews = do
 advisoriesListing :: Vector PackageAdvisoryPreview -> FloraHTML
 advisoriesListing advisoryPreviews =
   if Vector.null advisoryPreviews
-    then p_ [] "No advisories found for this package."
+    then p_ [] "No advisories found."
     else div_ [class_ "advisory-list"] $ do
       div_ [class_ "advisory-list__head"] $ do
         div_ [class_ "advisory-list__header"] "ID"
