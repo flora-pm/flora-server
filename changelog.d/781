@@ -1,5 +1,0 @@
-synopsis: Render the HTML of READMEs and Changelogs
-description: {
-  There was a regression, likely due to the switch to lucid2, that escaped the HTML from READMEs and Changelogs
-}
-prs: #781
