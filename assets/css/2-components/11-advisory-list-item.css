@@ -9,22 +9,27 @@
 	display: inline;
 }
 
-.package-advisory-list-item__hsec_id {
+.package-advisory-list-item__package {
+	font-weight: bolder;
 	order: 1;
 }
 
-.package-advisory-list-item__published {
+.package-advisory-list-item__hsec-id {
 	order: 2;
+}
+
+.package-advisory-list-item__published {
+	order: 3;
 	display: none;
 }
 
 .package-advisory-list-item__attributes {
-	order: 3;
+	order: 4;
 }
 
 .package-advisory-list-item__summary {
 	font-weight: bolder;
-	order: 4;
+	order: 5;
 }
 
 .advisory-list-item__severity-pill {

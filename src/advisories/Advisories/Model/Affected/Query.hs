@@ -49,6 +49,8 @@ getAdvisoryPreviewsByPackageId packageId =
       Select
       [sql|
 SELECT s0.hsec_id
+     , p3.namespace
+     , p3.name
      , s0.summary
      , CASE
          WHEN a2.fixed_version IS NULL
@@ -78,6 +80,8 @@ searchAdvisoriesQuery =
   [sql|
 WITH results AS (
   SELECT s0.hsec_id
+       , p3.namespace
+       , p3.name
        , s0.summary
        , CASE
            WHEN a2.fixed_version IS NULL
@@ -92,12 +96,15 @@ WITH results AS (
        INNER JOIN affected_version_ranges AS a2 ON a1.affected_package_id = a2.affected_package_id
        INNER JOIN packages AS p3 ON a1.package_id = p3.package_id
   WHERE ? <% s0.summary
+  GROUP BY s0.hsec_id, p3.namespace, p3.name, s0.summary, fixed, s0.published, a1.cvss, rating
   ORDER BY rating desc, s0.summary asc
   OFFSET ?
   LIMIT ?
 )
 
 SELECT r0.hsec_id
+     , r0.namespace
+     , r0.name
      , r0.summary
      , r0.fixed
      , r0.published
@@ -122,6 +129,8 @@ countAdvisorySearchResultsQuery =
   [sql|
 WITH results AS (
   SELECT s0.hsec_id
+       , p3.namespace
+       , p3.name
        , s0.summary
        , CASE
            WHEN a2.fixed_version IS NULL
