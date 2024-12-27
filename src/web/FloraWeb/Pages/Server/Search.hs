@@ -68,3 +68,7 @@ searchHandler (Headers session _) (Just searchString) pageParam = do
       (count, results) <- Search.searchExecutable pagination executableName
       render templateEnv $
         Search.showExecutableResults searchString count pageNumber results
+    Just (SearchInAdvisories searchTerm) -> do
+      (count, results) <- Search.searchInAdvisories pagination searchTerm
+      render templateEnv $
+        Search.showAdvisorySearchResults searchString count pageNumber results

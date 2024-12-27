@@ -30,8 +30,8 @@ import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne, queryOne_, query_)
 import Database.PostgreSQL.Entity.Types (field)
-import Database.PostgreSQL.Simple (In (..), Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ
+import Database.PostgreSQL.Simple.Types (In (..), Only (..), Query)
 import Distribution.Orphans.Version ()
 import Distribution.Version (Version)
 import Effectful
