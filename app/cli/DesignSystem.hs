@@ -152,6 +152,8 @@ packageAdvisoriesExample = do
         Vector.fromList
           [ PackageAdvisoryPreview
               { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0009"
+              , namespace = Namespace "hackage"
+              , packageName = PackageName "git-annex"
               , summary = "git-annex command injection via malicious SSH hostname"
               , fixed = True
               , published = read "2023-07-25 13:25:42 UTC"
@@ -159,6 +161,8 @@ packageAdvisoriesExample = do
               }
           , PackageAdvisoryPreview
               { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0010"
+              , namespace = Namespace "hackage"
+              , packageName = PackageName "git-annex"
               , summary = "git-annex private data exfiltration to compromised remote"
               , fixed = True
               , published = read "2023-07-25 13:25:42 UTC"
@@ -166,6 +170,8 @@ packageAdvisoriesExample = do
               }
           , PackageAdvisoryPreview
               { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0012"
+              , namespace = Namespace "hackage"
+              , packageName = PackageName "git-annex"
               , summary = "git-annex checksum exposure to encrypted special remotes"
               , fixed = True
               , published = read "2023-07-25 13:25:42 UTC"
@@ -173,6 +179,8 @@ packageAdvisoriesExample = do
               }
           , PackageAdvisoryPreview
               { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0013"
+              , namespace = Namespace "hackage"
+              , packageName = PackageName "git-annex"
               , summary = "git-annex plaintext storage of embedded credentials on encrypted remotes"
               , fixed = True
               , published = read "2023-07-25 13:25:42 UTC"
@@ -180,10 +188,12 @@ packageAdvisoriesExample = do
               }
           , PackageAdvisoryPreview
               { hsecId = fromJust $ HsecId.parseHsecId "HSEC-2023-0011"
+              , namespace = Namespace "hackage"
+              , packageName = PackageName "git-annex"
               , summary = "git-annex GPG decryption attack via compromised remote"
               , fixed = True
               , published = read "2023-07-25 13:25:42 UTC"
               , cvss = fromRight' $ parseCVSS "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
               }
           ]
-  ul_ [class_ "advisory-list"] $ Vector.forM_ advisoryPreviews (\preview -> Component.advisoryListRow preview)
+  ul_ [class_ "advisory-list"] $ Vector.forM_ advisoryPreviews (\preview -> Component.advisoryListRow True preview)

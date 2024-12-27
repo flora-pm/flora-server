@@ -78,6 +78,8 @@ data AffectedVersionRangeDAO = AffectedVersionRangeDAO
 
 data PackageAdvisoryPreview = PackageAdvisoryPreview
   { hsecId :: HsecId
+  , namespace :: Namespace
+  , packageName :: PackageName
   , summary :: Text
   , fixed :: Bool
   , published :: UTCTime
