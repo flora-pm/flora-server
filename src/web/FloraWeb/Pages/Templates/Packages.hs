@@ -24,6 +24,7 @@ module FloraWeb.Pages.Templates.Packages
   , showDependencies
   , showDependents
   , showPackageSecurityPage
+  , advisoriesListing
   ) where
 
 import Control.Monad (when)
@@ -566,13 +567,17 @@ showPackageSecurityPage
 showPackageSecurityPage namespace packageName advisoryPreviews = do
   div_ [class_ "container"] $ do
     presentationHeaderForAdvisories namespace packageName
-    if Vector.null advisoryPreviews
-      then p_ [] "No advisories found for this package."
-      else div_ [class_ "advisory-list"] $ do
-        div_ [class_ "advisory-list__head"] $ do
-          div_ [class_ "advisory-list__header"] "ID"
-          div_ [class_ "advisory-list__header"] "Summary"
-          div_ [class_ "advisory-list__header"] "Published"
-          div_ [class_ "advisory-list__header"] "Attributes"
-        div_ [class_ "advisory-list__body"] $
-          Vector.forM_ advisoryPreviews (\preview -> advisoryListRow preview)
+    advisoriesListing advisoryPreviews
+
+advisoriesListing :: Vector PackageAdvisoryPreview -> FloraHTML
+advisoriesListing advisoryPreviews =
+  if Vector.null advisoryPreviews
+    then p_ [] "No advisories found for this package."
+    else div_ [class_ "advisory-list"] $ do
+      div_ [class_ "advisory-list__head"] $ do
+        div_ [class_ "advisory-list__header"] "ID"
+        div_ [class_ "advisory-list__header"] "Summary"
+        div_ [class_ "advisory-list__header"] "Published"
+        div_ [class_ "advisory-list__header"] "Attributes"
+      div_ [class_ "advisory-list__body"] $
+        Vector.forM_ advisoryPreviews (\preview -> advisoryListRow preview)

@@ -117,6 +117,17 @@ packageWithExecutable pageNumber search =
     /: Just search
     /: Just pageNumber
 
+searchInAdvisories
+  :: Positive Word
+  -> Text
+  -> Link
+searchInAdvisories pageNumber search =
+  links
+    // Web.search
+    // Search.displaySearch
+    /: Just search
+    /: Just pageNumber
+
 packageSecurity :: Namespace -> PackageName -> Link
 packageSecurity namespace packageName =
   links

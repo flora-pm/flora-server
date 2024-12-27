@@ -147,7 +147,6 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.QRCode
-    Flora.Search
     Flora.Tracing
     JSON
     Log.Backend.File
@@ -227,6 +226,29 @@ library
     , zlib
 
   ghc-options:     -fplugin=Effectful.Plugin
+
+library flora-search
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  ./src/search
+
+  -- cabal-fmt: expand src/search
+  exposed-modules: Flora.Search
+  build-depends:
+    , aeson
+    , base
+    , effectful-core
+    , flora
+    , flora-advisories
+    , log-base
+    , log-effectful
+    , monad-time-effectful
+    , pg-transact-effectful
+    , text
+    , text-display
+    , tracing
+    , tracing-effectful
+    , vector
 
 library flora-advisories
   import:          common-extensions
@@ -369,6 +391,7 @@ library flora-web
     , flora
     , flora-advisories
     , flora-jobs
+    , flora-search
     , haddock-library
     , htmx-lucid
     , http-api-data
@@ -517,6 +540,7 @@ executable flora-cli
     , filepath
     , flora
     , flora-advisories
+    , flora-search
     , flora-web
     , hsec-core
     , log-base
@@ -562,6 +586,7 @@ test-suite flora-test
     , filepath
     , flora
     , flora-advisories
+    , flora-search
     , flora-web
     , hedgehog
     , http-client

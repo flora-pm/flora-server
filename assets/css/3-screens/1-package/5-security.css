@@ -1,25 +1,26 @@
-.advisory-list {
-	display: table;
-  border-collapse: separate;
-  border-spacing: 12px;
-}
-
 .advisory-list__head {
-	display: table-header-group;
-	border-inline: solid;
-	font-size: 1.25rem;
-}
-
-.advisory-list__body {
-	display: table-row-group;
+	display: none;
 }
 
 @media only screen and (--viewport-md) {
+	.advisory-list {
+		display: table;
+		border-collapse: separate;
+		border-spacing: 12px;
+	}
+
+	.advisory-list__head {
+		display: table-header-group;
+		border-inline: solid;
+		font-size: 1.25rem;
+	}
+
+	.advisory-list__body {
+		display: table-row-group;
+	}
+
 	.advisory-list__header {
 		display: table-cell;
 	}
 }
 
-.advisory-list__header {
-		display: none;
-}
