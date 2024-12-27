@@ -17,8 +17,12 @@ import Effectful
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
+import Effectful.Trace
 import Log qualified
+import Monitor.Tracing qualified as Tracing
 
+import Advisories.Model.Affected.Query qualified as Query
+import Advisories.Model.Affected.Types (PackageAdvisoryPreview)
 import Flora.Logging
 import Flora.Model.Package
   ( Namespace (..)
@@ -44,6 +48,7 @@ data SearchAction
       -- ^ Search within the package
   | SearchInNamespace Namespace PackageName
   | SearchExecutable Text
+  | SearchInAdvisories Text
   deriving (Eq, Ord, Show)
 
 instance Display SearchAction where
@@ -60,6 +65,8 @@ instance Display SearchAction where
     "Package " <> displayBuilder namespace <> "/" <> displayBuilder packageName
   displayBuilder (SearchExecutable executableName) =
     "Executable " <> displayBuilder executableName
+  displayBuilder (SearchInAdvisories searchTerm) =
+    "Search in Advisories: " <> displayBuilder searchTerm
 
 searchPackageByName
   :: (DB :> es, Log :> es, Time :> es)
@@ -158,6 +165,20 @@ searchExecutable (offset, limit) queryString = do
       ]
   pure (count, results)
 
+searchInAdvisories
+  :: (DB :> es, Trace :> es)
+  => (Word, Word)
+  -> Text
+  -> Eff es (Word, Vector PackageAdvisoryPreview)
+searchInAdvisories (offset, limit) queryString = do
+  results <-
+    Tracing.childSpan "Query.searchInAdvisories" $
+      Query.searchInAdvisories (offset, limit) queryString
+  count <-
+    Tracing.childSpan "Query.countAdvisorySearchResults" $
+      Query.countAdvisorySearchResults queryString
+  pure (count, results)
+
 dependencyInfoToPackageInfo :: DependencyInfo -> PackageInfo
 dependencyInfoToPackageInfo dep =
   PackageInfo
@@ -228,6 +249,7 @@ parseSearchQuery = \case
         Just $ ListAllPackagesInNamespace namespace
       _ -> Just $ SearchPackages rest
   (Text.stripPrefix "exe:" -> Just rest) -> Just $ SearchExecutable rest
+  (Text.stripPrefix "hsec:" -> Just rest) -> Just $ SearchInAdvisories rest
   e -> Just $ SearchPackages e
 
 -- Determine if the string is

@@ -7,12 +7,13 @@ import Data.Text.Display (display)
 import Data.Vector (Vector)
 import Lucid
 
+import Advisories.Model.Affected.Types
 import Flora.Model.Package (Namespace, PackageInfo (..), PackageInfoWithExecutables (..))
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Pages.Templates
-import FloraWeb.Pages.Templates.Packages (packageListing, packageWithExecutableListing)
+import FloraWeb.Pages.Templates.Packages (advisoriesListing, packageListing, packageWithExecutableListing)
 
 showAllPackages :: Word -> Positive Word -> Vector PackageInfo -> FloraHTML
 showAllPackages count currentPage packagesInfo = do
@@ -63,3 +64,17 @@ showExecutableResults executableName count currentPage results = do
     packageWithExecutableListing results
     when (count > 30) $
       paginationNav count currentPage (SearchExecutable executableName)
+
+showAdvisorySearchResults
+  :: Text
+  -> Word
+  -> Positive Word
+  -> Vector PackageAdvisoryPreview
+  -- ^ Results
+  -> FloraHTML
+showAdvisorySearchResults searchTerm count currentPage results = do
+  div_ [class_ "container"] $ do
+    presentationHeader searchTerm "" count
+    advisoriesListing results
+    when (count > 30) $
+      paginationNav count currentPage (SearchInAdvisories searchTerm)

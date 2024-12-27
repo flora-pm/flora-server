@@ -33,10 +33,14 @@ import Network.Wai.Handler.Warp
   )
 import Network.Wai.Log qualified as WaiLog
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
+import Network.Wai.Middleware.Prometheus qualified as P
 import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Job (startJobRunner)
 import OddJobs.Types qualified as OddJobs
 import Optics.Core
+import Prometheus qualified as P
+import Prometheus.Metric.GHC qualified as P
+import Prometheus.Metric.Proc qualified as P
 import Sel
 import Servant
   ( Application
@@ -106,6 +110,10 @@ runFlora =
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
+            liftIO $ when env.mltp.prometheusEnabled $ do
+              blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
+              void $ P.register P.ghcMetrics
+              void $ P.register P.procMetrics
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             let withLogger = Logging.makeLogger env.mltp.logger
@@ -169,7 +177,9 @@ runServer appLogger floraEnv = do
     $ heartbeatMiddleware
       . loggingMiddleware
       . const
-    $ server
+    $ P.prometheus
+      P.def
+      server
 
 mkServer
   :: Logger

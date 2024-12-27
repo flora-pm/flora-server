@@ -1,0 +1,123 @@
+cabal-version: 2.0
+
+name:           biscuit-haskell
+version:        0.4.0.0
+category:       Security
+synopsis:       Library support for the Biscuit security token
+description:    Please see the README on GitHub at <https://github.com/biscuit-auth/biscuit-haskell#readme>
+homepage:       https://github.com/biscuit-auth/biscuit-haskell#readme
+bug-reports:    https://github.com/biscuit-auth/biscuit-haskell/issues
+author:         Clément Delafargue
+maintainer:     clement@delafargue.name
+copyright:      2021 Clément Delafargue
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+tested-with:    GHC ==9.0.2 || ==9.2.4 || ==9.6.5 || ==9.8.2
+extra-source-files:
+    README.md
+    ChangeLog.md
+    test/samples/current/samples.json
+    test/samples/current/*.bc
+
+source-repository head
+  type: git
+  location: https://github.com/biscuit-auth/biscuit-haskell
+
+library
+  exposed-modules:
+      Auth.Biscuit
+      Auth.Biscuit.Symbols
+      Auth.Biscuit.Utils
+      Auth.Biscuit.Crypto
+      Auth.Biscuit.Datalog.AST
+      Auth.Biscuit.Datalog.Executor
+      Auth.Biscuit.Datalog.Parser
+      Auth.Biscuit.Datalog.ScopedExecutor
+      Auth.Biscuit.Example
+      Auth.Biscuit.Proto
+      Auth.Biscuit.ProtoBufAdapter
+      Auth.Biscuit.Timer
+      Auth.Biscuit.Token
+  other-modules:
+      Paths_biscuit_haskell
+  autogen-modules:
+      Paths_biscuit_haskell
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+    base                 >= 4.7 && <5,
+    async                ^>= 2.2,
+    base16               >= 0.3 && <2.0,
+    bytestring           >= 0.10 && <0.12,
+    text                 >= 1.2 && <3,
+    containers           ^>= 0.6,
+    cryptonite           >= 0.27 && < 0.31,
+    memory               >= 0.15 && < 0.19,
+    template-haskell     >= 2.16 && < 2.22,
+    base64               ^>= 0.4,
+    cereal               ^>= 0.5,
+    mtl                  >= 2.2 && < 2.4,
+    parser-combinators   >= 1.2 && < 1.4,
+    protobuf             ^>= 0.2,
+    random               >= 1.0 && < 1.3,
+    regex-tdfa           ^>= 1.3,
+    th-lift-instances    ^>= 0.1,
+    time                 ^>= 1.9,
+    validation-selective >= 0.1 && < 0.3,
+    megaparsec           >= 9.2 && < 9.7
+  default-language: Haskell2010
+
+test-suite biscuit-haskell-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Spec.NewCrypto
+      Spec.Executor
+      Spec.Parser
+      Spec.Quasiquoter
+      Spec.Roundtrip
+      Spec.SampleReader
+      Spec.ScopedExecutor
+      Spec.Verification
+      Paths_biscuit_haskell
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      async
+    , aeson
+    , base >=4.7 && <5
+    , base16 >=0.3 && <2.0
+    , base64
+    , biscuit-haskell
+    , bytestring
+    , cereal
+    , containers
+    , cryptonite
+    , lens
+    , lens-aeson
+    , megaparsec
+    , mtl
+    , parser-combinators
+    , protobuf
+    , random
+    , tasty
+    , tasty-hunit
+    , template-haskell
+    , text
+    , th-lift-instances
+    , time
+    , validation-selective
+  default-language: Haskell2010
+
+benchmark biscuit-bench
+  type:                exitcode-stdio-1.0
+  main-is:             Bench.hs
+  hs-source-dirs:      benchmarks
+  default-language:    Haskell2010
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-T
+  build-depends:       base
+                     , criterion
+                     , biscuit-haskell

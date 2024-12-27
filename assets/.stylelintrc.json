@@ -4,6 +4,7 @@
     "hue-degree-notation": "number",
     "media-feature-range-notation": "prefix",
     "import-notation": "string",
+    "selector-class-pattern": null,
     "at-rule-no-unknown": [
       true,
       {

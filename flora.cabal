@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.21
+version:            1.0.22
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -75,6 +75,13 @@ library
   -- cabal-fmt: expand src/core
   -- cabal-fmt: expand src/datatypes
   exposed-modules:
+    Advisories.AffectedVersionRange.Orphans
+    Advisories.CAPEC.Orphans
+    Advisories.CVSS.Orphans
+    Advisories.CWE.Orphans
+    Advisories.HsecId.Orphans
+    Advisories.Keyword.Orphans
+    Advisories.System.Orphans
     Data.Aeson.Orphans
     Data.Positive
     Data.Text.Display.Orphans
@@ -114,16 +121,24 @@ library
     Flora.Model.Job
     Flora.Model.Organisation
     Flora.Model.Package
+    Flora.Model.Package.Guard
     Flora.Model.Package.Orphans
     Flora.Model.Package.Publisher
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
+    Flora.Model.PackageGroup.Query
+    Flora.Model.PackageGroup.Types
+    Flora.Model.PackageGroup.Update
+    Flora.Model.PackageGroupPackage.Query
+    Flora.Model.PackageGroupPackage.Types
+    Flora.Model.PackageGroupPackage.Update
     Flora.Model.PackageIndex.Query
     Flora.Model.PackageIndex.Types
     Flora.Model.PackageIndex.Update
     Flora.Model.PersistentSession
     Flora.Model.Release
+    Flora.Model.Release.Guard
     Flora.Model.Release.Query
     Flora.Model.Release.Types
     Flora.Model.Release.Update
@@ -132,11 +147,12 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.QRCode
-    Flora.Search
     Flora.Tracing
     JSON
     Log.Backend.File
     Lucid.Orphans
+    OSV.Reference.Orphans
+    Pandoc.Orphans
     Servant.API.ContentTypes.GZip
 
   build-depends:
@@ -153,6 +169,7 @@ library
     , cryptohash-sha256
     , cryptonite
     , cryptonite-conduit
+    , cvss
     , dani-servant-lucid2
     , deepseq
     , deriving-aeson
@@ -162,6 +179,8 @@ library
     , effectful-plugin
     , envparse
     , filepath
+    , hsec-core
+    , hsec-sync
     , http-api-data
     , http-media
     , iso8601-time
@@ -175,6 +194,8 @@ library
     , odd-jobs
     , openapi3
     , optics-core
+    , osv
+    , pandoc-types
     , pcre2
     , pg-entity
     , pg-transact
@@ -197,6 +218,7 @@ library
     , text-display
     , time
     , tracing
+    , tracing-effectful
     , unliftio
     , utf8-string
     , uuid
@@ -204,6 +226,70 @@ library
     , zlib
 
   ghc-options:     -fplugin=Effectful.Plugin
+
+library flora-search
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  ./src/search
+
+  -- cabal-fmt: expand src/search
+  exposed-modules: Flora.Search
+  build-depends:
+    , aeson
+    , base
+    , effectful-core
+    , flora
+    , flora-advisories
+    , log-base
+    , log-effectful
+    , monad-time-effectful
+    , pg-transact-effectful
+    , text
+    , text-display
+    , tracing
+    , tracing-effectful
+    , vector
+
+library flora-advisories
+  import:          common-extensions
+  import:          common-ghc-options
+  hs-source-dirs:  ./src/advisories
+
+  -- cabal-fmt: expand src/advisories
+  exposed-modules:
+    Advisories.Import
+    Advisories.Import.Error
+    Advisories.Model.Advisory.Query
+    Advisories.Model.Advisory.Types
+    Advisories.Model.Advisory.Update
+    Advisories.Model.Affected.Query
+    Advisories.Model.Affected.Types
+    Advisories.Model.Affected.Update
+
+  build-depends:
+    , aeson
+    , base
+    , Cabal-syntax
+    , containers
+    , cvss
+    , deepseq
+    , effectful
+    , flora
+    , hsec-core
+    , hsec-sync
+    , hsec-tools
+    , osv
+    , pandoc-types
+    , pg-entity
+    , pg-transact-effectful
+    , postgresql-simple
+    , text
+    , time
+    , tracing
+    , tracing-effectful
+    , uuid
+    , validation-selective
+    , vector
 
 library flora-web
   import:          common-extensions
@@ -227,6 +313,7 @@ library flora-web
     FloraWeb.Common.Pagination
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
+    FloraWeb.Components.AdvisoryListItem
     FloraWeb.Components.Alert
     FloraWeb.Components.Button
     FloraWeb.Components.CategoryCard
@@ -283,7 +370,7 @@ library flora-web
   build-depends:
     , aeson
     , async
-    , base                      ^>=4.18.2
+    , base                       ^>=4.18.2
     , base32
     , bytestring
     , Cabal-syntax
@@ -292,6 +379,7 @@ library flora-web
     , colourista
     , containers
     , cookie
+    , cvss
     , dani-servant-lucid2
     , data-default
     , deepseq
@@ -301,7 +389,9 @@ library flora-web
     , effectful-plugin
     , extra
     , flora
+    , flora-advisories
     , flora-jobs
+    , flora-search
     , haddock-library
     , htmx-lucid
     , http-api-data
@@ -317,13 +407,16 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
-    , one-time-password         ==3.0.0.0
+    , one-time-password          ==3.0.0.0
     , openapi3
     , optics-core
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
     , pretty
+    , prometheus-client
+    , prometheus-metrics-ghc
+    , prometheus-proc
     , PyF
     , raven-haskell
     , resource-pool
@@ -347,6 +440,7 @@ library flora-web
     , wai-app-static
     , wai-log
     , wai-middleware-heartbeat
+    , wai-middleware-prometheus
     , warp
     , xml-conduit
     , xml-conduit-writer
@@ -437,13 +531,18 @@ executable flora-cli
     , bytestring
     , Cabal-syntax
     , containers
+    , cvss
     , effectful
     , effectful-core
     , effectful-plugin
     , envparse
+    , extra
     , filepath
     , flora
+    , flora-advisories
+    , flora-search
     , flora-web
+    , hsec-core
     , log-base
     , log-effectful
     , lucid2
@@ -457,10 +556,14 @@ executable flora-cli
     , text
     , text-display
     , time
+    , tracing
+    , tracing-effectful
     , transformers
     , uuid
     , vector
     , zlib
+
+  ghc-options:    -fplugin=Effectful.Plugin
 
 test-suite flora-test
   import:         common-extensions
@@ -479,8 +582,11 @@ test-suite flora-test
     , effectful-core
     , effectful-plugin
     , exceptions
+    , extra
     , filepath
     , flora
+    , flora-advisories
+    , flora-search
     , flora-web
     , hedgehog
     , http-client
@@ -502,8 +608,10 @@ test-suite flora-test
     , tar
     , tasty
     , tasty-hunit
+    , tasty-test-reporter
     , text
     , time
+    , tracing-effectful
     , uuid
     , vector
     , vector-algorithms
@@ -511,11 +619,13 @@ test-suite flora-test
 
   ghc-options:    -fplugin=Effectful.Plugin
   other-modules:
+    Flora.AdvisorySpec
     Flora.BlobSpec
     Flora.CabalSpec
     Flora.CategorySpec
     Flora.ImportSpec
     Flora.OddJobSpec
+    Flora.PackageGroupSpec
     Flora.PackageSpec
     Flora.SearchSpec
     Flora.TemplateSpec

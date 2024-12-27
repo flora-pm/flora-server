@@ -30,13 +30,13 @@ clean-assets: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
 	@cd docs/ && rm -R node_modules
 
+db-setup: db-create db-init db-migrate ## Setup the dev database
+
 db-create: ## Create the database
 	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
 db-drop: ## Drop the database
 	@dropdb -f --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
-
-db-setup: db-create db-init db-migrate ## Setup the dev database
 
 db-init: ## Create the database schema
 	@migrate init "$(FLORA_DB_CONNSTRING)"
@@ -56,9 +56,37 @@ db-provision: ## Create categories and repositories
 	@cabal run -- flora-cli provision-repository --name "horizon" --url https://packages.horizon-haskell.net \
 			--description "Packages of the Horizon project"
 
-db-provision-test-packages: ## Load development data in the database
+db-provision-advisories: ## Load HSEC advisories in the database
+	@cabal run -- flora-cli provision advisories
+
+db-provision-packages: ## Load development data in the dev database
 	@cabal run -- flora-cli provision test-packages --repository "hackage"
 	@cabal run -- flora-cli provision test-packages --repository "cardano"
+
+db-test-create: ## Create the test database
+	./scripts/run-with-test-config.sh db-create
+
+db-test-setup: db-test-create db-test-init db-test-migrate ## Setup the dev database
+
+db-test-drop: ## Drop the test database
+	./scripts/run-with-test-config.sh db-drop
+
+db-test-init: ## Create the test database schema
+	./scripts/run-with-test-config.sh db-init
+
+db-test-migrate: ## Apply test database migrations
+	./scripts/run-with-test-config.sh db-migrate
+
+db-test-reset: db-test-drop db-test-setup db-test-provision ## Reset the test database
+
+db-test-provision: ## Create categories and repositories
+	./scripts/run-with-test-config.sh db-provision
+
+db-test-provision-advisories: ## Load HSEC advisories in the test database
+	./scripts/run-with-test-config.sh db-provision-advisories
+
+db-test-provision-packages: ## Load development data in the database
+	./scripts/run-with-test-config.sh db-provision-packages
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
 	@cabal run -- flora-cli import-packages ./01-index
@@ -125,8 +153,19 @@ tags: ## Generate ctags for the project with `ghc-tags`
 
 design-system: ## Generate the HTML components used by the design system
 	@cabal run -- flora-cli gen-design-system
+
 start-design-sysytem: ## Start storybook.js
 	@cd design; yarn storybook
+
+migration: ## Generate timestamped database migration boilerplate files
+	@if test -z "$$name"; then \
+	  echo "Usage: make migration name=some-name"; \
+	else \
+	  migName="`date -u '+%Y%m%d%H%M%S'`_$$name"; \
+	  fname="migrations/$$migName.sql"; \
+	  touch "$$fname"; \
+	  echo "Touched $$fname";\
+	fi
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.* ?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -144,14 +183,3 @@ endif
 .PHONY: all $(MAKECMDGOALS)
 
 .DEFAULT_GOAL := help
-
-.PHONY: migration
-migration: ## Generate timestamped database migration boilerplate files
-	@if test -z "$$name"; then \
-	  echo "Usage: make migration name=some-name"; \
-	else \
-	  migName="`date -u '+%Y%m%d%H%M%S'`_$$name"; \
-	  fname="migrations/$$migName.sql"; \
-	  touch "$$fname"; \
-	  echo "Touched $$fname";\
-	fi

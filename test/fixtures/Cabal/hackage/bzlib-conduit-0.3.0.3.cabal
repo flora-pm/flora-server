@@ -1,0 +1,99 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           bzlib-conduit
+version:        0.3.0.3
+synopsis:       Streaming compression/decompression via conduits.
+description:    Please see the README and docs at <https://www.stackage.org/package/bzlib-conduit>
+category:       Codec
+homepage:       https://github.com/snoyberg/bzlib-conduit#readme
+bug-reports:    https://github.com/snoyberg/bzlib-conduit/issues
+author:         Hideyuki Tanaka
+maintainer:     Michael Snoyman
+copyright:      (c) 2012, Hideyuki Tanaka
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+data-files:
+    test/sample1.bz2
+    test/sample2.bz2
+    test/sample3.bz2
+    test/sample4.bz2
+    test/sample5.bz2
+    test/sample1.ref
+    test/sample2.ref
+    test/sample3.ref
+    test/sample4.ref
+    test/sample5.ref
+
+source-repository head
+  type: git
+  location: https://github.com/snoyberg/bzlib-conduit
+
+library
+  exposed-modules:
+      Data.Conduit.BZlib
+      Data.Conduit.BZlib.Internal
+  other-modules:
+      Paths_bzlib_conduit
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.9 && <10
+    , bindings-DSL
+    , bytestring >=0.9
+    , conduit >=1.3
+    , data-default-class
+    , mtl >=2.0
+    , resourcet >=1.2
+  default-language: Haskell2010
+  if !(os(windows))
+    extra-libraries:
+        bz2
+  else
+    build-depends:
+        bzip2-clib
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: test.hs
+  other-modules:
+      Paths_bzlib_conduit
+  hs-source-dirs:
+      test
+  build-depends:
+      base >=4.9 && <10
+    , bindings-DSL
+    , bytestring >=0.9
+    , bzlib-conduit
+    , conduit >=1.3
+    , data-default-class
+    , hspec >=1.3
+    , mtl >=2.0
+    , random
+    , resourcet >=1.2
+  default-language: Haskell2010
+
+benchmark bench
+  type: exitcode-stdio-1.0
+  main-is: bench.hs
+  other-modules:
+      Paths_bzlib_conduit
+  hs-source-dirs:
+      bench
+  build-depends:
+      base >=4.9 && <10
+    , bindings-DSL
+    , bytestring >=0.9
+    , bzlib-conduit
+    , conduit >=1.3
+    , data-default-class
+    , mtl >=2.0
+    , resourcet >=1.2
+  default-language: Haskell2010

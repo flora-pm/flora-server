@@ -5,6 +5,7 @@ exclude_paths:
 - dist
 - dist-newstyle
 - assets
+- _build
 extensions:
 - BangPatterns
 - BlockArguments

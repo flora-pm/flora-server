@@ -41,6 +41,16 @@ module Flora.TestUtils
   , instantiatePackage
   , randomPackageTemplate
 
+    -- *** Package Group
+  , PackageGroupTemplate (..)
+  , instantiatePackageGroup
+  , randomPackageGroupTemplate
+
+    -- *** Package Group Package
+  , PackageGroupPackageTemplate (..)
+  , instantiatePackageGroupPackage
+  , randomPackageGroupPackageTemplate
+
     -- *** Release
   , ReleaseTemplate (..)
   , instantiateRelease
@@ -104,6 +114,8 @@ import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
 import Effectful.Time
+import Effectful.Trace (Trace)
+import Effectful.Trace qualified as Trace
 import GHC.Generics
 import GHC.IO (mkUserError)
 import GHC.Stack
@@ -145,6 +157,10 @@ import Flora.Model.Package
   , PackageStatus
   )
 import Flora.Model.Package.Update qualified as Update
+import Flora.Model.PackageGroup.Types (PackageGroup (..), PackageGroupId (..))
+import Flora.Model.PackageGroup.Update qualified as Update
+import Flora.Model.PackageGroupPackage.Types (PackageGroupPackage (..), PackageGroupPackageId (..))
+import Flora.Model.PackageGroupPackage.Update qualified as Update
 import Flora.Model.Release.Types
   ( ImportStatus (..)
   , Release (..)
@@ -158,7 +174,7 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update qualified as Update
 
-type TestEff = Eff '[FileSystem, Poolboy, Fail, BlobStoreAPI, Reader TestEnv, DB, Log, Time, State (Set (Namespace, PackageName, Version)), IOE]
+type TestEff = Eff '[Trace, FileSystem, Poolboy, Fail, BlobStoreAPI, Reader TestEnv, DB, Log, Time, State (Set (Namespace, PackageName, Version)), IOE]
 
 data Fixtures = Fixtures
   { hackageUser :: User
@@ -197,6 +213,7 @@ runTestEff comp env = runEff $ do
       . runFailIO
       . runPoolboy (poolboySettingsWith env.dbConfig.connections)
       . runFileSystem
+      . Trace.runNoTrace
       $ comp
 
 testThis :: String -> TestEff () -> TestEff TestTree
@@ -658,3 +675,63 @@ instantiateRequirement
     let req = Requirement{..}
     Update.insertRequirement req
     pure req
+
+data PackageGroupTemplate m = PackageGroupTemplate
+  { packageGroupId :: m PackageGroupId
+  , groupName :: m Text
+  }
+  deriving stock (Generic)
+
+randomPackageGroupTemplate :: MonadIO m => PackageGroupTemplate m
+randomPackageGroupTemplate =
+  PackageGroupTemplate
+    { packageGroupId = PackageGroupId <$> H.sample genUUID
+    , groupName = H.sample genDisplayName
+    }
+
+instantiatePackageGroup
+  :: DB :> es
+  => PackageGroupTemplate (Eff es)
+  -> Eff es PackageGroup
+instantiatePackageGroup
+  PackageGroupTemplate
+    { packageGroupId = generatePackageGroupId
+    , groupName = generateGroupName
+    } = do
+    packageGroupId <- generatePackageGroupId
+    groupName <- generateGroupName
+    let pg = PackageGroup{..}
+    Update.insertPackageGroup pg
+    pure pg
+
+data PackageGroupPackageTemplate m = PackageGroupPackageTemplate
+  { packageGroupPackageId :: m PackageGroupPackageId
+  , packageId :: m PackageId
+  , packageGroupId :: m PackageGroupId
+  }
+  deriving stock (Generic)
+
+randomPackageGroupPackageTemplate :: MonadIO m => PackageGroupPackageTemplate m
+randomPackageGroupPackageTemplate =
+  PackageGroupPackageTemplate
+    { packageGroupPackageId = PackageGroupPackageId <$> H.sample genUUID
+    , packageId = PackageId <$> H.sample genUUID
+    , packageGroupId = PackageGroupId <$> H.sample genUUID
+    }
+
+instantiatePackageGroupPackage
+  :: DB :> es
+  => PackageGroupPackageTemplate (Eff es)
+  -> Eff es PackageGroupPackage
+instantiatePackageGroupPackage
+  PackageGroupPackageTemplate
+    { packageGroupPackageId = generatePackageGroupPackageId
+    , packageId = generatePackageId
+    , packageGroupId = generatePackageGroupId
+    } = do
+    packageGroupPackageId <- generatePackageGroupPackageId
+    packageId <- generatePackageId
+    packageGroupId <- generatePackageGroupId
+    let pgp = PackageGroupPackage{..}
+    Update.addPackageToPackageGroup pgp
+    pure pgp

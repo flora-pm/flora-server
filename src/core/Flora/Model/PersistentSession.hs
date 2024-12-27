@@ -69,7 +69,7 @@ persistSession
 persistSession persistentSessionId userId = do
   persistentSession <- newPersistentSession userId persistentSessionId
   insertSession persistentSession
-  pure $ persistentSession.persistentSessionId
+  pure persistentSession.persistentSessionId
 
 insertSession :: DB :> es => PersistentSession -> Eff es ()
 insertSession = dbtToEff . insert @PersistentSession
