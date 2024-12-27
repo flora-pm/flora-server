@@ -60,10 +60,11 @@ SELECT s0.hsec_id
      , s0.published
      , a1.cvss
 FROM security_advisories AS s0
-    INNER JOIN affected_packages AS a1 ON s0.advisory_id = a1.advisory_id
+     INNER JOIN affected_packages AS a1 ON s0.advisory_id = a1.advisory_id
      INNER JOIN affected_version_ranges AS a2 ON a1.affected_package_id = a2.affected_package_id
      INNER JOIN packages AS p3 ON a1.package_id = p3.package_id
 WHERE a1.package_id = ?
+GROUP BY s0.hsec_id, p3.namespace, p3.name, s0.summary, fixed, s0.published, a1.cvss
   |]
       (Only packageId)
 
