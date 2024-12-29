@@ -33,7 +33,7 @@ import Network.Wai.Handler.Warp
   )
 import Network.Wai.Log qualified as WaiLog
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
-import Network.Wai.Middleware.Prometheus qualified as P
+import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
 import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Job (startJobRunner)
 import OddJobs.Types qualified as OddJobs
@@ -41,6 +41,7 @@ import Optics.Core
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import Prometheus.Metric.Proc qualified as P
+import Prometheus.Servant qualified as P
 import Sel
 import Servant
   ( Application
@@ -177,9 +178,8 @@ runServer appLogger floraEnv = do
     $ heartbeatMiddleware
       . loggingMiddleware
       . const
-    $ P.prometheus
-      P.def
-      server
+    $ WaiMetrics.prometheus WaiMetrics.def
+    $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes) server
 
 mkServer
   :: Logger

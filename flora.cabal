@@ -426,6 +426,7 @@ library flora-web
     , servant-client
     , servant-client-core
     , servant-openapi3
+    , servant-prometheus
     , servant-server
     , text
     , text-display

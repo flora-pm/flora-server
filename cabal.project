@@ -87,3 +87,8 @@ source-repository-package
   type: git
   location: https://github.com/goodlyrottenapple/tasty-test-reporter
   tag: b704130
+
+source-repository-package
+  type: git
+  location: https://github.com/worm2fed/servant-prometheus
+  tag: 9f967b3b42b183653b91f0ba9097621797ad107d
