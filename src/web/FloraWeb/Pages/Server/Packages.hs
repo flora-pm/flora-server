@@ -33,7 +33,7 @@ import Servant.Server (err404)
 
 import Advisories.Model.Affected.Query qualified as Query
 import Advisories.Model.Affected.Types
-import Flora.Environment (FeatureEnv (..))
+import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobStore.API (BlobStoreAPI)
 import Flora.Model.Package

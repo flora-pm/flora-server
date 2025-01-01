@@ -16,7 +16,7 @@ import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import Servant (HasServer (..), Headers (..))
 
-import Flora.Environment (FeatureEnv (..), FloraEnv (..))
+import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User
@@ -24,7 +24,13 @@ import FloraJobs.Scheduler
 import FloraWeb.Common.Auth
 import FloraWeb.Common.Utils (handlerToEff, redirect)
 import FloraWeb.Pages.Routes.Admin
-import FloraWeb.Pages.Templates (ActiveElements (..), TemplateEnv (..), defaultTemplateEnv, render, templateFromSession)
+import FloraWeb.Pages.Templates
+  ( ActiveElements (..)
+  , TemplateEnv (..)
+  , defaultTemplateEnv
+  , render
+  , templateFromSession
+  )
 import FloraWeb.Pages.Templates.Admin qualified as Templates
 import FloraWeb.Types (FloraEff, fetchFloraEnv)
 

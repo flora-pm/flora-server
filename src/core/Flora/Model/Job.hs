@@ -86,7 +86,7 @@ data FloraOddJobs
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
-  | RefreshIndexes
+  | RefreshIndex Text
   deriving stock (Generic)
 
 -- TODO: Upstream these two ToJSON instances
@@ -106,4 +106,5 @@ instance ToJSON LogEvent where
     LogWebUIRequest -> toJSON ("web-ui-request" :: Text)
     LogKillJobSuccess job -> toJSON ("kill-success" :: Text, job)
     LogKillJobFailed job -> toJSON ("kill-failed" :: Text, job)
+    LogDeletionPoll data_ -> toJSON ("log-deletion-poll" :: Text, data_)
     LogText other -> toJSON ("other" :: Text, other)

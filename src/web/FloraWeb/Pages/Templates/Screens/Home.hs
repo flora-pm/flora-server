@@ -8,7 +8,7 @@ import Data.Text (Text)
 import Lucid
 import PyF
 
-import Flora.Environment
+import Flora.Environment.Env
 import FloraWeb.Components.MainSearchBar (mainSearchBar)
 import FloraWeb.Pages.Templates.Types
 

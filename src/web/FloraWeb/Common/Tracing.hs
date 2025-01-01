@@ -16,7 +16,7 @@ import System.Log.Raven (initRaven, register, silentFallback)
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))
 
-import Flora.Environment
+import Flora.Environment.Env
 
 onException :: Logger -> DeploymentEnv -> MLTP -> Maybe Request -> SomeException -> IO ()
 onException logger environment mltp mRequest exception =
