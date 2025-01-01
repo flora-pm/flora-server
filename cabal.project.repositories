@@ -9,10 +9,10 @@ repository cardano
     c00aae8461a256275598500ea0e187588c35a5d5d7454fb57eac18d9edb86a56
     d4a35cd3121aa00d18544bb0ac01c3e1691d618f462c46129271bccf39f7e8ee
 
-repository horizon
-  url: https://packages.horizon-haskell.net/
-  secure: True
-  root-keys:
-    272e995c7a74de109518100e1422193fe5e5971e52c92b98147c9355b47d7bb6
-    ea5c1bc0944dabe64d9d68c6813a8141d747cda042b870576d7af63a2326c31b
-    eb47482ddf51da1d3610094f5c57a626d42cfd7d9c248f53e23420b02b21c695
+-- repository horizon
+--   url: https://packages.horizon-haskell.net/
+--   secure: True
+--   root-keys:
+--     272e995c7a74de109518100e1422193fe5e5971e52c92b98147c9355b47d7bb6
+--     ea5c1bc0944dabe64d9d68c6813a8141d747cda042b870576d7af63a2326c31b
+--     eb47482ddf51da1d3610094f5c57a626d42cfd7d9c248f53e23420b02b21c695

@@ -105,7 +105,7 @@ checkIfIndexRefreshJobIsPlanned pool = do
       query_
         Select
         [sql|
-                select payload ->> 'content'
+                select payload ->> 'contents'
                 from "oddjobs"
                 where payload ->> 'tag' = 'RefreshIndex'
                 and status = 'queued'

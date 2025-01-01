@@ -237,8 +237,8 @@ refreshIndex
 refreshIndex indexName = do
   let repoPath =
         if indexName == "hackage"
-        then "hackage.haskell.org"
-        else Text.unpack indexName
+          then "hackage.haskell.org"
+          else Text.unpack indexName
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
   homeDir <- FileSystem.getHomeDirectory

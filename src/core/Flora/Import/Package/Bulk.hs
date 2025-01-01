@@ -198,6 +198,9 @@ importFromStream userId repository@(repositoryName, _) stream = do
           Update.updatePackageIndexByName repositoryName timestamp
       )
   displayStats processedPackageCount
+  increasePackageImportCounterBy
+    (fromIntegral @Int @Double processedPackageCount)
+    repositoryName
   where
     displayCount :: SFold.Fold (Eff es) a Int
     displayCount =
@@ -205,11 +208,7 @@ importFromStream userId repository@(repositoryName, _) stream = do
         \previousCount _ -> do
           let currentCount = previousCount + 1
               batchAmount = 400
-          when (currentCount `mod` batchAmount == 0) $ do
-            displayStats currentCount
-            increasePackageImportCounterBy
-              (fromIntegral @Int @Double batchAmount)
-              repositoryName
+          when (currentCount `mod` batchAmount == 0) $ displayStats currentCount
           pure currentCount
 
 displayStats

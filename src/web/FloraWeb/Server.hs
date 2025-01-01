@@ -113,7 +113,7 @@ runFlora =
               blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               void $ P.register P.ghcMetrics
               void $ P.register P.procMetrics
-              void $ P.register (P.counter (P.Info "flora_imported_packages_count" "The number of imported packages"))
+              void $ P.register (P.counter (P.Info "flora_imported_packages_total" "The number of imported packages"))
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             let withLogger = Logging.makeLogger env.mltp.logger
