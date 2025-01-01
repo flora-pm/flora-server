@@ -7,17 +7,17 @@ import Control.Monad.IO.Class
 import Data.ByteString.Base32 qualified as Base32
 import Data.Text.Encoding qualified as Text
 import Effectful (Eff, IOE, (:>))
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
+import Effectful.Time (Time)
 import Log qualified
 import Lucid
 import Optics.Core
 import Sel.HMAC.SHA256 qualified as HMAC
 import Servant (HasServer (..), Headers (..), Union, WithStatus (..), respond)
 
-import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
-import Effectful.Time (Time)
-import Flora.Environment
+import Flora.Environment.Env
 import Flora.Model.User
 import Flora.Model.User.Update qualified as Update
 import Flora.QRCode qualified as QRCode

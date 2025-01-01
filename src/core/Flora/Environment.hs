@@ -1,58 +1,23 @@
-{-# LANGUAGE PartialTypeSignatures #-}
-
 module Flora.Environment
-  ( FloraEnv (..)
-  , DeploymentEnv (..)
-  , MLTP (..)
-  , FeatureEnv (..)
-  , BlobStoreImpl (..)
-  , TestEnv (..)
-  , getFloraEnv
+  ( getFloraEnv
   , getFloraTestEnv
-  )
-where
+  ) where
 
 import Colourista.IO (blueMessage)
-import Data.Aeson (ToJSON)
 import Data.ByteString (ByteString)
 import Data.Pool (Pool)
 import Data.Pool qualified as Pool
 import Data.Pool.Introspection (defaultPoolConfig)
-import Data.Text
 import Data.Text.Encoding qualified as Text
 import Data.Time (NominalDiffTime)
-import Data.Word (Word16)
 import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Fail (Fail)
-import Env
-  ( parse
-  )
+import Env (parse)
+
 import Flora.Environment.Config
-import GHC.Generics
-
--- | The datatype that is used in the application
-data FloraEnv = FloraEnv
-  { pool :: Pool PG.Connection
-  , dbConfig :: PoolConfig
-  , jobsPool :: Pool PG.Connection
-  , httpPort :: Word16
-  , domain :: Text
-  , mltp :: MLTP
-  , environment :: DeploymentEnv
-  , features :: FeatureEnv
-  , config :: FloraConfig
-  , assets :: Assets
-  }
-  deriving stock (Generic)
-
-data TestEnv = TestEnv
-  { pool :: Pool PG.Connection
-  , dbConfig :: PoolConfig
-  , httpPort :: Word16
-  , mltp :: MLTP
-  }
-  deriving stock (Generic)
+import Flora.Environment.Env
+import Flora.Monitoring
 
 mkPool
   :: IOE :> es
@@ -69,16 +34,6 @@ mkPool connectionInfo timeout' connections =
         (realToFrac timeout')
         connections
 
-data BlobStoreImpl = BlobStoreFS FilePath | BlobStorePure
-  deriving stock (Generic, Show)
-
-instance ToJSON BlobStoreImpl
-
-newtype FeatureEnv = FeatureEnv {blobStoreImpl :: Maybe BlobStoreImpl}
-  deriving stock (Generic, Show)
-
-instance ToJSON FeatureEnv
-
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
 featureConfigToEnv FeatureConfig{..} =
@@ -94,8 +49,8 @@ configToEnv floraConfig = do
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   jobsPool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   assets <- getAssets floraConfig.environment
-  liftIO $ print assets
   featureEnv <- featureConfigToEnv floraConfig.features
+  metrics <- registerMetrics
   pure
     FloraEnv
       { pool = pool
@@ -108,12 +63,14 @@ configToEnv floraConfig = do
       , features = featureEnv
       , assets = assets
       , config = floraConfig
+      , metrics = metrics
       }
 
 testConfigToTestEnv :: TestConfig -> Eff '[IOE] TestEnv
 testConfigToTestEnv config@TestConfig{..} = do
   let PoolConfig{..} = config.dbConfig
   pool <- mkPool connectionInfo connectionTimeout connections
+  metrics <- registerMetrics
   pure TestEnv{..}
 
 getFloraEnv :: Eff '[Fail, IOE] FloraEnv

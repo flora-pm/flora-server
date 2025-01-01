@@ -25,6 +25,7 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
@@ -33,9 +34,11 @@ import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import GHC.Conc (numCapabilities)
+import GHC.Records
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude (maxThreads, ordered)
@@ -45,7 +48,7 @@ import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
 
-import Distribution.Types.Version (Version)
+import Flora.Environment.Env
 import Flora.Import.Package
   ( extractPackageDataFromCabal
   , loadContent
@@ -60,6 +63,7 @@ import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.User
+import Flora.Monitoring
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
@@ -70,6 +74,9 @@ importAllFilesInRelativeDirectory
      , IOE :> es
      , Poolboy :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , Reader r :> es
+     , HasField "metrics" r Metrics
+     , HasField "mltp" r MLTP
      )
   => UserId
   -> (Text, Text)
@@ -86,6 +93,9 @@ importFromIndex
      , DB :> es
      , IOE :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , Reader r :> es
+     , HasField "metrics" r Metrics
+     , HasField "mltp" r MLTP
      )
   => UserId
   -> Text
@@ -142,6 +152,9 @@ importAllFilesInDirectory
      , IOE :> es
      , Poolboy :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , Reader r :> es
+     , HasField "metrics" r Metrics
+     , HasField "mltp" r MLTP
      )
   => UserId
   -> (Text, Text)
@@ -154,13 +167,16 @@ importAllFilesInDirectory user (repositoryName, _repositoryURL) dir = do
   importFromStream user (repositoryName, packages) (findAllCabalFilesInDirectory dir)
 
 importFromStream
-  :: forall es
+  :: forall es r
    . ( Time :> es
      , Log :> es
      , DB :> es
      , IOE :> es
      , Poolboy :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , Reader r :> es
+     , HasField "metrics" r Metrics
+     , HasField "mltp" r MLTP
      )
   => UserId
   -> (Text, Set PackageName)
@@ -182,16 +198,18 @@ importFromStream userId repository@(repositoryName, _) stream = do
           Update.updatePackageIndexByName repositoryName timestamp
       )
   displayStats processedPackageCount
+  increasePackageImportCounterBy
+    (fromIntegral @Int @Double processedPackageCount)
+    repositoryName
   where
     displayCount :: SFold.Fold (Eff es) a Int
     displayCount =
       flip SFold.foldlM' (pure 0) $
-        \previousCount _ ->
+        \previousCount _ -> do
           let currentCount = previousCount + 1
-           in do
-                when (currentCount `mod` 400 == 0) $
-                  displayStats currentCount
-                pure currentCount
+              batchAmount = 400
+          when (currentCount `mod` batchAmount == 0) $ displayStats currentCount
+          pure currentCount
 
 displayStats
   :: IOE :> es

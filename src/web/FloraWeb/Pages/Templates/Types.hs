@@ -15,16 +15,16 @@ where
 import Control.Monad.Identity
 import Control.Monad.Reader (ReaderT)
 import Data.Text (Text)
+import Data.Text.Display
 import Data.UUID qualified as UUID
+import Effectful
+import Effectful.Reader.Static (Reader, ask)
 import GHC.Generics
 import Lucid
 import Optics.Core
 
-import Data.Text.Display
-import Effectful
-import Effectful.Reader.Static (Reader, ask)
-import Flora.Environment
 import Flora.Environment.Config (Assets)
+import Flora.Environment.Env
 import Flora.Model.PersistentSession (PersistentSessionId (..))
 import Flora.Model.User
 import FloraWeb.Common.Auth

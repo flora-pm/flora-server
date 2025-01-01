@@ -20,7 +20,7 @@ export FLORA_HTTP_PORT=8083
 export FLORA_ENVIRONMENT="development"
 export FLORA_DOMAIN="localhost"
 
-# Either "stdout" or "json"
+# Either "stdout", "json" or "json-file"
 export FLORA_LOGGING_DESTINATION="stdout"
 
 # Compatibility mode for Hackage.
