@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.0.23 -- 2025-01-02
+
+- Record more route duration metrics with prometheus [#810](https://github.com/flora-pm/flora-server/pull/810)
+- Add prometheus counter for package imports [#811](https://github.com/flora-pm/flora-server/pull/811)
+- Add new GHC versions [#813](https://github.com/flora-pm/flora-server/pull/813)
+
+  The following versions have been added:
+    * 9.12.1
+    * 9.10.1
+    * 9.8.4
+    * 9.8.3
+    * 9.6.7
+    * 9.6.6
+
 ## 1.0.22 -- 2024-12-27
 
 ### Significant changes
