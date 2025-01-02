@@ -1,12 +1,12 @@
 module FloraWeb.LiveReload where
 
 import Data.IORef
-import Effectful
-
 import Data.Text (Text)
-import Flora.Environment (DeploymentEnv (..))
-import FloraWeb.Common.Utils
+import Effectful
 import Servant.API (Header, Headers, NoContent (..))
+
+import Flora.Environment.Env (DeploymentEnv (..))
+import FloraWeb.Common.Utils
 
 livereloadHandler
   :: IOE :> es

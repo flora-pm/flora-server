@@ -16,7 +16,7 @@ import Effectful.Internal.Monad (unsafeEff_)
 import Servant (Header, Headers, addHeader)
 import Web.Cookie
 
-import Flora.Environment (FloraEnv)
+import Flora.Environment.Env (FloraEnv)
 import Flora.Model.PersistentSession
 import FloraWeb.Common.Auth.Types
 import FloraWeb.Types (fetchFloraEnv)

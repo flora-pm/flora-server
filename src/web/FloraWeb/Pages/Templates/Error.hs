@@ -13,7 +13,7 @@ import Data.Kind (Type)
 import Effectful
 import Effectful.Error.Static (Error, throwError)
 import Effectful.Reader.Static (Reader)
-import Flora.Environment (FeatureEnv)
+import Flora.Environment.Env (FeatureEnv)
 import Flora.Model.User (User)
 import FloraWeb.Pages.Templates
 import FloraWeb.Session

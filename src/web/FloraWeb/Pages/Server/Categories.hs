@@ -2,14 +2,14 @@ module FloraWeb.Pages.Server.Categories where
 
 import Data.Text (Text)
 import Effectful (Eff, IOE, (:>))
+import Effectful.Error.Static (Error)
+import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Reader.Static (Reader)
 import Lucid (Html)
 import Network.HTTP.Types (notFound404)
 import Servant (Headers (..), ServerError, ServerT)
 
-import Effectful.Error.Static (Error)
-import Effectful.PostgreSQL.Transact.Effect (DB)
-import Effectful.Reader.Static (Reader)
-import Flora.Environment (FeatureEnv)
+import Flora.Environment.Env (FeatureEnv)
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Query qualified as Query

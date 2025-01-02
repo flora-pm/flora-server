@@ -6,11 +6,14 @@ import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Maybe (fromJust)
+import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Text.Display
+import Data.Text.HTML qualified as HTML
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Distribution.Types.Version (Version)
 import Effectful (Eff, IOE, type (:>))
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
@@ -19,6 +22,7 @@ import Effectful.Poolboy (Poolboy)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Process.Typed
 import Effectful.Reader.Static (Reader)
+import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import Log
 import Network.HTTP.Types (gone410, notFound404, statusCode)
@@ -26,10 +30,8 @@ import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
-import Data.Set (Set)
-import Data.Text.HTML qualified as HTML
-import Distribution.Types.Version (Version)
-import Effectful.State.Static.Shared (State)
+import Data.Text
+import Flora.Environment.Env
 import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Import.Package.Bulk qualified as Import
 import Flora.Model.BlobIndex.Update qualified as Update
@@ -61,14 +63,11 @@ runner job = localDomain "job-runner" $
       FetchTarball x -> fetchTarball x
       FetchUploadTime x -> fetchUploadTime x
       FetchChangelog x -> fetchChangeLog x
-      ImportPackage x ->
-        persistImportOutput x
+      ImportPackage x -> persistImportOutput x
       FetchPackageDeprecationList -> fetchPackageDeprecationList
-      FetchReleaseDeprecationList packageName releases ->
-        fetchReleaseDeprecationList packageName releases
-      RefreshLatestVersions ->
-        Update.refreshLatestVersions
-      RefreshIndexes -> refreshIndexes
+      FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
+      RefreshLatestVersions -> Update.refreshLatestVersions
+      RefreshIndex indexName -> refreshIndex indexName
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -222,33 +221,33 @@ assignNamespace =
             else PackageAlternative (Namespace "hackage") p
       )
 
-refreshIndexes
+refreshIndex
   :: ( Time :> es
      , DB :> es
-     , TypedProcess :> es
      , Log :> es
      , Poolboy :> es
+     , TypedProcess :> es
      , IOE :> es
      , FileSystem :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , Reader FloraEnv :> es
      )
-  => Eff es ()
-refreshIndexes = do
+  => Text
+  -> Eff es ()
+refreshIndex indexName = do
+  let repoPath =
+        if indexName == "hackage"
+          then "hackage.haskell.org"
+          else Text.unpack indexName
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
-  let packageIndexes =
-        [ ("hackage", "hackage.haskell.org")
-        , ("cardano", "cardano")
-        , ("horizon", "horizon")
-        ]
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  forM_ packageIndexes $ \(indexName, repoPath) -> do
-    homeDir <- FileSystem.getHomeDirectory
-    let path = homeDir <> "/.cabal/packages/" <> repoPath <> "/01-index.tar.gz"
-    mPackageIndex <- Query.getPackageIndexByName indexName
-    case mPackageIndex of
-      Nothing -> do
-        Log.logAttention "Package index not found" $
-          object ["package_index" .= indexName]
-        error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
-      Just _ ->
-        Import.importFromIndex user.userId indexName path
+  homeDir <- FileSystem.getHomeDirectory
+  let path = homeDir <> "/.cabal/packages/" <> repoPath <> "/01-index.tar.gz"
+  mPackageIndex <- Query.getPackageIndexByName indexName
+  case mPackageIndex of
+    Nothing -> do
+      Log.logAttention "Package index not found" $
+        object ["package_index" .= indexName]
+      error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
+    Just _ ->
+      Import.importFromIndex user.userId indexName path

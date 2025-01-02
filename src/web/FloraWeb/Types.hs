@@ -18,6 +18,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Time (MonadTime (..))
 import Data.Text.Encoding qualified as TE
 import Effectful
+import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
@@ -29,8 +30,7 @@ import GHC.Generics
 import Servant (FromHttpApiData (..), Handler, ServerError)
 import Web.Cookie
 
-import Effectful.Concurrent (Concurrent)
-import Flora.Environment
+import Flora.Environment.Env
 import Flora.Model.BlobStore.API
 
 newtype WebEnvStore = WebEnvStore (MVar WebEnv)
