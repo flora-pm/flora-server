@@ -135,8 +135,8 @@ import Test.Tasty.HUnit qualified as Test
 
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
-import Flora.Environment
 import Flora.Environment.Config
+import Flora.Environment.Env
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
@@ -174,7 +174,20 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update qualified as Update
 
-type TestEff = Eff '[Trace, FileSystem, Poolboy, Fail, BlobStoreAPI, Reader TestEnv, DB, Log, Time, State (Set (Namespace, PackageName, Version)), IOE]
+type TestEff =
+  Eff
+    '[ Trace
+     , FileSystem
+     , Poolboy
+     , Fail
+     , BlobStoreAPI
+     , Reader TestEnv
+     , DB
+     , Log
+     , Time
+     , State (Set (Namespace, PackageName, Version))
+     , IOE
+     ]
 
 data Fixtures = Fixtures
   { hackageUser :: User

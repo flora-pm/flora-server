@@ -9,7 +9,7 @@ module FloraJobs.Scheduler
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
   , scheduleRefreshLatestVersions
-  , scheduleRefreshIndexes
+  , scheduleRefreshIndex
   , checkIfIndexRefreshJobIsPlanned
   , jobTableName
   --   prefer using smart constructors.
@@ -19,12 +19,14 @@ module FloraJobs.Scheduler
   )
 where
 
+import Control.Monad
 import Data.Aeson (ToJSON)
 import Data.Pool
+import Data.Text (Text)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version
@@ -34,8 +36,11 @@ import Effectful.PostgreSQL.Transact.Effect
 import Log
 import OddJobs.Job (Job (..), createJob, scheduleJob)
 
+import Database.PostgreSQL.Simple.Types
 import Flora.Model.Job
 import Flora.Model.Package
+import Flora.Model.PackageIndex.Query qualified as Query
+import Flora.Model.PackageIndex.Types
 import Flora.Model.Release.Types
 import FloraJobs.Types
 
@@ -76,10 +81,10 @@ scheduleReleaseDeprecationListJob pool (package, releaseIds) =
 scheduleRefreshLatestVersions :: Pool PG.Connection -> IO Job
 scheduleRefreshLatestVersions pool = createJobWithResource pool RefreshLatestVersions
 
-scheduleRefreshIndexes :: Pool PG.Connection -> IO Job
-scheduleRefreshIndexes pool = withResource pool $ \conn -> do
+scheduleRefreshIndex :: Pool PG.Connection -> Text -> IO Job
+scheduleRefreshIndex pool indexName = withResource pool $ \conn -> do
   now <- Time.getCurrentTime
-  scheduleJob conn jobTableName RefreshIndexes (Time.addUTCTime Time.nominalDay now)
+  scheduleJob conn jobTableName (RefreshIndex indexName) (Time.addUTCTime Time.nominalDay now)
 
 createJobWithResource :: ToJSON p => Pool PG.Connection -> p -> IO Job
 createJobWithResource pool job =
@@ -88,24 +93,25 @@ createJobWithResource pool job =
 checkIfIndexRefreshJobIsPlanned
   :: ( DB :> es
      , Log :> es
+     , IOE :> es
      )
-  => Eff es Bool
-checkIfIndexRefreshJobIsPlanned = do
+  => Pool PG.Connection
+  -> Eff es ()
+checkIfIndexRefreshJobIsPlanned pool = do
   Log.logInfo_ "Checking if the index refresh job is planned…"
-  (result :: Maybe (Only Int)) <-
+  indexes <- Query.listPackageIndexes
+  (result' :: Vector (Only Text)) <-
     dbtToEff $
-      queryOne_
+      query_
         Select
         [sql|
-              select count(*)
-              from "oddjobs"
-              where payload ->> 'tag' = 'RefreshIndexes'
-              and status = 'queued'
-      |]
-  case result of
-    Just (Only 1) -> do
-      Log.logInfo_ "Index refresh job is planned"
-      pure True
-    _ -> do
-      Log.logInfo_ "Index refresh job not not planned"
-      pure False
+                select payload ->> 'contents'
+                from "oddjobs"
+                where payload ->> 'tag' = 'RefreshIndex'
+                and status = 'queued'
+        |]
+  let result = fmap fromOnly result'
+  forM_ indexes $ \index ->
+    when (Vector.notElem index.repository result) $ do
+      Log.logInfo "Scheduling index refresh" $ object ["index" .= index.repository]
+      void $ liftIO $ scheduleRefreshIndex pool index.repository

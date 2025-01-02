@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               flora
-version:            1.0.22
+version:            1.0.23
 homepage:           https://github.com/flora-pm/flora-server/#readme
 bug-reports:        https://github.com/flora-pm/flora-server/issues
 author:             Théophile Choutri
@@ -97,6 +97,7 @@ library
     Effectful.Poolboy
     Flora.Environment
     Flora.Environment.Config
+    Flora.Environment.Env
     Flora.Import.Categories
     Flora.Import.Categories.Tuning
     Flora.Import.Package
@@ -146,6 +147,7 @@ library
     Flora.Model.User
     Flora.Model.User.Query
     Flora.Model.User.Update
+    Flora.Monitoring
     Flora.QRCode
     Flora.Tracing
     JSON
@@ -203,6 +205,7 @@ library
     , poolboy
     , postgresql-simple
     , pretty
+    , prometheus-client
     , qrcode-core
     , qrcode-juicypixels
     , resource-pool

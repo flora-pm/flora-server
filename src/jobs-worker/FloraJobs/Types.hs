@@ -15,13 +15,15 @@ import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Distribution.Types.Version (Version)
 import Effectful
+import Effectful.Concurrent.Async
 import Effectful.FileSystem
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
 import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Process.Typed
-import Effectful.Reader.Static (Reader, runReader)
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
@@ -34,8 +36,8 @@ import OddJobs.Job (Config (..), Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
 
 import Data.Set (Set)
-import Flora.Environment
 import Flora.Environment.Config
+import Flora.Environment.Env
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job ()
@@ -52,16 +54,24 @@ type JobsRunner =
      , TypedProcess
      , FileSystem
      , State (Set (Namespace, PackageName, Version))
+     , Reader FloraEnv
+     , Concurrent
      , IOE
      ]
 
-runJobRunner :: Pool Connection -> JobsRunnerEnv -> FloraEnv -> Logger -> JobsRunner a -> IO a
+runJobRunner
+  :: Pool Connection
+  -> JobsRunnerEnv
+  -> FloraEnv
+  -> Logger
+  -> JobsRunner a
+  -> IO a
 runJobRunner pool runnerEnv floraEnv logger jobRunner =
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & runDB pool
     & runPoolboy (poolboySettingsWith floraEnv.dbConfig.connections)
-    & runReader runnerEnv
+    & Reader.runReader runnerEnv
     & ( case floraEnv.features.blobStoreImpl of
           Just (BlobStoreFS fp) -> runBlobStoreFS fp
           _ -> runBlobStorePure
@@ -71,6 +81,8 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
     & runTypedProcess
     & runFileSystem
     & State.evalState mempty
+    & Reader.runReader floraEnv
+    & runConcurrent
     & runEff
 
 data OddJobException where

@@ -56,7 +56,7 @@ import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
 import Advisories.Model.Affected.Types
-import Flora.Environment (FeatureEnv (..))
+import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.Category.Types
 import Flora.Model.Package
 import Flora.Model.Release.Types

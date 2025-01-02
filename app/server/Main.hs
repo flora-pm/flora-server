@@ -4,12 +4,12 @@
 
 module Main where
 
-import Control.Monad (forM_, unless, void)
+import Control.Monad (forM_, unless)
 import Data.Function ((&))
 import Data.List qualified as List
-import Data.Pool (Pool)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
@@ -24,12 +24,11 @@ import Log qualified
 import System.Exit
 import System.IO
 
-import Data.Text qualified as Text
-import Database.PostgreSQL.Simple qualified as PG
-import Flora.Environment (FloraEnv (..), MLTP (..), getFloraEnv)
+import Flora.Environment (getFloraEnv)
+import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.PackageIndex.Types
-import FloraJobs.Scheduler (checkIfIndexRefreshJobIsPlanned, scheduleRefreshIndexes)
+import FloraJobs.Scheduler (checkIfIndexRefreshJobIsPlanned)
 import FloraWeb.Server
 
 main :: IO ()
@@ -47,16 +46,8 @@ main = do
           Log.LogTrace
         $ do
           checkRepositoriesAreConfigured
-          checkIndexRefreshScheduling env.pool
+          checkIfIndexRefreshJobIsPlanned env.pool
   runFlora
-
-checkIndexRefreshScheduling :: (DB :> es, Log :> es, IOE :> es) => Pool PG.Connection -> Eff es ()
-checkIndexRefreshScheduling pool = do
-  indexRefreshIsPlanned <-
-    checkIfIndexRefreshJobIsPlanned
-  unless indexRefreshIsPlanned $ do
-    Log.logInfo_ "Scheduling index refresh"
-    void $ liftIO $ scheduleRefreshIndexes pool
 
 checkRepositoriesAreConfigured :: (DB :> es, Log :> es, IOE :> es) => Eff es ()
 checkRepositoriesAreConfigured = do

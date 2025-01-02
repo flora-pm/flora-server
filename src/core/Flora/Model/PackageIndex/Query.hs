@@ -4,7 +4,9 @@
 module Flora.Model.PackageIndex.Query where
 
 import Data.Text (Text)
-import Database.PostgreSQL.Entity (selectOneByField)
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
+import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (..))
 import Effectful
@@ -19,3 +21,9 @@ getPackageIndexByName repository =
         r -> r
    in dbtToEff $
         selectOneByField [field| repository |] (Only index)
+
+listPackageIndexes :: DB :> es => Eff es (Vector PackageIndex)
+listPackageIndexes =
+  dbtToEff $
+    selectOrderBy @PackageIndex $
+      Vector.fromList [([field| repository |], ASC)]

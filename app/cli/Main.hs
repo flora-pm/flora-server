@@ -19,6 +19,8 @@ import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
@@ -26,6 +28,7 @@ import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
 import GHC.Conc
 import GHC.Generics (Generic)
+import GHC.Records
 import Log qualified
 import Log.Backend.StandardOutput qualified as Log
 import Monitor.Tracing.Zipkin (Zipkin (..))
@@ -36,7 +39,8 @@ import System.FilePath ((</>))
 
 import Advisories.Import (importAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
-import Flora.Environment
+import Flora.Environment (getFloraEnv)
+import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
 import Flora.Model.BlobIndex.Update qualified as Update
@@ -108,6 +112,7 @@ main = Log.withStdOutLogger $ \logger -> do
         )
       . runFileSystem
       . runLog "flora-cli" logger Log.LogTrace
+      . Reader.runReader env
       $ runOptions cliArgs
   case result of
     Right _ -> pure ()
@@ -196,6 +201,9 @@ runOptions
      , Poolboy :> es
      , Error (NonEmpty AdvisoryImportError) :> es
      , Trace :> es
+     , HasField "metrics" r Metrics
+     , HasField "mltp" r MLTP
+     , Reader r :> es
      )
   => Options
   -> Eff es ()
@@ -245,6 +253,9 @@ importFolderOfCabalFiles
      , DB :> es
      , IOE :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , HasField "metrics" r Metrics
+     , HasField "mltp" r MLTP
+     , Reader r :> es
      )
   => FilePath
   -> Text
@@ -264,6 +275,9 @@ importIndex
      , DB :> es
      , IOE :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , HasField "metrics" r Metrics
+     , HasField "mltp" r MLTP
+     , Reader r :> es
      )
   => FilePath
   -> Text

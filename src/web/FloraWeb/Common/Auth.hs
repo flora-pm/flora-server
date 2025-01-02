@@ -8,11 +8,16 @@ module FloraWeb.Common.Auth
   )
 where
 
+import Control.Monad.Except qualified as T
 import Data.Function ((&))
+import Data.Kind (Type)
 import Data.List qualified as List
 import Data.Text (Text)
+import Data.Text.Encoding qualified as Text
 import Data.UUID qualified as UUID
+import Data.UUID.V4 qualified as UUID
 import Effectful
+import Effectful.Dispatch.Static
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.PostgreSQL.Transact.Effect qualified as DB
@@ -24,12 +29,7 @@ import Servant.Server
 import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
 import Web.Cookie
 
-import Control.Monad.Except qualified as T
-import Data.Kind (Type)
-import Data.Text.Encoding qualified as Text
-import Data.UUID.V4 qualified as UUID
-import Effectful.Dispatch.Static
-import Flora.Environment
+import Flora.Environment.Env
 import Flora.Logging qualified as Logging
 import Flora.Model.PersistentSession
 import Flora.Model.User

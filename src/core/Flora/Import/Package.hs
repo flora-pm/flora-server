@@ -150,9 +150,15 @@ coreLibraries =
 versionList :: Set Version
 versionList =
   Set.fromList
-    [ Version.mkVersion [9, 10, 1]
+    [ Version.mkVersion [9, 12, 1]
+    , Version.mkVersion [9, 10, 2]
+    , Version.mkVersion [9, 10, 1]
+    , Version.mkVersion [9, 8, 4]
+    , Version.mkVersion [9, 8, 3]
     , Version.mkVersion [9, 8, 2]
     , Version.mkVersion [9, 8, 1]
+    , Version.mkVersion [9, 6, 7]
+    , Version.mkVersion [9, 6, 6]
     , Version.mkVersion [9, 6, 5]
     , Version.mkVersion [9, 6, 4]
     , Version.mkVersion [9, 6, 3]

@@ -60,15 +60,14 @@ import Servant
 import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
 
-import Flora.Environment
+import Flora.Environment (getFloraEnv)
+import Flora.Environment.Config (Assets, DeploymentEnv (..))
+import Flora.Environment.Env
   ( BlobStoreImpl (..)
-  , DeploymentEnv
   , FeatureEnv (..)
   , FloraEnv (..)
   , MLTP (..)
-  , getFloraEnv
   )
-import Flora.Environment.Config (Assets, DeploymentEnv (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Tracing qualified as Tracing
@@ -115,6 +114,7 @@ runFlora =
               blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               void $ P.register P.ghcMetrics
               void $ P.register P.procMetrics
+              void $ P.register (P.counter (P.Info "flora_imported_packages_total" "The number of imported packages"))
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             let withLogger = Logging.makeLogger env.mltp.logger
@@ -159,6 +159,10 @@ runServer appLogger floraEnv = do
       unsafeEff_ $
         Safe.withException (startJobRunner oddJobsCfg) (logException floraEnv.environment appLogger)
   loggingMiddleware <- Logging.runLog floraEnv.environment appLogger WaiLog.mkLogMiddleware
+  let prometheusMiddleware =
+        if floraEnv.mltp.prometheusEnabled
+          then WaiMetrics.prometheus WaiMetrics.def
+          else id
   oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
@@ -178,8 +182,8 @@ runServer appLogger floraEnv = do
     $ heartbeatMiddleware
       . loggingMiddleware
       . const
-    $ WaiMetrics.prometheus WaiMetrics.def
-    $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes) server
+    $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
+    $ prometheusMiddleware server
 
 mkServer
   :: Logger
