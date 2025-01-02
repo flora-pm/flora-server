@@ -1,0 +1,10 @@
+synopsis: Add new GHC versions
+prs: #813
+description: {
+  The following versions have been added:
+    * 9.12.1
+    * 9.10.1
+    * 9.8.4
+    * 9.8.3
+    * 9.6.6
+}
