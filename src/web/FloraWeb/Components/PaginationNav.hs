@@ -49,7 +49,9 @@ mkURL (ListAllPackagesInNamespace namespace) pageNumber =
 mkURL (SearchPackages searchTerm) pageNumber =
   "/" <> toUrlPiece (Links.packageSearchLink searchTerm pageNumber)
 mkURL (DependentsOf namespace packageName mbSearchString) pageNumber =
-  Links.dependentsPage namespace packageName pageNumber <> "q=" <> toUrlPiece mbSearchString
+  case mbSearchString of
+    Nothing -> Links.dependentsPage namespace packageName pageNumber
+    Just searchString -> Links.dependentsPage namespace packageName pageNumber <> "q=" <> toUrlPiece mbSearchString
 mkURL (SearchExecutable searchString) pageNumber =
   "/" <> toUrlPiece (Links.packageWithExecutable pageNumber searchString)
 mkURL (SearchInAdvisories searchString) pageNumber =
