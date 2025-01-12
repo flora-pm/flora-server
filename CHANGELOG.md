@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.24 -- 2025-01-12
+
+- Do not wrongly include "Nothing" as a query param to dependents listing pages' URL [#817](https://github.com/flora-pm/flora-server/pull/817)
+- Include prismJS to highlight code in the READMEs [#819](https://github.com/flora-pm/flora-server/pull/819)
+
 ## 1.0.23 -- 2025-01-02
 
 - Record more route duration metrics with prometheus [#810](https://github.com/flora-pm/flora-server/pull/810)
