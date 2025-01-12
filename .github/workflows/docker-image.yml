@@ -1,16 +1,16 @@
 name: Publish Docker Image
 
-on: 
+on:
   push:
     branches: ["development"]
     paths:
-      - Dockerfile 
+      - Dockerfile
       - docker-compose.yml
       - scripts/.zshrc
 
 jobs:
   publish-hello-docker-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Login to GitHub Container Registry

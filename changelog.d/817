@@ -1,0 +1,2 @@
+synopsis: Do not wrongly include "Nothing" as a query param to dependents listing pages' URL
+prs: #817
