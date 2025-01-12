@@ -12,7 +12,7 @@ import PyF
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.Utils
-import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
+import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..), UITheme(..))
 
 header :: FloraHTML
 header = do
@@ -23,12 +23,11 @@ header = do
     , class_ "no-js"
     , xData_
         "{ theme: \
-        \ localStorage.getItem('theme') \
-        \   || (window.matchMedia('(prefers-color-scheme: dark)').matches \
+        \   (window.matchMedia('(prefers-color-scheme: dark)').matches \
         \   ? 'dark' : 'light') \
         \ }"
     , xBind_ "data-theme" "(theme === 'dark') ? 'dark' : 'light'"
-    , xInit_ "$watch('theme', val => localStorage.setItem('theme', val))"
+    , xInit_ "$watch('theme', val => { localStorage.setItem('theme', val) ; const themeCookie = 'theme=' + encodeURIComponent(val) + ';path='/'; document.cookie = themeCookie; })"
     ]
     $ do
       head_ $ do
@@ -54,6 +53,7 @@ header = do
           |]
 
         jsLink
+        cssThemeLink
         cssLink
         meta_ [name_ "color-scheme", content_ "light dark"]
         link_
@@ -64,8 +64,7 @@ header = do
           ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
-        theme
-        -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
+        themeMetaTag
         meta_ [name_ "twitter:dnt", content_ "on"]
 
       body_ [] $ do
@@ -84,6 +83,24 @@ jsLink = do
       script_ [src_ jsURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsBundle.hash)] ("" :: Text)
     _ ->
       script_ [src_ jsURL, type_ "module", defer_ ""] ("" :: Text)
+
+cssThemeLink :: FloraHTML
+cssThemeLink = do
+  TemplateEnv{assets, environment, theme} <- ask
+  let cssURL = "/static/" <> getURL assets theme
+  case environment of
+    Production ->
+      link_ [rel_ "stylesheet", href_ cssURL, integrity_ ("sha256-" <> getHash assets theme)]
+    _ ->
+      link_ [rel_ "stylesheet", href_ cssURL]
+  where
+    getHash :: Assets -> UITheme -> Text
+    getHash assets LightTheme = assets.cssLightTheme.hash
+    getHash assets DarkTheme = assets.cssDarkTheme.hash
+
+    getURL :: Assets -> UITheme -> Text
+    getURL assets LightTheme = assets.cssLightTheme.name
+    getURL assets DarkTheme = assets.cssDarkTheme.name
 
 cssLink :: FloraHTML
 cssLink = do
@@ -108,7 +125,7 @@ ogTags = do
   meta_ [property_ "og:locale", content_ "en_GB"]
   meta_ [property_ "og:type", content_ "website"]
 
-theme :: FloraHTML
-theme = do
+themeMetaTag :: FloraHTML
+themeMetaTag = do
   meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
   meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]

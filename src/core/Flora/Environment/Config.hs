@@ -90,6 +90,8 @@ data LoggingDestination
 data Assets = Assets
   { jsBundle :: AssetBundle
   , cssBundle :: AssetBundle
+  , cssLightTheme :: AssetBundle
+  , cssDarkTheme :: AssetBundle
   , prism :: AssetBundle
   }
   deriving stock (Show, Generic)
@@ -247,17 +249,19 @@ getAssets environment =
       Assets
         <$> getAsset "app.js"
         <*> getAsset "styles.css"
+        <*> getAsset "light-theme.css"
+        <*> getAsset "dark-theme.css"
         <*> getAsset "prism.js"
     _ -> do
       Assets
         <$> getStaticAsset "app.js"
         <*> getStaticAsset "styles.css"
+        <*> getStaticAsset "light-theme.css"
+        <*> getStaticAsset "dark-theme.css"
         <*> getStaticAsset "prism.js"
 
 getStaticAsset :: Text -> Eff es AssetBundle
-getStaticAsset key =
-  pure $
-    AssetBundle key ""
+getStaticAsset key = pure $ AssetBundle key ""
 
 -- | Get the asset name with its hash
 --

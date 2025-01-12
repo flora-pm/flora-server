@@ -9,6 +9,7 @@ module FloraWeb.Pages.Templates.Types
   , ActiveElements (..)
   , defaultTemplateEnv
   , FromSession (..)
+  , UITheme(..)
   )
 where
 
@@ -44,6 +45,11 @@ newtype FlashError = FlashError {getFlashInfo :: Text}
 mkError :: Text -> FlashError
 mkError = FlashError
 
+data UITheme
+  = LightTheme
+  | DarkTheme
+  deriving stock (Show, Eq, Ord)
+
 data TemplateEnv = TemplateEnv
   { displayNavbarSearch :: Bool
   , flashInfo :: Maybe FlashInfo
@@ -59,6 +65,7 @@ data TemplateEnv = TemplateEnv
   , assets :: Assets
   , indexPage :: Bool
   , navbarSearchContent :: Maybe Text
+  , theme :: UITheme
   }
   deriving stock (Show, Generic)
 
@@ -84,6 +91,7 @@ data TemplateDefaults = TemplateDefaults
   , activeElements :: ActiveElements
   , indexPage :: Bool
   , navbarSearchContent :: Maybe Text
+  , theme :: UITheme
   }
   deriving stock (Show, Generic)
 
@@ -111,6 +119,7 @@ defaultTemplateEnv =
     , activeElements = defaultActiveElements
     , indexPage = True
     , navbarSearchContent = Nothing
+    , theme = LightTheme
     }
 
 -- | ⚠  DO NOT USE THIS FUNCTION IF YOU DON'T KNOW WHAT YOU'RE DOING
