@@ -32,7 +32,8 @@ const mkProdPlugins = () => {
         console.log(assets);
         const orderAssets = {
           "app.js": assets.app.js,
-          "styles.css": assets[''].css[0]
+          "styles.css": assets[''].css[0],
+		  "prism.js": assets.prism.js,
         }
         return JSON.stringify(orderAssets, null, "  ");
       }
@@ -70,6 +71,7 @@ const config = {
   entryPoints: {
     "app": "./js/app.js",
     "styles": "./css/styles.css",
+	"prism": "./js/prism.js",
   },
   outdir: "../static",
   bundle: true,
