@@ -36,7 +36,7 @@ package zlib
 source-repository-package
     type: git
     location: https://github.com/haskell/security-advisories/
-    tag: b6eca11d65ab18fce60030d1dba7793789157292
+    tag: d305942f9582bac9f90fb686c2573ba5a0c18cc5
     subdir:
       ./code/cvss
       ./code/osv
@@ -47,7 +47,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/scrive/tracing
-    tag: 9c2baa1
+    tag: 9c2baa154dbd0ef2c145ee65660261977323c2d8
     subdir:
         .
         ./tracing-effectful
@@ -61,32 +61,32 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/flora-pm/wai-middleware-heartbeat
-    tag: 5b56e1d
+    tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
 
 source-repository-package
     type: git
     location: https://github.com/kleidukos/pg-transact-effectful
-    tag: d3f3f3d
+    tag: 0f3de0516cb66efbfa6c437ef77c2774bd1325cb
 
 source-repository-package
     type: git
     location: https://github.com/kleidukos/servant-effectful
-    tag: cec4d54
+    tag: 22af09642078d5296b524495ad8213bf2ace62d2
 
 source-repository-package
     type: git
     location: https://github.com/saurabhnanda/odd-jobs
-    tag: a159d7a
+    tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
 
 source-repository-package
     type: git
     location: https://github.com/luc-tielen/souffle-haskell
-    tag: 268a112
+    tag: 268a11283ca9293b5eacabf7a0b79d9368232478
 
 source-repository-package
   type: git
   location: https://github.com/goodlyrottenapple/tasty-test-reporter
-  tag: b704130
+  tag: b704130545aa3925a8487bd3e92f1dd5ce0512e2
 
 source-repository-package
   type: git

@@ -12,7 +12,7 @@ concurrency:
 jobs:
   generateMatrix:
     name: "Generate matrix from cabal"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -21,7 +21,7 @@ jobs:
         uses: kleidukos/get-tested@v0.1.7.1
         with:
           cabal-file: flora.cabal
-          ubuntu-version: "latest"
+          ubuntu-version: "22.04"
           version: 0.1.7.1
 
   duplicate-index-check:

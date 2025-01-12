@@ -37,6 +37,7 @@
 @import "4-helpers/3-spacing.css";
 @import "4-helpers/4-typography.css";
 @import "4-helpers/5-state.css";
+@import "prism.css";
 
 /* Used for the sessions page */
 .login-form {
