@@ -10,11 +10,10 @@ import Control.Monad.Extra (whenJust)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.Reader (ask, runReaderT)
 import Data.ByteString.Lazy
-import Data.Text (Text)
 import Data.Text.Display
 import Lucid
 
-import Flora.Environment.Config
+import Flora.Environment.Env (DeploymentEnv (..))
 import FloraWeb.Components.Alert qualified as Alert
 import FloraWeb.Components.Header (header)
 import FloraWeb.Pages.Templates.Types as Types
@@ -41,14 +40,3 @@ rendered _deploymentEnv target = do
   whenJust flashError $ \msg -> do
     Alert.exception (display msg)
   main_ [class_ "container-fluid"] target
-  prismLink
-
-prismLink :: FloraHTML
-prismLink = do
-  TemplateEnv{assets, environment} <- ask
-  let prismURL = "/static/" <> assets.prism.name
-  case environment of
-    Production ->
-      script_ [src_ prismURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.prism.hash)] ("" :: Text)
-    _ ->
-      script_ [src_ prismURL, type_ "module", defer_ ""] ("" :: Text)

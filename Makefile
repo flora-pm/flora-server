@@ -120,7 +120,7 @@ style-hs: ## Run the haskell code formatters (fourmolu, cabal-fmt)
 	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
 style-css: ## Run the CSS code formatter (stylelint)
-	@cd assets ; yarn stylelint --fix css --ignore-path .stylelintignore
+	@cd assets ; yarn stylelint --fix css
 
 style: style-hs style-css ## Run all the code formatters
 
