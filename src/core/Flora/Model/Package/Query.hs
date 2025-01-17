@@ -570,36 +570,50 @@ searchExecutable (offset, limit) searchString =
   dbtToEff $
     query
       Select
-      [sql|
-WITH results AS (SELECT DISTINCT l2.namespace
-                      , l2.name
-                      , l2.synopsis
-                      , l2.version
-                      , l2.license
-                      , word_similarity(p0.component_name, ?) AS rating
-                      , p0.component_name
-                 FROM package_components AS p0
-                      INNER JOIN releases AS r1 ON p0.release_id = r1.release_id
-                      INNER JOIN latest_versions AS l2 ON r1.package_id = l2.package_id
-                 WHERE p0.component_type = 'executable'
-                   AND ? <% p0.component_name)
-
-   , executables AS (SELECT DISTINCT r.namespace
-                      , r.name
-                      , r.synopsis
-                      , r.version
-                      , r.license
-                      , array_agg(((r.component_name, r.rating)::elem_rating) ORDER BY r.rating) AS execs
-                     FROM results AS r
-                     GROUP BY r.namespace, r.name, r.synopsis, r.version, r.license)
-
-  SELECT e.*
-  FROM executables AS e
-  ORDER BY (e.execs)[1].rating DESC
-
-LIMIT ?
-OFFSET ?
-        |]
+--       [sql|
+-- WITH results AS (SELECT DISTINCT l2.namespace
+--                       , l2.name
+--                       , l2.synopsis
+--                       , l2.version
+--                       , l2.license
+--                       , word_similarity(p0.component_name, ?) AS rating
+--                       , p0.component_name
+--                  FROM package_components AS p0
+--                       INNER JOIN releases AS r1 ON p0.release_id = r1.release_id
+--                       INNER JOIN latest_versions AS l2 ON r1.package_id = l2.package_id
+--                  WHERE p0.component_type = 'executable'
+--                    AND ? <% p0.component_name)
+--
+--    , executables AS (SELECT DISTINCT r.namespace
+--                       , r.name
+--                       , r.synopsis
+--                       , r.version
+--                       , r.license
+--                       , array_agg(((r.component_name, r.rating)::elem_rating) ORDER BY r.rating) AS execs
+--                      FROM results AS r
+--                      GROUP BY r.namespace, r.name, r.synopsis, r.version, r.license)
+--
+--   SELECT e.*
+--   FROM executables AS e
+--   ORDER BY (e.execs)[1].rating DESC
+--
+-- LIMIT ?
+-- OFFSET ?
+--         |]
+    [sql|
+SELECT l0.namespace
+     , l0.name
+     , l0.synopsis
+     , l0.version
+     , l0.license
+     , (
+        select array_agg((exes.executable, word_similarity(executable, ?))::elem_rating)
+        from unnest(l0.executables) as exes(executable)
+        WHERE ? <% exes.executable
+      ) as executables
+FROM latest_versions as l0
+WHERE l0.executables IS NOT NULL
+    |]
       (searchString, searchString, limit, offset)
 
 getNumberOfExecutablesByName :: DB :> es => Text -> Eff es Word
