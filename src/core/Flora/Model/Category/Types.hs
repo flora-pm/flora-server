@@ -13,7 +13,6 @@ import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField (FromField)
 import Database.PostgreSQL.Simple.ToField (ToField)
 import GHC.Generics
-import Language.Souffle.Interpreted qualified as Souffle
 import Servant
 import Text.Slugify
 
@@ -26,8 +25,8 @@ newtype CategoryId = CategoryId {getCategoryId :: UUID}
     via UUID
 
 newtype CategoryName = CategoryName {getCategoryName :: Text}
-  deriving stock (Generic, Show)
   deriving anyclass (Souffle.Marshal)
+  deriving stock (Generic, Show)
   deriving
     (Eq, NFData, Ord)
     via Text
