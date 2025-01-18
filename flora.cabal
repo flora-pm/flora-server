@@ -27,13 +27,13 @@ flag prod
 
 common common-extensions
   default-extensions:
+    NoStarIsType
     DataKinds
     DeriveAnyClass
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
     LambdaCase
-    NoStarIsType
     OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
@@ -67,9 +67,6 @@ common common-rts-options
 library
   import:          common-extensions
   import:          common-ghc-options
-  extra-libraries: stdc++
-  cxx-options:     -std=c++17 -Wall -D__EMBEDDED_SOUFFLE__
-  cxx-sources:     cbits/categorise.cpp
   hs-source-dirs:  ./src/core ./src/datatypes
 
   -- cabal-fmt: expand src/core
@@ -99,7 +96,6 @@ library
     Flora.Environment.Config
     Flora.Environment.Env
     Flora.Import.Categories
-    Flora.Import.Categories.Tuning
     Flora.Import.Package
     Flora.Import.Package.Bulk
     Flora.Import.Package.Types
@@ -148,6 +144,7 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.Monitoring
+    Flora.Normalise
     Flora.QRCode
     Flora.Tracing
     JSON
@@ -213,7 +210,6 @@ library
     , servant
     , servant-server
     , slugify
-    , souffle-haskell        ==4.0.0
     , streamly
     , streamly-core
     , tar

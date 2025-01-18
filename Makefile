@@ -145,9 +145,6 @@ docker-enter: ## Enter the docker environment
 start-tmux: ## Start a Tmux session with hot code reloading
 	./scripts/start-tmux.sh
 
-soufflé: ## Generate C++ files from the Soufflé Datalog definitions
-	cd cbits ; souffle -g categorise.{cpp,dl}
-
 tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c
 

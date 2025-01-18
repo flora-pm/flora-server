@@ -77,7 +77,6 @@ import Distribution.Types.PackageDescription ()
 import Distribution.Types.TestSuite
 import Distribution.Types.Version (Version)
 import Distribution.Types.VersionRange (VersionRange, withinRange)
-import Distribution.Utils.ShortText qualified as Cabal
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Log (Log)
@@ -94,7 +93,6 @@ import System.FilePath qualified as FilePath
 
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
-import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Update qualified as Update
@@ -112,6 +110,7 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Model.User
+import Flora.Normalise
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -321,7 +320,7 @@ persistImportOutput (ImportOutput package categories release components) = State
     persistPackage = do
       let packageId = package.packageId
       Update.upsertPackage package
-      forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
+      forM_ categories (\case (_, name, _) -> Update.addToCategoryByName packageId name)
 
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
@@ -398,9 +397,7 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
-  let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to Text.pack
-  let categoryList = fmap (Tuning.UserPackageCategory . Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
-  categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
+  let categories = floraCategories
   let package =
         Package
           { packageId

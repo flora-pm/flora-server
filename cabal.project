@@ -15,7 +15,6 @@ allow-newer: hashable:filepath
            , qrcode-juicypixels:bytestring
            , qrcode-juicypixels:text
            , servant-lucid:text
-           , souffle-haskell:text
            , tasty-test-reporter:ansi-terminal
            , tasty-test-reporter:tasty
            , type-errors-pretty:base
@@ -77,11 +76,6 @@ source-repository-package
     type: git
     location: https://github.com/saurabhnanda/odd-jobs
     tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
-
-source-repository-package
-    type: git
-    location: https://github.com/luc-tielen/souffle-haskell
-    tag: 268a11283ca9293b5eacabf7a0b79d9368232478
 
 source-repository-package
   type: git

@@ -14,7 +14,6 @@ import Database.PostgreSQL.Simple.FromField (FromField)
 import Database.PostgreSQL.Simple.ToField (ToField)
 import Flora.Model.Package.Types
 import GHC.Generics
-import Language.Souffle.Interpreted qualified as Souffle
 import Servant
 import Text.Slugify
 
@@ -26,7 +25,6 @@ newtype CategoryId = CategoryId {getCategoryId :: UUID}
 
 newtype CategoryName = CategoryName {getCategoryName :: Text}
   deriving stock (Show, Generic)
-  deriving anyclass (Souffle.Marshal)
   deriving
     (Eq, Ord, NFData)
     via Text

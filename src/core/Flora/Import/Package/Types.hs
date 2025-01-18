@@ -3,10 +3,10 @@ module Flora.Import.Package.Types where
 import Control.DeepSeq
 import Data.Aeson
 import Data.List.NonEmpty (NonEmpty)
+import Data.Text (Text)
 import GHC.Generics
 import GHC.List (List)
 
-import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
@@ -28,7 +28,7 @@ type DependentName = (Namespace, PackageName)
 
 data ImportOutput = ImportOutput
   { package :: Package
-  , categories :: [Tuning.NormalisedPackageCategory]
+  , categories :: [(Text, Text, Text)]
   , release :: Release
   , components :: NonEmpty (PackageComponent, List ImportDependency)
   }
