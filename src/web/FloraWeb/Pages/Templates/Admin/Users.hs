@@ -1,9 +1,9 @@
 module FloraWeb.Pages.Templates.Admin.Users where
 
-import Lucid
-
 import Data.Foldable (forM_)
 import Data.Vector (Vector)
+import Lucid
+
 import Flora.Model.User
 import FloraWeb.Components.Utils (text)
 import FloraWeb.Pages.Templates.Types

@@ -10,9 +10,10 @@ import Distribution.Text (simpleParse)
 import Documentation.Haddock.Markup qualified as Haddock
 import Documentation.Haddock.Parser qualified as Haddock
 import Documentation.Haddock.Types (DocMarkupH (..), Example (..), Header (..), Hyperlink (..), MetaDoc (..), ModLink (..), Picture (..), Table (..), TableCell (..), TableRow (..))
-import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid
 import Network.URI
+
+import FloraWeb.Pages.Templates (FloraHTML)
 
 renderHaddock :: Text -> FloraHTML
 renderHaddock input = do

@@ -4,9 +4,10 @@ import Data.Aeson
 import Distribution.Types.Version
 import Effectful
 import Effectful.Error.Static (Error, throwError)
-import Flora.Model.Package.Types
 import Servant (ServerError (..))
 import Servant.Server (err404)
+
+import Flora.Model.Package.Types
 
 packageNotFound :: Error ServerError :> es => Namespace -> PackageName -> Eff es a
 packageNotFound namespace packageName =

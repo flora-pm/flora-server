@@ -13,7 +13,7 @@ data AdminReport = AdminReport
   { totalPackages :: Int
   , totalUsers :: Int
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow)
 
 getReport :: DBT IO AdminReport

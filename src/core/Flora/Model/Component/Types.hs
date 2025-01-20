@@ -39,20 +39,20 @@ import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.PackageDescription qualified as Condition
 import Distribution.SPDX qualified as SPDX
 import Distribution.Types.Version
+import GHC.Generics
 
 import Data.Aeson.Orphans ()
 import Distribution.Orphans ()
 import Distribution.Orphans.ConfVar ()
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
-import GHC.Generics
 
 newtype ComponentId = ComponentId {getComponentId :: UUID}
   deriving stock (Generic)
-  deriving
-    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, NFData)
-    via UUID
   deriving (Display) via ShowInstance UUID
+  deriving
+    (Eq, FromField, FromJSON, NFData, Ord, Show, ToField, ToJSON)
+    via UUID
 
 data ComponentType
   = Library
@@ -60,7 +60,7 @@ data ComponentType
   | TestSuite
   | Benchmark
   | ForeignLib
-  deriving stock (Eq, Ord, Show, Generic, Bounded, Enum)
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''ComponentType)
@@ -92,7 +92,7 @@ data CanonicalComponent = CanonicalComponent
   { componentName :: Text
   , componentType :: ComponentType
   }
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''CanonicalComponent)
@@ -108,14 +108,14 @@ instance Display CanonicalComponent where
     displayBuilder componentType <> ":" <> B.fromText componentName
 
 newtype ComponentCondition = ComponentCondition (Condition.Condition Condition.ConfVar)
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, NFData)
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromJSON, NFData, ToJSON)
 
 data ComponentMetadata = ComponentMetadata
   { conditions :: [ComponentCondition]
   }
-  deriving stock (Eq, Show, Generic, Typeable)
-  deriving anyclass (FromJSON, ToJSON, NFData)
+  deriving stock (Eq, Generic, Show, Typeable)
+  deriving anyclass (FromJSON, NFData, ToJSON)
 
 instance FromField ComponentMetadata where
   fromField = fromJSONField
@@ -129,7 +129,7 @@ data PackageComponent = PackageComponent
   , canonicalForm :: CanonicalComponent
   , metadata :: ComponentMetadata
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)
   deriving (Display) via ShowInstance PackageComponent
 
@@ -169,8 +169,8 @@ data PackageComponent' = PackageComponent'
   , componentType' :: ComponentType
   , componentMetadata' :: ComponentMetadata
   }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (ToRow, FromRow)
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromRow, ToRow)
 
 data PackageWithLatestRelease = PackageWithLatestRelease
   { namespace :: Namespace
@@ -191,5 +191,5 @@ data PackageWithLatestRelease = PackageWithLatestRelease
   , componentName :: Text
   , componentType :: ComponentType
   }
-  deriving stock (Eq, Ord, Generic)
+  deriving stock (Eq, Generic, Ord)
   deriving anyclass (FromRow)

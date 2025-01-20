@@ -1,8 +1,9 @@
 module Flora.AdvisorySpec where
 
+import Data.Vector qualified as Vector
+
 import Advisories.Model.Advisory.Query qualified as Query
 import Advisories.Model.Affected.Query qualified as Query
-import Data.Vector qualified as Vector
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.TestUtils

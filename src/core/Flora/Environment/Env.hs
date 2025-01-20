@@ -13,9 +13,10 @@ import Data.Pool (Pool)
 import Data.Text (Text)
 import Data.Word
 import Database.PostgreSQL.Simple qualified as PG
-import Flora.Environment.Config
 import GHC.Generics
 import Prometheus qualified as P
+
+import Flora.Environment.Config
 
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv

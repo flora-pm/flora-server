@@ -1,15 +1,15 @@
 module Flora.PackageGroupSpec where
 
-import Data.Vector qualified as Vector
-
 import Control.Monad (void)
+import Data.Vector qualified as Vector
+import Optics.Core
+
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroupPackage.Update as Update
 import Flora.Model.User
 import Flora.TestUtils
-import Optics.Core
 
 spec :: TestEff TestTree
 spec =

@@ -1,10 +1,15 @@
 module Flora.Model.Requirement where
 
+import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
+import Data.ByteString.Lazy (fromStrict)
 import Data.Foldable (foldl')
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Data.Text.Display
+import Data.Text.Encoding (encodeUtf8)
+import Data.Time (UTCTime)
 import Data.UUID (UUID, fromByteString)
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity (Entity)
@@ -15,23 +20,18 @@ import Database.PostgreSQL.Simple.FromField
   )
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField)
-
-import Control.DeepSeq
-import Data.ByteString.Lazy (fromStrict)
-import Data.Maybe (fromJust)
-import Data.Text.Encoding (encodeUtf8)
-import Data.Time (UTCTime)
 import Deriving.Aeson
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
+
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 
 newtype RequirementId = RequirementId {getRequirementId :: UUID}
-  deriving
-    (Eq, Show, FromField, ToField, FromJSON, ToJSON, NFData)
-    via UUID
   deriving (Display) via ShowInstance UUID
+  deriving
+    (Eq, FromField, FromJSON, NFData, Show, ToField, ToJSON)
+    via UUID
 
 deterministicRequirementId :: ComponentId -> PackageId -> RequirementId
 deterministicRequirementId componentId packageId =
@@ -51,8 +51,8 @@ data Requirement = Requirement
   , components :: Vector Text
   -- ^ Components that are depended on
   }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData, FromJSON, ToJSON)
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromJSON, FromRow, NFData, ToJSON, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "requirements"] Requirement)
@@ -72,7 +72,7 @@ data DependencyInfo = DependencyInfo
   , uploadedAt :: Maybe UTCTime
   , revisedAt :: Maybe UTCTime
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow, NFData)
 
 -- | Data Access Object for component dependencies to read from db
@@ -89,7 +89,7 @@ data ComponentDependency' = ComponentDependency'
   , uploadedAt :: Maybe UTCTime
   , revisedAt :: Maybe UTCTime
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow, NFData)
 
 -- | Map of components to its dependencies

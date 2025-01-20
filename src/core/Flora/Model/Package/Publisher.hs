@@ -7,13 +7,14 @@ import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Transact
+import GHC.Generics
+
 import Flora.Model.Package
 import Flora.Model.User (UserId)
-import GHC.Generics
 
 newtype PackagePublisherId = PackagePublisherId {getPackagePublisherId :: UUID}
   deriving
-    (Eq, Show, FromField, ToField)
+    (Eq, FromField, Show, ToField)
     via UUID
 
 data PackagePublisher = PackagePublisher
@@ -22,7 +23,7 @@ data PackagePublisher = PackagePublisher
   , packageName :: PackageName
   , publisherId :: UserId
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow, ToRow)
   deriving
     (Entity)

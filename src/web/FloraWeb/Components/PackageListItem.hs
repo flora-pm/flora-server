@@ -17,9 +17,7 @@ import Data.Time qualified as Time
 import Data.Vector qualified as Vector
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
-import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid
-import Lucid.Orphans ()
 
 import Flora.Model.Component.Types (CanonicalComponent (..))
 import Flora.Model.Package (ElemRating (..), Namespace, PackageInfoWithExecutables (..), PackageName (..))
@@ -29,6 +27,8 @@ import Flora.Model.Requirement
   )
 import FloraWeb.Components.Icons qualified as Icon
 import FloraWeb.Components.Utils
+import FloraWeb.Pages.Templates (FloraHTML)
+import Lucid.Orphans ()
 
 packageListItem
   :: ( Namespace

@@ -4,16 +4,16 @@ module Flora.Model.Category.Query where
 
 import Control.Monad.IO.Class
 import Data.Text (Text)
+import Data.Text.IO qualified as T
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Database.PostgreSQL.Entity.Types (field)
-import Database.PostgreSQL.Simple (Only (..))
-
-import Data.Text.IO qualified as T
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT
+import Database.PostgreSQL.Entity.Types (field)
+import Database.PostgreSQL.Simple (Only (..))
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 

@@ -1,16 +1,17 @@
 module FloraWeb.Components.PaginationNav where
 
 import Control.Monad (when)
-import Data.Positive
 import Data.Text (Text)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Lucid (class_, li_, nav_, ul_)
+import Servant.API (toUrlPiece)
+
+import Data.Positive
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML)
-import Lucid (class_, li_, nav_, ul_)
-import Servant.API (toUrlPiece)
 
 paginationNav
   :: Word

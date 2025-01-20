@@ -40,7 +40,7 @@ server =
     , deleteTwoFactorSetup = deleteTwoFactorSetupHandler
     }
 
-userSettingsHandler :: (Reader FeatureEnv :> es, IOE :> es) => SessionWithCookies User -> Eff es (Html ())
+userSettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> Eff es (Html ())
 userSettingsHandler (Headers session _) = do
   let user = session.user
   templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -51,7 +51,7 @@ userSettingsHandler (Headers session _) = do
   render templateEnv $
     Settings.dashboard session.sessionId user
 
-userSecuritySettingsHandler :: (Reader FeatureEnv :> es, IOE :> es) => SessionWithCookies User -> Eff es (Html ())
+userSecuritySettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> Eff es (Html ())
 userSecuritySettingsHandler (Headers session _) = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   let templateEnv =
@@ -63,9 +63,9 @@ userSecuritySettingsHandler (Headers session _) = do
     Settings.securitySettings
 
 getTwoFactorSettingsHandler
-  :: ( Reader FeatureEnv :> es
+  :: ( DB :> es
      , IOE :> es
-     , DB :> es
+     , Reader FeatureEnv :> es
      , Time :> es
      )
   => SessionWithCookies User
@@ -104,11 +104,11 @@ getTwoFactorSettingsHandler (Headers session _) = do
               (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
 postTwoFactorSetupHandler
-  :: ( Reader FeatureEnv :> es
+  :: ( DB :> es
      , IOE :> es
-     , DB :> es
-     , Time :> es
      , Log :> es
+     , Reader FeatureEnv :> es
+     , Time :> es
      )
   => SessionWithCookies User
   -> TwoFactorConfirmationForm

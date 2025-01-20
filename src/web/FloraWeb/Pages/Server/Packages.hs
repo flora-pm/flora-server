@@ -9,12 +9,10 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Foldable
 import Data.Function
 import Data.Maybe (fromMaybe, isJust, isNothing)
-import Data.Positive
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
-import Distribution.Orphans ()
 import Distribution.Types.Version (Version)
 import Effectful (Eff, IOE, (:>))
 import Effectful.Error.Static (Error, throwError)
@@ -26,13 +24,15 @@ import Effectful.Trace
 import Log (object, (.=))
 import Log qualified
 import Lucid
-import Lucid.Orphans ()
 import Monitor.Tracing qualified as Tracing
+import Network.HTTP.Types (notFound404)
 import Servant (Headers (..), ServerError, ServerT)
 import Servant.Server (err404)
 
 import Advisories.Model.Affected.Query qualified as Query
 import Advisories.Model.Affected.Types
+import Data.Positive
+import Distribution.Orphans ()
 import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobStore.API (BlobStoreAPI)
@@ -56,7 +56,7 @@ import FloraWeb.Pages.Templates.Packages qualified as Package
 import FloraWeb.Pages.Templates.Screens.Packages qualified as Packages
 import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Types (FloraEff)
-import Network.HTTP.Types (notFound404)
+import Lucid.Orphans ()
 
 server :: ServerT Routes FloraEff
 server =
@@ -78,8 +78,8 @@ server =
 
 listPackagesHandler
   :: ( DB :> es
-     , Reader FeatureEnv :> es
      , IOE :> es
+     , Reader FeatureEnv :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -94,11 +94,11 @@ listPackagesHandler (Headers session _) pageParam = do
 
 showNamespaceHandler
   :: ( DB :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Log :> es
      , Reader FeatureEnv :> es
      , Time :> es
-     , Error ServerError :> es
-     , Log :> es
-     , IOE :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -140,11 +140,11 @@ showNamespaceHandler (Headers session _) packageNamespace pageParam =
 
 showPackageHandler
   :: ( DB :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Log :> es
      , Reader FeatureEnv :> es
      , Time :> es
-     , Error ServerError :> es
-     , Log :> es
-     , IOE :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -156,11 +156,11 @@ showPackageHandler sessionWithCookies packageNamespace packageName =
 
 showVersionHandler
   :: ( DB :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Log :> es
      , Reader FeatureEnv :> es
      , Time :> es
-     , Error ServerError :> es
-     , Log :> es
-     , IOE :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -173,11 +173,11 @@ showVersionHandler sessionWithCookies packageNamespace packageName version =
 
 showPackageVersion
   :: ( DB :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Log :> es
      , Reader FeatureEnv :> es
      , Time :> es
-     , Error ServerError :> es
-     , Log :> es
-     , IOE :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -256,11 +256,11 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
 
 showDependentsHandler
   :: ( DB :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Log :> es
      , Reader FeatureEnv :> es
      , Time :> es
-     , Error ServerError :> es
-     , Log :> es
-     , IOE :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -277,11 +277,11 @@ showDependentsHandler s@(Headers session _) packageNamespace packageName mPage m
 
 showVersionDependentsHandler
   :: ( DB :> es
-     , Reader FeatureEnv :> es
-     , Log :> es
-     , Time :> es
      , Error ServerError :> es
      , IOE :> es
+     , Log :> es
+     , Reader FeatureEnv :> es
+     , Time :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -327,9 +327,9 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
 
 showDependenciesHandler
   :: ( DB :> es
-     , Reader FeatureEnv :> es
      , Error ServerError :> es
      , IOE :> es
+     , Reader FeatureEnv :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -344,9 +344,9 @@ showDependenciesHandler s@(Headers session _) packageNamespace packageName = do
 
 showVersionDependenciesHandler
   :: ( DB :> es
-     , Reader FeatureEnv :> es
-     , IOE :> es
      , Error ServerError :> es
+     , IOE :> es
+     , Reader FeatureEnv :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -374,9 +374,9 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
 
 showChangelogHandler
   :: ( DB :> es
-     , Reader FeatureEnv :> es
      , Error ServerError :> es
      , IOE :> es
+     , Reader FeatureEnv :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -394,9 +394,9 @@ showChangelogHandler s@(Headers session _) packageNamespace packageName = do
 
 showVersionChangelogHandler
   :: ( DB :> es
-     , Reader FeatureEnv :> es
-     , IOE :> es
      , Error ServerError :> es
+     , IOE :> es
+     , Reader FeatureEnv :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -419,9 +419,9 @@ showVersionChangelogHandler (Headers session _) packageNamespace packageName ver
 
 listVersionsHandler
   :: ( DB :> es
-     , Reader FeatureEnv :> es
-     , IOE :> es
      , Error ServerError :> es
+     , IOE :> es
+     , Reader FeatureEnv :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -443,12 +443,12 @@ constructTarballPath :: PackageName -> Version -> Text
 constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
 
 getTarballHandler
-  :: ( DB :> es
-     , Reader FeatureEnv :> es
-     , Log :> es
-     , IOE :> es
+  :: ( BlobStoreAPI :> es
+     , DB :> es
      , Error ServerError :> es
-     , BlobStoreAPI :> es
+     , IOE :> es
+     , Log :> es
+     , Reader FeatureEnv :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -470,9 +470,9 @@ getTarballHandler (Headers session _) packageNamespace packageName version tarba
 
 showPackageSecurityHandler
   :: ( DB :> es
-     , Reader FeatureEnv :> es
-     , IOE :> es
      , Error ServerError :> es
+     , IOE :> es
+     , Reader FeatureEnv :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)

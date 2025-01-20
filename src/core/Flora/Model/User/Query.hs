@@ -3,14 +3,14 @@
 module Flora.Model.User.Query where
 
 import Data.Text (Text)
+import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Entity.DBT qualified as DBT
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (Only))
-
-import Data.Vector (Vector)
-import Database.PostgreSQL.Entity.DBT qualified as DBT
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
+
 import Flora.Model.User
 
 getUserById :: DB :> es => UserId -> Eff es (Maybe User)

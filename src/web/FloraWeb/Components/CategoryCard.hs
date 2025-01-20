@@ -1,8 +1,9 @@
 module FloraWeb.Components.CategoryCard where
 
+import Lucid
+
 import Flora.Model.Category (Category (..))
 import FloraWeb.Pages.Templates (FloraHTML)
-import Lucid
 
 categoryCard :: Category -> FloraHTML
 categoryCard Category{name, slug, synopsis} =

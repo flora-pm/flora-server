@@ -29,7 +29,7 @@ import Flora.Model.Package.Types
 newtype AffectedPackageId = AffectedPackageId {getAffectedPackageId :: UUID}
   deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, NFData)
+    (Eq, FromField, FromJSON, NFData, Ord, ToField, ToJSON)
     via UUID
 
 data AffectedPackageDAO = AffectedPackageDAO
@@ -41,8 +41,8 @@ data AffectedPackageDAO = AffectedPackageDAO
   , operatingSystems :: Maybe (Vector OS)
   , declarations :: Vector AffectedDeclaration
   }
-  deriving stock (Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving stock (Generic, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "affected_packages"] AffectedPackageDAO)
@@ -51,8 +51,8 @@ data AffectedDeclaration = AffectedDeclaration
   { canonicalPath :: Text
   , affectedRange :: VersionRange
   }
-  deriving stock (Show, Generic)
-  deriving anyclass (NFData, ToJSON, FromJSON)
+  deriving stock (Generic, Show)
+  deriving anyclass (FromJSON, NFData, ToJSON)
 
 deriving via (Aeson AffectedDeclaration) instance ToField AffectedDeclaration
 
@@ -61,7 +61,7 @@ deriving via (Aeson AffectedDeclaration) instance FromField AffectedDeclaration
 newtype AffectedVersionId = AffectedVersionId {getAffectedVersionId :: UUID}
   deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, NFData)
+    (Eq, FromField, FromJSON, NFData, Ord, ToField, ToJSON)
     via UUID
 
 data AffectedVersionRangeDAO = AffectedVersionRangeDAO
@@ -70,8 +70,8 @@ data AffectedVersionRangeDAO = AffectedVersionRangeDAO
   , introducedVersion :: Version
   , fixedVersion :: Maybe Version
   }
-  deriving stock (Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving stock (Generic, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "affected_version_ranges"] AffectedVersionRangeDAO)
@@ -85,5 +85,5 @@ data PackageAdvisoryPreview = PackageAdvisoryPreview
   , published :: UTCTime
   , cvss :: CVSS
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving anyclass (FromRow, NFData)

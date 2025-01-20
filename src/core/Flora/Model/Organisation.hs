@@ -29,7 +29,7 @@ import Flora.Model.User
 
 newtype OrganisationId = OrganisationId {getOrganisationId :: UUID}
   deriving
-    (Eq, Show, FromField, ToField, FromJSON, ToJSON)
+    (Eq, FromField, FromJSON, Show, ToField, ToJSON)
     via UUID
 
 data Organisation = Organisation
@@ -38,7 +38,7 @@ data Organisation = Organisation
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow, ToRow)
   deriving
     (Entity)

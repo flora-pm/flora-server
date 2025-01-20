@@ -31,9 +31,9 @@ registerMetrics = do
 increaseCounter
   :: forall r es label
    . ( HasField "mltp" r MLTP
-     , Reader r :> es
-     , Label label
      , IOE :> es
+     , Label label
+     , Reader r :> es
      )
   => Vector label Counter
   -> label
@@ -47,9 +47,9 @@ increaseCounter promVector label = do
 
 increaseCounterBy
   :: ( HasField "mltp" r MLTP
-     , Reader r :> es
-     , Label label
      , IOE :> es
+     , Label label
+     , Reader r :> es
      )
   => Double
   -> Vector label Counter
@@ -65,8 +65,8 @@ increaseCounterBy value promVector label = do
 increasePackageImportCounter
   :: ( HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
-     , Reader r :> es
      , IOE :> es
+     , Reader r :> es
      )
   => Text
   -> Eff es ()
@@ -77,8 +77,8 @@ increasePackageImportCounter repository = do
 increasePackageImportCounterBy
   :: ( HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
-     , Reader r :> es
      , IOE :> es
+     , Reader r :> es
      )
   => Double
   -> Text

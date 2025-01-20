@@ -1,15 +1,16 @@
 module FloraWeb.Pages.Routes where
 
+import Lucid
+import Servant
+import Servant.API.ContentTypes.Lucid
+import Servant.API.Generic
+
 import FloraWeb.Pages.Routes.Admin qualified as Admin
 import FloraWeb.Pages.Routes.Categories qualified as Categories
 import FloraWeb.Pages.Routes.Packages qualified as Packages
 import FloraWeb.Pages.Routes.Search qualified as Search
 import FloraWeb.Pages.Routes.Sessions qualified as Sessions
 import FloraWeb.Pages.Routes.Settings qualified as Settings
-import Lucid
-import Servant
-import Servant.API.ContentTypes.Lucid
-import Servant.API.Generic
 
 type Routes = NamedRoutes Routes'
 

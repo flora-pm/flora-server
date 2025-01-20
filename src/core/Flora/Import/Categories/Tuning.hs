@@ -21,8 +21,8 @@ data Categoriser = Categoriser
 
 -- | A package name and category provided by users. Input to our program.
 data UserPackageCategory = UserPackageCategory Text
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (Souffle.Marshal)
-  deriving stock (Generic, Eq, Show)
   deriving
     (Souffle.Fact)
     via Souffle.FactOptions UserPackageCategory "user_package_category" 'Souffle.Input
@@ -32,16 +32,16 @@ instance Display UserPackageCategory where
 
 -- | A normalised pair of package name and category. Output to our program.
 data NormalisedPackageCategory = NormalisedPackageCategory CName
-  deriving anyclass (Souffle.Marshal, FromJSON, ToJSON)
-  deriving stock (Generic, Eq, Show)
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromJSON, Souffle.Marshal, ToJSON)
   deriving
     (Souffle.Fact)
     via Souffle.FactOptions NormalisedPackageCategory "normalised_package_category" 'Souffle.Output
 
 -- | A report that arises if no normalisation could be done.
 data NormaliseIssue = NormaliseIssue CName
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (Souffle.Marshal)
-  deriving stock (Generic, Eq, Show)
   deriving
     (Souffle.Fact)
     via Souffle.FactOptions NormaliseIssue "normalise_issue" 'Souffle.Output
@@ -53,7 +53,7 @@ data Results = Results
   { normalisedCategories :: [NormalisedPackageCategory]
   , normalisationIssues :: [NormaliseIssue]
   }
-  deriving stock (Generic, Eq, Show)
+  deriving stock (Eq, Generic, Show)
 
 data SourceCategories = SourceCategories
   deriving
@@ -61,8 +61,8 @@ data SourceCategories = SourceCategories
     via Souffle.ProgramOptions SourceCategories "categorise" '[CanonicalCategory]
 
 data CanonicalCategory = CanonicalCategory Text Text Text
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (Souffle.Marshal)
-  deriving stock (Generic, Eq, Show)
   deriving
     (Souffle.Fact)
     via Souffle.FactOptions CanonicalCategory "flora_category" 'Souffle.Output

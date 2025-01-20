@@ -34,7 +34,6 @@ import Data.Foldable (fold, forM_)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust, isJust)
-import Data.Positive
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -43,7 +42,6 @@ import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
-import Distribution.Orphans ()
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
@@ -56,6 +54,8 @@ import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
 import Advisories.Model.Affected.Types
+import Data.Positive
+import Distribution.Orphans ()
 import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.Category.Types
 import Flora.Model.Package

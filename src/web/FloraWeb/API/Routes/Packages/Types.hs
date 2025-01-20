@@ -19,12 +19,12 @@ import Distribution.SPDX qualified as SPDX
 import Distribution.Types.Flag
 import Distribution.Types.Version
 import GHC.TypeLits
-import JSON
 import Optics.Core
 
 import Flora.Model.Component.Types
 import Flora.Model.Package
 import Flora.Model.Release.Types
+import JSON
 
 -- | This type is the representation of a 'Package'
 -- for the purposes of the JSON API.
@@ -46,7 +46,7 @@ data PackageDTO (version :: Natural) = PackageDTO
   , testedWith :: Vector Version
   , components :: Vector Text
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow, NFData)
 
 toPackageDTO :: Package -> Release -> Vector CanonicalComponent -> PackageDTO 0
@@ -136,7 +136,7 @@ packageDTOExample =
 data PackageList = PackageList
   { packages :: Vector (PackageDTO 0)
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving
     (FromJSON, ToJSON)
     via CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageList

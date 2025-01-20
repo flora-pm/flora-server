@@ -7,14 +7,14 @@ module FloraWeb.Pages.Routes.Settings
   )
 where
 
+import Data.Text (Text)
 import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
-
-import Data.Text (Text)
-import FloraWeb.Common.Auth ()
 import Web.FormUrlEncoded
+
+import FloraWeb.Common.Auth ()
 
 type Routes =
   NamedRoutes Routes'

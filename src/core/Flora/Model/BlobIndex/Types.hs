@@ -1,18 +1,17 @@
 module Flora.Model.BlobIndex.Types where
 
+import Codec.Archive.Tar qualified as Tar
 import Control.DeepSeq (NFData)
 import Control.Exception (Exception)
-import Data.Aeson.Orphans ()
 import Data.Text.Display (Display (..))
-import GHC.Generics (Generic)
-
-import Codec.Archive.Tar qualified as Tar
 import Database.PostgreSQL.Entity.Types (Entity, GenericEntity, TableName)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.Orphans ()
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Distribution.Version (Version)
+import GHC.Generics (Generic)
 
+import Data.Aeson.Orphans ()
+import Database.PostgreSQL.Simple.Orphans ()
 import Flora.Model.BlobStore.Types (Sha256Sum (..))
 import Flora.Model.Package.Types (PackageName)
 

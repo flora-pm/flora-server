@@ -1,11 +1,11 @@
 module FloraWeb.Pages.Server.Search where
 
-import Data.Positive
 import Data.Text (Text)
 import Data.Vector qualified as Vector
 import Lucid (Html)
 import Servant (Headers (..), ServerT)
 
+import Data.Positive
 import Flora.Model.Package.Types
 import Flora.Model.User (User)
 import Flora.Search (SearchAction (..))

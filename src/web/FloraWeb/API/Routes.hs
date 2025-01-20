@@ -1,8 +1,9 @@
 module FloraWeb.API.Routes where
 
-import FloraWeb.API.Routes.Packages qualified as PackagesAPI
 import GHC.Generics
 import Servant
+
+import FloraWeb.API.Routes.Packages qualified as PackagesAPI
 
 type Routes =
   "experimental"

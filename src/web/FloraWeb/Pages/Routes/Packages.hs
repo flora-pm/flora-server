@@ -5,15 +5,16 @@ module FloraWeb.Pages.Routes.Packages
 where
 
 import Data.ByteString.Lazy (ByteString)
-import Data.Positive
 import Data.Text (Text)
 import Distribution.Types.Version (Version)
-import Flora.Model.Package (Namespace, PackageName)
 import Lucid
 import Servant
-import Servant.API.ContentTypes.GZip
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
+
+import Data.Positive
+import Flora.Model.Package (Namespace, PackageName)
+import Servant.API.ContentTypes.GZip
 
 type Routes = NamedRoutes Routes'
 

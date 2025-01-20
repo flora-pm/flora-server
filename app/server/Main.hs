@@ -49,7 +49,7 @@ main = do
           checkIfIndexRefreshJobIsPlanned env.pool
   runFlora
 
-checkRepositoriesAreConfigured :: (DB :> es, Log :> es, IOE :> es) => Eff es ()
+checkRepositoriesAreConfigured :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
 checkRepositoriesAreConfigured = do
   let expectedRepositories = Set.fromList ["hackage", "cardano", "horizon"]
   (result :: (Vector (Only Text))) <-

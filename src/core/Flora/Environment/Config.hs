@@ -65,13 +65,13 @@ data ConnectionInfo = ConnectionInfo
   , connectDatabase :: Text
   , sslMode :: Text
   }
-  deriving (Generic, Eq, Read, Show, Typeable)
+  deriving (Eq, Generic, Read, Show, Typeable)
 
 data DeploymentEnv
   = Production
   | Development
   | Test
-  deriving stock (Show, Eq, Generic, Enum, Bounded)
+  deriving stock (Bounded, Enum, Eq, Generic, Show)
 
 instance Display DeploymentEnv where
   displayBuilder Production = "production"
@@ -85,20 +85,20 @@ data LoggingDestination
     Json
   | -- | Logs are sent to a file as JSON
     JSONFile
-  deriving (Show, Generic)
+  deriving (Generic, Show)
 
 data Assets = Assets
   { jsBundle :: AssetBundle
   , cssBundle :: AssetBundle
   , prism :: AssetBundle
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
 
 data AssetBundle = AssetBundle
   { name :: Text
   , hash :: Text
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
 
 -- | MLTP stands for Metrics, Logs, Traces and Profiles
 data MLTP = MLTP
@@ -109,13 +109,13 @@ data MLTP = MLTP
   , zipkinHost :: Maybe HostName
   , zipkinPort :: Maybe PortNumber
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
   , blobStoreFS :: Maybe FilePath
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
 
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
@@ -127,7 +127,7 @@ data FloraConfig = FloraConfig
   , features :: FeatureConfig
   , environment :: DeploymentEnv
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
