@@ -1,6 +1,5 @@
 export NIXPKGS_ALLOW_BROKEN=1
 export DATALOG_DIR="cbits/"
-export COMPOSE_PROFILES=local
 
 export FLORA_DB_HOST="localhost"
 export FLORA_DB_PORT="5432"
