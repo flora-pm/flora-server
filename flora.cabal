@@ -155,6 +155,7 @@ library
     Lucid.Orphans
     OSV.Reference.Orphans
     Pandoc.Orphans
+    Prometheus.Servant.HasEndpoint
     Servant.API.ContentTypes.GZip
 
   build-depends:
@@ -211,6 +212,7 @@ library
     , resource-pool
     , sel
     , servant
+    , servant-prometheus
     , servant-server
     , slugify
     , souffle-haskell        ==4.0.0
@@ -226,6 +228,7 @@ library
     , utf8-string
     , uuid
     , vector
+    , wai
     , zlib
 
   ghc-options:     -fplugin=Effectful.Plugin
@@ -395,6 +398,7 @@ library flora-web
     , flora-advisories
     , flora-jobs
     , flora-search
+    , generics-sop
     , haddock-library
     , htmx-lucid
     , http-api-data

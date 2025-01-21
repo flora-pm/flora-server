@@ -1,10 +1,14 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module FloraWeb.Pages.Routes.Sessions where
 
 import Data.Text
+import Generics.SOP (I (..), NP (..), NS (..))
 import Lucid
-import Servant
+import Servant.API
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
+import Servant.API.MultiVerb
 import Web.Cookie
 import Web.FormUrlEncoded
 
@@ -14,26 +18,70 @@ type Routes = NamedRoutes Routes'
 
 type NewSession =
   "new"
-    :> UVerb 'GET '[HTML] NewSessionResponses
+    :> MultiVerb
+         'GET
+         '[HTML]
+         NewSessionResponses
+         NewSessionResult
 
 type NewSessionResponses =
-  '[ -- User is not logged-in, dispay the login page
-     WithStatus 200 (Html ())
-   , -- User is already logged-in, redirect to home page
-     WithStatus 301 (Headers '[Header "Location" Text] NoContent)
+  '[ -- User is already logged-in, redirect to home page
+     WithHeaders
+       '[Header "Location" Text]
+       ((), Text)
+       (RespondEmpty 301 "Already logged-in")
+   , -- User is not logged-in, dispay the login page
+     Respond 200 "Log-in required" (Html ())
    ]
+
+data NewSessionResult
+  = AlreadyAuthenticated Text
+  | AuthenticationRequired (Html ())
+  deriving stock (Generic)
+
+instance AsUnion NewSessionResponses NewSessionResult where
+  toUnion (AlreadyAuthenticated location) = Z (I ((), location))
+  toUnion (AuthenticationRequired response) = S (Z (I response))
+
+  fromUnion (Z (I ((), location))) = AlreadyAuthenticated location
+  fromUnion (S (Z (I response))) = AuthenticationRequired response
+  fromUnion (S (S x)) = case x of {}
+
+instance AsHeaders '[Text, SetCookie] () (Text, SetCookie) where
+  toHeaders (location, cookie) = (I location :* I cookie :* Nil, ())
+  fromHeaders (I location :* I cookie :* Nil, ()) = (location, cookie)
 
 type CreateSession =
   "new"
     :> ReqBody '[FormUrlEncoded] LoginForm
-    :> UVerb 'POST '[HTML] CreateSessionResponses
+    :> MultiVerb
+         'POST
+         '[HTML]
+         CreateSessionResponses
+         CreateSessionResult
 
 type CreateSessionResponses =
   '[ -- Failure, send login page back
-     WithStatus 401 (Html ())
+     Respond 401 "Authentication failed" (Html ())
    , -- Success, redirected to home page
-     WithStatus 301 (Headers '[Header "Location" Text, Header "Set-Cookie" SetCookie] NoContent)
+     WithHeaders
+       '[Header "Location" Text, Header "Set-Cookie" SetCookie]
+       (Text, SetCookie)
+       (RespondEmpty 301 "Authentication succeeded")
    ]
+
+data CreateSessionResult
+  = AuthenticationFailure (Html ())
+  | AuthenticationSuccess (Text, SetCookie)
+  deriving stock (Generic)
+
+instance AsUnion CreateSessionResponses CreateSessionResult where
+  toUnion (AuthenticationFailure body) = Z (I body)
+  toUnion (AuthenticationSuccess (location, cookie)) = S (Z (I (location, cookie)))
+
+  fromUnion (Z (I body)) = AuthenticationFailure body
+  fromUnion (S (Z (I headers))) = AuthenticationSuccess headers
+  fromUnion (S (S x)) = case x of {}
 
 type DeleteSession =
   "delete"
