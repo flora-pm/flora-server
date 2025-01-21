@@ -9,14 +9,12 @@ import Effectful.Trace (Trace)
 import Log qualified
 import Monitor.Tracing qualified as Tracing
 import Optics.Core
-import Servant (respond)
-import Servant.API.UVerb
 
 import Flora.Model.Package
 import Flora.Model.PackageIndex.Query as Query
 import Flora.Model.PackageIndex.Types (PackageIndex)
 import Flora.Model.User (User)
-import FloraWeb.Pages.Routes.Sessions (CreateSessionResponses)
+import FloraWeb.Pages.Routes.Sessions
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Screens.Sessions qualified as Sessions
 import FloraWeb.Session (Session)
@@ -40,15 +38,16 @@ guardThatPackageIndexExists namespace action =
 guardThatUserHasProvidedTOTP
   :: Session (Maybe User)
   -> Maybe Text
-  -> (Text -> FloraEff (Union CreateSessionResponses))
-  -> FloraEff (Union CreateSessionResponses)
-guardThatUserHasProvidedTOTP session mTOTP action = do
+  -> (Text -> FloraEff CreateSessionResult)
+  -> FloraEff CreateSessionResult
+guardThatUserHasProvidedTOTP session mTOTP totpAction = do
   case mTOTP of
-    Just totp -> action totp
+    Just totp -> totpAction totp
     Nothing -> do
       Log.logInfo_ "User did not provide a TOTP code"
       templateDefaults <- templateFromSession session defaultTemplateEnv
       let templateEnv =
             templateDefaults
               & (#flashError ?~ mkError "Must provide an OTP code")
-      respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
+      body <- render templateEnv Sessions.newSession
+      pure $ AuthenticationFailure body

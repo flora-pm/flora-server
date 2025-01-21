@@ -91,6 +91,7 @@ import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
 import FloraWeb.Pages.Templates.Error (renderError)
 import FloraWeb.Routes
 import FloraWeb.Types
+import Prometheus.Servant.HasEndpoint ()
 
 type FloraAuthContext =
   '[ OptionalAuthContext
