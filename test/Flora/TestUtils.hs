@@ -357,7 +357,7 @@ genUsername :: MonadGen m => m Text
 genUsername = H.text (Range.constant 1 25) H.ascii
 
 genDisplayName :: MonadGen m => m Text
-genDisplayName = H.text (Range.constant 3 25) H.ascii
+genDisplayName = H.text (Range.constant 3 25) H.alphaNum
 
 genPassword :: MonadGen m => m PasswordHash
 genPassword = unsafePerformIO . Sel.hashText <$> H.text (Range.constant 20 30) H.ascii
