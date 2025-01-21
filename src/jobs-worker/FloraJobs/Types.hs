@@ -8,6 +8,7 @@ import Data.Aeson
 import Data.Function ((&))
 import Data.Pool hiding (PoolConfig)
 import Data.Poolboy (poolboySettingsWith)
+import Data.Set (Set)
 import Data.Text qualified as Text
 import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple (Connection)
@@ -19,7 +20,6 @@ import Effectful.Concurrent.Async
 import Effectful.FileSystem
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Process.Typed
 import Effectful.Reader.Static (Reader)
@@ -35,7 +35,7 @@ import OddJobs.ConfigBuilder
 import OddJobs.Job (Config (..), Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
 
-import Data.Set (Set)
+import Effectful.Poolboy
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Logging qualified as Logging

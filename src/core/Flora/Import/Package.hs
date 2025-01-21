@@ -81,9 +81,9 @@ import Distribution.Utils.ShortText qualified as Cabal
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Log (Log)
-import Effectful.Poolboy (Poolboy)
-import Effectful.Poolboy qualified as Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import GHC.List (List)
@@ -92,8 +92,8 @@ import Optics.Core
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
+import Effectful.Poolboy (Poolboy)
+import Effectful.Poolboy qualified as Poolboy
 import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
@@ -211,7 +211,7 @@ loadContent :: Log :> es => FilePath -> BS.ByteString -> Eff es GenericPackageDe
 loadContent = parseString parseGenericPackageDescription
 
 loadJSONContent
-  :: (Log :> es, IOE :> es, State (Map (Namespace, PackageName, Version) Text) :> es)
+  :: (IOE :> es, Log :> es, State (Map (Namespace, PackageName, Version) Text) :> es)
   => FilePath
   -> BS.ByteString
   -> (Text, Set PackageName)
@@ -237,7 +237,7 @@ loadJSONContent path content (repositoryName, repositoryPackages) = do
           pure (chosenNamespace, packageName, version, target)
 
 processJSONContent
-  :: (Log :> es, IOE :> es)
+  :: (IOE :> es, Log :> es)
   => Text
   -> a
   -> b
@@ -291,7 +291,7 @@ parseString parser name bs = do
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 persistImportOutput
   :: forall es
-   . (State (Set (Namespace, PackageName, Version)) :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
+   . (DB :> es, IOE :> es, Log :> es, Poolboy :> es, State (Set (Namespace, PackageName, Version)) :> es)
   => ImportOutput
   -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
@@ -378,9 +378,9 @@ persistHashes (namespace, packageName, version, target) = do
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
   :: ( IOE :> es
-     , Time :> es
      , Log :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => UserId
   -> (Text, Set PackageName)

@@ -15,7 +15,7 @@ import Lucid
 -- | a wrapper that attaches from and tofield instances
 --  for a text db row for LucidHtml
 newtype TextHtml = MkTextHtml Text
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving
     (Eq, ToHtml)
     via Text

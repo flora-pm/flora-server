@@ -110,9 +110,10 @@ import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Effectful.Time
 import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
@@ -133,8 +134,7 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
+import Effectful.Poolboy
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
@@ -192,7 +192,7 @@ type TestEff =
 data Fixtures = Fixtures
   { hackageUser :: User
   }
-  deriving stock (Generic, Show, Eq)
+  deriving stock (Eq, Generic, Show)
 
 getFixtures :: (DB :> es, Fail :> es) => Eff es Fixtures
 getFixtures = do
@@ -357,7 +357,7 @@ genUsername :: MonadGen m => m Text
 genUsername = H.text (Range.constant 1 25) H.ascii
 
 genDisplayName :: MonadGen m => m Text
-genDisplayName = H.text (Range.constant 3 25) H.ascii
+genDisplayName = H.text (Range.constant 3 25) H.alphaNum
 
 genPassword :: MonadGen m => m PasswordHash
 genPassword = unsafePerformIO . Sel.hashText <$> H.text (Range.constant 20 30) H.ascii

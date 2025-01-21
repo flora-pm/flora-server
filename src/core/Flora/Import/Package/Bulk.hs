@@ -32,7 +32,6 @@ import Effectful.FileSystem qualified as FileSystem
 import Effectful.FileSystem.IO.ByteString qualified as FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
@@ -48,6 +47,7 @@ import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
 
+import Effectful.Poolboy
 import Flora.Environment.Env
 import Flora.Import.Package
   ( extractPackageDataFromCabal
@@ -67,16 +67,16 @@ import Flora.Monitoring
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
-  :: ( Log :> es
-     , Time :> es
+  :: ( DB :> es
      , FileSystem :> es
-     , DB :> es
-     , IOE :> es
-     , Poolboy :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
-     , Reader r :> es
      , HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
+     , IOE :> es
+     , Log :> es
+     , Poolboy :> es
+     , Reader r :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => UserId
   -> (Text, Text)
@@ -87,15 +87,15 @@ importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
   importAllFilesInDirectory user (repositoryName, repositoryURL) workdir
 
 importFromIndex
-  :: ( Poolboy :> es
-     , Time :> es
-     , Log :> es
-     , DB :> es
-     , IOE :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
-     , Reader r :> es
+  :: ( DB :> es
      , HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
+     , IOE :> es
+     , Log :> es
+     , Poolboy :> es
+     , Reader r :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => UserId
   -> Text
@@ -145,16 +145,16 @@ importFromIndex user repositoryName index = do
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
 importAllFilesInDirectory
-  :: ( Time :> es
-     , Log :> es
+  :: ( DB :> es
      , FileSystem :> es
-     , DB :> es
-     , IOE :> es
-     , Poolboy :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
-     , Reader r :> es
      , HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
+     , IOE :> es
+     , Log :> es
+     , Poolboy :> es
+     , Reader r :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => UserId
   -> (Text, Text)
@@ -168,15 +168,15 @@ importAllFilesInDirectory user (repositoryName, _repositoryURL) dir = do
 
 importFromStream
   :: forall es r
-   . ( Time :> es
-     , Log :> es
-     , DB :> es
-     , IOE :> es
-     , Poolboy :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
-     , Reader r :> es
+   . ( DB :> es
      , HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
+     , IOE :> es
+     , Log :> es
+     , Poolboy :> es
+     , Reader r :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => UserId
   -> (Text, Set PackageName)
@@ -219,12 +219,12 @@ displayStats currentCount = do
   liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
 processFile
-  :: ( State (Set (Namespace, PackageName, Version)) :> es
-     , Log :> es
+  :: ( DB :> es
      , IOE :> es
-     , DB :> es
-     , Time :> es
+     , Log :> es
      , Poolboy :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => UserId
   -> (Text, Set PackageName)

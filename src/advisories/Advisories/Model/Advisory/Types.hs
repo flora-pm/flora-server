@@ -24,7 +24,7 @@ import Pandoc.Orphans ()
 
 newtype AdvisoryId = AdvisoryId {getAdvisoryId :: UUID}
   deriving stock (Generic, Show)
-  deriving newtype (Eq, Ord, FromJSON, ToJSON, FromField, ToField, NFData)
+  deriving newtype (Eq, FromField, FromJSON, NFData, Ord, ToField, ToJSON)
 
 data AdvisoryDAO = AdvisoryDAO
   { advisoryId :: AdvisoryId
@@ -42,8 +42,8 @@ data AdvisoryDAO = AdvisoryDAO
   , summary :: Text
   , details :: Text
   }
-  deriving stock (Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving stock (Generic, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "security_advisories"] AdvisoryDAO)

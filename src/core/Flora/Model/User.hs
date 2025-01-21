@@ -25,7 +25,6 @@ import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Binary (..))
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), fromJSONField, returnError)
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.Orphans ()
 import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Effectful
@@ -37,14 +36,16 @@ import Sel.Hashing.Password
 import Sel.Hashing.Password qualified as Sel
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 
+import Database.PostgreSQL.Simple.Orphans ()
+
 newtype UserId = UserId {getUserId :: UUID}
   deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData, NFData)
-    via UUID
-  deriving
     (Display)
     via (ShowInstance UUID)
+  deriving
+    (Eq, FromField, FromHttpApiData, FromJSON, NFData, Ord, ToField, ToHttpApiData, ToJSON)
+    via UUID
 
 data User = User
   { userId :: UserId
@@ -59,7 +60,7 @@ data User = User
   , totpEnabled :: Bool
   }
   deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "users"] User)
@@ -72,7 +73,7 @@ data UserFlags = UserFlags
   , canLogin :: Bool
   }
   deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromJSON, ToJSON, NFData)
+  deriving anyclass (FromJSON, NFData, ToJSON)
 
 instance FromField UserFlags where
   fromField = fromJSONField
@@ -85,7 +86,7 @@ data UserCreationForm = UserCreationForm
   , email :: Text
   , password :: PasswordHash
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)
 
 data AdminCreationForm = AdminCreationForm
@@ -93,7 +94,7 @@ data AdminCreationForm = AdminCreationForm
   , email :: Text
   , password :: PasswordHash
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)
 
 -- | Type error! Do not use 'toJSON' on a 'Password'!

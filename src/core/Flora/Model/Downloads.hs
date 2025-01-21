@@ -12,7 +12,7 @@ import Flora.Model.Release.Types
 newtype DownloadId = DownloadId {getDownloadId :: UUID}
   deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField)
+    (Eq, FromField, FromJSON, Ord, ToField, ToJSON)
     via UUID
 
 data Download = Download

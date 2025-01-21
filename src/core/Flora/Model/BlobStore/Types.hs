@@ -3,19 +3,18 @@ module Flora.Model.BlobStore.Types where
 import Control.DeepSeq (NFData)
 import Data.Aeson.Types
 import Data.ByteString (ByteString)
+import Data.ByteString.Base16 qualified as B16
 import Data.Text (Text)
 import Data.Text.Display (Display (..), display)
 import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
 import Data.Text.Lazy.Builder (fromText)
-import GHC.Generics (Generic)
-
-import Data.ByteString.Base16 qualified as B16
 import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..))
+import GHC.Generics (Generic)
 
 newtype Sha256Sum = Sha256Sum {bytestring :: ByteString}
-  deriving (Eq, Show, Generic)
-  deriving newtype (Ord, NFData)
+  deriving (Eq, Generic, Show)
+  deriving newtype (NFData, Ord)
 
 instance ToField Sha256Sum where
   toField = toField . decodeUtf8Lenient . B16.encode . bytestring

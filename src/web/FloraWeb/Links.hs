@@ -1,18 +1,19 @@
 module FloraWeb.Links where
 
-import Data.Positive
 import Data.Text (Text)
 import Data.Text.Display (display)
-import Distribution.Orphans ()
 import Distribution.Version (Version)
+import Servant.API
+import Servant.Client
+import Servant.Links qualified as Links
+
+import Data.Positive
+import Distribution.Orphans ()
 import Flora.Model.Package (Namespace (..), PackageName (..))
 import FloraWeb.Pages.Routes qualified as Pages
 import FloraWeb.Pages.Routes qualified as Web
 import FloraWeb.Pages.Routes.Packages qualified as Web
 import FloraWeb.Pages.Routes.Search qualified as Search
-import Servant.API
-import Servant.Client
-import Servant.Links qualified as Links
 
 links :: Pages.Routes' (Links.AsLink Link)
 links = Links.allFieldLinks

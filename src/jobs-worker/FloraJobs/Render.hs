@@ -6,6 +6,7 @@ import Control.Exception
 import Data.Text (Text)
 import Data.Text.Lazy qualified as TL
 import Data.Typeable
+
 import FloraJobs.Types (OddJobException (..))
 
 renderMarkdown :: (Monad m, Typeable m) => String -> Text -> m Text

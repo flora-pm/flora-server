@@ -8,13 +8,12 @@ module FloraWeb.Components.Pill
   , ratingNone
   ) where
 
-import Lucid
-
-import FloraWeb.Pages.Templates.Types (FloraHTML)
-
 import Data.Text (Text)
 import Data.Text.Display (display)
+import Lucid
+
 import FloraWeb.Components.Utils (dataText_)
+import FloraWeb.Pages.Templates.Types (FloraHTML)
 
 customBuildType :: FloraHTML
 customBuildType =

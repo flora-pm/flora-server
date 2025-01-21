@@ -5,10 +5,10 @@ import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
+import Web.Cookie
 import Web.FormUrlEncoded
 
 import Flora.Model.PersistentSession
-import Web.Cookie
 
 type Routes = NamedRoutes Routes'
 

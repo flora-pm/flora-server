@@ -6,7 +6,6 @@ import Data.Text (Text)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Trace (Trace)
-import FloraWeb.Pages.Templates
 import Log qualified
 import Monitor.Tracing qualified as Tracing
 import Optics.Core
@@ -18,6 +17,7 @@ import Flora.Model.PackageIndex.Query as Query
 import Flora.Model.PackageIndex.Types (PackageIndex)
 import Flora.Model.User (User)
 import FloraWeb.Pages.Routes.Sessions (CreateSessionResponses)
+import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Screens.Sessions qualified as Sessions
 import FloraWeb.Session (Session)
 import FloraWeb.Types (FloraEff)

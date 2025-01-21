@@ -18,7 +18,7 @@ data ImportDependency = ImportDependency
   -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
   , requirement :: Requirement
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -32,5 +32,5 @@ data ImportOutput = ImportOutput
   , release :: Release
   , components :: NonEmpty (PackageComponent, List ImportDependency)
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, ToJSON)

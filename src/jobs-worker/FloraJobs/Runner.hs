@@ -8,9 +8,9 @@ import Data.Function
 import Data.Maybe (fromJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Data.Text
 import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Text.HTML qualified as HTML
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
@@ -18,7 +18,6 @@ import Effectful (Eff, IOE, type (:>))
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log
-import Effectful.Poolboy (Poolboy)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Process.Typed
 import Effectful.Reader.Static (Reader)
@@ -30,7 +29,8 @@ import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 
-import Data.Text
+import Data.Text.HTML qualified as HTML
+import Effectful.Poolboy (Poolboy)
 import Flora.Environment.Env
 import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Import.Package.Bulk qualified as Import
@@ -106,11 +106,11 @@ makeReadme pay@ReadmeJobPayload{..} =
         Update.updateReadme mpReleaseId (Just $ HTML.fromText readmeBody) Imported
 
 fetchTarball
-  :: ( IOE :> es
+  :: ( BlobStoreAPI :> es
      , DB :> es
-     , Reader JobsRunnerEnv :> es
+     , IOE :> es
      , Log :> es
-     , BlobStoreAPI :> es
+     , Reader JobsRunnerEnv :> es
      )
   => TarballJobPayload
   -> Eff es ()
@@ -222,15 +222,15 @@ assignNamespace =
       )
 
 refreshIndex
-  :: ( Time :> es
-     , DB :> es
+  :: ( DB :> es
+     , FileSystem :> es
+     , IOE :> es
      , Log :> es
      , Poolboy :> es
-     , TypedProcess :> es
-     , IOE :> es
-     , FileSystem :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
      , Reader FloraEnv :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
+     , TypedProcess :> es
      )
   => Text
   -> Eff es ()

@@ -1,9 +1,10 @@
 module FloraWeb.Components.MainSearchBar where
 
+import Lucid
+
 import FloraWeb.Components.Icons
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Pages.Templates.Types (FloraHTML)
-import Lucid
 
 mainSearchBar :: FloraHTML
 mainSearchBar =

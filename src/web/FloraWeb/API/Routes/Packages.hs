@@ -12,13 +12,13 @@ type API = NamedRoutes API'
 type GetPackage =
   Summary "Get information about a package"
     :> Description
-        "This endpoint returns information about a package and its latest version"
+         "This endpoint returns information about a package and its latest version"
     :> Get '[JSON] (PackageDTO 0)
 
 type GetVersionedPackage =
   Summary "Get information about a package and version"
     :> Description
-        "This endpoint returns information about a package and the specified version"
+         "This endpoint returns information about a package and the specified version"
     :> Capture "version" Version
     :> Get '[JSON] (PackageDTO 0)
 

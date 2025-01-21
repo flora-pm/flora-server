@@ -27,25 +27,25 @@ data ImportError
 data ReleaseJSONFile = ReleaseJSONFile
   { signed :: Signed
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 data Signed = Signed
   { targets :: KeyMap Target
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 data Target = Target
   { hashes :: Hashes
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 data Hashes = Hashes
   { sha256 :: Text
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, ToJSON)
 
 data ImportFileType

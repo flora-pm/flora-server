@@ -7,18 +7,16 @@ import Data.Int (Int64)
 import Data.Map qualified as M
 import Data.String (fromString)
 import Data.Text.Display (display)
-import Effectful (Eff, type (:>))
-import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
-import Log qualified
-
 import Database.PostgreSQL.Entity (Entity, _insert)
 import Database.PostgreSQL.Entity.DBT (QueryNature (..), execute)
 import Database.PostgreSQL.Simple (ToRow)
 import Database.PostgreSQL.Simple.Types (Query)
 import Database.PostgreSQL.Transact (DBT)
-
 import Distribution.Version (Version)
+import Effectful (Eff, type (:>))
+import Effectful.Log (Log)
+import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Log qualified
 
 import Flora.Model.BlobIndex.Internal
 import Flora.Model.BlobIndex.Types
@@ -30,7 +28,7 @@ import Flora.Model.Release.Types (Release (..), ReleaseId (..))
 import Flora.Model.Release.Update qualified as Update
 
 insertTar
-  :: (Log :> es, DB :> es, BlobStoreAPI :> es)
+  :: (BlobStoreAPI :> es, DB :> es, Log :> es)
   => PackageName
   -> Version
   -> LazyByteString
@@ -50,7 +48,7 @@ insertTar pname version contents = do
             Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree release.releaseId t
 
 insertTree
-  :: (Log :> es, DB :> es, BlobStoreAPI :> es)
+  :: (BlobStoreAPI :> es, DB :> es, Log :> es)
   => ReleaseId
   -> TarRoot Sha256Sum
   -> Eff es ()
@@ -67,7 +65,7 @@ insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
     _onConflictDoNothing :: Query
     _onConflictDoNothing = fromString "on conflict do nothing"
 
-    insertDoNothing :: forall e m. (ToRow e, Entity e, MonadIO m) => e -> DBT m Int64
+    insertDoNothing :: forall e m. (Entity e, MonadIO m, ToRow e) => e -> DBT m Int64
     insertDoNothing = execute Update (_insert @e <> _onConflictDoNothing)
 
     insertBlobs parentHash dir (TarDirectory childHash nodes) = do

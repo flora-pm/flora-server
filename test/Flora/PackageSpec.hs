@@ -12,10 +12,10 @@ import Distribution.System (OS (Windows))
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
+import Distribution.Version (mkVersion)
 import Optics.Core
 import Test.Tasty
 
-import Distribution.Version (mkVersion)
 import Flora.Import.Package
 import Flora.Model.Category (Category (..))
 import Flora.Model.Category.Query qualified as Query

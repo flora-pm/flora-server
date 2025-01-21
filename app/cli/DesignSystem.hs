@@ -16,6 +16,7 @@ import Data.Time.Clock (UTCTime (..))
 import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Distribution.SPDX
 import Distribution.Version
 import Effectful
 import Effectful.Fail
@@ -26,7 +27,6 @@ import Security.Advisories.Core.HsecId qualified as HsecId
 import Security.CVSS
 
 import Advisories.Model.Affected.Types
-import Distribution.SPDX
 import Flora.Environment.Config
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category

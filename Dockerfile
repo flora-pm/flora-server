@@ -7,7 +7,7 @@ ARG UID=1000
 
 ARG GHC_VERSION=9.6.6
 ARG CABAL_VERSION=3.10.3.0
-ARG FOURMOLU_VERSION=0.14.1.0
+ARG FOURMOLU_VERSION=0.17.0.0
 ARG HLINT_VERSION=3.8
 ARG APPLY_REFACT_VERSION=0.14.0.0
 ARG CABAL_FMT_VERSION=0.1.12
@@ -27,7 +27,7 @@ RUN chown $USER:$USER /flora-server
 
 RUN mkdir /home/$USER/.cabal
 RUN chown -R $USER:$USER /home/$USER/.cabal
-WORKDIR /flora-server 
+WORKDIR /flora-server
 
 RUN apt update && \
     apt install -y build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 git libsodium-dev pkg-config
@@ -39,7 +39,7 @@ ENV BOOTSTRAP_HASKELL_INSTALL_NO_STACK_HOOK="YES"
 ENV PATH="$PATH:/home/$USER/.ghcup/bin"
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list 
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 RUN apt install -y nodejs libpq-dev mcpp wget zsh tmux postgresql-client
 RUN corepack enable
 USER ${USER}

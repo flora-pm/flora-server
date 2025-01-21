@@ -15,20 +15,20 @@ import GHC.Generics
 
 newtype PackageGroupId = PackageGroupId {getPackageGroupId :: UUID}
   deriving
-    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, NFData)
-    via UUID
-  deriving
     (Display)
     via ShowInstance UUID
+  deriving
+    (Eq, FromField, FromJSON, NFData, Ord, Show, ToField, ToJSON)
+    via UUID
 
 data PackageGroup = PackageGroup
   { packageGroupId :: PackageGroupId
   , groupName :: Text
   }
   deriving stock
-    (Eq, Ord, Show, Generic)
+    (Eq, Generic, Ord, Show)
   deriving anyclass
-    (FromRow, ToRow, FromJSON, ToJSON, NFData)
+    (FromJSON, FromRow, NFData, ToJSON, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "package_groups"] PackageGroup)

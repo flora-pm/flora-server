@@ -5,11 +5,11 @@ module FloraWeb.Components.Navbar where
 import Control.Monad.Reader (ask, asks)
 import Data.Text (Text)
 import Lucid
+import PyF (str)
 
 import Flora.Model.User (User (..), UserFlags (..))
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types
-import PyF (str)
 
 navbar :: FloraHTML
 navbar = do

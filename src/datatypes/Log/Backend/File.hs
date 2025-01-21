@@ -14,7 +14,7 @@ import System.IO (stdout)
 data FileBackendConfig = FileBackendConfig
   { destinationFile :: FilePath
   }
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
 
 withJSONFileBackend
   :: forall (es :: [Effect]) (a :: Type)

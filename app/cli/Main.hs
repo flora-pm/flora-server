@@ -10,14 +10,12 @@ import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
-import DesignSystem (generateComponents)
 import Distribution.Version (Version)
 import Effectful
 import Effectful.Error.Static (Error, runErrorNoCallStack)
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
@@ -35,10 +33,13 @@ import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
 import Options.Applicative
 import Sel.Hashing.Password qualified as Sel
+import System.Exit (exitFailure)
 import System.FilePath ((</>))
 
 import Advisories.Import (importAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
+import DesignSystem (generateComponents)
+import Effectful.Poolboy
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
@@ -53,12 +54,11 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Tracing qualified as Tracing
-import System.Exit (exitFailure)
 
 data Options = Options
   { cliCommand :: Command
   }
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 data Command
   = Provision ProvisionTarget
@@ -68,13 +68,13 @@ data Command
   | ImportIndex FilePath Text
   | ProvisionRepository Text Text Text
   | ImportPackageTarball PackageName Version FilePath
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 data ProvisionTarget
   = Categories
   | TestPackages Text
   | Advisories
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 data UserCreationOptions = UserCreationOptions
   { username :: Text
@@ -83,7 +83,7 @@ data UserCreationOptions = UserCreationOptions
   , isAdmin :: Bool
   , canLogin :: Bool
   }
-  deriving stock (Generic, Show, Eq)
+  deriving stock (Eq, Generic, Show)
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
@@ -190,20 +190,20 @@ parseImportPackageTarball =
     <*> argument str (metavar "PATH")
 
 runOptions
-  :: ( Log :> es
-     , FileSystem :> es
+  :: ( BlobStoreAPI :> es
      , DB :> es
-     , Time :> es
-     , Fail :> es
-     , IOE :> es
-     , BlobStoreAPI :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
-     , Poolboy :> es
      , Error (NonEmpty AdvisoryImportError) :> es
-     , Trace :> es
+     , Fail :> es
+     , FileSystem :> es
      , HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
+     , IOE :> es
+     , Log :> es
+     , Poolboy :> es
      , Reader r :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
+     , Trace :> es
      )
   => Options
   -> Eff es ()
@@ -246,16 +246,16 @@ provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es (
 provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
 
 importFolderOfCabalFiles
-  :: ( FileSystem :> es
-     , Time :> es
-     , Log :> es
-     , Poolboy :> es
-     , DB :> es
-     , IOE :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
+  :: ( DB :> es
+     , FileSystem :> es
      , HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
+     , IOE :> es
+     , Log :> es
+     , Poolboy :> es
      , Reader r :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => FilePath
   -> Text
@@ -269,15 +269,15 @@ importFolderOfCabalFiles path repository = do
       importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
 
 importIndex
-  :: ( Time :> es
-     , Log :> es
-     , Poolboy :> es
-     , DB :> es
-     , IOE :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
+  :: ( DB :> es
      , HasField "metrics" r Metrics
      , HasField "mltp" r MLTP
+     , IOE :> es
+     , Log :> es
+     , Poolboy :> es
      , Reader r :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => FilePath
   -> Text
@@ -291,10 +291,10 @@ importIndex path repository = do
       importFromIndex (user ^. #userId) repository path
 
 importPackageTarball
-  :: ( Log :> es
-     , BlobStoreAPI :> es
-     , IOE :> es
+  :: ( BlobStoreAPI :> es
      , DB :> es
+     , IOE :> es
+     , Log :> es
      )
   => PackageName
   -> Version

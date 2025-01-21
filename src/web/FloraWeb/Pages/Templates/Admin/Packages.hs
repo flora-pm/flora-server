@@ -2,13 +2,13 @@
 
 module FloraWeb.Pages.Templates.Admin.Packages where
 
+import Data.Foldable (forM_)
 import Data.Text.Display
+import Data.Vector (Vector)
 import Lucid
 import Optics.Core
 
-import Data.Foldable (forM_)
 import Data.Text.Display.Orphans ()
-import Data.Vector (Vector)
 import Flora.Model.Admin.Report
 import Flora.Model.Package (Package (..))
 import Flora.Model.User

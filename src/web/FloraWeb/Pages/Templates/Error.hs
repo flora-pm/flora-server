@@ -5,19 +5,19 @@ module FloraWeb.Pages.Templates.Error
   )
 where
 
-import Lucid
-import Network.HTTP.Types.Status
-import Optics.Core
-
 import Data.Kind (Type)
 import Effectful
 import Effectful.Error.Static (Error, throwError)
 import Effectful.Reader.Static (Reader)
+import Lucid
+import Network.HTTP.Types.Status
+import Optics.Core
+import Servant (ServerError (..))
+
 import Flora.Environment.Env (FeatureEnv)
 import Flora.Model.User (User)
 import FloraWeb.Pages.Templates
 import FloraWeb.Session
-import Servant (ServerError (..))
 
 renderError
   :: forall (es :: [Effect]) (a :: Type)
