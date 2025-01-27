@@ -28,7 +28,7 @@ type DependentName = (Namespace, PackageName)
 
 data ImportOutput = ImportOutput
   { package :: Package
-  , categories :: [(Text, Text, Text)]
+  , categories :: [Text]
   , release :: Release
   , components :: NonEmpty (PackageComponent, List ImportDependency)
   }

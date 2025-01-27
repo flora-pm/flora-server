@@ -39,7 +39,7 @@ import Data.ByteString qualified as BS
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe
+import Data.Maybe as Maybe
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -85,6 +85,7 @@ import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
+import Flora.Model.Category.Query as Query
 import GHC.List (List)
 import Log qualified
 import Optics.Core
@@ -323,8 +324,10 @@ persistImportOutput (ImportOutput package categories release components) = State
     persistPackage = do
       let packageId = package.packageId
       Update.upsertPackage package
-      forM_ categories (\case (_, name, _) -> Update.addToCategoryByName packageId name)
-
+      let categoriesByName = map Query.getCategoryByName categories
+      forM_
+        categoriesByName
+        (\case name -> Update.addToCategoryByName packageId name) -- types are incongruent
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo
@@ -400,7 +403,8 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
-  let categories = floraCategories
+  let categoryNames = map extractNameFromFloraCategories floraCategories
+  let categories = Maybe.mapMaybe normaliseCategory categoryNames
   let package =
         Package
           { packageId
@@ -477,6 +481,9 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
       extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc
     Just components -> pure ImportOutput{..}
+
+extractNameFromFloraCategories :: (Text, Text, Text) -> Text
+extractNameFromFloraCategories (_, name, _) = name
 
 extractLibrary
   :: Package
@@ -670,7 +677,6 @@ getVersions supportedCompilers =
   foldMap
     (\version -> Vector.foldMap (checkVersion version) supportedCompilers)
     versionList
-
 checkVersion :: Version -> VersionRange -> Vector Version
 checkVersion version versionRange =
   if version `withinRange` versionRange
