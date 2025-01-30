@@ -4,6 +4,7 @@ module FloraWeb.Pages.Routes.Sessions where
 
 import Data.Text
 import Generics.SOP (I (..), NP (..), NS (..))
+import Generics.SOP qualified as GSOP
 import Lucid
 import Servant.API
 import Servant.API.ContentTypes.Lucid
@@ -13,6 +14,10 @@ import Web.Cookie
 import Web.FormUrlEncoded
 
 import Flora.Model.PersistentSession
+
+instance AsConstructor '[r] (WithHeaders hs r (RespondEmpty code desc)) where
+  toConstructor x = I x :* Nil
+  fromConstructor (I x :* Nil) = x
 
 type Routes = NamedRoutes Routes'
 
@@ -39,17 +44,24 @@ data NewSessionResult
   | AuthenticationRequired (Html ())
   deriving stock (Generic)
 
-instance AsUnion NewSessionResponses NewSessionResult where
-  toUnion (AlreadyAuthenticated location) = Z (I ((), location))
-  toUnion (AuthenticationRequired response) = S (Z (I response))
+instance GSOP.Generic NewSessionResult
 
-  fromUnion (Z (I ((), location))) = AlreadyAuthenticated location
-  fromUnion (S (Z (I response))) = AuthenticationRequired response
-  fromUnion (S (S x)) = case x of {}
+deriving via
+  GenericAsUnion NewSessionResponses NewSessionResult
+  instance
+    AsUnion NewSessionResponses NewSessionResult
 
-instance AsHeaders '[Text, SetCookie] () (Text, SetCookie) where
-  toHeaders (location, cookie) = (I location :* I cookie :* Nil, ())
-  fromHeaders (I location :* I cookie :* Nil, ()) = (location, cookie)
+-- instance AsUnion NewSessionResponses NewSessionResult where
+--   toUnion (AlreadyAuthenticated location) = Z (I ((), location))
+--   toUnion (AuthenticationRequired response) = S (Z (I response))
+--
+--   fromUnion (Z (I ((), location))) = AlreadyAuthenticated location
+--   fromUnion (S (Z (I response))) = AuthenticationRequired response
+--   fromUnion (S (S x)) = case x of {}
+
+-- instance AsHeaders '[Text, SetCookie] () (Text, SetCookie) where
+--   toHeaders (location, cookie) = (I location :* I cookie :* Nil, ())
+--   fromHeaders (I location :* I cookie :* Nil, ()) = (location, cookie)
 
 type CreateSession =
   "new"
@@ -75,13 +87,12 @@ data CreateSessionResult
   | AuthenticationSuccess (Text, SetCookie)
   deriving stock (Generic)
 
-instance AsUnion CreateSessionResponses CreateSessionResult where
-  toUnion (AuthenticationFailure body) = Z (I body)
-  toUnion (AuthenticationSuccess (location, cookie)) = S (Z (I (location, cookie)))
+instance GSOP.Generic CreateSessionResult
 
-  fromUnion (Z (I body)) = AuthenticationFailure body
-  fromUnion (S (Z (I headers))) = AuthenticationSuccess headers
-  fromUnion (S (S x)) = case x of {}
+deriving via
+  GenericAsUnion CreateSessionResponses CreateSessionResult
+  instance
+    AsUnion CreateSessionResponses CreateSessionResult
 
 type DeleteSession =
   "delete"
