@@ -60,6 +60,16 @@ source-repository-package
 
 source-repository-package
     type: git
+    location: https://github.com/haskell-servant/servant
+    tag: 831423ead6e2f0ed0d04d5b21cd61f2e0994a18d
+    subdir:
+      ./servant
+      ./servant-server
+      ./servant-client
+      ./servant-client-core
+
+source-repository-package
+    type: git
     location: https://github.com/flora-pm/wai-middleware-heartbeat
     tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
 
