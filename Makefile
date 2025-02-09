@@ -4,10 +4,10 @@ init: ## Set up git hooks properly - needs calling once when cloning the repo
 start: ## Start flora-server
 	@cabal run exe:flora-server
 
-build: soufflé ## Build the server
+build: ## Build the server
 	@cabal build
 
-build-release: soufflé ## Build the server for production
+build-release: ## Build the server for production
 	@cabal freeze --project-file cabal.project.release
 	@cabal build --project-file cabal.project.release
 
@@ -91,21 +91,21 @@ db-test-provision-packages: ## Load development data in the database
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
 	@cabal run -- flora-cli import-packages ./01-index
 
-repl: soufflé ## Start a cabal REPL
+repl: ## Start a cabal REPL
 	@cabal repl lib:flora
 
 ghci: repl ## Start a cabal REPL (alias for `make repl`)
 
-watch: soufflé ## Load the main library and reload on file change
+watch: ## Load the main library and reload on file change
 	@ghcid --target flora-server -l
 
-test: build soufflé ## Run the test suite
+test:  ## Run the test suite
 	./scripts/run-tests.sh
 
-watch-test: soufflé ## Load the tests in ghcid and reload them on file change
+watch-test: ## Load the tests in ghcid and reload them on file change
 	./scripts/run-tests.sh --watch
 
-watch-server: soufflé ## Start flora-server in ghcid
+watch-server: ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
 
 lint-hs: ## Run the code linter (HLint)

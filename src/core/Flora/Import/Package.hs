@@ -327,7 +327,7 @@ persistImportOutput (ImportOutput package categories release components) = State
       let categoriesByName = map Query.getCategoryByName categories
       forM_
         categoriesByName
-        (\case name -> Update.addToCategoryByName packageId name) -- types are incongruent
+        (\case category -> Update.addToCategoryByName packageId _) -- types are incongruent
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo

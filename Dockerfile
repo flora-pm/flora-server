@@ -76,6 +76,9 @@ COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 COPY --chown=${USER} cabal.project flora.cabal cabal.project.freeze ./
 RUN cabal build --only-dependencies -j
 
+# copy makefile
+COPY --chown=${USER} Makefile ./
+
 # copy and build the assets
 COPY --chown=${USER} assets ./assets
 COPY --chown=${USER} docs ./docs
