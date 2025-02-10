@@ -10,7 +10,7 @@
     "concurrently": "^6.4.0",
     "cpx2": "^4.2.0",
     "cssnano": "^5.0.10",
-    "esbuild": "^0.13.13",
+    "esbuild": "^0.25.0",
     "esbuild-copy-static-files": "^0.1.0",
     "esbuild-plugin-assets-manifest": "^1.0.7",
     "esbuild-sass-plugin": "^3.3.1",
