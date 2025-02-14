@@ -82,8 +82,6 @@ const config = {
   entryNames: entryNames,
   plugins: pluginsList(),
   metafile: true,
-  incremental: process.argv.includes("--watch"),
-  watch: process.argv.includes("--watch"),
 }
 
 console.log(config.outdir);
