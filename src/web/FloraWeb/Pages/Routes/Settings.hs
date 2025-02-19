@@ -4,14 +4,17 @@ module FloraWeb.Pages.Routes.Settings
   , TwoFactorSetupResponses
   , TwoFactorConfirmationForm (..)
   , DeleteTwoFactorSetupResponse
+  , TwoFactorSetupResult (..)
   )
 where
 
 import Data.Text (Text)
+import Generics.SOP (I (..), NS (..))
 import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
+import Servant.API.MultiVerb
 import Web.FormUrlEncoded
 
 import FloraWeb.Common.Auth ()
@@ -35,9 +38,32 @@ type GetTwoFactorSettingsPage =
     :> Get '[HTML] (Html ())
 
 type TwoFactorSetupResponses =
-  '[ WithStatus 200 (Html ())
-   , WithStatus 301 (Headers '[Header "Location" Text] NoContent)
+  '[ WithHeaders
+       '[Header "Location" Text]
+       ((), Text)
+       (RespondEmpty 301 "2FA Validation Success")
+   , WithHeaders
+       '[Header "Location" Text]
+       ((), Text)
+       (RespondEmpty 301 "")
+   , Respond 400 "2FA Validation Failed" (Html ())
    ]
+
+data TwoFactorSetupResult
+  = TwoFactorSetupSuccess Text
+  | TwoFactorSetupNotEnabled Text
+  | TwoFactorSetupFailure (Html ())
+  deriving stock (Generic)
+
+instance AsUnion TwoFactorSetupResponses TwoFactorSetupResult where
+  toUnion (TwoFactorSetupSuccess location) = Z (I ((), location))
+  toUnion (TwoFactorSetupNotEnabled location) = S (Z (I ((), location)))
+  toUnion (TwoFactorSetupFailure response) = S (S (Z (I response)))
+
+  fromUnion (Z (I ((), location))) = TwoFactorSetupSuccess location
+  fromUnion (S (Z (I ((), location)))) = TwoFactorSetupNotEnabled location
+  fromUnion (S (S (Z (I response)))) = TwoFactorSetupFailure response
+  fromUnion (S (S (S x))) = case x of {}
 
 data TwoFactorConfirmationForm = TwoFactorConfirmationForm
   { code :: Text
@@ -51,7 +77,7 @@ type PostTwoFactorSetup =
     :> "two-factor"
     :> "setup"
     :> ReqBody '[FormUrlEncoded] TwoFactorConfirmationForm
-    :> UVerb 'POST '[HTML] TwoFactorSetupResponses
+    :> MultiVerb 'POST '[HTML] TwoFactorSetupResponses TwoFactorSetupResult
 
 type DeleteTwoFactorSetup =
   AuthProtect "cookie-auth"

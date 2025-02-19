@@ -15,7 +15,7 @@ import Log qualified
 import Lucid
 import Optics.Core
 import Sel.HMAC.SHA256 qualified as HMAC
-import Servant (HasServer (..), Headers (..), Union, WithStatus (..), respond)
+import Servant (HasServer (..), Headers (..))
 
 import Flora.Environment.Env
 import Flora.Model.User
@@ -24,7 +24,7 @@ import Flora.QRCode qualified as QRCode
 import FloraWeb.Common.Auth.TwoFactor qualified as TwoFactor
 import FloraWeb.Common.Utils (redirect)
 import FloraWeb.Pages.Routes.Settings
-import FloraWeb.Pages.Templates (render, renderUVerb)
+import FloraWeb.Pages.Templates (render)
 import FloraWeb.Pages.Templates.Screens.Settings qualified as Settings
 import FloraWeb.Pages.Templates.Types
 import FloraWeb.Session
@@ -112,19 +112,19 @@ postTwoFactorSetupHandler
      )
   => SessionWithCookies User
   -> TwoFactorConfirmationForm
-  -> Eff es (Union TwoFactorSetupResponses)
+  -> Eff es TwoFactorSetupResult
 postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = userCode} = do
   let user = session.user
   templateEnv' <- templateFromSession session defaultTemplateEnv
   case user.totpKey of
-    Nothing -> respond $ WithStatus @301 (redirect "/settings/security/two-factor")
+    Nothing -> pure $ TwoFactorSetupNotEnabled "/settings/security/two-factor"
     Just userKey -> do
       validated <- liftIO $ TwoFactor.validateTOTP userKey userCode
       if validated
         then do
           Update.confirmTOTP user.userId
           Log.logInfo_ "Code validation succeeded"
-          respond $ WithStatus @301 (redirect "/settings/security/two-factor")
+          pure $ TwoFactorSetupSuccess "/settings/security/two-factor"
         else do
           Log.logAttention_ "Code validation failed"
           let templateEnv =
@@ -137,12 +137,12 @@ postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = u
           let qrCode =
                 QRCode.generateQRCode uri
                   & Text.decodeUtf8
-          respond $
-            WithStatus @200 $
-              renderUVerb templateEnv $
-                Settings.twoFactorSettings
-                  qrCode
-                  (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
+          body <-
+            render templateEnv $
+              Settings.twoFactorSettings
+                qrCode
+                (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
+          pure $ TwoFactorSetupFailure body
 
 deleteTwoFactorSetupHandler :: (DB :> es, Time :> es) => SessionWithCookies User -> Eff es DeleteTwoFactorSetupResponse
 deleteTwoFactorSetupHandler (Headers session _) = do
