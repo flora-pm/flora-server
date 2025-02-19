@@ -61,7 +61,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/haskell-servant/servant
-    tag: 831423ead6e2f0ed0d04d5b21cd61f2e0994a18d
+    tag: 527e99e78952717b1b2cc50c8059dbece6dc979f
     subdir:
       ./servant
       ./servant-server

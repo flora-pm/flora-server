@@ -3,7 +3,7 @@
 module FloraWeb.Pages.Routes.Sessions where
 
 import Data.Text
-import Generics.SOP (I (..), NP (..), NS (..))
+import Generics.SOP (I (..), NS (..))
 import Lucid
 import Servant.API
 import Servant.API.ContentTypes.Lucid
@@ -46,10 +46,6 @@ instance AsUnion NewSessionResponses NewSessionResult where
   fromUnion (Z (I ((), location))) = AlreadyAuthenticated location
   fromUnion (S (Z (I response))) = AuthenticationRequired response
   fromUnion (S (S x)) = case x of {}
-
-instance AsHeaders '[Text, SetCookie] () (Text, SetCookie) where
-  toHeaders (location, cookie) = (I location :* I cookie :* Nil, ())
-  fromHeaders (I location :* I cookie :* Nil, ()) = (location, cookie)
 
 type CreateSession =
   "new"
