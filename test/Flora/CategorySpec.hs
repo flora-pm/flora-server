@@ -1,6 +1,5 @@
 module Flora.CategorySpec where
 
-import Control.Monad.IO.Class
 import Test.Tasty
 
 import Flora.Normalise (normaliseCategory)
@@ -15,14 +14,18 @@ spec =
 
 testUnificationAlgorithm :: TestEff ()
 testUnificationAlgorithm = do
-  liftIO (normaliseCategory "Algorithm")
-    >>= assertEqual "Algorithms"
+  assertEqual
+    (Just "Algorithms")
+    (normaliseCategory "Algorithm")
 
-  liftIO (normaliseCategory "Crypto")
-    >>= assertEqual "Cryptography"
+  assertEqual
+    (Just "Cryptography")
+    (normaliseCategory "Crypto")
 
-  liftIO (normaliseCategory "CLI")
-    >>= assertEqual "CLI & TUI Development"
+  assertEqual
+    (Just "CLI & TUI Development")
+    (normaliseCategory "CLI")
 
-  liftIO (normaliseCategory "Numeric")
-    >>= assertEqual "Mathematics"
+  assertEqual
+    (Just "Mathematics")
+    (normaliseCategory "Numeric")

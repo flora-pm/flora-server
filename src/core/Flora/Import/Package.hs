@@ -86,6 +86,7 @@ import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Flora.Model.Category.Query as Query
+import Flora.Model.Category.Types
 import GHC.List (List)
 import Log qualified
 import Optics.Core
@@ -303,7 +304,7 @@ persistImportOutput (ImportOutput package categories release components) = State
       [ "package_name" .= packageName
       , "version" .= display release.version
       ]
-  persistPackage
+  persistPackage package.packageId
   if Set.member (package.namespace, package.name, release.version) packageCache
     then do
       Log.logInfo "Release already present" $
@@ -320,14 +321,16 @@ persistImportOutput (ImportOutput package categories release components) = State
   where
     parallelRun :: Foldable t => (a -> Eff es ()) -> t a -> Eff es ()
     parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
+
     packageName = display package.namespace <> "/" <> display package.name
-    persistPackage = do
-      let packageId = package.packageId
+
+    persistPackage :: PackageId -> Eff es ()
+    persistPackage packageId = do
       Update.upsertPackage package
-      let categoriesByName = map Query.getCategoryByName categories
+      categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
       forM_
         categoriesByName
-        (\case category -> Update.addToCategoryByName packageId _) -- types are incongruent
+        (\c -> Update.addToCategoryByName packageId c.name)
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo
