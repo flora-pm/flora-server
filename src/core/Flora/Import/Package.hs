@@ -85,8 +85,6 @@ import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
-import Flora.Model.Category.Query as Query
-import Flora.Model.Category.Types
 import GHC.List (List)
 import Log qualified
 import Optics.Core
@@ -95,11 +93,10 @@ import System.FilePath qualified as FilePath
 
 import Effectful.Poolboy (Poolboy)
 import Effectful.Poolboy qualified as Poolboy
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
-import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
+import Flora.Model.Category.Query as Query
+import Flora.Model.Category.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
 import Flora.Model.Package.Orphans ()

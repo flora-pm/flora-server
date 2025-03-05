@@ -25,7 +25,6 @@ newtype CategoryId = CategoryId {getCategoryId :: UUID}
     via UUID
 
 newtype CategoryName = CategoryName {getCategoryName :: Text}
-  deriving anyclass (Souffle.Marshal)
   deriving stock (Generic, Show)
   deriving
     (Eq, NFData, Ord)

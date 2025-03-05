@@ -1,11 +1,11 @@
 module Flora.Import.Categories where
 
 import Control.Monad.IO.Class
+import Data.Text (Text)
 import Data.Text.IO qualified as T
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 
-import Data.Text (Text)
 import Flora.Model.Category.Types (Category, mkCategory, mkCategoryId)
 import Flora.Model.Category.Update (insertCategory)
 import Flora.Normalise
