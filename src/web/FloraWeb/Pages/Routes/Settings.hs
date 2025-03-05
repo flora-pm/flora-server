@@ -9,7 +9,7 @@ module FloraWeb.Pages.Routes.Settings
 where
 
 import Data.Text (Text)
-import Generics.SOP (I (..), NS (..))
+import Generics.SOP qualified as GSOP
 import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
@@ -40,11 +40,11 @@ type GetTwoFactorSettingsPage =
 type TwoFactorSetupResponses =
   '[ WithHeaders
        '[Header "Location" Text]
-       ((), Text)
+       Text
        (RespondEmpty 301 "2FA Validation Success")
    , WithHeaders
        '[Header "Location" Text]
-       ((), Text)
+       Text
        (RespondEmpty 301 "")
    , Respond 400 "2FA Validation Failed" (Html ())
    ]
@@ -54,16 +54,11 @@ data TwoFactorSetupResult
   | TwoFactorSetupNotEnabled Text
   | TwoFactorSetupFailure (Html ())
   deriving stock (Generic)
+  deriving
+    (AsUnion TwoFactorSetupResponses)
+    via GenericAsUnion TwoFactorSetupResponses TwoFactorSetupResult
 
-instance AsUnion TwoFactorSetupResponses TwoFactorSetupResult where
-  toUnion (TwoFactorSetupSuccess location) = Z (I ((), location))
-  toUnion (TwoFactorSetupNotEnabled location) = S (Z (I ((), location)))
-  toUnion (TwoFactorSetupFailure response) = S (S (Z (I response)))
-
-  fromUnion (Z (I ((), location))) = TwoFactorSetupSuccess location
-  fromUnion (S (Z (I ((), location)))) = TwoFactorSetupNotEnabled location
-  fromUnion (S (S (Z (I response)))) = TwoFactorSetupFailure response
-  fromUnion (S (S (S x))) = case x of {}
+instance GSOP.Generic TwoFactorSetupResult
 
 data TwoFactorConfirmationForm = TwoFactorConfirmationForm
   { code :: Text

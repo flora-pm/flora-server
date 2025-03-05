@@ -1,9 +1,7 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
-
 module FloraWeb.Pages.Routes.Sessions where
 
 import Data.Text
-import Generics.SOP (I (..), NS (..))
+import Generics.SOP qualified as GSOP
 import Lucid
 import Servant.API
 import Servant.API.ContentTypes.Lucid
@@ -28,7 +26,7 @@ type NewSessionResponses =
   '[ -- User is already logged-in, redirect to home page
      WithHeaders
        '[Header "Location" Text]
-       ((), Text)
+       Text
        (RespondEmpty 301 "Already logged-in")
    , -- User is not logged-in, dispay the login page
      Respond 200 "Log-in required" (Html ())
@@ -38,14 +36,11 @@ data NewSessionResult
   = AlreadyAuthenticated Text
   | AuthenticationRequired (Html ())
   deriving stock (Generic)
+  deriving
+    (AsUnion NewSessionResponses)
+    via GenericAsUnion NewSessionResponses NewSessionResult
 
-instance AsUnion NewSessionResponses NewSessionResult where
-  toUnion (AlreadyAuthenticated location) = Z (I ((), location))
-  toUnion (AuthenticationRequired response) = S (Z (I response))
-
-  fromUnion (Z (I ((), location))) = AlreadyAuthenticated location
-  fromUnion (S (Z (I response))) = AuthenticationRequired response
-  fromUnion (S (S x)) = case x of {}
+instance GSOP.Generic NewSessionResult
 
 type CreateSession =
   "new"
@@ -70,14 +65,11 @@ data CreateSessionResult
   = AuthenticationFailure (Html ())
   | AuthenticationSuccess (Text, SetCookie)
   deriving stock (Generic)
+  deriving
+    (AsUnion CreateSessionResponses)
+    via GenericAsUnion CreateSessionResponses CreateSessionResult
 
-instance AsUnion CreateSessionResponses CreateSessionResult where
-  toUnion (AuthenticationFailure body) = Z (I body)
-  toUnion (AuthenticationSuccess (location, cookie)) = S (Z (I (location, cookie)))
-
-  fromUnion (Z (I body)) = AuthenticationFailure body
-  fromUnion (S (Z (I headers))) = AuthenticationSuccess headers
-  fromUnion (S (S x)) = case x of {}
+instance GSOP.Generic CreateSessionResult
 
 type DeleteSession =
   "delete"
