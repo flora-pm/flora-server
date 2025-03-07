@@ -57,6 +57,7 @@ preFlightChecks = do
 
 checkExpectedTables :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
 checkExpectedTables = do
+  -- Update the list in alphabetical order when adding or removing a table!
   let expectedTables =
         Set.fromAscList
           [ "affected_packages"
