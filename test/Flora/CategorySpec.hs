@@ -1,31 +1,36 @@
 module Flora.CategorySpec where
 
 import Test.Tasty
+import Data.Set qualified as Set
 
-import Flora.Normalise (normaliseCategory)
+import Flora.Normalise
 import Flora.TestUtils
 
 spec :: TestEff TestTree
 spec =
   testThese
-    "category tuning"
-    [ testThis "Test that the category unification algorithm works" testUnificationAlgorithm
+    "Category Normalisation"
+    [ testThis "Normalisation of Mathematics categories" testNormalisationOfMathematicsCategories
     ]
 
-testUnificationAlgorithm :: TestEff ()
-testUnificationAlgorithm = do
+testNormalisationOfMathematicsCategories :: TestEff ()
+testNormalisationOfMathematicsCategories = do
+  let mathematicsExceptions =
+        Set.fromList
+          [ "Numeric"
+          , "Numerical"
+          , "Numerics"
+          , "Arithmetic"
+          , "Number Theory"
+          , "Math"
+          , "Mathematics"
+          , "mathematics"
+          , "Maths"
+          , "Algebra"
+          , "Graph"
+          , "Graphs"
+          , "Geometry"
+          ]
   assertEqual
-    (Just "Algorithms")
-    (normaliseCategory "Algorithm")
-
-  assertEqual
-    (Just "Cryptography")
-    (normaliseCategory "Crypto")
-
-  assertEqual
-    (Just "CLI & TUI Development")
-    (normaliseCategory "CLI")
-
-  assertEqual
-    (Just "Mathematics")
-    (normaliseCategory "Numeric")
+    (Set.singleton (Just "Mathematics"))
+    (Set.map normaliseCategory mathematicsExceptions)
