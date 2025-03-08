@@ -77,6 +77,7 @@ import Distribution.Types.PackageDescription ()
 import Distribution.Types.TestSuite
 import Distribution.Types.Version (Version)
 import Distribution.Types.VersionRange (VersionRange, withinRange)
+import Distribution.Utils.ShortText (fromShortText)
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Log (Log)
@@ -403,8 +404,9 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
-  let categoryNames = map extractNameFromFloraCategories floraCategories
-  let categories = Maybe.mapMaybe normaliseCategory categoryNames
+  let rawCategoryField = packageDesc ^. #category % to fromShortText % to Text.pack
+  let categoryList = fmap (Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
+  let categories = Maybe.mapMaybe normaliseCategory categoryList
   let package =
         Package
           { packageId
@@ -481,9 +483,6 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
       extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc
     Just components -> pure ImportOutput{..}
-
-extractNameFromFloraCategories :: (Text, Text, Text) -> Text
-extractNameFromFloraCategories (_, name, _) = name
 
 extractLibrary
   :: Package

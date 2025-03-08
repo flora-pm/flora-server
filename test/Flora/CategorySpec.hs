@@ -1,7 +1,7 @@
 module Flora.CategorySpec where
 
-import Test.Tasty
 import Data.Set qualified as Set
+import Test.Tasty
 
 import Flora.Normalise
 import Flora.TestUtils
