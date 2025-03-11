@@ -18,7 +18,6 @@ The following Haskell command-line tools will have to be installed:
 
 (Some of the above packages have incompatible dependencies, so don't try to install them all at once with `cabal install`)
 
-* [Soufflé datalog engine v2.2](https://github.com/souffle-lang/souffle/releases/tag/2.2): The datalog engine for package classification
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling

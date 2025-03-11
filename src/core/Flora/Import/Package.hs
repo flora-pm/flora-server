@@ -39,7 +39,7 @@ import Data.ByteString qualified as BS
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe
+import Data.Maybe as Maybe
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -77,7 +77,7 @@ import Distribution.Types.PackageDescription ()
 import Distribution.Types.TestSuite
 import Distribution.Types.Version (Version)
 import Distribution.Types.VersionRange (VersionRange, withinRange)
-import Distribution.Utils.ShortText qualified as Cabal
+import Distribution.Utils.ShortText (fromShortText)
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Log (Log)
@@ -94,9 +94,10 @@ import System.FilePath qualified as FilePath
 
 import Effectful.Poolboy (Poolboy)
 import Effectful.Poolboy qualified as Poolboy
-import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Import.Package.Types
 import Flora.Import.Types
+import Flora.Model.Category.Query as Query
+import Flora.Model.Category.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
 import Flora.Model.Package.Orphans ()
@@ -112,6 +113,7 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Model.User
+import Flora.Normalise
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -300,7 +302,7 @@ persistImportOutput (ImportOutput package categories release components) = State
       [ "package_name" .= packageName
       , "version" .= display release.version
       ]
-  persistPackage
+  persistPackage package.packageId
   if Set.member (package.namespace, package.name, release.version) packageCache
     then do
       Log.logInfo "Release already present" $
@@ -317,12 +319,16 @@ persistImportOutput (ImportOutput package categories release components) = State
   where
     parallelRun :: Foldable t => (a -> Eff es ()) -> t a -> Eff es ()
     parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
-    packageName = display package.namespace <> "/" <> display package.name
-    persistPackage = do
-      let packageId = package.packageId
-      Update.upsertPackage package
-      forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
 
+    packageName = display package.namespace <> "/" <> display package.name
+
+    persistPackage :: PackageId -> Eff es ()
+    persistPackage packageId = do
+      Update.upsertPackage package
+      categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
+      forM_
+        categoriesByName
+        (\c -> Update.addToCategoryByName packageId c.name)
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo
@@ -398,9 +404,9 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
-  let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to Text.pack
-  let categoryList = fmap (Tuning.UserPackageCategory . Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
-  categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
+  let rawCategoryField = packageDesc ^. #category % to fromShortText % to Text.pack
+  let categoryList = fmap (Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
+  let categories = Maybe.mapMaybe normaliseCategory categoryList
   let package =
         Package
           { packageId
@@ -670,7 +676,6 @@ getVersions supportedCompilers =
   foldMap
     (\version -> Vector.foldMap (checkVersion version) supportedCompilers)
     versionList
-
 checkVersion :: Version -> VersionRange -> Vector Version
 checkVersion version versionRange =
   if version `withinRange` versionRange

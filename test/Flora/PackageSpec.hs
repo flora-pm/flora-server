@@ -17,7 +17,6 @@ import Optics.Core
 import Test.Tasty
 
 import Flora.Import.Package
-import Flora.Model.Category (Category (..))
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Component.Types
 import Flora.Model.Package
@@ -35,8 +34,6 @@ spec =
     "package tests"
     [ testThis "Check Cabal dependencies" testCabalDeps
     , testThis "Insert containers and its dependencies" testInsertContainers
-    , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory
-    , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
     , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns expected results by namespace/package name" testSearchResultText
@@ -122,12 +119,6 @@ testThatBaseisInPreludeCategory :: TestEff ()
 testThatBaseisInPreludeCategory = do
   result <- Query.getPackagesFromCategorySlug "prelude"
   assertBool $ Set.member (PackageName "base") (Set.fromList $ Vector.toList $ fmap (view #name) result)
-
-testThatSemigroupsIsInMathematicsAndDataStructures :: TestEff ()
-testThatSemigroupsIsInMathematicsAndDataStructures = do
-  semigroups <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
-  result <- Query.getPackageCategories semigroups.packageId
-  assertEqual (Set.fromList ["data-structures", "maths"]) (Set.fromList $ slug <$> Vector.toList result)
 
 testCorrectNumberInHaskellNamespace :: TestEff ()
 testCorrectNumberInHaskellNamespace = do

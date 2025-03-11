@@ -40,7 +40,6 @@ import Deriving.Aeson
 import Distribution.Pretty (Pretty (..))
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
-import Language.Souffle.Interpreted qualified as Souffle
 import Lucid
 import Optics.Core hiding (element)
 import Servant (FromHttpApiData (..))
@@ -71,7 +70,6 @@ deterministicPackageId (Namespace ns) (PackageName name) =
 
 newtype PackageName = PackageName Text
   deriving stock (Generic, Show)
-  deriving anyclass (Souffle.Marshal)
   deriving
     (Eq, FromField, FromJSON, NFData, Ord, ToField, ToHtml, ToHttpApiData, ToJSON)
     via Text

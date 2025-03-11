@@ -1,0 +1,8 @@
+synopsis: Replace the usage of datalog with Haskell for category normalisation
+
+prs: #822
+issues: #794
+
+description: {
+  Replaces Souffle as much as possible for category normalisation
+}

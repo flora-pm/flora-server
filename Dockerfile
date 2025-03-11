@@ -1,5 +1,4 @@
-# this is a pinned ubuntu:22.04 (newer versions have incomptible
-# library versions for souffle)
+# this is a pinned ubuntu:22.04
 FROM ubuntu@sha256:67211c14fa74f070d27cc59d69a7fa9aeff8e28ea118ef3babc295a0428a6d21
 
 ARG GID=1000
@@ -19,7 +18,7 @@ ARG POSTGRESQL_MIGRATION_VERSION=0.2.1.8
 USER "root"
 ARG USER="local"
 RUN groupadd -g "$GID" -o "$USER" \
-    && useradd -r -u "$UID" -g "$GID" -m -s /bin/zsh "$USER"
+  && useradd -r -u "$UID" -g "$GID" -m -s /bin/zsh "$USER"
 
 # We create the folder explicitly so that we can give nonprivileged user the appropriate access
 RUN mkdir /flora-server
@@ -30,7 +29,20 @@ RUN chown -R $USER:$USER /home/$USER/.cabal
 WORKDIR /flora-server
 
 RUN apt update && \
-    apt install -y build-essential curl libffi-dev libffi8 libgmp-dev libgmp10 libncurses-dev libncurses5 libtinfo5 git libsodium-dev pkg-config
+  apt install -y  \
+    build-essential \
+    curl \
+    libffi-dev \
+    libffi8 \
+    libgmp-dev \
+    libgmp10 \
+    libncurses-dev \
+    libncurses5 \
+    libtinfo5 \
+    git \
+    libsodium-dev \
+    pkg-config \
+    zlib1g-dev
 
 # install dependencies (pg_config, postgresql-client, yarn)
 ENV BOOTSTRAP_HASKELL_NONINTERACTIVE="YES"
@@ -48,16 +60,10 @@ RUN git config --global --add safe.directory "*"
 RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 
 RUN ghcup install hls $HLS_VERSION \
-    && ghcup install ghc $GHC_VERSION \
-    && ghcup set ghc $GHC_VERSION \
-    && ghcup install cabal $CABAL_VERSION
+  && ghcup install ghc $GHC_VERSION \
+  && ghcup set ghc $GHC_VERSION \
+  && ghcup install cabal $CABAL_VERSION
 
-USER ${USER}
-
-# install soufflé
-USER "root"
-RUN wget --content-disposition https://github.com/souffle-lang/souffle/releases/download/2.2/x86_64-ubuntu-2004-souffle-2.2-Linux.deb
-RUN apt install -f -y ./x86_64-ubuntu-2004-souffle-2.2-Linux.deb
 USER ${USER}
 
 RUN echo $PATH
@@ -83,10 +89,8 @@ COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 COPY --chown=${USER} cabal.project flora.cabal cabal.project.freeze ./
 RUN cabal build --only-dependencies -j
 
-# compile Souffle source files
+# copy makefile
 COPY --chown=${USER} Makefile ./
-COPY --chown=${USER} cbits ./cbits
-RUN make souffle
 
 # copy and build the assets
 COPY --chown=${USER} assets ./assets
