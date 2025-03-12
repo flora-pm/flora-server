@@ -1,0 +1,22 @@
+[tools]
+yarn = '1.22.22'
+node = '22.14.0'
+ghcup = '0.1.40.0'
+
+[tasks.install-haskell-toolchain]
+description = "Install the haskell toolchain"
+run = "ghcup install --set -f ghc 9.6.6 && ghcup install --set -f cabal 3.14.1.1"
+
+[tasks.install-migration-tool]
+description = "Install postgresql-migration"
+depends = ['install-migration-tool']
+run = "cabal install postgresql-migration-0.2.1.8"
+
+[tasks.db-migrate]
+description = "Schema migrations"
+run = "make db-init && make db-migrate && make db-provision && "
+
+[tasks.start]
+description = "Start flora-server"
+depends = ['db-migrate']
+run = "make start-release"
