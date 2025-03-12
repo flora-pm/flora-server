@@ -2,7 +2,7 @@
   "name": "flora-dev",
   "scripts": {
     "start": "mise run start-release",
-    "install": "mise trust && mise install && mise run install-haskell-toolchain && mise run build-js && make build-release"
+    "install": "./build-clever-cloud.sh"
   },
   "engines": {
     "node": "^22"

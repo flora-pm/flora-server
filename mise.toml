@@ -3,13 +3,11 @@ yarn = '1.22.22'
 node = '22.14.0'
 ghcup = '0.1.40.0'
 
-[env]
-PATH = "{{env.HOME}}/.ghcup/bin:{{env.PATH}}"
-
 [tasks.install-haskell-toolchain]
 description = "Install the haskell toolchain"
 run = ["ghcup install ghc 9.6.6 --set -f ",
        "ghcup install cabal 3.14.1.1 --set -f",
+       "cabal update"
        ]
 
 [tasks.install-migration-tool]
