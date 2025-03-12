@@ -2,7 +2,7 @@
   "name": "flora-dev",
   "scripts": {
     "start": "mise run start-release",
-    "install": "mise install && make build-assets && make build-release"
+    "install": "mise trust && mise install && mise run install-haskell-toolchain && mise run build-js && make build-release"
   },
   "engines": {
     "node": "^22"
