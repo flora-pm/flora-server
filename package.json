@@ -1,7 +1,7 @@
 {
   "name": "flora-dev",
   "scripts": {
-    "start": "mise run start-release",
+    "start": "./start-clever-cloud.sh",
     "install": "./build-clever-cloud.sh"
   },
   "engines": {

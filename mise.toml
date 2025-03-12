@@ -10,20 +10,6 @@ run = ["ghcup install ghc 9.6.6 --set -f ",
        "cabal update"
        ]
 
-[tasks.install-migration-tool]
-description = "Install postgresql-migration"
-run = "cabal install postgresql-migration-0.2.1.8"
-
-[tasks.db-migrate]
-description = "Schema migrations"
-depends = ['install-migration-tool']
-run = "make db-init && make db-migrate && make db-provision"
-
-[tasks.start-release]
-description = "Start flora-server"
-depends = ['db-migrate']
-run = "make start-release"
-
 [tasks.install-js-deps]
 description = "Install JS dependencies"
 run = "yarn install --immutable --immutable-cache --check-cache"
