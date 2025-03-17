@@ -476,6 +476,7 @@ library flora-jobs
     , effectful
     , effectful-core
     , effectful-plugin
+    , filepath
     , flora
     , http-client
     , http-media

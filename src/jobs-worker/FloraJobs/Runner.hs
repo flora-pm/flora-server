@@ -28,6 +28,7 @@ import Network.HTTP.Types (gone410, notFound404, statusCode)
 import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
+import System.FilePath
 
 import Data.Text.HTML qualified as HTML
 import Effectful.Poolboy (Poolboy)
@@ -241,8 +242,8 @@ refreshIndex indexName = do
           else Text.unpack indexName
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  homeDir <- FileSystem.getHomeDirectory
-  let path = homeDir <> "/.cabal/packages/" <> repoPath <> "/01-index.tar.gz"
+  packagesPath <- getCabalPackagesDirectory
+  let path = packagesPath </> repoPath </> "01-index.tar.gz"
   mPackageIndex <- Query.getPackageIndexByName indexName
   case mPackageIndex of
     Nothing -> do
@@ -251,3 +252,14 @@ refreshIndex indexName = do
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
     Just _ ->
       Import.importFromIndex user.userId indexName path
+
+getCabalPackagesDirectory :: FileSystem :> es => Eff es FilePath
+getCabalPackagesDirectory = do
+  xdgPath <- FileSystem.getXdgDirectory FileSystem.XdgCache "/packages"
+  xdgPathExists <- FileSystem.doesDirectoryExist xdgPath
+  if xdgPathExists
+    then pure xdgPath
+    else do
+      homeDir <- FileSystem.getHomeDirectory
+      let legacyPackagesDirectory = homeDir </> ".cabal/packages"
+      pure legacyPackagesDirectory
