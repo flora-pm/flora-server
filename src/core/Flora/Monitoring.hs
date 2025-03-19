@@ -6,17 +6,16 @@ module Flora.Monitoring
   , increasePackageImportCounterBy
   ) where
 
-import Control.Monad (void, when)
+import Control.Monad (replicateM_)
 import Data.Text
 import Effectful
-import Effectful.Reader.Static (Reader, ask)
-import GHC.Records
+import Effectful.Prometheus
 import Prometheus
 import Prometheus qualified as P
 
 import Flora.Environment.Env
 
-registerMetrics :: IOE :> es => Eff es Metrics
+registerMetrics :: IOE :> es => Eff es AppMetrics
 registerMetrics = do
   let packageImportCount =
         P.vector "package_index" $
@@ -26,63 +25,27 @@ registerMetrics = do
               , metricHelp = "Packages imported and their index"
               }
   packageImportCounter <- P.register packageImportCount
-  pure Metrics{..}
-
-increaseCounter
-  :: forall r es label
-   . ( HasField "mltp" r MLTP
-     , IOE :> es
-     , Label label
-     , Reader r :> es
-     )
-  => Vector label Counter
-  -> label
-  -> Eff es ()
-increaseCounter promVector label = do
-  env <- ask
-  let mltpConf = env.mltp
-  when mltpConf.prometheusEnabled $
-    liftIO $
-      withLabel promVector label incCounter
+  pure AppMetrics{..}
 
 increaseCounterBy
-  :: ( HasField "mltp" r MLTP
-     , IOE :> es
-     , Label label
-     , Reader r :> es
-     )
-  => Double
-  -> Vector label Counter
-  -> label
+  :: Metrics AppMetrics :> es
+  => Int
+  -> Text
   -> Eff es ()
-increaseCounterBy value promVector label = do
-  env <- ask
-  let mltpConf = env.mltp
-  when mltpConf.prometheusEnabled $
-    liftIO $
-      withLabel promVector label (\c -> void $ addCounter c value)
+increaseCounterBy amount label = do
+  replicateM_ amount $ increasePackageImportCounter label
 
 increasePackageImportCounter
-  :: ( HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
-     , IOE :> es
-     , Reader r :> es
-     )
+  :: Metrics AppMetrics :> es
   => Text
   -> Eff es ()
 increasePackageImportCounter repository = do
-  env <- ask
-  increaseCounter env.metrics.packageImportCounter repository
+  increaseLabelledCounter packageImportCounter repository
 
 increasePackageImportCounterBy
-  :: ( HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
-     , IOE :> es
-     , Reader r :> es
-     )
-  => Double
+  :: Metrics AppMetrics :> es
+  => Int
   -> Text
   -> Eff es ()
 increasePackageImportCounterBy value repository = do
-  env <- ask
-  increaseCounterBy value env.metrics.packageImportCounter repository
+  increaseCounterBy value repository

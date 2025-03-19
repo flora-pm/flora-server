@@ -33,11 +33,10 @@ import Effectful.FileSystem.IO.ByteString qualified as FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
-import Effectful.Reader.Static (Reader)
+import Effectful.Prometheus
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import GHC.Conc (numCapabilities)
-import GHC.Records
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude (maxThreads, ordered)
@@ -69,12 +68,10 @@ import Flora.Monitoring
 importAllFilesInRelativeDirectory
   :: ( DB :> es
      , FileSystem :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
      , IOE :> es
      , Log :> es
+     , Metrics AppMetrics :> es
      , Poolboy :> es
-     , Reader r :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -88,12 +85,10 @@ importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
 
 importFromIndex
   :: ( DB :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
      , IOE :> es
      , Log :> es
+     , Metrics AppMetrics :> es
      , Poolboy :> es
-     , Reader r :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -147,12 +142,10 @@ importFromIndex user repositoryName index = do
 importAllFilesInDirectory
   :: ( DB :> es
      , FileSystem :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
      , IOE :> es
      , Log :> es
+     , Metrics AppMetrics :> es
      , Poolboy :> es
-     , Reader r :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -167,14 +160,12 @@ importAllFilesInDirectory user (repositoryName, _repositoryURL) dir = do
   importFromStream user (repositoryName, packages) (findAllCabalFilesInDirectory dir)
 
 importFromStream
-  :: forall es r
+  :: forall es
    . ( DB :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
      , IOE :> es
      , Log :> es
+     , Metrics AppMetrics :> es
      , Poolboy :> es
-     , Reader r :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -198,9 +189,7 @@ importFromStream userId repository@(repositoryName, _) stream = do
           Update.updatePackageIndexByName repositoryName timestamp
       )
   displayStats processedPackageCount
-  increasePackageImportCounterBy
-    (fromIntegral @Int @Double processedPackageCount)
-    repositoryName
+  increasePackageImportCounterBy processedPackageCount repositoryName
   where
     displayCount :: SFold.Fold (Eff es) a Int
     displayCount =

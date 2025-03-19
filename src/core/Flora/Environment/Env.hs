@@ -1,6 +1,6 @@
 module Flora.Environment.Env
   ( FloraEnv (..)
-  , Metrics (..)
+  , AppMetrics (..)
   , DeploymentEnv (..)
   , MLTP (..)
   , FeatureEnv (..)
@@ -30,11 +30,11 @@ data FloraEnv = FloraEnv
   , features :: FeatureEnv
   , config :: FloraConfig
   , assets :: Assets
-  , metrics :: Metrics
+  , metrics :: AppMetrics
   }
   deriving stock (Generic)
 
-data Metrics = Metrics
+data AppMetrics = AppMetrics
   { packageImportCounter :: P.Vector P.Label1 P.Counter
   }
 
@@ -43,7 +43,7 @@ data TestEnv = TestEnv
   , dbConfig :: PoolConfig
   , httpPort :: Word16
   , mltp :: MLTP
-  , metrics :: Metrics
+  , metrics :: AppMetrics
   }
   deriving stock (Generic)
 

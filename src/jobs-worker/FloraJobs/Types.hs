@@ -22,6 +22,7 @@ import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
 import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Process.Typed
+import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
@@ -56,6 +57,7 @@ type JobsRunner =
      , State (Set (Namespace, PackageName, Version))
      , Reader FloraEnv
      , Concurrent
+     , Metrics AppMetrics
      , IOE
      ]
 
@@ -83,6 +85,7 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
     & State.evalState mempty
     & Reader.runReader floraEnv
     & runConcurrent
+    & runPrometheusMetrics floraEnv.metrics
     & runEff
 
 data OddJobException where

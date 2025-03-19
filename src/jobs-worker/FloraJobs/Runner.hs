@@ -20,6 +20,7 @@ import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Process.Typed
+import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
@@ -227,8 +228,8 @@ refreshIndex
      , FileSystem :> es
      , IOE :> es
      , Log :> es
+     , Metrics AppMetrics :> es
      , Poolboy :> es
-     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      , TypedProcess :> es

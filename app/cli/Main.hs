@@ -17,7 +17,7 @@ import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect
-import Effectful.Reader.Static (Reader)
+import Effectful.Prometheus
 import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
@@ -26,7 +26,6 @@ import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
 import GHC.Conc
 import GHC.Generics (Generic)
-import GHC.Records
 import Log qualified
 import Log.Backend.StandardOutput qualified as Log
 import Monitor.Tracing.Zipkin (Zipkin (..))
@@ -97,23 +96,25 @@ main = Log.withStdOutLogger $ \logger -> do
         pure $ Trace.runTrace zipkin.zipkinTracer
       else pure Trace.runNoTrace
   result <-
-    runEff
-      . runTrace
-      . runErrorNoCallStack
-      . State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-      . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      . runDB env.pool
-      . runFailIO
-      . runTime
-      . runPoolboy (poolboySettingsWith capabilities)
-      . ( case env.features.blobStoreImpl of
+    runOptions cliArgs
+      & Reader.runReader env
+      & runLog "flora-cli" logger Log.LogTrace
+      & runFileSystem
+      & ( case env.features.blobStoreImpl of
             Just (BlobStoreFS fp) -> runBlobStoreFS fp
             _ -> runBlobStorePure
         )
-      . runFileSystem
-      . runLog "flora-cli" logger Log.LogTrace
-      . Reader.runReader env
-      $ runOptions cliArgs
+      & runPoolboy (poolboySettingsWith capabilities)
+      & runTime
+      & runFailIO
+      & runDB env.pool
+      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
+      & runErrorNoCallStack
+      & runTrace
+      & runPrometheusMetrics env.metrics
+      & runEff
+
   case result of
     Right _ -> pure ()
     Left errors ->
@@ -195,12 +196,10 @@ runOptions
      , Error (NonEmpty AdvisoryImportError) :> es
      , Fail :> es
      , FileSystem :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
      , IOE :> es
      , Log :> es
+     , Metrics AppMetrics :> es
      , Poolboy :> es
-     , Reader r :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      , Trace :> es
@@ -248,12 +247,10 @@ provisionRepository name url description = Update.upsertPackageIndex name url de
 importFolderOfCabalFiles
   :: ( DB :> es
      , FileSystem :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
      , IOE :> es
      , Log :> es
+     , Metrics AppMetrics :> es
      , Poolboy :> es
-     , Reader r :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -270,12 +267,10 @@ importFolderOfCabalFiles path repository = do
 
 importIndex
   :: ( DB :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
      , IOE :> es
      , Log :> es
+     , Metrics AppMetrics :> es
      , Poolboy :> es
-     , Reader r :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )

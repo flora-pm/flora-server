@@ -204,6 +204,7 @@ library
     , postgresql-simple
     , pretty
     , prometheus-client
+    , prometheus-effectful
     , qrcode-core
     , qrcode-juicypixels
     , resource-pool
@@ -418,6 +419,7 @@ library flora-web
     , postgresql-simple
     , pretty
     , prometheus-client
+    , prometheus-effectful
     , prometheus-metrics-ghc
     , prometheus-proc
     , PyF
@@ -489,6 +491,7 @@ library flora-jobs
     , pg-transact-effectful
     , poolboy
     , postgresql-simple
+    , prometheus-effectful
     , req
     , resource-pool
     , servant
@@ -556,6 +559,7 @@ executable flora-cli
     , optparse-applicative
     , pg-transact-effectful
     , poolboy
+    , prometheus-effectful
     , PyF
     , sel
     , text
@@ -605,6 +609,7 @@ test-suite flora-test
     , poolboy
     , postgresql-migration
     , postgresql-simple
+    , prometheus-effectful
     , resource-pool
     , sel
     , servant
