@@ -15,6 +15,7 @@ import Effectful.Concurrent
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
+import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
@@ -105,7 +106,7 @@ runFlora :: IO ()
 runFlora =
   secureMain $
     bracket
-      (getFloraEnv & runFailIO & runEff)
+      (getFloraEnv & runFileSystem & runFailIO & runEff)
       (runEff . shutdownFlora)
       ( \env ->
           runEff . withUnliftStrategy (ConcUnlift Ephemeral Unlimited) . runTime . runConcurrent $ do

@@ -19,24 +19,21 @@ module Flora.Environment.Config
 where
 
 import Control.Monad ((>=>))
-import Crypto.Hash (Digest, SHA256)
-import Crypto.Hash.Conduit (hashFile)
 import Data.Aeson qualified as Aeson
-import Data.Base64.Types qualified as B64
 import Data.Bifunctor (Bifunctor (second))
-import Data.ByteArray qualified as BA
 import Data.ByteString (ByteString)
-import Data.ByteString.Base64 qualified as B64
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.Display (Display (..), display)
+import Data.Text.Display (Display (..))
 import Data.Time (NominalDiffTime)
 import Data.Typeable (Typeable)
 import Data.Word (Word16)
 import Effectful (Eff, IOE, MonadIO (liftIO), type (:>))
 import Effectful.Fail (Fail)
+import Effectful.FileSystem (FileSystem)
+import Effectful.FileSystem.IO.ByteString qualified as EBS
 import Env
   ( AsUnread (unread)
   , Error (..)
@@ -54,6 +51,7 @@ import Env
   )
 import GHC.Generics (Generic)
 import Network.Socket (HostName, PortNumber)
+import Sel.Hashing.SHA256 qualified as Sel
 import System.FilePath (isValid)
 import Text.Read (readMaybe)
 
@@ -240,7 +238,7 @@ loggingDestination e = Left $ unread e
 filepath :: Reader Error FilePath
 filepath fp = if isValid fp then Right fp else Left $ unread fp
 
-getAssets :: (Fail :> es, IOE :> es) => DeploymentEnv -> Eff es Assets
+getAssets :: (Fail :> es, FileSystem :> es, IOE :> es) => DeploymentEnv -> Eff es Assets
 getAssets environment =
   case environment of
     Production -> do
@@ -263,7 +261,7 @@ getStaticAsset key =
 --
 --  >>> $(getAsset "app.js")
 --  "app-U6EOZTZG.js"
-getAsset :: (Fail :> es, IOE :> es) => Text -> Eff es AssetBundle
+getAsset :: (Fail :> es, FileSystem :> es, IOE :> es) => Text -> Eff es AssetBundle
 getAsset key = do
   let path = "./static/manifest.json"
   Just (json :: Map Text Text) <- liftIO $ Aeson.decodeFileStrict path
@@ -274,14 +272,9 @@ getAsset key = do
       hash <- getAssetHash ("./static/" <> name)
       pure $ AssetBundle{name, hash}
 
--- Get the SHA256 hash of an asset bundle.
-getAssetHash :: IOE :> es => Text -> Eff es Text
+-- Get the SHA-256 hash of an asset bundle.
+getAssetHash :: (FileSystem :> es, IOE :> es) => Text -> Eff es Text
 getAssetHash hashedAssetPath = do
   let path = hashedAssetPath
-  hashBundle path
-
--- | Returns a base64-encoded sha256 hash of the file
-hashBundle :: IOE :> es => Text -> Eff es Text
-hashBundle path = do
-  digest :: Digest SHA256 <- hashFile (Text.unpack path)
-  pure . display . B64.extractBase64 . B64.encodeBase64 . BA.convert $ digest
+  content <- EBS.readFile (Text.unpack path)
+  liftIO $ Sel.hashToHexText <$> Sel.hashByteString content

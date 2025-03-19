@@ -84,14 +84,12 @@ module Flora.TestUtils
   )
 where
 
-import Control.Concurrent (threadDelay)
 import Control.Exception (throw)
 import Control.Monad (void)
 import Control.Monad.Catch
 import Data.Function
 import Data.List.NonEmpty qualified as NE
 import Data.Pool hiding (PoolConfig)
-import Data.Poolboy (poolboySettingsWith)
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
@@ -107,6 +105,7 @@ import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Version (Version)
 import Distribution.Types.Version qualified as Version
 import Effectful
+import Effectful.Concurrent
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log)
@@ -136,7 +135,6 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
-import Effectful.Poolboy
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
@@ -180,15 +178,15 @@ type TestEff =
   Eff
     '[ Trace
      , FileSystem
-     , Poolboy
      , Fail
      , BlobStoreAPI
-     , Reader TestEnv
+     , Reader FloraEnv
      , DB
      , Log
      , Time
      , State (Set (Namespace, PackageName, Version))
      , Metrics AppMetrics
+     , Concurrent
      , IOE
      ]
 
@@ -213,16 +211,13 @@ importAllPackages fixtures = do
     ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
     "./test/fixtures/Cabal/cardano"
 
-  liftIO $ threadDelay 20000
-
-runTestEff :: TestEff a -> TestEnv -> IO a
+runTestEff :: TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $ do
   let withLogger = Logging.makeLogger env.mltp.logger
   withLogger $ \logger ->
     comp
       & Trace.runNoTrace
       & runFileSystem
-      & runPoolboy (poolboySettingsWith env.dbConfig.connections)
       & runFailIO
       & runBlobStorePure
       & runReader env
@@ -232,10 +227,11 @@ runTestEff comp env = runEff $ do
       & runTime
       & State.evalState mempty
       & runPrometheusMetrics env.metrics
+      & runConcurrent
 
 testThis :: String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
-  env <- ask @TestEnv
+  env <- ask @FloraEnv
   let test = runTestEff assertion env
   pure $ Test.testCase name test
 

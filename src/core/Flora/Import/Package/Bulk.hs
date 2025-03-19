@@ -27,6 +27,8 @@ import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Distribution.Types.Version (Version)
 import Effectful
+import Effectful.Concurrent (Concurrent)
+import Effectful.Concurrent qualified as Concurrent
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.FileSystem.IO.ByteString qualified as FileSystem
@@ -34,9 +36,9 @@ import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Prometheus
+import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
-import GHC.Conc (numCapabilities)
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude (maxThreads, ordered)
@@ -46,7 +48,6 @@ import System.Directory qualified as System
 import System.FilePath
 import UnliftIO.Exception (finally)
 
-import Effectful.Poolboy
 import Flora.Environment.Env
 import Flora.Import.Package
   ( extractPackageDataFromCabal
@@ -66,12 +67,13 @@ import Flora.Monitoring
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
-  :: ( DB :> es
+  :: ( Concurrent :> es
+     , DB :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -84,11 +86,12 @@ importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
   importAllFilesInDirectory user (repositoryName, repositoryURL) workdir
 
 importFromIndex
-  :: ( DB :> es
+  :: ( Concurrent :> es
+     , DB :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -140,12 +143,13 @@ importFromIndex user repositoryName index = do
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
 importAllFilesInDirectory
-  :: ( DB :> es
+  :: ( Concurrent :> es
+     , DB :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -161,11 +165,12 @@ importAllFilesInDirectory user (repositoryName, _repositoryURL) dir = do
 
 importFromStream
   :: forall es
-   . ( DB :> es
+   . ( Concurrent :> es
+     , DB :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -174,7 +179,8 @@ importFromStream
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
   -> Eff es ()
 importFromStream userId repository@(repositoryName, _) stream = do
-  let cfg = maxThreads numCapabilities . ordered True
+  capabilities <- Concurrent.getNumCapabilities
+  let cfg = maxThreads capabilities . ordered True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
@@ -208,10 +214,11 @@ displayStats currentCount = do
   liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
 processFile
-  :: ( DB :> es
+  :: ( Concurrent :> es
+     , DB :> es
      , IOE :> es
      , Log :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )

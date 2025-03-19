@@ -5,26 +5,27 @@ import Control.Monad.Extra (unlessM)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe
-import Data.Poolboy (poolboySettingsWith)
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Distribution.Version (Version)
 import Effectful
+import Effectful.Concurrent (Concurrent)
+import Effectful.Concurrent qualified as Concurrent
 import Effectful.Error.Static (Error, runErrorNoCallStack)
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Prometheus
+import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
 import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
-import GHC.Conc
 import GHC.Generics (Generic)
 import Log qualified
 import Log.Backend.StandardOutput qualified as Log
@@ -38,8 +39,8 @@ import System.FilePath ((</>))
 import Advisories.Import (importAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
 import DesignSystem (generateComponents)
-import Effectful.Poolboy
 import Flora.Environment (getFloraEnv)
+-- import Flora.Environment.Config (PoolConfig (..))
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
@@ -87,8 +88,7 @@ data UserCreationOptions = UserCreationOptions
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
-  capabilities <- getNumCapabilities
-  env <- getFloraEnv & runFailIO & runEff
+  env <- getFloraEnv & runFileSystem & runFailIO & runEff
   runTrace <-
     if env.environment == Production
       then do
@@ -104,7 +104,6 @@ main = Log.withStdOutLogger $ \logger -> do
             Just (BlobStoreFS fp) -> runBlobStoreFS fp
             _ -> runBlobStorePure
         )
-      & runPoolboy (poolboySettingsWith capabilities)
       & runTime
       & runFailIO
       & runDB env.pool
@@ -113,6 +112,7 @@ main = Log.withStdOutLogger $ \logger -> do
       & runErrorNoCallStack
       & runTrace
       & runPrometheusMetrics env.metrics
+      & Concurrent.runConcurrent
       & runEff
 
   case result of
@@ -192,6 +192,7 @@ parseImportPackageTarball =
 
 runOptions
   :: ( BlobStoreAPI :> es
+     , Concurrent :> es
      , DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
      , Fail :> es
@@ -199,7 +200,7 @@ runOptions
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      , Trace :> es
@@ -245,12 +246,13 @@ provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es (
 provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
 
 importFolderOfCabalFiles
-  :: ( DB :> es
+  :: ( Concurrent :> es
+     , DB :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -266,11 +268,12 @@ importFolderOfCabalFiles path repository = do
       importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
 
 importIndex
-  :: ( DB :> es
+  :: ( Concurrent :> es
+     , DB :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )

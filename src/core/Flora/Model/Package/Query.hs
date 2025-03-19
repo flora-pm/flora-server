@@ -31,10 +31,13 @@ module Flora.Model.Package.Query
   , searchPackageByNamespace
   , unsafeGetComponent
   , getNumberOfExecutablesByName
+  , getTransitiveDependencies
   ) where
 
+import Data.Aeson
 import Data.Text (Text)
 import Data.Text.Display (display)
+import Data.Tuple.Optics
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
@@ -53,21 +56,22 @@ import Database.PostgreSQL.Entity.DBT
   , query_
   )
 import Database.PostgreSQL.Entity.Types (Field, field)
-import Database.PostgreSQL.Simple (Only (Only), Query)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Database.PostgreSQL.Simple.Types
 import Effectful (Eff, type (:>))
-import Effectful.Log (Log, object, (.=))
+import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Effectful.Time (Time)
 import Log qualified
+import Optics.Core ((&), (^.))
 
+import Database.PostgreSQL.Simple.Orphans ()
 import Flora.Logging (timeAction)
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Component.Types
-import Flora.Model.Package (Namespace (..), Package, PackageId, PackageInfo, PackageName (..))
-import Flora.Model.Package.Types (PackageInfoWithExecutables (..))
+import Flora.Model.Package
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
   ( ComponentDependencies
@@ -329,24 +333,18 @@ getAllRequirements releaseId = dbtToEff $ toComponentDependencies <$> query Sele
 -- this component's dependencies are chosen.
 -- Otherwise, requirements without discrimination by component are fetched.
 getRequirements
-  :: (DB :> es, Log :> es, Time :> es)
+  :: DB :> es
   => PackageName
   -> ReleaseId
-  -> Eff es (Vector (Namespace, PackageName, Text))
+  -> Eff es (Vector DependencyVersionRequirement)
 getRequirements (PackageName packageName) releaseId = do
   components <- Query.getComponentsByReleaseId releaseId
-  (result, duration) <-
-    case Vector.find (\CanonicalComponent{componentName} -> componentName == packageName) components of
-      Just (CanonicalComponent{componentType}) ->
-        timeAction $ dbtToEff $ query Select (getRequirementsQuery True <> " LIMIT 6") (componentType, releaseId)
-      Nothing ->
-        timeAction $ dbtToEff $ query Select (getRequirementsQuery False <> " LIMIT 6") (Only releaseId)
-  Log.logInfo "Retrieving limited dependencies of a release" $
-    object
-      [ "duration" .= duration
-      , "release_id" .= releaseId
-      ]
-  pure result
+  results <- case Vector.find (\CanonicalComponent{componentName} -> componentName == packageName) components of
+    Just (CanonicalComponent{componentType}) ->
+      dbtToEff $ query Select (getRequirementsQuery True <> " LIMIT 6") (componentType, releaseId)
+    Nothing ->
+      dbtToEff $ query Select (getRequirementsQuery False <> " LIMIT 6") (Only releaseId)
+  pure $ Vector.map (\(namespace, name, requirement) -> DependencyVersionRequirement namespace name requirement) results
 
 -- | This query finds all the dependencies of a release,
 --  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
@@ -749,3 +747,87 @@ countPackagesInNamespace namespace =
     case result of
       Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
+
+getTransitiveDependencies
+  :: (DB :> es, Log :> es)
+  => ComponentId
+  -> Eff es (Vector PackageDependencies)
+getTransitiveDependencies componentId = do
+  results :: Vector (ComponentId, Namespace, PackageName, PGArray (PGArray Text)) <-
+    dbtToEff $
+      query
+        Select
+        sqlQuery
+        (Only componentId)
+
+  let dependencies =
+        results
+          & Vector.map
+            ( \(_, namespace, packageName, dependenciesArray) ->
+                PackageDependencies
+                  namespace
+                  packageName
+                  (Vector.fromList $ fromPGArray $ fmap arrayToDependencyVersionRequirement dependenciesArray)
+            )
+
+  case Vector.find (\c -> c ^. _1 == componentId) results of
+    Just _ -> pure dependencies
+    Nothing -> do
+      Log.logAttention "Could not find component for library and package" $
+        object ["components" .= dependencies]
+      error "wtf"
+  where
+    arrayToDependencyVersionRequirement :: PGArray Text -> DependencyVersionRequirement
+    arrayToDependencyVersionRequirement array =
+      let (namespace : packageName : version : _) = fromPGArray array
+       in DependencyVersionRequirement{namespace = Namespace namespace, packageName = PackageName packageName, version = version}
+
+    sqlQuery =
+      [sql|
+WITH RECURSIVE transitive_dependencies(  dependent_id, dependent_namespace, dependent_name, dependent_component, dependency_id, dependency_namespace, dependency_name, requirement) AS
+     (SELECT c1.package_component_id AS dependent_id
+           , p3.namespace
+           , p3.name
+           , c1.component_name AS dependent
+           , p4.package_id AS dependency_id
+           , p4.namespace AS dependency_namespace
+           , p4.name AS dependency_name
+           , r0.requirement
+      FROM requirements AS r0
+           INNER JOIN package_components AS c1 ON r0.package_component_id = c1.package_component_id
+           INNER JOIN releases AS r2 ON c1.release_id = r2.release_id
+           INNER JOIN packages AS p3 ON r2.package_id = p3.package_id
+           INNER JOIN packages AS p4 ON r0.package_id = p4.package_id
+      WHERE c1.package_component_id = ?
+        AND c1.component_type = 'library'
+        AND p4.status = 'fully-imported'
+
+      UNION ALL
+
+      SELECT c1.package_component_id AS dependent_id
+           , p3.namespace
+           , p3.name
+           , c1.component_name AS dependent
+           , p4.package_id AS dependency_id
+           , p4.namespace AS dependency_namespace
+           , p4.name AS dependency_name
+           , r0.requirement
+      FROM requirements AS r0
+           INNER JOIN package_components AS c1 ON r0.package_component_id = c1.package_component_id
+           INNER JOIN releases AS r2 ON c1.release_id = r2.release_id
+           INNER JOIN packages AS p3 ON r2.package_id = p3.package_id
+           INNER JOIN packages AS p4 ON r0.package_id = p4.package_id
+           INNER JOIN transitive_dependencies AS t5 ON t5.dependency_id = p3.package_id
+      WHERE c1.component_type = 'library'
+        AND p4.status = 'fully-imported'
+        AND p4.name <> p3.name)
+
+   CYCLE dependency_id SET is_cycle TO TRUE DEFAULT FALSE USING path
+
+  SELECT t3.dependent_id
+       , t3.dependent_namespace
+       , t3.dependent_name
+       , array_agg(DISTINCT ARRAY[t3.dependency_namespace , t3.dependency_name , t3.requirement])
+  FROM transitive_dependencies AS t3
+  GROUP BY (t3.dependent_id, t3.dependent_namespace, t3.dependent_name)
+|]

@@ -7,7 +7,6 @@ import Control.Exception (Exception)
 import Data.Aeson
 import Data.Function ((&))
 import Data.Pool hiding (PoolConfig)
-import Data.Poolboy (poolboySettingsWith)
 import Data.Set (Set)
 import Data.Text qualified as Text
 import Data.Text.Encoding.Error (UnicodeException)
@@ -36,7 +35,6 @@ import OddJobs.ConfigBuilder
 import OddJobs.Job (Config (..), Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
 
-import Effectful.Poolboy
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Logging qualified as Logging
@@ -47,7 +45,6 @@ import Flora.Model.Package.Types (Namespace, PackageName)
 type JobsRunner =
   Eff
     '[ DB
-     , Poolboy
      , Reader JobsRunnerEnv
      , BlobStoreAPI
      , Log
@@ -72,7 +69,6 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & runDB pool
-    & runPoolboy (poolboySettingsWith floraEnv.dbConfig.connections)
     & Reader.runReader runnerEnv
     & ( case floraEnv.features.blobStoreImpl of
           Just (BlobStoreFS fp) -> runBlobStoreFS fp

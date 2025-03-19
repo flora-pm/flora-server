@@ -144,7 +144,6 @@ showPackageHandler
      , IOE :> es
      , Log :> es
      , Reader FeatureEnv :> es
-     , Time :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -160,7 +159,6 @@ showVersionHandler
      , IOE :> es
      , Log :> es
      , Reader FeatureEnv :> es
-     , Time :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)
@@ -177,7 +175,6 @@ showPackageVersion
      , IOE :> es
      , Log :> es
      , Reader FeatureEnv :> es
-     , Time :> es
      , Trace :> es
      )
   => SessionWithCookies (Maybe User)

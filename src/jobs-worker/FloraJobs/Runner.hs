@@ -15,6 +15,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Effectful (Eff, IOE, type (:>))
+import Effectful.Concurrent (Concurrent)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log
@@ -32,7 +33,6 @@ import Servant.Client.Core (ResponseF (..))
 import System.FilePath
 
 import Data.Text.HTML qualified as HTML
-import Effectful.Poolboy (Poolboy)
 import Flora.Environment.Env
 import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Import.Package.Bulk qualified as Import
@@ -224,12 +224,13 @@ assignNamespace =
       )
 
 refreshIndex
-  :: ( DB :> es
+  :: ( Concurrent :> es
+     , DB :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
-     , Poolboy :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      , TypedProcess :> es
