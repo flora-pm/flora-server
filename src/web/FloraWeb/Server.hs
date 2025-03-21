@@ -16,6 +16,7 @@ import Effectful.Dispatch.Static
 import Effectful.Error.Static (runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
 import Effectful.PostgreSQL.Transact.Effect (runDB)
+import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
 import Effectful.Trace qualified as Trace
@@ -240,6 +241,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
           & Logging.runLog floraEnv.environment logger
           & runErrorWith (\_callstack err -> pure $ Left err)
           & runConcurrent
+          & runPrometheusMetrics floraEnv.metrics
           & runEff
   either Except.throwError pure result
 

@@ -88,6 +88,7 @@ import Control.Concurrent (threadDelay)
 import Control.Exception (throw)
 import Control.Monad (void)
 import Control.Monad.Catch
+import Data.Function
 import Data.List.NonEmpty qualified as NE
 import Data.Pool hiding (PoolConfig)
 import Data.Poolboy (poolboySettingsWith)
@@ -111,6 +112,7 @@ import Effectful.FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Prometheus
 import Effectful.Reader.Static
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
@@ -186,6 +188,7 @@ type TestEff =
      , Log
      , Time
      , State (Set (Namespace, PackageName, Version))
+     , Metrics AppMetrics
      , IOE
      ]
 
@@ -216,18 +219,19 @@ runTestEff :: TestEff a -> TestEnv -> IO a
 runTestEff comp env = runEff $ do
   let withLogger = Logging.makeLogger env.mltp.logger
   withLogger $ \logger ->
-    State.evalState mempty
-      . runTime
-      . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      . Log.runLog "flora-test" logger LogAttention
-      . runDB env.pool
-      . runReader env
-      . runBlobStorePure
-      . runFailIO
-      . runPoolboy (poolboySettingsWith env.dbConfig.connections)
-      . runFileSystem
-      . Trace.runNoTrace
-      $ comp
+    comp
+      & Trace.runNoTrace
+      & runFileSystem
+      & runPoolboy (poolboySettingsWith env.dbConfig.connections)
+      & runFailIO
+      & runBlobStorePure
+      & runReader env
+      & runDB env.pool
+      & Log.runLog "flora-test" logger LogAttention
+      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+      & runTime
+      & State.evalState mempty
+      & runPrometheusMetrics env.metrics
 
 testThis :: String -> TestEff () -> TestEff TestTree
 testThis name assertion = do

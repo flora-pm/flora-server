@@ -7,7 +7,6 @@ import Data.Text (Text)
 import Log.Backend.StandardOutput (withStdOutLogger)
 import Optics.Core
 
-import Flora.Environment.Env
 import Flora.Import.Package (chooseNamespace)
 import Flora.Import.Package.Bulk
 import Flora.Model.Package.Query qualified as Query

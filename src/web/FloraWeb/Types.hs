@@ -22,6 +22,7 @@ import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
 import Effectful.Trace
@@ -46,6 +47,7 @@ type RouteEffects =
    , Log
    , Error ServerError
    , Concurrent
+   , Metrics AppMetrics
    , IOE
    ]
 
