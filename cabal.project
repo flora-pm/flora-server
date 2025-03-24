@@ -1,7 +1,7 @@
 packages:
     ./
 
-with-compiler: ghc-9.6
+with-compiler: ghc-9.6.6
 
 active-repositories: hackage.haskell.org
 
@@ -35,7 +35,7 @@ package zlib
 source-repository-package
     type: git
     location: https://github.com/haskell/security-advisories/
-    tag: d305942f9582bac9f90fb686c2573ba5a0c18cc5
+    tag: 7da651fe058a19a08faff8d873e73ec2ff4c77a0
     subdir:
       ./code/cvss
       ./code/osv
