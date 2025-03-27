@@ -1,6 +1,7 @@
 cabal-version:  2.2
 name:           text
-version:        2.0
+version:        2.1.2
+x-revision: 1
 
 homepage:       https://github.com/haskell/text
 bug-reports:    https://github.com/haskell/text/issues
@@ -46,19 +47,21 @@ copyright:      2009-2011 Bryan O'Sullivan, 2008-2009 Tom Harper, 2021 Andrew Le
 category:       Data, Text
 build-type:     Simple
 tested-with:
-    GHC == 8.0.2
-    GHC == 8.2.2
     GHC == 8.4.4
     GHC == 8.6.5
     GHC == 8.8.4
     GHC == 8.10.7
-    GHC == 9.0.1
-    GHC == 9.2.1
+    GHC == 9.0.2
+    GHC == 9.2.8
+    GHC == 9.4.8
+    GHC == 9.6.4
+    GHC == 9.8.2
+    GHC == 9.10.1
 
 extra-source-files:
     -- scripts/CaseFolding.txt
     -- scripts/SpecialCasing.txt
-    README.markdown
+    README.md
     changelog.md
     scripts/*.hs
     simdutf/LICENSE-APACHE
@@ -73,33 +76,90 @@ flag developer
   manual: True
 
 flag simdutf
-  description: use simdutf library
+  description: use simdutf library, causes Data.Text.Internal.Validate.Simd to be exposed
   default: True
   manual: True
 
+flag pure-haskell
+  description: Don't use text's standard C routines
+    NB: This feature is not fully implemented. Several C routines are still in
+    use.
+
+    When this flag is true, text will use pure Haskell variants of the
+    routines. This is not recommended except for use with GHC's JavaScript
+    backend.
+
+    This flag also disables simdutf.
+
+  default: False
+  manual: True
+
+flag ExtendedBenchmarks
+  description: Runs extra benchmarks which can be very slow.
+  default: False
+  manual: True
+
 library
-  c-sources:    cbits/is_ascii.c
-                cbits/measure_off.c
+  if arch(javascript) || flag(pure-haskell)
+    cpp-options: -DPURE_HASKELL
+  else
+    c-sources:  cbits/is_ascii.c
                 cbits/reverse.c
                 cbits/utils.c
+    if (arch(aarch64))
+      c-sources: cbits/aarch64/measure_off.c
+    else
+      c-sources: cbits/measure_off.c
+
   hs-source-dirs: src
 
-  if flag(simdutf)
+  if flag(simdutf) && !(arch(javascript) || flag(pure-haskell))
+    exposed-modules: Data.Text.Internal.Validate.Simd
     include-dirs: simdutf
     cxx-sources: simdutf/simdutf.cpp
                  cbits/validate_utf8.cpp
     cxx-options: -std=c++17
     cpp-options: -DSIMDUTF
-    if os(windows)
-      if arch(x86_64)
-        extra-libraries: stdc++-6 gcc_s_seh-1
-      else
-        extra-libraries: stdc++-6 gcc_s_dw2-1
-    else
-      if os(darwin)
-        extra-libraries: c++
-      else
+    if impl(ghc >= 9.4)
+      build-depends: system-cxx-std-lib == 1.0
+    elif os(darwin) || os(freebsd)
+      extra-libraries: c++
+    elif os(openbsd)
+      extra-libraries: c++ c++abi pthread
+    elif os(windows)
+      -- GHC's Windows toolchain is based on clang/libc++ in GHC 9.4 and later
+      if impl(ghc < 9.3)
         extra-libraries: stdc++
+      else
+        extra-libraries: c++ c++abi
+    elif arch(wasm32)
+      cpp-options: -DSIMDUTF_NO_THREADS
+      cxx-options: -fno-exceptions
+      extra-libraries: c++ c++abi
+    else
+      extra-libraries: stdc++
+
+  -- Certain version of GHC crash on Windows, when TemplateHaskell encounters C++.
+  -- https://gitlab.haskell.org/ghc/ghc/-/issues/19417
+  if flag(simdutf) && os(windows) && impl(ghc >= 8.8 && < 8.10.5 || == 9.0.1)
+    build-depends: base < 0
+
+  -- For GHC 8.2, 8.6.3 and 8.10.1 even TH + C crash Windows linker.
+  if os(windows) && impl(ghc >= 8.2 && < 8.4 || == 8.6.3 || == 8.10.1)
+    build-depends: base < 0
+
+  -- GHC 8.10 has linking issues (probably TH-related) on ARM.
+  if (arch(aarch64) || arch(arm)) && impl(ghc == 8.10.*)
+    build-depends: base < 0
+
+  -- Subword primitives in GHC 9.2.1 are broken on ARM platforms.
+  if (arch(aarch64) || arch(arm)) && impl(ghc == 9.2.1)
+    build-depends: base < 0
+
+  -- NetBSD + GHC 9.2.1 + TH + C++ does not work together.
+  -- https://gitlab.haskell.org/ghc/ghc/-/issues/22577
+  if flag(simdutf) && os(netbsd) && impl(ghc < 9.4)
+    build-depends: base < 0
 
   exposed-modules:
     Data.Text
@@ -108,13 +168,16 @@ library
     Data.Text.Encoding.Error
     Data.Text.Foreign
     Data.Text.IO
+    Data.Text.IO.Utf8
     Data.Text.Internal
+    Data.Text.Internal.ArrayUtils
     Data.Text.Internal.Builder
     Data.Text.Internal.Builder.Functions
     Data.Text.Internal.Builder.Int.Digits
     Data.Text.Internal.Builder.RealFloat.Functions
     Data.Text.Internal.ByteStringCompat
     Data.Text.Internal.PrimCompat
+    Data.Text.Internal.Encoding
     Data.Text.Internal.Encoding.Fusion
     Data.Text.Internal.Encoding.Fusion.Common
     Data.Text.Internal.Encoding.Utf16
@@ -133,8 +196,11 @@ library
     Data.Text.Internal.Private
     Data.Text.Internal.Read
     Data.Text.Internal.Search
+    Data.Text.Internal.StrictBuilder
     Data.Text.Internal.Unsafe
     Data.Text.Internal.Unsafe.Char
+    Data.Text.Internal.Validate
+    Data.Text.Internal.Validate.Native
     Data.Text.Lazy
     Data.Text.Lazy.Builder
     Data.Text.Lazy.Builder.Int
@@ -148,24 +214,29 @@ library
 
   other-modules:
     Data.Text.Show
+    Data.Text.Internal.Measure
+    Data.Text.Internal.Reverse
+    Data.Text.Internal.Transformation
+    Data.Text.Internal.IsAscii
 
   build-depends:
     array            >= 0.3 && < 0.6,
-    base             >= 4.9 && < 5,
+    base             >= 4.11 && < 5,
     binary           >= 0.5 && < 0.9,
-    bytestring       >= 0.10.4 && < 0.12,
-    deepseq          >= 1.1 && < 1.5,
-    ghc-prim         >= 0.2 && < 0.9,
-    template-haskell >= 2.5 && < 2.19
+    bytestring       >= 0.10.4 && < 0.13,
+    deepseq          >= 1.1 && < 1.6,
+    ghc-prim         >= 0.2 && < 0.14,
+    template-haskell >= 2.5 && < 2.24
+
+  if impl(ghc < 9.4)
+    build-depends: data-array-byte >= 0.1 && < 0.2
 
   ghc-options: -Wall -fwarn-tabs -funbox-strict-fields -O2
   if flag(developer)
     ghc-options: -fno-ignore-asserts
     cpp-options: -DASSERTS
-
-  -- https://gitlab.haskell.org/ghc/ghc/-/issues/19900
-  if os(windows)
-    extra-libraries: gcc_s
+    if impl(ghc >= 9.2.2)
+      ghc-options: -fcheck-prim-bounds
 
   default-language: Haskell2010
   default-extensions:
@@ -197,7 +268,7 @@ source-repository head
 test-suite tests
   type:           exitcode-stdio-1.0
   ghc-options:
-    -Wall -threaded -rtsopts
+    -Wall -threaded -rtsopts -with-rtsopts=-N
 
   hs-source-dirs: tests
   main-is:        Tests.hs
@@ -213,14 +284,18 @@ test-suite tests
     Tests.Properties.Substrings
     Tests.Properties.Text
     Tests.Properties.Transcoding
+    Tests.Properties.Validate
     Tests.QuickCheckUtils
+    Tests.RebindableSyntaxTest
     Tests.Regressions
     Tests.SlowFunctions
+    Tests.ShareEmpty
     Tests.Utils
 
   build-depends:
-    QuickCheck >= 2.12.6 && < 2.15,
+    QuickCheck >= 2.12.6 && < 2.16,
     base <5,
+    binary,
     bytestring,
     deepseq,
     directory,
@@ -229,11 +304,13 @@ test-suite tests
     tasty-hunit,
     tasty-quickcheck,
     template-haskell,
+    transformers,
     text
-
-  -- Starting from 9.2 ghc library depends on parsec,
-  -- which causes circular dependency.
-  if impl(ghc < 9.2)
+  if impl(ghc < 9.4)
+    build-depends: data-array-byte >= 0.1 && < 0.2
+  -- Plugin infrastructure does not work properly in 8.6.1, and
+  -- ghc-9.2.1 library depends on parsec, which causes a circular dependency.
+  if impl(ghc >= 8.2.1 && < 8.6 || >= 8.6.2 && < 9.2 || >= 9.2.2)
     build-depends: tasty-inspection-testing
 
   default-language: Haskell2010
@@ -242,11 +319,11 @@ test-suite tests
 benchmark text-benchmarks
   type:           exitcode-stdio-1.0
 
-  ghc-options:    -Wall -O2 -rtsopts
-  if impl(ghc >= 8.10)
-    ghc-options:  "-with-rtsopts=-A32m --nonmoving-gc"
-  else
-    ghc-options:  "-with-rtsopts=-A32m"
+  ghc-options:    -Wall -O2 -rtsopts "-with-rtsopts=-A32m"
+  if impl(ghc >= 8.6)
+    ghc-options:  -fproc-alignment=64
+  if flag(ExtendedBenchmarks)
+    cpp-options: -DExtendedBenchmarks
 
   build-depends:  base,
                   bytestring >= 0.10.4,
@@ -267,7 +344,9 @@ benchmark text-benchmarks
     Benchmarks.EncodeUtf8
     Benchmarks.Equality
     Benchmarks.FileRead
+    Benchmarks.FileWrite
     Benchmarks.FoldLines
+    Benchmarks.Micro
     Benchmarks.Multilang
     Benchmarks.Programs.BigTable
     Benchmarks.Programs.Cut

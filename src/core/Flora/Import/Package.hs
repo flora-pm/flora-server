@@ -29,8 +29,8 @@ module Flora.Import.Package
   ) where
 
 import Control.DeepSeq (force)
-import Control.Exception
-import Control.Monad (forM_)
+import Control.Exception ()
+import Control.Monad
 import Data.Aeson (object, (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
@@ -80,8 +80,13 @@ import Distribution.Types.VersionRange (VersionRange, withinRange)
 import Distribution.Utils.ShortText (fromShortText)
 import Distribution.Version qualified as Version
 import Effectful
+import Effectful.Concurrent (Concurrent)
+import Effectful.Concurrent.Async qualified as Concurrent
+import Effectful.Exception
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
@@ -92,8 +97,8 @@ import Optics.Core
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
-import Effectful.Poolboy (Poolboy)
-import Effectful.Poolboy qualified as Poolboy
+import Flora.Environment.Config (PoolConfig (..))
+import Flora.Environment.Env (FloraEnv (..))
 import Flora.Import.Package.Types
 import Flora.Import.Types
 import Flora.Model.Category.Query as Query
@@ -287,19 +292,19 @@ parseString parser name bs = do
     Right x -> pure x
     Left err -> do
       Log.logAttention_ (display $ show err)
-      throw $ CabalFileCouldNotBeParsed name
+      throwIO $ CabalFileCouldNotBeParsed name
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 persistImportOutput
   :: forall es
-   . (DB :> es, IOE :> es, Log :> es, Poolboy :> es, State (Set (Namespace, PackageName, Version)) :> es)
+   . (Concurrent :> es, DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, State (Set (Namespace, PackageName, Version)) :> es)
   => ImportOutput
   -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
   Log.logInfo "Persisting package" $
     object
-      [ "package_name" .= packageName
+      [ "package" .= (display package.namespace <> "/" <> display package.name)
       , "version" .= display release.version
       ]
   persistPackage package.packageId
@@ -314,14 +319,11 @@ persistImportOutput (ImportOutput package categories release components) = State
       pure packageCache
     else do
       Update.upsertRelease release
-      parallelRun persistComponent components
+      env <- Reader.ask
+      Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections components persistComponent
+      when (package.name /= PackageName "rts") sanityCheck
       pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    parallelRun :: Foldable t => (a -> Eff es ()) -> t a -> Eff es ()
-    parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
-
-    packageName = display package.namespace <> "/" <> display package.name
-
     persistPackage :: PackageId -> Eff es ()
     persistPackage packageId = do
       Update.upsertPackage package
@@ -329,21 +331,43 @@ persistImportOutput (ImportOutput package categories release components) = State
       forM_
         categoriesByName
         (\c -> Update.addToCategoryByName packageId c.name)
+
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo
         "Persisting component"
         $ object
           [ "component" .= display packageComponent.canonicalForm
+          , "release_version" .= release.version
           , "number_of_dependencies" .= display (length deps)
+          , "dependencies" .= deps
           ]
       Update.upsertPackageComponent packageComponent
-      parallelRun persistImportDependency deps
+      mapM_ persistImportDependency deps
 
     persistImportDependency :: ImportDependency -> Eff es ()
     persistImportDependency dep = do
       Update.upsertPackage dep.package
       Update.upsertRequirement dep.requirement
+
+    sanityCheck :: Eff es ()
+    sanityCheck = do
+      dependencies <- Query.getRequirements package.name release.releaseId
+      when (Vector.null dependencies) $ do
+        Log.logAttention "No dependencies found after inserting release!" $
+          object
+            [ "namespace" .= package.namespace
+            , "package" .= package.name
+            , "version" .= release.version
+            ]
+        error $
+          Text.unpack $
+            "No dependencies found after inserting release: "
+              <> display package.namespace
+              <> "/"
+              <> display package.name
+              <> "-"
+              <> display release.version
 
 persistHashes
   :: ( DB :> es

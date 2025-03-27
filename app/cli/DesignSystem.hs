@@ -20,6 +20,7 @@ import Distribution.SPDX
 import Distribution.Version
 import Effectful
 import Effectful.Fail
+import Effectful.FileSystem
 import Env
 import Lucid
 import PyF (fmt)
@@ -45,7 +46,7 @@ newtype ComponentName = ComponentName Text
 newtype ComponentTitle = ComponentTitle Text
   deriving newtype (Eq, Ord, Show)
 
-generateComponents :: (Fail :> es, IOE :> es) => Eff es ()
+generateComponents :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es ()
 generateComponents = do
   environment <- liftIO $ Env.parse id parseDeploymentEnv
   assets <- getAssets environment

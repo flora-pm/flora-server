@@ -18,7 +18,7 @@ data Routes mode = Routes
   { assets :: mode :- "static" :> Raw
   , openSearch :: mode :- "opensearch.xml" :> Get '[OpenSearchXML] Document
   , pages :: mode :- AuthProtect "optional-cookie-auth" :> Pages.Routes
-  , api :: mode :- "api" :> API.Routes
+  , api :: mode :- API.Routes
   , openApi
       :: mode
         :- "documentation"

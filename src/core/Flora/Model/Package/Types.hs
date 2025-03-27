@@ -346,3 +346,32 @@ data PackageAlternative = PackageAlternative
   deriving (FromField, ToField) via Aeson PackageAlternative
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Package)
+
+data DependencyVersionRequirement = DependencyVersionRequirement
+  { namespace :: Namespace
+  , packageName :: PackageName
+  , version :: Text
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] DependencyVersionRequirement)
+
+instance ToSchema DependencyVersionRequirement where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy
+
+data PackageDependencies = PackageDependencies
+  { namespace :: Namespace
+  , packageName :: PackageName
+  , requirements :: Vector DependencyVersionRequirement
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (ToJSON)
+    via CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageDependencies
+
+instance ToSchema PackageDependencies where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy

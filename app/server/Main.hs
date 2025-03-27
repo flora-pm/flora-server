@@ -19,6 +19,7 @@ import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.Fail (runFailIO)
+import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff, runDB)
 import Log qualified
@@ -40,7 +41,7 @@ main = do
 
 preFlightChecks :: IO ()
 preFlightChecks = do
-  env <- getFloraEnv & runFailIO & runEff
+  env <- getFloraEnv & runFileSystem & runFailIO & runEff
   runEff $ do
     let withLogger = Logging.makeLogger env.mltp.logger
     withLogger $ \appLogger ->

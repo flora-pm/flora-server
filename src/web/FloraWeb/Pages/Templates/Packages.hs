@@ -58,7 +58,7 @@ import Data.Positive
 import Distribution.Orphans ()
 import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.Category.Types
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
@@ -371,7 +371,7 @@ displayDependencies
   -- ^ The package namespace and name
   -> Word
   -- ^ Number of dependenciesc
-  -> Vector (Namespace, PackageName, Text)
+  -> Vector DependencyVersionRequirement
   -- ^ (Namespace, Name, Version requirement, Synopsis of the dependency)
   -> FloraHTML
 displayDependencies (namespace, packageName, version) numberOfDependencies dependencies =
@@ -483,10 +483,10 @@ renderDependent Package{name, namespace} = do
 
   a_ [class_ "dependent", href_ $ Links.packageResource namespace name] qualifiedName
 
-renderDependency :: (Namespace, PackageName, Text) -> FloraHTML
-renderDependency (namespace, name, version) = do
+renderDependency :: DependencyVersionRequirement -> FloraHTML
+renderDependency DependencyVersionRequirement{namespace, packageName, version} = do
   li_ [class_ "dependency"] $ do
-    a_ [href_ $ Links.packageResource namespace name] (toHtml name)
+    a_ [href_ $ Links.packageResource namespace packageName] (toHtml packageName)
     toHtmlRaw @Text "&nbsp;"
     if version == ">=0"
       then ""

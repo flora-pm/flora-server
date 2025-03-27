@@ -91,7 +91,6 @@ library
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
     Distribution.Orphans.Version
-    Effectful.Poolboy
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
@@ -167,8 +166,6 @@ library
     , containers
     , cryptohash-md5
     , cryptohash-sha256
-    , cryptonite
-    , cryptonite-conduit
     , cvss
     , dani-servant-lucid2
     , deepseq
@@ -180,7 +177,6 @@ library
     , envparse
     , filepath
     , hsec-core
-    , hsec-sync
     , http-api-data
     , http-media
     , iso8601-time
@@ -188,7 +184,6 @@ library
     , log-base
     , log-effectful
     , lucid2
-    , memory
     , monad-time-effectful
     , network
     , odd-jobs
@@ -200,7 +195,6 @@ library
     , pg-entity
     , pg-transact
     , pg-transact-effectful
-    , poolboy
     , postgresql-simple
     , pretty
     , prometheus-client
@@ -279,9 +273,7 @@ library flora-advisories
     , effectful
     , flora
     , hsec-core
-    , hsec-sync
     , hsec-tools
-    , osv
     , pandoc-types
     , pg-entity
     , pg-transact-effectful
@@ -489,7 +481,6 @@ library flora-jobs
     , odd-jobs
     , pg-entity
     , pg-transact-effectful
-    , poolboy
     , postgresql-simple
     , prometheus-effectful
     , req
@@ -523,7 +514,6 @@ executable flora-server
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
-    , resource-pool
     , text
     , vector
 
@@ -558,7 +548,6 @@ executable flora-cli
     , optics-core
     , optparse-applicative
     , pg-transact-effectful
-    , poolboy
     , prometheus-effectful
     , PyF
     , sel
@@ -606,7 +595,6 @@ test-suite flora-test
     , pg-entity
     , pg-transact
     , pg-transact-effectful
-    , poolboy
     , postgresql-migration
     , postgresql-simple
     , prometheus-effectful

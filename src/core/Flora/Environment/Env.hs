@@ -5,7 +5,6 @@ module Flora.Environment.Env
   , MLTP (..)
   , FeatureEnv (..)
   , BlobStoreImpl (..)
-  , TestEnv (..)
   ) where
 
 import Data.Aeson
@@ -37,15 +36,6 @@ data FloraEnv = FloraEnv
 data AppMetrics = AppMetrics
   { packageImportCounter :: P.Vector P.Label1 P.Counter
   }
-
-data TestEnv = TestEnv
-  { pool :: Pool PG.Connection
-  , dbConfig :: PoolConfig
-  , httpPort :: Word16
-  , mltp :: MLTP
-  , metrics :: AppMetrics
-  }
-  deriving stock (Generic)
 
 data BlobStoreImpl = BlobStoreFS FilePath | BlobStorePure
   deriving stock (Generic, Show)

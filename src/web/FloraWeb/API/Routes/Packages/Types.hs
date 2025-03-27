@@ -5,6 +5,7 @@ module FloraWeb.API.Routes.Packages.Types where
 import Control.DeepSeq
 import Data.Aeson
 import Data.Aeson.TH
+import Data.Function
 import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi.Schema
 import Data.Text (Text)
@@ -153,3 +154,21 @@ instance ToSchema PackageList where
 
 packageListExample :: PackageList
 packageListExample = PackageList (Vector.singleton packageDTOExample)
+
+data PackageDependenciesDTO (version :: Natural) = PackageDependenciesDTO
+  { dependencies :: Vector PackageDependencies
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (ToJSON)
+    via CustomJSON '[FieldLabelModifier '[CamelToSnake]] (PackageDependenciesDTO version)
+
+instance KnownNat i => ToSchema (PackageDependenciesDTO i) where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy
+      & ( mapped
+            % #schema
+            % #description
+            ?~ "Listing of dependencies for a package"
+        )
+      & (mapped % #schema % #example ?~ toJSON packageListExample)
