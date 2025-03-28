@@ -132,7 +132,7 @@ makeUIConfig cfg logger pool =
   mkUIConfig (structuredLogging cfg logger) jobTableName pool id
 
 structuredLogging :: FloraConfig -> Logger -> LogLevel -> LogEvent -> IO ()
-structuredLogging FloraConfig{..} logger level event =
+structuredLogging FloraConfig{environment} logger level event =
   runEff
     . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     . runTime

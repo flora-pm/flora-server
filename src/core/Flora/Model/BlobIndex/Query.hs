@@ -52,14 +52,14 @@ queryTar pname version rootHash = do
           )
           (Only hash)
     go :: BlobRelation -> Eff es (FilePath, TarTree Sha256Sum)
-    go BlobRelation{..}
+    go (BlobRelation _blobHash blobDepHash blobDepPath blobDepDirectory)
       | blobDepDirectory =
           (blobDepPath,)
             . TarDirectory blobDepHash
             . M.fromList
             . V.toList
             <$> (traverse go =<< queryChildren blobDepHash)
-    go BlobRelation{..} = do
+    go (BlobRelation _blobHash blobDepHash blobDepPath _blobDepDirectory) = do
       mcontent <- get blobDepHash
       case mcontent of
         Nothing -> throw $ IncompleteDirectoryTree pname version

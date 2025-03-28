@@ -36,7 +36,7 @@ mkPool connectionInfo timeout' connections =
 
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
-featureConfigToEnv FeatureConfig{..} =
+featureConfigToEnv FeatureConfig{blobStoreFS, tarballsEnabled} =
   case blobStoreFS of
     Just fp | tarballsEnabled -> pure . FeatureEnv . Just $ BlobStoreFS fp
     _ ->

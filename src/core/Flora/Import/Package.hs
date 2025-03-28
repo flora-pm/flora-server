@@ -507,7 +507,7 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
     Nothing -> do
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
       extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc
-    Just components -> pure ImportOutput{..}
+    Just components -> pure $ ImportOutput package categories release components
 
 extractLibrary
   :: Package
@@ -645,10 +645,10 @@ genericComponentExtractor
   rawComponent =
     let releaseId = release.releaseId
         componentName = maybe (getName rawComponent) display defaultComponentName
-        canonicalForm = CanonicalComponent{..}
+        canonicalForm = CanonicalComponent componentName componentType
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
-        component = PackageComponent{..}
+        component = PackageComponent componentId releaseId canonicalForm metadata
         dependencies = buildDependency package repository componentId <$> getDeps rawComponent
      in (component, dependencies)
 
@@ -667,7 +667,7 @@ buildDependency package repository packageComponentId (Cabal.Dependency depName 
       updatedAt = package.updatedAt
       status = UnknownPackage
       deprecationInfo = Nothing
-      dependencyPackage = Package{..}
+      dependencyPackage = Package packageId namespace name ownerId createdAt updatedAt status deprecationInfo
       requirement =
         Requirement
           { requirementId = deterministicRequirementId packageComponentId packageId

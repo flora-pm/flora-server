@@ -148,16 +148,17 @@ instance Entity PackageComponent where
 
 instance ToRow PackageComponent where
   toRow PackageComponent{componentId, releaseId, canonicalForm, metadata} =
-    let componentId' = componentId
-        releaseId' = releaseId
-        componentMetadata' = metadata
-        componentName' = canonicalForm.componentName
-        componentType' = canonicalForm.componentType
-     in toRow PackageComponent'{..}
+    toRow $
+      PackageComponent'
+        componentId
+        releaseId
+        canonicalForm.componentName
+        canonicalForm.componentType
+        metadata
 
 instance FromRow PackageComponent where
   fromRow = do
-    PackageComponent'{..} <- fromRow
+    PackageComponent'{componentId', componentName', componentType', releaseId', componentMetadata'} <- fromRow
     let canonicalForm = CanonicalComponent componentName' componentType'
     pure $ PackageComponent componentId' releaseId' canonicalForm componentMetadata'
 

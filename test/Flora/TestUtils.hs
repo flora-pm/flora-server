@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Flora.TestUtils
   ( -- ** Test group functions
@@ -198,7 +199,7 @@ data Fixtures = Fixtures
 getFixtures :: (DB :> es, Fail :> es) => Eff es Fixtures
 getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
-  pure Fixtures{..}
+  pure Fixtures{hackageUser}
 
 importAllPackages :: Fixtures -> TestEff ()
 importAllPackages fixtures = do

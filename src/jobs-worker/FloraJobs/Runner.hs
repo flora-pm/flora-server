@@ -90,7 +90,7 @@ fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseI
         Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
 
 makeReadme :: ReadmeJobPayload -> JobsRunner ()
-makeReadme pay@ReadmeJobPayload{..} =
+makeReadme pay@ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
   localDomain "fetch-readme" $ do
     logInfo "Fetching README" pay
     let payload = VersionedPackage mpPackage mpVersion
@@ -116,14 +116,14 @@ fetchTarball
      )
   => TarballJobPayload
   -> Eff es ()
-fetchTarball pay@TarballJobPayload{..} = do
+fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
   localDomain "fetch-tarball" $ do
     mArchive <- Query.getReleaseTarballArchive releaseId
     content <- case mArchive of
       Just bs -> pure bs
       Nothing -> do
         logInfo "Fetching tarball" pay
-        let payload = VersionedPackage{..}
+        let payload = VersionedPackage package version
         result <- Hackage.request $ Hackage.getPackageTarball payload
         case result of
           Right bs -> pure bs
