@@ -15,27 +15,27 @@ normaliseCategory string =
       "TUI" -> Just "CLI & TUI Development"
       "Command Line" -> Just "CLI & TUI Development"
       "CommandLine" -> Just "CLI & TUI Development"
+      "Algebra" -> Just "Mathematics"
+      "Arithmetic" -> Just "Mathematics"
+      "Geometry" -> Just "Mathematics"
+      "Graph" -> Just "Mathematics"
+      "Graphs" -> Just "Mathematics"
+      "Math" -> Just "Mathematics"
+      "Mathematics" -> Just "Mathematics"
+      "Maths" -> Just "Mathematics"
+      "Number Theory" -> Just "Mathematics"
       "Numeric" -> Just "Mathematics"
       "Numerical" -> Just "Mathematics"
       "Numerics" -> Just "Mathematics"
-      "Arithmetic" -> Just "Mathematics"
-      "Number Theory" -> Just "Mathematics"
-      "Math" -> Just "Mathematics"
-      "Mathematics" -> Just "Mathematics"
-      "mathematics" -> Just "Mathematics"
-      "Maths" -> Just "Mathematics"
-      "Algebra" -> Just "Mathematics"
-      "Graph" -> Just "Mathematics"
-      "Graphs" -> Just "Mathematics"
-      "Geometry" -> Just "Mathematics"
       "Tropical Geometry" -> Just "Mathematics"
+      "mathematics" -> Just "Mathematics"
       "Parser Builder" -> Just "Parsers"
       "Parser Combinators" -> Just "Parsers"
       "Parser" -> Just "Parsers"
       "ParserCombinators" -> Just "Parsers"
       "Parsers" -> Just "Parsers"
-      "Parsing" -> Just "Parsers"
       "Parsing Text" -> Just "Parsers"
+      "Parsing" -> Just "Parsers"
       "Network" -> Just "Network Development"
       "Data Network" -> Just "Network Development"
       "Network APIs" -> Just "Network Development"
@@ -70,22 +70,23 @@ normaliseCategory string =
       "User Interfaces" -> Just "GUI"
       "graphics" -> Just "Graphics"
       "Code Generation" -> Just "FFI"
-      "Foreign binding" -> Just "FFI"
       "Elm" -> Just "FFI"
-      "TypeScript" -> Just "FFI"
-      "Java" -> Just "FFI"
-      "JVM" -> Just "FFI"
-      "Jvm" -> Just "FFI"
       "Erlang" -> Just "FFI"
-      "PHP" -> Just "FFI"
+      "Foreign binding" -> Just "FFI"
       "Foreign" -> Just "FFI"
+      "JVM" -> Just "FFI"
+      "Java" -> Just "FFI"
+      "Jvm" -> Just "FFI"
+      "PHP" -> Just "FFI"
+      "TypeScript" -> Just "FFI"
+      "language" -> Just "FFI"
       "Types" -> Just "Type System"
-      "Validity" -> Just "Testing"
       "QuickCheck" -> Just "Testing"
       "Test" -> Just "Testing"
-      "Sound" -> Just "Audio"
+      "Validity" -> Just "Testing"
       "Algorithmic Music Composition" -> Just "Audio"
       "Automatic Music Generation" -> Just "Audio"
+      "Sound" -> Just "Audio"
       "Music" -> Just "Audio"
       "Zip" -> Just "Compression"
       "ZLib" -> Just "Compression"
@@ -117,12 +118,13 @@ normaliseCategory string =
       "SYstem" -> Just "Systems Programming"
       "Embedded" -> Just "Systems Programming"
       "Distribution" -> Just "Package Distribution"
-      "Trace" -> Just "Profiling"
-      "Debug" -> Just "Profiling"
-      "Debugging" -> Just "Profiling"
-      "OpenTelemetry" -> Just "Telemetry"
-      "Metrics" -> Just "Telemetry"
-      "Regex" -> Just "Text"
+      "Debug" -> Just "Debugging"
+      "Tracing" -> Just "Debugging"
+      "OpenTelemetry" -> Just "Debugging"
+      "Metrics" -> Just "Debugging"
+      "Regex" -> Just "Text Processing"
+      "text" -> Just "Text Processing"
+      "Text" -> Just "Text Processing"
       _ -> Nothing
 
 floraCategories :: [(Text, Text, Text)]
@@ -138,6 +140,7 @@ floraCategories =
   , ("cryptography", "Cryptography", "Algorithms for encrypting and hashing data")
   , ("data-structures", "Data Structures", "Data structures, whether purely functional or mutable")
   , ("databases", "Databases", "Database drivers and interfaces")
+  , ("debugging", "Debugging", "Observe the behaviour of your code with tracing, logging, and telemetry.")
   , ("development", "Development", "Development helpers, integration with other languages")
   , ("distributed", "Distributed Systems & Computation", "Tooling and techniques for writing distributed systems")
   , ("distribution", "Package Distribution", "Building, Packaging and Distributing software in Haskell")
@@ -149,7 +152,6 @@ floraCategories =
   , ("gui", "GUI", "Creating graphical user interfaces")
   , ("hardware", "Hardware", "Digital circuit description and hardware interfacing")
   , ("json", "JSON", "Parsing, producing and manipulating JSON")
-  , ("language", "Language", "Interfacing with other programming languages from Haskell")
   , ("lenses", "Lenses", "Functional references such as Lenses, Folds and Traversals")
   , ("maths", "Mathematics", "Numerical and Mathematical packages")
   , ("monads", "Monads", "Effectful sequential computations")
@@ -157,17 +159,15 @@ floraCategories =
   , ("nlp", "Natural Language Processing", "Tooling to work with natural languages")
   , ("parallelism", "Parallelism", "Parallel programming")
   , ("parser-implementations", "Parser Implementations", "Parsing data formats")
-  , ("parsers", "Parsers", "Libraries to ingest and parse data")
-  , ("parsing", "Parsing", "Parser generators, combinators and tools to help with parsing")
+  , ("parsers", "Parsers", "Parser generators, combinators and tools to help with parsing")
   , ("physics", "Physics", "The study of matter, its consituents, motion, and behaviour")
   , ("prelude", "Prelude", "Libraries that provide default imports")
-  , ("profiling", "Profiling", "Measure the behaviour of your programs")
+  , ("profiling", "Profiling", "Measure the performance of your programs")
   , ("streaming", "Streaming", "Data streaming for continuous processing")
   , ("system", "Systems Programming", "Programming and communicating with the Operating System")
-  , ("telemetry", "Telemetry", "Systems Observability")
   , ("template-haskell", "Template Haskell", "Metaprogramming with Template Haskell")
   , ("testing", "Testing", "Test frameworks")
-  , ("text", "Text", "Working with textual data and algorithms")
+  , ("text-processing", "Text Processing", "Regular expressions, Unicode, Input validation")
   , ("type-system", "Type System", "Enhancing the Haskell type system")
   , ("web", "Web Development", "Programming for the web")
   , ("xml", "XML", "Libraries to consume and produce XML documents")
