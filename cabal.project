@@ -15,7 +15,6 @@ allow-newer: hashable:filepath
            , qrcode-juicypixels:bytestring
            , qrcode-juicypixels:text
            , servant-lucid:text
-           , souffle-haskell:text
            , tasty-test-reporter:ansi-terminal
            , tasty-test-reporter:tasty
            , type-errors-pretty:base
@@ -60,13 +59,23 @@ source-repository-package
 
 source-repository-package
     type: git
+    location: https://github.com/haskell-servant/servant
+    tag: bce6b4bd14c4cb953561366cd43600eb6b8fc17c
+    subdir:
+      ./servant
+      ./servant-server
+      ./servant-client
+      ./servant-client-core
+
+source-repository-package
+    type: git
     location: https://github.com/flora-pm/wai-middleware-heartbeat
     tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
 
 source-repository-package
     type: git
     location: https://github.com/kleidukos/pg-transact-effectful
-    tag: 0f3de0516cb66efbfa6c437ef77c2774bd1325cb
+    tag: ea610e9d85a628a19d350397b9e43520e452b4f8
 
 source-repository-package
     type: git
@@ -75,13 +84,13 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/saurabhnanda/odd-jobs
-    tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
+    location: https://github.com/haskell-effectful/prometheus-effectful
+    tag: cd362b4f0a9f1a7dcc743176a9fa663f2cfe33d3
 
 source-repository-package
     type: git
-    location: https://github.com/luc-tielen/souffle-haskell
-    tag: 268a11283ca9293b5eacabf7a0b79d9368232478
+    location: https://github.com/saurabhnanda/odd-jobs
+    tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
 
 source-repository-package
   type: git

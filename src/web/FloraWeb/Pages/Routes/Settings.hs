@@ -4,17 +4,20 @@ module FloraWeb.Pages.Routes.Settings
   , TwoFactorSetupResponses
   , TwoFactorConfirmationForm (..)
   , DeleteTwoFactorSetupResponse
+  , TwoFactorSetupResult (..)
   )
 where
 
+import Data.Text (Text)
+import Generics.SOP qualified as GSOP
 import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
-
-import Data.Text (Text)
-import FloraWeb.Common.Auth ()
+import Servant.API.MultiVerb
 import Web.FormUrlEncoded
+
+import FloraWeb.Common.Auth ()
 
 type Routes =
   NamedRoutes Routes'
@@ -35,9 +38,27 @@ type GetTwoFactorSettingsPage =
     :> Get '[HTML] (Html ())
 
 type TwoFactorSetupResponses =
-  '[ WithStatus 200 (Html ())
-   , WithStatus 301 (Headers '[Header "Location" Text] NoContent)
+  '[ WithHeaders
+       '[Header "Location" Text]
+       Text
+       (RespondEmpty 301 "2FA Validation Success")
+   , WithHeaders
+       '[Header "Location" Text]
+       Text
+       (RespondEmpty 301 "")
+   , Respond 400 "2FA Validation Failed" (Html ())
    ]
+
+data TwoFactorSetupResult
+  = TwoFactorSetupSuccess Text
+  | TwoFactorSetupNotEnabled Text
+  | TwoFactorSetupFailure (Html ())
+  deriving stock (Generic)
+  deriving
+    (AsUnion TwoFactorSetupResponses)
+    via GenericAsUnion TwoFactorSetupResponses TwoFactorSetupResult
+
+instance GSOP.Generic TwoFactorSetupResult
 
 data TwoFactorConfirmationForm = TwoFactorConfirmationForm
   { code :: Text
@@ -51,7 +72,7 @@ type PostTwoFactorSetup =
     :> "two-factor"
     :> "setup"
     :> ReqBody '[FormUrlEncoded] TwoFactorConfirmationForm
-    :> UVerb 'POST '[HTML] TwoFactorSetupResponses
+    :> MultiVerb 'POST '[HTML] TwoFactorSetupResponses TwoFactorSetupResult
 
 type DeleteTwoFactorSetup =
   AuthProtect "cookie-auth"

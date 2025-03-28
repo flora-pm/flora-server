@@ -1,5 +1,6 @@
 module Flora.Model.PersistentSession where
 
+import Control.DeepSeq
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text
@@ -17,21 +18,20 @@ import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Transact ()
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Time (Time)
+import Effectful.Time qualified as Time
 import Env.Generic
 import Web.HttpApiData
 
-import Control.DeepSeq
-import Effectful.Time (Time)
-import Effectful.Time qualified as Time
 import Flora.Model.User (UserId)
 
 newtype PersistentSessionId = PersistentSessionId {getPersistentSessionId :: UUID}
   deriving
-    (Show, Eq, FromField, ToField, FromHttpApiData, ToHttpApiData, NFData)
-    via UUID
-  deriving
     (Display)
     via ShowInstance UUID
+  deriving
+    (Eq, FromField, FromHttpApiData, NFData, Show, ToField, ToHttpApiData)
+    via UUID
 
 data PersistentSession = PersistentSession
   { persistentSessionId :: PersistentSessionId
@@ -39,14 +39,14 @@ data PersistentSession = PersistentSession
   , sessionData :: SessionData
   , createdAt :: UTCTime
   }
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "persistent_sessions"] PersistentSession)
 
 newtype SessionData = SessionData {getSessionData :: Map Text Text}
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving newtype (NFData)
   deriving
     (FromField, ToField)
@@ -59,7 +59,7 @@ newPersistentSession :: Time :> es => UserId -> PersistentSessionId -> Eff es Pe
 newPersistentSession userId persistentSessionId = do
   createdAt <- Time.currentTime
   let sessionData = SessionData Map.empty
-  pure PersistentSession{..}
+  pure $ PersistentSession{userId, persistentSessionId, createdAt, sessionData}
 
 persistSession
   :: (DB :> es, Time :> es)

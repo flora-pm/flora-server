@@ -2,11 +2,11 @@ module FloraWeb.Pages.Templates.Screens.Categories.Index where
 
 import Data.Vector (Vector)
 import Data.Vector qualified as V
-import Flora.Model.Category (Category (..))
-import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid
 
+import Flora.Model.Category (Category (..))
 import FloraWeb.Components.CategoryCard (categoryCard)
+import FloraWeb.Pages.Templates (FloraHTML)
 
 index :: Vector Category -> FloraHTML
 index categories =

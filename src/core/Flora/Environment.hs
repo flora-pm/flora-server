@@ -1,6 +1,5 @@
 module Flora.Environment
   ( getFloraEnv
-  , getFloraTestEnv
   ) where
 
 import Colourista.IO (blueMessage)
@@ -13,6 +12,7 @@ import Data.Time (NominalDiffTime)
 import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Fail (Fail)
+import Effectful.FileSystem (FileSystem)
 import Env (parse)
 
 import Flora.Environment.Config
@@ -36,14 +36,14 @@ mkPool connectionInfo timeout' connections =
 
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
-featureConfigToEnv FeatureConfig{..} =
+featureConfigToEnv FeatureConfig{blobStoreFS, tarballsEnabled} =
   case blobStoreFS of
     Just fp | tarballsEnabled -> pure . FeatureEnv . Just $ BlobStoreFS fp
     _ ->
       pure . FeatureEnv $
         if tarballsEnabled then Just BlobStorePure else Nothing
 
-configToEnv :: (Fail :> es, IOE :> es) => FloraConfig -> Eff es FloraEnv
+configToEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FloraConfig -> Eff es FloraEnv
 configToEnv floraConfig = do
   let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
@@ -66,20 +66,8 @@ configToEnv floraConfig = do
       , metrics = metrics
       }
 
-testConfigToTestEnv :: TestConfig -> Eff '[IOE] TestEnv
-testConfigToTestEnv config@TestConfig{..} = do
-  let PoolConfig{..} = config.dbConfig
-  pool <- mkPool connectionInfo connectionTimeout connections
-  metrics <- registerMetrics
-  pure TestEnv{..}
-
-getFloraEnv :: Eff '[Fail, IOE] FloraEnv
+getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
   liftIO $ blueMessage $ "🔌 Connecting to database at " <> Text.decodeUtf8 config.connectionInfo
   configToEnv config
-
-getFloraTestEnv :: Eff '[IOE] TestEnv
-getFloraTestEnv = do
-  config <- liftIO $ Env.parse id parseTestConfig
-  testConfigToTestEnv config

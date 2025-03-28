@@ -5,20 +5,20 @@ import Control.Monad.Extra (unlessM)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe
-import Data.Poolboy (poolboySettingsWith)
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
-import DesignSystem (generateComponents)
 import Distribution.Version (Version)
 import Effectful
+import Effectful.Concurrent (Concurrent)
+import Effectful.Concurrent qualified as Concurrent
 import Effectful.Error.Static (Error, runErrorNoCallStack)
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
@@ -26,20 +26,21 @@ import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
 import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
-import GHC.Conc
 import GHC.Generics (Generic)
-import GHC.Records
 import Log qualified
 import Log.Backend.StandardOutput qualified as Log
 import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
 import Options.Applicative
 import Sel.Hashing.Password qualified as Sel
+import System.Exit (exitFailure)
 import System.FilePath ((</>))
 
 import Advisories.Import (importAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
+import DesignSystem (generateComponents)
 import Flora.Environment (getFloraEnv)
+-- import Flora.Environment.Config (PoolConfig (..))
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
@@ -53,12 +54,11 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Tracing qualified as Tracing
-import System.Exit (exitFailure)
 
 data Options = Options
   { cliCommand :: Command
   }
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 data Command
   = Provision ProvisionTarget
@@ -68,13 +68,13 @@ data Command
   | ImportIndex FilePath Text
   | ProvisionRepository Text Text Text
   | ImportPackageTarball PackageName Version FilePath
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 data ProvisionTarget
   = Categories
   | TestPackages Text
   | Advisories
-  deriving stock (Show, Eq)
+  deriving stock (Eq, Show)
 
 data UserCreationOptions = UserCreationOptions
   { username :: Text
@@ -83,13 +83,12 @@ data UserCreationOptions = UserCreationOptions
   , isAdmin :: Bool
   , canLogin :: Bool
   }
-  deriving stock (Generic, Show, Eq)
+  deriving stock (Eq, Generic, Show)
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
-  capabilities <- getNumCapabilities
-  env <- getFloraEnv & runFailIO & runEff
+  env <- getFloraEnv & runFileSystem & runFailIO & runEff
   runTrace <-
     if env.environment == Production
       then do
@@ -97,23 +96,25 @@ main = Log.withStdOutLogger $ \logger -> do
         pure $ Trace.runTrace zipkin.zipkinTracer
       else pure Trace.runNoTrace
   result <-
-    runEff
-      . runTrace
-      . runErrorNoCallStack
-      . State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-      . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      . runDB env.pool
-      . runFailIO
-      . runTime
-      . runPoolboy (poolboySettingsWith capabilities)
-      . ( case env.features.blobStoreImpl of
+    runOptions cliArgs
+      & Reader.runReader env
+      & runLog "flora-cli" logger Log.LogTrace
+      & runFileSystem
+      & ( case env.features.blobStoreImpl of
             Just (BlobStoreFS fp) -> runBlobStoreFS fp
             _ -> runBlobStorePure
         )
-      . runFileSystem
-      . runLog "flora-cli" logger Log.LogTrace
-      . Reader.runReader env
-      $ runOptions cliArgs
+      & runTime
+      & runFailIO
+      & runDB env.pool
+      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
+      & runErrorNoCallStack
+      & runTrace
+      & runPrometheusMetrics env.metrics
+      & Concurrent.runConcurrent
+      & runEff
+
   case result of
     Right _ -> pure ()
     Left errors ->
@@ -190,20 +191,19 @@ parseImportPackageTarball =
     <*> argument str (metavar "PATH")
 
 runOptions
-  :: ( Log :> es
-     , FileSystem :> es
+  :: ( BlobStoreAPI :> es
+     , Concurrent :> es
      , DB :> es
-     , Time :> es
-     , Fail :> es
-     , IOE :> es
-     , BlobStoreAPI :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
-     , Poolboy :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , Fail :> es
+     , FileSystem :> es
+     , IOE :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
+     , Reader FloraEnv :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      , Trace :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
-     , Reader r :> es
      )
   => Options
   -> Eff es ()
@@ -227,13 +227,13 @@ runOptions (Options (CreateUser opts)) = do
       password <- liftIO $ Sel.hashText opts.password
       if opts ^. #isAdmin
         then
-          addAdmin AdminCreationForm{..}
+          addAdmin AdminCreationForm{username, email, password}
             >>= \admin ->
               if canLogin
                 then pure ()
                 else lockAccount admin.userId
         else do
-          templateUser <- mkUser UserCreationForm{..}
+          templateUser <- mkUser UserCreationForm{username, email, password}
           let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
@@ -246,16 +246,15 @@ provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es (
 provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
 
 importFolderOfCabalFiles
-  :: ( FileSystem :> es
-     , Time :> es
-     , Log :> es
-     , Poolboy :> es
+  :: ( Concurrent :> es
      , DB :> es
+     , FileSystem :> es
      , IOE :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
-     , Reader r :> es
+     , Time :> es
      )
   => FilePath
   -> Text
@@ -269,15 +268,14 @@ importFolderOfCabalFiles path repository = do
       importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
 
 importIndex
-  :: ( Time :> es
-     , Log :> es
-     , Poolboy :> es
+  :: ( Concurrent :> es
      , DB :> es
      , IOE :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
-     , Reader r :> es
+     , Time :> es
      )
   => FilePath
   -> Text
@@ -291,10 +289,10 @@ importIndex path repository = do
       importFromIndex (user ^. #userId) repository path
 
 importPackageTarball
-  :: ( Log :> es
-     , BlobStoreAPI :> es
-     , IOE :> es
+  :: ( BlobStoreAPI :> es
      , DB :> es
+     , IOE :> es
+     , Log :> es
      )
   => PackageName
   -> Version

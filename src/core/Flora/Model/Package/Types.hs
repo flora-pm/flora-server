@@ -6,7 +6,6 @@ import Control.Applicative (many, (<|>))
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson
-import Data.Aeson.Orphans ()
 import Data.Aeson.TH
 import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.ByteString.Char8 qualified as Attoparsec
@@ -41,8 +40,6 @@ import Deriving.Aeson
 import Distribution.Pretty (Pretty (..))
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
-import JSON
-import Language.Souffle.Interpreted qualified as Souffle
 import Lucid
 import Optics.Core hiding (element)
 import Servant (FromHttpApiData (..))
@@ -50,19 +47,21 @@ import Text.PrettyPrint qualified as PP
 import Text.Regex.Pcre2
 import Web.HttpApiData (ToHttpApiData (..))
 
+import Data.Aeson.Orphans ()
 import Distribution.Orphans ()
 import Distribution.Orphans.Version ()
 import Flora.Model.Package.Orphans ()
 import Flora.Model.User
+import JSON
 
 newtype PackageId = PackageId {getPackageId :: UUID}
   deriving stock (Generic)
   deriving
-    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, ToHttpApiData, FromHttpApiData, NFData)
-    via UUID
-  deriving
     (Display)
     via ShowInstance UUID
+  deriving
+    (Eq, FromField, FromHttpApiData, FromJSON, NFData, Ord, Show, ToField, ToHttpApiData, ToJSON)
+    via UUID
 
 -- | Generates a package id deterministically by hashing the namespace and the package name
 deterministicPackageId :: Namespace -> PackageName -> PackageId
@@ -70,10 +69,9 @@ deterministicPackageId (Namespace ns) (PackageName name) =
   PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ ns <> name
 
 newtype PackageName = PackageName Text
-  deriving stock (Show, Generic)
-  deriving anyclass (Souffle.Marshal)
+  deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, ToHtml, ToHttpApiData, NFData)
+    (Eq, FromField, FromJSON, NFData, Ord, ToField, ToHtml, ToHttpApiData, ToJSON)
     via Text
 
 instance Pretty PackageName where
@@ -120,9 +118,9 @@ packageNameSchema =
     ?~ "Name of a package\n It corresponds to the regular expression: `^[[:digit:]]*[[:alpha:]][[:alnum:]]*(-[[:digit:]]*[[:alpha:]][[:alnum:]]*)*$`"
 
 newtype Namespace = Namespace Text
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, ToHtml, NFData)
+    (Eq, FromJSON, NFData, Ord, ToHtml, ToJSON)
     via Text
 
 instance ToField Namespace where
@@ -181,10 +179,10 @@ namespaceSchema =
     ?~ "Namespace containing packages"
 
 data PackageStatus = UnknownPackage | FullyImportedPackage
-  deriving stock (Eq, Show, Generic, Bounded, Enum, Ord)
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageStatus)
 
 parsePackageStatus :: ByteString -> Maybe PackageStatus
@@ -220,8 +218,8 @@ data Package = Package
   , status :: PackageStatus
   , deprecationInfo :: Maybe PackageAlternatives
   }
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving stock (Eq, Generic, Ord, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "packages"] Package)
@@ -231,8 +229,8 @@ data Dependent = Dependent
   , namespace :: Text
   , dependentId :: PackageId
   }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "dependents"] Dependent)
@@ -249,14 +247,14 @@ data PackageInfo = PackageInfo
   , uploadedAt :: Maybe UTCTime
   , revisedAt :: Maybe UTCTime
   }
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (FromRow, NFData)
 
 data ElemRating = ElemRating
   { element :: Text
   , rating :: Double
   }
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (NFData, ToJSON)
 
 instance FromField ElemRating where
@@ -300,7 +298,7 @@ data PackageInfoWithExecutables = PackageInfoWithExecutables
   , license :: SPDX.License
   , executables :: Vector ElemRating
   }
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (FromRow, NFData, ToJSON)
 
 -- DTO that we get from Hackage
@@ -308,43 +306,72 @@ data DeprecatedPackage' = DeprecatedPackage'
   { package :: PackageName
   , inFavourOf :: Vector PackageName
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
 
 instance FromJSON DeprecatedPackage' where
   parseJSON = withObject "deprecatedPackage" $ \o -> do
     package <- o .: "deprecated-package"
     inFavourOf <- o .: "in-favour-of"
-    pure DeprecatedPackage'{..}
+    pure DeprecatedPackage'{package, inFavourOf}
 
 -- DAO that we persist to the database
 data DeprecatedPackage = DeprecatedPackage
   { package :: PackageName
   , inFavourOf :: PackageAlternatives
   }
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] DeprecatedPackage)
-  deriving (ToField, FromField) via Aeson DeprecatedPackage
+  deriving (FromField, ToField) via Aeson DeprecatedPackage
 
 newtype PackageAlternatives = PackageAlternatives (Vector PackageAlternative)
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageAlternatives)
-  deriving (ToField, FromField) via Aeson PackageAlternatives
+  deriving (FromField, ToField) via Aeson PackageAlternatives
 
 data PackageAlternative = PackageAlternative
   { namespace :: Namespace
   , package :: PackageName
   }
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageAlternative)
-  deriving (ToField, FromField) via Aeson PackageAlternative
+  deriving (FromField, ToField) via Aeson PackageAlternative
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Package)
+
+data DependencyVersionRequirement = DependencyVersionRequirement
+  { namespace :: Namespace
+  , packageName :: PackageName
+  , version :: Text
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (NFData)
+  deriving
+    (ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] DependencyVersionRequirement)
+
+instance ToSchema DependencyVersionRequirement where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy
+
+data PackageDependencies = PackageDependencies
+  { namespace :: Namespace
+  , packageName :: PackageName
+  , requirements :: Vector DependencyVersionRequirement
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (ToJSON)
+    via CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageDependencies
+
+instance ToSchema PackageDependencies where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy

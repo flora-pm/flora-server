@@ -29,7 +29,7 @@ server sessionWithCookies =
     }
 
 indexHandler
-  :: (Reader FeatureEnv :> es, IOE :> es, DB :> es)
+  :: (DB :> es, IOE :> es, Reader FeatureEnv :> es)
   => SessionWithCookies (Maybe User)
   -> Eff es (Html ())
 indexHandler (Headers session _) = do
@@ -38,7 +38,7 @@ indexHandler (Headers session _) = do
   render templateEnv $ Template.index categories
 
 showHandler
-  :: (Reader FeatureEnv :> es, IOE :> es, DB :> es, Error ServerError :> es)
+  :: (DB :> es, Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es)
   => SessionWithCookies (Maybe User)
   -> Text
   -> Eff es (Html ())

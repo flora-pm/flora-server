@@ -1,23 +1,26 @@
 module Flora.PackageSpec where
 
+import Data.Aeson
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Foldable
 import Data.Function
-import Data.Map qualified as Map
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Maybe
 import Data.Monoid (Sum (..))
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms qualified as Vector
 import Distribution.System (OS (Windows))
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
+import Distribution.Version (mkVersion)
 import Optics.Core
 import Test.Tasty
 
-import Distribution.Version (mkVersion)
 import Flora.Import.Package
-import Flora.Model.Category (Category (..))
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Component.Types
 import Flora.Model.Package
@@ -28,6 +31,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
 import Flora.TestUtils
+import FloraWeb.API.Routes.Packages.Types
 
 spec :: TestEff TestTree
 spec =
@@ -35,8 +39,6 @@ spec =
     "package tests"
     [ testThis "Check Cabal dependencies" testCabalDeps
     , testThis "Insert containers and its dependencies" testInsertContainers
-    , testThis "@haskell/base belongs to the \"Prelude\" category" testThatBaseisInPreludeCategory
-    , testThis "@hackage/semigroups belongs to appropriate categories" testThatSemigroupsIsInMathematicsAndDataStructures
     , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns expected results by namespace/package name" testSearchResultText
@@ -46,8 +48,14 @@ spec =
     , testThis "Get and set release deprecation markers" testReleaseDeprecation
     , testThis "Dependencies are deduplicated in the abbreviated listing" testDeduplicatedDependencies
     , testThis "Packages with only an executable have their dependencies handled well" testExecutableOnlyPackage
-    -- Disable until conditions are properly supported everywhere
-    -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
+    , testThese
+        "Transitive dependencies"
+        [ testThis "Aggregation of transitive dependencies" testAggregationOfTransitiveDependencies
+        , testThis "Transitive dependencies are properly computed" testTransitiveDependencies
+        , testThis "Serialise dependencies tree" testSerialiseDependenciesTree
+        ]
+        -- Disable until conditions are properly supported everywhere
+        -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
 
 testCabalDeps :: TestEff ()
@@ -101,7 +109,7 @@ testInsertContainers = do
         Query.getRequirements package.name latestRelease.releaseId
   assertEqual
     (Set.fromList [PackageName "base", PackageName "deepseq", PackageName "array"])
-    (Set.fromList $ view _2 <$> Vector.toList dependencies)
+    (Set.fromList $ view #packageName <$> Vector.toList dependencies)
 
 testFetchGHCPrimDependents :: TestEff ()
 testFetchGHCPrimDependents = do
@@ -122,12 +130,6 @@ testThatBaseisInPreludeCategory :: TestEff ()
 testThatBaseisInPreludeCategory = do
   result <- Query.getPackagesFromCategorySlug "prelude"
   assertBool $ Set.member (PackageName "base") (Set.fromList $ Vector.toList $ fmap (view #name) result)
-
-testThatSemigroupsIsInMathematicsAndDataStructures :: TestEff ()
-testThatSemigroupsIsInMathematicsAndDataStructures = do
-  semigroups <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "semigroups")
-  result <- Query.getPackageCategories semigroups.packageId
-  assertEqual (Set.fromList ["data-structures", "maths"]) (Set.fromList $ slug <$> Vector.toList result)
 
 testCorrectNumberInHaskellNamespace :: TestEff ()
 testCorrectNumberInHaskellNamespace = do
@@ -151,6 +153,10 @@ testBytestringDependencies = do
 
 testTimeComponents :: TestEff ()
 testTimeComponents = do
+  let countBy :: Foldable t => (a -> Bool) -> t a -> Int
+      countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
+      countComponentsByType :: Foldable t => ComponentType -> t PackageComponent -> Int
+      countComponentsByType t = countBy (^. #canonicalForm % #componentType % to (== t))
   package <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
   releases <- Query.getReleases package.packageId
   let latestRelease = maximumBy (compare `on` (.version)) releases
@@ -175,10 +181,10 @@ testSearchResultText :: TestEff ()
 testSearchResultText = do
   text <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
   releases <- Query.getNumberOfReleases text.packageId
-  assertEqual 2 releases
+  assertEqual 3 releases
   results <- Query.searchPackage (0, 30) "text"
   assertEqual 2 (Vector.length results)
-  assertEqual (Cabal.mkVersion [2, 0]) ((.version) $ Vector.head results)
+  assertEqual (Cabal.mkVersion [2, 1, 2]) ((.version) $ Vector.head results)
 
 testPackagesDeprecation :: TestEff ()
 testPackagesDeprecation = do
@@ -203,7 +209,7 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: TestEff ()
 testReleaseDeprecation = do
   result <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  assertEqual 86 (length result)
+  assertEqual 89 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
   deprecatedBinaryVersion' <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
@@ -216,7 +222,7 @@ testDeduplicatedDependencies = do
   package <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-network")
   release <- assertJust =<< Query.getReleaseByVersion package.packageId (mkVersion [0, 10, 2, 2])
   requirements <- Query.getRequirements package.name release.releaseId
-  let uniqueRequirements = Vector.nubBy (\(_, name1, _) (_, name2, _) -> compare name1 name2) requirements
+  let uniqueRequirements = Vector.nubBy (\DependencyVersionRequirement{packageName = name1} DependencyVersionRequirement{packageName = name2} -> compare name1 name2) requirements
   assertEqual
     uniqueRequirements
     requirements
@@ -236,12 +242,137 @@ testExecutableOnlyPackage = do
         , PackageName "random"
         ]
     )
-    (Set.fromList $ view _2 <$> Vector.toList requirements)
+    (Set.fromList $ view #packageName <$> Vector.toList requirements)
 
----
+testAggregationOfTransitiveDependencies :: TestEff ()
+testAggregationOfTransitiveDependencies = do
+  let dependencies :: Map Text [Text]
+      dependencies =
+        Map.fromListWith
+          (++)
+          [ ("array", ["base"])
+          , ("base", ["ghc-bignum"])
+          , ("base", ["ghc-prim"])
+          , ("base", ["rts"])
+          , ("bytestring", ["base"])
+          , ("bytestring", ["deepseq"])
+          , ("bytestring", ["ghc-prim"])
+          , ("bytestring", ["template-haskell"])
+          , ("deepseq", ["array"])
+          , ("deepseq", ["base"])
+          , ("deepseq", ["ghc-prim"])
+          , ("ghc-bignum", ["ghc-prim"])
+          , ("ghc-boot-th", ["base"])
+          , ("ghc-prim", ["rts"])
+          , ("pretty", ["base"])
+          , ("pretty", ["deepseq"])
+          , ("pretty", ["ghc-prim"])
+          , ("template-haskell", ["base"])
+          , ("template-haskell", ["ghc-boot-th"])
+          , ("template-haskell", ["ghc-prim"])
+          , ("template-haskell", ["pretty"])
+          ]
 
-countBy :: Foldable t => (a -> Bool) -> t a -> Int
-countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
+  assertEqual
+    ( Map.fromList
+        [ ("array", ["base"])
+        , ("base", ["rts", "ghc-prim", "ghc-bignum"])
+        , ("bytestring", ["template-haskell", "ghc-prim", "deepseq", "base"])
+        , ("deepseq", ["ghc-prim", "base", "array"])
+        , ("ghc-bignum", ["ghc-prim"])
+        , ("ghc-boot-th", ["base"])
+        , ("ghc-prim", ["rts"])
+        , ("pretty", ["ghc-prim", "deepseq", "base"])
+        , ("template-haskell", ["pretty", "ghc-prim", "ghc-boot-th", "base"])
+        ]
+    )
+    dependencies
 
-countComponentsByType :: Foldable t => ComponentType -> t PackageComponent -> Int
-countComponentsByType t = countBy (^. #canonicalForm % #componentType % to (== t))
+testTransitiveDependencies :: TestEff ()
+testTransitiveDependencies = do
+  base <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
+  baseRelease <- assertJust =<< Query.getReleaseByVersion base.packageId (mkVersion [4, 16, 0, 0])
+  baseComponent <- assertJust =<< Query.getComponent baseRelease.releaseId "base" Library
+  dependenciesMap <- Query.getTransitiveDependencies baseComponent.componentId
+
+  assertEqual
+    dependenciesMap
+    ( Vector.fromList
+        [ PackageDependencies
+            { namespace = Namespace "haskell"
+            , packageName = PackageName "ghc-bignum"
+            , requirements =
+                Vector.fromList
+                  [ DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}
+                  ]
+            }
+        , PackageDependencies{namespace = Namespace "haskell", packageName = PackageName "base", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-bignum", version = ">=1.0 && <2.0"}, DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}, DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
+        , PackageDependencies{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
+        ]
+    )
+
+testSerialiseDependenciesTree :: TestEff ()
+testSerialiseDependenciesTree = do
+  let dependencies =
+        Vector.fromList
+          [ PackageDependencies
+              { namespace = Namespace "haskell"
+              , packageName = PackageName "ghc-bignum"
+              , requirements =
+                  Vector.fromList
+                    [ DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}
+                    ]
+              }
+          , PackageDependencies{namespace = Namespace "haskell", packageName = PackageName "base", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-bignum", version = ">=1.0 && <2.0"}, DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}, DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
+          , PackageDependencies{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
+          ]
+  let actualJSON = toJSON $ PackageDependenciesDTO dependencies
+  let expectedJSON =
+        Object
+          ( KeyMap.fromList
+              [
+                ( "dependencies"
+                , Array $
+                    Vector.fromList
+                      [ Object
+                          ( KeyMap.fromList
+                              [ ("namespace", String "haskell")
+                              , ("package_name", String "ghc-bignum")
+                              ,
+                                ( "requirements"
+                                , Array $
+                                    Vector.fromList
+                                      [ Object (KeyMap.fromList [("namespace", String "haskell"), ("package_name", String "ghc-prim"), ("version", String ">=0.5.1.0 && <0.9")])
+                                      ]
+                                )
+                              ]
+                          )
+                      , Object
+                          ( KeyMap.fromList
+                              [ ("namespace", String "haskell")
+                              , ("package_name", String "base")
+                              ,
+                                ( "requirements"
+                                , Array $
+                                    Vector.fromList
+                                      [ Object (KeyMap.fromList [("namespace", String "haskell"), ("package_name", String "ghc-bignum"), ("version", String ">=1.0 && <2.0")])
+                                      , Object (KeyMap.fromList [("namespace", String "haskell"), ("package_name", String "ghc-prim"), ("version", String ">=0.5.1.0 && <0.9")])
+                                      , Object (KeyMap.fromList [("namespace", String "haskell"), ("package_name", String "rts"), ("version", String ">=1.0 && <1.1")])
+                                      ]
+                                )
+                              ]
+                          )
+                      , Object
+                          ( KeyMap.fromList
+                              [ ("namespace", String "haskell")
+                              , ("package_name", String "ghc-prim")
+                              , ("requirements", Array $ Vector.fromList [Object (KeyMap.fromList [("namespace", String "haskell"), ("package_name", String "rts"), ("version", String ">=1.0 && <1.1")])])
+                              ]
+                          )
+                      ]
+                )
+              ]
+          )
+  assertEqual
+    actualJSON
+    expectedJSON

@@ -23,7 +23,7 @@ instance FromJSON AffectedVersionRange where
   parseJSON = withObject "AffectedVersionRange" $ \o -> do
     affectedVersionRangeIntroduced <- o .: "introduced"
     affectedVersionRangeFixed <- o .:? "fixed"
-    pure AffectedVersionRange{..}
+    pure AffectedVersionRange{affectedVersionRangeIntroduced, affectedVersionRangeFixed}
 
 instance NFData AffectedVersionRange where
   rnf a = seq a ()

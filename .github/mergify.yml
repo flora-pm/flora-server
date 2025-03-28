@@ -1,8 +1,6 @@
-
 pull_request_rules:
   # rebase+merge strategy
-  - name: Put pull requests in the rebase+merge queue + Put pull requests in the squash+merge
-      queue
+  - name: Put pull requests in the rebase+merge queue + Put pull requests in the squash+merge queue
     conditions: []
     actions:
       queue:
@@ -26,3 +24,9 @@ queue_rules:
     merge_conditions: []
     update_method: rebase
     merge_method: merge
+priority_rules:
+  - name: priority for queue `duplicated default from Put pull requests in the squash+merge queue`
+    conditions:
+      - label=squash+merge me
+      - 'check-success=Backend_tests'
+    priority: 2250

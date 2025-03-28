@@ -16,9 +16,11 @@ import Data.Time.Clock (UTCTime (..))
 import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Distribution.SPDX
 import Distribution.Version
 import Effectful
 import Effectful.Fail
+import Effectful.FileSystem
 import Env
 import Lucid
 import PyF (fmt)
@@ -26,7 +28,6 @@ import Security.Advisories.Core.HsecId qualified as HsecId
 import Security.CVSS
 
 import Advisories.Model.Affected.Types
-import Distribution.SPDX
 import Flora.Environment.Config
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category
@@ -45,7 +46,7 @@ newtype ComponentName = ComponentName Text
 newtype ComponentTitle = ComponentTitle Text
   deriving newtype (Eq, Ord, Show)
 
-generateComponents :: (Fail :> es, IOE :> es) => Eff es ()
+generateComponents :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es ()
 generateComponents = do
   environment <- liftIO $ Env.parse id parseDeploymentEnv
   assets <- getAssets environment

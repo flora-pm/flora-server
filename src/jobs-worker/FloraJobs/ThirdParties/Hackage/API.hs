@@ -14,15 +14,15 @@ import Data.Time (UTCTime)
 import Data.Typeable
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Distribution.Types.Version (Version)
 import Network.HTTP.Media ((//), (/:))
 import Servant.API
-import Servant.API.ContentTypes.GZip
 import Servant.API.Generic
 
 import Distribution.Orphans ()
-import Distribution.Types.Version (Version)
 import Flora.Model.Job (IntAesonVersion)
 import Flora.Model.Package.Types (DeprecatedPackage' (..), PackageName)
+import Servant.API.ContentTypes.GZip
 
 type HackageAPI = NamedRoutes HackageAPI'
 
@@ -84,7 +84,7 @@ data HackageUserObject = HackageUserObject
   { userid :: Word
   , username :: Text
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON)
 
 data HackageUserDetailsObject = HackageUserDetailsOject
@@ -92,20 +92,20 @@ data HackageUserDetailsObject = HackageUserDetailsOject
   , username :: Text
   , groups :: [Text]
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON)
 
 data HackagePreferredVersions = HackagePreferredVersions
   { deprecatedVersions :: Vector Version
   , normalVersions :: Vector Version
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
 
 instance FromJSON HackagePreferredVersions where
   parseJSON = withObject "Hackage preferred versions" $ \o -> do
     deprecatedVersions <- o .:? "deprecated-version" .!= Vector.empty
     normalVersions <- o .: "normal-version"
-    pure HackagePreferredVersions{..}
+    pure $ HackagePreferredVersions deprecatedVersions normalVersions
 
 data HackagePackageInfo = HackagePackageInfo
   { metadataRevision :: Word

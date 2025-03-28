@@ -24,7 +24,7 @@ import Sel.HMAC.SHA256 qualified as HMAC
 
 import Flora.Model.User
 
-addAdmin :: (DB :> es, Time :> es, IOE :> es) => AdminCreationForm -> Eff es User
+addAdmin :: (DB :> es, IOE :> es, Time :> es) => AdminCreationForm -> Eff es User
 addAdmin form = do
   adminUser <- mkAdmin form
   insertUser adminUser

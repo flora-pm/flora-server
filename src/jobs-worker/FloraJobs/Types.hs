@@ -7,7 +7,7 @@ import Control.Exception (Exception)
 import Data.Aeson
 import Data.Function ((&))
 import Data.Pool hiding (PoolConfig)
-import Data.Poolboy (poolboySettingsWith)
+import Data.Set (Set)
 import Data.Text qualified as Text
 import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple (Connection)
@@ -19,9 +19,9 @@ import Effectful.Concurrent.Async
 import Effectful.FileSystem
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Process.Typed
+import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
@@ -35,7 +35,6 @@ import OddJobs.ConfigBuilder
 import OddJobs.Job (Config (..), Job, LogEvent (..), LogLevel (..))
 import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
 
-import Data.Set (Set)
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Logging qualified as Logging
@@ -46,7 +45,6 @@ import Flora.Model.Package.Types (Namespace, PackageName)
 type JobsRunner =
   Eff
     '[ DB
-     , Poolboy
      , Reader JobsRunnerEnv
      , BlobStoreAPI
      , Log
@@ -56,6 +54,7 @@ type JobsRunner =
      , State (Set (Namespace, PackageName, Version))
      , Reader FloraEnv
      , Concurrent
+     , Metrics AppMetrics
      , IOE
      ]
 
@@ -70,7 +69,6 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & runDB pool
-    & runPoolboy (poolboySettingsWith floraEnv.dbConfig.connections)
     & Reader.runReader runnerEnv
     & ( case floraEnv.features.blobStoreImpl of
           Just (BlobStoreFS fp) -> runBlobStoreFS fp
@@ -83,6 +81,7 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
     & State.evalState mempty
     & Reader.runReader floraEnv
     & runConcurrent
+    & runPrometheusMetrics floraEnv.metrics
     & runEff
 
 data OddJobException where
@@ -133,7 +132,7 @@ makeUIConfig cfg logger pool =
   mkUIConfig (structuredLogging cfg logger) jobTableName pool id
 
 structuredLogging :: FloraConfig -> Logger -> LogLevel -> LogEvent -> IO ()
-structuredLogging FloraConfig{..} logger level event =
+structuredLogging FloraConfig{environment} logger level event =
   runEff
     . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     . runTime

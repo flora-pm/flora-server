@@ -27,18 +27,18 @@ import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Distribution.Types.Version (Version)
 import Effectful
+import Effectful.Concurrent (Concurrent)
+import Effectful.Concurrent qualified as Concurrent
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.FileSystem.IO.ByteString qualified as FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
-import GHC.Conc (numCapabilities)
-import GHC.Records
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude (maxThreads, ordered)
@@ -67,16 +67,15 @@ import Flora.Monitoring
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
 importAllFilesInRelativeDirectory
-  :: ( Log :> es
-     , Time :> es
-     , FileSystem :> es
+  :: ( Concurrent :> es
      , DB :> es
+     , FileSystem :> es
      , IOE :> es
-     , Poolboy :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
-     , Reader r :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
+     , Time :> es
      )
   => UserId
   -> (Text, Text)
@@ -87,15 +86,14 @@ importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
   importAllFilesInDirectory user (repositoryName, repositoryURL) workdir
 
 importFromIndex
-  :: ( Poolboy :> es
-     , Time :> es
-     , Log :> es
+  :: ( Concurrent :> es
      , DB :> es
      , IOE :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
-     , Reader r :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
+     , Time :> es
      )
   => UserId
   -> Text
@@ -145,16 +143,15 @@ importFromIndex user repositoryName index = do
 
 -- | Finds all cabal files in the specified directory, and inserts them into the database after extracting the relevant data
 importAllFilesInDirectory
-  :: ( Time :> es
-     , Log :> es
-     , FileSystem :> es
+  :: ( Concurrent :> es
      , DB :> es
+     , FileSystem :> es
      , IOE :> es
-     , Poolboy :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
-     , Reader r :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
+     , Time :> es
      )
   => UserId
   -> (Text, Text)
@@ -167,23 +164,23 @@ importAllFilesInDirectory user (repositoryName, _repositoryURL) dir = do
   importFromStream user (repositoryName, packages) (findAllCabalFilesInDirectory dir)
 
 importFromStream
-  :: forall es r
-   . ( Time :> es
-     , Log :> es
+  :: forall es
+   . ( Concurrent :> es
      , DB :> es
      , IOE :> es
-     , Poolboy :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
+     , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
-     , Reader r :> es
-     , HasField "metrics" r Metrics
-     , HasField "mltp" r MLTP
+     , Time :> es
      )
   => UserId
   -> (Text, Set PackageName)
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
   -> Eff es ()
 importFromStream userId repository@(repositoryName, _) stream = do
-  let cfg = maxThreads numCapabilities . ordered True
+  capabilities <- Concurrent.getNumCapabilities
+  let cfg = maxThreads capabilities . ordered True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
@@ -198,9 +195,7 @@ importFromStream userId repository@(repositoryName, _) stream = do
           Update.updatePackageIndexByName repositoryName timestamp
       )
   displayStats processedPackageCount
-  increasePackageImportCounterBy
-    (fromIntegral @Int @Double processedPackageCount)
-    repositoryName
+  increasePackageImportCounterBy processedPackageCount repositoryName
   where
     displayCount :: SFold.Fold (Eff es) a Int
     displayCount =
@@ -219,12 +214,13 @@ displayStats currentCount = do
   liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
 processFile
-  :: ( State (Set (Namespace, PackageName, Version)) :> es
-     , Log :> es
-     , IOE :> es
+  :: ( Concurrent :> es
      , DB :> es
+     , IOE :> es
+     , Log :> es
+     , Reader FloraEnv :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
-     , Poolboy :> es
      )
   => UserId
   -> (Text, Set PackageName)

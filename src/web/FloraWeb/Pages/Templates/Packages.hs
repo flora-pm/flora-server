@@ -34,7 +34,6 @@ import Data.Foldable (fold, forM_)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust, isJust)
-import Data.Positive
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -43,7 +42,6 @@ import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
-import Distribution.Orphans ()
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
@@ -56,9 +54,11 @@ import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
 import Advisories.Model.Affected.Types
+import Data.Positive
+import Distribution.Orphans ()
 import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.Category.Types
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
@@ -232,7 +232,7 @@ packageListing mExactMatchItems packages =
           packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license, em.uploadedAt, em.revisedAt)
     Vector.forM_
       packages
-      (\PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license, uploadedAt, revisedAt))
+      (\PackageInfo{namespace, name, synopsis, version, license, uploadedAt, revisedAt} -> packageListItem (namespace, name, synopsis, version, license, uploadedAt, revisedAt))
 
 packageWithExecutableListing
   :: Vector PackageInfoWithExecutables
@@ -371,7 +371,7 @@ displayDependencies
   -- ^ The package namespace and name
   -> Word
   -- ^ Number of dependenciesc
-  -> Vector (Namespace, PackageName, Text)
+  -> Vector DependencyVersionRequirement
   -- ^ (Namespace, Name, Version requirement, Synopsis of the dependency)
   -> FloraHTML
 displayDependencies (namespace, packageName, version) numberOfDependencies dependencies =
@@ -483,10 +483,10 @@ renderDependent Package{name, namespace} = do
 
   a_ [class_ "dependent", href_ $ Links.packageResource namespace name] qualifiedName
 
-renderDependency :: (Namespace, PackageName, Text) -> FloraHTML
-renderDependency (namespace, name, version) = do
+renderDependency :: DependencyVersionRequirement -> FloraHTML
+renderDependency DependencyVersionRequirement{namespace, packageName, version} = do
   li_ [class_ "dependency"] $ do
-    a_ [href_ $ Links.packageResource namespace name] (toHtml name)
+    a_ [href_ $ Links.packageResource namespace packageName] (toHtml packageName)
     toHtmlRaw @Text "&nbsp;"
     if version == ">=0"
       then ""

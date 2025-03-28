@@ -10,28 +10,26 @@ import Data.ByteString.Lazy (LazyByteString)
 import Data.Map qualified as M
 import Data.Text.Display (display)
 import Data.Vector qualified as V
-
 import Database.PostgreSQL.Entity (_orderBy, _selectWhere)
 import Database.PostgreSQL.Entity.DBT (QueryNature (..), query)
 import Database.PostgreSQL.Entity.Types (SortKeyword (..), field)
 import Database.PostgreSQL.Simple (Only (..))
+import Distribution.Version (Version)
 import Effectful (Eff, type (:>))
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Log qualified
 
-import Distribution.Version (Version)
+import Flora.Model.BlobIndex.Internal
 import Flora.Model.BlobIndex.Types (BlobRelation (..), BlobStoreQueryError (..))
 import Flora.Model.BlobStore.API (BlobStoreAPI, get)
 import Flora.Model.Package (PackageName)
-
-import Flora.Model.BlobIndex.Internal
 
 -- | Query a package name, version and hash and construct a uncompressed tarball
 -- from the database
 queryTar
   :: forall es
-   . (Log :> es, DB :> es, BlobStoreAPI :> es)
+   . (BlobStoreAPI :> es, DB :> es, Log :> es)
   => PackageName
   -> Version
   -> Sha256Sum
@@ -54,14 +52,14 @@ queryTar pname version rootHash = do
           )
           (Only hash)
     go :: BlobRelation -> Eff es (FilePath, TarTree Sha256Sum)
-    go BlobRelation{..}
+    go (BlobRelation _blobHash blobDepHash blobDepPath blobDepDirectory)
       | blobDepDirectory =
           (blobDepPath,)
             . TarDirectory blobDepHash
             . M.fromList
             . V.toList
             <$> (traverse go =<< queryChildren blobDepHash)
-    go BlobRelation{..} = do
+    go (BlobRelation _blobHash blobDepHash blobDepPath _blobDepDirectory) = do
       mcontent <- get blobDepHash
       case mcontent of
         Nothing -> throw $ IncompleteDirectoryTree pname version

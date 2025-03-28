@@ -14,10 +14,10 @@ import Effectful.Log qualified as Log
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Log (Logger)
-import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 import Log.Backend.StandardOutput qualified as Log
 
 import Flora.Environment.Config
+import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
 -- | Wrapper around 'Log.runLogT' with necessary metadata
 runLog

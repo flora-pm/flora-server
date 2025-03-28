@@ -29,8 +29,8 @@ module Flora.Import.Package
   ) where
 
 import Control.DeepSeq (force)
-import Control.Exception
-import Control.Monad (forM_)
+import Control.Exception ()
+import Control.Monad
 import Data.Aeson (object, (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
@@ -39,7 +39,7 @@ import Data.ByteString qualified as BS
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe
+import Data.Maybe as Maybe
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -77,13 +77,18 @@ import Distribution.Types.PackageDescription ()
 import Distribution.Types.TestSuite
 import Distribution.Types.Version (Version)
 import Distribution.Types.VersionRange (VersionRange, withinRange)
-import Distribution.Utils.ShortText qualified as Cabal
+import Distribution.Utils.ShortText (fromShortText)
 import Distribution.Version qualified as Version
 import Effectful
+import Effectful.Concurrent (Concurrent)
+import Effectful.Concurrent.Async qualified as Concurrent
+import Effectful.Exception
 import Effectful.Log (Log)
-import Effectful.Poolboy (Poolboy)
-import Effectful.Poolboy qualified as Poolboy
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import GHC.List (List)
@@ -92,11 +97,12 @@ import Optics.Core
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
-import Flora.Import.Categories.Tuning qualified as Tuning
+import Flora.Environment.Config (PoolConfig (..))
+import Flora.Environment.Env (FloraEnv (..))
 import Flora.Import.Package.Types
 import Flora.Import.Types
+import Flora.Model.Category.Query as Query
+import Flora.Model.Category.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
 import Flora.Model.Package.Orphans ()
@@ -112,6 +118,7 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Model.User
+import Flora.Normalise
 
 coreLibraries :: Set PackageName
 coreLibraries =
@@ -211,7 +218,7 @@ loadContent :: Log :> es => FilePath -> BS.ByteString -> Eff es GenericPackageDe
 loadContent = parseString parseGenericPackageDescription
 
 loadJSONContent
-  :: (Log :> es, IOE :> es, State (Map (Namespace, PackageName, Version) Text) :> es)
+  :: (IOE :> es, Log :> es, State (Map (Namespace, PackageName, Version) Text) :> es)
   => FilePath
   -> BS.ByteString
   -> (Text, Set PackageName)
@@ -237,7 +244,7 @@ loadJSONContent path content (repositoryName, repositoryPackages) = do
           pure (chosenNamespace, packageName, version, target)
 
 processJSONContent
-  :: (Log :> es, IOE :> es)
+  :: (IOE :> es, Log :> es)
   => Text
   -> a
   -> b
@@ -285,22 +292,22 @@ parseString parser name bs = do
     Right x -> pure x
     Left err -> do
       Log.logAttention_ (display $ show err)
-      throw $ CabalFileCouldNotBeParsed name
+      throwIO $ CabalFileCouldNotBeParsed name
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 persistImportOutput
   :: forall es
-   . (State (Set (Namespace, PackageName, Version)) :> es, Log :> es, Poolboy :> es, DB :> es, IOE :> es)
+   . (Concurrent :> es, DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, State (Set (Namespace, PackageName, Version)) :> es)
   => ImportOutput
   -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
   Log.logInfo "Persisting package" $
     object
-      [ "package_name" .= packageName
+      [ "package" .= (display package.namespace <> "/" <> display package.name)
       , "version" .= display release.version
       ]
-  persistPackage
+  persistPackage package.packageId
   if Set.member (package.namespace, package.name, release.version) packageCache
     then do
       Log.logInfo "Release already present" $
@@ -312,16 +319,19 @@ persistImportOutput (ImportOutput package categories release components) = State
       pure packageCache
     else do
       Update.upsertRelease release
-      parallelRun persistComponent components
+      env <- Reader.ask
+      Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections components persistComponent
+      let expectedDependencies = foldMap snd components
+      unless (null expectedDependencies) sanityCheck
       pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    parallelRun :: Foldable t => (a -> Eff es ()) -> t a -> Eff es ()
-    parallelRun f xs = forM_ xs (Poolboy.enqueue . f)
-    packageName = display package.namespace <> "/" <> display package.name
-    persistPackage = do
-      let packageId = package.packageId
+    persistPackage :: PackageId -> Eff es ()
+    persistPackage packageId = do
       Update.upsertPackage package
-      forM_ categories (\case Tuning.NormalisedPackageCategory cat -> Update.addToCategoryByName packageId cat)
+      categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
+      forM_
+        categoriesByName
+        (\c -> Update.addToCategoryByName packageId c.name)
 
     persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
     persistComponent (packageComponent, deps) = do
@@ -329,15 +339,36 @@ persistImportOutput (ImportOutput package categories release components) = State
         "Persisting component"
         $ object
           [ "component" .= display packageComponent.canonicalForm
+          , "release_version" .= release.version
           , "number_of_dependencies" .= display (length deps)
+          , "dependencies" .= deps
           ]
       Update.upsertPackageComponent packageComponent
-      parallelRun persistImportDependency deps
+      mapM_ persistImportDependency deps
 
     persistImportDependency :: ImportDependency -> Eff es ()
     persistImportDependency dep = do
       Update.upsertPackage dep.package
       Update.upsertRequirement dep.requirement
+
+    sanityCheck :: Eff es ()
+    sanityCheck = do
+      dependencies <- Query.getRequirements package.name release.releaseId
+      when (Vector.null dependencies) $ do
+        Log.logAttention "No dependencies found after inserting release!" $
+          object
+            [ "namespace" .= package.namespace
+            , "package" .= package.name
+            , "version" .= release.version
+            ]
+        error $
+          Text.unpack $
+            "No dependencies found after inserting release: "
+              <> display package.namespace
+              <> "/"
+              <> display package.name
+              <> "-"
+              <> display release.version
 
 persistHashes
   :: ( DB :> es
@@ -378,9 +409,9 @@ persistHashes (namespace, packageName, version, target) = do
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
   :: ( IOE :> es
-     , Time :> es
      , Log :> es
      , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
      )
   => UserId
   -> (Text, Set PackageName)
@@ -398,9 +429,9 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
   let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
-  let rawCategoryField = packageDesc ^. #category % to Cabal.fromShortText % to Text.pack
-  let categoryList = fmap (Tuning.UserPackageCategory . Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
-  categories <- liftIO $ Tuning.normalisedCategories <$> Tuning.normalise categoryList
+  let rawCategoryField = packageDesc ^. #category % to fromShortText % to Text.pack
+  let categoryList = fmap (Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
+  let categories = Maybe.mapMaybe normaliseCategory categoryList
   let package =
         Package
           { packageId
@@ -476,7 +507,7 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
     Nothing -> do
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
       extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc
-    Just components -> pure ImportOutput{..}
+    Just components -> pure $ ImportOutput package categories release components
 
 extractLibrary
   :: Package
@@ -614,10 +645,10 @@ genericComponentExtractor
   rawComponent =
     let releaseId = release.releaseId
         componentName = maybe (getName rawComponent) display defaultComponentName
-        canonicalForm = CanonicalComponent{..}
+        canonicalForm = CanonicalComponent componentName componentType
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
-        component = PackageComponent{..}
+        component = PackageComponent componentId releaseId canonicalForm metadata
         dependencies = buildDependency package repository componentId <$> getDeps rawComponent
      in (component, dependencies)
 
@@ -636,7 +667,7 @@ buildDependency package repository packageComponentId (Cabal.Dependency depName 
       updatedAt = package.updatedAt
       status = UnknownPackage
       deprecationInfo = Nothing
-      dependencyPackage = Package{..}
+      dependencyPackage = Package packageId namespace name ownerId createdAt updatedAt status deprecationInfo
       requirement =
         Requirement
           { requirementId = deterministicRequirementId packageComponentId packageId
@@ -670,7 +701,6 @@ getVersions supportedCompilers =
   foldMap
     (\version -> Vector.foldMap (checkVersion version) supportedCompilers)
     versionList
-
 checkVersion :: Version -> VersionRange -> Vector Version
 checkVersion version versionRange =
   if version `withinRange` versionRange

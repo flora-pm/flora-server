@@ -1,12 +1,11 @@
 module FloraWeb.API.Routes where
 
-import FloraWeb.API.Routes.Packages qualified as PackagesAPI
 import GHC.Generics
 import Servant
 
-type Routes =
-  "experimental"
-    :> NamedRoutes Routes'
+import FloraWeb.API.Routes.Packages qualified as PackagesAPI
+
+type Routes = "api" :> "experimental" :> NamedRoutes Routes'
 
 data Routes' mode = Routes'
   { packages :: mode :- "packages" :> PackagesAPI.API

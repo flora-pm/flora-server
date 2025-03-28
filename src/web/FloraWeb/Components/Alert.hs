@@ -1,9 +1,10 @@
 module FloraWeb.Components.Alert where
 
 import Data.Text (Text)
+import Lucid
+
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Pages.Templates.Types
-import Lucid
 
 info :: Text -> FloraHTML
 info message =

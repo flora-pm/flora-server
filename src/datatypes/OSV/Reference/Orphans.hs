@@ -19,8 +19,8 @@ instance NFData Reference where
   rnf a = seq a ()
 
 newtype References = References (Vector Reference)
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON, ToJSON, NFData)
+  deriving stock (Eq, Generic, Show)
+  deriving newtype (FromJSON, NFData, ToJSON)
   deriving
     (FromField, ToField)
     via (Aeson References)

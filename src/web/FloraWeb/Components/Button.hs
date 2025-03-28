@@ -1,7 +1,8 @@
 module FloraWeb.Components.Button where
 
-import FloraWeb.Pages.Templates
 import Lucid
+
+import FloraWeb.Pages.Templates
 
 button :: FloraHTML -> FloraHTML
 button text =

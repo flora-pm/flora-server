@@ -10,4 +10,4 @@ data AdvisoryImportError
   = AffectedPackageNotFound Namespace PackageName
   | AdvisoryParsingError (FilePath, ParseAdvisoryError)
   | AffectedVersionNotFound Namespace PackageName Version
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)

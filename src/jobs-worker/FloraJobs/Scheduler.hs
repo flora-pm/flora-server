@@ -29,6 +29,7 @@ import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Database.PostgreSQL.Simple.Types
 import Distribution.Types.Version
 import Effectful
 import Effectful.Log (Log)
@@ -36,7 +37,6 @@ import Effectful.PostgreSQL.Transact.Effect
 import Log
 import OddJobs.Job (Job (..), createJob, scheduleJob)
 
-import Database.PostgreSQL.Simple.Types
 import Flora.Model.Job
 import Flora.Model.Package
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -92,8 +92,8 @@ createJobWithResource pool job =
 
 checkIfIndexRefreshJobIsPlanned
   :: ( DB :> es
-     , Log :> es
      , IOE :> es
+     , Log :> es
      )
   => Pool PG.Connection
   -> Eff es ()

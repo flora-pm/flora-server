@@ -1,6 +1,4 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module FloraWeb.Common.Pagination where
@@ -8,7 +6,6 @@ module FloraWeb.Common.Pagination where
 import Control.Applicative ((<|>))
 import Data.Maybe (fromMaybe)
 import Data.OpenApi qualified as O
-import Data.Positive
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.TypeLits
@@ -16,6 +13,7 @@ import Optics.Core
 import Servant
 import Servant.OpenApi
 
+import Data.Positive
 import FloraWeb.Servant.Common
 
 data PaginationSpec = PaginationSpec
@@ -55,8 +53,8 @@ type PaginationParamsExpanded subApi =
     :> subApi
 
 instance
-  ( HasServer subApi ctx
-  , HasContextEntry (ctx .++ DefaultErrorFormatters) ErrorFormatters
+  ( HasContextEntry (ctx .++ DefaultErrorFormatters) ErrorFormatters
+  , HasServer subApi ctx
   , KnownPaginationPageSize settings
   )
   => HasServer (PaginationParameters settings :> subApi) ctx

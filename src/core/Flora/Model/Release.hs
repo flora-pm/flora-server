@@ -1,5 +1,6 @@
 module Flora.Model.Release where
 
+import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.ByteString.Lazy (fromStrict, toStrict)
 import Data.Maybe (fromJust)
@@ -7,7 +8,6 @@ import Data.UUID (fromByteString, toByteString)
 import Distribution.Types.Version
 import Distribution.Utils.Structured (structuredEncode)
 
-import Control.DeepSeq
 import Flora.Model.Package
 import Flora.Model.Release.Types
 

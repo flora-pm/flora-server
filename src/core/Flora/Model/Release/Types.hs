@@ -13,7 +13,6 @@ where
 
 import Control.DeepSeq
 import Data.Aeson
-import Data.Aeson.Orphans ()
 import Data.Aeson.TH
 import Data.ByteString (ByteString)
 import Data.OpenApi.Schema (ToSchema)
@@ -33,26 +32,27 @@ import Deriving.Aeson
 import Distribution.Compiler (CompilerFlavor)
 import Distribution.SPDX.License ()
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.BuildType (BuildType)
 import Distribution.Types.Flag (PackageFlag)
 import Distribution.Types.Version
 import Distribution.Types.VersionRange (VersionRange)
 
+import Data.Aeson.Orphans ()
 import Data.Text.HTML
 import Distribution.Orphans ()
 import Distribution.Orphans.BuildType ()
 import Distribution.Orphans.CompilerFlavor ()
 import Distribution.Orphans.PackageFlag ()
-import Distribution.Types.BuildType (BuildType)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Package
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}
   deriving
-    (Eq, Ord, Show, FromField, ToField, FromJSON, ToJSON, NFData)
-    via UUID
-  deriving
     (Display)
     via ShowInstance UUID
+  deriving
+    (Eq, FromField, FromJSON, NFData, Ord, Show, ToField, ToJSON)
+    via UUID
 
 data Release = Release
   { releaseId :: ReleaseId
@@ -83,8 +83,8 @@ data Release = Release
   , revisedAt :: Maybe UTCTime
   , buildType :: BuildType
   }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "releases"] Release)
@@ -93,18 +93,18 @@ instance Ord Release where
   compare x y = compare x.version y.version
 
 newtype ReleaseFlags = ReleaseFlags (Vector PackageFlag)
-  deriving stock (Eq, Ord, Show, Generic)
-  deriving newtype (ToJSON, FromJSON, NFData, ToSchema)
-  deriving (ToField, FromField) via Aeson ReleaseFlags
+  deriving stock (Eq, Generic, Ord, Show)
+  deriving newtype (FromJSON, NFData, ToJSON, ToSchema)
+  deriving (FromField, ToField) via Aeson ReleaseFlags
 
 data ImportStatus
   = Imported
   | Inexistent
   | NotImported
-  deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportStatus)
 
 parseImportStatus :: ByteString -> Maybe ImportStatus
@@ -133,19 +133,19 @@ instance ToField ImportStatus where
   toField = Escape . encodeUtf8 . display
 
 newtype SupportedCompilers = Vector (CompilerFlavor, VersionRange)
-  deriving stock (Eq, Show, Generic, Typeable)
+  deriving stock (Eq, Generic, Show, Typeable)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] SupportedCompilers)
 
 data ReleaseDeprecation = ReleaseDeprecation
   { deprecated :: Bool
   , release :: ReleaseId
   }
-  deriving stock (Eq, Ord, Show, Generic)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReleaseDeprecation)
-  deriving (ToField, FromField) via Aeson ReleaseDeprecation
+  deriving (FromField, ToField) via Aeson ReleaseDeprecation
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Release)

@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module FloraWeb.Pages.Templates.Types
   ( FloraHTML
   , FlashInfo (..)
@@ -33,13 +35,13 @@ import FloraWeb.Types
 type FloraHTML = HtmlT (ReaderT TemplateEnv Identity) ()
 
 newtype FlashInfo = FlashInfo {getFlashInfo :: Text}
-  deriving (Show, Display) via Text
+  deriving (Display, Show) via Text
 
 mkInfo :: Text -> FlashInfo
 mkInfo = FlashInfo
 
 newtype FlashError = FlashError {getFlashInfo :: Text}
-  deriving (Show, Display) via Text
+  deriving (Display, Show) via Text
 
 mkError :: Text -> FlashError
 mkError = FlashError
@@ -60,7 +62,7 @@ data TemplateEnv = TemplateEnv
   , indexPage :: Bool
   , navbarSearchContent :: Maybe Text
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
 
 -- | This record holds flags for UI elements that must be marked active in the templates.
 data ActiveElements = ActiveElements
@@ -69,7 +71,7 @@ data ActiveElements = ActiveElements
   , menuNav :: Bool
   , adminDashboard :: Bool
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
 
 data TemplateDefaults = TemplateDefaults
   { displayNavbarSearch :: Bool
@@ -85,7 +87,7 @@ data TemplateDefaults = TemplateDefaults
   , indexPage :: Bool
   , navbarSearchContent :: Maybe Text
   }
-  deriving stock (Show, Generic)
+  deriving stock (Generic, Show)
 
 defaultActiveElements :: ActiveElements
 defaultActiveElements =
@@ -120,7 +122,7 @@ defaultsToEnv assets TemplateDefaults{..} =
    in TemplateEnv{..}
 
 class FromSession a where
-  templateFromSession :: (Reader FeatureEnv :> es, IOE :> es) => a -> TemplateDefaults -> Eff es TemplateEnv
+  templateFromSession :: (IOE :> es, Reader FeatureEnv :> es) => a -> TemplateDefaults -> Eff es TemplateEnv
 
 instance FromSession (Session User) where
   templateFromSession session defaults = do

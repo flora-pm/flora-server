@@ -192,7 +192,7 @@ dependencyInfoToPackageInfo dep =
     dep.revisedAt
 
 listAllPackagesInNamespace
-  :: (DB :> es, Time :> es, Log :> es)
+  :: (DB :> es, Log :> es, Time :> es)
   => (Word, Word)
   -> Namespace
   -> Eff es (Word, Vector PackageInfo)

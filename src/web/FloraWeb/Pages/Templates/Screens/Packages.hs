@@ -8,7 +8,6 @@ import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.Version
 import Lucid
-import Lucid.Orphans ()
 
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
@@ -31,6 +30,7 @@ import FloraWeb.Pages.Templates.Packages
   , displayVersions
   )
 import FloraWeb.Pages.Templates.Types (FloraHTML)
+import Lucid.Orphans ()
 
 showPackage
   :: Release
@@ -40,7 +40,7 @@ showPackage
   -> Text
   -> Vector Package
   -> Word
-  -> Vector (Namespace, PackageName, Text)
+  -> Vector DependencyVersionRequirement
   -> Word
   -> Vector Category
   -> FloraHTML
@@ -89,7 +89,7 @@ packageBody
   -> Release
   -> Vector Release
   -> Word
-  -> Vector (Namespace, PackageName, Text)
+  -> Vector DependencyVersionRequirement
   -> Word
   -> Vector Package
   -> Word

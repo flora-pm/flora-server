@@ -33,7 +33,7 @@ import Flora.Model.Release.Types
 insertRelease :: DB :> es => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
 
-upsertRelease :: (Log :> es, DB :> es) => Release -> Eff es ()
+upsertRelease :: (DB :> es, Log :> es) => Release -> Eff es ()
 upsertRelease newRelease = do
   mReleaseFromDB <- Query.getReleaseById newRelease.releaseId
   case mReleaseFromDB of

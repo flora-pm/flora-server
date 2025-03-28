@@ -3,10 +3,10 @@ module Flora.Import.Package.Types where
 import Control.DeepSeq
 import Data.Aeson
 import Data.List.NonEmpty (NonEmpty)
+import Data.Text (Text)
 import GHC.Generics
 import GHC.List (List)
 
-import Flora.Import.Categories.Tuning qualified as Tuning
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
@@ -18,7 +18,7 @@ data ImportDependency = ImportDependency
   -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
   , requirement :: Requirement
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (NFData)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -28,9 +28,9 @@ type DependentName = (Namespace, PackageName)
 
 data ImportOutput = ImportOutput
   { package :: Package
-  , categories :: [Tuning.NormalisedPackageCategory]
+  , categories :: [Text]
   , release :: Release
   , components :: NonEmpty (PackageComponent, List ImportDependency)
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, ToJSON)

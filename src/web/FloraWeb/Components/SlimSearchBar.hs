@@ -1,9 +1,10 @@
 module FloraWeb.Components.SlimSearchBar (slimSearchBar, SearchBarOptions (..)) where
 
 import Data.Text (Text)
+import Lucid
+
 import FloraWeb.Components.Icons
 import FloraWeb.Pages.Templates.Types (FloraHTML)
-import Lucid
 
 data SearchBarOptions = SearchBarOptions
   { actionUrl :: Text

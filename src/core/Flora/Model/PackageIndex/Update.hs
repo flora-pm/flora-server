@@ -31,12 +31,12 @@ updatePackageIndexByName repositoryName newTimestamp = do
         ([field| repository |], repositoryName)
         (Only newTimestamp)
 
-createPackageIndex :: (IOE :> es, DB :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
+createPackageIndex :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
 createPackageIndex repositoryName url description timestamp = do
   packageIndex <- mkPackageIndex repositoryName url description timestamp
   void $ dbtToEff $ insert @PackageIndex packageIndex
 
-upsertPackageIndex :: (IOE :> es, DB :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
+upsertPackageIndex :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
 upsertPackageIndex repositoryName url description timestamp = do
   packageIndex <- mkPackageIndex repositoryName url description timestamp
   dbtToEff $ void $ execute Insert (_insert @PackageIndex <> " ON CONFLICT DO NOTHING") packageIndex

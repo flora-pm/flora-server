@@ -1,39 +1,75 @@
 module FloraWeb.Pages.Routes.Sessions where
 
 import Data.Text
+import Generics.SOP qualified as GSOP
 import Lucid
-import Servant
+import Servant.API
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
+import Servant.API.MultiVerb
+import Web.Cookie
 import Web.FormUrlEncoded
 
 import Flora.Model.PersistentSession
-import Web.Cookie
 
 type Routes = NamedRoutes Routes'
 
 type NewSession =
   "new"
-    :> UVerb 'GET '[HTML] NewSessionResponses
+    :> MultiVerb
+         'GET
+         '[HTML]
+         NewSessionResponses
+         NewSessionResult
 
 type NewSessionResponses =
-  '[ -- User is not logged-in, dispay the login page
-     WithStatus 200 (Html ())
-   , -- User is already logged-in, redirect to home page
-     WithStatus 301 (Headers '[Header "Location" Text] NoContent)
+  '[ -- User is already logged-in, redirect to home page
+     WithHeaders
+       '[Header "Location" Text]
+       Text
+       (RespondEmpty 301 "Already logged-in")
+   , -- User is not logged-in, dispay the login page
+     Respond 200 "Log-in required" (Html ())
    ]
+
+data NewSessionResult
+  = AlreadyAuthenticated Text
+  | AuthenticationRequired (Html ())
+  deriving stock (Generic)
+  deriving
+    (AsUnion NewSessionResponses)
+    via GenericAsUnion NewSessionResponses NewSessionResult
+
+instance GSOP.Generic NewSessionResult
 
 type CreateSession =
   "new"
     :> ReqBody '[FormUrlEncoded] LoginForm
-    :> UVerb 'POST '[HTML] CreateSessionResponses
+    :> MultiVerb
+         'POST
+         '[HTML]
+         CreateSessionResponses
+         CreateSessionResult
 
 type CreateSessionResponses =
   '[ -- Failure, send login page back
-     WithStatus 401 (Html ())
+     Respond 401 "Authentication failed" (Html ())
    , -- Success, redirected to home page
-     WithStatus 301 (Headers '[Header "Location" Text, Header "Set-Cookie" SetCookie] NoContent)
+     WithHeaders
+       '[Header "Location" Text, Header "Set-Cookie" SetCookie]
+       (Text, SetCookie)
+       (RespondEmpty 301 "Authentication succeeded")
    ]
+
+data CreateSessionResult
+  = AuthenticationFailure (Html ())
+  | AuthenticationSuccess (Text, SetCookie)
+  deriving stock (Generic)
+  deriving
+    (AsUnion CreateSessionResponses)
+    via GenericAsUnion CreateSessionResponses CreateSessionResult
+
+instance GSOP.Generic CreateSessionResult
 
 type DeleteSession =
   "delete"

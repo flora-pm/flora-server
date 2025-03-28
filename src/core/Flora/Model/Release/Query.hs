@@ -32,11 +32,11 @@ import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne, queryO
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple.SqlQQ
 import Database.PostgreSQL.Simple.Types (In (..), Only (..), Query)
-import Distribution.Orphans.Version ()
 import Distribution.Version (Version)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
+import Distribution.Orphans.Version ()
 import Flora.Model.BlobStore.API (BlobStoreAPI, get)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Component.Types

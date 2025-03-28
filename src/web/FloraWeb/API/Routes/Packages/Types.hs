@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module FloraWeb.API.Routes.Packages.Types where
@@ -5,6 +6,7 @@ module FloraWeb.API.Routes.Packages.Types where
 import Control.DeepSeq
 import Data.Aeson
 import Data.Aeson.TH
+import Data.Function
 import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi.Schema
 import Data.Text (Text)
@@ -19,12 +21,12 @@ import Distribution.SPDX qualified as SPDX
 import Distribution.Types.Flag
 import Distribution.Types.Version
 import GHC.TypeLits
-import JSON
 import Optics.Core
 
 import Flora.Model.Component.Types
 import Flora.Model.Package
 import Flora.Model.Release.Types
+import JSON
 
 -- | This type is the representation of a 'Package'
 -- for the purposes of the JSON API.
@@ -46,7 +48,7 @@ data PackageDTO (version :: Natural) = PackageDTO
   , testedWith :: Vector Version
   , components :: Vector Text
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving anyclass (FromRow, NFData)
 
 toPackageDTO :: Package -> Release -> Vector CanonicalComponent -> PackageDTO 0
@@ -136,7 +138,7 @@ packageDTOExample =
 data PackageList = PackageList
   { packages :: Vector (PackageDTO 0)
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Generic, Show)
   deriving
     (FromJSON, ToJSON)
     via CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageList
@@ -153,3 +155,21 @@ instance ToSchema PackageList where
 
 packageListExample :: PackageList
 packageListExample = PackageList (Vector.singleton packageDTOExample)
+
+data PackageDependenciesDTO (version :: Natural) = PackageDependenciesDTO
+  { dependencies :: Vector PackageDependencies
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (ToJSON)
+    via CustomJSON '[FieldLabelModifier '[CamelToSnake]] (PackageDependenciesDTO version)
+
+instance KnownNat i => ToSchema (PackageDependenciesDTO i) where
+  declareNamedSchema proxy =
+    genericDeclareNamedSchema openApiSchemaOptions proxy
+      & ( mapped
+            % #schema
+            % #description
+            ?~ "Listing of dependencies for a package"
+        )
+      & (mapped % #schema % #example ?~ toJSON packageListExample)

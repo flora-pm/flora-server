@@ -11,6 +11,9 @@ module Flora.Model.BlobIndex.Internal
   )
 where
 
+import Codec.Archive.Tar qualified as Tar
+import Codec.Archive.Tar.Entry qualified as Tar
+import Crypto.Hash.SHA256 qualified as SHA
 import Data.Aeson (ToJSON (..), object)
 import Data.ByteString (StrictByteString)
 import Data.ByteString qualified as BS
@@ -20,13 +23,9 @@ import Data.List (foldl')
 import Data.Map qualified as M
 import Data.Text qualified as T
 import Data.Text.Display (display)
+import Distribution.Version (Version)
 import Log ((.=))
 import System.FilePath (dropTrailingPathSeparator, joinPath, splitPath, (</>))
-
-import Codec.Archive.Tar qualified as Tar
-import Codec.Archive.Tar.Entry qualified as Tar
-import Crypto.Hash.SHA256 qualified as SHA
-import Distribution.Version (Version)
 
 import Flora.Model.BlobIndex.Types (TarError (..))
 import Flora.Model.BlobStore.API (hashByteString)

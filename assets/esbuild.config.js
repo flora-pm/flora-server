@@ -80,8 +80,6 @@ const config = {
   entryNames: entryNames,
   plugins: pluginsList(),
   metafile: true,
-  incremental: process.argv.includes("--watch"),
-  watch: process.argv.includes("--watch"),
 }
 
 console.log(config.outdir);
@@ -89,13 +87,9 @@ console.log(__dirname);
 
 if (process.argv.includes("--watch")) {
   (async () => {
-    const result = await esbuild.build(config);
-    chokidar.watch(watchDirectories).on('all', (event, path) => {
-      console.log(`rebuilding ${path}`)
-      result.rebuild()
-    })
-  })();
-
+	const context = esbuild.context(config);
+	await context.watch();
+  })
 } else {
   esbuild.build(config).catch(() => process.exit(1))
 }

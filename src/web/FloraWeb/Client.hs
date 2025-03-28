@@ -7,6 +7,7 @@ import Optics.Core
 import Servant (AuthProtect, Union)
 import Servant.Client
 import Servant.Client.Core
+import Servant.Client.Core qualified as Client
 import Servant.Client.Generic
 
 import Flora.Model.PersistentSession
@@ -17,7 +18,6 @@ import FloraWeb.Pages.Routes qualified as Web
 import FloraWeb.Pages.Routes.Sessions qualified as Web
 import FloraWeb.Routes as Web
 import Lucid.Orphans ()
-import Servant.Client.Core qualified as Client
 
 -- type instance AuthClientData (AuthProtect "optional-cookie-auth") = Session (Maybe User)
 --

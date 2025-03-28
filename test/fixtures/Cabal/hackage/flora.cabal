@@ -68,9 +68,6 @@ common common-rts-options
 library
   import:          common-extensions
   import:          common-ghc-options
-  extra-libraries: stdc++
-  cxx-options:     -std=c++17 -Wall -D__EMBEDDED_SOUFFLE__
-  cxx-sources:     cbits/categorise.cpp
   hs-source-dirs:  ./src/core ./src/orphans
 
   -- cabal-fmt: expand src/core
@@ -84,7 +81,6 @@ library
     Flora.Environment
     Flora.Environment.Config
     Flora.Import.Categories
-    Flora.Import.Categories.Tuning
     Flora.Import.Package
     Flora.Import.Package.Bulk
     Flora.Import.Package.Types
@@ -160,7 +156,6 @@ library
     , servant-lucid
     , servant-server
     , slugify
-    , souffle-haskell        ==3.5.1
     , streamly
     , streamly-core
     , tar

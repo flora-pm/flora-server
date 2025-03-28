@@ -8,19 +8,20 @@ import Data.Function
 import Data.Maybe (fromJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Data.Text
 import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Text.HTML qualified as HTML
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Effectful (Eff, IOE, type (:>))
+import Effectful.Concurrent (Concurrent)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log
-import Effectful.Poolboy (Poolboy)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Process.Typed
+import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
@@ -29,8 +30,9 @@ import Network.HTTP.Types (gone410, notFound404, statusCode)
 import OddJobs.Job (Job (..))
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
+import System.FilePath
 
-import Data.Text
+import Data.Text.HTML qualified as HTML
 import Flora.Environment.Env
 import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Import.Package.Bulk qualified as Import
@@ -88,7 +90,7 @@ fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseI
         Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
 
 makeReadme :: ReadmeJobPayload -> JobsRunner ()
-makeReadme pay@ReadmeJobPayload{..} =
+makeReadme pay@ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
   localDomain "fetch-readme" $ do
     logInfo "Fetching README" pay
     let payload = VersionedPackage mpPackage mpVersion
@@ -106,22 +108,22 @@ makeReadme pay@ReadmeJobPayload{..} =
         Update.updateReadme mpReleaseId (Just $ HTML.fromText readmeBody) Imported
 
 fetchTarball
-  :: ( IOE :> es
+  :: ( BlobStoreAPI :> es
      , DB :> es
-     , Reader JobsRunnerEnv :> es
+     , IOE :> es
      , Log :> es
-     , BlobStoreAPI :> es
+     , Reader JobsRunnerEnv :> es
      )
   => TarballJobPayload
   -> Eff es ()
-fetchTarball pay@TarballJobPayload{..} = do
+fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
   localDomain "fetch-tarball" $ do
     mArchive <- Query.getReleaseTarballArchive releaseId
     content <- case mArchive of
       Just bs -> pure bs
       Nothing -> do
         logInfo "Fetching tarball" pay
-        let payload = VersionedPackage{..}
+        let payload = VersionedPackage package version
         result <- Hackage.request $ Hackage.getPackageTarball payload
         case result of
           Right bs -> pure bs
@@ -222,15 +224,16 @@ assignNamespace =
       )
 
 refreshIndex
-  :: ( Time :> es
+  :: ( Concurrent :> es
      , DB :> es
-     , Log :> es
-     , Poolboy :> es
-     , TypedProcess :> es
-     , IOE :> es
      , FileSystem :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
+     , IOE :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
+     , TypedProcess :> es
      )
   => Text
   -> Eff es ()
@@ -241,8 +244,8 @@ refreshIndex indexName = do
           else Text.unpack indexName
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
   user <- fromJust <$> Query.getUserByUsername "hackage-user"
-  homeDir <- FileSystem.getHomeDirectory
-  let path = homeDir <> "/.cabal/packages/" <> repoPath <> "/01-index.tar.gz"
+  packagesPath <- getCabalPackagesDirectory
+  let path = packagesPath </> repoPath </> "01-index.tar.gz"
   mPackageIndex <- Query.getPackageIndexByName indexName
   case mPackageIndex of
     Nothing -> do
@@ -251,3 +254,14 @@ refreshIndex indexName = do
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
     Just _ ->
       Import.importFromIndex user.userId indexName path
+
+getCabalPackagesDirectory :: FileSystem :> es => Eff es FilePath
+getCabalPackagesDirectory = do
+  xdgPath <- FileSystem.getXdgDirectory FileSystem.XdgCache "/packages"
+  xdgPathExists <- FileSystem.doesDirectoryExist xdgPath
+  if xdgPathExists
+    then pure xdgPath
+    else do
+      homeDir <- FileSystem.getHomeDirectory
+      let legacyPackagesDirectory = homeDir </> ".cabal/packages"
+      pure legacyPackagesDirectory

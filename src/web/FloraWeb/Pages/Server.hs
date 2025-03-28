@@ -3,6 +3,8 @@
 module FloraWeb.Pages.Server where
 
 import Lucid
+import OddJobs.Endpoints qualified as OddJobs
+import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import Servant
 
@@ -19,8 +21,6 @@ import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Error (web404)
 import FloraWeb.Pages.Templates.Screens.Home qualified as Home
 import FloraWeb.Types (FloraEff)
-import OddJobs.Endpoints qualified as OddJobs
-import OddJobs.Types qualified as OddJobs
 
 server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraEff
 server cfg env =

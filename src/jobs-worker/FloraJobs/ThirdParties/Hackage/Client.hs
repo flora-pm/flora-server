@@ -8,7 +8,6 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Proxy
 import Data.Text
 import Data.Time (UTCTime)
-import Data.Time.Orphans ()
 import Data.Vector (Vector)
 import Effectful (Eff, IOE, type (:>))
 import Effectful.Reader.Static
@@ -17,6 +16,7 @@ import Network.HTTP.Req qualified as Req
 import Servant.API ()
 import Servant.Client (BaseUrl (..), Client, ClientError (..), ClientM, Scheme (..), client, mkClientEnv, runClientM, (//), (/:))
 
+import Data.Time.Orphans ()
 import Flora.Model.Package.Types
 import FloraJobs.ThirdParties.Hackage.API as API
 import FloraJobs.Types (JobsRunnerEnv (..))

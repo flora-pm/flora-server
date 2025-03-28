@@ -1,13 +1,13 @@
 module FloraWeb.Pages.Templates.Screens.Search where
 
 import Control.Monad (when)
-import Data.Positive
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector (Vector)
 import Lucid
 
 import Advisories.Model.Affected.Types
+import Data.Positive
 import Flora.Model.Package (Namespace, PackageInfo (..), PackageInfoWithExecutables (..))
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)

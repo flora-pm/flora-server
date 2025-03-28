@@ -7,7 +7,7 @@ import Data.ByteString (ByteString)
 import Data.Text qualified as Text
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), returnError)
 import Database.PostgreSQL.Simple.ToField
-import Database.PostgreSQL.Simple.Types (Binary (..))
+import Database.PostgreSQL.Simple.Types (Binary (..), PGArray (..))
 import Sel.HMAC.SHA256 qualified as HMAC
 
 deriving newtype instance NFData (Binary ByteString)
@@ -25,3 +25,5 @@ instance ToField HMAC.AuthenticationKey where
 instance NFData HMAC.AuthenticationKey where
   rnf :: HMAC.AuthenticationKey -> ()
   rnf a = seq a ()
+
+deriving newtype instance NFData a => NFData (PGArray a)

@@ -1,7 +1,5 @@
 module Flora.Model.PackageIndex.Types where
 
-import GHC.Generics
-
 import Control.DeepSeq (NFData)
 import Data.Text (Text)
 import Data.Text.Display
@@ -14,13 +12,14 @@ import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Effectful
+import GHC.Generics
 import Text.Regex.Pcre2
 
 newtype PackageIndexId = PackageIndexId {getPackageIndexId :: UUID}
   deriving stock (Generic)
   deriving newtype (NFData)
-  deriving (Eq, Ord, Show, FromField, ToField) via UUID
   deriving (Display) via ShowInstance UUID
+  deriving (Eq, FromField, Ord, Show, ToField) via UUID
 
 data PackageIndex = PackageIndex
   { packageIndexId :: PackageIndexId
@@ -29,8 +28,8 @@ data PackageIndex = PackageIndex
   , url :: Text
   , description :: Text
   }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "package_indexes"] PackageIndex)
@@ -38,7 +37,7 @@ data PackageIndex = PackageIndex
 mkPackageIndex :: IOE :> es => Text -> Text -> Text -> Maybe UTCTime -> Eff es PackageIndex
 mkPackageIndex repository url description timestamp = do
   packageIndexId <- PackageIndexId <$> liftIO UUID.nextRandom
-  pure $ PackageIndex{..}
+  pure $ PackageIndex{packageIndexId, repository, url, description, timestamp}
 
 parseRepository :: Text -> Bool
 parseRepository txt =

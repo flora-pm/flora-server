@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Flora.TestUtils
   ( -- ** Test group functions
@@ -84,13 +85,12 @@ module Flora.TestUtils
   )
 where
 
-import Control.Concurrent (threadDelay)
 import Control.Exception (throw)
 import Control.Monad (void)
 import Control.Monad.Catch
+import Data.Function
 import Data.List.NonEmpty qualified as NE
 import Data.Pool hiding (PoolConfig)
-import Data.Poolboy (poolboySettingsWith)
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
@@ -106,13 +106,16 @@ import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Version (Version)
 import Distribution.Types.Version qualified as Version
 import Effectful
+import Effectful.Concurrent
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.Poolboy
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Prometheus
 import Effectful.Reader.Static
+import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Effectful.Time
 import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
@@ -133,8 +136,6 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
@@ -178,26 +179,27 @@ type TestEff =
   Eff
     '[ Trace
      , FileSystem
-     , Poolboy
      , Fail
      , BlobStoreAPI
-     , Reader TestEnv
+     , Reader FloraEnv
      , DB
      , Log
      , Time
      , State (Set (Namespace, PackageName, Version))
+     , Metrics AppMetrics
+     , Concurrent
      , IOE
      ]
 
 data Fixtures = Fixtures
   { hackageUser :: User
   }
-  deriving stock (Generic, Show, Eq)
+  deriving stock (Eq, Generic, Show)
 
 getFixtures :: (DB :> es, Fail :> es) => Eff es Fixtures
 getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
-  pure Fixtures{..}
+  pure Fixtures{hackageUser}
 
 importAllPackages :: Fixtures -> TestEff ()
 importAllPackages fixtures = do
@@ -210,28 +212,27 @@ importAllPackages fixtures = do
     ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
     "./test/fixtures/Cabal/cardano"
 
-  liftIO $ threadDelay 20000
-
-runTestEff :: TestEff a -> TestEnv -> IO a
+runTestEff :: TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $ do
   let withLogger = Logging.makeLogger env.mltp.logger
   withLogger $ \logger ->
-    State.evalState mempty
-      . runTime
-      . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      . Log.runLog "flora-test" logger LogAttention
-      . runDB env.pool
-      . runReader env
-      . runBlobStorePure
-      . runFailIO
-      . runPoolboy (poolboySettingsWith env.dbConfig.connections)
-      . runFileSystem
-      . Trace.runNoTrace
-      $ comp
+    comp
+      & Trace.runNoTrace
+      & runFileSystem
+      & runFailIO
+      & runBlobStorePure
+      & runReader env
+      & runDB env.pool
+      & Log.runLog "flora-test" logger LogAttention
+      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+      & runTime
+      & State.evalState mempty
+      & runPrometheusMetrics env.metrics
+      & runConcurrent
 
 testThis :: String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
-  env <- ask @TestEnv
+  env <- ask @FloraEnv
   let test = runTestEff assertion env
   pure $ Test.testCase name test
 
@@ -249,10 +250,10 @@ assertBool boolean = liftIO $ Test.assertBool "" boolean
 --  Usage:
 --
 --  >>> assertEqual expected actual
-assertEqual :: (Eq a, Show a) => a -> a -> TestEff ()
+assertEqual :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
 assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 
-assertFailure :: MonadIO m => String -> m ()
+assertFailure :: (HasCallStack, MonadIO m) => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
 assertJust :: HasCallStack => Maybe a -> TestEff a
@@ -357,7 +358,7 @@ genUsername :: MonadGen m => m Text
 genUsername = H.text (Range.constant 1 25) H.ascii
 
 genDisplayName :: MonadGen m => m Text
-genDisplayName = H.text (Range.constant 3 25) H.ascii
+genDisplayName = H.text (Range.constant 3 25) H.alphaNum
 
 genPassword :: MonadGen m => m PasswordHash
 genPassword = unsafePerformIO . Sel.hashText <$> H.text (Range.constant 20 30) H.ascii

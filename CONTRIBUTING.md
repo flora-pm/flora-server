@@ -10,7 +10,7 @@ The compiler version used is described in the `cabal.project` file.
 The following Haskell command-line tools will have to be installed:
 
 * `postgresql-migration`: To perform schema migrations
-* `fourmolu`: To style the code base. Version is 0.14.1.0
+* `fourmolu`: To style the code base. Version is 0.17.0.0
 * `hlint` & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-fmt` and `nixfmt`: To style the cabal and nix files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
@@ -18,7 +18,6 @@ The following Haskell command-line tools will have to be installed:
 
 (Some of the above packages have incompatible dependencies, so don't try to install them all at once with `cabal install`)
 
-* [Soufflé datalog engine v2.2](https://github.com/souffle-lang/souffle/releases/tag/2.2): The datalog engine for package classification
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling

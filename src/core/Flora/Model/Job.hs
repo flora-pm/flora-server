@@ -8,14 +8,14 @@ import Data.Aeson
 import Data.Aeson.TH
 import Data.Text (Text)
 import Data.Text.Display
+import Data.Vector (Vector)
+import Deriving.Aeson
 import Distribution.Pretty
 import Distribution.Version (Version, mkVersion, versionNumbers)
 import OddJobs.Job (Job, LogEvent (..))
 import OddJobs.Types (FailureMode)
 import Servant (ToHttpApiData)
 
-import Data.Vector (Vector)
-import Deriving.Aeson
 import Distribution.Orphans.Version ()
 import Flora.Import.Package.Types (ImportOutput)
 import Flora.Model.Package (PackageName (..))
@@ -23,7 +23,7 @@ import Flora.Model.Release.Types (ReleaseId (..))
 
 newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
   deriving
-    (Pretty, ToHttpApiData, Display)
+    (Display, Pretty, ToHttpApiData)
     via Version
 
 instance ToJSON IntAesonVersion where
@@ -39,7 +39,7 @@ data ReadmeJobPayload = ReadmeJobPayload
   }
   deriving stock (Generic)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReadmeJobPayload)
 
 data TarballJobPayload = TarballJobPayload
@@ -48,7 +48,7 @@ data TarballJobPayload = TarballJobPayload
   , version :: IntAesonVersion
   }
   deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
+  deriving anyclass (FromJSON, ToJSON)
 
 data UploadTimeJobPayload = UploadTimeJobPayload
   { packageName :: PackageName
@@ -57,7 +57,7 @@ data UploadTimeJobPayload = UploadTimeJobPayload
   }
   deriving stock (Generic)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] UploadTimeJobPayload)
 
 data ChangelogJobPayload = ChangelogJobPayload
@@ -67,13 +67,13 @@ data ChangelogJobPayload = ChangelogJobPayload
   }
   deriving stock (Generic)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ChangelogJobPayload)
 
 data ImportHackageIndexPayload = ImportHackageIndexPayload
   deriving stock (Generic)
   deriving
-    (ToJSON, FromJSON)
+    (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportHackageIndexPayload)
 
 -- these represent the possible odd jobs we can run.

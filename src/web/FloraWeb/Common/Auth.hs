@@ -24,6 +24,7 @@ import Effectful.PostgreSQL.Transact.Effect qualified as DB
 import Log (Logger)
 import Network.HTTP.Types (hCookie)
 import Network.Wai
+import Servant qualified
 import Servant.API (Header, Headers)
 import Servant.Server
 import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
@@ -37,7 +38,6 @@ import Flora.Model.User.Query
 import FloraWeb.Common.Auth.Types
 import FloraWeb.Session
 import FloraWeb.Types
-import Servant qualified
 
 type OptionalAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
 type StrictAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session User))
@@ -89,7 +89,7 @@ requireUserHandler floraEnv req = do
       Just (user, userSession) -> pure (user, userSession.persistentSessionId)
   webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
   let sessionCookie = craftSessionCookie sessionId False
-  pure $ addCookie sessionCookie (Session{..})
+  pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
 handler
   :: (DB :> es, Error ServerError :> es, IOE :> es)
@@ -110,7 +110,7 @@ handler floraEnv req = do
       Just (user, userSession) -> pure (Just user, userSession.persistentSessionId)
   webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
   let sessionCookie = craftSessionCookie sessionId False
-  pure $ addCookie sessionCookie (Session{..})
+  pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
 requireAdminHandler
   :: (DB :> es, Error ServerError :> es, IOE :> es)
@@ -132,7 +132,7 @@ requireAdminHandler floraEnv req = do
           else throwError $ err404{errBody = "Not Found"}
   webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
   let sessionCookie = craftSessionCookie sessionId False
-  pure $ addCookie sessionCookie (Session{..})
+  pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
 getCookies :: Request -> Cookies
 getCookies req =
@@ -168,7 +168,7 @@ getInTheFuckingSessionShinji (Just persistentSessionId) = do
     (Just userSession) -> pure (Just userSession)
 
 fetchUser
-  :: (Error ServerError :> es, DB :> es)
+  :: (DB :> es, Error ServerError :> es)
   => Maybe PersistentSession
   -> Eff es (Maybe (User, PersistentSession))
 fetchUser Nothing = pure Nothing
@@ -176,7 +176,7 @@ fetchUser (Just userSession) = do
   user <- lookupUser userSession.userId
   pure (Just (user, userSession))
 
-lookupUser :: (Error ServerError :> es, DB :> es) => UserId -> Eff es User
+lookupUser :: (DB :> es, Error ServerError :> es) => UserId -> Eff es User
 lookupUser uid = do
   result <- getUserById uid
   case result of

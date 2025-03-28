@@ -6,12 +6,12 @@ import Data.Text qualified as Text
 import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
 import Effectful
 import Effectful.Error.Static
+import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Log qualified
 import Sel.Hashing.Password qualified as Sel
 import System.Exit
-import System.FilePath ((</>))
 import System.IO
 import Test.Tasty
 import Test.Tasty.Runners.Reporter qualified as Reporter
@@ -39,7 +39,7 @@ import Flora.UserSpec qualified as UserSpec
 main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
-  env <- runEff getFloraTestEnv
+  env <- runEff . runFailIO . runFileSystem $ getFloraEnv
   fixtures <-
     runTestEff
       ( do
@@ -54,9 +54,8 @@ main = do
           f' <- getFixtures
           importAllPackages f'
           result <- runErrorNoCallStack @(NonEmpty AdvisoryImportError) $ do
-            dataDir <- getXdgDirectory XdgData ""
-            let advisoriesDirectory = dataDir </> "security-advisories"
-            unlessM (doesDirectoryExist advisoriesDirectory) $ do
+            advisoriesDirectory <- getXdgDirectory XdgData "security-advisories"
+            unlessM (doesPathExist advisoriesDirectory) $ do
               Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
               liftIO exitFailure
             Advisories.importAdvisories advisoriesDirectory

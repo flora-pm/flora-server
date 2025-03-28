@@ -30,9 +30,9 @@ import OSV.Reference.Orphans
 -- | List deduplicated parsed Advisories
 importAdvisories
   :: ( DB :> es
-     , Trace :> es
-     , IOE :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , IOE :> es
+     , Trace :> es
      )
   => FilePath
   -> Eff es ()
@@ -49,9 +49,9 @@ importAdvisories root = Tracing.rootSpan alwaysSampled "import-advisories" $ do
 
 importAdvisory
   :: ( DB :> es
-     , Trace :> es
-     , IOE :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , IOE :> es
+     , Trace :> es
      )
   => Advisory
   -> Eff es ()
@@ -85,10 +85,10 @@ processAdvisory advisoryId advisory =
     }
 
 processAffectedPackages
-  :: ( IOE :> es
-     , DB :> es
-     , Trace :> es
+  :: ( DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , IOE :> es
+     , Trace :> es
      )
   => AdvisoryId
   -> Vector Affected
@@ -97,9 +97,9 @@ processAffectedPackages advisoryId affectedPackages = do
   forM_ affectedPackages (processAffectedPackage advisoryId)
 
 processAffectedPackage
-  :: ( IOE :> es
-     , DB :> es
+  :: ( DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , IOE :> es
      , Trace :> es
      )
   => AdvisoryId
@@ -132,8 +132,8 @@ processAffectedPackage advisoryId affected = do
   processAffectedVersionRanges affectedPackageId affected.affectedVersions
 
 processAffectedVersionRanges
-  :: ( IOE :> es
-     , DB :> es
+  :: ( DB :> es
+     , IOE :> es
      )
   => AffectedPackageId
   -> [AffectedVersionRange]

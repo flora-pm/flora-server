@@ -9,3 +9,7 @@ newlines-between-decls: 1 # number of newlines between top-level declarations
 fixities: []
 function-arrows: leading
 single-constraint-parens: never
+import-grouping: by-scope
+sort-constraints: true
+sort-derived-classes: true
+sort-deriving-clauses: true

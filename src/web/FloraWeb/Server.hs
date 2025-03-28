@@ -15,7 +15,9 @@ import Effectful.Concurrent
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
+import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (runDB)
+import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
 import Effectful.Trace qualified as Trace
@@ -91,6 +93,7 @@ import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
 import FloraWeb.Pages.Templates.Error (renderError)
 import FloraWeb.Routes
 import FloraWeb.Types
+import Prometheus.Servant.HasEndpoint ()
 
 type FloraAuthContext =
   '[ OptionalAuthContext
@@ -103,7 +106,7 @@ runFlora :: IO ()
 runFlora =
   secureMain $
     bracket
-      (getFloraEnv & runFailIO & runEff)
+      (getFloraEnv & runFileSystem & runFailIO & runEff)
       (runEff . shutdownFlora)
       ( \env ->
           runEff . withUnliftStrategy (ConcUnlift Ephemeral Unlimited) . runTime . runConcurrent $ do
@@ -239,6 +242,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
           & Logging.runLog floraEnv.environment logger
           & runErrorWith (\_callstack err -> pure $ Left err)
           & runConcurrent
+          & runPrometheusMetrics floraEnv.metrics
           & runEff
   either Except.throwError pure result
 

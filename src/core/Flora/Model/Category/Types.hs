@@ -12,23 +12,22 @@ import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField (FromField)
 import Database.PostgreSQL.Simple.ToField (ToField)
-import Flora.Model.Package.Types
 import GHC.Generics
-import Language.Souffle.Interpreted qualified as Souffle
 import Servant
 import Text.Slugify
+
+import Flora.Model.Package.Types
 
 newtype CategoryId = CategoryId {getCategoryId :: UUID}
   deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, FromJSON, ToJSON, FromField, ToField, FromHttpApiData, ToHttpApiData, NFData)
+    (Eq, FromField, FromHttpApiData, FromJSON, NFData, Ord, ToField, ToHttpApiData, ToJSON)
     via UUID
 
 newtype CategoryName = CategoryName {getCategoryName :: Text}
-  deriving stock (Show, Generic)
-  deriving anyclass (Souffle.Marshal)
+  deriving stock (Generic, Show)
   deriving
-    (Eq, Ord, NFData)
+    (Eq, NFData, Ord)
     via Text
 
 data Category = Category
@@ -38,7 +37,7 @@ data Category = Category
   , synopsis :: Text
   }
   deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "categories"] Category)
@@ -48,7 +47,7 @@ data PackageCategory = PackageCategory
   , categoryId :: CategoryId
   }
   deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromRow, ToRow, NFData)
+  deriving anyclass (FromRow, NFData, ToRow)
   deriving
     (Entity)
     via (GenericEntity '[TableName "package_categories"] PackageCategory)
@@ -69,4 +68,4 @@ mkCategory
 mkCategory categoryId name Nothing synopsis =
   mkCategory categoryId name (Just $ slugify name) synopsis
 mkCategory categoryId name (Just slug) synopsis =
-  Category{..}
+  Category{categoryId, name, slug, synopsis}

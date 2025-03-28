@@ -1,11 +1,10 @@
 module Flora.Environment.Env
   ( FloraEnv (..)
-  , Metrics (..)
+  , AppMetrics (..)
   , DeploymentEnv (..)
   , MLTP (..)
   , FeatureEnv (..)
   , BlobStoreImpl (..)
-  , TestEnv (..)
   ) where
 
 import Data.Aeson
@@ -13,9 +12,10 @@ import Data.Pool (Pool)
 import Data.Text (Text)
 import Data.Word
 import Database.PostgreSQL.Simple qualified as PG
-import Flora.Environment.Config
 import GHC.Generics
 import Prometheus qualified as P
+
+import Flora.Environment.Config
 
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
@@ -29,22 +29,13 @@ data FloraEnv = FloraEnv
   , features :: FeatureEnv
   , config :: FloraConfig
   , assets :: Assets
-  , metrics :: Metrics
+  , metrics :: AppMetrics
   }
   deriving stock (Generic)
 
-data Metrics = Metrics
+data AppMetrics = AppMetrics
   { packageImportCounter :: P.Vector P.Label1 P.Counter
   }
-
-data TestEnv = TestEnv
-  { pool :: Pool PG.Connection
-  , dbConfig :: PoolConfig
-  , httpPort :: Word16
-  , mltp :: MLTP
-  , metrics :: Metrics
-  }
-  deriving stock (Generic)
 
 data BlobStoreImpl = BlobStoreFS FilePath | BlobStorePure
   deriving stock (Generic, Show)

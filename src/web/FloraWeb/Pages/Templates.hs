@@ -1,6 +1,5 @@
 module FloraWeb.Pages.Templates
   ( render
-  , renderUVerb
   , mkErrorPage
   , module Types
   )
@@ -19,12 +18,9 @@ import FloraWeb.Components.Header (header)
 import FloraWeb.Pages.Templates.Types as Types
 
 render :: Monad m => TemplateEnv -> FloraHTML -> m (Html ())
-render env template = pure (renderUVerb env template)
-
-renderUVerb :: TemplateEnv -> FloraHTML -> Html ()
-renderUVerb env template =
+render env template = do
   let deploymentEnv = env.environment
-   in toHtmlRaw $ runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
+  pure $ toHtmlRaw $ runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
 
 mkErrorPage :: TemplateEnv -> FloraHTML -> ByteString
 mkErrorPage env template =

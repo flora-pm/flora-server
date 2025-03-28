@@ -39,7 +39,6 @@ common common-extensions
     OverloadedStrings
     PackageImports
     PolyKinds
-    RecordWildCards
     StrictData
     TypeFamilies
     UndecidableInstances
@@ -67,9 +66,6 @@ common common-rts-options
 library
   import:          common-extensions
   import:          common-ghc-options
-  extra-libraries: stdc++
-  cxx-options:     -std=c++17 -Wall -D__EMBEDDED_SOUFFLE__
-  cxx-sources:     cbits/categorise.cpp
   hs-source-dirs:  ./src/core ./src/datatypes
 
   -- cabal-fmt: expand src/core
@@ -94,12 +90,10 @@ library
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
     Distribution.Orphans.Version
-    Effectful.Poolboy
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
     Flora.Import.Categories
-    Flora.Import.Categories.Tuning
     Flora.Import.Package
     Flora.Import.Package.Bulk
     Flora.Import.Package.Types
@@ -148,6 +142,7 @@ library
     Flora.Model.User.Query
     Flora.Model.User.Update
     Flora.Monitoring
+    Flora.Normalise
     Flora.QRCode
     Flora.Tracing
     JSON
@@ -155,6 +150,7 @@ library
     Lucid.Orphans
     OSV.Reference.Orphans
     Pandoc.Orphans
+    Prometheus.Servant.HasEndpoint
     Servant.API.ContentTypes.GZip
 
   build-depends:
@@ -169,8 +165,6 @@ library
     , containers
     , cryptohash-md5
     , cryptohash-sha256
-    , cryptonite
-    , cryptonite-conduit
     , cvss
     , dani-servant-lucid2
     , deepseq
@@ -182,7 +176,6 @@ library
     , envparse
     , filepath
     , hsec-core
-    , hsec-sync
     , http-api-data
     , http-media
     , iso8601-time
@@ -190,7 +183,6 @@ library
     , log-base
     , log-effectful
     , lucid2
-    , memory
     , monad-time-effectful
     , network
     , odd-jobs
@@ -202,18 +194,18 @@ library
     , pg-entity
     , pg-transact
     , pg-transact-effectful
-    , poolboy
     , postgresql-simple
     , pretty
     , prometheus-client
+    , prometheus-effectful
     , qrcode-core
     , qrcode-juicypixels
     , resource-pool
     , sel
     , servant
+    , servant-prometheus
     , servant-server
     , slugify
-    , souffle-haskell        ==4.0.0
     , streamly
     , streamly-core
     , tar
@@ -226,6 +218,7 @@ library
     , utf8-string
     , uuid
     , vector
+    , wai
     , zlib
 
   ghc-options:     -fplugin=Effectful.Plugin
@@ -279,9 +272,7 @@ library flora-advisories
     , effectful
     , flora
     , hsec-core
-    , hsec-sync
     , hsec-tools
-    , osv
     , pandoc-types
     , pg-entity
     , pg-transact-effectful
@@ -395,6 +386,7 @@ library flora-web
     , flora-advisories
     , flora-jobs
     , flora-search
+    , generics-sop
     , haddock-library
     , htmx-lucid
     , http-api-data
@@ -418,6 +410,7 @@ library flora-web
     , postgresql-simple
     , pretty
     , prometheus-client
+    , prometheus-effectful
     , prometheus-metrics-ghc
     , prometheus-proc
     , PyF
@@ -476,6 +469,7 @@ library flora-jobs
     , effectful
     , effectful-core
     , effectful-plugin
+    , filepath
     , flora
     , http-client
     , http-media
@@ -486,8 +480,8 @@ library flora-jobs
     , odd-jobs
     , pg-entity
     , pg-transact-effectful
-    , poolboy
     , postgresql-simple
+    , prometheus-effectful
     , req
     , resource-pool
     , servant
@@ -519,7 +513,6 @@ executable flora-server
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
-    , resource-pool
     , text
     , vector
 
@@ -554,7 +547,7 @@ executable flora-cli
     , optics-core
     , optparse-applicative
     , pg-transact-effectful
-    , poolboy
+    , prometheus-effectful
     , PyF
     , sel
     , text
@@ -601,9 +594,9 @@ test-suite flora-test
     , pg-entity
     , pg-transact
     , pg-transact-effectful
-    , poolboy
     , postgresql-migration
     , postgresql-simple
+    , prometheus-effectful
     , resource-pool
     , sel
     , servant

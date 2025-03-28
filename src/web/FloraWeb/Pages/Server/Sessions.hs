@@ -32,22 +32,23 @@ server s =
     , delete = deleteSessionHandler
     }
 
-newSessionHandler :: SessionWithCookies (Maybe User) -> FloraEff (Union NewSessionResponses)
+newSessionHandler :: SessionWithCookies (Maybe User) -> FloraEff NewSessionResult
 newSessionHandler (Headers session _) = do
   let mUser = session.user
   case mUser of
     Nothing -> do
       Log.logInfo_ "[+] No user logged-in"
       templateDefaults <- templateFromSession session defaultTemplateEnv
-      respond $ WithStatus @200 $ renderUVerb templateDefaults Sessions.newSession
+      html <- render templateDefaults Sessions.newSession
+      pure $ AuthenticationRequired html
     Just u -> do
       Log.logInfo_ $ "[+] User is already logged: " <> display u
-      respond $ WithStatus @301 (redirect "/")
+      pure $ AlreadyAuthenticated "/"
 
 createSessionHandler
   :: SessionWithCookies (Maybe User)
   -> LoginForm
-  -> FloraEff (Union CreateSessionResponses)
+  -> FloraEff CreateSessionResult
 createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
   mUser <- Query.getUserByEmail email
   case mUser of
@@ -57,39 +58,41 @@ createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
       let templateEnv =
             templateDefaults
               & (#flashError ?~ mkError "Could not authenticate")
-      respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
+      body <- render templateEnv Sessions.newSession
+      pure $ AuthenticationFailure body
     Just user ->
       if user.userFlags.canLogin
         then
           if Sel.verifyText user.password password
             then do
               if user.totpEnabled
-                then guardThatUserHasProvidedTOTP session totp $ \userCode -> do
-                  checkTOTPIsValid session userCode user
+                then guardThatUserHasProvidedTOTP session totp $ \userCode -> checkTOTPIsValid session userCode user
                 else do
                   sessionId <- persistSession session.sessionId user.userId
                   let sessionCookie = craftSessionCookie sessionId True
-                  respond $ WithStatus @301 $ redirectWithCookie "/" sessionCookie
+                  pure $ AuthenticationSuccess ("/", sessionCookie)
             else do
               Log.logInfo_ "Invalid password"
               templateDefaults <- templateFromSession session defaultTemplateEnv
               let templateEnv =
                     templateDefaults
                       & (#flashError ?~ mkError "Could not authenticate")
-              respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
+              body <- render templateEnv Sessions.newSession
+              pure $ AuthenticationFailure body
         else do
           Log.logInfo_ "User not allowed to log-in"
           templateDefaults <- templateFromSession session defaultTemplateEnv
           let templateEnv =
                 templateDefaults
                   & (#flashError ?~ mkError "Could not authenticate")
-          respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
+          body <- render templateEnv Sessions.newSession
+          pure $ AuthenticationFailure body
 
 checkTOTPIsValid
   :: Session (Maybe User)
   -> Text
   -> User
-  -> FloraEff (Union CreateSessionResponses)
+  -> FloraEff CreateSessionResult
 checkTOTPIsValid session userCode user = do
   validated <- liftIO $ TwoFactor.validateTOTP (fromJust user.totpKey) userCode
   if validated
@@ -97,14 +100,15 @@ checkTOTPIsValid session userCode user = do
       Log.logInfo_ "[+] User connected!"
       sessionId <- persistSession session.sessionId user.userId
       let sessionCookie = craftSessionCookie sessionId True
-      respond $ WithStatus @301 $ redirectWithCookie "/" sessionCookie
+      pure $ AuthenticationSuccess ("/", sessionCookie)
     else do
       Log.logInfo_ "[+] Couldn't authenticate user's TOTP code"
       templateDefaults <- templateFromSession session defaultTemplateEnv
       let templateEnv =
             templateDefaults
               & (#flashError ?~ mkError "Could not authenticate")
-      respond $ WithStatus @401 $ renderUVerb templateEnv Sessions.newSession
+      body <- render templateEnv Sessions.newSession
+      pure $ AuthenticationFailure body
 
 deleteSessionHandler :: PersistentSessionId -> FloraEff DeleteSessionResponse
 deleteSessionHandler sessionId = do
