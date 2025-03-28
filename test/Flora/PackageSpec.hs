@@ -1,5 +1,3 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 module Flora.PackageSpec where
 
 import Data.Aeson
@@ -14,15 +12,11 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms qualified as Vector
-import Database.PostgreSQL.Simple
-import Database.PostgreSQL.Simple.SqlQQ
-import Database.PostgreSQL.Transact
 import Distribution.System (OS (Windows))
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Version (mkVersion)
-import Effectful.PostgreSQL.Transact.Effect
 import Optics.Core
 import Test.Tasty
 
@@ -60,9 +54,8 @@ spec =
         , testThis "Transitive dependencies are properly computed" testTransitiveDependencies
         , testThis "Serialise dependencies tree" testSerialiseDependenciesTree
         ]
-    , testThis "The only package without dependencies is @haskell/rts" testOnlyPackageWithoutDependencies
-    -- Disable until conditions are properly supported everywhere
-    -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
+        -- Disable until conditions are properly supported everywhere
+        -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
 
 testCabalDeps :: TestEff ()
@@ -216,7 +209,7 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: TestEff ()
 testReleaseDeprecation = do
   result <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  assertEqual 87 (length result)
+  assertEqual 89 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
   deprecatedBinaryVersion' <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
@@ -383,28 +376,3 @@ testSerialiseDependenciesTree = do
   assertEqual
     actualJSON
     expectedJSON
-
-testOnlyPackageWithoutDependencies :: TestEff ()
-testOnlyPackageWithoutDependencies = do
-  mResults :: (Maybe (Only Text)) <-
-    dbtToEff $
-      queryOne_
-        [sql|
-        SELECT dependent
-        FROM (SELECT (('@' || p0.namespace) || '/') || p0.name AS dependent
-                   , count(r3.requirement) AS deps_count
-              FROM packages AS p0
-                   INNER JOIN releases AS r1 ON r1.package_id = p0.package_id
-                   INNER JOIN package_components AS p2 ON p2.release_id = r1.release_id
-                   LEFT JOIN requirements AS r3 ON r3.package_component_id = p2.package_component_id
-                   LEFT JOIN packages AS p4 ON r3.package_id = p4.package_id
-              WHERE p2.component_name = p0.name
-                AND r1.version = (SELECT max(version)
-                                  FROM releases
-                                  WHERE package_id = p0.package_id)
-              GROUP BY (p0.namespace, p0.name))
-        WHERE deps_count = 0
-      |]
-  assertEqual
-    mResults
-    (Just (Only "@haskell/rts"))

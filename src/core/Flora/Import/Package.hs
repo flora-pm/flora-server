@@ -321,7 +321,8 @@ persistImportOutput (ImportOutput package categories release components) = State
       Update.upsertRelease release
       env <- Reader.ask
       Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections components persistComponent
-      when (package.name /= PackageName "rts") sanityCheck
+      let expectedDependencies = foldMap snd components
+      unless (null expectedDependencies) sanityCheck
       pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
     persistPackage :: PackageId -> Eff es ()
