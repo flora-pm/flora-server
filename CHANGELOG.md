@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 1.0.25 -- 2025-03-28
+
+### Significant changes
+
+- Transitive dependencies API endpoint [#848](https://github.com/flora-pm/flora-server/pull/848)
+
+### Other changes
+
+- Replace the usage of datalog with Haskell for category normalisation [#794](https://github.com/flora-pm/flora-server/issue/794) [#822](https://github.com/flora-pm/flora-server/pull/822)
+- Upgrade to Fourmolu 0.17.0.0 [#823](https://github.com/flora-pm/flora-server/pull/823)
+- Add database consistency checks [#837](https://github.com/flora-pm/flora-server/pull/837)
+
 ## 1.0.24 -- 2025-01-12
 
 - Do not wrongly include "Nothing" as a query param to dependents listing pages' URL [#817](https://github.com/flora-pm/flora-server/pull/817)
