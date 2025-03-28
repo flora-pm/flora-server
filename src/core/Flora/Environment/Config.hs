@@ -20,8 +20,10 @@ where
 
 import Control.Monad ((>=>))
 import Data.Aeson qualified as Aeson
+import Data.Base64.Types qualified as Base64
 import Data.Bifunctor (Bifunctor (second))
 import Data.ByteString (ByteString)
+import Data.ByteString.Base64 qualified as Base64
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -274,4 +276,5 @@ getAssetHash :: (FileSystem :> es, IOE :> es) => Text -> Eff es Text
 getAssetHash hashedAssetPath = do
   let path = hashedAssetPath
   content <- EBS.readFile (Text.unpack path)
-  liftIO $ Sel.hashToHexText <$> Sel.hashByteString content
+  binaryHash <- liftIO $ Sel.hashByteString content
+  pure $ Base64.extractBase64 $ Base64.encodeBase64 $ Sel.hashToBinary binaryHash
