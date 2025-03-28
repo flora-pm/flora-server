@@ -105,7 +105,7 @@ instance FromJSON HackagePreferredVersions where
   parseJSON = withObject "Hackage preferred versions" $ \o -> do
     deprecatedVersions <- o .:? "deprecated-version" .!= Vector.empty
     normalVersions <- o .: "normal-version"
-    pure HackagePreferredVersions{..}
+    pure $ HackagePreferredVersions deprecatedVersions normalVersions
 
 data HackagePackageInfo = HackagePackageInfo
   { metadataRevision :: Word

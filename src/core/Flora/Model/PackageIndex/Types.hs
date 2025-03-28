@@ -37,7 +37,7 @@ data PackageIndex = PackageIndex
 mkPackageIndex :: IOE :> es => Text -> Text -> Text -> Maybe UTCTime -> Eff es PackageIndex
 mkPackageIndex repository url description timestamp = do
   packageIndexId <- PackageIndexId <$> liftIO UUID.nextRandom
-  pure $ PackageIndex{..}
+  pure $ PackageIndex{packageIndexId, repository, url, description, timestamp}
 
 parseRepository :: Text -> Bool
 parseRepository txt =

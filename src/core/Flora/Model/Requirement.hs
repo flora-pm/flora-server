@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Flora.Model.Requirement where
 
 import Control.DeepSeq

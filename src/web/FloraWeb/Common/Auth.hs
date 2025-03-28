@@ -89,7 +89,7 @@ requireUserHandler floraEnv req = do
       Just (user, userSession) -> pure (user, userSession.persistentSessionId)
   webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
   let sessionCookie = craftSessionCookie sessionId False
-  pure $ addCookie sessionCookie (Session{..})
+  pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
 handler
   :: (DB :> es, Error ServerError :> es, IOE :> es)
@@ -110,7 +110,7 @@ handler floraEnv req = do
       Just (user, userSession) -> pure (Just user, userSession.persistentSessionId)
   webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
   let sessionCookie = craftSessionCookie sessionId False
-  pure $ addCookie sessionCookie (Session{..})
+  pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
 requireAdminHandler
   :: (DB :> es, Error ServerError :> es, IOE :> es)
@@ -132,7 +132,7 @@ requireAdminHandler floraEnv req = do
           else throwError $ err404{errBody = "Not Found"}
   webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
   let sessionCookie = craftSessionCookie sessionId False
-  pure $ addCookie sessionCookie (Session{..})
+  pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
 getCookies :: Request -> Cookies
 getCookies req =

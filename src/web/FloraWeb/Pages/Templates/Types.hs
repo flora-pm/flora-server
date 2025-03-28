@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module FloraWeb.Pages.Templates.Types
   ( FloraHTML
   , FlashInfo (..)

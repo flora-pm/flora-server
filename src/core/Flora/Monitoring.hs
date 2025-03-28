@@ -25,7 +25,7 @@ registerMetrics = do
               , metricHelp = "Packages imported and their index"
               }
   packageImportCounter <- P.register packageImportCount
-  pure AppMetrics{..}
+  pure $ AppMetrics packageImportCounter
 
 increaseCounterBy
   :: Metrics AppMetrics :> es

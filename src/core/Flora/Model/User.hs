@@ -131,7 +131,7 @@ mkUser UserCreationForm{username, email, password} = do
   let userFlags = UserFlags{isAdmin = False, canLogin = True}
   let totpKey = Nothing
   let totpEnabled = False
-  pure User{..}
+  pure User{userId, username, email, displayName, password, userFlags, createdAt, updatedAt, totpKey, totpEnabled}
 
 mkAdmin :: IOE :> es => AdminCreationForm -> Eff es User
 mkAdmin AdminCreationForm{username, email, password} = do
@@ -143,4 +143,4 @@ mkAdmin AdminCreationForm{username, email, password} = do
   let userFlags = UserFlags{isAdmin = True, canLogin = True}
   let totpKey = Nothing
   let totpEnabled = False
-  pure User{..}
+  pure User{userId, username, email, displayName, password, userFlags, createdAt, updatedAt, totpKey, totpEnabled}

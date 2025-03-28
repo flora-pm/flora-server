@@ -227,13 +227,13 @@ runOptions (Options (CreateUser opts)) = do
       password <- liftIO $ Sel.hashText opts.password
       if opts ^. #isAdmin
         then
-          addAdmin AdminCreationForm{..}
+          addAdmin AdminCreationForm{username, email, password}
             >>= \admin ->
               if canLogin
                 then pure ()
                 else lockAccount admin.userId
         else do
-          templateUser <- mkUser UserCreationForm{..}
+          templateUser <- mkUser UserCreationForm{username, email, password}
           let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents

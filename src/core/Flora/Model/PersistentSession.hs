@@ -59,7 +59,7 @@ newPersistentSession :: Time :> es => UserId -> PersistentSessionId -> Eff es Pe
 newPersistentSession userId persistentSessionId = do
   createdAt <- Time.currentTime
   let sessionData = SessionData Map.empty
-  pure PersistentSession{..}
+  pure $ PersistentSession{userId, persistentSessionId, createdAt, sessionData}
 
 persistSession
   :: (DB :> es, Time :> es)

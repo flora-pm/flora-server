@@ -312,7 +312,7 @@ instance FromJSON DeprecatedPackage' where
   parseJSON = withObject "deprecatedPackage" $ \o -> do
     package <- o .: "deprecated-package"
     inFavourOf <- o .: "in-favour-of"
-    pure DeprecatedPackage'{..}
+    pure DeprecatedPackage'{package, inFavourOf}
 
 -- DAO that we persist to the database
 data DeprecatedPackage = DeprecatedPackage

@@ -232,7 +232,7 @@ packageListing mExactMatchItems packages =
           packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license, em.uploadedAt, em.revisedAt)
     Vector.forM_
       packages
-      (\PackageInfo{..} -> packageListItem (namespace, name, synopsis, version, license, uploadedAt, revisedAt))
+      (\PackageInfo{namespace, name, synopsis, version, license, uploadedAt, revisedAt} -> packageListItem (namespace, name, synopsis, version, license, uploadedAt, revisedAt))
 
 packageWithExecutableListing
   :: Vector PackageInfoWithExecutables
