@@ -87,9 +87,10 @@ console.log(__dirname);
 
 if (process.argv.includes("--watch")) {
   (async () => {
-	const context = esbuild.context(config);
+	let context = await esbuild.context(config);
 	await context.watch();
-  })
+	console.log('Watching...');
+  })()
 } else {
   esbuild.build(config).catch(() => process.exit(1))
 }
