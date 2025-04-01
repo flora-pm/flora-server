@@ -8,7 +8,6 @@ import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroupPackage.Update as Update
-import Flora.Model.User
 import Flora.TestUtils
 
 spec :: TestEff TestTree
