@@ -117,7 +117,6 @@ import Flora.Model.Requirement
   ( Requirement (..)
   , deterministicRequirementId
   )
-import Flora.Model.User
 import Flora.Normalise
 
 coreLibraries :: Set PackageName
@@ -413,12 +412,11 @@ extractPackageDataFromCabal
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => UserId
-  -> (Text, Set PackageName)
+  => (Text, Set PackageName)
   -> UTCTime
   -> GenericPackageDescription
   -> Eff es ImportOutput
-extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
+extractPackageDataFromCabal repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -505,7 +503,7 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
   case NE.nonEmpty components' of
     Nothing -> do
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
-      extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc
+      extractPackageDataFromCabal (repositoryName, repositoryPackages) uploadTime genericDesc
     Just components -> pure $ ImportOutput package categories release components
 
 extractLibrary

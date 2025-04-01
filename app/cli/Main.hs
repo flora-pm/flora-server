@@ -233,7 +233,6 @@ runOptions (Options (CreateUser opts)) = do
                 then pure ()
                 else lockAccount admin.userId
         else do
-          templateUser <- mkUser UserCreationForm{username, email, password}
           let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
@@ -265,7 +264,7 @@ importFolderOfCabalFiles path repository = do
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
+      importAllFilesInRelativeDirectory (repository, packageIndex.url) (path </> Text.unpack repository)
 
 importIndex
   :: ( Concurrent :> es
@@ -281,12 +280,11 @@ importIndex
   -> Text
   -> Eff es ()
 importIndex path repository = do
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just _ ->
-      importFromIndex (user ^. #userId) repository path
+      importFromIndex  repository path
 
 importPackageTarball
   :: ( BlobStoreAPI :> es

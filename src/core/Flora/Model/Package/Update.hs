@@ -3,7 +3,7 @@
 
 module Flora.Model.Package.Update where
 
-import Control.Monad (unless, void, when)
+import Control.Monad (unless, void)
 import Data.Function ((&))
 import Data.List qualified as List
 import Data.Vector (Vector)
@@ -27,8 +27,11 @@ insertPackage package = dbtToEff $ insert @Package package
 upsertPackage :: DB :> es => Package -> Eff es ()
 upsertPackage package =
   dbtToEff $
-    when ( package.status == FullyImportedPackage ) $
-        upsert @Package package
+    case package.status of
+      UnknownPackage -> upsert @Package package [[field| updated_at |]]
+      FullyImportedPackage ->
+        upsert @Package
+          package
           [ [field| updated_at |]
           , [field| status |]
           ]

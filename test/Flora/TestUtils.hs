@@ -201,14 +201,12 @@ getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
   pure Fixtures{hackageUser}
 
-importAllPackages :: Fixtures -> TestEff ()
-importAllPackages fixtures = do
+importAllPackages :: TestEff ()
+importAllPackages = do
   importAllFilesInRelativeDirectory
-    fixtures.hackageUser.userId
     ("hackage", "https://hackage.haskell.org")
     "./test/fixtures/Cabal/hackage"
   importAllFilesInRelativeDirectory
-    fixtures.hackageUser.userId
     ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
     "./test/fixtures/Cabal/cardano"
 
