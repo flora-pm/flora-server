@@ -437,7 +437,6 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
           { packageId
           , namespace
           , name = packageName
-          , ownerId = userId
           , createdAt = timestamp
           , updatedAt = timestamp
           , status = FullyImportedPackage
@@ -662,12 +661,11 @@ buildDependency package repository packageComponentId (Cabal.Dependency depName 
   let name = depName & unPackageName & pack & PackageName
       namespace = chooseNamespace name repository
       packageId = deterministicPackageId namespace name
-      ownerId = package.ownerId
       createdAt = package.createdAt
       updatedAt = package.updatedAt
       status = UnknownPackage
       deprecationInfo = Nothing
-      dependencyPackage = Package packageId namespace name ownerId createdAt updatedAt status deprecationInfo
+      dependencyPackage = Package packageId namespace name createdAt updatedAt status deprecationInfo
       requirement =
         Requirement
           { requirementId = deterministicRequirementId packageComponentId packageId

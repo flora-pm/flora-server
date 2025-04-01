@@ -434,7 +434,6 @@ data PackageTemplate m = PackageTemplate
   { packageId :: m PackageId
   , namespace :: m Namespace
   , name :: m PackageName
-  , ownerId :: m UserId
   , createdAt :: m UTCTime
   , updatedAt :: m UTCTime
   , status :: m PackageStatus
@@ -448,7 +447,6 @@ randomPackageTemplate =
     { packageId = PackageId <$> H.sample genUUID
     , namespace = liftIO $ H.sample genPackageNamespace
     , name = liftIO $ H.sample genPackageName
-    , ownerId = liftIO $ H.sample genUserId
     , createdAt = liftIO $ H.sample genUTCTime
     , updatedAt = liftIO $ H.sample genUTCTime
     , status = liftIO $ H.sample genStatus
@@ -461,7 +459,6 @@ instantiatePackage
     { packageId = generatePackageId
     , namespace = generatePackageNamespace
     , name = generatePackageName
-    , ownerId = generateUserId
     , createdAt = generateCreatedAt
     , status = generatePackageStatus
     , deprecationInfo = generatePackageDeprecationInfo
@@ -469,7 +466,6 @@ instantiatePackage
     packageId <- generatePackageId
     namespace <- generatePackageNamespace
     name <- generatePackageName
-    ownerId <- generateUserId
     createdAt <- generateCreatedAt
     let updatedAt = createdAt
     status <- generatePackageStatus

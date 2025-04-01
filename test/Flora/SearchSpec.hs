@@ -71,8 +71,6 @@ testSearchExecutable hackageUser = do
       randomPackageTemplate
         & #status
         .~ pure FullyImportedPackage
-        & #ownerId
-        .~ pure hackageUser.userId
   release1 <-
     instantiateRelease $
       randomReleaseTemplate
@@ -90,8 +88,6 @@ testSearchExecutable hackageUser = do
       randomPackageTemplate
         & #status
         .~ pure FullyImportedPackage
-        & #ownerId
-        .~ pure hackageUser.userId
   release2 <-
     instantiateRelease $
       randomReleaseTemplate
