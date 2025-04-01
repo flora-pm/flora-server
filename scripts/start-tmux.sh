@@ -1,13 +1,15 @@
 set -euxo pipefail
 
 tmux kill-session -t 'flora' || true
-tmux new-session -d -s 'flora'
-tmux rename-window 'flora'
-sleep 1
-tmux send-keys -t "flora" 'make watch-server' 'C-m'
-tmux select-window -t flora:0
-sleep 1
-(cd assets && yarn install)
-tmux split-window -h 'make watch-assets'
-tmux send-keys -t "flora" 'C-b'
+
+LEFT_PANE_CMD='make watch-server'
+RIGHT_PANE_CMD="(cd assets && yarn install); make watch-assets"
+
+tmux \
+  new-session -d -s 'flora' -n 'flora' \; \
+  split-window -t 'flora' -h \; \
+  send-keys -t "flora:flora.0" "$LEFT_PANE_CMD" 'C-m' \; \
+  send-keys -t "flora:flora.1" "$RIGHT_PANE_CMD" 'C-m' \; \
+  select-pane -t 'flora:flora.0'
+
 tmux attach-session -t flora
