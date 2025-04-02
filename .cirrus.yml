@@ -1,0 +1,30 @@
+freebsd_instance:
+  image_family: freebsd-14-2
+
+task:
+  name: "Backend build on FreeBSD 14.2"
+  env:
+    GHCUP_VERSION: 0.1.40.0
+    CABAL_PROJECT: cabal.project.release
+    PATH: $HOME/.local/bin:$HOME/.ghcup/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/opt/curl/bin
+    BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
+    BOOTSTRAP_HASKELL_GHC_VERSION: 9.6.6
+    BOOTSTRAP_HASKELL_CABAL_VERSION: 3.12.1.0
+    BOOTSTRAP_HASKELL_INSTALL_NO_STACK: 1
+
+  deps_install_script: |
+      pkg install -y gmake bash libsodium curl git postgresql16-client
+      curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+      echo $PATH
+
+  freeze_script: |
+    cabal freeze --project-file ${CABAL_PROJECT}
+
+  haskell_cache:
+    folder: ${HOME}/.local/state/cabal/store
+    reupload_on_changes: false # since there is a fingerprint script
+    fingerprint_script:
+      - sha256sum < dist-newstyle/cache/plan.json
+
+  build_script: |
+      gmake build-release

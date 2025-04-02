@@ -90,7 +90,6 @@ jobs:
     - name: Build
       run: |
         cabal install postgresql-migration
-        make soufflé
         make build
 
     - name: Test
