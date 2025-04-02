@@ -69,6 +69,14 @@ source-repository-package
 
 source-repository-package
     type: git
+    location: https://github.com/composewell/streamly
+    tag: 8500b6446dae07e763370608625f26eff5c84600
+    subdir:
+      ./core
+      ./.
+
+source-repository-package
+    type: git
     location: https://github.com/flora-pm/wai-middleware-heartbeat
     tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
 
