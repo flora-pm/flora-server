@@ -179,7 +179,6 @@ packageDependentsQuery =
   SELECT DISTINCT   p."package_id"
                   , p."namespace"
                   , p."name"
-                  , p."owner_id"
                   , p."created_at"
                   , p."updated_at"
                   , p."status"

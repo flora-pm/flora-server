@@ -117,7 +117,6 @@ import Flora.Model.Requirement
   ( Requirement (..)
   , deterministicRequirementId
   )
-import Flora.Model.User
 import Flora.Normalise
 
 coreLibraries :: Set PackageName
@@ -413,12 +412,11 @@ extractPackageDataFromCabal
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => UserId
-  -> (Text, Set PackageName)
+  => (Text, Set PackageName)
   -> UTCTime
   -> GenericPackageDescription
   -> Eff es ImportOutput
-extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
+extractPackageDataFromCabal repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -437,7 +435,6 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
           { packageId
           , namespace
           , name = packageName
-          , ownerId = userId
           , createdAt = timestamp
           , updatedAt = timestamp
           , status = FullyImportedPackage
@@ -506,7 +503,7 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
   case NE.nonEmpty components' of
     Nothing -> do
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
-      extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc
+      extractPackageDataFromCabal (repositoryName, repositoryPackages) uploadTime genericDesc
     Just components -> pure $ ImportOutput package categories release components
 
 extractLibrary
@@ -662,12 +659,11 @@ buildDependency package repository packageComponentId (Cabal.Dependency depName 
   let name = depName & unPackageName & pack & PackageName
       namespace = chooseNamespace name repository
       packageId = deterministicPackageId namespace name
-      ownerId = package.ownerId
       createdAt = package.createdAt
       updatedAt = package.updatedAt
       status = UnknownPackage
       deprecationInfo = Nothing
-      dependencyPackage = Package packageId namespace name ownerId createdAt updatedAt status deprecationInfo
+      dependencyPackage = Package packageId namespace name createdAt updatedAt status deprecationInfo
       requirement =
         Requirement
           { requirementId = deterministicRequirementId packageComponentId packageId
