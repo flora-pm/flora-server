@@ -296,20 +296,20 @@ testTransitiveDependencies = do
   dependenciesMap <- Query.getTransitiveDependencies baseComponent.componentId
 
   assertEqual
-    dependenciesMap
     ( Vector.fromList
         [ PackageDependencies
             { namespace = Namespace "haskell"
             , packageName = PackageName "ghc-bignum"
             , requirements =
                 Vector.fromList
-                  [ DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}
+                  [ DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.10"}
                   ]
             }
         , PackageDependencies{namespace = Namespace "haskell", packageName = PackageName "base", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-bignum", version = ">=1.0 && <2.0"}, DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}, DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
         , PackageDependencies{namespace = Namespace "haskell", packageName = PackageName "ghc-prim", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
         ]
     )
+    dependenciesMap
 
 testSerialiseDependenciesTree :: TestEff ()
 testSerialiseDependenciesTree = do
