@@ -22,16 +22,7 @@
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
 
-- name: "Kill previous process"
-  ansible.builtin.shell:
-    cmd: if pgrep flora-server ; then pkill flora-server ; else echo "No process found"; fi
+- name: Restart the process
+  ansible.builtin.command:
+    cmd: supervisorctl -c supervisord.conf restart flora-server
     chdir: flora-server
-  environment:
-    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
-
-- name: "Start new instance"
-  ansible.builtin.shell:
-    cmd: (gmake start-release &)
-    chdir: flora-server
-  environment:
-    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
