@@ -1,0 +1,30 @@
+name: Deploy dev.flora.pm
+
+on:
+  push:
+    branches: ["development"]
+
+concurrency:
+  group: backend-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  playbook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Invoke Ansible
+        working-directory: deployment/
+        run: |
+          ansible-playbook  \
+            -i inventory.yaml \
+            --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }} \
+            -e "ansible_port=${{ secrets.ANSIBLE_SSH_PORT }}" \
+            playbooks/deploy-dev.yaml

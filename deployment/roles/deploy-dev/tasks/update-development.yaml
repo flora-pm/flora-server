@@ -1,0 +1,16 @@
+---
+
+- name: "Update development branch"
+  ansible.builtin.shell:
+    cmd: git checkout development && git pull
+    chdir: flora-server
+
+- name: "Build frontend assets"
+  ansible.builtin.shell:
+    cmd: gmake build-assets
+    chdir: flora-server
+
+- name: "Build backend"
+  ansible.builtin.shell:
+    cmd: gmake build-release
+    chdir: flora-server
