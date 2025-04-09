@@ -44,49 +44,6 @@
 	margin-right: auto;
 }
 
-.admin-page {
-	padding-top: 1.25rem;
-	padding-bottom: 1.25rem;
-
-	.admin-title {
-		font-size: 3rem;
-		line-height: 1;
-		letter-spacing: -0.025em;
-		text-align: center;
-	}
-
-	.admin-cards {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		padding-top: 2.5rem;
-		padding-bottom: 2.5rem;
-		gap: 1.25rem;
-		display: grid;
-		margin-top: 1.25rem;
-	}
-
-	.admin-card {
-		padding: 1.5rem;
-		border-radius: 0.5rem;
-		overflow: hidden;
-
-		dt {
-			font-weight: 500;
-			font-size: 0.875rem;
-			line-height: 1.25rem;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		dd {
-			font-weight: 600;
-			font-size: 1.875rem;
-			line-height: 2.25rem;
-			margin-top: 0.25rem;
-		}
-	}
-}
-
 @media (max-width: 48rem) {
 	.about-page {
 		margin-left: auto;

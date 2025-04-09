@@ -319,6 +319,7 @@ library flora-web
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
     FloraWeb.Components.Pill
+    FloraWeb.Components.Sidebar
     FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader

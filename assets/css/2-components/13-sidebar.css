@@ -1,0 +1,12 @@
+#sidebar {
+	section {
+		h3 {
+			font-weight: 800;
+		}
+
+		.sidebar-item {
+			font-weight: 700;
+			border-right: 2px solid var(--navbar-background-color);
+		}
+	}
+}

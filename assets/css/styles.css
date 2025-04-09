@@ -19,6 +19,7 @@
 @import "2-components/10-error.css";
 @import "2-components/11-advisory-list-item.css";
 @import "2-components/12-headline.css";
+@import "2-components/13-sidebar.css";
 
 /* Screens/Pages specific style */
 @import "3-screens/1-package/1-package.css";
@@ -30,6 +31,7 @@
 @import "3-screens/3-about.css";
 @import "3-screens/4-front-page.css";
 @import "3-screens/5-settings/1-dashboard.css";
+@import "3-screens/6-admin/1-overview.css";
 
 /* Helpers/Utility classes */
 @import "4-helpers/1-globals.css";

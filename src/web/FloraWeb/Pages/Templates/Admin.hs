@@ -4,13 +4,16 @@ import Data.Text.Display
 import Lucid
 
 import Flora.Model.Admin.Report
+import FloraWeb.Components.Sidebar
 import FloraWeb.Pages.Templates.Types
 
 index :: AdminReport -> FloraHTML
 index adminReport = do
-  div_ [class_ "container admin-page"] $ do
+  div_ [class_ "admin-page"] $ do
+    sidebar
     h1_ [class_ "admin-title"] "Overview"
-    dataReport adminReport
+    div_ [class_ "admin-body"] $
+      dataReport adminReport
 
 dataReport :: AdminReport -> FloraHTML
 dataReport adminReport = do
@@ -21,7 +24,7 @@ dataReport adminReport = do
         "Total Packages"
       dd_ [class_ ""] $
         toHtml $
-          display (adminReport.totalPackages)
+          display adminReport.totalPackages
 
     div_ [class_ "admin-card"] $ do
       dt_
@@ -29,7 +32,7 @@ dataReport adminReport = do
         "Total Users"
       dd_ [class_ ""] $
         toHtml $
-          display (adminReport.totalUsers)
+          display adminReport.totalUsers
 
     div_ [class_ "admin-card"] $ do
       dt_
