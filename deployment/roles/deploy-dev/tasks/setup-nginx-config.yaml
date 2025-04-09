@@ -1,0 +1,10 @@
+- name: "Synchronise configuration"
+  ansible.builtin.template:
+    src: dev.flora.pm.nginx
+    dest: /usr/local/etc/nginx/sites-available/flora.nginx
+
+- name: "Enable the configuration"
+  ansible.builtin.file:
+    src: /usr/local/etc/nginx/sites-available/flora.nginx
+    dest: /usr/local/etc/nginx/sites-enabled/flora.nginx
+    state: link

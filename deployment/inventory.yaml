@@ -1,0 +1,11 @@
+hosts:
+  hosts:
+    dev-1:
+      inventory_hostname: dev-1
+      host_ip: 95.217.207.190
+    vars:
+      etc_dir: /usr/local/etc
+
+dev:
+  hosts:
+    dev-1:
