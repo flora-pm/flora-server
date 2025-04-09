@@ -1,16 +1,37 @@
 ---
 
 - name: "Update development branch"
-  ansible.builtin.shell:
-    cmd: git checkout development && git pull
+  ansible.builtin.command:
+    cmd: git checkout development
+    chdir: flora-server
+
+- name: "Update development branch"
+  ansible.builtin.command:
+    cmd: git pull
     chdir: flora-server
 
 - name: "Build frontend assets"
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: gmake build-assets
     chdir: flora-server
 
 - name: "Build backend"
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: gmake build-release
     chdir: flora-server
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- name: "Kill previous process"
+  ansible.builtin.shell:
+    cmd: if pgrep flora-server ; then pkill flora-server ; else echo "No process found"; fi
+    chdir: flora-server
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- name: "Start new instance"
+  ansible.builtin.shell:
+    cmd: (gmake start-release &)
+    chdir: flora-server
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"

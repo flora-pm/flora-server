@@ -2,6 +2,7 @@ hosts:
   hosts:
     dev-1:
       inventory_hostname: dev-1
+      ansible_host: web-1.dev.flora.pm
       host_ip: 95.217.207.190
     vars:
       etc_dir: /usr/local/etc
