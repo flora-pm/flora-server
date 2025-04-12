@@ -44,6 +44,8 @@ data API' mode = API'
       :: mode
         :- "search"
           :> Capture "packageNamePrefix" Text
+          :> QueryParam "offset" Word
+          :> QueryParam "limit" Word
           :> GetPackagesByPrefix
   , withPackage
       :: mode
