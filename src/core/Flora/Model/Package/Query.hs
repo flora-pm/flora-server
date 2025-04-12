@@ -88,7 +88,7 @@ getAllPackages = do
       ["duration" .= duration]
   pure result
 
-getPackagesByPrefix :: (DB :> es) => Text -> Eff es (Vector Package)
+getPackagesByPrefix :: DB :> es => Text -> Eff es (Vector Package)
 getPackagesByPrefix prefix = do
   let prefixString = prefix <> "%"
   dbtToEff $ do

@@ -2,9 +2,9 @@ module FloraWeb.API.Server.Packages where
 
 import Data.Function
 import Data.Maybe (fromMaybe)
-import Data.Vector (Vector)
 import Data.Text (Text)
 import Data.Text.Display
+import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Version (Version)
 import Effectful (Eff, IOE, liftIO, (:>))
