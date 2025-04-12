@@ -19,6 +19,7 @@ module Flora.Model.Package.Query
   , getPackageDependents
   , getPackageDependentsByName
   , getPackageDependentsWithLatestVersion
+  , getPackagesByPrefix
   , getPackagesByNamespace
   , getPackagesFromCategoryWithLatestVersion
   , getRequirements
@@ -86,6 +87,20 @@ getAllPackages = do
     object
       ["duration" .= duration]
   pure result
+
+getPackagesByPrefix :: (DB :> es) => Text -> Eff es (Vector Package)
+getPackagesByPrefix prefix = do
+  let prefixString = prefix <> "%"
+  dbtToEff $ do
+    (result :: Vector Package) <- query Select packagesByPrefixQuery (Only prefixString)
+    pure result
+
+packagesByPrefixQuery :: Query
+packagesByPrefixQuery =
+  [sql|
+  SELECT * FROM "packages"
+  WHERE name LIKE ?
+  |]
 
 getPackagesByNamespace :: DB :> es => Namespace -> Eff es (Vector Package)
 getPackagesByNamespace namespace = dbtToEff $ selectManyByField @Package [field| namespace |] (Only namespace)

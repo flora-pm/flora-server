@@ -2,6 +2,8 @@ module FloraWeb.API.Server.Packages where
 
 import Data.Function
 import Data.Maybe (fromMaybe)
+import Data.Vector (Vector)
+import Data.Text (Text)
 import Data.Text.Display
 import Data.Vector qualified as Vector
 import Distribution.Version (Version)
@@ -28,6 +30,7 @@ packagesServer :: ServerT Packages.API FloraEff
 packagesServer =
   Packages.API'
     { withPackage = withPackageServer
+    , getPackagesByPrefix = getPackagesByPrefixHandler
     }
 
 withPackageServer :: Namespace -> PackageName -> ServerT Packages.PackageAPI FloraEff
@@ -88,6 +91,19 @@ getPackageHandler namespace packageName = do
         package.name
   components <- Query.getComponentsByReleaseId release.releaseId
   pure $ toPackageDTO package release components
+
+getPackagesByPrefixHandler
+  :: ( DB :> es
+     , Error ServerError :> es
+     , IOE :> es
+     , Trace :> es
+     )
+  => Text
+  -> (Eff es) (Vector PackageName)
+getPackagesByPrefixHandler packageName = do
+  (packages :: Vector Package) <- Query.getPackagesByPrefix packageName
+  pure
+    (Vector.map (\p -> p.name) packages)
 
 getVersionedPackageHandler
   :: ( DB :> es
