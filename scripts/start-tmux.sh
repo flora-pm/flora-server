@@ -3,7 +3,7 @@ set -euxo pipefail
 tmux kill-session -t 'flora' || true
 
 LEFT_PANE_CMD='make watch-server'
-RIGHT_PANE_CMD="(cd assets && yarn install); make watch-assets"
+RIGHT_PANE_CMD="(cd assets && make assets-deps); make watch-assets"
 
 tmux \
   new-session -d -s 'flora' -n 'flora' \; \
