@@ -2,12 +2,16 @@ module FloraWeb.API.Server.Packages where
 
 import Data.Function
 import Data.Maybe (fromMaybe)
+import Data.Text (Text)
 import Data.Text.Display
+import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Version (Version)
 import Effectful (Eff, IOE, liftIO, (:>))
 import Effectful.Error.Static (Error)
+import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Time (Time)
 import Effectful.Trace
 import Servant hiding ((:>))
 
@@ -19,6 +23,7 @@ import Flora.Model.Package.Types
 import Flora.Model.Release.Guard (guardThatReleaseExists)
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Search (searchPackageByName)
 import FloraWeb.API.Errors
 import FloraWeb.API.Routes.Packages qualified as Packages
 import FloraWeb.API.Routes.Packages.Types
@@ -28,6 +33,7 @@ packagesServer :: ServerT Packages.API FloraEff
 packagesServer =
   Packages.API'
     { withPackage = withPackageServer
+    , getPackagesByPrefix = getPackagesByPrefixHandler
     }
 
 withPackageServer :: Namespace -> PackageName -> ServerT Packages.PackageAPI FloraEff
@@ -88,6 +94,22 @@ getPackageHandler namespace packageName = do
         package.name
   components <- Query.getComponentsByReleaseId release.releaseId
   pure $ toPackageDTO package release components
+
+getPackagesByPrefixHandler
+  :: ( DB :> es
+     , Log :> es
+     , Time :> es
+     )
+  => Text
+  -> Maybe Word
+  -> Maybe Word
+  -> (Eff es) (Vector PackageName)
+getPackagesByPrefixHandler packageName maybeOffset maybeLimit = do
+  let offset = fromMaybe 0 maybeOffset
+  let limit = fromMaybe 10 maybeLimit
+  (_, packagesInfo) <- searchPackageByName (offset, limit) packageName
+  pure
+    (Vector.map (\p -> p.name) packagesInfo)
 
 getVersionedPackageHandler
   :: ( DB :> es
