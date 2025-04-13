@@ -15,6 +15,13 @@
     cmd: gmake build-assets
     chdir: flora-server
 
+- name: "Clean build artifacts"
+  ansible.builtin.command:
+    cmd: gmake clean
+    chdir: flora-server
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
 - name: "Build backend"
   ansible.builtin.command:
     cmd: gmake build-release
