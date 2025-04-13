@@ -15,7 +15,7 @@ build-release: ## Build the server for production
 	@cabal build --project-file cabal.project.release
 
 clean: ## Remove the cabal build artifacts
-	@rm cbits/*.cpp
+	@rm -rf assets/node_modules
 	@cabal clean
 
 assets-deps: ## Install the dependencies of the frontend
