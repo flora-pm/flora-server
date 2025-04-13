@@ -1,0 +1,9 @@
+synopsis: Improve tmux script
+prs: #864
+
+description: {
+
+- Rewrite the tmux script so it only make one single invocation to tmux.
+  Session name / Window name / Pane name are all specified in each tmux command, so you can nest it (given that you use zsh).
+
+}
