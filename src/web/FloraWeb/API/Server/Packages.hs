@@ -100,11 +100,12 @@ getPackagesByPrefixHandler
      , Log :> es
      , Time :> es
      )
-  => Text
+  => Maybe Text
   -> Maybe Word
   -> Maybe Word
   -> (Eff es) (Vector PackageName)
-getPackagesByPrefixHandler packageName maybeOffset maybeLimit = do
+getPackagesByPrefixHandler maybePackageName maybeOffset maybeLimit = do
+  let packageName = fromMaybe mempty maybePackageName
   let offset = fromMaybe 0 maybeOffset
   let limit = fromMaybe 10 maybeLimit
   (_, packagesInfo) <- searchPackageByName (offset, limit) packageName
