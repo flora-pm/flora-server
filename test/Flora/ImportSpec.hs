@@ -15,14 +15,13 @@ import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
-import Flora.Model.User
 import Flora.TestUtils
 
-spec :: Fixtures -> TestEff TestTree
-spec fixtures =
+spec :: TestEff TestTree
+spec =
   testThese
     "Import tests"
-    [ testThis "Import index" $ testImportIndex fixtures
+    [ testThis "Import index" $ testImportIndex
     , testThis "Namespace chooser" testNamespaceChooser
     ]
 
@@ -38,15 +37,14 @@ defaultRepoURL = "localhost"
 defaultDescription :: Text
 defaultDescription = "test-description"
 
-testImportIndex :: Fixtures -> TestEff ()
-testImportIndex fixture = withStdOutLogger $
+testImportIndex :: TestEff ()
+testImportIndex = withStdOutLogger $
   \_ -> do
     mIndex <- Query.getPackageIndexByName defaultRepo
     case mIndex of
       Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
       Just _ -> pure ()
     importFromIndex
-      fixture.hackageUser.userId
       defaultRepo
       testIndex
     -- check the packages have been imported

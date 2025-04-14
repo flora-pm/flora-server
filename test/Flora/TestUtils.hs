@@ -201,14 +201,12 @@ getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
   pure Fixtures{hackageUser}
 
-importAllPackages :: Fixtures -> TestEff ()
-importAllPackages fixtures = do
+importAllPackages :: TestEff ()
+importAllPackages = do
   importAllFilesInRelativeDirectory
-    fixtures.hackageUser.userId
     ("hackage", "https://hackage.haskell.org")
     "./test/fixtures/Cabal/hackage"
   importAllFilesInRelativeDirectory
-    fixtures.hackageUser.userId
     ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
     "./test/fixtures/Cabal/cardano"
 
@@ -434,7 +432,6 @@ data PackageTemplate m = PackageTemplate
   { packageId :: m PackageId
   , namespace :: m Namespace
   , name :: m PackageName
-  , ownerId :: m UserId
   , createdAt :: m UTCTime
   , updatedAt :: m UTCTime
   , status :: m PackageStatus
@@ -448,7 +445,6 @@ randomPackageTemplate =
     { packageId = PackageId <$> H.sample genUUID
     , namespace = liftIO $ H.sample genPackageNamespace
     , name = liftIO $ H.sample genPackageName
-    , ownerId = liftIO $ H.sample genUserId
     , createdAt = liftIO $ H.sample genUTCTime
     , updatedAt = liftIO $ H.sample genUTCTime
     , status = liftIO $ H.sample genStatus
@@ -461,7 +457,6 @@ instantiatePackage
     { packageId = generatePackageId
     , namespace = generatePackageNamespace
     , name = generatePackageName
-    , ownerId = generateUserId
     , createdAt = generateCreatedAt
     , status = generatePackageStatus
     , deprecationInfo = generatePackageDeprecationInfo
@@ -469,7 +464,6 @@ instantiatePackage
     packageId <- generatePackageId
     namespace <- generatePackageNamespace
     name <- generatePackageName
-    ownerId <- generateUserId
     createdAt <- generateCreatedAt
     let updatedAt = createdAt
     status <- generatePackageStatus

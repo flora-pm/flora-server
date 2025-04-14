@@ -28,13 +28,12 @@ upsertPackage :: DB :> es => Package -> Eff es ()
 upsertPackage package =
   dbtToEff $
     case package.status of
-      UnknownPackage -> upsert @Package package [[field| owner_id |]]
+      UnknownPackage -> upsert @Package package [[field| updated_at |]]
       FullyImportedPackage ->
         upsert @Package
           package
           [ [field| updated_at |]
           , [field| status |]
-          , [field| owner_id |]
           ]
 
 deprecatePackages :: DB :> es => Vector DeprecatedPackage -> Eff es ()

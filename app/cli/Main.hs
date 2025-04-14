@@ -265,7 +265,7 @@ importFolderOfCabalFiles path repository = do
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
+      importAllFilesInRelativeDirectory (repository, packageIndex.url) (path </> Text.unpack repository)
 
 importIndex
   :: ( Concurrent :> es
@@ -286,7 +286,7 @@ importIndex path repository = do
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just _ ->
-      importFromIndex (user ^. #userId) repository path
+      importFromIndex repository path
 
 importPackageTarball
   :: ( BlobStoreAPI :> es

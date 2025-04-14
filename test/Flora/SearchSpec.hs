@@ -7,12 +7,11 @@ import Test.Tasty
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
-import Flora.Model.User (User (..))
 import Flora.Search
 import Flora.TestUtils
 
-spec :: Fixtures -> TestEff TestTree
-spec Fixtures{hackageUser} =
+spec :: TestEff TestTree
+spec =
   testThese
     "Search tests"
     [ testThese
@@ -25,7 +24,7 @@ spec Fixtures{hackageUser} =
         ]
     , testThese
         "Search results"
-        [ testThis "Search executable" (testSearchExecutable hackageUser)
+        [ testThis "Search executable" testSearchExecutable
         ]
     ]
 
@@ -64,15 +63,13 @@ testParsingExecutableSearch = do
     (Just (SearchExecutable "flora-cli"))
     result
 
-testSearchExecutable :: User -> TestEff ()
-testSearchExecutable hackageUser = do
+testSearchExecutable :: TestEff ()
+testSearchExecutable = do
   package1 <-
     instantiatePackage $
       randomPackageTemplate
         & #status
         .~ pure FullyImportedPackage
-        & #ownerId
-        .~ pure hackageUser.userId
   release1 <-
     instantiateRelease $
       randomReleaseTemplate
@@ -90,8 +87,6 @@ testSearchExecutable hackageUser = do
       randomPackageTemplate
         & #status
         .~ pure FullyImportedPackage
-        & #ownerId
-        .~ pure hackageUser.userId
   release2 <-
     instantiateRelease $
       randomReleaseTemplate
