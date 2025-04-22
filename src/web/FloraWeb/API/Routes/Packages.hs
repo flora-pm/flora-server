@@ -43,7 +43,7 @@ data API' mode = API'
   { getPackagesByPrefix
       :: mode
         :- "search"
-          :> Capture "packageNamePrefix" Text
+          :> QueryParam "name" Text
           :> QueryParam "offset" Word
           :> QueryParam "limit" Word
           :> GetPackagesByPrefix
