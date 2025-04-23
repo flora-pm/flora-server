@@ -816,10 +816,12 @@ WITH RECURSIVE transitive_dependencies(  dependent_id, dependent_namespace, depe
            INNER JOIN releases AS r2 ON c1.release_id = r2.release_id
            INNER JOIN packages AS p3 ON r2.package_id = p3.package_id
            INNER JOIN packages AS p4 ON r0.package_id = p4.package_id
-           INNER JOIN transitive_dependencies AS t5 ON t5.dependency_id = p3.package_id
+           INNER JOIN latest_versions as l5 ON l5.package_id = p3.package_id
+           INNER JOIN transitive_dependencies AS t6 ON t6.dependency_id = p3.package_id
       WHERE c1.component_type = 'library'
         AND p4.status = 'fully-imported'
-        AND p4.name <> p3.name)
+        AND p4.name <> p3.name
+        AND r2.version = l5.version)
 
    CYCLE dependency_id SET is_cycle TO TRUE DEFAULT FALSE USING path
 

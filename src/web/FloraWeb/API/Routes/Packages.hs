@@ -1,5 +1,7 @@
 module FloraWeb.API.Routes.Packages where
 
+import Data.Text (Text)
+import Data.Vector (Vector)
 import Distribution.Version
 import GHC.Generics
 import Servant
@@ -31,8 +33,21 @@ type GetPackageDependencies =
     :> QueryFlag "transitive"
     :> Get '[JSON] (PackageDependenciesDTO 0)
 
+type GetPackagesByPrefix =
+  Summary "Get a list of packages"
+    :> Description
+         "Return a list of packages, given a prefix"
+    :> Get '[JSON] (Vector PackageName)
+
 data API' mode = API'
-  { withPackage
+  { getPackagesByPrefix
+      :: mode
+        :- "search"
+          :> QueryParam "name" Text
+          :> QueryParam "offset" Word
+          :> QueryParam "limit" Word
+          :> GetPackagesByPrefix
+  , withPackage
       :: mode
         :- Capture "namespace" Namespace
           :> Capture "packageName" PackageName

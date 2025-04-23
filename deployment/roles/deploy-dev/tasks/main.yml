@@ -1,0 +1,6 @@
+---
+
+- import_tasks: update-development.yaml
+  tags:
+    - deployment
+    - dev

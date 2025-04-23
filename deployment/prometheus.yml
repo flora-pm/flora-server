@@ -1,5 +1,0 @@
-# Sample configuration to add to your own 'prometheus.yml'
-scrape_configs:
-  - job_name: flora-server
-    static_configs:
-      - targets: ['localhost:8003']

@@ -39,3 +39,4 @@ _build/cabal-store
 storage/
 cabal.project.release.freeze
 prlog
+supervisor/supervisord.pid
