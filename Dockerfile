@@ -1,5 +1,5 @@
-# this is a pinned ubuntu:22.04
-FROM ubuntu@sha256:67211c14fa74f070d27cc59d69a7fa9aeff8e28ea118ef3babc295a0428a6d21
+# this is a pinned ubuntu:24.04
+FROM ubuntu:22.04
 
 ARG GID=1000
 ARG UID=1000
@@ -17,6 +17,7 @@ ARG POSTGRESQL_MIGRATION_VERSION=0.2.1.8
 # generate a working directory
 USER "root"
 ARG USER="local"
+RUN apt update && apt install -y zsh
 RUN groupadd -g "$GID" -o "$USER" \
   && useradd -r -u "$UID" -g "$GID" -m -s /bin/zsh "$USER"
 
@@ -52,7 +53,7 @@ ENV PATH="$PATH:/home/$USER/.ghcup/bin"
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-RUN apt install -y nodejs libpq-dev mcpp wget zsh tmux postgresql-client
+RUN apt install -y nodejs libpq-dev mcpp wget tmux postgresql-client
 RUN corepack enable
 USER ${USER}
 RUN chmod ugo+x /home/$USER/.cabal
