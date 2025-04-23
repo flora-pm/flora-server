@@ -5,7 +5,6 @@ module Flora.Model.Requirement where
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.ByteString.Lazy (fromStrict)
-import Data.Foldable (foldl')
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust)
 import Data.Text (Text)

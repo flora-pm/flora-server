@@ -4,10 +4,10 @@ FROM ubuntu:22.04
 ARG GID=1000
 ARG UID=1000
 
-ARG GHC_VERSION=9.6.6
+ARG GHC_VERSION=9.10.1
 ARG CABAL_VERSION=3.14.1.1
 ARG FOURMOLU_VERSION=0.17.0.0
-ARG HLINT_VERSION=3.8
+ARG HLINT_VERSION=3.10
 ARG APPLY_REFACT_VERSION=0.14.0.0
 ARG CABAL_FMT_VERSION=0.1.12
 ARG GHCID_VERSION=0.8.9
@@ -33,17 +33,22 @@ RUN apt update && \
   apt install -y  \
     build-essential \
     curl \
+    git \
     libffi-dev \
     libffi8 \
     libgmp-dev \
     libgmp10 \
     libncurses-dev \
     libncurses5 \
-    libtinfo5 \
-    git \
     libsodium-dev \
+    libtinfo5 \
+    locales \
     pkg-config \
     zlib1g-dev
+RUN localedef -i en_GB -c -f UTF-8 -A /usr/share/locale/locale.alias en_GB.UTF-8
+RUN rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man
+
+ENV LANG="en_GB.UTF-8"
 
 # install dependencies (pg_config, postgresql-client, yarn)
 ENV BOOTSTRAP_HASKELL_NONINTERACTIVE="YES"

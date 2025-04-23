@@ -8,8 +8,8 @@ task:
     CABAL_PROJECT: cabal.project.release
     PATH: $HOME/.local/bin:$HOME/.ghcup/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/opt/curl/bin
     BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
-    BOOTSTRAP_HASKELL_GHC_VERSION: 9.6.6
-    BOOTSTRAP_HASKELL_CABAL_VERSION: 3.12.1.0
+    BOOTSTRAP_HASKELL_GHC_VERSION: 9.10.1
+    BOOTSTRAP_HASKELL_CABAL_VERSION: 3.14.1.0
     BOOTSTRAP_HASKELL_INSTALL_NO_STACK: 1
 
   deps_install_script: |
