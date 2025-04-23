@@ -378,6 +378,7 @@ library flora-web
     , data-default
     , deepseq
     , deriving-aeson
+    , dlist
     , effectful
     , effectful-core
     , effectful-plugin
@@ -440,7 +441,6 @@ library flora-web
     , wai-middleware-prometheus
     , warp
     , xml-conduit
-    , xml-conduit-writer
 
   ghc-options:     -fplugin=Effectful.Plugin
 
