@@ -5,7 +5,6 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
-import Data.Maybe (fromJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text
@@ -45,8 +44,6 @@ import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
-import Flora.Model.User (User (..))
-import Flora.Model.User.Query qualified as Query
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.ThirdParties.Hackage.API
   ( HackagePackageInfo (..)
@@ -243,7 +240,6 @@ refreshIndex indexName = do
           then "hackage.haskell.org"
           else Text.unpack indexName
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   packagesPath <- getCabalPackagesDirectory
   let path = packagesPath </> repoPath </> "01-index.tar.gz"
   mPackageIndex <- Query.getPackageIndexByName indexName
@@ -253,7 +249,7 @@ refreshIndex indexName = do
         object ["package_index" .= indexName]
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
     Just _ ->
-      Import.importFromIndex user.userId indexName path
+      Import.importFromIndex indexName path
 
 getCabalPackagesDirectory :: FileSystem :> es => Eff es FilePath
 getCabalPackagesDirectory = do

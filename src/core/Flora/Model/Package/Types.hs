@@ -51,7 +51,6 @@ import Data.Aeson.Orphans ()
 import Distribution.Orphans ()
 import Distribution.Orphans.Version ()
 import Flora.Model.Package.Orphans ()
-import Flora.Model.User
 import JSON
 
 newtype PackageId = PackageId {getPackageId :: UUID}
@@ -212,7 +211,6 @@ data Package = Package
   { packageId :: PackageId
   , namespace :: Namespace
   , name :: PackageName
-  , ownerId :: UserId
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   , status :: PackageStatus

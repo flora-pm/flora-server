@@ -4,7 +4,6 @@ import Codec.Compression.GZip qualified as GZip
 import Control.Monad.Extra (unlessM)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List.NonEmpty (NonEmpty)
-import Data.Maybe
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -260,12 +259,11 @@ importFolderOfCabalFiles
   -> Text
   -> Eff es ()
 importFolderOfCabalFiles path repository = do
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
+      importAllFilesInRelativeDirectory (repository, packageIndex.url) (path </> Text.unpack repository)
 
 importIndex
   :: ( Concurrent :> es
@@ -281,12 +279,11 @@ importIndex
   -> Text
   -> Eff es ()
 importIndex path repository = do
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just _ ->
-      importFromIndex (user ^. #userId) repository path
+      importFromIndex repository path
 
 importPackageTarball
   :: ( BlobStoreAPI :> es

@@ -44,6 +44,10 @@ main = do
     runTestEff
       ( do
           cleanUp
+          advisoriesDirectory <- getXdgDirectory XdgData "security-advisories"
+          unlessM (doesPathExist advisoriesDirectory) $ do
+            Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
+            liftIO exitFailure
           testMigrations
           importCategories
           Update.createPackageIndex "hackage" "" "" Nothing
@@ -51,19 +55,15 @@ main = do
           password <- liftIO $ Sel.hashText "foobar2000"
           templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
           Update.insertUser templateUser
-          f' <- getFixtures
-          importAllPackages f'
-          result <- runErrorNoCallStack @(NonEmpty AdvisoryImportError) $ do
-            advisoriesDirectory <- getXdgDirectory XdgData "security-advisories"
-            unlessM (doesPathExist advisoriesDirectory) $ do
-              Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
-              liftIO exitFailure
-            Advisories.importAdvisories advisoriesDirectory
+          importAllPackages
+          result <-
+            runErrorNoCallStack @(NonEmpty AdvisoryImportError) $
+              Advisories.importAdvisories advisoriesDirectory
           case result of
             Left errors -> do
               liftIO $ print errors
               liftIO exitFailure
-            Right _ -> pure f'
+            Right _ -> getFixtures
       )
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
@@ -78,9 +78,9 @@ specs fixtures =
   , CategorySpec.spec
   , TemplateSpec.spec
   , CabalSpec.spec
-  , ImportSpec.spec fixtures
+  , ImportSpec.spec
   , BlobSpec.spec
-  , SearchSpec.spec fixtures
+  , SearchSpec.spec
   , PackageGroupSpec.spec
   , AdvisorySpec.spec
   ]

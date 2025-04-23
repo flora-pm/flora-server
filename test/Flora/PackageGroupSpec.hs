@@ -8,7 +8,6 @@ import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroupPackage.Update as Update
-import Flora.Model.User
 import Flora.TestUtils
 
 spec :: TestEff TestTree
@@ -24,12 +23,7 @@ spec =
 
 testInsertPackageGroup :: TestEff ()
 testInsertPackageGroup = do
-  user <- instantiateUser randomUserTemplate
-  void $
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  void (instantiatePackage randomPackageTemplate)
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
 
@@ -44,12 +38,7 @@ testInsertPackageGroup = do
 
 testAddPackageToPackageGroup :: TestEff ()
 testAddPackageToPackageGroup = do
-  user <- instantiateUser randomUserTemplate
-  package <-
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  package <- instantiatePackage randomPackageTemplate
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -67,12 +56,7 @@ testAddPackageToPackageGroup = do
 
 testRemovePackageFromPackageGroup :: TestEff ()
 testRemovePackageFromPackageGroup = do
-  user <- instantiateUser randomUserTemplate
-  package <-
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  package <- instantiatePackage randomPackageTemplate
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -91,12 +75,7 @@ testRemovePackageFromPackageGroup = do
 
 testGetPackagesByPackageGroupId :: TestEff ()
 testGetPackagesByPackageGroupId = do
-  user <- instantiateUser randomUserTemplate
-  package <-
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  package <- instantiatePackage randomPackageTemplate
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -114,12 +93,7 @@ testGetPackagesByPackageGroupId = do
 
 testGetPackageGroupByPackageGroupName :: TestEff ()
 testGetPackageGroupByPackageGroupName = do
-  user <- instantiateUser randomUserTemplate
-  void $
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  void (instantiatePackage randomPackageTemplate)
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
 
