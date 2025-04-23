@@ -33,17 +33,22 @@ RUN apt update && \
   apt install -y  \
     build-essential \
     curl \
+    git \
     libffi-dev \
     libffi8 \
     libgmp-dev \
     libgmp10 \
     libncurses-dev \
     libncurses5 \
-    libtinfo5 \
-    git \
     libsodium-dev \
+    libtinfo5 \
+    locales \
     pkg-config \
     zlib1g-dev
+RUN localedef -i en_GB -c -f UTF-8 -A /usr/share/locale/locale.alias en_GB.UTF-8
+RUN rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man
+
+ENV LANG="en_GB.UTF-8"
 
 # install dependencies (pg_config, postgresql-client, yarn)
 ENV BOOTSTRAP_HASKELL_NONINTERACTIVE="YES"
@@ -72,7 +77,6 @@ RUN echo $PATH
 # install Haskell tooling (note that for cabal, it's probably better
 # to run `cabal update` as separate step, as cabal doesn't delete
 # package versions)
-ENV LC_ALL="en_UK.UTF-8"
 RUN cabal update
 RUN cabal install -j postgresql-migration-$POSTGRESQL_MIGRATION_VERSION
 RUN cabal install -j hlint-$HLINT_VERSION
