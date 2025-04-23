@@ -4,7 +4,6 @@ import Codec.Compression.GZip qualified as GZip
 import Control.Monad.Extra (unlessM)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List.NonEmpty (NonEmpty)
-import Data.Maybe
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
