@@ -21,7 +21,7 @@ spec :: TestEff TestTree
 spec =
   testThese
     "Import tests"
-    [ testThis "Import index" $ testImportIndex
+    [ testThis "Import index" testImportIndex
     , testThis "Namespace chooser" testNamespaceChooser
     ]
 

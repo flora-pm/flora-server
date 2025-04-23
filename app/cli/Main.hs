@@ -260,7 +260,6 @@ importFolderOfCabalFiles
   -> Text
   -> Eff es ()
 importFolderOfCabalFiles path repository = do
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
@@ -281,7 +280,6 @@ importIndex
   -> Text
   -> Eff es ()
 importIndex path repository = do
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"

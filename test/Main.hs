@@ -46,8 +46,8 @@ main = do
           cleanUp
           advisoriesDirectory <- getXdgDirectory XdgData "security-advisories"
           unlessM (doesPathExist advisoriesDirectory) $ do
-              Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
-              liftIO exitFailure
+            Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
+            liftIO exitFailure
           testMigrations
           importCategories
           Update.createPackageIndex "hackage" "" "" Nothing
@@ -56,8 +56,9 @@ main = do
           templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
           Update.insertUser templateUser
           importAllPackages
-          result <- runErrorNoCallStack @(NonEmpty AdvisoryImportError) $
-            Advisories.importAdvisories advisoriesDirectory
+          result <-
+            runErrorNoCallStack @(NonEmpty AdvisoryImportError) $
+              Advisories.importAdvisories advisoriesDirectory
           case result of
             Left errors -> do
               liftIO $ print errors
