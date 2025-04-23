@@ -19,7 +19,6 @@ import Data.ByteString (StrictByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy (LazyByteString)
 import Data.ByteString.UTF8 qualified as BSU
-import Data.List (foldl')
 import Data.Map qualified as M
 import Data.Text qualified as T
 import Data.Text.Display (display)

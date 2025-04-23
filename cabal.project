@@ -1,25 +1,32 @@
 packages:
     ./
 
-with-compiler: ghc-9.6.6
+with-compiler: ghc-9.10.1
 
 active-repositories: hackage.haskell.org
 
 tests: True
 
-allow-newer: hashable:filepath
-           , hsec-sync:lens
-           , hsec-tools:pandoc
-           , qrcode-core:bytestring
-           , qrcode-core:text
-           , qrcode-juicypixels:bytestring
-           , qrcode-juicypixels:text
+allow-newer: base32:base
+           , binary:containers
+           , chronos:hashable
+           , feed:base
+           , hashable:filepath
+           , hsec-core:*
+           , hsec-sync:*
+           , hsec-tools:*
+           , insert-ordered-containers:hashable
+           , openapi3:*
+           , prometheus-effectful:bytestring
+           , wai-middleware-heartbeat:*
+           , odd-jobs:async
+           , prometheus-proc:*
+           , qrcode-core:*
+           , qrcode-juicypixels:*
            , servant-lucid:text
-           , tasty-test-reporter:ansi-terminal
-           , tasty-test-reporter:tasty
+           , servant-openapi3:*
+           , tasty-test-reporter:*
            , type-errors-pretty:base
-
-allow-older: pg-entity:time
 
 test-show-details: direct
 
