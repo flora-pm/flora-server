@@ -7,7 +7,7 @@ ARG UID=1000
 ARG GHC_VERSION=9.10.1
 ARG CABAL_VERSION=3.14.1.1
 ARG FOURMOLU_VERSION=0.17.0.0
-ARG HLINT_VERSION=3.8
+ARG HLINT_VERSION=3.10
 ARG APPLY_REFACT_VERSION=0.14.0.0
 ARG CABAL_FMT_VERSION=0.1.12
 ARG GHCID_VERSION=0.8.9
@@ -72,6 +72,7 @@ RUN echo $PATH
 # install Haskell tooling (note that for cabal, it's probably better
 # to run `cabal update` as separate step, as cabal doesn't delete
 # package versions)
+ENV LC_ALL="en_UK.UTF-8"
 RUN cabal update
 RUN cabal install -j postgresql-migration-$POSTGRESQL_MIGRATION_VERSION
 RUN cabal install -j hlint-$HLINT_VERSION
