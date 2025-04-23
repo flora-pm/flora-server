@@ -21,7 +21,7 @@ task:
     cabal freeze --project-file ${CABAL_PROJECT}
 
   haskell_cache:
-    folder: ${HOME}/.local/state/cabal/store
+    folder: ${HOME}/.cabal/store
     reupload_on_changes: false # since there is a fingerprint script
     fingerprint_script:
       - sha256sum < dist-newstyle/cache/plan.json
