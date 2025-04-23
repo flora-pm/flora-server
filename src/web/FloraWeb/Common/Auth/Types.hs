@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module FloraWeb.Common.Auth.Types where
 
 import Data.Kind (Type)
