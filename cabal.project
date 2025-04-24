@@ -66,8 +66,8 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/haskell-servant/servant
-    tag: bce6b4bd14c4cb953561366cd43600eb6b8fc17c
+    location: https://github.com/kutyel/servant
+    tag: d628150c765000ac987528698fc28aed3154b1c8
     subdir:
       ./servant
       ./servant-server

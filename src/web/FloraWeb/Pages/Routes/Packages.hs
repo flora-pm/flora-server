@@ -1,25 +1,36 @@
 module FloraWeb.Pages.Routes.Packages
   ( Routes
   , Routes' (..)
+  , PackageFilter (..)
   )
 where
 
+import Control.Monad
 import Data.ByteString.Lazy (ByteString)
+import Data.List qualified as List
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Distribution.Types.Version (Version)
 import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
+import Servant.API.QueryString
 
 import Data.Positive
-import Flora.Model.Package (Namespace, PackageName)
+import Flora.Model.Package.Types
 import Servant.API.ContentTypes.GZip
 
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { index
+  { showPackageFeed
+      :: mode
+        :- AuthProtect "optional-cookie-auth"
+          :> "feed"
+          :> DeepQuery "filter" PackageFilter
+          :> Get '[HTML] (Html ())
+  , index
       :: mode
         :- AuthProtect "optional-cookie-auth"
           :> QueryParam "page" (Positive Word)
@@ -116,3 +127,27 @@ data Routes' mode = Routes'
           :> Get '[HTML] (Html ())
   }
   deriving stock (Generic)
+
+data PackageFilter = PackageFilter
+  { namespace :: Maybe Namespace
+  , packageName :: Maybe PackageName
+  }
+  deriving stock (Eq, Generic, Ord, Show)
+
+instance FromDeepQuery PackageFilter where
+  fromDeepQuery filterValues =
+    let namespaceResult = join $ List.lookup (["namespace" :: Text]) filterValues
+        packageNameResult = join $ List.lookup (["package_name"]) filterValues
+     in case parseNamespace <$> namespaceResult of
+          Nothing -> Left "could not parse namespace"
+          Just namespace ->
+            case parsePackageName <$> packageNameResult of
+              Nothing -> Left "Could not parse package_name"
+              Just packageName ->
+                Right $ PackageFilter namespace packageName
+
+instance ToDeepQuery PackageFilter where
+  toDeepQuery (PackageFilter namespace packageName) =
+    [ ([Text.pack "namespace"], Just $ toQueryParam namespace)
+    , ([Text.pack "package_name"], Just $ toQueryParam packageName)
+    ]

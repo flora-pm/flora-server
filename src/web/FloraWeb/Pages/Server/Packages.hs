@@ -61,7 +61,8 @@ import Lucid.Orphans ()
 server :: ServerT Routes FloraEff
 server =
   Routes'
-    { index = listPackagesHandler
+    { showPackageFeed = showPackageFeedHandler
+    , index = listPackagesHandler
     , showNamespace = showNamespaceHandler
     , showPackage = showPackageHandler
     , showVersion = showVersionHandler
@@ -75,6 +76,17 @@ server =
     , getTarball = getTarballHandler
     , showPackageSecurity = showPackageSecurityHandler
     }
+
+showPackageFeedHandler
+  :: ( DB :> es
+     , IOE :> es
+     , Reader FeatureEnv :> es
+     , Trace :> es
+     )
+  => SessionWithCookies (Maybe User)
+  -> PackageFilter
+  -> Eff es (Html ())
+showPackageFeedHandler _ packageFilter = undefined
 
 listPackagesHandler
   :: ( DB :> es
