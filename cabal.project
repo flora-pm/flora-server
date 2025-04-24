@@ -5,10 +5,6 @@ with-compiler: ghc-9.10.1
 
 active-repositories: hackage.haskell.org
 
-semaphore: True
-
-jobs: $ncpus
-
 tests: True
 
 allow-newer: base32:base
