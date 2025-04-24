@@ -23,18 +23,24 @@ import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static (Reader)
+import Effectful.Time (Time)
 import Log qualified
 
+import Flora.Environment.Env (FloraEnv)
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
+import Flora.Model.Feed.Types qualified as Types
+import Flora.Model.Feed.Update qualified as Update
+import Flora.Model.Package.Types (Package (..))
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 
 insertRelease :: DB :> es => Release -> Eff es ()
 insertRelease = dbtToEff . insert @Release
 
-upsertRelease :: (DB :> es, Log :> es) => Release -> Eff es ()
-upsertRelease newRelease = do
+upsertRelease :: (DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es) => Package -> Release -> Eff es ()
+upsertRelease package newRelease = do
   mReleaseFromDB <- Query.getReleaseById newRelease.releaseId
   case mReleaseFromDB of
     Just releaseFromDB ->
@@ -51,6 +57,8 @@ upsertRelease newRelease = do
     Nothing -> do
       Log.logInfo "Inserting new release" $ object ["new_release" .= newRelease]
       insertRelease newRelease
+      entry <- Types.newReleaseEntry package newRelease.version
+      Update.insertFeedEntry entry
 
 refreshLatestVersions :: DB :> es => Eff es ()
 refreshLatestVersions = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()

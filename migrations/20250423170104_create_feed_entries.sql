@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS feed_entries (
 );
 
 CREATE INDEX
-  ON feed_entries (updated_at)
+  ON feed_entries (updated_at);

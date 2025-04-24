@@ -113,6 +113,9 @@ library
     Flora.Model.Component.Query
     Flora.Model.Component.Types
     Flora.Model.Downloads
+    Flora.Model.Feed.Query
+    Flora.Model.Feed.Types
+    Flora.Model.Feed.Update
     Flora.Model.Job
     Flora.Model.Organisation
     Flora.Model.Package
@@ -175,6 +178,7 @@ library
     , effectful-plugin
     , envparse
     , filepath
+    , heptapod               ^>=1.1.0.0
     , hsec-core
     , http-api-data
     , http-media
@@ -620,6 +624,7 @@ test-suite flora-test
     Flora.BlobSpec
     Flora.CabalSpec
     Flora.CategorySpec
+    Flora.FeedSpec
     Flora.ImportSpec
     Flora.OddJobSpec
     Flora.PackageGroupSpec
