@@ -601,7 +601,6 @@ test-suite flora-test
     , pg-transact
     , pg-transact-effectful
     , postgresql-migration
-    , postgresql-simple
     , prometheus-effectful
     , resource-pool
     , sel

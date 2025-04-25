@@ -13,7 +13,11 @@ spec =
 
 testFeedEntryPresenceForPackageImports :: TestEff ()
 testFeedEntryPresenceForPackageImports = do
-  entries <- Query.getEntriesByPackage (Namespace "haskell") (PackageName "base") 0 10
+  entries <-
+    Query.getEntriesByPackage
+      [(Namespace "haskell", PackageName "base")]
+      0
+      10
   assertEqual
     2
     (length entries)

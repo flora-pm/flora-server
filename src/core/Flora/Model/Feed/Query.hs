@@ -2,8 +2,8 @@
 
 module Flora.Model.Feed.Query where
 
+import Data.List (List)
 import Data.Vector (Vector)
-import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (In (..))
 import Database.PostgreSQL.Simple.SqlQQ
@@ -15,15 +15,14 @@ import Flora.Model.Package.Types
 
 getEntriesByPackage
   :: DB :> es
-  => Vector (Namespace, PackageName)
+  => List (Namespace, PackageName)
   -> Word
   -- ^ Offset
   -> Word
   -- ^ Limit
   -> Eff es (Vector FeedEntry)
 getEntriesByPackage packages offset limit = do
-  let pairs = Vector.toList packages
-  dbtToEff $ query Select querySpec (In pairs, offset, limit)
+  dbtToEff $ query Select querySpec (In packages, offset, limit)
   where
     querySpec =
       [sql|
@@ -37,6 +36,7 @@ getEntriesByPackage packages offset limit = do
         FROM feed_entries AS f0
              INNER JOIN latest_versions AS l1 ON (l1.namespace, l1.name) IN ?
         WHERE l1.package_id = f0.package_id
+        ORDER BY f0.updated_at DESC
         OFFSET ?
         LIMIT ?
     |]

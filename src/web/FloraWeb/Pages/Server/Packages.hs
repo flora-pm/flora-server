@@ -19,13 +19,16 @@ import Effectful.Error.Static (Error, throwError)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader, ask)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
+import Effectful.Time qualified as Time
 import Effectful.Trace
 import Log (object, (.=))
 import Log qualified
 import Lucid
 import Monitor.Tracing qualified as Tracing
 import Network.HTTP.Types (notFound404)
+import Optics.Core
 import Servant (Headers (..), ServerError, ServerT)
 import Servant.Server (err404)
 import Text.Atom.Feed qualified as Atom
@@ -34,9 +37,11 @@ import Advisories.Model.Affected.Query qualified as Query
 import Advisories.Model.Affected.Types
 import Data.Positive
 import Distribution.Orphans ()
-import Flora.Environment.Env (FeatureEnv (..))
+import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobStore.API (BlobStoreAPI)
+import Flora.Model.Feed.Query qualified as Query
+import Flora.Model.Feed.Types
 import Flora.Model.Package
 import Flora.Model.Package.Guard
 import Flora.Model.Package.Query qualified as Query
@@ -47,6 +52,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.User (User)
 import Flora.Search qualified as Search
+import FloraWeb.Atom
 import FloraWeb.Common.Auth
 import FloraWeb.Common.Guards
 import FloraWeb.Common.Pagination
@@ -80,13 +86,23 @@ server =
 
 showPackageFeedHandler
   :: ( DB :> es
-     , IOE :> es
-     , Reader FeatureEnv :> es
-     , Trace :> es
+     , Reader FloraEnv :> es
+     , Time :> es
      )
   => [PackageFilter]
   -> Eff es Atom.Feed
-showPackageFeedHandler packageFilter = undefined
+showPackageFeedHandler packageFilter = do
+  env <- Reader.ask @FloraEnv
+  entries <- Query.getEntriesByPackage (fmap (view #selectedPackages) packageFilter) 0 100
+  lastUpdatedAt <-
+    case Vector.uncons entries of
+      Nothing -> Time.currentTime
+      Just (x, _) -> pure x.updatedAt
+  pure $
+    makeFeed
+      env.domain
+      lastUpdatedAt
+      entries
 
 listPackagesHandler
   :: ( DB :> es

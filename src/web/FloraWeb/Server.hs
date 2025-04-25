@@ -243,6 +243,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
           & runErrorWith (\_callstack err -> pure $ Left err)
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
+          & runReader floraEnv
           & runEff
   either Except.throwError pure result
 
