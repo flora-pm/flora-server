@@ -14,6 +14,8 @@ import Distribution.Types.Version (Version)
 import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
+import Text.Atom.Feed qualified as Atom
+import FloraWeb.Atom
 import Servant.API.Generic
 import Servant.API.QueryString
 
@@ -29,7 +31,7 @@ data Routes' mode = Routes'
         :- AuthProtect "optional-cookie-auth"
           :> "feed"
           :> DeepQuery "filter" PackageFilter
-          :> Get '[HTML] (Html ())
+          :> Get '[Atom] (Atom.Feed)
   , index
       :: mode
         :- AuthProtect "optional-cookie-auth"

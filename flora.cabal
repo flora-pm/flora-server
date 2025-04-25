@@ -302,6 +302,7 @@ library flora-web
     FloraWeb.API.Routes.Packages.Types
     FloraWeb.API.Server
     FloraWeb.API.Server.Packages
+    FloraWeb.Atom
     FloraWeb.Client
     FloraWeb.Common.Auth
     FloraWeb.Common.Auth.TwoFactor
@@ -387,6 +388,7 @@ library flora-web
     , effectful-core
     , effectful-plugin
     , extra
+    , feed
     , flora
     , flora-advisories
     , flora-jobs
