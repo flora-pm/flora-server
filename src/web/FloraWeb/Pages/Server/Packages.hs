@@ -28,6 +28,7 @@ import Monitor.Tracing qualified as Tracing
 import Network.HTTP.Types (notFound404)
 import Servant (Headers (..), ServerError, ServerT)
 import Servant.Server (err404)
+import Text.Atom.Feed qualified as Atom
 
 import Advisories.Model.Affected.Query qualified as Query
 import Advisories.Model.Affected.Types
@@ -83,10 +84,9 @@ showPackageFeedHandler
      , Reader FeatureEnv :> es
      , Trace :> es
      )
-  => SessionWithCookies (Maybe User)
-  -> PackageFilter
-  -> Eff es (Html ())
-showPackageFeedHandler _ packageFilter = undefined
+  => [PackageFilter]
+  -> Eff es Atom.Feed
+showPackageFeedHandler packageFilter = undefined
 
 listPackagesHandler
   :: ( DB :> es

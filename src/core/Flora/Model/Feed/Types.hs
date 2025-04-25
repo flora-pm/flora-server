@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Flora.Model.Feed.Types where
 
 import Control.DeepSeq
@@ -47,10 +45,10 @@ newReleaseEntry package version = do
   env <- Reader.ask
   let port = if env.environment == Production then "" else ":" <> display env.httpPort
   let linkBase = "http://" <> env.domain <> port
-  entryId <- liftIO $ Heptapod.generate
+  entryId <- liftIO Heptapod.generate
   let title = display package.namespace <> "/" <> display package.name <> " v" <> display version
   let link = toUrlPiece $ linkBase <> "/packages/" <> display package.namespace <> "/" <> display package.name <> "/" <> display version
-  let content = display package.namespace <> "/" <> display package.name <> " v" <> display version <> " has been released. See its changelog at " <> (toUrlPiece $ linkBase <> "/packages/" <> display package.namespace <> "/" <> display package.name <> "/" <> display version <> "/changelog")
+  let content = display package.namespace <> "/" <> display package.name <> " v" <> display version <> " has been released. See its changelog at " <> toUrlPiece (linkBase <> "/packages/" <> display package.namespace <> "/" <> display package.name <> "/" <> display version <> "/changelog")
   now <- Time.currentTime
   pure $
     FeedEntry

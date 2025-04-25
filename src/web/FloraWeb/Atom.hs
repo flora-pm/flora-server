@@ -3,12 +3,12 @@ module FloraWeb.Atom where
 import Data.Data
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromJust)
+import Data.Text.Lazy.Encoding qualified as TLE
 import Network.HTTP.Media qualified as M
 import Servant.API
 import Text.Atom.Feed qualified as Atom
 import Text.Feed.Export qualified as Export
-import Text.Feed.Types (Feed(AtomFeed))
-import qualified Data.Text.Lazy.Encoding as TLE
+import Text.Feed.Types (Feed (AtomFeed))
 
 data Atom deriving stock (Typeable)
 

@@ -5,22 +5,19 @@ module FloraWeb.Pages.Routes.Packages
   )
 where
 
-import Control.Monad
 import Data.ByteString.Lazy (ByteString)
-import Data.List qualified as List
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Distribution.Types.Version (Version)
 import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
-import Text.Atom.Feed qualified as Atom
-import FloraWeb.Atom
 import Servant.API.Generic
-import Servant.API.QueryString
+import Text.Atom.Feed qualified as Atom
 
 import Data.Positive
 import Flora.Model.Package.Types
+import FloraWeb.Atom
 import Servant.API.ContentTypes.GZip
 
 type Routes = NamedRoutes Routes'
@@ -28,10 +25,9 @@ type Routes = NamedRoutes Routes'
 data Routes' mode = Routes'
   { showPackageFeed
       :: mode
-        :- AuthProtect "optional-cookie-auth"
-          :> "feed"
-          :> DeepQuery "filter" PackageFilter
-          :> Get '[Atom] (Atom.Feed)
+        :- "feed"
+          :> QueryParams "filter" PackageFilter
+          :> Get '[Atom] Atom.Feed
   , index
       :: mode
         :- AuthProtect "optional-cookie-auth"
@@ -130,26 +126,22 @@ data Routes' mode = Routes'
   }
   deriving stock (Generic)
 
-data PackageFilter = PackageFilter
-  { namespace :: Maybe Namespace
-  , packageName :: Maybe PackageName
+newtype PackageFilter = PackageFilter
+  { selectedPackages :: (Namespace, PackageName)
   }
   deriving stock (Eq, Generic, Ord, Show)
 
-instance FromDeepQuery PackageFilter where
-  fromDeepQuery filterValues =
-    let namespaceResult = join $ List.lookup (["namespace" :: Text]) filterValues
-        packageNameResult = join $ List.lookup (["package_name"]) filterValues
-     in case parseNamespace <$> namespaceResult of
-          Nothing -> Left "could not parse namespace"
-          Just namespace ->
-            case parsePackageName <$> packageNameResult of
-              Nothing -> Left "Could not parse package_name"
-              Just packageName ->
-                Right $ PackageFilter namespace packageName
+instance ToHttpApiData PackageFilter where
+  toUrlPiece packages =
+    formatSelectedPackage packages.selectedPackages
+    where
+      formatSelectedPackage :: (Namespace, PackageName) -> Text
+      formatSelectedPackage (namespace, packageName) =
+        "packages[]=" <> toUrlPiece namespace <> "/" <> toUrlPiece packageName
 
-instance ToDeepQuery PackageFilter where
-  toDeepQuery (PackageFilter namespace packageName) =
-    [ ([Text.pack "namespace"], Just $ toQueryParam namespace)
-    , ([Text.pack "package_name"], Just $ toQueryParam packageName)
-    ]
+instance FromHttpApiData PackageFilter where
+  parseUrlPiece urlPiece = do
+    let (namespace', packageName') = Text.breakOn "/" urlPiece
+    namespace <- maybe (Left ("Could not parse namespace " <> namespace')) Right $ parseNamespace namespace'
+    packageName <- maybe (Left ("Could not parse package name " <> packageName')) Right $ parsePackageName packageName'
+    pure $ PackageFilter (namespace, packageName)
