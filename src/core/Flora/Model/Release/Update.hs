@@ -23,12 +23,12 @@ import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect
-import Effectful.Reader.Static qualified as Reader
 import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Log qualified
 
-import Flora.Environment.Env (FloraEnv(..), DeploymentEnv(..))
+import Flora.Environment.Env (DeploymentEnv (..), FloraEnv (..))
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Feed.Types qualified as Types

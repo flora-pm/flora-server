@@ -183,9 +183,9 @@ instance ToField (Namespace, PackageName) where
     Many
       [ litC '('
       , toField namespace
-      , (litC ',')
+      , litC ','
       , toField packageName
-      , (litC ')')
+      , litC ')'
       ]
     where
       litC = Plain . B.char8

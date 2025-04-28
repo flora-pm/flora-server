@@ -46,7 +46,7 @@ makeFeed
   -> Vector FeedEntry
   -> Atom.Feed
 makeFeed instanceInfo updated entries =
-  let feedTitle = Atom.TextString $ "Flora Feed"
+  let feedTitle = Atom.TextString "Flora Feed"
       feedUpdated = Text.pack $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" updated
       feedId = either fst id instanceInfo
       floraLink =

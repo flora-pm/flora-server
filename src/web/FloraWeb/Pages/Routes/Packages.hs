@@ -147,5 +147,5 @@ instance FromHttpApiData PackageFilter where
   parseUrlPiece urlPiece = do
     let (namespace', packageName') = Text.breakOn "/" urlPiece
     namespace <- maybe (Left ("Could not parse namespace " <> namespace')) Right $ parseNamespace namespace'
-    packageName <- maybe (Left ("Could not parse package name " <> (Text.tail packageName'))) Right $ parsePackageName (Text.tail packageName')
+    packageName <- maybe (Left ("Could not parse package name " <> Text.tail packageName')) Right $ parsePackageName (Text.tail packageName')
     pure $ PackageFilter (namespace, packageName)
