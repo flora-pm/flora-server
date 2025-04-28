@@ -10,6 +10,7 @@ import Data.Aeson.TH
 import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.ByteString.Char8 qualified as Attoparsec
 import Data.ByteString (ByteString)
+import Data.ByteString.Builder qualified as B
 import Data.ByteString.Char8 qualified as B
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
@@ -34,7 +35,7 @@ import Database.PostgreSQL.Simple.FromField
   )
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
-import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
+import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Deriving.Aeson
 import Distribution.Pretty (Pretty (..))
@@ -176,6 +177,18 @@ namespaceSchema =
   mempty
     & #description
     ?~ "Namespace containing packages"
+
+instance ToField (Namespace, PackageName) where
+  toField (namespace, packageName) =
+    Many
+      [ litC '('
+      , toField namespace
+      , litC ','
+      , toField packageName
+      , litC ')'
+      ]
+    where
+      litC = Plain . B.char8
 
 data PackageStatus = UnknownPackage | FullyImportedPackage
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)

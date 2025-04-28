@@ -297,7 +297,7 @@ parseString parser name bs = do
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 persistImportOutput
   :: forall es
-   . (Concurrent :> es, DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, State (Set (Namespace, PackageName, Version)) :> es)
+   . (Concurrent :> es, DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, State (Set (Namespace, PackageName, Version)) :> es, Time :> es)
   => ImportOutput
   -> Eff es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
@@ -317,7 +317,7 @@ persistImportOutput (ImportOutput package categories release components) = State
           ]
       pure packageCache
     else do
-      Update.upsertRelease release
+      Update.upsertRelease package release
       env <- Reader.ask
       Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections components persistComponent
       let expectedDependencies = foldMap snd components

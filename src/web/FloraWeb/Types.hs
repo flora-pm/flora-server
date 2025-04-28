@@ -48,6 +48,7 @@ type RouteEffects =
    , Error ServerError
    , Concurrent
    , Metrics AppMetrics
+   , Reader FloraEnv
    , IOE
    ]
 

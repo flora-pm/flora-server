@@ -66,6 +66,7 @@ checkExpectedTables = do
           , "blob_relations"
           , "categories"
           , "downloads"
+          , "package_feeds"
           , "oddjobs"
           , "organisations"
           , "package_categories"

@@ -21,7 +21,7 @@ let minify = false;
 let sourcemap = true;
 let entryNames = "[name]";
 
-const watchDirectories = [  "./css", "./js", "./style-tokens"];
+const watchDirectories = [  "./css", "./js", "./style-tokens", "./feed"];
 
 const mkProdPlugins = () => {
   return [

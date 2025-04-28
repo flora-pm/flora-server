@@ -100,7 +100,7 @@ repl: ## Start a cabal REPL
 ghci: repl ## Start a cabal REPL (alias for `make repl`)
 
 watch: ## Load the main library and reload on file change
-	@ghcid --target flora-server -l
+	@ghcid --target flora-server --restart="src" -l
 
 test:  ## Run the test suite
 	./scripts/run-tests.sh

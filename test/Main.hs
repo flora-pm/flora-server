@@ -23,6 +23,7 @@ import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Environment
+import Flora.FeedSpec qualified as FeedSpec
 import Flora.Import.Categories (importCategories)
 import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.PackageIndex.Update qualified as Update
@@ -73,16 +74,17 @@ main = do
 
 specs :: Fixtures -> [TestEff TestTree]
 specs fixtures =
-  [ UserSpec.spec fixtures
-  , PackageSpec.spec
-  , CategorySpec.spec
-  , TemplateSpec.spec
-  , CabalSpec.spec
-  , ImportSpec.spec
+  [ AdvisorySpec.spec
   , BlobSpec.spec
-  , SearchSpec.spec
+  , CabalSpec.spec
+  , CategorySpec.spec
+  , FeedSpec.spec
+  , ImportSpec.spec
   , PackageGroupSpec.spec
-  , AdvisorySpec.spec
+  , PackageSpec.spec
+  , SearchSpec.spec
+  , TemplateSpec.spec
+  , UserSpec.spec fixtures
   ]
 
 cleanUp :: DB :> es => Eff es ()
@@ -101,6 +103,7 @@ cleanUp = dbtToEff $ do
   void $ execute Delete "DELETE FROM releases" ()
   void $ execute Delete "DELETE FROM package_group_packages" ()
   void $ execute Delete "DELETE FROM package_groups" ()
+  void $ execute Delete "DELETE FROM package_feeds" ()
   void $ execute Delete "DELETE FROM packages" ()
   void $ execute Delete "DELETE FROM package_indexes" ()
   void $ execute Delete "DELETE FROM user_organisation" ()

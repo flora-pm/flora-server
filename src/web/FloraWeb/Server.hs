@@ -219,6 +219,7 @@ floraServer cfg jobsRunnerEnv environment ioref =
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
     , livereload = LiveReload.livereloadHandler environment ioref
+    , favicon = serveDirectoryWebApp "./static"
     }
 
 naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> Zipkin -> FloraEff a -> Handler a
@@ -243,6 +244,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
           & runErrorWith (\_callstack err -> pure $ Left err)
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
+          & runReader floraEnv
           & runEff
   either Except.throwError pure result
 

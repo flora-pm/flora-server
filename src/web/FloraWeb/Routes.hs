@@ -26,5 +26,6 @@ data Routes mode = Routes
           :> Get '[JSON] OpenApi
   , docs :: mode :- "documentation" :> Raw
   , livereload :: mode :- "livereload" :> Get '[PlainText] (Headers '[Header "HX-Refresh" Text] NoContent)
+  , favicon :: mode :- Raw
   }
   deriving stock (Generic)
