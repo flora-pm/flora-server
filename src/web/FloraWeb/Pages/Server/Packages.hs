@@ -37,7 +37,7 @@ import Advisories.Model.Affected.Query qualified as Query
 import Advisories.Model.Affected.Types
 import Data.Positive
 import Distribution.Orphans ()
-import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
+import Flora.Environment.Env (DeploymentEnv (..), FeatureEnv (..), FloraEnv (..))
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobStore.API (BlobStoreAPI)
 import Flora.Model.Feed.Query qualified as Query
@@ -98,9 +98,13 @@ showPackageFeedHandler packageFilter = do
     case Vector.uncons entries of
       Nothing -> Time.currentTime
       Just (x, _) -> pure x.updatedAt
+  let instanceInfo =
+        case env.environment of
+          Production -> Right env.domain
+          _ -> Left (env.domain, env.httpPort)
   pure $
     makeFeed
-      env.domain
+      instanceInfo
       lastUpdatedAt
       entries
 

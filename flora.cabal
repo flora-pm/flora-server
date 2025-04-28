@@ -447,7 +447,6 @@ library flora-web
     , wai-middleware-prometheus
     , warp
     , xml-conduit
-    , xml-types
 
   ghc-options:     -fplugin=Effectful.Plugin
 

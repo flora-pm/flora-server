@@ -23,11 +23,12 @@ import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
 import Log qualified
 
-import Flora.Environment.Env (FloraEnv)
+import Flora.Environment.Env (FloraEnv(..), DeploymentEnv(..))
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Feed.Types qualified as Types
@@ -57,7 +58,12 @@ upsertRelease package newRelease = do
     Nothing -> do
       Log.logInfo "Inserting new release" $ object ["new_release" .= newRelease]
       insertRelease newRelease
-      entry <- Types.newReleaseEntry package newRelease.version
+      env <- Reader.ask
+      let instanceInfo =
+            case env.environment of
+              Production -> Right env.domain
+              _ -> Left (env.domain, env.httpPort)
+      entry <- Types.newReleaseEntry instanceInfo package newRelease.version
       Update.insertFeedEntry entry
 
 refreshLatestVersions :: DB :> es => Eff es ()
