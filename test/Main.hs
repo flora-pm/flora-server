@@ -103,7 +103,7 @@ cleanUp = dbtToEff $ do
   void $ execute Delete "DELETE FROM releases" ()
   void $ execute Delete "DELETE FROM package_group_packages" ()
   void $ execute Delete "DELETE FROM package_groups" ()
-  void $ execute Delete "DELETE FROM feed_entries" ()
+  void $ execute Delete "DELETE FROM package_feeds" ()
   void $ execute Delete "DELETE FROM packages" ()
   void $ execute Delete "DELETE FROM package_indexes" ()
   void $ execute Delete "DELETE FROM user_organisation" ()

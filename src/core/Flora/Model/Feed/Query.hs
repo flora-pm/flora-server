@@ -33,7 +33,7 @@ getEntriesByPackage packages offset limit = do
              , f0.package_id
              , f0.created_at
              , f0.updated_at
-        FROM feed_entries AS f0
+        FROM package_feeds AS f0
              INNER JOIN latest_versions AS l1 ON (l1.namespace, l1.name) IN ?
         WHERE l1.package_id = f0.package_id
         ORDER BY f0.updated_at DESC

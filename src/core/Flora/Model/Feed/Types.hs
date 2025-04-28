@@ -37,7 +37,7 @@ data FeedEntry = FeedEntry
     via (Aeson.CustomJSON '[Aeson.FieldLabelModifier '[Aeson.CamelToSnake]] FeedEntry)
   deriving
     (Entity)
-    via (GenericEntity '[TableName "feed_entries"] FeedEntry)
+    via (GenericEntity '[TableName "package_feeds"] FeedEntry)
 
 newReleaseEntry
   :: (IOE :> es, Time :> es)

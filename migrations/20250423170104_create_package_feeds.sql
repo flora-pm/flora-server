@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS feed_entries (
+CREATE TABLE IF NOT EXISTS package_feeds (
     entry_id uuid PRIMARY KEY
   , title text NOT NULL
   , link text
@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS feed_entries (
 );
 
 CREATE INDEX
-  ON feed_entries (updated_at);
+  ON package_feeds (updated_at);
