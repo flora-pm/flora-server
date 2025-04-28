@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS package_feeds (
 
 CREATE INDEX
   ON package_feeds (updated_at);
+
+CREATE INDEX package_feeds_package_id_fkey
+  ON package_feeds (package_id)
