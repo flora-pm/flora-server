@@ -34,8 +34,8 @@
     "build": "concurrently \"yarn:build-assets\" \"yarn:copy-static-files\"",
     "watch-assets": "NODE_ENV=dev node esbuild.config.js --watch",
     "build-assets": "NODE_ENV=prod node esbuild.config.js",
-    "copy-static-files": "cpx \"**/*.{svg,png,jpg,xsl}\" ../static",
-    "watch-static-files": "cpx \"**/*.{svg,png,jpg,xsl}\" ../static -w"
+    "copy-static-files": "cpx \"**/*.{svg,png,jpg,xsl,ico}\" ../static",
+    "watch-static-files": "cpx \"**/*.{svg,png,jpg,xsl,ico}\" ../static -w"
   },
   "dependencies": {
     "@docusaurus/core": "^3.1.1",

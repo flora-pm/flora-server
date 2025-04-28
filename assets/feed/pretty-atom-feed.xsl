@@ -51,7 +51,9 @@ https://nicolas-hoizey.com/feeds/all.xml
               <path d="M160 213h-34a82 82 0 0 0 -82 -82v-34a116 116 0 0 1 116 116z" fill="#FFF"/>
               <path d="M184 213A140 140 0 0 0 44 73 V 38a175 175 0 0 1 175 175z" fill="#FFF"/>
             </svg>
-          Latest Package Updates</h1>
+            Flora Atom Feed
+          </h1>
+          <h2> Latest Package Updates</h2>
           <xsl:apply-templates select="atom:feed/atom:entry" />
         </div>
       </body>
