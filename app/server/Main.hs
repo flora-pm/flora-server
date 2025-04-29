@@ -60,17 +60,17 @@ checkExpectedTables :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
 checkExpectedTables = do
   -- Update the list in alphabetical order when adding or removing a table!
   let expectedTables =
-        Set.fromAscList
+        Set.fromList
           [ "affected_packages"
           , "affected_version_ranges"
           , "blob_relations"
           , "categories"
           , "downloads"
-          , "package_feeds"
           , "oddjobs"
           , "organisations"
           , "package_categories"
           , "package_components"
+          , "package_feeds"
           , "package_group_packages"
           , "package_groups"
           , "package_indexes"
