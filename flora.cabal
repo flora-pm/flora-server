@@ -328,6 +328,9 @@ library flora-web
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
     FloraWeb.Embedded
+    FloraWeb.Feed.Routes
+    FloraWeb.Feed.Server
+    FloraWeb.Feed.Templates
     FloraWeb.Links
     FloraWeb.LiveReload
     FloraWeb.Pages.Routes

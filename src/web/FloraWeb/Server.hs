@@ -87,6 +87,7 @@ import FloraWeb.Common.Auth
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
+import FloraWeb.Feed.Server qualified as Feed
 import FloraWeb.LiveReload qualified as LiveReload
 import FloraWeb.Pages.Server qualified as Pages
 import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
@@ -213,6 +214,7 @@ floraServer
 floraServer cfg jobsRunnerEnv environment ioref =
   Routes
     { assets = serveDirectoryWebApp "./static"
+    , feed = Feed.server
     , openSearch = openSearchHandler
     , pages = \_ -> Pages.server cfg jobsRunnerEnv
     , api = API.apiServer

@@ -1,6 +1,7 @@
 module FloraWeb.Pages.Templates
   ( render
   , mkErrorPage
+  , renderPartial
   , module Types
   )
 where
@@ -19,17 +20,19 @@ import FloraWeb.Components.Header (header)
 import FloraWeb.Pages.Templates.Types as Types
 
 render :: Monad m => TemplateEnv -> FloraHTML -> m (Html ())
-render env template = do
-  let deploymentEnv = env.environment
-  pure $ toHtmlRaw $ runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
+render env template =
+  pure $ toHtmlRaw $ runIdentity $ runReaderT (renderBST (rendered template)) env
+
+renderPartial :: Monad m => TemplateEnv -> FloraHTML -> m (Html ())
+renderPartial env template = do
+  pure $ toHtmlRaw $ runIdentity $ runReaderT (renderBST template) env
+  where
 
 mkErrorPage :: TemplateEnv -> FloraHTML -> ByteString
-mkErrorPage env template =
-  let deploymentEnv = env.environment
-   in runIdentity $ runReaderT (renderBST (rendered deploymentEnv template)) env
+mkErrorPage env template = runIdentity $ runReaderT (renderBST (rendered template)) env
 
-rendered :: DeploymentEnv -> FloraHTML -> FloraHTML
-rendered _deploymentEnv target = do
+rendered :: FloraHTML -> FloraHTML
+rendered target = do
   TemplateEnv{flashInfo, flashError} <- ask
   header
   whenJust flashInfo $ \msg -> do
