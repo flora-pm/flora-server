@@ -87,7 +87,7 @@ searchPackageHandler (Headers session _) PackageFeedSearchForm{search = packageN
     if Text.null packageName
       then pure Vector.empty
       else do
-        (_, packagesInfo) <- searchPackageByName (0, 10) packageName
+        (_, packagesInfo) <- searchPackageByName (0, 4) packageName
         Log.logInfo "packages" $ object ["packages" .= packagesInfo]
         pure (Vector.map (\p -> (p.namespace, p.name)) packagesInfo)
   renderPartial templateEnv $ Feed.showSearchedPackages results

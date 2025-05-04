@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module FloraWeb.Feed.Templates
   ( showFeedsBuilderPage
   , showSearchedPackages
@@ -8,16 +10,40 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Htmx.Lucid.Core
 import Lucid
+import PyF
 
 import Flora.Model.Package
+import FloraWeb.Components.Icons qualified as Icons
+import FloraWeb.Components.Utils (xData_, xFor_, xModel_, xOn_, xText_)
 import FloraWeb.Pages.Templates
 
 showFeedsBuilderPage :: FloraHTML
 showFeedsBuilderPage = do
   banner
-  div_ [class_ "container container--small"] $ do
-    packageSelector
-    div_ [class_ "selected-packages"] $ mempty
+  let alpineData =
+        [str| {
+        packages: []
+        } |]
+  let onChange =
+        [str| {
+          let index =
+        } |]
+  div_ [class_ "container container--small", xData_ alpineData] $ do
+    div_ [class_ "feed-package-selector"] $ do
+      packageSelector
+    div_ [class_ "searched-packages"] $ mempty
+    section_ [class_ "selected-packages"]
+      $ template_ [xFor_ "package in packages"]
+      $ button_
+        [ name_ "package"
+        , class_ "selected_package"
+        , type_ "checkbox"
+        , checked_
+        , xOn_ "change" ""
+        ]
+      $ do
+        span_ [xText_ "package"] $ mempty
+        Icons.cross
 
 banner :: FloraHTML
 banner = do
@@ -27,27 +53,30 @@ banner = do
 
 packageSelector :: FloraHTML
 packageSelector =
-  div_ [class_ "package-selector"] $
-    input_
-      [ class_ "form-control"
-      , type_ "search"
-      , placeholder_ "Begin Typing To Search Packages…"
-      , hxPost_ "/feed/search"
-      , hxTrigger_ "input changed delay:100ms, keyup[key=='Enter'], load"
-      , hxSwap_ "innerHTML"
-      , name_ "search"
-      , hxTarget_ ".selected-packages"
-      ]
+  input_
+    [ class_ "feed-package-search"
+    , type_ "search"
+    , placeholder_ "Begin typing…"
+    , hxPost_ "/feed/search"
+    , hxTrigger_ "input changed delay:100ms, keyup[key=='Enter'], load"
+    , hxSwap_ "innerHTML"
+    , name_ "search"
+    , hxTarget_ ".searched-packages"
+    , autocomplete_ "off"
+    ]
 
 showSearchedPackages :: Vector (Namespace, PackageName) -> FloraHTML
 showSearchedPackages packages = do
-  Vector.forM_ packages $ \(namespace, packageName) -> do
+  Vector.forM_ packages $ \(namespace@(Namespace nsText), packageName) -> do
     let qualifiedName = display namespace <> "/" <> display packageName
-    let idName = display namespace <> "-" <> display packageName
+    let idName = nsText <> "-" <> display packageName
     div_ [] $ do
       input_
         [ id_ ("selected-" <> idName)
         , name_ ("selected-" <> idName)
         , type_ "checkbox"
+        , class_ "searched-package"
+        , value_ qualifiedName
+        , xModel_ [] "packages"
         ]
       label_ [for_ ("selected-" <> idName)] $ toHtml qualifiedName

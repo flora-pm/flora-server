@@ -10,6 +10,7 @@ module FloraWeb.Components.Icons
   , terminal
   , license
   , lightbulb
+  , cross
   ) where
 
 import Data.Text (Text)
@@ -22,9 +23,9 @@ usageInstructionTooltip :: FloraHTML
 usageInstructionTooltip =
   toHtmlRaw @Text
     [str|
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="tooltip"> 
-  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /> 
-</svg> 
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="tooltip">
+  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+</svg>
 |]
 
 chevronRightOutline :: FloraHTML
@@ -32,7 +33,7 @@ chevronRightOutline =
   toHtmlRaw @Text
     [str|
 <svg xmlns="http://www.w3.org/2000/svg" class="breadcrumb" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke="currentColor" /> 
+    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke="currentColor" />
 </svg>
 |]
 
@@ -98,4 +99,16 @@ lightbulb =
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
 </svg>
 
+    |]
+
+cross :: FloraHTML
+cross =
+  toHtmlRaw @Text
+    [str|
+<svg aria-hidden="true" width="15" height="15" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <g id="X" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" stroke-linecap="round">
+      <line x1="13.706511" y1="1.12859785" x2="1.1726127" y2="14.143332" id="Line-3" stroke="currentColor" stroke-width="1.2" transform="translate(7.4831, 7.7105) scale(1, -1) translate(-7.4831, -7.7105)"></line>
+      <line x1="13.706511" y1="1.12859785" x2="1.1726127" y2="14.143332" id="Line-3" stroke="currentColor" stroke-width="1.2" transform="translate(7.4831, 7.7105) scale(-1, -1) translate(-7.4831, -7.7105)"></line>
+  </g>
+</svg>
     |]
