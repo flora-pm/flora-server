@@ -73,7 +73,7 @@
 	padding: 0.5rem;
 }
 
-feed-package-search {
+.feed-package-search {
 	background-color: var(--search-bar-background-color);
 	color: var(--search-bar-color);
 	display: block;
@@ -85,11 +85,11 @@ feed-package-search {
 	min-width: 0;
 }
 
-feed-package-search:hover {
+.feed-package-search:hover {
 	background-color: var(--search-bar-background-hover-color);
 }
 
-feed-package-search:focus {
+.feed-package-search:focus {
 	background-color: var(--search-bar-background-focus-color);
 	outline: 2px solid transparent;
 	outline-offset: 2px;
