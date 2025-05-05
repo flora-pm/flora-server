@@ -63,7 +63,7 @@ import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (Assets, DeploymentEnv (..))
+import Flora.Environment.Config (DeploymentEnv (..))
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
@@ -255,19 +255,19 @@ genAuthServerContext logger floraEnv =
   optionalAuthHandler logger floraEnv
     :. strictAuthHandler logger floraEnv
     :. adminAuthHandler logger floraEnv
-    :. errorFormatters floraEnv.assets
+    :. errorFormatters floraEnv
     :. EmptyContext
 
-errorFormatters :: Assets -> ErrorFormatters
-errorFormatters assets =
-  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage assets}
+errorFormatters :: FloraEnv -> ErrorFormatters
+errorFormatters floraEnv =
+  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage floraEnv}
 
-notFoundPage :: Assets -> NotFoundErrorFormatter
-notFoundPage assets _req =
+notFoundPage :: FloraEnv -> NotFoundErrorFormatter
+notFoundPage floraEnv _req =
   let result =
         runPureEff $
           runErrorNoCallStack $
-            renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
+            renderError (defaultsToEnv floraEnv defaultTemplateEnv) notFound404
    in case result of
         Left err -> err
         Right _ -> err404

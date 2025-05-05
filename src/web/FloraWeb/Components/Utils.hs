@@ -51,9 +51,6 @@ xId_ = makeAttributes "x-id"
 id'_ :: Text -> Attributes
 id'_ = makeAttributes ":id"
 
-template_ :: Term arg result => arg -> result
-template_ = term "template"
-
 -- | @datalist@ element
 dataText_ :: Text -> Attributes
 dataText_ = makeAttributes "data-text"
@@ -89,6 +86,11 @@ xShow_ = makeAttributes "x-show"
 xText_ :: Text -> Attributes
 xText_ = makeAttributes "x-text"
 
+-- | x-html
+-- Set the text content of an element to the result of a given expression.
+xHtml_ :: Text -> Attributes
+xHtml_ = makeAttributes "x-html"
+
 -- | x-bind
 -- Dynamically set HTML attributes on an element
 xBind_
@@ -120,3 +122,8 @@ xFor_
   :: Text
   -> Attributes
 xFor_ = makeAttributes "x-for"
+
+key_
+  :: Text
+  -> Attributes
+key_ = makeAttributes ":key"

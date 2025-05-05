@@ -132,3 +132,7 @@ feed-package-search:focus {
 	border-radius: .4rem;
 	gap: .5rem;
 }
+
+.generated-feed-url {
+	display: block;
+}

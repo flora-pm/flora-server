@@ -16,8 +16,8 @@ import FloraWeb.Common.Auth ()
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
-  { feed :: mode :- "atom.xml" :> QueryParams "packages" PackageFilter :> Get '[Atom] Atom.Feed
-  , index :: mode :- AuthProtect "optional-cookie-auth" :> Get '[HTML] (Html ())
+  { index :: mode :- AuthProtect "optional-cookie-auth" :> Get '[HTML] (Html ())
+  , feed :: mode :- "atom.xml" :> QueryParams "packages" PackageFilter :> Get '[Atom] Atom.Feed
   , searchPackage
       :: mode
         :- "search"
