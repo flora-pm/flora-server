@@ -14,7 +14,7 @@ import PyF
 
 import Flora.Model.Package
 import FloraWeb.Components.Icons qualified as Icons
-import FloraWeb.Components.Utils (xData_, xFor_, xModel_, xOn_, xText_)
+import FloraWeb.Components.Utils (xBind_, xData_, xFor_, xModel_, xOn_, xText_)
 import FloraWeb.Pages.Templates
 
 showFeedsBuilderPage :: FloraHTML
@@ -22,24 +22,20 @@ showFeedsBuilderPage = do
   banner
   let alpineData =
         [str| {
-        packages: []
-        } |]
-  let onChange =
-        [str| {
-          let index =
+        activeFilters: []
         } |]
   div_ [class_ "container container--small", xData_ alpineData] $ do
     div_ [class_ "feed-package-selector"] $ do
       packageSelector
     div_ [class_ "searched-packages"] $ mempty
     section_ [class_ "selected-packages"]
-      $ template_ [xFor_ "package in packages"]
+      $ template_ [xFor_ "(package, index) in activeFilters"]
       $ button_
         [ name_ "package"
         , class_ "selected_package"
-        , type_ "checkbox"
-        , checked_
-        , xOn_ "change" ""
+        , xBind_ "id" "index"
+        , type_ "button"
+        , xOn_ "click" "activeFilters.splice(index, 1)"
         ]
       $ do
         span_ [xText_ "package"] $ mempty
@@ -77,6 +73,6 @@ showSearchedPackages packages = do
         , type_ "checkbox"
         , class_ "searched-package"
         , value_ qualifiedName
-        , xModel_ [] "packages"
+        , xModel_ [] "activeFilters"
         ]
       label_ [for_ ("selected-" <> idName)] $ toHtml qualifiedName
