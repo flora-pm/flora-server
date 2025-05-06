@@ -133,6 +133,10 @@
 	gap: .5rem;
 }
 
+.selected_package:hover {
+	border-color: var(--red-60);
+}
+
 .generated-feed-url {
 	display: block;
 }
