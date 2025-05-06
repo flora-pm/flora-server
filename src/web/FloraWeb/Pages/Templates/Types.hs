@@ -19,6 +19,7 @@ import Control.Monad.Reader (ReaderT)
 import Data.Text (Text)
 import Data.Text.Display
 import Data.UUID qualified as UUID
+import Data.Word (Word16)
 import Effectful
 import Effectful.Reader.Static (Reader, ask)
 import GHC.Generics
@@ -61,6 +62,8 @@ data TemplateEnv = TemplateEnv
   , assets :: Assets
   , indexPage :: Bool
   , navbarSearchContent :: Maybe Text
+  , domain :: Text
+  , httpPort :: Word16
   }
   deriving stock (Generic, Show)
 
@@ -116,9 +119,12 @@ defaultTemplateEnv =
     }
 
 -- | ⚠  DO NOT USE THIS FUNCTION IF YOU DON'T KNOW WHAT YOU'RE DOING
-defaultsToEnv :: Assets -> TemplateDefaults -> TemplateEnv
-defaultsToEnv assets TemplateDefaults{..} =
-  let sessionId = PersistentSessionId UUID.nil
+defaultsToEnv :: FloraEnv -> TemplateDefaults -> TemplateEnv
+defaultsToEnv floraEnv TemplateDefaults{..} =
+  let assets = floraEnv.assets
+      sessionId = PersistentSessionId UUID.nil
+      domain = floraEnv.domain
+      httpPort = floraEnv.httpPort
    in TemplateEnv{..}
 
 class FromSession a where
@@ -132,6 +138,8 @@ instance FromSession (Session User) where
     floraEnv <- liftIO $ fetchFloraEnv webEnvStore
     featuresEnv <- ask @FeatureEnv
     let assets = floraEnv.assets
+    let domain = floraEnv.domain
+        httpPort = floraEnv.httpPort
     let TemplateDefaults{..} =
           defaults
             & (#mUser .~ muser)
@@ -147,6 +155,8 @@ instance FromSession (Session (Maybe User)) where
     floraEnv <- liftIO $ fetchFloraEnv webEnvStore
     featuresEnv <- ask @FeatureEnv
     let assets = floraEnv.assets
+    let domain = floraEnv.domain
+        httpPort = floraEnv.httpPort
     let TemplateDefaults{..} =
           defaults
             & (#mUser .~ muser)

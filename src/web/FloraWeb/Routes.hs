@@ -10,12 +10,14 @@ import Text.XML
 
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.Common.OpenSearch
+import FloraWeb.Feed.Routes qualified as Feed
 import FloraWeb.Pages.Routes qualified as Pages
 
 type ServerRoutes = NamedRoutes Routes
 
 data Routes mode = Routes
   { assets :: mode :- "static" :> Raw
+  , feed :: mode :- "feed" :> Feed.Routes
   , openSearch :: mode :- "opensearch.xml" :> Get '[OpenSearchXML] Document
   , pages :: mode :- AuthProtect "optional-cookie-auth" :> Pages.Routes
   , api :: mode :- API.Routes

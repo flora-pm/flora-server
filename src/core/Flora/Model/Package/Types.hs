@@ -260,6 +260,9 @@ data PackageInfo = PackageInfo
   }
   deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (FromRow, NFData)
+  deriving
+    (FromJSON, ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageInfo)
 
 data ElemRating = ElemRating
   { element :: Text

@@ -63,7 +63,7 @@ import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (Assets, DeploymentEnv (..))
+import Flora.Environment.Config (DeploymentEnv (..))
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
@@ -87,6 +87,7 @@ import FloraWeb.Common.Auth
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
+import FloraWeb.Feed.Server qualified as Feed
 import FloraWeb.LiveReload qualified as LiveReload
 import FloraWeb.Pages.Server qualified as Pages
 import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
@@ -213,6 +214,7 @@ floraServer
 floraServer cfg jobsRunnerEnv environment ioref =
   Routes
     { assets = serveDirectoryWebApp "./static"
+    , feed = Feed.server
     , openSearch = openSearchHandler
     , pages = \_ -> Pages.server cfg jobsRunnerEnv
     , api = API.apiServer
@@ -253,19 +255,19 @@ genAuthServerContext logger floraEnv =
   optionalAuthHandler logger floraEnv
     :. strictAuthHandler logger floraEnv
     :. adminAuthHandler logger floraEnv
-    :. errorFormatters floraEnv.assets
+    :. errorFormatters floraEnv
     :. EmptyContext
 
-errorFormatters :: Assets -> ErrorFormatters
-errorFormatters assets =
-  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage assets}
+errorFormatters :: FloraEnv -> ErrorFormatters
+errorFormatters floraEnv =
+  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage floraEnv}
 
-notFoundPage :: Assets -> NotFoundErrorFormatter
-notFoundPage assets _req =
+notFoundPage :: FloraEnv -> NotFoundErrorFormatter
+notFoundPage floraEnv _req =
   let result =
         runPureEff $
           runErrorNoCallStack $
-            renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
+            renderError (defaultsToEnv floraEnv defaultTemplateEnv) notFound404
    in case result of
         Left err -> err
         Right _ -> err404
