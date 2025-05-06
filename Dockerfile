@@ -8,7 +8,7 @@ ARG GHC_VERSION=9.10.1
 ARG CABAL_VERSION=3.14.1.1
 ARG FOURMOLU_VERSION=0.17.0.0
 ARG HLINT_VERSION=3.10
-ARG APPLY_REFACT_VERSION=0.14.0.0
+ARG APPLY_REFACT_VERSION=0.15.0.0
 ARG CABAL_FMT_VERSION=0.1.12
 ARG GHCID_VERSION=0.8.9
 ARG GHC_TAGS_VERSION=1.9
@@ -78,13 +78,12 @@ RUN echo $PATH
 # to run `cabal update` as separate step, as cabal doesn't delete
 # package versions)
 RUN cabal update
-RUN cabal install -j postgresql-migration-$POSTGRESQL_MIGRATION_VERSION
-RUN cabal install -j hlint-$HLINT_VERSION
-RUN cabal install -j apply-refact-$APPLY_REFACT_VERSION
-RUN cabal install -j fourmolu-$FOURMOLU_VERSION
-RUN cabal install -j cabal-fmt-$CABAL_FMT_VERSION
-RUN cabal install -j ghcid-$GHCID_VERSION
-RUN cabal install -j ghc-tags-$GHC_TAGS_VERSION
+RUN cd ~/ && cabal install -j postgresql-migration-$POSTGRESQL_MIGRATION_VERSION
+RUN cd ~/ && cabal install -j hlint-$HLINT_VERSION
+RUN cd ~/ && ghcup run --ghc 9.6.7 -- cabal install -j apply-refact-$APPLY_REFACT_VERSION
+RUN cd ~/ && cabal install -j fourmolu-$FOURMOLU_VERSION
+RUN cd ~/ && cabal install -j ghcid-$GHCID_VERSION
+RUN cd ~/ && cabal install -j ghc-tags-$GHC_TAGS_VERSION
 
 # configure the shell
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
