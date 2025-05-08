@@ -35,16 +35,38 @@ type PostAddGroup =
          CreateGroupResponses
          CreateGroupResult
 
+type DeleteGroupResponses =
+  '[ Respond 301 "Group Deleted" (Html ())
+   , Respond 409 "Conflict" (Html ())
+   ]
+
+data DeleteGroupResult
+  = GroupDeletionSuccess (Html ())
+  | GroupDeletionFailure (Html ())
+  deriving stock (Generic)
+  deriving
+    (AsUnion DeleteGroupResponses)
+    via GenericAsUnion DeleteGroupResponses DeleteGroupResult
+
+instance GSOP.Generic DeleteGroupResult
+
 type DeleteGroup =
   "delete"
     :> Capture "group_id" PackageGroupId
-    :> Verb 'POST 301 '[HTML] DeleteSessionResponse
+    :> MultiVerb
+         'POST
+         '[HTML]
+         DeleteGroupResponses
+         DeleteGroupResult
+
+type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
   , addGroup :: mode :- PostAddGroup
   , deleteGroup :: mode :- DeleteGroup
   }
+  deriving stock (Generic)
 
 data GroupCreationForm = GroupCreationForm
   { name :: Text

@@ -1,19 +1,23 @@
 module FloraWeb.Pages.Server.Admin.Groups where
 
-import FloraWeb.Pages.Templates.Admin.Groups qualified as Templates
 import Lucid
+import Optics.Core
 import Servant
 
-import Flora.Environment.Env
 import Flora.Model.User
 import FloraWeb.Common.Auth
+import FloraWeb.Pages.Routes.Admin.Groups
+import FloraWeb.Pages.Templates
+import FloraWeb.Pages.Templates.Screens.Admin.Groups qualified as Templates
 import FloraWeb.Types
 
-indexHandler :: SessionWithCookies User -> FloraEff (Html ())
-indexHandler (Headers session _) = do
-  templateEnv <-
-    templateFromSession session defaultTemplateEnv
-      >>= \te -> pure $ set (#activeElements % #adminDashboard) True te
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv session.webEnvStore
-  report <- liftIO $ withPool pool getReport
-  render templateEnv (Templates.index report)
+server :: ServerT Routes FloraEff
+server =
+  Routes'
+    { index = indexHandler
+    , addGroup = undefined
+    , deleteGroup = undefined
+    }
+
+indexHandler :: _
+indexHandler = undefined
