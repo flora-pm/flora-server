@@ -8,6 +8,7 @@ import Servant
 import Servant.API.ContentTypes.Lucid
 import Servant.API.MultiVerb
 import Web.FormUrlEncoded
+
 import Flora.Model.PackageGroup.Types
 
 type CreateGroupResponses =
@@ -36,8 +37,8 @@ type PostAddGroup =
 
 type DeleteGroup =
   "delete"
-  :> Capture "group_id" PackageGroupId
-  :> Verb 'POST 301 '[HTML] DeleteSessionResponse
+    :> Capture "group_id" PackageGroupId
+    :> Verb 'POST 301 '[HTML] DeleteSessionResponse
 
 data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
