@@ -12,13 +12,14 @@ import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow)
 import GHC.Generics
+import Servant (ToHttpApiData)
 
 newtype PackageGroupId = PackageGroupId {getPackageGroupId :: UUID}
   deriving
     (Display)
     via ShowInstance UUID
   deriving
-    (Eq, FromField, FromJSON, NFData, Ord, Show, ToField, ToJSON)
+    (Eq, FromField, FromJSON, NFData, Ord, Show, ToField, ToHttpApiData, ToJSON)
     via UUID
 
 data PackageGroup = PackageGroup
