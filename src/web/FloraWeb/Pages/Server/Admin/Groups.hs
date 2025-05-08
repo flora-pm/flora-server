@@ -1,12 +1,13 @@
 module FloraWeb.Pages.Server.Admin.Groups where
-import FloraWeb.Common.Auth
-import Flora.Model.User
-import FloraWeb.Types
+
+import FloraWeb.Pages.Templates.Admin.Groups qualified as Templates
 import Lucid
-import Flora.Environment.Env
-import Servant
 import Servant
 
+import Flora.Environment.Env
+import Flora.Model.User
+import FloraWeb.Common.Auth
+import FloraWeb.Types
 
 indexHandler :: SessionWithCookies User -> FloraEff (Html ())
 indexHandler (Headers session _) = do
