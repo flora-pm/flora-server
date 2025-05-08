@@ -59,13 +59,13 @@ testImportIndex = withStdOutLogger $
     -- check the packages have been imported
     tars <- traverse (Query.getPackageByNamespaceAndName (Namespace defaultRepo) . PackageName) ["tar-a", "tar-b"]
     releases <- fmap mconcat . traverse (\x -> Query.getReleases (x ^. #packageId)) $ catMaybes tars
-    assertEqual 2 (length tars)
-    assertEqual 2 (length releases)
-    traverse_ (\x -> assertEqual (x ^. #repository) (Just defaultRepo)) releases
+    assertEqual_ 2 (length tars)
+    assertEqual_ 2 (length releases)
+    traverse_ (\x -> assertEqual_ (x ^. #repository) (Just defaultRepo)) releases
 
 testNamespaceChooser :: RequireCallStack => TestEff ()
 testNamespaceChooser = do
-  assertEqual
+  assertEqual_
     (chooseNamespace (PackageName "tar-a") (Vector.singleton (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"])))
     (Just (Namespace defaultRepo))
 
@@ -74,7 +74,7 @@ testPackageListFromArchive = do
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile "test/fixtures/Cabal/mlabs/01-index.tar.gz")
   packages <- assertRight $ buildPackageListFromArchive entries
 
-  assertEqual
+  assertEqual_
     (Set.fromList [PackageName "plutarch", PackageName "plutarch-ledger-api", PackageName "plutarch-orphanage"])
     packages
 
@@ -83,7 +83,7 @@ testNthLevelDependencies = do
   plutarch <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch")
   latestRelease <- assertJust_ =<< Query.getLatestPackageRelease plutarch.packageId
   dependencies <- Query.getRequirements plutarch.name latestRelease.releaseId
-  assertEqual
+  assertEqual_
     ( Vector.fromList
         [ DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "base", version = ">=4.9 && <5"}
         , DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "bytestring", version = ">=0"}

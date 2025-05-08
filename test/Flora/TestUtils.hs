@@ -84,6 +84,7 @@ module Flora.TestUtils
     -- ** HUnit re-exports
   , TestTree
   , liftIO
+  , assertEqual_
   )
 where
 
@@ -149,22 +150,9 @@ import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
 import Flora.Model.Component.Types
-  ( CanonicalComponent (..)
-  , ComponentId (..)
-  , ComponentMetadata (..)
-  , ComponentType (..)
-  , PackageComponent (..)
-  )
-import Flora.Model.Package
-  ( Namespace (..)
-  , Package (..)
-  , PackageAlternatives
-  , PackageId (..)
-  , PackageName (..)
-  , PackageStatus
-  )
+import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
-import Flora.Model.PackageGroup.Types (PackageGroup (..), PackageGroupId (..))
+import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroup.Update qualified as Update
 import Flora.Model.PackageGroupPackage.Types (PackageGroupPackage (..), PackageGroupPackageId (..))
 import Flora.Model.PackageGroupPackage.Update qualified as Update
@@ -267,9 +255,20 @@ assertBool boolean = liftIO $ Test.assertBool "" boolean
 --
 --  Usage:
 --
+--  >>> assertEqual message expected actual
+assertEqual :: (Eq a, HasCallStack, Show a) => String -> a -> a -> TestEff ()
+assertEqual message expected actual = liftIO $ Test.assertEqual message expected actual
+
+--
+
+-- | Make sure an expected value is the same as the actual one.
+--  Without message
+--
+--  Usage:
+--
 --  >>> assertEqual expected actual
-assertEqual :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
-assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
+assertEqual_ :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
+assertEqual_ expected actual = liftIO $ Test.assertEqual "" expected actual
 
 assertFailure :: (HasCallStack, MonadIO m) => String -> m ()
 assertFailure = liftIO . Test.assertFailure
@@ -710,7 +709,7 @@ instantiateRequirement
 
 data PackageGroupTemplate m = PackageGroupTemplate
   { packageGroupId :: m PackageGroupId
-  , groupName :: m Text
+  , groupName :: m PackageGroupName
   }
   deriving stock (Generic)
 
@@ -718,7 +717,7 @@ randomPackageGroupTemplate :: MonadIO m => PackageGroupTemplate m
 randomPackageGroupTemplate =
   PackageGroupTemplate
     { packageGroupId = PackageGroupId <$> H.sample genUUID
-    , groupName = H.sample genDisplayName
+    , groupName = PackageGroupName <$> H.sample genDisplayName
     }
 
 instantiatePackageGroup

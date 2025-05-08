@@ -17,7 +17,7 @@ type Routes = NamedRoutes Routes'
 data Routes' mode = Routes'
   { home :: mode :- AuthProtect "optional-cookie-auth" :> Get '[HTML] (Html ())
   , about :: mode :- AuthProtect "optional-cookie-auth" :> "about" :> Get '[HTML] (Html ())
-  , admin :: mode :- "admin" :> Admin.Routes
+  , admin :: mode :- AuthProtect "cookie-admin" :> "admin" :> Admin.Routes
   , sessions :: mode :- AuthProtect "optional-cookie-auth" :> "sessions" :> Sessions.Routes
   , packages :: mode :- "packages" :> Packages.Routes
   , categories :: mode :- AuthProtect "optional-cookie-auth" :> "categories" :> Categories.Routes

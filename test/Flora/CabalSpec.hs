@@ -28,7 +28,7 @@ testImportSimplePackage = do
   packageA <- assertJust "Search for package a" =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "a")
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
   componentsA <- Query.getReleaseComponents (releaseA.releaseId)
-  assertEqual
+  assertEqual_
     (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
     ( Set.fromList
         [ CanonicalComponent{componentName = "a", componentType = Library}
@@ -41,7 +41,7 @@ testImportMultiplePublicLibraries = do
   packageA <- assertJust "Search for package b" =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "b")
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
   componentsA <- Query.getReleaseComponents (releaseA.releaseId)
-  assertEqual
+  assertEqual_
     (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
     ( Set.fromList
         [ CanonicalComponent{componentName = "b", componentType = Library}

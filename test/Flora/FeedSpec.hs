@@ -20,6 +20,6 @@ testFeedEntryPresenceForPackageImports = do
       [(Namespace "haskell", PackageName "base")]
       0
       10
-  assertEqual
+  assertEqual_
     2
     (length entries)
