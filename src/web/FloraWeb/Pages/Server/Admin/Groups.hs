@@ -9,6 +9,7 @@ import Servant (HasServer (..), Headers (..))
 import Flora.Environment.Env
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
+import Flora.Model.PackageGroup.Update qualified as Update
 import Flora.Model.User
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes.Admin.Groups
@@ -40,7 +41,10 @@ addGroupHandler
   :: SessionWithCookies User
   -> GroupCreationForm
   -> FloraEff CreateGroupResult
-addGroupHandler (Headers session _) form = undefined
+addGroupHandler (Headers session _) GroupCreationForm{name} = do
+  packageGroup <- mkPackageGroup name
+  Update.insertPackageGroup packageGroup
+  pure $ GroupCreationSuccess "/admin/groups"
 
 deleteGroupHandler
   :: SessionWithCookies User

@@ -12,12 +12,15 @@ import Web.FormUrlEncoded
 import Flora.Model.PackageGroup.Types
 
 type CreateGroupResponses =
-  '[ Respond 201 "Group created" (Html ())
+  '[ WithHeaders
+       '[Header "Location" Text]
+       Text
+       (RespondEmpty 301 "Group created")
    , Respond 409 "Conflict" (Html ())
    ]
 
 data CreateGroupResult
-  = GroupCreationSuccess (Html ())
+  = GroupCreationSuccess Text
   | GroupCreationFailure (Html ())
   deriving stock (Generic)
   deriving
@@ -36,12 +39,15 @@ type PostAddGroup =
          CreateGroupResult
 
 type DeleteGroupResponses =
-  '[ Respond 301 "Group Deleted" (Html ())
+  '[ WithHeaders
+       '[Header "Location" Text]
+       Text
+       (RespondEmpty 301 "Group Deleted")
    , Respond 409 "Conflict" (Html ())
    ]
 
 data DeleteGroupResult
-  = GroupDeletionSuccess (Html ())
+  = GroupDeletionSuccess Text
   | GroupDeletionFailure (Html ())
   deriving stock (Generic)
   deriving
@@ -54,7 +60,7 @@ type DeleteGroup =
   "delete"
     :> Capture "group_id" PackageGroupId
     :> MultiVerb
-         'POST
+         'DELETE
          '[HTML]
          DeleteGroupResponses
          DeleteGroupResult
