@@ -320,6 +320,7 @@ library flora-web
     FloraWeb.Components.Icons
     FloraWeb.Components.MainSearchBar
     FloraWeb.Components.Navbar
+    FloraWeb.Components.PackageGroup
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav

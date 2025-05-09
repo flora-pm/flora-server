@@ -1,14 +1,16 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Flora.Model.PackageGroup.Query
   ( getPackagesByPackageGroupId
   , getPackageGroupByPackageGroupName
+  , listPackageGroups
   ) where
 
 import Data.Text (Text)
 import Data.Vector (Vector)
-import Database.PostgreSQL.Entity (joinSelectOneByField, selectOneByField)
-import Database.PostgreSQL.Entity.Types (field)
+import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (..))
 import Effectful (Eff, type (:>))
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
@@ -29,3 +31,7 @@ getPackagesByPackageGroupId packageGroupId =
 
 getPackageGroupByPackageGroupName :: DB :> es => Text -> Eff es (Maybe PackageGroup)
 getPackageGroupByPackageGroupName groupName = dbtToEff $ selectOneByField [field| group_name |] (Only groupName)
+
+listPackageGroups :: DB :> es => Eff es (Vector PackageGroup)
+listPackageGroups =
+  dbtToEff $ selectOrderBy @PackageGroup [([field| group_name |], ASC)]
