@@ -8,7 +8,7 @@ By passing the namespaces and package names to the `packages[]` query parameter,
 get the aggregated feed for multiple packages, like so:
 
 ```
-/packages/feed?packages[]=@hackage/biscuit-haskell&packages[]=@cardano/ouroboros-network
+/feed/atom.xml?packages[]=@hackage/biscuit-haskell&packages[]=@cardano/ouroboros-network
 ```
 
 This will give you a feed like this:
