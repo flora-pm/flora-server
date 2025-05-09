@@ -18,7 +18,7 @@ import Effectful.Concurrent (Concurrent)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log
-import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.PostgreSQL.Transact.Effect (DB, getPool)
 import Effectful.Process.Typed
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
@@ -52,6 +52,7 @@ import FloraJobs.ThirdParties.Hackage.API
   )
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
+import FloraJobs.Scheduler (scheduleRefreshIndex)
 
 runner :: Job -> JobsRunner ()
 runner job = localDomain "job-runner" $
@@ -248,8 +249,10 @@ refreshIndex indexName = do
       Log.logAttention "Package index not found" $
         object ["package_index" .= indexName]
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
-    Just _ ->
+    Just _ -> do
       Import.importFromIndex indexName path
+      pool <- getPool
+      void $ liftIO $ scheduleRefreshIndex pool indexName
 
 getCabalPackagesDirectory :: FileSystem :> es => Eff es FilePath
 getCabalPackagesDirectory = do
