@@ -37,7 +37,7 @@ showFeedsBuilderPage = do
   div_ [class_ "container container--small", xData_ alpineData] $ do
     div_ [class_ "feed-package-selector"] $ do
       packageSelector
-    div_ [class_ "searched-packages"] $ mempty
+    div_ [class_ "searched-packages"] mempty
     section_ [class_ "selected-packages"] $ do
       div_
         [ class_ "generated-feed-url"
@@ -53,7 +53,7 @@ showFeedsBuilderPage = do
           , xOn_ "click" "activeFilters.splice(index, 1)"
           ]
         $ do
-          span_ [xText_ "package"] $ mempty
+          span_ [xText_ "package"] mempty
           Icons.cross
 
 banner :: FloraHTML
