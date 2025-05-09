@@ -45,6 +45,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import FloraJobs.Render (renderMarkdown)
+import FloraJobs.Scheduler (scheduleRefreshIndex)
 import FloraJobs.ThirdParties.Hackage.API
   ( HackagePackageInfo (..)
   , HackagePreferredVersions (..)
@@ -52,7 +53,6 @@ import FloraJobs.ThirdParties.Hackage.API
   )
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
-import FloraJobs.Scheduler (scheduleRefreshIndex)
 
 runner :: Job -> JobsRunner ()
 runner job = localDomain "job-runner" $
