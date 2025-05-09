@@ -82,10 +82,11 @@ const config = {
   entryNames: entryNames,
   plugins: pluginsList(),
   metafile: true,
+  loader:
+    { '.woff2': 'file',
+	  '.ttf': 'file'
+	},
 }
-
-console.log(config.outdir);
-console.log(__dirname);
 
 if (process.argv.includes("--watch")) {
   (async () => {
