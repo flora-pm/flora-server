@@ -269,6 +269,24 @@
 	border-radius: 6px;
 }
 
+.search-announcement {
+	margin-top: 1rem;
+	padding-left: 1rem;
+
+	.lightbulb-icon {
+		display: inline;
+		height: 1.25rem;
+		width: 1.25rem;
+	}
+
+	.feed-icon {
+		display: inline;
+		height: 1.25rem;
+		width: 1.25rem;
+	}
+
+}
+
 .package-count {
 	text-align: center;
 	font-size: 1.25rem;
