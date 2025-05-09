@@ -38,13 +38,13 @@ import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Admin qualified as Templates
 import FloraWeb.Types (RouteEffects, fetchFloraEnv)
 
-server :: RequireCallStack => OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes (Eff RouteEffects)
-server cfg env =
+server :: RequireCallStack => OddJobs.UIConfig -> OddJobs.Env -> SessionWithCookies User -> ServerT Routes (Eff RouteEffects)
+server cfg env session =
   Routes'
-    { index = indexHandler
-    , oddJobs = \_ -> OddJobs.server cfg env handlerToEff
-    , fetchMetadata = fetchMetadataHandler
-    , groups = Groups.server
+    { index = indexHandler session
+    , oddJobs = OddJobs.server cfg env handlerToEff
+    , fetchMetadata = fetchMetadataHandler session
+    , groups = Groups.server session
     }
 
 indexHandler :: SessionWithCookies User -> FloraM RouteEffects (Html ())
