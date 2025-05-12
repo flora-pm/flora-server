@@ -8,6 +8,7 @@ import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
 
 import Flora.Model.User
+import FloraWeb.Pages.Routes.Admin.Groups qualified as Groups
 
 type Routes = NamedRoutes Routes'
 
@@ -19,9 +20,10 @@ type FetchMetadataResponse =
   Headers '[Header "Location" Text] NoContent
 
 data Routes' mode = Routes'
-  { index :: mode :- AuthProtect "cookie-admin" :> Get '[HTML] (Html ())
-  , fetchMetadata :: mode :- AuthProtect "cookie-admin" :> FetchMetadata
-  , oddJobs :: mode :- AuthProtect "cookie-admin" :> "odd-jobs" :> OddJobs.FinalAPI -- they compose :o
+  { index :: mode :- Get '[HTML] (Html ())
+  , fetchMetadata :: mode :- FetchMetadata
+  , oddJobs :: mode :- "odd-jobs" :> OddJobs.FinalAPI -- they compose :o
+  , groups :: mode :- "groups" :> Groups.Routes
   }
   deriving stock (Generic)
 
