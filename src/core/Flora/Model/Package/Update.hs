@@ -21,9 +21,6 @@ import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
 
-insertPackage :: DB :> es => Package -> Eff es ()
-insertPackage package = dbtToEff $ insert @Package package
-
 upsertPackage :: DB :> es => Package -> Eff es ()
 upsertPackage package =
   dbtToEff $

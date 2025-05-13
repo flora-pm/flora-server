@@ -469,7 +469,7 @@ instantiatePackage
     status <- generatePackageStatus
     deprecationInfo <- generatePackageDeprecationInfo
     let package = Package{..}
-    Update.insertPackage package
+    Update.upsertPackage package
     pure package
 
 genPackageName :: MonadGen m => m PackageName
