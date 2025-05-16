@@ -117,6 +117,7 @@ import Flora.Model.Requirement
   ( Requirement (..)
   , deterministicRequirementId
   )
+import Flora.Monad
 import Flora.Normalise
 
 coreLibraries :: Set PackageName
@@ -213,7 +214,7 @@ versionList =
     , Version.mkVersion [7, 10, 3]
     ]
 
-loadContent :: Log :> es => FilePath -> BS.ByteString -> Eff es GenericPackageDescription
+loadContent :: Log :> es => FilePath -> BS.ByteString -> FloraM es GenericPackageDescription
 loadContent = parseString parseGenericPackageDescription
 
 loadJSONContent
@@ -221,7 +222,7 @@ loadJSONContent
   => FilePath
   -> BS.ByteString
   -> (Text, Set PackageName)
-  -> Eff es (Namespace, PackageName, Version, Target)
+  -> FloraM es (Namespace, PackageName, Version, Target)
 loadJSONContent path content (repositoryName, repositoryPackages) = do
   case getNameAndVersionFromPath path of
     Left (name, versionText) -> do
@@ -249,7 +250,7 @@ processJSONContent
   -> b
   -> c
   -> BS.ByteString
-  -> Eff es (a, b, c, Target)
+  -> FloraM es (a, b, c, Target)
 processJSONContent field namespace packageName version content = do
   let (mReleaseJSON :: Maybe ReleaseJSONFile) = Aeson.decodeStrict' content
   case mReleaseJSON of
@@ -284,7 +285,7 @@ parseString
   -> String
   -- ^ File name
   -> BS.ByteString
-  -> Eff es a
+  -> FloraM es a
 parseString parser name bs = do
   let (_warnings, result) = runParseResult (parser bs)
   case result of
@@ -299,7 +300,7 @@ persistImportOutput
   :: forall es
    . (Concurrent :> es, DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, State (Set (Namespace, PackageName, Version)) :> es, Time :> es)
   => ImportOutput
-  -> Eff es ()
+  -> FloraM es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
   Log.logInfo "Persisting package" $
     object
@@ -324,7 +325,7 @@ persistImportOutput (ImportOutput package categories release components) = State
       unless (null expectedDependencies) sanityCheck
       pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    persistPackage :: PackageId -> Eff es ()
+    persistPackage :: PackageId -> FloraM es ()
     persistPackage packageId = do
       Update.upsertPackage package
       categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
@@ -332,7 +333,7 @@ persistImportOutput (ImportOutput package categories release components) = State
         categoriesByName
         (\c -> Update.addToCategoryByName packageId c.name)
 
-    persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
+    persistComponent :: (PackageComponent, List ImportDependency) -> FloraM es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo
         "Persisting component"
@@ -345,12 +346,12 @@ persistImportOutput (ImportOutput package categories release components) = State
       Update.upsertPackageComponent packageComponent
       mapM_ persistImportDependency deps
 
-    persistImportDependency :: ImportDependency -> Eff es ()
+    persistImportDependency :: ImportDependency -> FloraM es ()
     persistImportDependency dep = do
       Update.upsertPackage dep.package
       Update.upsertRequirement dep.requirement
 
-    sanityCheck :: Eff es ()
+    sanityCheck :: FloraM es ()
     sanityCheck = do
       dependencies <- Query.getRequirements package.name release.releaseId
       when (Vector.null dependencies) $ do
@@ -375,7 +376,7 @@ persistHashes
      , State (Map (Namespace, PackageName, Version) Text) :> es
      )
   => (Namespace, PackageName, Version, Target)
-  -> Eff es ()
+  -> FloraM es ()
 persistHashes (namespace, packageName, version, target) = do
   mPackage <- Query.getPackageByNamespaceAndName namespace packageName
   case mPackage of
@@ -415,7 +416,7 @@ extractPackageDataFromCabal
   => (Text, Set PackageName)
   -> UTCTime
   -> GenericPackageDescription
-  -> Eff es ImportOutput
+  -> FloraM es ImportOutput
 extractPackageDataFromCabal repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags

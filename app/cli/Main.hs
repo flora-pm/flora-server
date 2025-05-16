@@ -1,6 +1,7 @@
 module Main where
 
 import Codec.Compression.GZip qualified as GZip
+import RequireCallStack
 import Control.Monad.Extra (unlessM)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List.NonEmpty (NonEmpty)
@@ -52,6 +53,7 @@ import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
+import Flora.Monad
 import Flora.Tracing qualified as Tracing
 
 data Options = Options
@@ -95,7 +97,7 @@ main = Log.withStdOutLogger $ \logger -> do
         pure $ Trace.runTrace zipkin.zipkinTracer
       else pure Trace.runNoTrace
   result <-
-    runOptions cliArgs
+    provideCallStack $ runOptions cliArgs
       & Reader.runReader env
       & runLog "flora-cli" logger Log.LogTrace
       & runFileSystem
@@ -205,7 +207,7 @@ runOptions
      , Trace :> es
      )
   => Options
-  -> Eff es ()
+  -> FloraM es ()
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision Advisories)) = do
   dataDir <- getXdgDirectory XdgData ""
@@ -241,7 +243,7 @@ runOptions (Options (ImportIndex path repository)) = importIndex path repository
 runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
 
-provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es ()
+provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> FloraM es ()
 provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
 
 importFolderOfCabalFiles
@@ -257,7 +259,7 @@ importFolderOfCabalFiles
      )
   => FilePath
   -> Text
-  -> Eff es ()
+  -> FloraM es ()
 importFolderOfCabalFiles path repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
@@ -277,7 +279,7 @@ importIndex
      )
   => FilePath
   -> Text
-  -> Eff es ()
+  -> FloraM es ()
 importIndex path repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
@@ -294,7 +296,7 @@ importPackageTarball
   => PackageName
   -> Version
   -> FilePath
-  -> Eff es ()
+  -> FloraM es ()
 importPackageTarball pname version path = do
   contents <- liftIO $ GZip.decompress <$> BS.readFile path
   res <- Update.insertTar pname version contents

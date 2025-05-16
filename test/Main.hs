@@ -1,6 +1,7 @@
 module Main where
 
 import Control.Monad.Extra
+import RequireCallStack
 import Data.List.NonEmpty
 import Data.Text qualified as Text
 import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
@@ -38,7 +39,7 @@ import Flora.TestUtils
 import Flora.UserSpec qualified as UserSpec
 
 main :: IO ()
-main = do
+main = provideCallStack $ do
   hSetBuffering stdout LineBuffering
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv
   fixtures <-
@@ -72,7 +73,7 @@ main = do
     testGroup "Flora Tests" $
       OddJobSpec.spec : spec
 
-specs :: Fixtures -> [TestEff TestTree]
+specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =
   [ AdvisorySpec.spec
   , BlobSpec.spec

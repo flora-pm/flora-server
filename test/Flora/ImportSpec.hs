@@ -2,6 +2,7 @@ module Flora.ImportSpec where
 
 import Data.Foldable (traverse_)
 import Data.Maybe (catMaybes)
+import RequireCallStack
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Log.Backend.StandardOutput (withStdOutLogger)
@@ -17,7 +18,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.TestUtils
 
-spec :: TestEff TestTree
+spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "Import tests"
@@ -25,19 +26,19 @@ spec =
     , testThis "Namespace chooser" testNamespaceChooser
     ]
 
-testIndex :: FilePath
+testIndex :: RequireCallStack => FilePath
 testIndex = "./test/fixtures/tarballs/test-index.tar.gz"
 
-defaultRepo :: Text
+defaultRepo :: RequireCallStack => Text
 defaultRepo = "test-namespace"
 
-defaultRepoURL :: Text
+defaultRepoURL :: RequireCallStack => Text
 defaultRepoURL = "localhost"
 
-defaultDescription :: Text
+defaultDescription :: RequireCallStack => Text
 defaultDescription = "test-description"
 
-testImportIndex :: TestEff ()
+testImportIndex :: RequireCallStack => TestEff ()
 testImportIndex = withStdOutLogger $
   \_ -> do
     mIndex <- Query.getPackageIndexByName defaultRepo
@@ -54,7 +55,7 @@ testImportIndex = withStdOutLogger $
     assertEqual 2 (length releases)
     traverse_ (\x -> assertEqual (x ^. #repository) (Just defaultRepo)) releases
 
-testNamespaceChooser :: TestEff ()
+testNamespaceChooser :: RequireCallStack => TestEff ()
 testNamespaceChooser = do
   assertEqual
     (chooseNamespace (PackageName "tar-a") (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"]))

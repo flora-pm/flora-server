@@ -36,11 +36,12 @@ import Flora.Model.Feed.Update qualified as Update
 import Flora.Model.Package.Types (Package (..))
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Monad
 
-insertRelease :: DB :> es => Release -> Eff es ()
+insertRelease :: DB :> es => Release -> FloraM es ()
 insertRelease = dbtToEff . insert @Release
 
-upsertRelease :: (DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es) => Package -> Release -> Eff es ()
+upsertRelease :: (DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es) => Package -> Release -> FloraM es ()
 upsertRelease package newRelease = do
   mReleaseFromDB <- Query.getReleaseById newRelease.releaseId
   case mReleaseFromDB of
@@ -66,10 +67,10 @@ upsertRelease package newRelease = do
       entry <- Types.newReleaseEntry instanceInfo package newRelease.version
       Update.insertFeedEntry entry
 
-refreshLatestVersions :: DB :> es => Eff es ()
+refreshLatestVersions :: DB :> es => FloraM es ()
 refreshLatestVersions = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
 
-updateReadme :: DB :> es => ReleaseId -> Maybe TextHtml -> ImportStatus -> Eff es ()
+updateReadme :: DB :> es => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
 updateReadme releaseId readmeBody status =
   dbtToEff $
     void $
@@ -80,7 +81,7 @@ updateReadme releaseId readmeBody status =
         ([field| release_id |], releaseId)
         (readmeBody, status)
 
-updateUploadTime :: DB :> es => ReleaseId -> UTCTime -> Eff es ()
+updateUploadTime :: DB :> es => ReleaseId -> UTCTime -> FloraM es ()
 updateUploadTime releaseId timestamp =
   dbtToEff $
     void $
@@ -89,7 +90,7 @@ updateUploadTime releaseId timestamp =
         ([field| release_id |], releaseId)
         (Only (Just timestamp))
 
-updateRevisionTime :: DB :> es => ReleaseId -> UTCTime -> Eff es ()
+updateRevisionTime :: DB :> es => ReleaseId -> UTCTime -> FloraM es ()
 updateRevisionTime releaseId timestamp =
   dbtToEff $
     void $
@@ -98,7 +99,7 @@ updateRevisionTime releaseId timestamp =
         ([field| release_id |], releaseId)
         (Only (Just timestamp))
 
-updateChangelog :: DB :> es => ReleaseId -> Maybe TextHtml -> ImportStatus -> Eff es ()
+updateChangelog :: DB :> es => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
 updateChangelog releaseId changelogBody status =
   dbtToEff $
     void $
@@ -109,7 +110,7 @@ updateChangelog releaseId changelogBody status =
         ([field| release_id |], releaseId)
         (changelogBody, status)
 
-updateTarballRootHash :: DB :> es => ReleaseId -> Sha256Sum -> Eff es ()
+updateTarballRootHash :: DB :> es => ReleaseId -> Sha256Sum -> FloraM es ()
 updateTarballRootHash releaseId hash =
   dbtToEff $
     void $
@@ -123,7 +124,7 @@ updateTestedWith
   => ReleaseId
   -> Vector Version
   -> UTCTime
-  -> Eff es ()
+  -> FloraM es ()
 updateTestedWith releaseId testedCompilers timestamp =
   dbtToEff $
     void $
@@ -136,7 +137,7 @@ updateTarballArchiveHash
   :: (BlobStoreAPI :> es, DB :> es)
   => ReleaseId
   -> LazyByteString
-  -> Eff es ()
+  -> FloraM es ()
 updateTarballArchiveHash releaseId (toStrict -> content) = do
   let hash = Sha256Sum . SHA.hash $ content
   put hash content
@@ -147,7 +148,7 @@ updateTarballArchiveHash releaseId (toStrict -> content) = do
         ([field| release_id |], releaseId)
         (Only . Just $ display hash)
 
-setReleasesDeprecationMarker :: DB :> es => Vector (Bool, ReleaseId) -> Eff es ()
+setReleasesDeprecationMarker :: DB :> es => Vector (Bool, ReleaseId) -> FloraM es ()
 setReleasesDeprecationMarker releaseVersions =
   dbtToEff $ void $ executeMany Update q (releaseVersions & Vector.toList)
   where
@@ -159,7 +160,7 @@ setReleasesDeprecationMarker releaseVersions =
     WHERE r0.release_id = (upd.y :: uuid)
     |]
 
-setArchiveChecksum :: DB :> es => ReleaseId -> Text -> Eff es ()
+setArchiveChecksum :: DB :> es => ReleaseId -> Text -> FloraM es ()
 setArchiveChecksum releaseId sha256Hash =
   dbtToEff $
     void $

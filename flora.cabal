@@ -28,6 +28,7 @@ flag prod
 common common-extensions
   default-extensions:
     DataKinds
+    DeepSubsumption
     DeriveAnyClass
     DerivingStrategies
     DerivingVia
@@ -49,8 +50,8 @@ common common-extensions
 common common-ghc-options
   ghc-options:
     -Wall -Wcompat -Widentities -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
-    -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
+    -Wincomplete-uni-patterns -Wpartial-fields -fhide-source-paths
+    -Wno-unused-do-bind -fshow-hole-constraints
     -Wno-unticked-promoted-constructors -Werror=unused-imports
     -fdicts-strict -fmax-worker-args=16 -fspec-constr-recursive=16
     -Wunused-packages
@@ -144,6 +145,7 @@ library
     Flora.Model.User
     Flora.Model.User.Query
     Flora.Model.User.Update
+    Flora.Monad
     Flora.Monitoring
     Flora.Normalise
     Flora.QRCode
@@ -204,6 +206,7 @@ library
     , prometheus-effectful
     , qrcode-core
     , qrcode-juicypixels
+    , require-callstack
     , resource-pool
     , sel
     , servant
@@ -214,6 +217,7 @@ library
     , streamly-core
     , tar
     , text
+    , text-builder-linear
     , text-display
     , time
     , tracing
@@ -425,6 +429,7 @@ library flora-web
     , prometheus-proc
     , PyF
     , raven-haskell
+    , require-callstack
     , resource-pool
     , safe-exceptions
     , sel
@@ -492,6 +497,7 @@ library flora-jobs
     , postgresql-simple
     , prometheus-effectful
     , req
+    , require-callstack
     , resource-pool
     , servant
     , servant-client
@@ -522,6 +528,7 @@ executable flora-server
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
+    , require-callstack
     , text
     , vector
 
@@ -541,7 +548,6 @@ executable flora-cli
     , effectful
     , effectful-core
     , effectful-plugin
-    , envparse
     , extra
     , filepath
     , flora
@@ -558,6 +564,7 @@ executable flora-cli
     , pg-transact-effectful
     , prometheus-effectful
     , PyF
+    , require-callstack
     , sel
     , text
     , text-display
@@ -605,6 +612,7 @@ test-suite flora-test
     , pg-transact-effectful
     , postgresql-migration
     , prometheus-effectful
+    , require-callstack
     , resource-pool
     , sel
     , servant

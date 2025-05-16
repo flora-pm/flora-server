@@ -23,9 +23,9 @@ import Data.Data
 import Data.Maybe
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Builder.Linear qualified as B
 import Data.Text.Display
 import Data.Text.Encoding
-import Data.Text.Lazy.Builder qualified as B
 import Data.Time
 import Data.UUID
 import Data.Vector (Vector)

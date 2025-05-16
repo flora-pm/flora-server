@@ -1,50 +1,45 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module FloraWeb.Common.Tracing where
 
 import Control.Exception (AsyncException (..), Exception (..), SomeException, throw)
-import Control.Monad.IO.Class
-import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 (unpack)
-import Data.Maybe (isJust)
 import Data.Text.Display (display)
+import Effectful
+import Effectful.Exception qualified as E
+import Effectful.Log
 import GHC.IO.Exception (IOErrorType (..))
-import Log (LogLevel (..), Logger, logAttention, runLogT)
+import GHC.Stack
+import Log (logAttention)
 import Network.Wai
 import Network.Wai.Handler.Warp
+import RequireCallStack
 import System.IO.Error (ioeGetErrorType)
-import System.Log.Raven (initRaven, register, silentFallback)
-import System.Log.Raven.Transport.HttpConduit (sendRecord)
-import System.Log.Raven.Types (SentryLevel (Error), SentryRecord (..))
+import System.Log.Raven.Types (SentryRecord (..))
 
-import Flora.Environment.Env
-
-onException :: Logger -> DeploymentEnv -> MLTP -> Maybe Request -> SomeException -> IO ()
-onException logger environment mltp mRequest exception =
-  Log.runLogT "flora" logger LogAttention $ do
-    case mltp.sentryDSN of
-      Nothing -> do
-        logAttention "Unhandled exception" $
-          Aeson.object ["exception" .= display (show exception)]
-        throw exception
-      Just sentryDSN ->
-        if shouldDisplayException exception && isJust mRequest
-          then do
-            sentryService <-
-              liftIO $
-                initRaven
-                  sentryDSN
-                  (\defaultRecord -> defaultRecord{srEnvironment = Just $ show environment})
-                  sendRecord
-                  silentFallback
-            liftIO $
-              register
-                sentryService
-                "flora-logger"
-                Error
-                (formatMessage mRequest exception)
-                (recordUpdate mRequest exception)
-            liftIO $ defaultOnException mRequest exception
-          else liftIO $ defaultOnException mRequest exception
+onException
+  :: (Log :> es, RequireCallStack)
+  => [E.Handler (Eff es) a]
+onException =
+  [ E.Handler $ \(E.SomeException exception) -> do
+      Log.logAttention "Unhandled exception" $
+        Aeson.object
+          [ "exception" .= display (show exception)
+          , "backtraces" .= map formatFunCall (getCallStack callStack)
+          ]
+      throw exception
+  ]
+  where
+    formatFunCall :: (String, SrcLoc) -> String
+    formatFunCall (fun, SrcLoc{..}) =
+      fun
+        ++ " at "
+        ++ srcLocFile
+        ++ ":"
+        ++ show srcLocStartLine
+        ++ ":"
+        ++ show srcLocStartCol
 
 shouldDisplayException :: SomeException -> Bool
 shouldDisplayException exception

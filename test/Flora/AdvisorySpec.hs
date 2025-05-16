@@ -1,6 +1,7 @@
 module Flora.AdvisorySpec where
 
 import Data.Vector qualified as Vector
+import RequireCallStack
 
 import Advisories.Model.Advisory.Query qualified as Query
 import Advisories.Model.Affected.Query qualified as Query
@@ -8,7 +9,7 @@ import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.TestUtils
 
-spec :: TestEff TestTree
+spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "Advisory tests"
@@ -16,7 +17,7 @@ spec =
     , testThis "Fetch advisory previews by package id" testFetchingAdvisoryPreviewByPackageId
     ]
 
-testFetchingAllBiscuitHaskellAdvisories :: TestEff ()
+testFetchingAllBiscuitHaskellAdvisories :: RequireCallStack => TestEff ()
 testFetchingAllBiscuitHaskellAdvisories = do
   package <-
     assertJust
@@ -26,7 +27,7 @@ testFetchingAllBiscuitHaskellAdvisories = do
   advisories <- Query.getAdvisoriesByPackageId package.packageId
   assertEqual 2 (Vector.length advisories)
 
-testFetchingAllBaseAdvisories :: TestEff ()
+testFetchingAllBaseAdvisories :: RequireCallStack => TestEff ()
 testFetchingAllBaseAdvisories = do
   package <-
     assertJust
@@ -36,7 +37,7 @@ testFetchingAllBaseAdvisories = do
   advisories <- Query.getAdvisoriesByPackageId package.packageId
   assertEqual 1 (Vector.length advisories)
 
-testFetchingAdvisoryPreviewByPackageId :: TestEff ()
+testFetchingAdvisoryPreviewByPackageId :: RequireCallStack => TestEff ()
 testFetchingAdvisoryPreviewByPackageId = do
   package <-
     assertJust

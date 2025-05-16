@@ -2,6 +2,7 @@ module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
+import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
 import Control.Monad.Except qualified as Except
@@ -14,6 +15,7 @@ import Effectful
 import Effectful.Concurrent
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (runErrorNoCallStack, runErrorWith)
+import Effectful.Exception qualified as E
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (runDB)
@@ -30,7 +32,6 @@ import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
-  , setOnException
   , setPort
   )
 import Network.Wai.Log qualified as WaiLog
@@ -44,6 +45,7 @@ import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import Prometheus.Metric.Proc qualified as P
 import Prometheus.Servant qualified as P
+import RequireCallStack
 import Sel
 import Servant
   ( Application
@@ -72,9 +74,10 @@ import Flora.Environment.Env
   )
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
+import Flora.Monad
 import Flora.Tracing qualified as Tracing
-import FloraJobs.Runner (runner)
-import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
+import FloraJobs.Runner
+import FloraJobs.Types (JobsRunnerEnv (..))
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
 import FloraWeb.Common.Auth
@@ -104,7 +107,8 @@ type FloraAuthContext =
    ]
 
 runFlora :: IO ()
-runFlora =
+runFlora = do
+  setBacktraceMechanismState HasCallStackBacktrace True
   secureMain $
     bracket
       (getFloraEnv & runFileSystem & runFailIO & runEff)
@@ -124,7 +128,7 @@ runFlora =
             let withLogger = Logging.makeLogger env.mltp.logger
             withLogger
               ( \appLogger ->
-                  runServer appLogger env
+                  provideCallStack $ runServer appLogger env
               )
       )
 
@@ -144,7 +148,7 @@ logException env logger exception =
     . Logging.runLog env logger
     $ Log.logAttention "odd-jobs runner crashed " (show exception)
 
-runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
+runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> FloraM es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-server"
@@ -156,7 +160,6 @@ runServer appLogger floraEnv = do
           floraEnv
           appLogger
           floraEnv.jobsPool
-          runner
 
   void $
     forkIO $
@@ -172,15 +175,7 @@ runServer appLogger floraEnv = do
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   ioref <- liftIO $ newIORef True
   let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv zipkin ioref
-  let warpSettings =
-        setPort (fromIntegral floraEnv.httpPort) $
-          setOnException
-            ( onException
-                appLogger
-                floraEnv.environment
-                floraEnv.mltp
-            )
-            defaultSettings
+  let warpSettings = setPort (fromIntegral floraEnv.httpPort) defaultSettings
   liftIO
     $ runSettings warpSettings
     $ heartbeatMiddleware
@@ -190,7 +185,8 @@ runServer appLogger floraEnv = do
     $ prometheusMiddleware server
 
 mkServer
-  :: Logger
+  :: RequireCallStack
+  => Logger
   -> WebEnvStore
   -> FloraEnv
   -> OddJobs.UIConfig
@@ -206,7 +202,8 @@ mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv zipkin ioref =
     (floraServer cfg jobsRunnerEnv floraEnv.environment ioref)
 
 floraServer
-  :: OddJobs.UIConfig
+  :: RequireCallStack
+  => OddJobs.UIConfig
   -> OddJobs.Env
   -> DeploymentEnv
   -> IORef Bool
@@ -224,7 +221,14 @@ floraServer cfg jobsRunnerEnv environment ioref =
     , favicon = serveDirectoryWebApp "./static"
     }
 
-naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> Zipkin -> FloraEff a -> Handler a
+naturalTransform
+  :: RequireCallStack
+  => FloraEnv
+  -> Logger
+  -> WebEnvStore
+  -> Zipkin
+  -> FloraEff a
+  -> Handler a
 naturalTransform floraEnv logger _webEnvStore zipkin app = do
   let runTrace =
         if floraEnv.environment == Production
@@ -242,6 +246,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
                 Just (BlobStoreFS fp) -> runBlobStoreFS fp
                 _ -> runBlobStorePure
             )
+          & (`E.catches` onException)
           & Logging.runLog floraEnv.environment logger
           & runErrorWith (\_callstack err -> pure $ Left err)
           & runConcurrent

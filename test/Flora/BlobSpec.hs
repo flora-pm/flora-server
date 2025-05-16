@@ -7,6 +7,7 @@ import Control.Arrow
 import Control.Monad.IO.Class
 import Data.ByteString.Lazy (LazyByteString)
 import Data.ByteString.Lazy qualified as BL
+import RequireCallStack
 import Data.Foldable (traverse_)
 import Data.Function (on)
 import Data.List (sortBy)
@@ -24,7 +25,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.TestUtils
 
-spec :: TestEff TestTree
+spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "Blob store tests"
@@ -34,13 +35,13 @@ spec =
     ]
 
 -- Util function to extract a list from Tar.Entries which is easier to compare
-toList :: Tar.Entries e -> Either e [Tar.Entry]
+toList :: RequireCallStack => Tar.Entries e -> Either e [Tar.Entry]
 toList = right reverse . left fst . Tar.foldlEntries (\acc x -> x : acc) []
 
-readTarball :: FilePath -> TestEff LazyByteString
+readTarball :: RequireCallStack => FilePath -> TestEff LazyByteString
 readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/tarballs" </> tarball)
 
-testImportTarball :: TestEff ()
+testImportTarball :: RequireCallStack => TestEff ()
 testImportTarball = do
   content <- readTarball "b-0.1.0.0.tar.gz"
   let pname = PackageName "b"
@@ -76,7 +77,7 @@ testImportTarball = do
       traverse_ (uncurry assertEqual . (f *** f)) $
         zip xs ys
 
-testBadTarball :: TestEff ()
+testBadTarball :: RequireCallStack => TestEff ()
 testBadTarball = do
   content <- readTarball "bad-tar-0.1.0.0.tar.gz"
   let pname = PackageName "bad-tar"
@@ -88,7 +89,7 @@ testBadTarball = do
       assertEqual entry (Tar.SymbolicLink $ fromJust $ Tar.toLinkTarget "src/Lib.hs")
     Left err -> assertFailure $ "Unexpected error " <> show err
 
-testMalformedTarball :: TestEff ()
+testMalformedTarball :: RequireCallStack => TestEff ()
 testMalformedTarball = do
   content <- readTarball "malformed-tar-0.1.0.0.tar.gz"
   let pname = PackageName "malformed-tar"

@@ -13,7 +13,7 @@ import Database.PostgreSQL.Simple (ToRow)
 import Database.PostgreSQL.Simple.Types (Query)
 import Database.PostgreSQL.Transact (DBT)
 import Distribution.Version (Version)
-import Effectful (Eff, type (:>))
+import Effectful (type (:>))
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Log qualified
@@ -26,13 +26,14 @@ import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types (Release (..), ReleaseId (..))
 import Flora.Model.Release.Update qualified as Update
+import Flora.Monad
 
 insertTar
   :: (BlobStoreAPI :> es, DB :> es, Log :> es)
   => PackageName
   -> Version
   -> LazyByteString
-  -> Eff es (Either BlobStoreInsertError Sha256Sum)
+  -> FloraM es (Either BlobStoreInsertError Sha256Sum)
 insertTar pname version contents = do
   mpackage <- Query.getPackageByNamespaceAndName (Namespace "hackage") pname
   case mpackage of
@@ -51,7 +52,7 @@ insertTree
   :: (BlobStoreAPI :> es, DB :> es, Log :> es)
   => ReleaseId
   -> TarRoot Sha256Sum
-  -> Eff es ()
+  -> FloraM es ()
 insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
   Log.logTrace "Trying to insert directory tree" t
   mTarballHash <- Query.getReleaseTarballRootHash releaseId

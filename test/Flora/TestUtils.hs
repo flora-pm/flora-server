@@ -127,6 +127,7 @@ import Hedgehog.Gen qualified as H
 import Hedgehog.Range qualified as Range
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
+import RequireCallStack
 import Sel.Hashing.Password
 import Sel.Hashing.Password qualified as Sel
 import Servant.API ()
@@ -174,8 +175,9 @@ import Flora.Model.Requirement
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update qualified as Update
+import Flora.Monad
 
-type TestEff =
+type TestEff a =
   Eff
     '[ Trace
      , FileSystem
@@ -190,18 +192,19 @@ type TestEff =
      , Concurrent
      , IOE
      ]
+    a
 
 data Fixtures = Fixtures
   { hackageUser :: User
   }
   deriving stock (Eq, Generic, Show)
 
-getFixtures :: (DB :> es, Fail :> es) => Eff es Fixtures
+getFixtures :: (DB :> es, Fail :> es) => FloraM es Fixtures
 getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
   pure Fixtures{hackageUser}
 
-importAllPackages :: TestEff ()
+importAllPackages :: RequireCallStack => TestEff ()
 importAllPackages = do
   importAllFilesInRelativeDirectory
     ("hackage", "https://hackage.haskell.org")
@@ -210,7 +213,7 @@ importAllPackages = do
     ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
     "./test/fixtures/Cabal/cardano"
 
-runTestEff :: TestEff a -> FloraEnv -> IO a
+runTestEff :: RequireCallStack => TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $ do
   let withLogger = Logging.makeLogger env.mltp.logger
   withLogger $ \logger ->
@@ -228,7 +231,7 @@ runTestEff comp env = runEff $ do
       & runPrometheusMetrics env.metrics
       & runConcurrent
 
-testThis :: String -> TestEff () -> TestEff TestTree
+testThis :: RequireCallStack => String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
   env <- ask @FloraEnv
   let test = runTestEff assertion env
@@ -321,7 +324,7 @@ getEnv mgrSettings = do
 managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
 
-testMigrations :: (DB :> es, IOE :> es) => Eff es ()
+testMigrations :: (DB :> es, IOE :> es) => FloraM es ()
 testMigrations = do
   pool <- getPool
   liftIO $ withResource pool $ \conn ->
@@ -403,7 +406,7 @@ randomUserTemplate =
     , updatedAt = liftIO $ H.sample genUTCTime
     }
 
-instantiateUser :: DB :> es => UserTemplate (Eff es) -> Eff es User
+instantiateUser :: DB :> es => UserTemplate (Eff es) -> FloraM es User
 instantiateUser
   UserTemplate
     { userId = generateUserId
@@ -451,7 +454,7 @@ randomPackageTemplate =
     , deprecationInfo = pure Nothing
     }
 
-instantiatePackage :: DB :> es => PackageTemplate (Eff es) -> Eff es Package
+instantiatePackage :: DB :> es => PackageTemplate (Eff es) -> FloraM es Package
 instantiatePackage
   PackageTemplate
     { packageId = generatePackageId
@@ -546,7 +549,7 @@ randomReleaseTemplate =
     , buildType = pure Simple
     }
 
-instantiateRelease :: DB :> es => ReleaseTemplate (Eff es) -> Eff es Release
+instantiateRelease :: DB :> es => ReleaseTemplate (Eff es) -> FloraM es Release
 instantiateRelease
   ReleaseTemplate
     { releaseId = generateReleaseId
@@ -628,7 +631,7 @@ randomPackageComponentTemplate =
 instantiatePackageComponent
   :: DB :> es
   => PackageComponentTemplate (Eff es)
-  -> Eff es PackageComponent
+  -> FloraM es PackageComponent
 instantiatePackageComponent
   PackageComponentTemplate
     { componentId = generateComponentId
@@ -666,7 +669,7 @@ randomRequirementTemplate =
 instantiateRequirement
   :: DB :> es
   => RequirementTemplate (Eff es)
-  -> Eff es Requirement
+  -> FloraM es Requirement
 instantiateRequirement
   RequirementTemplate
     { requirementId = generateRequirementId
@@ -700,7 +703,7 @@ randomPackageGroupTemplate =
 instantiatePackageGroup
   :: DB :> es
   => PackageGroupTemplate (Eff es)
-  -> Eff es PackageGroup
+  -> FloraM es PackageGroup
 instantiatePackageGroup
   PackageGroupTemplate
     { packageGroupId = generatePackageGroupId
@@ -730,7 +733,7 @@ randomPackageGroupPackageTemplate =
 instantiatePackageGroupPackage
   :: DB :> es
   => PackageGroupPackageTemplate (Eff es)
-  -> Eff es PackageGroupPackage
+  -> FloraM es PackageGroupPackage
 instantiatePackageGroupPackage
   PackageGroupPackageTemplate
     { packageGroupPackageId = generatePackageGroupPackageId

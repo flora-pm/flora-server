@@ -6,6 +6,7 @@ import Lucid
 import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Types qualified as OddJobs
 import Optics.Core
+import RequireCallStack
 import Servant
 
 import Flora.Model.User (User)
@@ -22,7 +23,7 @@ import FloraWeb.Pages.Templates.Error (web404)
 import FloraWeb.Pages.Templates.Screens.Home qualified as Home
 import FloraWeb.Types (FloraEff)
 
-server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraEff
+server :: RequireCallStack => OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraEff
 server cfg env =
   Routes'
     { home = homeHandler
