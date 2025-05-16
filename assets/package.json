@@ -1,7 +1,7 @@
 {
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "@deanc/esbuild-plugin-postcss": "^1.0.2",
+    "@deanc/esbuild-plugin-postcss": "deanc/esbuild-plugin-postcss#v2.0.0",
     "@fullhuman/postcss-purgecss": "^4.0.3",
     "@ryangjchandler/alpine-clipboard": "^2.1.0",
     "alpinejs": "^3.12.0",
