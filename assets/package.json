@@ -18,6 +18,7 @@
     "htmx-ext-sse": "^2.2.2",
     "htmx.org": "^2.0.2",
     "livereload-js": "^4.0.2",
+    "onchange": "^7.1.0",
     "postcss": "^8.4.31",
     "postcss-cli": "^9.0.2",
     "postcss-copy": "^7.1.0",
@@ -32,7 +33,7 @@
   "scripts": {
     "watch": "concurrently \"yarn:watch-assets\" \"yarn:watch-static-files\"",
     "build": "concurrently \"yarn:build-assets\" \"yarn:copy-static-files\"",
-    "watch-assets": "NODE_ENV=dev node esbuild.config.js --watch",
+    "watch-assets": "NODE_ENV=dev onchange -i \"css/**\" \"js/**\" \"style-tokens/**\" \"feed/**\" -- node esbuild.config.js",
     "build-assets": "NODE_ENV=prod node esbuild.config.js",
     "copy-static-files": "cpx \"**/*.{svg,png,jpg,xsl,ico}\" ../static",
     "watch-static-files": "cpx \"**/*.{svg,png,jpg,xsl,ico}\" ../static -w"

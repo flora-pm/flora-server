@@ -11,17 +11,14 @@ const postcssNesting = require("postcss-nesting");
 const postcssCustomMedia = require('postcss-custom-media');
 const autoprefixer = require("autoprefixer");
 const postcssCopy = require("postcss-copy")({
-    dest: "../assets/fonts",
+  dest: "../assets/fonts",
 });
 const postcssDesignTokenUtils = require("postcss-design-token-utils");
 const designTokensConfig = require("./style-tokens/tokens.js");
 
-
 let minify = false;
 let sourcemap = true;
 let entryNames = "[name]";
-
-const watchDirectories = [  "./css", "./js", "./style-tokens", "./feed"];
 
 const mkProdPlugins = () => {
   return [
@@ -33,7 +30,7 @@ const mkProdPlugins = () => {
         const orderAssets = {
           "app.js": assets.app.js,
           "styles.css": assets[''].css[0],
-		  "prism.js": assets.prism.js,
+          "prism.js": assets.prism.js,
         }
         return JSON.stringify(orderAssets, null, "  ");
       }
@@ -44,17 +41,18 @@ const mkProdPlugins = () => {
 const pluginsList = () => {
   let plugins = [
     postcssPlugin({
-      	plugins: [
-			postcssDesignTokenUtils({
-				tokens: designTokensConfig,
-			}),
-			postcssImport,
-			postcssNesting,
-			postcssCustomMedia,
-			autoprefixer,
-			postcssCopy,
+      plugins: [
+        postcssDesignTokenUtils({
+          tokens: designTokensConfig,
+        }),
+        postcssImport,
+        postcssNesting,
+        postcssCustomMedia,
+        autoprefixer,
+        postcssCopy,
       ],
-    })];
+    })
+  ];
   let prodPlugins = process.env.NODE_ENV === "prod" ? mkProdPlugins() : [];
   return plugins.concat(prodPlugins);
 }
@@ -71,7 +69,7 @@ const config = {
   entryPoints: {
     "app": "./js/app.js",
     "styles": "./css/styles.css",
-	"prism": "./js/prism.js",
+    "prism": "./js/prism.js",
   },
   outdir: "../static",
   bundle: true,
@@ -84,15 +82,4 @@ const config = {
   metafile: true,
 }
 
-console.log(config.outdir);
-console.log(__dirname);
-
-if (process.argv.includes("--watch")) {
-  (async () => {
-	let context = await esbuild.context(config);
-	await context.watch();
-	console.log('Watching...');
-  })()
-} else {
-  esbuild.build(config).catch(() => process.exit(1))
-}
+esbuild.build(config).catch(() => process.exit(1));
