@@ -1,9 +1,6 @@
 const esbuild = require("esbuild");
 const assetsManifestPlugin = require("esbuild-plugin-assets-manifest");
 const postcssPlugin = require("@deanc/esbuild-plugin-postcss");
-const fs = require("fs");
-const chokidar = require('chokidar');
-const path = require("path");
 
 // PostCSS plugins
 const postcssImport = require("postcss-import");
