@@ -10,7 +10,7 @@ tests: True
 allow-newer: base32:base
            , binary:containers
            , chronos:hashable
-           , feed:base
+           , feed:*
            , hashable:filepath
            , hsec-core:*
            , hsec-sync:*
@@ -27,6 +27,7 @@ allow-newer: base32:base
            , servant-openapi3:*
            , tasty-test-reporter:*
            , type-errors-pretty:base
+           , one-time-password:sel
 
 test-show-details: direct
 
@@ -40,72 +41,72 @@ package zlib
   flags: -pkg-config
 
 source-repository-package
-    type: git
-    location: https://github.com/haskell/security-advisories/
-    tag: 7da651fe058a19a08faff8d873e73ec2ff4c77a0
-    subdir:
-      ./code/cvss
-      ./code/osv
-      ./code/hsec-core
-      ./code/hsec-sync
-      ./code/hsec-tools
+  type: git
+  location: https://github.com/haskell/security-advisories/
+  tag: 7da651fe058a19a08faff8d873e73ec2ff4c77a0
+  subdir:
+    ./code/cvss
+    ./code/osv
+    ./code/hsec-core
+    ./code/hsec-sync
+    ./code/hsec-tools
 
 source-repository-package
-    type: git
-    location: https://github.com/scrive/tracing
-    tag: 9c2baa154dbd0ef2c145ee65660261977323c2d8
-    subdir:
-        .
-        ./tracing-effectful
+  type: git
+  location: https://github.com/scrive/tracing
+  tag: 9c2baa154dbd0ef2c145ee65660261977323c2d8
+  subdir:
+    .
+    ./tracing-effectful
 
 source-repository-package
-    type: git
-    location: https://gitlab.com/dpwiz/raven-haskell.git/
-    tag: 37434cb1b2515a9aa74a0544da9716bfbabea7ca
-    subdir: ./raven-haskell
+  type: git
+  location: https://gitlab.com/dpwiz/raven-haskell.git/
+  tag: 37434cb1b2515a9aa74a0544da9716bfbabea7ca
+  subdir: ./raven-haskell
 
 source-repository-package
-    type: git
-    location: https://github.com/haskell-servant/servant
-    tag: 685885efc8b0af9cb999309722aaaaae818dfb51
-    subdir:
-      ./servant
-      ./servant-server
-      ./servant-client
-      ./servant-client-core
+  type: git
+  location: https://github.com/haskell-servant/servant
+  tag: 685885efc8b0af9cb999309722aaaaae818dfb51
+  subdir:
+    ./servant
+    ./servant-server
+    ./servant-client
+    ./servant-client-core
 
 source-repository-package
-    type: git
-    location: https://github.com/composewell/streamly
-    tag: 8500b6446dae07e763370608625f26eff5c84600
-    subdir:
-      ./core
-      ./.
+  type: git
+  location: https://github.com/composewell/streamly
+  tag: 8500b6446dae07e763370608625f26eff5c84600
+  subdir:
+    ./core
+    ./.
 
 source-repository-package
-    type: git
-    location: https://github.com/flora-pm/wai-middleware-heartbeat
-    tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
+  type: git
+  location: https://github.com/flora-pm/wai-middleware-heartbeat
+  tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
 
 source-repository-package
-    type: git
-    location: https://github.com/kleidukos/pg-transact-effectful
-    tag: ea610e9d85a628a19d350397b9e43520e452b4f8
+  type: git
+  location: https://github.com/kleidukos/pg-transact-effectful
+  tag: ea610e9d85a628a19d350397b9e43520e452b4f8
 
 source-repository-package
-    type: git
-    location: https://github.com/kleidukos/servant-effectful
-    tag: 22af09642078d5296b524495ad8213bf2ace62d2
+  type: git
+  location: https://github.com/kleidukos/servant-effectful
+  tag: 22af09642078d5296b524495ad8213bf2ace62d2
 
 source-repository-package
-    type: git
-    location: https://github.com/haskell-effectful/prometheus-effectful
-    tag: cd362b4f0a9f1a7dcc743176a9fa663f2cfe33d3
+  type: git
+  location: https://github.com/haskell-effectful/prometheus-effectful
+  tag: cd362b4f0a9f1a7dcc743176a9fa663f2cfe33d3
 
 source-repository-package
-    type: git
-    location: https://github.com/saurabhnanda/odd-jobs
-    tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
+  type: git
+  location: https://github.com/saurabhnanda/odd-jobs
+  tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
 
 source-repository-package
   type: git
@@ -116,3 +117,21 @@ source-repository-package
   type: git
   location: https://github.com/worm2fed/servant-prometheus
   tag: 9f967b3b42b183653b91f0ba9097621797ad107d
+
+source-repository-package
+  type: git
+  location: https://github.com/tchoutri/pg-entity
+  tag: 8f7837d024ae175b5f4dec15f15d0d6a45aea0ce
+
+source-repository-package
+  type: git
+  location: https://github.com/haskell-cryptography/one-time-password
+  tag: 888563664ec314faa4bd288ea4851c99a4d1d644
+
+source-repository-package
+  type: git
+  location: https://github.com/haskell-cryptography/libsodium-bindings
+  tag: a6e7938e55f9476e395513c64dc8fa94518d9200
+  subdir:
+    ./libsodium-bindings
+    ./sel
