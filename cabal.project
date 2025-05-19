@@ -121,12 +121,12 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/tchoutri/pg-entity
-  tag: 8f7837d024ae175b5f4dec15f15d0d6a45aea0ce
+  tag: 94d15179f07473642353113abe2c6d5d1fb4377a
 
 source-repository-package
   type: git
   location: https://github.com/haskell-cryptography/one-time-password
-  tag: 888563664ec314faa4bd288ea4851c99a4d1d644
+  tag: 093cf1947564e2a4e9953b6e2f4efd3015e242ba
 
 source-repository-package
   type: git
