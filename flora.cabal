@@ -384,6 +384,7 @@ library flora-web
     , effectful-plugin
     , extra
     , feed
+    , time-manager
     , flora
     , flora-advisories
     , flora-jobs

@@ -13,6 +13,7 @@ import Effectful.Log
 import GHC.IO.Exception (IOErrorType (..))
 import Log qualified
 import Network.Wai
+import System.TimeManager
 import Network.Wai.Handler.Warp
 import System.IO.Error (ioeGetErrorType)
 import System.Log.Raven
@@ -61,6 +62,7 @@ onException logger environment mltp mRequest e@(E.SomeException exception) = do
 shouldDisplayException :: SomeException -> Bool
 shouldDisplayException exception
   | Just ThreadKilled <- fromException exception = False
+  | Just TimeoutThread <- fromException exception = False
   | Just ConnectionClosedByPeer <- fromException exception = False
   | Just (_ :: InvalidRequest) <- fromException exception = False
   | Just (ioeGetErrorType -> et) <- fromException exception
