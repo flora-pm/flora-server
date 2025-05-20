@@ -18,13 +18,6 @@ source-repository head
   type:     git
   location: https://github.com/flora-pm/flora-server
 
-flag prod
-  description:
-    Compile the project with additional optimisations (takes longer)
-
-  default:     False
-  manual:      True
-
 common common-extensions
   default-extensions:
     DataKinds
@@ -54,12 +47,8 @@ common common-ghc-options
     -Wno-unused-do-bind -fshow-hole-constraints
     -Wno-unticked-promoted-constructors -Werror=unused-imports
     -fdicts-strict -fmax-worker-args=16 -fspec-constr-recursive=16
-    -Wunused-packages
-
-  if flag(prod)
-    ghc-options:
-      -flate-specialise -funbox-strict-fields
-      -finline-generics-aggressively -fexpose-all-unfoldings
+    -Wunused-packages -flate-specialise -funbox-strict-fields
+    -finline-generics-aggressively -fexpose-all-unfoldings
 
 common common-rts-options
   ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
