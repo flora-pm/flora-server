@@ -2,11 +2,11 @@ module Flora.ImportSpec where
 
 import Data.Foldable (traverse_)
 import Data.Maybe (catMaybes)
-import RequireCallStack
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Log.Backend.StandardOutput (withStdOutLogger)
 import Optics.Core
+import RequireCallStack
 
 import Flora.Import.Package (chooseNamespace)
 import Flora.Import.Package.Bulk

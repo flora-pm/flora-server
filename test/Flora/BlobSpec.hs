@@ -7,12 +7,12 @@ import Control.Arrow
 import Control.Monad.IO.Class
 import Data.ByteString.Lazy (LazyByteString)
 import Data.ByteString.Lazy qualified as BL
-import RequireCallStack
 import Data.Foldable (traverse_)
 import Data.Function (on)
 import Data.List (sortBy)
 import Data.Maybe (fromJust)
 import Distribution.Version (mkVersion)
+import RequireCallStack
 import System.FilePath ((</>))
 
 import Flora.Model.BlobIndex.Query qualified as Query

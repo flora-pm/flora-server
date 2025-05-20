@@ -1,8 +1,8 @@
 module Flora.TemplateSpec where
 
 import Distribution.Version qualified as Version
-import Servant
 import RequireCallStack
+import Servant
 
 import Flora.Model.Package
 import Flora.TestUtils (TestEff, TestTree, assertEqual, testThese, testThis)

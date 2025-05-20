@@ -1,7 +1,8 @@
 module Flora.FeedSpec where
 
-import Flora.Model.Feed.Query qualified as Query
 import RequireCallStack
+
+import Flora.Model.Feed.Query qualified as Query
 import Flora.Model.Package
 import Flora.TestUtils
 

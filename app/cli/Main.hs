@@ -1,7 +1,6 @@
 module Main where
 
 import Codec.Compression.GZip qualified as GZip
-import RequireCallStack
 import Control.Monad.Extra (unlessM)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List.NonEmpty (NonEmpty)
@@ -32,6 +31,7 @@ import Log.Backend.StandardOutput qualified as Log
 import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
 import Options.Applicative
+import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
@@ -97,24 +97,25 @@ main = Log.withStdOutLogger $ \logger -> do
         pure $ Trace.runTrace zipkin.zipkinTracer
       else pure Trace.runNoTrace
   result <-
-    provideCallStack $ runOptions cliArgs
-      & Reader.runReader env
-      & runLog "flora-cli" logger Log.LogTrace
-      & runFileSystem
-      & ( case env.features.blobStoreImpl of
-            Just (BlobStoreFS fp) -> runBlobStoreFS fp
-            _ -> runBlobStorePure
-        )
-      & runTime
-      & runFailIO
-      & runDB env.pool
-      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-      & runErrorNoCallStack
-      & runTrace
-      & runPrometheusMetrics env.metrics
-      & Concurrent.runConcurrent
-      & runEff
+    provideCallStack $
+      runOptions cliArgs
+        & Reader.runReader env
+        & runLog "flora-cli" logger Log.LogTrace
+        & runFileSystem
+        & ( case env.features.blobStoreImpl of
+              Just (BlobStoreFS fp) -> runBlobStoreFS fp
+              _ -> runBlobStorePure
+          )
+        & runTime
+        & runFailIO
+        & runDB env.pool
+        & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+        & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
+        & runErrorNoCallStack
+        & runTrace
+        & runPrometheusMetrics env.metrics
+        & Concurrent.runConcurrent
+        & runEff
 
   case result of
     Right _ -> pure ()

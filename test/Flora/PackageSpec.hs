@@ -1,7 +1,6 @@
 module Flora.PackageSpec where
 
 import Data.Aeson
-import RequireCallStack
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Foldable
 import Data.Function
@@ -19,6 +18,7 @@ import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Version (mkVersion)
 import Optics.Core
+import RequireCallStack
 import Test.Tasty
 
 import Flora.Import.Package

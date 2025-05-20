@@ -1,7 +1,6 @@
 module Main where
 
 import Control.Monad.Extra
-import RequireCallStack
 import Data.List.NonEmpty
 import Data.Text qualified as Text
 import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
@@ -11,6 +10,7 @@ import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Log qualified
+import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
 import System.Exit
 import System.IO

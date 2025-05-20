@@ -2,8 +2,8 @@ module Flora.PackageGroupSpec where
 
 import Control.Monad (void)
 import Data.Vector qualified as Vector
-import RequireCallStack
 import Optics.Core
+import RequireCallStack
 
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query

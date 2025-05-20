@@ -2,8 +2,8 @@ module Flora.CabalSpec where
 
 import Data.Maybe
 import Data.Set qualified as Set
-import RequireCallStack
 import Data.Vector qualified as Vector
+import RequireCallStack
 import Test.Tasty
 
 import Flora.Model.Component.Types
