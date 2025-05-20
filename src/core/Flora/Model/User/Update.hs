@@ -13,7 +13,7 @@ module Flora.Model.User.Update
 
 import Control.Monad
 import Database.PostgreSQL.Entity (delete, insert)
-import Database.PostgreSQL.Entity.DBT ( execute)
+import Database.PostgreSQL.Entity.DBT (execute)
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful (Eff, IOE, type (:>))

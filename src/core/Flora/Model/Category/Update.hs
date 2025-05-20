@@ -6,7 +6,7 @@ import Control.Monad (void)
 import Control.Monad.IO.Class
 import Data.Text (Text)
 import Data.Text.IO qualified as T
-import Database.PostgreSQL.Entity.DBT ( execute)
+import Database.PostgreSQL.Entity.DBT (execute)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)

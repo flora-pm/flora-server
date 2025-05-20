@@ -15,7 +15,6 @@ import Effectful
 import Effectful.Concurrent
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (runErrorNoCallStack, runErrorWith)
-import Effectful.Exception qualified as E
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (runDB)
@@ -32,6 +31,7 @@ import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
+  , setOnException
   , setPort
   )
 import Network.Wai.Log qualified as WaiLog
@@ -175,7 +175,15 @@ runServer appLogger floraEnv = do
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   ioref <- liftIO $ newIORef True
   let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv zipkin ioref
-  let warpSettings = setPort (fromIntegral floraEnv.httpPort) defaultSettings
+  let warpSettings =
+        setPort (fromIntegral floraEnv.httpPort) $
+          setOnException
+            ( onException
+                appLogger
+                floraEnv.environment
+                floraEnv.mltp
+            )
+            defaultSettings
   liftIO
     $ runSettings warpSettings
     $ heartbeatMiddleware
@@ -246,7 +254,6 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
                 Just (BlobStoreFS fp) -> runBlobStoreFS fp
                 _ -> runBlobStorePure
             )
-          & (`E.catches` onException)
           & Logging.runLog floraEnv.environment logger
           & runErrorWith (\_callstack err -> pure $ Left err)
           & runConcurrent

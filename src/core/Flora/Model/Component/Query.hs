@@ -6,7 +6,7 @@ module Flora.Model.Component.Query (getComponentsByReleaseId) where
 import Data.Text
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT ( query)
+import Database.PostgreSQL.Entity.DBT (query)
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (..))
 import Effectful

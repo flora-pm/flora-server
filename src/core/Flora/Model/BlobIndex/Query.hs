@@ -11,7 +11,7 @@ import Data.Map qualified as M
 import Data.Text.Display (display)
 import Data.Vector qualified as V
 import Database.PostgreSQL.Entity (_orderBy, _selectWhere)
-import Database.PostgreSQL.Entity.DBT ( query)
+import Database.PostgreSQL.Entity.DBT (query)
 import Database.PostgreSQL.Entity.Types (SortKeyword (..), field)
 import Database.PostgreSQL.Simple (Only (..))
 import Distribution.Version (Version)
