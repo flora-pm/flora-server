@@ -62,6 +62,7 @@ import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Update qualified as Update
+import Flora.Monad
 import Flora.Monitoring
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
@@ -78,7 +79,7 @@ importAllFilesInRelativeDirectory
      )
   => (Text, Text)
   -> FilePath
-  -> Eff es ()
+  -> FloraM es ()
 importAllFilesInRelativeDirectory (repositoryName, repositoryURL) dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
   importAllFilesInDirectory (repositoryName, repositoryURL) workdir
@@ -95,7 +96,7 @@ importFromIndex
      )
   => Text
   -> FilePath
-  -> Eff es ()
+  -> FloraM es ()
 importFromIndex repositoryName index = do
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
   let Right repositoryPackages = buildPackageListFromArchive entries
@@ -151,7 +152,7 @@ importAllFilesInDirectory
      )
   => (Text, Text)
   -> FilePath
-  -> Eff es ()
+  -> FloraM es ()
 importAllFilesInDirectory (repositoryName, _repositoryURL) dir = do
   liftIO $ System.createDirectoryIfMissing True dir
   packages <- buildPackageListFromDirectory dir
@@ -171,7 +172,7 @@ importFromStream
      )
   => (Text, Set PackageName)
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
-  -> Eff es ()
+  -> FloraM es ()
 importFromStream repository@(repositoryName, _) stream = do
   capabilities <- Concurrent.getNumCapabilities
   let cfg = maxThreads capabilities . ordered True
@@ -203,7 +204,7 @@ importFromStream repository@(repositoryName, _) stream = do
 displayStats
   :: IOE :> es
   => Int
-  -> Eff es ()
+  -> FloraM es ()
 displayStats currentCount = do
   liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
@@ -218,7 +219,7 @@ processFile
      )
   => (Text, Set PackageName)
   -> (ImportFileType, UTCTime, StrictByteString)
-  -> Eff es ()
+  -> FloraM es ()
 processFile repository importSubject =
   case importSubject of
     (CabalFile path, timestamp, content) -> do
@@ -241,7 +242,7 @@ findAllCabalFilesInDirectory
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
 findAllCabalFilesInDirectory workdir = Streamly.concatMapM traversePath $ Streamly.fromList [workdir]
   where
-    traversePath :: FilePath -> Eff es (Stream (Eff es) (ImportFileType, UTCTime, StrictByteString))
+    traversePath :: FileSystem :> es1 => FilePath -> Eff es1 (Stream (Eff es1) (ImportFileType, UTCTime, StrictByteString))
     traversePath p = do
       isDir <- FileSystem.doesDirectoryExist p
       case isDir of
@@ -266,7 +267,7 @@ buildPackageListFromArchive entries =
         & Set.fromList
         & Right
 
-buildPackageListFromDirectory :: IOE :> es => FilePath -> Eff es (Set PackageName)
+buildPackageListFromDirectory :: IOE :> es => FilePath -> FloraM es (Set PackageName)
 buildPackageListFromDirectory dir = do
   paths <- liftIO $ listDirectory dir
   paths

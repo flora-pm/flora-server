@@ -3,6 +3,7 @@ module Flora.PackageGroupSpec where
 import Control.Monad (void)
 import Data.Vector qualified as Vector
 import Optics.Core
+import RequireCallStack
 
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
@@ -10,7 +11,7 @@ import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroupPackage.Update as Update
 import Flora.TestUtils
 
-spec :: TestEff TestTree
+spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "package group"
@@ -21,7 +22,7 @@ spec =
     , testThis "Get packages by package group name" testGetPackageGroupByPackageGroupName
     ]
 
-testInsertPackageGroup :: TestEff ()
+testInsertPackageGroup :: RequireCallStack => TestEff ()
 testInsertPackageGroup = do
   void (instantiatePackage randomPackageTemplate)
   packageGroup <-
@@ -36,7 +37,7 @@ testInsertPackageGroup = do
     Just pg ->
       assertEqual pg.packageGroupId packageGroup.packageGroupId
 
-testAddPackageToPackageGroup :: TestEff ()
+testAddPackageToPackageGroup :: RequireCallStack => TestEff ()
 testAddPackageToPackageGroup = do
   package <- instantiatePackage randomPackageTemplate
   packageGroup <-
@@ -54,7 +55,7 @@ testAddPackageToPackageGroup = do
 
   assertEqual 1 (Vector.length results)
 
-testRemovePackageFromPackageGroup :: TestEff ()
+testRemovePackageFromPackageGroup :: RequireCallStack => TestEff ()
 testRemovePackageFromPackageGroup = do
   package <- instantiatePackage randomPackageTemplate
   packageGroup <-
@@ -73,7 +74,7 @@ testRemovePackageFromPackageGroup = do
 
   assertBool (Vector.notElem package results)
 
-testGetPackagesByPackageGroupId :: TestEff ()
+testGetPackagesByPackageGroupId :: RequireCallStack => TestEff ()
 testGetPackagesByPackageGroupId = do
   package <- instantiatePackage randomPackageTemplate
   packageGroup <-
@@ -91,7 +92,7 @@ testGetPackagesByPackageGroupId = do
 
   assertEqual (Vector.length results) 1
 
-testGetPackageGroupByPackageGroupName :: TestEff ()
+testGetPackageGroupByPackageGroupName :: RequireCallStack => TestEff ()
 testGetPackageGroupByPackageGroupName = do
   void (instantiatePackage randomPackageTemplate)
   packageGroup <-

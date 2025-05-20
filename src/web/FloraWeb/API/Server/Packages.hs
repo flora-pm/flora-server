@@ -7,12 +7,13 @@ import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Version (Version)
-import Effectful (Eff, IOE, liftIO, (:>))
+import Effectful (IOE, liftIO, (:>))
 import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Time (Time)
 import Effectful.Trace
+import RequireCallStack
 import Servant hiding ((:>))
 
 import Flora.Model.Component.Query qualified as Query
@@ -23,20 +24,21 @@ import Flora.Model.Package.Types
 import Flora.Model.Release.Guard (guardThatReleaseExists)
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Monad
 import Flora.Search (searchPackageByName)
 import FloraWeb.API.Errors
 import FloraWeb.API.Routes.Packages qualified as Packages
 import FloraWeb.API.Routes.Packages.Types
 import FloraWeb.Types
 
-packagesServer :: ServerT Packages.API FloraEff
+packagesServer :: RequireCallStack => ServerT Packages.API FloraEff
 packagesServer =
   Packages.API'
     { withPackage = withPackageServer
     , getPackagesByPrefix = getPackagesByPrefixHandler
     }
 
-withPackageServer :: Namespace -> PackageName -> ServerT Packages.PackageAPI FloraEff
+withPackageServer :: RequireCallStack => Namespace -> PackageName -> ServerT Packages.PackageAPI FloraEff
 withPackageServer namespace packageName =
   Packages.PackageAPI'
     { getPackage = getPackageHandler namespace packageName
@@ -49,7 +51,7 @@ getDependenciesHandler
   -> PackageName
   -> Version
   -> Bool
-  -> Eff RouteEffects (PackageDependenciesDTO 0)
+  -> FloraM RouteEffects (PackageDependenciesDTO 0)
 getDependenciesHandler namespace packageName version transitive = do
   package <- guardThatPackageExists namespace packageName packageNotFound
   release <-
@@ -78,7 +80,7 @@ getPackageHandler
      )
   => Namespace
   -> PackageName
-  -> (Eff es) (PackageDTO 0)
+  -> (FloraM es) (PackageDTO 0)
 getPackageHandler namespace packageName = do
   package <- guardThatPackageExists namespace packageName packageNotFound
   releases <- Query.getReleases package.packageId
@@ -103,7 +105,7 @@ getPackagesByPrefixHandler
   => Maybe Text
   -> Maybe Word
   -> Maybe Word
-  -> (Eff es) (Vector PackageName)
+  -> (FloraM es) (Vector PackageName)
 getPackagesByPrefixHandler maybePackageName maybeOffset maybeLimit =
   case maybePackageName of
     Nothing -> pure Vector.empty
@@ -123,7 +125,7 @@ getVersionedPackageHandler
   => Namespace
   -> PackageName
   -> Version
-  -> (Eff es) (PackageDTO 0)
+  -> (FloraM es) (PackageDTO 0)
 getVersionedPackageHandler namespace packageName version = do
   liftIO $ print @String "LOOOOOOOOOOOOOOOOOOOOOL"
   package <- guardThatPackageExists namespace packageName packageNotFound

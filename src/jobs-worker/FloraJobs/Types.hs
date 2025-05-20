@@ -4,14 +4,11 @@ module FloraJobs.Types where
 
 import Commonmark qualified
 import Control.Exception (Exception)
-import Data.Aeson
 import Data.Function ((&))
 import Data.Pool hiding (PoolConfig)
 import Data.Set (Set)
-import Data.Text qualified as Text
 import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple (Connection)
-import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Distribution.Types.Version (Version)
 import Effectful
@@ -29,21 +26,17 @@ import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
 import GHC.Generics (Generic)
 import GHC.Stack (HasCallStack, callStack, prettyCallStack)
-import Log hiding (LogLevel)
 import Network.HTTP.Client
-import OddJobs.ConfigBuilder
-import OddJobs.Job (Config (..), Job, LogEvent (..), LogLevel (..))
-import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
+import RequireCallStack
 
-import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job ()
 import Flora.Model.Package.Types (Namespace, PackageName)
+import Flora.Monad
 
-type JobsRunner =
-  Eff
+type JobsRunner a =
+  FloraM
     '[ DB
      , Reader JobsRunnerEnv
      , BlobStoreAPI
@@ -57,9 +50,11 @@ type JobsRunner =
      , Metrics AppMetrics
      , IOE
      ]
+    a
 
 runJobRunner
-  :: Pool Connection
+  :: RequireCallStack
+  => Pool Connection
   -> JobsRunnerEnv
   -> FloraEnv
   -> Logger
@@ -110,37 +105,3 @@ data JobsRunnerEnv = JobsRunnerEnv
   { httpManager :: Manager
   }
   deriving stock (Generic)
-
-makeConfig
-  :: JobsRunnerEnv
-  -> FloraEnv
-  -> Logger
-  -> Pool PG.Connection
-  -> (Job -> JobsRunner ())
-  -> Config
-makeConfig runnerEnv floraEnv logger pool runnerContinuation =
-  mkConfig
-    (\level event -> structuredLogging floraEnv.config logger level event)
-    jobTableName
-    pool
-    (MaxConcurrentJobs 100)
-    (runJobRunner pool runnerEnv floraEnv logger . runnerContinuation)
-    (\x -> x{cfgDefaultMaxAttempts = 3, cfgDefaultJobTimeout = 36000})
-
-makeUIConfig :: FloraConfig -> Logger -> Pool PG.Connection -> UIConfig
-makeUIConfig cfg logger pool =
-  mkUIConfig (structuredLogging cfg logger) jobTableName pool id
-
-structuredLogging :: FloraConfig -> Logger -> LogLevel -> LogEvent -> IO ()
-structuredLogging FloraConfig{environment} logger level event =
-  runEff
-    . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-    . runTime
-    . Logging.runLog environment logger
-    $ localDomain "odd-jobs"
-    $ case level of
-      LevelDebug -> logMessage Log.LogTrace "LevelDebug" (toJSON event)
-      LevelInfo -> logMessage Log.LogInfo "LevelInfo" (toJSON event)
-      LevelWarn -> logMessage Log.LogAttention "LevelWarn" (toJSON event)
-      LevelError -> logMessage Log.LogAttention "LevelError" (toJSON event)
-      (LevelOther x) -> logMessage Log.LogAttention ("LevelOther " <> Text.pack (show x)) (toJSON event)

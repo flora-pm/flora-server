@@ -1,15 +1,17 @@
 module Main where
 
+import Control.Exception.Backtrace
 import Control.Monad.Extra
 import Data.List.NonEmpty
 import Data.Text qualified as Text
-import Database.PostgreSQL.Entity.DBT (QueryNature (Delete), execute)
+import Database.PostgreSQL.Entity.DBT (execute)
 import Effectful
 import Effectful.Error.Static
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Log qualified
+import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
 import System.Exit
 import System.IO
@@ -38,7 +40,8 @@ import Flora.TestUtils
 import Flora.UserSpec qualified as UserSpec
 
 main :: IO ()
-main = do
+main = provideCallStack $ do
+  setBacktraceMechanismState CostCentreBacktrace True
   hSetBuffering stdout LineBuffering
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv
   fixtures <-
@@ -72,7 +75,7 @@ main = do
     testGroup "Flora Tests" $
       OddJobSpec.spec : spec
 
-specs :: Fixtures -> [TestEff TestTree]
+specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =
   [ AdvisorySpec.spec
   , BlobSpec.spec
@@ -89,23 +92,23 @@ specs fixtures =
 
 cleanUp :: DB :> es => Eff es ()
 cleanUp = dbtToEff $ do
-  void $ execute Delete "DELETE FROM blob_relations" ()
-  void $ execute Delete "DELETE FROM oddjobs" ()
-  void $ execute Delete "DELETE FROM package_categories" ()
-  void $ execute Delete "DELETE FROM categories" ()
-  void $ execute Delete "DELETE FROM persistent_sessions" ()
-  void $ execute Delete "DELETE FROM downloads" ()
-  void $ execute Delete "DELETE FROM requirements" ()
-  void $ execute Delete "DELETE FROM package_components" ()
-  void $ execute Delete "DELETE FROM affected_version_ranges" ()
-  void $ execute Delete "DELETE FROM affected_packages" ()
-  void $ execute Delete "DELETE FROM security_advisories" ()
-  void $ execute Delete "DELETE FROM releases" ()
-  void $ execute Delete "DELETE FROM package_group_packages" ()
-  void $ execute Delete "DELETE FROM package_groups" ()
-  void $ execute Delete "DELETE FROM package_feeds" ()
-  void $ execute Delete "DELETE FROM packages" ()
-  void $ execute Delete "DELETE FROM package_indexes" ()
-  void $ execute Delete "DELETE FROM user_organisation" ()
-  void $ execute Delete "DELETE FROM package_publishers" ()
-  void $ execute Delete "DELETE FROM users" ()
+  void $ execute "DELETE FROM blob_relations" ()
+  void $ execute "DELETE FROM oddjobs" ()
+  void $ execute "DELETE FROM package_categories" ()
+  void $ execute "DELETE FROM categories" ()
+  void $ execute "DELETE FROM persistent_sessions" ()
+  void $ execute "DELETE FROM downloads" ()
+  void $ execute "DELETE FROM requirements" ()
+  void $ execute "DELETE FROM package_components" ()
+  void $ execute "DELETE FROM affected_version_ranges" ()
+  void $ execute "DELETE FROM affected_packages" ()
+  void $ execute "DELETE FROM security_advisories" ()
+  void $ execute "DELETE FROM releases" ()
+  void $ execute "DELETE FROM package_group_packages" ()
+  void $ execute "DELETE FROM package_groups" ()
+  void $ execute "DELETE FROM package_feeds" ()
+  void $ execute "DELETE FROM packages" ()
+  void $ execute "DELETE FROM package_indexes" ()
+  void $ execute "DELETE FROM user_organisation" ()
+  void $ execute "DELETE FROM package_publishers" ()
+  void $ execute "DELETE FROM users" ()

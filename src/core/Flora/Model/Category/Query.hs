@@ -42,4 +42,4 @@ getPackagesFromCategorySlug slug =
             categoryId
 
 getAllCategories :: DB :> es => Eff es (Vector Category)
-getAllCategories = dbtToEff $ query_ Select (_select @Category)
+getAllCategories = dbtToEff $ query_ (_select @Category)

@@ -18,16 +18,10 @@ source-repository head
   type:     git
   location: https://github.com/flora-pm/flora-server
 
-flag prod
-  description:
-    Compile the project with additional optimisations (takes longer)
-
-  default:     False
-  manual:      True
-
 common common-extensions
   default-extensions:
     DataKinds
+    DeepSubsumption
     DeriveAnyClass
     DerivingStrategies
     DerivingVia
@@ -49,16 +43,12 @@ common common-extensions
 common common-ghc-options
   ghc-options:
     -Wall -Wcompat -Widentities -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
-    -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
+    -Wincomplete-uni-patterns -Wpartial-fields -fhide-source-paths
+    -Wno-unused-do-bind -fshow-hole-constraints
     -Wno-unticked-promoted-constructors -Werror=unused-imports
     -fdicts-strict -fmax-worker-args=16 -fspec-constr-recursive=16
-    -Wunused-packages
-
-  if flag(prod)
-    ghc-options:
-      -flate-specialise -funbox-strict-fields
-      -finline-generics-aggressively -fexpose-all-unfoldings
+    -Wunused-packages -flate-specialise -funbox-strict-fields
+    -finline-generics-aggressively -fexpose-all-unfoldings
 
 common common-rts-options
   ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
@@ -144,6 +134,7 @@ library
     Flora.Model.User
     Flora.Model.User.Query
     Flora.Model.User.Update
+    Flora.Monad
     Flora.Monitoring
     Flora.Normalise
     Flora.QRCode
@@ -164,7 +155,6 @@ library
     , base64
     , bytestring
     , Cabal-syntax
-    , colourista
     , containers
     , cryptohash-md5
     , cryptohash-sha256
@@ -204,6 +194,7 @@ library
     , prometheus-effectful
     , qrcode-core
     , qrcode-juicypixels
+    , require-callstack
     , resource-pool
     , sel
     , servant
@@ -214,6 +205,7 @@ library
     , streamly-core
     , tar
     , text
+    , text-builder-linear
     , text-display
     , time
     , tracing
@@ -412,7 +404,7 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
-    , one-time-password          ==3.0.0.0
+    , one-time-password          ==3.0.1.0
     , openapi3
     , optics-core
     , pg-entity
@@ -425,6 +417,7 @@ library flora-web
     , prometheus-proc
     , PyF
     , raven-haskell
+    , require-callstack
     , resource-pool
     , safe-exceptions
     , sel
@@ -437,6 +430,7 @@ library flora-web
     , text
     , text-display
     , time
+    , time-manager
     , torsor
     , tracing
     , tracing-effectful
@@ -492,6 +486,7 @@ library flora-jobs
     , postgresql-simple
     , prometheus-effectful
     , req
+    , require-callstack
     , resource-pool
     , servant
     , servant-client
@@ -541,7 +536,6 @@ executable flora-cli
     , effectful
     , effectful-core
     , effectful-plugin
-    , envparse
     , extra
     , filepath
     , flora
@@ -558,6 +552,7 @@ executable flora-cli
     , pg-transact-effectful
     , prometheus-effectful
     , PyF
+    , require-callstack
     , sel
     , text
     , text-display
@@ -605,7 +600,9 @@ test-suite flora-test
     , pg-transact-effectful
     , postgresql-migration
     , prometheus-effectful
+    , require-callstack
     , resource-pool
+    , say
     , sel
     , servant
     , servant-client
@@ -615,6 +612,7 @@ test-suite flora-test
     , tasty-hunit
     , tasty-test-reporter
     , text
+    , text-display
     , time
     , tracing-effectful
     , uuid

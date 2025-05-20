@@ -33,7 +33,7 @@ instance Accept Atom where
 
 instance MimeRender Atom Atom.Feed where
   mimeRender _ atom =
-    let feed = TLE.encodeUtf8 . fromJust . Export.textFeedWith (def{rsXMLDeclaration = False, rsPretty = True}) $ AtomFeed atom
+    let feed = TLE.encodeUtf8 . fromJust . Export.textFeedWith (def{rsXMLDeclaration = False}) $ AtomFeed atom
      in "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
           <> "<?xml-stylesheet href=\"/static/feed/pretty-atom-feed.xsl\" type=\"text/xsl\"?>\n"
           <> feed

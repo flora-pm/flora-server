@@ -5,7 +5,6 @@ module Distribution.Orphans.CompilerFlavor where
 import Data.Aeson
 import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Text.Lazy.Builder qualified as Builder
 import Distribution.Compiler (CompilerFlavor)
 import Distribution.Parsec
 import Distribution.Pretty qualified as Pretty
@@ -22,4 +21,4 @@ instance FromJSON CompilerFlavor where
       )
 
 instance Display CompilerFlavor where
-  displayBuilder = Builder.fromString . Pretty.prettyShow
+  displayBuilder = displayBuilder . Pretty.prettyShow

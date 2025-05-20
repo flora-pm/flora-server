@@ -9,14 +9,15 @@ import Monitor.Tracing qualified as Tracing
 import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Monad
 
 guardThatReleaseExists
   :: (DB :> es, Trace :> es)
   => PackageId
   -> Version
-  -> (Version -> Eff es Release)
+  -> (Version -> FloraM es Release)
   -- ^ Action to run if the package does not exist
-  -> Eff es Release
+  -> FloraM es Release
 guardThatReleaseExists packageId version action = do
   result <-
     Tracing.childSpan "Query.getReleaseByVersion" $

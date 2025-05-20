@@ -7,8 +7,19 @@ active-repositories: hackage.haskell.org
 
 tests: True
 
-allow-newer: base32:base
-           , binary:containers
+semaphore: True
+
+jobs: $ncpus
+
+multi-repl: True
+
+profiling: True
+
+package *
+  profiling-detail: none
+  ghc-options: +RTS -A32m -RTS -fprof-auto -fprof-auto-calls
+
+allow-newer: binary:containers
            , chronos:hashable
            , feed:*
            , hashable:filepath
@@ -16,23 +27,21 @@ allow-newer: base32:base
            , hsec-sync:*
            , hsec-tools:*
            , insert-ordered-containers:hashable
-           , openapi3:*
-           , prometheus-effectful:bytestring
-           , wai-middleware-heartbeat:*
            , odd-jobs:async
+           , pandoc:*
+           , prometheus-effectful:bytestring
            , prometheus-proc:*
            , qrcode-core:*
            , qrcode-juicypixels:*
            , servant-lucid:text
-           , servant-openapi3:*
            , tasty-test-reporter:*
+           , texmath:*
            , type-errors-pretty:base
-           , one-time-password:sel
-
+           , wai-middleware-heartbeat:*
 test-show-details: direct
 
-package *
-  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
+package feed
+  ghc-options: -Wno-tabs
 
 package warp
   flags: -x509
@@ -76,6 +85,11 @@ source-repository-package
     ./servant-client-core
 
 source-repository-package
+    type: git
+    location: https://github.com/haskell-party/feed
+    tag: f859f8b1bf6f9476c05a906f1a26f87ce6182626
+
+source-repository-package
   type: git
   location: https://github.com/composewell/streamly
   tag: 8500b6446dae07e763370608625f26eff5c84600
@@ -117,21 +131,3 @@ source-repository-package
   type: git
   location: https://github.com/worm2fed/servant-prometheus
   tag: 9f967b3b42b183653b91f0ba9097621797ad107d
-
-source-repository-package
-  type: git
-  location: https://github.com/tchoutri/pg-entity
-  tag: 8f7837d024ae175b5f4dec15f15d0d6a45aea0ce
-
-source-repository-package
-  type: git
-  location: https://github.com/haskell-cryptography/one-time-password
-  tag: 888563664ec314faa4bd288ea4851c99a4d1d644
-
-source-repository-package
-  type: git
-  location: https://github.com/haskell-cryptography/libsodium-bindings
-  tag: a6e7938e55f9476e395513c64dc8fa94518d9200
-  subdir:
-    ./libsodium-bindings
-    ./sel

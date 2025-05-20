@@ -1,13 +1,14 @@
 module Flora.TemplateSpec where
 
 import Distribution.Version qualified as Version
+import RequireCallStack
 import Servant
 
 import Flora.Model.Package
 import Flora.TestUtils (TestEff, TestTree, assertEqual, testThese, testThis)
 import FloraWeb.Links qualified as Links
 
-spec :: TestEff TestTree
+spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "templates"
@@ -15,7 +16,7 @@ spec =
     , testThis "Generate a link to a namespace" testGenerateNamespaceLink
     ]
 
-testGenerateVersionedPackageLink :: TestEff ()
+testGenerateVersionedPackageLink :: RequireCallStack => TestEff ()
 testGenerateVersionedPackageLink = do
   let namespace = Namespace "hackage"
   let packageName = PackageName "base"
@@ -23,7 +24,7 @@ testGenerateVersionedPackageLink = do
   let generatedLink = toUrlPiece $ Links.packageVersionLink namespace packageName version
   assertEqual "packages/%40hackage/base/4.16.1.0" generatedLink
 
-testGenerateNamespaceLink :: TestEff ()
+testGenerateNamespaceLink :: RequireCallStack => TestEff ()
 testGenerateNamespaceLink = do
   let namespace = Namespace "haskell"
   let generatedLink = toUrlPiece $ Links.namespaceLink namespace 2

@@ -5,7 +5,6 @@ module Distribution.Orphans where
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as C8
 import Data.Text.Display
-import Data.Text.Lazy.Builder qualified as Builder
 import Database.PostgreSQL.Simple.FromField
   ( Conversion
   , Field
@@ -36,4 +35,4 @@ instance ToField SPDX.License where
   toField = Escape . C8.pack . Pretty.prettyShow
 
 instance Display UnqualComponentName where
-  displayBuilder = Builder.fromString . unUnqualComponentName
+  displayBuilder = displayBuilder . unUnqualComponentName

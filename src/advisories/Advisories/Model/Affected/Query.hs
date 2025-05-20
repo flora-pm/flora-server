@@ -5,7 +5,7 @@ module Advisories.Model.Affected.Query where
 import Data.Text (Text)
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne)
+import Database.PostgreSQL.Entity.DBT (query, queryOne)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ
@@ -46,7 +46,6 @@ getAdvisoryPreviewsByPackageId :: DB :> es => PackageId -> Eff es (Vector Packag
 getAdvisoryPreviewsByPackageId packageId =
   dbtToEff $
     query
-      Select
       [sql|
 SELECT s0.hsec_id
      , p3.namespace
@@ -72,7 +71,6 @@ searchInAdvisories :: DB :> es => (Word, Word) -> Text -> Eff es (Vector Package
 searchInAdvisories (offset, limit) searchTerm =
   dbtToEff $
     query
-      Select
       searchAdvisoriesQuery
       (searchTerm, searchTerm, offset, limit)
 
@@ -118,7 +116,6 @@ countAdvisorySearchResults searchTerm =
   dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne
-        Select
         countAdvisorySearchResultsQuery
         (searchTerm, searchTerm)
     case result of

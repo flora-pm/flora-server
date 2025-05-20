@@ -11,7 +11,7 @@ import Data.Map qualified as M
 import Data.Text.Display (display)
 import Data.Vector qualified as V
 import Database.PostgreSQL.Entity (_orderBy, _selectWhere)
-import Database.PostgreSQL.Entity.DBT (QueryNature (..), query)
+import Database.PostgreSQL.Entity.DBT (query)
 import Database.PostgreSQL.Entity.Types (SortKeyword (..), field)
 import Database.PostgreSQL.Simple (Only (..))
 import Distribution.Version (Version)
@@ -44,7 +44,6 @@ queryTar pname version rootHash = do
     queryChildren hash =
       dbtToEff $!
         query
-          Select
           ( _selectWhere @BlobRelation [[field| blob_hash |]]
               -- Ensures we consistently get back the directory structure
               -- This may not be the same as the hackage tarball!
