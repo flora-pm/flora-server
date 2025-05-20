@@ -13,6 +13,12 @@ jobs: $ncpus
 
 multi-repl: True
 
+profiling: True
+
+package *
+  profiling-detail: none
+  ghc-options: +RTS -A32m -RTS -fprof-auto -fprof-auto-calls
+
 allow-newer: binary:containers
            , chronos:hashable
            , feed:*
@@ -33,9 +39,6 @@ allow-newer: binary:containers
            , type-errors-pretty:base
            , wai-middleware-heartbeat:*
 test-show-details: direct
-
-package *
-  ghc-options: +RTS -A32m -RTS
 
 package feed
   ghc-options: -Wno-tabs

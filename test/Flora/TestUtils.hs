@@ -107,6 +107,7 @@ import Distribution.Types.Version (Version)
 import Distribution.Types.Version qualified as Version
 import Effectful
 import Effectful.Concurrent
+import Effectful.Exception qualified as E
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log)
@@ -128,10 +129,12 @@ import Hedgehog.Range qualified as Range
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import RequireCallStack
+import Say
 import Sel.Hashing.Password
 import Sel.Hashing.Password qualified as Sel
 import Servant.API ()
 import Servant.Client
+import System.Exit
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
@@ -215,6 +218,13 @@ importAllPackages = do
 
 runTestEff :: RequireCallStack => TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $ do
+  let reportException =
+        [ E.Handler $ \e@(SomeException exception) -> do
+            let context = E.displayExceptionContext $ E.someExceptionContext e
+            sayErrString $ "Exception: " <> E.displayException exception
+            sayErrString $ "Context: " <> context
+            liftIO exitFailure
+        ]
   let withLogger = Logging.makeLogger env.mltp.logger
   withLogger $ \logger ->
     comp
@@ -224,6 +234,7 @@ runTestEff comp env = runEff $ do
       & runBlobStorePure
       & runReader env
       & runDB env.pool
+      & (`E.catches` reportException)
       & Log.runLog "flora-test" logger LogAttention
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime

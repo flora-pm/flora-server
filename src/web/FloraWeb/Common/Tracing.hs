@@ -1,5 +1,3 @@
-
-
 module FloraWeb.Common.Tracing where
 
 import Control.Exception (AsyncException (..), Exception (..), SomeException, throw)
@@ -13,23 +11,23 @@ import Effectful.Log
 import GHC.IO.Exception (IOErrorType (..))
 import Log qualified
 import Network.Wai
-import System.TimeManager
 import Network.Wai.Handler.Warp
 import System.IO.Error (ioeGetErrorType)
 import System.Log.Raven
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (..), SentryRecord (..))
+import System.TimeManager (TimeoutThread (..))
 
 import Flora.Environment.Config
 
-onException
+handleExceptions
   :: Logger
   -> DeploymentEnv
   -> MLTP
   -> Maybe Request
   -> E.SomeException
   -> IO ()
-onException logger environment mltp mRequest e@(E.SomeException exception) = do
+handleExceptions logger environment mltp mRequest e@(E.SomeException exception) = do
   Log.runLogT "flora-production" logger LogAttention $ do
     let context = E.displayExceptionContext $ E.someExceptionContext e
     Log.logAttention "Unhandled exception" $

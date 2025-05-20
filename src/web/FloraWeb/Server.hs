@@ -178,7 +178,7 @@ runServer appLogger floraEnv = do
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
-            ( onException
+            ( handleExceptions
                 appLogger
                 floraEnv.environment
                 floraEnv.mltp

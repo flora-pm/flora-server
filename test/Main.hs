@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Exception.Backtrace
 import Control.Monad.Extra
 import Data.List.NonEmpty
 import Data.Text qualified as Text
@@ -40,6 +41,7 @@ import Flora.UserSpec qualified as UserSpec
 
 main :: IO ()
 main = provideCallStack $ do
+  setBacktraceMechanismState CostCentreBacktrace True
   hSetBuffering stdout LineBuffering
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv
   fixtures <-

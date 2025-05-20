@@ -384,7 +384,6 @@ library flora-web
     , effectful-plugin
     , extra
     , feed
-    , time-manager
     , flora
     , flora-advisories
     , flora-jobs
@@ -431,6 +430,7 @@ library flora-web
     , text
     , text-display
     , time
+    , time-manager
     , torsor
     , tracing
     , tracing-effectful
@@ -602,6 +602,7 @@ test-suite flora-test
     , prometheus-effectful
     , require-callstack
     , resource-pool
+    , say
     , sel
     , servant
     , servant-client
@@ -611,6 +612,7 @@ test-suite flora-test
     , tasty-hunit
     , tasty-test-reporter
     , text
+    , text-display
     , time
     , tracing-effectful
     , uuid

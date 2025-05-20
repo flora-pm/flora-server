@@ -201,7 +201,7 @@ getReleaseByVersion packageId version =
     queryOne
       ( _selectWhere
           @Release
-          [[field| package_id |], [field| version |], [field| failure |]]
+          [[field| package_id |], [field| version |]]
       )
       (packageId, version)
 
