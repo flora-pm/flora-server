@@ -4,13 +4,18 @@ import Effectful
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (Reader)
 import Lucid
+import Data.Text.Display (display)
 import Servant (HasServer (..), Headers (..))
 
 import Flora.Environment.Env
+import Flora.Model.Package.Guard
+import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Guards (guardThatPackageGroupExists)
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroup.Update qualified as Update
+import Flora.Model.PackageGroupPackage.Types
+import Flora.Model.PackageGroupPackage.Update qualified as Update
 import Flora.Model.User
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes.Admin.Groups
@@ -26,6 +31,7 @@ server session =
     , addGroup = addGroupHandler session
     , deleteGroup = deleteGroupHandler session
     , showGroup = showGroupHandler session
+    , addPackageToGroup = addPackageToGroupHandler session
     }
 
 indexHandler
@@ -54,6 +60,18 @@ deleteGroupHandler
   -> PackageGroupId
   -> FloraEff DeleteGroupResult
 deleteGroupHandler (Headers session _) packageGroupId = undefined
+
+addPackageToGroupHandler
+  :: SessionWithCookies User
+  -> PackageGroupId
+  -> AddPackageToGroupForm
+  -> FloraEff AddPackageToGroupResult
+addPackageToGroupHandler (Headers session _) packageGroupId AddPackageToGroupForm{namespace, packageName} = do
+  package <- guardThatPackageExists namespace packageName $ \_ _ -> web404 session
+  group <- guardThatPackageGroupExists packageGroupId $ const (web404 session)
+  packageGroupPackage <- mkPackageGroupPackage package.packageId packageGroupId
+  Update.addPackageToPackageGroup packageGroupPackage
+  pure $ PackageAddedToGroupSuccess ("/admin/groups/" <> display packageGroupId)
 
 showGroupHandler
   :: SessionWithCookies User

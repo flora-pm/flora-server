@@ -9,6 +9,7 @@ import Servant.API.ContentTypes.Lucid
 import Servant.API.MultiVerb
 import Web.FormUrlEncoded
 
+import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 
 type CreateGroupResponses =
@@ -69,6 +70,34 @@ type GetPackageGroup =
   Capture "group_id" PackageGroupId
     :> Get '[HTML] (Html ())
 
+type PostAddPackageToGroup =
+  Capture "group_id" PackageGroupId
+    :> "add"
+    :> ReqBody '[FormUrlEncoded] AddPackageToGroupForm
+    :> MultiVerb
+         'POST
+         '[HTML]
+         AddPackageToGroupResponses
+         AddPackageToGroupResult
+
+type AddPackageToGroupResponses =
+  '[ WithHeaders
+       '[Header "Location" Text]
+       Text
+       (RespondEmpty 301 "Package added to group")
+   , Respond 409 "Conflict" (Html ())
+   ]
+
+data AddPackageToGroupResult
+  = PackageAddedToGroupSuccess Text
+  | PackageAddedToGroupFailure (Html ())
+  deriving stock (Generic)
+  deriving
+    (AsUnion AddPackageToGroupResponses)
+    via GenericAsUnion AddPackageToGroupResponses AddPackageToGroupResult
+
+instance GSOP.Generic AddPackageToGroupResult
+
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
@@ -76,13 +105,23 @@ data Routes' mode = Routes'
   , addGroup :: mode :- PostAddGroup
   , deleteGroup :: mode :- DeleteGroup
   , showGroup :: mode :- GetPackageGroup
+  , addPackageToGroup :: mode :- PostAddPackageToGroup
   }
   deriving stock (Generic)
 
 data GroupCreationForm = GroupCreationForm
-  { name :: Text
+  { name :: PackageGroupName
   }
   deriving stock (Generic)
 
 instance FromForm GroupCreationForm
 instance ToForm GroupCreationForm
+
+data AddPackageToGroupForm = AddPackageToGroupForm
+  { namespace :: Namespace
+  , packageName :: PackageName
+  }
+  deriving stock (Generic)
+
+instance FromForm AddPackageToGroupForm
+instance ToForm AddPackageToGroupForm

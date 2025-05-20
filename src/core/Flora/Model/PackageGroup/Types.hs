@@ -17,6 +17,7 @@ import Database.PostgreSQL.Simple.ToRow (ToRow)
 import Effectful
 import GHC.Generics
 import Heptapod qualified
+import Lucid (ToHtml)
 import Servant (FromHttpApiData (..), ToHttpApiData)
 import Text.Regex.Pcre2 (matches)
 
@@ -30,7 +31,7 @@ newtype PackageGroupId = PackageGroupId {getPackageGroupId :: UUID}
 
 newtype PackageGroupName = PackageGroupName Text
   deriving
-    (Display, Eq, FromField, NFData, Ord, Show, ToField, ToHttpApiData, ToJSON)
+    (Display, Eq, FromField, NFData, Ord, Show, ToField, ToHtml, ToHttpApiData, ToJSON)
     via Text
 
 instance FromHttpApiData PackageGroupName where
@@ -53,7 +54,7 @@ parsePackageGroupName txt =
 
 data PackageGroup = PackageGroup
   { packageGroupId :: PackageGroupId
-  , groupName :: Text
+  , groupName :: PackageGroupName
   }
   deriving stock
     (Eq, Generic, Ord, Show)
@@ -63,7 +64,7 @@ data PackageGroup = PackageGroup
     (Entity)
     via (GenericEntity '[TableName "package_groups"] PackageGroup)
 
-mkPackageGroup :: IOE :> es => Text -> Eff es PackageGroup
+mkPackageGroup :: IOE :> es => PackageGroupName -> Eff es PackageGroup
 mkPackageGroup groupName = do
   packageGroupId <- liftIO $ PackageGroupId <$> Heptapod.generate
   pure PackageGroup{..}
