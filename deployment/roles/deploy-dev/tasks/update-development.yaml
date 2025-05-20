@@ -24,7 +24,7 @@
 
 - name: "Build backend"
   ansible.builtin.command:
-    cmd: gmake build-release
+    cmd: cabal build -O2
     chdir: flora-server
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"

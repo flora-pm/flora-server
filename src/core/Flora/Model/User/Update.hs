@@ -13,7 +13,7 @@ module Flora.Model.User.Update
 
 import Control.Monad
 import Database.PostgreSQL.Entity (delete, insert)
-import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute)
+import Database.PostgreSQL.Entity.DBT ( execute)
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful (Eff, IOE, type (:>))
@@ -34,7 +34,7 @@ addAdmin form = do
 lockAccount :: (DB :> es, Time :> es) => UserId -> Eff es ()
 lockAccount userId = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute Update q (ts, userId)
+  dbtToEff $ void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -47,7 +47,7 @@ lockAccount userId = do
 unlockAccount :: (DB :> es, Time :> es) => UserId -> Eff es ()
 unlockAccount userId = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute Update q (ts, userId)
+  dbtToEff $ void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -70,7 +70,7 @@ setupTOTP
   -> Eff es ()
 setupTOTP userId key = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute Update q (key, ts, userId)
+  dbtToEff $ void $ execute q (key, ts, userId)
   where
     q =
       [sql|
@@ -86,7 +86,7 @@ confirmTOTP
   -> Eff es ()
 confirmTOTP userId = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute Update q (ts, userId)
+  dbtToEff $ void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -102,7 +102,7 @@ unSetTOTP
   -> Eff es ()
 unSetTOTP userId = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute Update q (ts, userId)
+  dbtToEff $ void $ execute q (ts, userId)
   where
     q =
       [sql|

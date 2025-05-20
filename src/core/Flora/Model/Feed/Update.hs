@@ -19,6 +19,5 @@ deleteEntriesBefore date =
   void $
     dbtToEff $
       execute
-        Delete
         "DELETE FROM package_feeds WHERE created_at < ?"
         (Only date)

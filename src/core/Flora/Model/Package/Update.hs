@@ -9,7 +9,7 @@ import Data.List qualified as List
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity (Entity (fields), delete, insert, insertMany, upsert)
-import Database.PostgreSQL.Entity.DBT (QueryNature (Update), execute, executeMany)
+import Database.PostgreSQL.Entity.DBT (execute, executeMany)
 import Database.PostgreSQL.Entity.Internal.QQ
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
@@ -34,7 +34,7 @@ upsertPackage package =
           ]
 
 deprecatePackages :: DB :> es => Vector DeprecatedPackage -> Eff es ()
-deprecatePackages dp = dbtToEff $ void $ executeMany Update q (dp & Vector.map Only & Vector.toList)
+deprecatePackages dp = dbtToEff $ void $ executeMany q (dp & Vector.map Only & Vector.toList)
   where
     q =
       [sql|
@@ -49,7 +49,7 @@ deletePackage (namespace, packageName) = dbtToEff $ delete @Package (namespace, 
 
 refreshDependents :: DB :> es => Eff es ()
 refreshDependents =
-  dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
+  dbtToEff $ void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
 
 insertPackageComponent :: DB :> es => PackageComponent -> Eff es ()
 insertPackageComponent = dbtToEff . insert @PackageComponent

@@ -155,7 +155,6 @@ library
     , base64
     , bytestring
     , Cabal-syntax
-    , colourista
     , containers
     , cryptohash-md5
     , cryptohash-sha256
@@ -405,7 +404,7 @@ library flora-web
     , mtl
     , network-uri
     , odd-jobs
-    , one-time-password          ==3.0.0.0
+    , one-time-password          ==3.0.1.0
     , openapi3
     , optics-core
     , pg-entity
@@ -517,7 +516,6 @@ executable flora-server
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
-    , require-callstack
     , text
     , vector
 

@@ -7,13 +7,6 @@ start: ## Start flora-server
 build: ## Build the server
 	@cabal build
 
-start-release: ## Start flora-server for production
-	@cabal run --project-file cabal.project.release exe:flora-server
-
-build-release: ## Build the server for production
-	@cabal freeze --project-file cabal.project.release
-	@cabal build --project-file cabal.project.release
-
 clean: ## Remove the cabal build artifacts
 	@rm -rf assets/node_modules
 	@cabal clean

@@ -28,7 +28,7 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (..), query, queryOne, queryOne_, query_)
+import Database.PostgreSQL.Entity.DBT (query, queryOne, queryOne_, query_)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple.SqlQQ
 import Database.PostgreSQL.Simple.Types (In (..), Only (..), Query)
@@ -52,11 +52,11 @@ packageReleasesQuery =
 getReleases :: DB :> es => PackageId -> FloraM es (Vector Release)
 getReleases pid =
   dbtToEff $ do
-    query Select (packageReleasesQuery <> " LIMIT 6") (Only pid)
+    query (packageReleasesQuery <> " LIMIT 6") (Only pid)
 
 getLatestReleaseTime :: DB :> es => Maybe Text -> FloraM es (Maybe UTCTime)
 getLatestReleaseTime repo =
-  dbtToEff $ fmap fromOnly <$> maybe (queryOne_ Select q') (queryOne Select q . Only) repo
+  dbtToEff $ fmap fromOnly <$> maybe (queryOne_ q') (queryOne q . Only) repo
   where
     q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
     q' = [sql| select max(uploaded_at) from releases |]
@@ -79,14 +79,14 @@ getReleaseTarballArchive releaseId = do
 getAllReleases :: DB :> es => PackageId -> FloraM es (Vector Release)
 getAllReleases pid =
   dbtToEff $ do
-    query Select packageReleasesQuery (Only pid)
+    query packageReleasesQuery (Only pid)
 
 getVersionFromManyReleaseIds
   :: DB :> es
   => Vector ReleaseId
   -> FloraM es (Vector (ReleaseId, Version))
 getVersionFromManyReleaseIds releaseIds = do
-  dbtToEff $ query Select q (Only (In (Vector.toList releaseIds)))
+  dbtToEff $ query q (Only (In (Vector.toList releaseIds)))
   where
     q =
       [sql|
@@ -100,7 +100,7 @@ getHackagePackageReleasesWithoutReadme
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutReadme =
   dbtToEff $
-    query Select querySpec ()
+    query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -119,7 +119,7 @@ getHackagePackageReleasesWithoutUploadTimestamp
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutUploadTimestamp =
   dbtToEff $
-    query Select querySpec ()
+    query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -138,7 +138,7 @@ getHackagePackageReleasesWithoutChangelog
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutChangelog =
   dbtToEff $
-    query Select querySpec ()
+    query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -156,7 +156,7 @@ getHackagePackageReleasesWithoutTarball
   :: DB :> es
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutTarball =
-  dbtToEff $! query Select querySpec ()
+  dbtToEff $! query querySpec ()
   where
     querySpec =
       [sql|
@@ -171,7 +171,7 @@ getHackagePackagesWithoutReleaseDeprecationInformation
   :: DB :> es
   => FloraM es (Vector (PackageName, Vector ReleaseId))
 getHackagePackagesWithoutReleaseDeprecationInformation =
-  dbtToEff $ query_ Select q
+  dbtToEff $ query_ q
   where
     q =
       [sql|
@@ -199,7 +199,6 @@ getReleaseByVersion
 getReleaseByVersion packageId version =
   dbtToEff $
     queryOne
-      Select
       ( _selectWhere
           @Release
           [[field| package_id |], [field| version |], [field| failure |]]
@@ -209,7 +208,7 @@ getReleaseByVersion packageId version =
 getNumberOfReleases :: DB :> es => PackageId -> FloraM es Word
 getNumberOfReleases pid =
   dbtToEff $ do
-    (result :: Maybe (Only Int)) <- queryOne Select numberOfReleasesQuery (Only pid)
+    (result :: Maybe (Only Int)) <- queryOne numberOfReleasesQuery (Only pid)
     case result of
       Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
@@ -224,4 +223,4 @@ numberOfReleasesQuery =
 
 getReleaseComponents :: DB :> es => ReleaseId -> FloraM es (Vector PackageComponent)
 getReleaseComponents releaseId =
-  dbtToEff $ query Select (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
+  dbtToEff $ query (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)

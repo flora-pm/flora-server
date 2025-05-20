@@ -22,7 +22,7 @@ getEntriesByPackage
   -- ^ Limit
   -> Eff es (Vector FeedEntry)
 getEntriesByPackage packages offset limit = do
-  dbtToEff $ query Select querySpec (In packages, offset, limit)
+  dbtToEff $ query querySpec (In packages, offset, limit)
   where
     querySpec =
       [sql|

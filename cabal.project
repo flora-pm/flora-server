@@ -7,8 +7,13 @@ active-repositories: hackage.haskell.org
 
 tests: True
 
-allow-newer: base32:base
-           , binary:containers
+semaphore: True
+
+jobs: $ncpus
+
+multi-repl: True
+
+allow-newer: binary:containers
            , chronos:hashable
            , feed:*
            , hashable:filepath
@@ -17,16 +22,12 @@ allow-newer: base32:base
            , hsec-tools:*
            , insert-ordered-containers:hashable
            , odd-jobs:async
-           , one-time-password:*
-           , openapi3:*
            , pandoc:*
            , prometheus-effectful:bytestring
            , prometheus-proc:*
            , qrcode-core:*
            , qrcode-juicypixels:*
-           , sel:*
            , servant-lucid:text
-           , servant-openapi3:*
            , tasty-test-reporter:*
            , texmath:*
            , type-errors-pretty:base
@@ -34,7 +35,7 @@ allow-newer: base32:base
 test-show-details: direct
 
 package *
-  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
+  ghc-options: +RTS -A32m -RTS
 
 package feed
   ghc-options: -Wno-tabs
@@ -127,8 +128,3 @@ source-repository-package
   type: git
   location: https://github.com/worm2fed/servant-prometheus
   tag: 9f967b3b42b183653b91f0ba9097621797ad107d
-
-source-repository-package
-  type: git
-  location: https://github.com/tchoutri/pg-entity
-  tag: 8f7837d024ae175b5f4dec15f15d0d6a45aea0ce

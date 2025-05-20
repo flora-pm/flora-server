@@ -279,5 +279,5 @@ getAssetHash :: (FileSystem :> es, IOE :> es) => Text -> Eff es Text
 getAssetHash hashedAssetPath = do
   let path = hashedAssetPath
   content <- EBS.readFile (Text.unpack path)
-  binaryHash <- liftIO $ Sel.hashByteString content
+  let binaryHash = Sel.hashByteString content
   pure $ Base64.extractBase64 $ Base64.encodeBase64 $ Sel.hashToBinary binaryHash

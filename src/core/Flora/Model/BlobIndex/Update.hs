@@ -8,7 +8,7 @@ import Data.Map qualified as M
 import Data.String (fromString)
 import Data.Text.Display (display)
 import Database.PostgreSQL.Entity (Entity, _insert)
-import Database.PostgreSQL.Entity.DBT (QueryNature (..), execute)
+import Database.PostgreSQL.Entity.DBT (execute)
 import Database.PostgreSQL.Simple (ToRow)
 import Database.PostgreSQL.Simple.Types (Query)
 import Database.PostgreSQL.Transact (DBT)
@@ -67,7 +67,7 @@ insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
     _onConflictDoNothing = fromString "on conflict do nothing"
 
     insertDoNothing :: forall e m. (Entity e, MonadIO m, ToRow e) => e -> DBT m Int64
-    insertDoNothing = execute Update (_insert @e <> _onConflictDoNothing)
+    insertDoNothing = execute (_insert @e <> _onConflictDoNothing)
 
     insertBlobs parentHash dir (TarDirectory childHash nodes) = do
       res <- dbtToEff . insertDoNothing $! BlobRelation parentHash childHash dir True

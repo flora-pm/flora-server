@@ -49,8 +49,7 @@ import Database.PostgreSQL.Entity
   , _selectWhere
   )
 import Database.PostgreSQL.Entity.DBT
-  ( QueryNature (Select)
-  , query
+  ( query
   , queryOne
   , queryOne_
   , query_
@@ -81,7 +80,7 @@ import Flora.Model.Requirement
 
 getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do
-  (result, duration) <- timeAction $ dbtToEff $ query_ Select (_select @Package)
+  (result, duration) <- timeAction $ dbtToEff $ query_ (_select @Package)
   Log.logInfo "Retrieving all packages" $
     object
       ["duration" .= duration]
@@ -94,7 +93,6 @@ getPackageByNamespaceAndName :: DB :> es => Namespace -> PackageName -> Eff es (
 getPackageByNamespaceAndName namespace name = do
   dbtToEff $
     queryOne
-      Select
       (_selectWhere @Package [[field| namespace |], [field| name |]])
       (namespace, name)
 
@@ -107,7 +105,7 @@ getAllPackageDependents
   -> PackageName
   -> Eff es (Vector Package)
 getAllPackageDependents namespace packageName =
-  dbtToEff $ query Select packageDependentsQuery (namespace, packageName)
+  dbtToEff $ query packageDependentsQuery (namespace, packageName)
 
 getPackageDependentsByName
   :: DB :> es
@@ -118,13 +116,12 @@ getPackageDependentsByName
 getPackageDependentsByName namespace packageName searchString =
   dbtToEff $
     query
-      Select
       searchPackageDependentsQuery
       (namespace, packageName, searchString)
 
 -- | This function gets the first 6 dependents of a package
 getPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es (Vector Package)
-getPackageDependents namespace packageName = dbtToEff $ query Select q (namespace, packageName)
+getPackageDependents namespace packageName = dbtToEff $ query q (namespace, packageName)
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
@@ -138,13 +135,13 @@ getNumberOfPackageDependents namespace packageName mbSearchString = do
   case mbSearchString of
     Nothing ->
       dbtToEff $ do
-        (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageDependentsQuery (namespace, packageName)
+        (result :: Maybe (Only Int)) <- queryOne numberOfPackageDependentsQuery (namespace, packageName)
         case result of
           Just (Only n) -> pure $ fromIntegral n
           Nothing -> pure 0
     Just searchString ->
       dbtToEff $ do
-        (result :: Maybe (Only Int)) <- queryOne Select searchNumberOfPackageDependentsQuery (namespace, packageName, searchString)
+        (result :: Maybe (Only Int)) <- queryOne searchNumberOfPackageDependentsQuery (namespace, packageName, searchString)
         case result of
           Just (Only n) -> pure $ fromIntegral n
           Nothing -> pure 0
@@ -204,11 +201,11 @@ getAllPackageDependentsWithLatestVersion
 getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) mSearchString =
   case mSearchString of
     Nothing ->
-      dbtToEff $ query Select q (namespace, packageName, offset, limit)
+      dbtToEff $ query q (namespace, packageName, offset, limit)
       where
         q = packageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
     Just searchString ->
-      dbtToEff $ query Select q (namespace, packageName, searchString, offset, limit)
+      dbtToEff $ query q (namespace, packageName, searchString, offset, limit)
       where
         q = searchPackageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
 
@@ -221,7 +218,7 @@ getPackageDependentsWithLatestVersion namespace packageName = do
   (result, duration) <-
     timeAction $
       dbtToEff $
-        query Select (packageDependentsWithLatestVersionQuery <> " LIMIT 6") (namespace, packageName)
+        query (packageDependentsWithLatestVersionQuery <> " LIMIT 6") (namespace, packageName)
   Log.logInfo "Retrieving package dependents" $
     object
       [ "duration" .= duration
@@ -302,7 +299,7 @@ getComponentById componentId = dbtToEff $ selectById @PackageComponent (Only com
 getComponent :: DB :> es => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
 getComponent releaseId name componentType =
   dbtToEff $
-    queryOne Select (_selectWhere @PackageComponent queryFields) (releaseId, name, componentType)
+    queryOne (_selectWhere @PackageComponent queryFields) (releaseId, name, componentType)
   where
     queryFields :: Vector Field
     queryFields =
@@ -317,7 +314,7 @@ unsafeGetComponent
   -> Eff es (Maybe PackageComponent)
 unsafeGetComponent releaseId =
   dbtToEff $
-    queryOne Select (_selectWhere @PackageComponent queryFields) (Only releaseId)
+    queryOne (_selectWhere @PackageComponent queryFields) (Only releaseId)
   where
     queryFields :: Vector Field
     queryFields = [[field| release_id |]]
@@ -326,7 +323,7 @@ getAllRequirements
   :: DB :> es
   => ReleaseId
   -> Eff es ComponentDependencies
-getAllRequirements releaseId = dbtToEff $ toComponentDependencies <$> query Select getAllRequirementsQuery (Only releaseId)
+getAllRequirements releaseId = dbtToEff $ toComponentDependencies <$> query getAllRequirementsQuery (Only releaseId)
 
 -- | This function has a bit of logic where if there exists a component with the same name as the package,
 -- this component's dependencies are chosen.
@@ -340,9 +337,9 @@ getRequirements (PackageName packageName) releaseId = do
   components <- Query.getComponentsByReleaseId releaseId
   results <- case Vector.find (\CanonicalComponent{componentName} -> componentName == packageName) components of
     Just (CanonicalComponent{componentType}) ->
-      dbtToEff $ query Select (getRequirementsQuery True <> " LIMIT 6") (componentType, releaseId)
+      dbtToEff $ query (getRequirementsQuery True <> " LIMIT 6") (componentType, releaseId)
     Nothing ->
-      dbtToEff $ query Select (getRequirementsQuery False <> " LIMIT 6") (Only releaseId)
+      dbtToEff $ query (getRequirementsQuery False <> " LIMIT 6") (Only releaseId)
   pure $ Vector.map (\(namespace, name, requirement) -> DependencyVersionRequirement namespace name requirement) results
 
 -- | This query finds all the dependencies of a release,
@@ -433,7 +430,7 @@ getRequirementsQuery singleComponentType =
 getNumberOfPackageRequirements :: DB :> es => ReleaseId -> Eff es Word
 getNumberOfPackageRequirements releaseId =
   dbtToEff $ do
-    (result :: Maybe (Only Int)) <- queryOne Select numberOfPackageRequirementsQuery (Only releaseId)
+    (result :: Maybe (Only Int)) <- queryOne numberOfPackageRequirementsQuery (Only releaseId)
     case result of
       Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
@@ -467,7 +464,7 @@ getPackagesFromCategoryWithLatestVersion
   :: DB :> es
   => CategoryId
   -> Eff es (Vector PackageInfo)
-getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query Select q (Only categoryId)
+getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query q (Only categoryId)
   where
     q =
       [sql|
@@ -493,7 +490,6 @@ searchPackage
 searchPackage (offset, limit) searchString =
   dbtToEff $
     query
-      Select
       [sql|
         SELECT  lv."namespace"
               , lv."name"
@@ -529,7 +525,6 @@ searchPackageByNamespace
 searchPackageByNamespace (offset, limit) namespace searchString =
   dbtToEff $
     query
-      Select
       [sql|
         SELECT  lv."namespace"
               , lv."name"
@@ -566,7 +561,6 @@ searchExecutable
 searchExecutable (offset, limit) searchString =
   dbtToEff $
     query
-      Select
       [sql|
 WITH results AS (SELECT DISTINCT l2.namespace
                       , l2.name
@@ -604,7 +598,6 @@ getNumberOfExecutablesByName queryString = do
   dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne
-        Select
         [sql|
 WITH results AS (SELECT l2.name
                       , word_similarity(p0.component_name, ?) AS rating
@@ -637,7 +630,6 @@ listAllPackages (offset, limit) =
   dbtToEff $
     let
      in query
-          Select
           [sql|
     SELECT  lv."namespace"
           , lv."name"
@@ -673,7 +665,6 @@ listAllPackagesInNamespace
 listAllPackagesInNamespace (offset, limit) namespace =
   dbtToEff $
     query
-      Select
       [sql|
     SELECT  lv."namespace"
           , lv."name"
@@ -705,7 +696,6 @@ countPackages =
   dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne_
-        Select
         [sql|
     SELECT DISTINCT COUNT(*)
     FROM packages
@@ -720,7 +710,6 @@ countPackagesByName searchString =
   dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne
-        Select
         [sql|
         SELECT DISTINCT COUNT(*)
         FROM latest_versions as lv
@@ -736,7 +725,6 @@ countPackagesInNamespace namespace =
   dbtToEff $ do
     (result :: Maybe (Only Int)) <-
       queryOne
-        Select
         [sql|
         SELECT DISTINCT COUNT(*)
         FROM latest_versions as lv
@@ -755,7 +743,6 @@ getTransitiveDependencies componentId = do
   results :: Vector (ComponentId, Namespace, PackageName, PGArray (PGArray Text)) <-
     dbtToEff $
       query
-        Select
         sqlQuery
         (Only componentId)
 

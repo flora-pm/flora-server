@@ -15,7 +15,7 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (QueryNature (..), execute, executeMany)
+import Database.PostgreSQL.Entity.DBT (execute, executeMany)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
@@ -68,7 +68,7 @@ upsertRelease package newRelease = do
       Update.insertFeedEntry entry
 
 refreshLatestVersions :: DB :> es => FloraM es ()
-refreshLatestVersions = dbtToEff $ void $ execute Update [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
+refreshLatestVersions = dbtToEff $ void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
 
 updateReadme :: DB :> es => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
 updateReadme releaseId readmeBody status =
@@ -150,7 +150,7 @@ updateTarballArchiveHash releaseId (toStrict -> content) = do
 
 setReleasesDeprecationMarker :: DB :> es => Vector (Bool, ReleaseId) -> FloraM es ()
 setReleasesDeprecationMarker releaseVersions =
-  dbtToEff $ void $ executeMany Update q (releaseVersions & Vector.toList)
+  dbtToEff $ void $ executeMany q (releaseVersions & Vector.toList)
   where
     q =
       [sql|
