@@ -7,6 +7,7 @@ import Lucid
 import Servant (HasServer (..), Headers (..))
 
 import Flora.Environment.Env
+import Flora.Model.PackageGroup.Guards (guardThatPackageGroupExists)
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroup.Update qualified as Update
@@ -14,6 +15,7 @@ import Flora.Model.User
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes.Admin.Groups
 import FloraWeb.Pages.Templates
+import FloraWeb.Pages.Templates.Error
 import FloraWeb.Pages.Templates.Screens.Admin.Groups qualified as Templates
 import FloraWeb.Types
 
@@ -23,6 +25,7 @@ server session =
     { index = indexHandler session
     , addGroup = addGroupHandler session
     , deleteGroup = deleteGroupHandler session
+    , showGroup = showGroupHandler session
     }
 
 indexHandler
@@ -50,4 +53,15 @@ deleteGroupHandler
   :: SessionWithCookies User
   -> PackageGroupId
   -> FloraEff DeleteGroupResult
-deleteGroupHandler (Headers session _) packageId = undefined
+deleteGroupHandler (Headers session _) packageGroupId = undefined
+
+showGroupHandler
+  :: SessionWithCookies User
+  -> PackageGroupId
+  -> FloraEff (Html ())
+showGroupHandler (Headers session _) packageGroupId = do
+  group <- guardThatPackageGroupExists packageGroupId $ const (web404 session)
+  packages <- Query.getPackagesByPackageGroupId packageGroupId
+  templateEnv <- templateFromSession session defaultTemplateEnv
+  render templateEnv $
+    Templates.showGroup group packages

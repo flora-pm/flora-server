@@ -4,6 +4,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Lucid
 
+import Flora.Model.Package
 import Flora.Model.PackageGroup.Types
 import FloraWeb.Components.PackageGroup
 import FloraWeb.Pages.Templates
@@ -18,7 +19,7 @@ index groups = do
         th_ [] $ span_ [] "Actions"
     tbody_ [] $
       Vector.forM_ groups $ \group ->
-        groupCard group
+        groupListItem group
 
 newGroupForm :: FloraHTML
 newGroupForm =
@@ -27,3 +28,7 @@ newGroupForm =
       label_ [for_ "name"] "Group name"
       input_ [type_ "text", name_ "name", required_ "", class_ "new-group-input"]
       button_ [] "Create group"
+
+showGroup :: PackageGroup -> Vector Package -> FloraHTML
+showGroup packageGroup packages = do
+  packageGroupHeader packageGroup packages

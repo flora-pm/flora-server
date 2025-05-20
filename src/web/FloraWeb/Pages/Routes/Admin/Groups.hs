@@ -65,12 +65,17 @@ type DeleteGroup =
          DeleteGroupResponses
          DeleteGroupResult
 
+type GetPackageGroup =
+  Capture "group_id" PackageGroupId
+    :> Get '[HTML] (Html ())
+
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
   , addGroup :: mode :- PostAddGroup
   , deleteGroup :: mode :- DeleteGroup
+  , showGroup :: mode :- GetPackageGroup
   }
   deriving stock (Generic)
 

@@ -115,6 +115,7 @@ library
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
+    Flora.Model.PackageGroup.Guards
     Flora.Model.PackageGroup.Query
     Flora.Model.PackageGroup.Types
     Flora.Model.PackageGroup.Update
