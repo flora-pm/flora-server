@@ -6,4 +6,4 @@ set -eao pipefail
 
 gmake db-migrate
 
-gmake start
+cabal run --no-semaphore exe:flora-server
