@@ -23,7 +23,7 @@ groupListItem PackageGroup{packageGroupId, groupName} =
     td_ [class_ "group-table-actions"]
       $ button_
         [class_ "delete-group", hxDelete_ ("/admin/groups/delete/" <> toUrlPiece packageGroupId), ariaLabel_ "Delete"]
-      $ i_ [class_ "fa fa-trash"] mempty
+      $ i_ [class_ "fa-solid fa-trash"] mempty
 
 packageGroupHeader :: PackageGroup -> Vector Package -> FloraHTML
 packageGroupHeader packageGroup packages = div_ [class_ "divider"] $ do
