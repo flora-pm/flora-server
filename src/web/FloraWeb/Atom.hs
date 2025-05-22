@@ -9,7 +9,7 @@ import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Lazy.Encoding qualified as TLE
 import Data.Time
-import Data.Time qualified as Time
+import Data.Time.Format.ISO8601 qualified as Time
 import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -47,12 +47,12 @@ makeFeed
   -> Atom.Feed
 makeFeed instanceInfo updated entries =
   let feedTitle = Atom.TextString "Flora Feed"
-      feedUpdated = Text.pack $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" updated
-      feedId = either fst id instanceInfo
-      floraLink =
+      feedUpdated = Text.pack $ Time.formatShow Time.iso8601Format updated
+      feedId =
         case instanceInfo of
-          Right hostname -> Atom.nullLink ("http://" <> hostname)
-          Left (hostname, port) -> Atom.nullLink ("http://" <> hostname <> ":" <> display port)
+          Right hostname -> "http://" <> hostname
+          Left (hostname, port) -> "http://" <> hostname <> ":" <> display port
+      floraLink = Atom.nullLink feedId
       feedLinks =
         [ floraLink
         , floraLink{linkRel = Just (Right "self")}
@@ -68,7 +68,7 @@ makeAtomEntry :: FeedEntry -> Entry
 makeAtomEntry FeedEntry{entryId = feedEntryId, title, updatedAt, link, content} =
   let entryId = UUID.toText feedEntryId
       entryTitle = Atom.TextString title
-      entryUpdated = Text.pack $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" updatedAt
+      entryUpdated = Text.pack $ Time.formatShow Time.iso8601Format updatedAt
       entryContent = Just $ Atom.TextContent content
       entry = Atom.nullEntry entryId entryTitle entryUpdated
       entryLinks = maybeToList (Atom.nullLink <$> link)
