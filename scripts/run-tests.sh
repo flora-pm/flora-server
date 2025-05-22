@@ -4,8 +4,6 @@ set -eao pipefail
 
 [ -f ./environment.test.local.sh ] && source ./environment.test.local.sh || source ./environment.test.sh
 
-export DATALOG_DIR="cbits/"
-
 if [ -z "$1" ] ;
 then
   cabal test

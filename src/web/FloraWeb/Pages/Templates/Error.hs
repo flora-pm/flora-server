@@ -15,9 +15,7 @@ import Optics.Core
 import Servant (ServerError (..))
 
 import Flora.Environment.Env (FeatureEnv)
-import Flora.Model.User (User)
 import FloraWeb.Pages.Templates
-import FloraWeb.Session
 
 renderError
   :: forall (es :: [Effect]) (a :: Type)
@@ -38,10 +36,11 @@ renderError env status = do
 
 web404
   :: ( Error ServerError :> es
+     , FromSession s
      , IOE :> es
      , Reader FeatureEnv :> es
      )
-  => Session (Maybe User)
+  => s
   -> Eff es a
 web404 session = do
   templateEnv <- templateFromSession session defaultTemplateEnv
