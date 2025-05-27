@@ -26,7 +26,6 @@ render env template =
 renderPartial :: Monad m => TemplateEnv -> FloraHTML -> m (Html ())
 renderPartial env template = do
   pure $ toHtmlRaw $ runIdentity $ runReaderT (renderBST template) env
-  where
 
 mkErrorPage :: TemplateEnv -> FloraHTML -> ByteString
 mkErrorPage env template = runIdentity $ runReaderT (renderBST (rendered template)) env

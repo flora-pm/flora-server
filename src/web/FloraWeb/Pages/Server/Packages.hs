@@ -270,8 +270,8 @@ showDependentsHandler
   -> FloraM es (Html ())
 showDependentsHandler s@(Headers session _) packageNamespace packageName mPage mSearch = do
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-  releases <- Query.getAllReleases package.packageId
-  let latestRelease = maximumBy (compare `on` (.version)) releases
+  release <- Query.getLatestPackageRelease package.packageId
+  let latestRelease = Vector.head release
   showVersionDependentsHandler s packageNamespace packageName latestRelease.version mPage mSearch
 
 showVersionDependentsHandler
@@ -337,8 +337,8 @@ showDependenciesHandler
   -> FloraM es (Html ())
 showDependenciesHandler s@(Headers session _) packageNamespace packageName = do
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-  releases <- Query.getAllReleases package.packageId
-  let latestRelease = maximumBy (compare `on` (.version)) releases
+  release <- Query.getLatestPackageRelease package.packageId
+  let latestRelease = Vector.head release
   showVersionDependenciesHandler s packageNamespace packageName latestRelease.version
 
 showVersionDependenciesHandler
@@ -385,10 +385,10 @@ showChangelogHandler
 showChangelogHandler s@(Headers session _) packageNamespace packageName = do
   Tracing.rootSpan alwaysSampled "show-changelog" $ do
     package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-    releases <-
-      Tracing.childSpan "Query.getAllReleases" $
-        Query.getAllReleases package.packageId
-    let latestRelease = maximumBy (compare `on` (.version)) releases
+    release <-
+      Tracing.childSpan "Query.getLatestPackageRelease" $
+        Query.getLatestPackageRelease package.packageId
+    let latestRelease = Vector.head release
     showVersionChangelogHandler s packageNamespace packageName latestRelease.version
 
 showVersionChangelogHandler

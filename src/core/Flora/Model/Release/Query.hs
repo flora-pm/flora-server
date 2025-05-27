@@ -13,6 +13,7 @@ module Flora.Model.Release.Query
   , getHackagePackageReleasesWithoutTarball
   , getAllReleases
   , getLatestReleaseTime
+  , getLatestPackageRelease
   , getNumberOfReleases
   , getReleaseComponents
   , getHackagePackagesWithoutReleaseDeprecationInformation
@@ -44,6 +45,11 @@ import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 import Flora.Monad
 
+getLatestPackageReleaseQuery :: Query
+getLatestPackageReleaseQuery =
+  _selectWhere @Release [[field| package_id |]]
+    <> " ORDER BY releases.version DESC LIMIT 1"
+
 packageReleasesQuery :: Query
 packageReleasesQuery =
   _selectWhere @Release [[field| package_id |]]
@@ -53,6 +59,11 @@ getReleases :: DB :> es => PackageId -> FloraM es (Vector Release)
 getReleases pid =
   dbtToEff $ do
     query (packageReleasesQuery <> " LIMIT 6") (Only pid)
+
+getLatestPackageRelease :: DB :> es => PackageId -> FloraM es (Vector Release)
+getLatestPackageRelease pid =
+  dbtToEff $ do
+    query getLatestPackageReleaseQuery (Only pid)
 
 getLatestReleaseTime :: DB :> es => Maybe Text -> FloraM es (Maybe UTCTime)
 getLatestReleaseTime repo =
