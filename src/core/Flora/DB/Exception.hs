@@ -7,6 +7,7 @@ import Data.ByteString
 import Data.Data (Typeable)
 import Database.PostgreSQL.Simple (ExecStatus, SqlError (..))
 import GHC.Stack
+import RequireCallStack
 
 data DBException = DBException
   { sqlState :: StrictByteString
@@ -19,7 +20,7 @@ data DBException = DBException
   deriving stock (Show, Typeable)
   deriving anyclass (Exception)
 
-sqlErrorToDBException :: SqlError -> DBException
+sqlErrorToDBException :: RequireCallStack => SqlError -> DBException
 sqlErrorToDBException SqlError{..} =
   let dbCallStack = callStack
    in DBException{..}

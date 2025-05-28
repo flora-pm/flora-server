@@ -357,7 +357,7 @@ persistImportOutput (ImportOutput package categories release components) = State
 
     persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
     persistImportDependency dep = do
-      Update.upsertPackageByNamespaceAndName dep.package
+      Update.upsertPackageByPackageId dep.package
       Update.upsertRequirement dep.requirement
 
     sanityCheck :: RequireCallStack => FloraM es ()
