@@ -17,6 +17,7 @@ import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Version (mkVersion)
+import Effectful.Time qualified as Time
 import Optics.Core
 import RequireCallStack
 import Test.Tasty
@@ -49,6 +50,7 @@ spec =
     , testThis "Get and set release deprecation markers" testReleaseDeprecation
     , testThis "Dependencies are deduplicated in the abbreviated listing" testDeduplicatedDependencies
     , testThis "Packages with only an executable have their dependencies handled well" testExecutableOnlyPackage
+    , testThis "Package upsert" testPackageUpsert
     , testThese
         "Transitive dependencies"
         [ testThis "Aggregation of transitive dependencies" testAggregationOfTransitiveDependencies
@@ -244,6 +246,15 @@ testExecutableOnlyPackage = do
         ]
     )
     (Set.fromList $ view #packageName <$> Vector.toList requirements)
+
+testPackageUpsert :: RequireCallStack => TestEff ()
+testPackageUpsert = do
+  package' <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-demo")
+  now <- Time.currentTime
+  let package = package' & #updatedAt .~ now
+  Update.upsertPackageByNamespaceAndName package
+  assertBool $
+    package'.updatedAt < package.updatedAt
 
 testAggregationOfTransitiveDependencies :: RequireCallStack => TestEff ()
 testAggregationOfTransitiveDependencies = do
