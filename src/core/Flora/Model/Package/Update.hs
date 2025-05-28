@@ -8,31 +8,58 @@ import Data.Function ((&))
 import Data.List qualified as List
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Database.PostgreSQL.Entity (Entity (fields), delete, insert, insertMany, upsert)
-import Database.PostgreSQL.Entity.DBT (execute, executeMany)
+import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Entity.DBT (DBT, execute, executeMany)
 import Database.PostgreSQL.Entity.Internal.QQ
-import Database.PostgreSQL.Simple (Only (..))
+import Database.PostgreSQL.Simple (Only (..), SqlError (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
+import Effectful.Exception qualified as E
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import RequireCallStack
 
+import Flora.DB.Exception
 import Flora.Model.Component.Types (PackageComponent)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
 
-upsertPackage :: (DB :> es, RequireCallStack) => Package -> Eff es ()
-upsertPackage package =
+upsertPackageByNamespaceAndName :: (DB :> es, RequireCallStack) => Package -> Eff es ()
+upsertPackageByNamespaceAndName package =
+  E.catch
+    ( dbtToEff $
+        case package.status of
+          UnknownPackage -> upsertWith package [[field| updated_at |]]
+          FullyImportedPackage ->
+            upsertWith
+              package
+              [ [field| updated_at |]
+              , [field| status |]
+              ]
+    )
+    (\sqlError@(SqlError{}) -> E.throwIO $ sqlErrorToDBException sqlError)
+  where
+    upsertWith :: Package -> Vector Field -> DBT IO ()
+    upsertWith entity fieldsToReplace =
+      void $ execute @Package (_insert @Package <> _onConflictDoUpdate conflictTarget fieldsToReplace) entity
+    conflictTarget = [[field| namespace |], [field| name |]]
+
+upsertPackageByPackageId :: (DB :> es, RequireCallStack) => Package -> Eff es ()
+upsertPackageByPackageId package =
   dbtToEff $
     case package.status of
-      UnknownPackage -> upsert @Package package [[field| updated_at |]]
+      UnknownPackage -> upsertWith package [[field| updated_at |]]
       FullyImportedPackage ->
-        upsert @Package
+        upsertWith
           package
           [ [field| updated_at |]
           , [field| status |]
           ]
+  where
+    upsertWith :: Package -> Vector Field -> DBT IO ()
+    upsertWith entity fieldsToReplace =
+      void $ execute @Package (_insert @Package <> _onConflictDoUpdate conflictTarget fieldsToReplace) entity
+    conflictTarget = [[field| package_id |]]
 
 deprecatePackages :: (DB :> es, RequireCallStack) => Vector DeprecatedPackage -> Eff es ()
 deprecatePackages dp = dbtToEff $ void $ executeMany q (dp & Vector.map Only & Vector.toList)

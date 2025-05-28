@@ -42,6 +42,7 @@ import Flora.UserSpec qualified as UserSpec
 main :: IO ()
 main = provideCallStack $ do
   setBacktraceMechanismState CostCentreBacktrace True
+  setBacktraceMechanismState HasCallStackBacktrace True
   hSetBuffering stdout LineBuffering
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv
   fixtures <-
