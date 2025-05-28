@@ -75,6 +75,7 @@ importAllFilesInRelativeDirectory
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -92,6 +93,7 @@ importFromIndex
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -148,6 +150,7 @@ importAllFilesInDirectory
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )

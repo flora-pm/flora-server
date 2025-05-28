@@ -255,6 +255,7 @@ importFolderOfCabalFiles
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -293,6 +294,7 @@ importPackageTarball
      , DB :> es
      , IOE :> es
      , Log :> es
+     , RequireCallStack
      )
   => PackageName
   -> Version
