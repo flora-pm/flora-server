@@ -94,6 +94,7 @@ import Effectful.Time qualified as Time
 import GHC.List (List)
 import Log qualified
 import Optics.Core
+import RequireCallStack
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
@@ -298,7 +299,15 @@ parseString parser name bs = do
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 persistImportOutput
   :: forall es
-   . (Concurrent :> es, DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, State (Set (Namespace, PackageName, Version)) :> es, Time :> es)
+   . ( Concurrent :> es
+     , DB :> es
+     , IOE :> es
+     , Log :> es
+     , Reader FloraEnv :> es
+     , RequireCallStack
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
+     )
   => ImportOutput
   -> FloraM es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
@@ -325,7 +334,7 @@ persistImportOutput (ImportOutput package categories release components) = State
       unless (null expectedDependencies) sanityCheck
       pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    persistPackage :: PackageId -> FloraM es ()
+    persistPackage :: RequireCallStack => PackageId -> FloraM es ()
     persistPackage packageId = do
       Update.upsertPackage package
       categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
@@ -333,7 +342,7 @@ persistImportOutput (ImportOutput package categories release components) = State
         categoriesByName
         (\c -> Update.addToCategoryByName packageId c.name)
 
-    persistComponent :: (PackageComponent, List ImportDependency) -> FloraM es ()
+    persistComponent :: RequireCallStack => (PackageComponent, List ImportDependency) -> FloraM es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo
         "Persisting component"
@@ -346,12 +355,12 @@ persistImportOutput (ImportOutput package categories release components) = State
       Update.upsertPackageComponent packageComponent
       mapM_ persistImportDependency deps
 
-    persistImportDependency :: ImportDependency -> FloraM es ()
+    persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
     persistImportDependency dep = do
       Update.upsertPackage dep.package
       Update.upsertRequirement dep.requirement
 
-    sanityCheck :: FloraM es ()
+    sanityCheck :: RequireCallStack => FloraM es ()
     sanityCheck = do
       dependencies <- Query.getRequirements package.name release.releaseId
       when (Vector.null dependencies) $ do
@@ -410,6 +419,7 @@ persistHashes (namespace, packageName, version, target) = do
 extractPackageDataFromCabal
   :: ( IOE :> es
      , Log :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )

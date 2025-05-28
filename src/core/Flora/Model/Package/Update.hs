@@ -15,13 +15,14 @@ import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import RequireCallStack
 
 import Flora.Model.Component.Types (PackageComponent)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
 
-upsertPackage :: DB :> es => Package -> Eff es ()
+upsertPackage :: (DB :> es, RequireCallStack) => Package -> Eff es ()
 upsertPackage package =
   dbtToEff $
     case package.status of
@@ -33,7 +34,7 @@ upsertPackage package =
           , [field| status |]
           ]
 
-deprecatePackages :: DB :> es => Vector DeprecatedPackage -> Eff es ()
+deprecatePackages :: (DB :> es, RequireCallStack) => Vector DeprecatedPackage -> Eff es ()
 deprecatePackages dp = dbtToEff $ void $ executeMany q (dp & Vector.map Only & Vector.toList)
   where
     q =
@@ -44,29 +45,29 @@ deprecatePackages dp = dbtToEff $ void $ executeMany q (dp & Vector.map Only & V
       WHERE p0.name = jsonb(js) ->> 'package'
       |]
 
-deletePackage :: DB :> es => (Namespace, PackageName) -> Eff es ()
+deletePackage :: (DB :> es, RequireCallStack) => (Namespace, PackageName) -> Eff es ()
 deletePackage (namespace, packageName) = dbtToEff $ delete @Package (namespace, packageName)
 
-refreshDependents :: DB :> es => Eff es ()
+refreshDependents :: (DB :> es, RequireCallStack) => Eff es ()
 refreshDependents =
   dbtToEff $ void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
 
-insertPackageComponent :: DB :> es => PackageComponent -> Eff es ()
+insertPackageComponent :: (DB :> es, RequireCallStack) => PackageComponent -> Eff es ()
 insertPackageComponent = dbtToEff . insert @PackageComponent
 
-upsertPackageComponent :: DB :> es => PackageComponent -> Eff es ()
+upsertPackageComponent :: (DB :> es, RequireCallStack) => PackageComponent -> Eff es ()
 upsertPackageComponent packageComponent =
   dbtToEff $ upsert @PackageComponent packageComponent (fields @PackageComponent)
 
-bulkInsertPackageComponents :: DB :> es => [PackageComponent] -> Eff es ()
+bulkInsertPackageComponents :: (DB :> es, RequireCallStack) => [PackageComponent] -> Eff es ()
 bulkInsertPackageComponents = dbtToEff . insertMany @PackageComponent
 
-insertRequirement :: DB :> es => Requirement -> Eff es ()
+insertRequirement :: (DB :> es, RequireCallStack) => Requirement -> Eff es ()
 insertRequirement = dbtToEff . insert @Requirement
 
-upsertRequirement :: DB :> es => Requirement -> Eff es ()
+upsertRequirement :: (DB :> es, RequireCallStack) => Requirement -> Eff es ()
 upsertRequirement req = dbtToEff $ upsert @Requirement req [[field| components |], [field| requirement |]]
 
-bulkInsertRequirements :: DB :> es => [Requirement] -> Eff es ()
+bulkInsertRequirements :: (DB :> es, RequireCallStack) => [Requirement] -> Eff es ()
 bulkInsertRequirements requirements =
   dbtToEff $ unless (List.null requirements) $ insertMany @Requirement requirements
