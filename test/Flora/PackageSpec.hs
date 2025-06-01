@@ -61,8 +61,7 @@ testCabalDeps :: RequireCallStack => TestEff ()
 testCabalDeps = do
   dependencies <- do
     cabalPackage <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "Cabal")
-    release <- Query.getLatestPackageRelease cabalPackage.packageId
-    let latestRelease = Vector.head release
+    latestRelease <- assertJust =<< Query.getLatestPackageRelease cabalPackage.packageId
     Query.getAllRequirements latestRelease.releaseId
   assertEqual
     ( Set.fromList
@@ -103,8 +102,7 @@ testInsertContainers = do
         assertFailure "Couldn't find @haskell/containers despite being inserted"
         undefined
       Just package -> do
-        release <- Query.getLatestPackageRelease package.packageId
-        let latestRelease = Vector.head release
+        latestRelease <- assertJust =<< Query.getLatestPackageRelease package.packageId
         Query.getRequirements package.name latestRelease.releaseId
   assertEqual
     (Set.fromList [PackageName "base", PackageName "deepseq", PackageName "array"])
@@ -145,8 +143,7 @@ testNoSelfDependent = do
 testBytestringDependencies :: RequireCallStack => TestEff ()
 testBytestringDependencies = do
   package <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "bytestring")
-  release <- Query.getLatestPackageRelease package.packageId
-  let latestRelease = Vector.head release
+  latestRelease <- assertJust =<< Query.getLatestPackageRelease package.packageId
   latestReleasedependencies <- Query.getRequirements package.name latestRelease.releaseId
   assertEqual 4 (Vector.length latestReleasedependencies)
 
@@ -157,8 +154,7 @@ testTimeComponents = do
       countComponentsByType :: RequireCallStack => Foldable t => ComponentType -> t PackageComponent -> Int
       countComponentsByType t = countBy (^. #canonicalForm % #componentType % to (== t))
   package <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
-  release <- Query.getLatestPackageRelease package.packageId
-  let latestRelease = Vector.head release
+  latestRelease <- assertJust =<< Query.getLatestPackageRelease package.packageId
   components <- Query.getReleaseComponents latestRelease.releaseId
   assertEqual 1 $ countComponentsByType Library components
   assertEqual 1 $ countComponentsByType Benchmark components
@@ -167,8 +163,7 @@ testTimeComponents = do
 testTimeConditions :: RequireCallStack => TestEff ()
 testTimeConditions = do
   time <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
-  release <- Query.getLatestPackageRelease time.packageId
-  let latestRelease = Vector.head release
+  latestRelease <- assertJust =<< Query.getLatestPackageRelease time.packageId
   timeLib <- fromJust <$> Query.getComponent latestRelease.releaseId "time" Library
   timeUnixTest <- fromJust <$> Query.getComponent latestRelease.releaseId "test-unix" TestSuite
   let timeLibExpectedCondition = [ComponentCondition (CNot (Var (OS Windows)))]

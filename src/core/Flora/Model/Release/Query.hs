@@ -60,10 +60,10 @@ getReleases pid =
   dbtToEff $ do
     query (packageReleasesQuery <> " LIMIT 6") (Only pid)
 
-getLatestPackageRelease :: DB :> es => PackageId -> FloraM es (Vector Release)
+getLatestPackageRelease :: DB :> es => PackageId -> FloraM es (Maybe Release)
 getLatestPackageRelease pid =
   dbtToEff $ do
-    query getLatestPackageReleaseQuery (Only pid)
+    queryOne getLatestPackageReleaseQuery (Only pid)
 
 getLatestReleaseTime :: DB :> es => Maybe Text -> FloraM es (Maybe UTCTime)
 getLatestReleaseTime repo =

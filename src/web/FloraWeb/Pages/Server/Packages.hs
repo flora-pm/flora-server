@@ -270,9 +270,12 @@ showDependentsHandler
   -> FloraM es (Html ())
 showDependentsHandler s@(Headers session _) packageNamespace packageName mPage mSearch = do
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-  release <- Query.getLatestPackageRelease package.packageId
-  let latestRelease = Vector.head release
-  showVersionDependentsHandler s packageNamespace packageName latestRelease.version mPage mSearch
+  maybeLatestRelease <- Query.getLatestPackageRelease package.packageId
+
+  case maybeLatestRelease of
+    Nothing -> throwError err404
+    Just latestRelease ->
+      showVersionDependentsHandler s packageNamespace packageName latestRelease.version mPage mSearch
 
 showVersionDependentsHandler
   :: ( DB :> es
@@ -337,9 +340,12 @@ showDependenciesHandler
   -> FloraM es (Html ())
 showDependenciesHandler s@(Headers session _) packageNamespace packageName = do
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-  release <- Query.getLatestPackageRelease package.packageId
-  let latestRelease = Vector.head release
-  showVersionDependenciesHandler s packageNamespace packageName latestRelease.version
+  maybeLatestRelease <- Query.getLatestPackageRelease package.packageId
+
+  case maybeLatestRelease of
+    Nothing -> throwError err404
+    Just latestRelease ->
+      showVersionDependenciesHandler s packageNamespace packageName latestRelease.version
 
 showVersionDependenciesHandler
   :: ( DB :> es
@@ -385,11 +391,14 @@ showChangelogHandler
 showChangelogHandler s@(Headers session _) packageNamespace packageName = do
   Tracing.rootSpan alwaysSampled "show-changelog" $ do
     package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-    release <-
+    maybeLatestRelease <-
       Tracing.childSpan "Query.getLatestPackageRelease" $
         Query.getLatestPackageRelease package.packageId
-    let latestRelease = Vector.head release
-    showVersionChangelogHandler s packageNamespace packageName latestRelease.version
+
+    case maybeLatestRelease of
+      Nothing -> throwError err404
+      Just latestRelease ->
+        showVersionChangelogHandler s packageNamespace packageName latestRelease.version
 
 showVersionChangelogHandler
   :: ( DB :> es
