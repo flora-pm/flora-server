@@ -39,6 +39,7 @@ import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
+import RequireCallStack
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude (maxThreads, ordered)
@@ -74,6 +75,7 @@ importAllFilesInRelativeDirectory
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -91,6 +93,7 @@ importFromIndex
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -147,6 +150,7 @@ importAllFilesInDirectory
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -167,6 +171,7 @@ importFromStream
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
@@ -214,6 +219,7 @@ processFile
      , IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )

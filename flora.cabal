@@ -80,6 +80,7 @@ library
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
     Distribution.Orphans.Version
+    Flora.DB.Exception
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
