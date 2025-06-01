@@ -271,7 +271,6 @@ showDependentsHandler
 showDependentsHandler s@(Headers session _) packageNamespace packageName mPage mSearch = do
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
   maybeLatestRelease <- Query.getLatestPackageRelease package.packageId
-
   case maybeLatestRelease of
     Nothing -> throwError err404
     Just latestRelease ->
@@ -341,7 +340,6 @@ showDependenciesHandler
 showDependenciesHandler s@(Headers session _) packageNamespace packageName = do
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
   maybeLatestRelease <- Query.getLatestPackageRelease package.packageId
-
   case maybeLatestRelease of
     Nothing -> throwError err404
     Just latestRelease ->
@@ -394,7 +392,6 @@ showChangelogHandler s@(Headers session _) packageNamespace packageName = do
     maybeLatestRelease <-
       Tracing.childSpan "Query.getLatestPackageRelease" $
         Query.getLatestPackageRelease package.packageId
-
     case maybeLatestRelease of
       Nothing -> throwError err404
       Just latestRelease ->
