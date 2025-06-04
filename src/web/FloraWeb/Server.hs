@@ -63,6 +63,7 @@ import Servant
   )
 import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
+import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Config (DeploymentEnv (..))
@@ -121,7 +122,7 @@ runFlora = do
             liftIO $ when env.mltp.prometheusEnabled $ do
               blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               void $ P.register P.ghcMetrics
-              void $ P.register P.procMetrics
+              when (System.os == "linux") $ void $ P.register P.procMetrics
               void $ P.register (P.counter (P.Info "flora_imported_packages_total" "The number of imported packages"))
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
