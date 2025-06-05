@@ -24,7 +24,7 @@ jobs:
       - name: Invoke Ansible
         working-directory: deployment/
         run: |
-          ansible-playbook  \
+          ansible-playbook -vvv \
             -i inventory.yaml \
             --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }} \
             -e "ansible_port=${{ secrets.ANSIBLE_SSH_PORT }}" \

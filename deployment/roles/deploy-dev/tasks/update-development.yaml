@@ -23,11 +23,15 @@
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
 
 - name: "Build backend"
+  register: build
   ansible.builtin.command:
     cmd: cabal build -O2 --no-semaphore
     chdir: flora-server
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- debug: msg="{{ build.stdout }}"
+- debug: msg="{{ build.stderr }}"
 
 - name: Restart the process
   ansible.builtin.command:
