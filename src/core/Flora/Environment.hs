@@ -2,12 +2,10 @@ module Flora.Environment
   ( getFloraEnv
   ) where
 
-import Colourista.IO (blueMessage)
 import Data.ByteString (ByteString)
 import Data.Pool (Pool)
 import Data.Pool qualified as Pool
 import Data.Pool.Introspection (defaultPoolConfig)
-import Data.Text.Encoding qualified as Text
 import Data.Time (NominalDiffTime)
 import Database.PostgreSQL.Simple qualified as PG
 import Effectful
@@ -69,5 +67,4 @@ configToEnv floraConfig = do
 getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
-  liftIO $ blueMessage $ "🔌 Connecting to database at " <> Text.decodeUtf8 config.connectionInfo
   configToEnv config

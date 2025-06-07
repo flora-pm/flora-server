@@ -44,6 +44,7 @@ ariaControls_ = makeAttributes ":aria-controls"
 ariaExpanded_ :: Text -> Attributes
 ariaExpanded_ = makeAttributes ":aria-expanded"
 
+-- AlpineJS bindings
 xId_ :: Text -> Attributes
 xId_ = makeAttributes "x-id"
 
@@ -80,6 +81,16 @@ xOn_ event = makeAttributes ("x-on:" <> event)
 xShow_ :: Text -> Attributes
 xShow_ = makeAttributes "x-show"
 
+-- | x-text
+-- Set the text content of an element to the result of a given expression.
+xText_ :: Text -> Attributes
+xText_ = makeAttributes "x-text"
+
+-- | x-html
+-- Set the text content of an element to the result of a given expression.
+xHtml_ :: Text -> Attributes
+xHtml_ = makeAttributes "x-html"
+
 -- | x-bind
 -- Dynamically set HTML attributes on an element
 xBind_
@@ -104,3 +115,15 @@ xModel_
 xModel_ mods = case mods of
   [] -> makeAttributes "x-model"
   _ -> makeAttributes ("x-model." <> Text.intercalate "." mods)
+
+-- | x-for
+-- Create DOM elements by iterating through a list
+xFor_
+  :: Text
+  -> Attributes
+xFor_ = makeAttributes "x-for"
+
+key_
+  :: Text
+  -> Attributes
+key_ = makeAttributes ":key"

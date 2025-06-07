@@ -39,6 +39,7 @@ import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
+import RequireCallStack
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude (maxThreads, ordered)
@@ -62,7 +63,7 @@ import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Update qualified as Update
-import Flora.Model.User
+import Flora.Monad
 import Flora.Monitoring
 
 -- | Same as 'importAllFilesInDirectory' but accepts a relative path to the current working directory
@@ -74,16 +75,16 @@ importAllFilesInRelativeDirectory
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => UserId
-  -> (Text, Text)
+  => (Text, Text)
   -> FilePath
-  -> Eff es ()
-importAllFilesInRelativeDirectory user (repositoryName, repositoryURL) dir = do
+  -> FloraM es ()
+importAllFilesInRelativeDirectory (repositoryName, repositoryURL) dir = do
   workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importAllFilesInDirectory user (repositoryName, repositoryURL) workdir
+  importAllFilesInDirectory (repositoryName, repositoryURL) workdir
 
 importFromIndex
   :: ( Concurrent :> es
@@ -92,14 +93,14 @@ importFromIndex
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => UserId
-  -> Text
+  => Text
   -> FilePath
-  -> Eff es ()
-importFromIndex user repositoryName index = do
+  -> FloraM es ()
+importFromIndex repositoryName index = do
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
   let Right repositoryPackages = buildPackageListFromArchive entries
   Log.logInfo "packages" $
@@ -118,7 +119,6 @@ importFromIndex user repositoryName index = do
   case Tar.foldlEntries (buildContentStream time) Streamly.nil entries of
     Right stream ->
       importFromStream
-        user
         (repositoryName, repositoryPackages)
         stream
     Left (err, _) ->
@@ -150,18 +150,18 @@ importAllFilesInDirectory
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => UserId
-  -> (Text, Text)
+  => (Text, Text)
   -> FilePath
-  -> Eff es ()
-importAllFilesInDirectory user (repositoryName, _repositoryURL) dir = do
+  -> FloraM es ()
+importAllFilesInDirectory (repositoryName, _repositoryURL) dir = do
   liftIO $ System.createDirectoryIfMissing True dir
   packages <- buildPackageListFromDirectory dir
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
-  importFromStream user (repositoryName, packages) (findAllCabalFilesInDirectory dir)
+  importFromStream (repositoryName, packages) (findAllCabalFilesInDirectory dir)
 
 importFromStream
   :: forall es
@@ -171,20 +171,20 @@ importFromStream
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => UserId
-  -> (Text, Set PackageName)
+  => (Text, Set PackageName)
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
-  -> Eff es ()
-importFromStream userId repository@(repositoryName, _) stream = do
+  -> FloraM es ()
+importFromStream repository@(repositoryName, _) stream = do
   capabilities <- Concurrent.getNumCapabilities
   let cfg = maxThreads capabilities . ordered True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
-          Streamly.parMapM cfg (processFile userId repository) stream
+          Streamly.parMapM cfg (processFile repository) stream
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
@@ -209,7 +209,7 @@ importFromStream userId repository@(repositoryName, _) stream = do
 displayStats
   :: IOE :> es
   => Int
-  -> Eff es ()
+  -> FloraM es ()
 displayStats currentCount = do
   liftIO . putStrLn $ "✅ Processed " <> show currentCount <> " new cabal files"
 
@@ -219,20 +219,20 @@ processFile
      , IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => UserId
-  -> (Text, Set PackageName)
+  => (Text, Set PackageName)
   -> (ImportFileType, UTCTime, StrictByteString)
-  -> Eff es ()
-processFile userId repository importSubject =
+  -> FloraM es ()
+processFile repository importSubject =
   case importSubject of
     (CabalFile path, timestamp, content) -> do
       Log.logInfo "importing-package" $
         object ["file_path" .= path]
       loadContent path content
-        >>= ( extractPackageDataFromCabal userId repository timestamp
+        >>= ( extractPackageDataFromCabal repository timestamp
                 >=> \importedPackage -> persistImportOutput importedPackage
             )
 
@@ -248,7 +248,7 @@ findAllCabalFilesInDirectory
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
 findAllCabalFilesInDirectory workdir = Streamly.concatMapM traversePath $ Streamly.fromList [workdir]
   where
-    traversePath :: FilePath -> Eff es (Stream (Eff es) (ImportFileType, UTCTime, StrictByteString))
+    traversePath :: FileSystem :> es1 => FilePath -> Eff es1 (Stream (Eff es1) (ImportFileType, UTCTime, StrictByteString))
     traversePath p = do
       isDir <- FileSystem.doesDirectoryExist p
       case isDir of
@@ -273,7 +273,7 @@ buildPackageListFromArchive entries =
         & Set.fromList
         & Right
 
-buildPackageListFromDirectory :: IOE :> es => FilePath -> Eff es (Set PackageName)
+buildPackageListFromDirectory :: IOE :> es => FilePath -> FloraM es (Set PackageName)
 buildPackageListFromDirectory dir = do
   paths <- liftIO $ listDirectory dir
   paths

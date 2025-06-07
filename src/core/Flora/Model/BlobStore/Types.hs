@@ -5,9 +5,9 @@ import Data.Aeson.Types
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.Text (Text)
+import Data.Text.Builder.Linear (fromText)
 import Data.Text.Display (Display (..), display)
 import Data.Text.Encoding (decodeUtf8Lenient, encodeUtf8)
-import Data.Text.Lazy.Builder (fromText)
 import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import GHC.Generics (Generic)

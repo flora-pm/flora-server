@@ -14,7 +14,7 @@ import Data.Text.Display (display)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.Types.Version (Version)
-import Effectful (Eff, IOE, (:>))
+import Effectful (IOE, (:>))
 import Effectful.Error.Static (Error, throwError)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
@@ -26,6 +26,7 @@ import Log qualified
 import Lucid
 import Monitor.Tracing qualified as Tracing
 import Network.HTTP.Types (notFound404)
+import RequireCallStack
 import Servant (Headers (..), ServerError, ServerT)
 import Servant.Server (err404)
 
@@ -45,6 +46,7 @@ import Flora.Model.Release.Guard
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.User (User)
+import Flora.Monad
 import Flora.Search qualified as Search
 import FloraWeb.Common.Auth
 import FloraWeb.Common.Guards
@@ -58,7 +60,7 @@ import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Types (FloraEff)
 import Lucid.Orphans ()
 
-server :: ServerT Routes FloraEff
+server :: RequireCallStack => ServerT Routes FloraEff
 server =
   Routes'
     { index = listPackagesHandler
@@ -84,7 +86,7 @@ listPackagesHandler
      )
   => SessionWithCookies (Maybe User)
   -> Maybe (Positive Word)
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 listPackagesHandler (Headers session _) pageParam = do
   Tracing.rootSpan alwaysSampled "list-all-packages" $ do
     let pageNumber = pageParam ?: PositiveUnsafe 1
@@ -104,7 +106,7 @@ showNamespaceHandler
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> Maybe (Positive Word)
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showNamespaceHandler (Headers session _) packageNamespace pageParam =
   Tracing.rootSpan alwaysSampled "show-namespace" $ do
     let pageNumber = pageParam ?: PositiveUnsafe 1
@@ -149,7 +151,7 @@ showPackageHandler
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showPackageHandler sessionWithCookies packageNamespace packageName =
   showPackageVersion sessionWithCookies packageNamespace packageName Nothing
 
@@ -165,7 +167,7 @@ showVersionHandler
   -> Namespace
   -> PackageName
   -> Version
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showVersionHandler sessionWithCookies packageNamespace packageName version =
   showPackageVersion sessionWithCookies packageNamespace packageName (Just version)
 
@@ -181,7 +183,7 @@ showPackageVersion
   -> Namespace
   -> PackageName
   -> Maybe Version
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showPackageVersion (Headers session _) packageNamespace packageName mversion =
   Tracing.rootSpan alwaysSampled "show-package-with-version" $ do
     templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -265,12 +267,14 @@ showDependentsHandler
   -> PackageName
   -> Maybe (Positive Word)
   -> Maybe Text
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showDependentsHandler s@(Headers session _) packageNamespace packageName mPage mSearch = do
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-  releases <- Query.getAllReleases package.packageId
-  let latestRelease = maximumBy (compare `on` (.version)) releases
-  showVersionDependentsHandler s packageNamespace packageName latestRelease.version mPage mSearch
+  maybeLatestRelease <- Query.getLatestPackageRelease package.packageId
+  case maybeLatestRelease of
+    Nothing -> throwError err404
+    Just latestRelease ->
+      showVersionDependentsHandler s packageNamespace packageName latestRelease.version mPage mSearch
 
 showVersionDependentsHandler
   :: ( DB :> es
@@ -287,7 +291,7 @@ showVersionDependentsHandler
   -> Version
   -> Maybe (Positive Word)
   -> Maybe Text
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showVersionDependentsHandler s packageNamespace packageName version Nothing mSearch =
   showVersionDependentsHandler s packageNamespace packageName version (Just $ PositiveUnsafe 1) mSearch
 showVersionDependentsHandler s packageNamespace packageName version pageNumber (Just "") =
@@ -332,12 +336,14 @@ showDependenciesHandler
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showDependenciesHandler s@(Headers session _) packageNamespace packageName = do
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-  releases <- Query.getAllReleases package.packageId
-  let latestRelease = maximumBy (compare `on` (.version)) releases
-  showVersionDependenciesHandler s packageNamespace packageName latestRelease.version
+  maybeLatestRelease <- Query.getLatestPackageRelease package.packageId
+  case maybeLatestRelease of
+    Nothing -> throwError err404
+    Just latestRelease ->
+      showVersionDependenciesHandler s packageNamespace packageName latestRelease.version
 
 showVersionDependenciesHandler
   :: ( DB :> es
@@ -350,7 +356,7 @@ showVersionDependenciesHandler
   -> Namespace
   -> PackageName
   -> Version
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showVersionDependenciesHandler (Headers session _) packageNamespace packageName version = do
   Tracing.rootSpan alwaysSampled "show-version-dependencies" $ do
     templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -379,15 +385,17 @@ showChangelogHandler
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showChangelogHandler s@(Headers session _) packageNamespace packageName = do
   Tracing.rootSpan alwaysSampled "show-changelog" $ do
     package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-    releases <-
-      Tracing.childSpan "Query.getAllReleases" $
-        Query.getAllReleases package.packageId
-    let latestRelease = maximumBy (compare `on` (.version)) releases
-    showVersionChangelogHandler s packageNamespace packageName latestRelease.version
+    maybeLatestRelease <-
+      Tracing.childSpan "Query.getLatestPackageRelease" $
+        Query.getLatestPackageRelease package.packageId
+    case maybeLatestRelease of
+      Nothing -> throwError err404
+      Just latestRelease ->
+        showVersionChangelogHandler s packageNamespace packageName latestRelease.version
 
 showVersionChangelogHandler
   :: ( DB :> es
@@ -400,7 +408,7 @@ showVersionChangelogHandler
   -> Namespace
   -> PackageName
   -> Version
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showVersionChangelogHandler (Headers session _) packageNamespace packageName version = do
   Tracing.rootSpan alwaysSampled "show-version-changelog" $ do
     templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -424,7 +432,7 @@ listVersionsHandler
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 listVersionsHandler (Headers session _) packageNamespace packageName = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   package <- guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
@@ -453,7 +461,7 @@ getTarballHandler
   -> PackageName
   -> Version
   -> Text
-  -> Eff es ByteString
+  -> FloraM es ByteString
 getTarballHandler (Headers session _) packageNamespace packageName version tarballName = do
   features <- ask @FeatureEnv
   unless (isJust features.blobStoreImpl) $ throwError err404
@@ -475,7 +483,7 @@ showPackageSecurityHandler
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showPackageSecurityHandler (Headers session _) packageNamespace packageName =
   Tracing.rootSpan alwaysSampled "show-package-security" $ do
     templateEnv' <- templateFromSession session defaultTemplateEnv

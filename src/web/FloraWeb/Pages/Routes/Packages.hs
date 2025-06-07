@@ -6,14 +6,14 @@ where
 
 import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
+import Deriving.Aeson
 import Distribution.Types.Version (Version)
 import Lucid
 import Servant
 import Servant.API.ContentTypes.Lucid
-import Servant.API.Generic
 
 import Data.Positive
-import Flora.Model.Package (Namespace, PackageName)
+import Flora.Model.Package.Types
 import Servant.API.ContentTypes.GZip
 
 type Routes = NamedRoutes Routes'

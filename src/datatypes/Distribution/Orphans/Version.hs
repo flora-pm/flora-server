@@ -9,7 +9,6 @@ import Data.Either (fromRight)
 import Data.String (IsString (..))
 import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Text.Lazy.Builder qualified as Builder
 import Database.PostgreSQL.Simple.FromField
 import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField
@@ -43,7 +42,7 @@ instance ToField Version where
   toField = toField . PGArray . Cabal.versionNumbers
 
 instance Display Version where
-  displayBuilder = Builder.fromString . Pretty.prettyShow
+  displayBuilder = displayBuilder . Pretty.prettyShow
 
 instance ToHttpApiData Version where
   toUrlPiece = Text.pack . Pretty.prettyShow
@@ -55,7 +54,7 @@ instance FromHttpApiData Version where
       Just a -> Right a
 
 instance Display VersionRange where
-  displayBuilder = Builder.fromString . Pretty.prettyShow
+  displayBuilder = displayBuilder . Pretty.prettyShow
 
 instance ToJSON VersionRange where
   toJSON = toJSON . Pretty.prettyShow

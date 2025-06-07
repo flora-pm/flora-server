@@ -107,6 +107,7 @@ import Distribution.Types.Version (Version)
 import Distribution.Types.Version qualified as Version
 import Effectful
 import Effectful.Concurrent
+import Effectful.Exception qualified as E
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log)
@@ -127,10 +128,13 @@ import Hedgehog.Gen qualified as H
 import Hedgehog.Range qualified as Range
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
+import RequireCallStack
+import Say
 import Sel.Hashing.Password
 import Sel.Hashing.Password qualified as Sel
 import Servant.API ()
 import Servant.Client
+import System.Exit
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
@@ -174,8 +178,9 @@ import Flora.Model.Requirement
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update qualified as Update
+import Flora.Monad
 
-type TestEff =
+type TestEff a =
   Eff
     '[ Trace
      , FileSystem
@@ -190,30 +195,36 @@ type TestEff =
      , Concurrent
      , IOE
      ]
+    a
 
 data Fixtures = Fixtures
   { hackageUser :: User
   }
   deriving stock (Eq, Generic, Show)
 
-getFixtures :: (DB :> es, Fail :> es) => Eff es Fixtures
+getFixtures :: (DB :> es, Fail :> es) => FloraM es Fixtures
 getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
   pure Fixtures{hackageUser}
 
-importAllPackages :: Fixtures -> TestEff ()
-importAllPackages fixtures = do
+importAllPackages :: RequireCallStack => TestEff ()
+importAllPackages = do
   importAllFilesInRelativeDirectory
-    fixtures.hackageUser.userId
     ("hackage", "https://hackage.haskell.org")
     "./test/fixtures/Cabal/hackage"
   importAllFilesInRelativeDirectory
-    fixtures.hackageUser.userId
     ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
     "./test/fixtures/Cabal/cardano"
 
-runTestEff :: TestEff a -> FloraEnv -> IO a
+runTestEff :: RequireCallStack => TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $ do
+  let reportException =
+        [ E.Handler $ \e@(SomeException exception) -> do
+            let context = E.displayExceptionContext $ E.someExceptionContext e
+            sayErrString $ "Exception: " <> E.displayException exception
+            sayErrString $ "Context: " <> context
+            liftIO exitFailure
+        ]
   let withLogger = Logging.makeLogger env.mltp.logger
   withLogger $ \logger ->
     comp
@@ -223,6 +234,7 @@ runTestEff comp env = runEff $ do
       & runBlobStorePure
       & runReader env
       & runDB env.pool
+      & (`E.catches` reportException)
       & Log.runLog "flora-test" logger LogAttention
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime
@@ -230,7 +242,7 @@ runTestEff comp env = runEff $ do
       & runPrometheusMetrics env.metrics
       & runConcurrent
 
-testThis :: String -> TestEff () -> TestEff TestTree
+testThis :: RequireCallStack => String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
   env <- ask @FloraEnv
   let test = runTestEff assertion env
@@ -323,7 +335,7 @@ getEnv mgrSettings = do
 managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
 
-testMigrations :: (DB :> es, IOE :> es) => Eff es ()
+testMigrations :: (DB :> es, IOE :> es) => FloraM es ()
 testMigrations = do
   pool <- getPool
   liftIO $ withResource pool $ \conn ->
@@ -405,7 +417,7 @@ randomUserTemplate =
     , updatedAt = liftIO $ H.sample genUTCTime
     }
 
-instantiateUser :: DB :> es => UserTemplate (Eff es) -> Eff es User
+instantiateUser :: DB :> es => UserTemplate (Eff es) -> FloraM es User
 instantiateUser
   UserTemplate
     { userId = generateUserId
@@ -434,7 +446,6 @@ data PackageTemplate m = PackageTemplate
   { packageId :: m PackageId
   , namespace :: m Namespace
   , name :: m PackageName
-  , ownerId :: m UserId
   , createdAt :: m UTCTime
   , updatedAt :: m UTCTime
   , status :: m PackageStatus
@@ -448,20 +459,18 @@ randomPackageTemplate =
     { packageId = PackageId <$> H.sample genUUID
     , namespace = liftIO $ H.sample genPackageNamespace
     , name = liftIO $ H.sample genPackageName
-    , ownerId = liftIO $ H.sample genUserId
     , createdAt = liftIO $ H.sample genUTCTime
     , updatedAt = liftIO $ H.sample genUTCTime
     , status = liftIO $ H.sample genStatus
     , deprecationInfo = pure Nothing
     }
 
-instantiatePackage :: DB :> es => PackageTemplate (Eff es) -> Eff es Package
+instantiatePackage :: DB :> es => PackageTemplate (Eff es) -> FloraM es Package
 instantiatePackage
   PackageTemplate
     { packageId = generatePackageId
     , namespace = generatePackageNamespace
     , name = generatePackageName
-    , ownerId = generateUserId
     , createdAt = generateCreatedAt
     , status = generatePackageStatus
     , deprecationInfo = generatePackageDeprecationInfo
@@ -469,13 +478,12 @@ instantiatePackage
     packageId <- generatePackageId
     namespace <- generatePackageNamespace
     name <- generatePackageName
-    ownerId <- generateUserId
     createdAt <- generateCreatedAt
     let updatedAt = createdAt
     status <- generatePackageStatus
     deprecationInfo <- generatePackageDeprecationInfo
     let package = Package{..}
-    Update.insertPackage package
+    Update.upsertPackageByNamespaceAndName package
     pure package
 
 genPackageName :: MonadGen m => m PackageName
@@ -552,7 +560,7 @@ randomReleaseTemplate =
     , buildType = pure Simple
     }
 
-instantiateRelease :: DB :> es => ReleaseTemplate (Eff es) -> Eff es Release
+instantiateRelease :: DB :> es => ReleaseTemplate (Eff es) -> FloraM es Release
 instantiateRelease
   ReleaseTemplate
     { releaseId = generateReleaseId
@@ -634,7 +642,7 @@ randomPackageComponentTemplate =
 instantiatePackageComponent
   :: DB :> es
   => PackageComponentTemplate (Eff es)
-  -> Eff es PackageComponent
+  -> FloraM es PackageComponent
 instantiatePackageComponent
   PackageComponentTemplate
     { componentId = generateComponentId
@@ -672,7 +680,7 @@ randomRequirementTemplate =
 instantiateRequirement
   :: DB :> es
   => RequirementTemplate (Eff es)
-  -> Eff es Requirement
+  -> FloraM es Requirement
 instantiateRequirement
   RequirementTemplate
     { requirementId = generateRequirementId
@@ -706,7 +714,7 @@ randomPackageGroupTemplate =
 instantiatePackageGroup
   :: DB :> es
   => PackageGroupTemplate (Eff es)
-  -> Eff es PackageGroup
+  -> FloraM es PackageGroup
 instantiatePackageGroup
   PackageGroupTemplate
     { packageGroupId = generatePackageGroupId
@@ -736,7 +744,7 @@ randomPackageGroupPackageTemplate =
 instantiatePackageGroupPackage
   :: DB :> es
   => PackageGroupPackageTemplate (Eff es)
-  -> Eff es PackageGroupPackage
+  -> FloraM es PackageGroupPackage
 instantiatePackageGroupPackage
   PackageGroupPackageTemplate
     { packageGroupPackageId = generatePackageGroupPackageId

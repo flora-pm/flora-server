@@ -7,15 +7,8 @@ start: ## Start flora-server
 build: ## Build the server
 	@cabal build
 
-start-release: ## Start flora-server for production
-	@cabal run --project-file cabal.project.release exe:flora-server
-
-build-release: ## Build the server for production
-	@cabal freeze --project-file cabal.project.release
-	@cabal build --project-file cabal.project.release
-
 clean: ## Remove the cabal build artifacts
-	@rm cbits/*.cpp
+	@rm -rf assets/node_modules
 	@cabal clean
 
 assets-deps: ## Install the dependencies of the frontend
@@ -100,7 +93,7 @@ repl: ## Start a cabal REPL
 ghci: repl ## Start a cabal REPL (alias for `make repl`)
 
 watch: ## Load the main library and reload on file change
-	@ghcid --target flora-server -l
+	@ghcid --target flora-server --restart="src" -l
 
 test:  ## Run the test suite
 	./scripts/run-tests.sh

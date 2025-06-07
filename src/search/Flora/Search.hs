@@ -10,7 +10,6 @@ import Data.List qualified as List
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (Display (..))
-import Data.Text.Lazy.Builder qualified as Builder
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful
@@ -54,13 +53,13 @@ data SearchAction
 instance Display SearchAction where
   displayBuilder ListAllPackages = "Packages"
   displayBuilder (ListAllPackagesInNamespace namespace) = "Packages in " <> displayBuilder namespace
-  displayBuilder (SearchPackages title) = "\"" <> Builder.fromText title <> "\""
+  displayBuilder (SearchPackages title) = "\"" <> displayBuilder title <> "\""
   displayBuilder (DependentsOf namespace packageName mbSearchString) =
     "Dependents of "
       <> displayBuilder namespace
       <> "/"
       <> displayBuilder packageName
-      <> foldMap (\searchString -> " \"" <> Builder.fromText searchString <> "\"") mbSearchString
+      <> foldMap (\searchString -> " \"" <> displayBuilder searchString <> "\"") mbSearchString
   displayBuilder (SearchInNamespace namespace packageName) =
     "Package " <> displayBuilder namespace <> "/" <> displayBuilder packageName
   displayBuilder (SearchExecutable executableName) =

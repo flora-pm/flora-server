@@ -103,7 +103,6 @@ checkIfIndexRefreshJobIsPlanned pool = do
   (result' :: Vector (Only Text)) <-
     dbtToEff $
       query_
-        Select
         [sql|
                 select payload ->> 'contents'
                 from "oddjobs"

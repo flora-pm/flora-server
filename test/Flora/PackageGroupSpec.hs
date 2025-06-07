@@ -3,15 +3,15 @@ module Flora.PackageGroupSpec where
 import Control.Monad (void)
 import Data.Vector qualified as Vector
 import Optics.Core
+import RequireCallStack
 
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroupPackage.Update as Update
-import Flora.Model.User
 import Flora.TestUtils
 
-spec :: TestEff TestTree
+spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "package group"
@@ -22,14 +22,9 @@ spec =
     , testThis "Get packages by package group name" testGetPackageGroupByPackageGroupName
     ]
 
-testInsertPackageGroup :: TestEff ()
+testInsertPackageGroup :: RequireCallStack => TestEff ()
 testInsertPackageGroup = do
-  user <- instantiateUser randomUserTemplate
-  void $
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  void (instantiatePackage randomPackageTemplate)
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
 
@@ -42,14 +37,9 @@ testInsertPackageGroup = do
     Just pg ->
       assertEqual pg.packageGroupId packageGroup.packageGroupId
 
-testAddPackageToPackageGroup :: TestEff ()
+testAddPackageToPackageGroup :: RequireCallStack => TestEff ()
 testAddPackageToPackageGroup = do
-  user <- instantiateUser randomUserTemplate
-  package <-
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  package <- instantiatePackage randomPackageTemplate
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -65,14 +55,9 @@ testAddPackageToPackageGroup = do
 
   assertEqual 1 (Vector.length results)
 
-testRemovePackageFromPackageGroup :: TestEff ()
+testRemovePackageFromPackageGroup :: RequireCallStack => TestEff ()
 testRemovePackageFromPackageGroup = do
-  user <- instantiateUser randomUserTemplate
-  package <-
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  package <- instantiatePackage randomPackageTemplate
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -89,14 +74,9 @@ testRemovePackageFromPackageGroup = do
 
   assertBool (Vector.notElem package results)
 
-testGetPackagesByPackageGroupId :: TestEff ()
+testGetPackagesByPackageGroupId :: RequireCallStack => TestEff ()
 testGetPackagesByPackageGroupId = do
-  user <- instantiateUser randomUserTemplate
-  package <-
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  package <- instantiatePackage randomPackageTemplate
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -112,14 +92,9 @@ testGetPackagesByPackageGroupId = do
 
   assertEqual (Vector.length results) 1
 
-testGetPackageGroupByPackageGroupName :: TestEff ()
+testGetPackageGroupByPackageGroupName :: RequireCallStack => TestEff ()
 testGetPackageGroupByPackageGroupName = do
-  user <- instantiateUser randomUserTemplate
-  void $
-    instantiatePackage $
-      randomPackageTemplate
-        & #ownerId
-        .~ pure user.userId
+  void (instantiatePackage randomPackageTemplate)
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
 

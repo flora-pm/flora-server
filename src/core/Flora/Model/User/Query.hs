@@ -23,4 +23,4 @@ getUserByEmail :: DB :> es => Text -> Eff es (Maybe User)
 getUserByEmail email = dbtToEff $ selectOneByField [field| email |] (Only email)
 
 getAllUsers :: DB :> es => Eff es (Vector User)
-getAllUsers = dbtToEff $ DBT.query_ DBT.Select (_select @User)
+getAllUsers = dbtToEff $ DBT.query_ (_select @User)

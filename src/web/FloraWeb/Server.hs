@@ -2,6 +2,7 @@ module FloraWeb.Server where
 
 import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
+import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
 import Control.Monad.Except qualified as Except
@@ -44,6 +45,7 @@ import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import Prometheus.Metric.Proc qualified as P
 import Prometheus.Servant qualified as P
+import RequireCallStack
 import Sel
 import Servant
   ( Application
@@ -61,9 +63,10 @@ import Servant
   )
 import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
+import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (Assets, DeploymentEnv (..))
+import Flora.Environment.Config (DeploymentEnv (..))
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
@@ -72,9 +75,10 @@ import Flora.Environment.Env
   )
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
+import Flora.Monad
 import Flora.Tracing qualified as Tracing
-import FloraJobs.Runner (runner)
-import FloraJobs.Types (JobsRunnerEnv (..), makeConfig, makeUIConfig)
+import FloraJobs.Runner
+import FloraJobs.Types (JobsRunnerEnv (..))
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
 import FloraWeb.Common.Auth
@@ -87,6 +91,7 @@ import FloraWeb.Common.Auth
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
+import FloraWeb.Feed.Server qualified as Feed
 import FloraWeb.LiveReload qualified as LiveReload
 import FloraWeb.Pages.Server qualified as Pages
 import FloraWeb.Pages.Templates (defaultTemplateEnv, defaultsToEnv)
@@ -103,7 +108,8 @@ type FloraAuthContext =
    ]
 
 runFlora :: IO ()
-runFlora =
+runFlora = do
+  setBacktraceMechanismState HasCallStackBacktrace True
   secureMain $
     bracket
       (getFloraEnv & runFileSystem & runFailIO & runEff)
@@ -116,14 +122,14 @@ runFlora =
             liftIO $ when env.mltp.prometheusEnabled $ do
               blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               void $ P.register P.ghcMetrics
-              void $ P.register P.procMetrics
+              when (System.os == "linux") $ void $ P.register P.procMetrics
               void $ P.register (P.counter (P.Info "flora_imported_packages_total" "The number of imported packages"))
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             let withLogger = Logging.makeLogger env.mltp.logger
             withLogger
               ( \appLogger ->
-                  runServer appLogger env
+                  provideCallStack $ runServer appLogger env
               )
       )
 
@@ -143,7 +149,7 @@ logException env logger exception =
     . Logging.runLog env logger
     $ Log.logAttention "odd-jobs runner crashed " (show exception)
 
-runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> Eff es ()
+runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> FloraM es ()
 runServer appLogger floraEnv = do
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-server"
@@ -155,7 +161,6 @@ runServer appLogger floraEnv = do
           floraEnv
           appLogger
           floraEnv.jobsPool
-          runner
 
   void $
     forkIO $
@@ -174,7 +179,7 @@ runServer appLogger floraEnv = do
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
-            ( onException
+            ( handleExceptions
                 appLogger
                 floraEnv.environment
                 floraEnv.mltp
@@ -189,7 +194,8 @@ runServer appLogger floraEnv = do
     $ prometheusMiddleware server
 
 mkServer
-  :: Logger
+  :: RequireCallStack
+  => Logger
   -> WebEnvStore
   -> FloraEnv
   -> OddJobs.UIConfig
@@ -205,7 +211,8 @@ mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv zipkin ioref =
     (floraServer cfg jobsRunnerEnv floraEnv.environment ioref)
 
 floraServer
-  :: OddJobs.UIConfig
+  :: RequireCallStack
+  => OddJobs.UIConfig
   -> OddJobs.Env
   -> DeploymentEnv
   -> IORef Bool
@@ -213,15 +220,24 @@ floraServer
 floraServer cfg jobsRunnerEnv environment ioref =
   Routes
     { assets = serveDirectoryWebApp "./static"
+    , feed = Feed.server
     , openSearch = openSearchHandler
     , pages = \_ -> Pages.server cfg jobsRunnerEnv
     , api = API.apiServer
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
     , livereload = LiveReload.livereloadHandler environment ioref
+    , favicon = serveDirectoryWebApp "./static"
     }
 
-naturalTransform :: FloraEnv -> Logger -> WebEnvStore -> Zipkin -> FloraEff a -> Handler a
+naturalTransform
+  :: RequireCallStack
+  => FloraEnv
+  -> Logger
+  -> WebEnvStore
+  -> Zipkin
+  -> FloraEff a
+  -> Handler a
 naturalTransform floraEnv logger _webEnvStore zipkin app = do
   let runTrace =
         if floraEnv.environment == Production
@@ -243,6 +259,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
           & runErrorWith (\_callstack err -> pure $ Left err)
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
+          & runReader floraEnv
           & runEff
   either Except.throwError pure result
 
@@ -251,19 +268,19 @@ genAuthServerContext logger floraEnv =
   optionalAuthHandler logger floraEnv
     :. strictAuthHandler logger floraEnv
     :. adminAuthHandler logger floraEnv
-    :. errorFormatters floraEnv.assets
+    :. errorFormatters floraEnv
     :. EmptyContext
 
-errorFormatters :: Assets -> ErrorFormatters
-errorFormatters assets =
-  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage assets}
+errorFormatters :: FloraEnv -> ErrorFormatters
+errorFormatters floraEnv =
+  defaultErrorFormatters{notFoundErrorFormatter = notFoundPage floraEnv}
 
-notFoundPage :: Assets -> NotFoundErrorFormatter
-notFoundPage assets _req =
+notFoundPage :: FloraEnv -> NotFoundErrorFormatter
+notFoundPage floraEnv _req =
   let result =
         runPureEff $
           runErrorNoCallStack $
-            renderError (defaultsToEnv assets defaultTemplateEnv) notFound404
+            renderError (defaultsToEnv floraEnv defaultTemplateEnv) notFound404
    in case result of
         Left err -> err
         Right _ -> err404

@@ -60,7 +60,7 @@ checkExpectedTables :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
 checkExpectedTables = do
   -- Update the list in alphabetical order when adding or removing a table!
   let expectedTables =
-        Set.fromAscList
+        Set.fromList
           [ "affected_packages"
           , "affected_version_ranges"
           , "blob_relations"
@@ -70,6 +70,7 @@ checkExpectedTables = do
           , "organisations"
           , "package_categories"
           , "package_components"
+          , "package_feeds"
           , "package_group_packages"
           , "package_groups"
           , "package_indexes"
@@ -86,7 +87,6 @@ checkExpectedTables = do
     dbtToEff $
       Set.fromAscList . Vector.toList . Vector.map fromOnly
         <$> query_
-          Select
           [sql|
       SELECT table_name
       FROM information_schema.tables
@@ -131,7 +131,6 @@ checkRepositoriesAreConfigured = do
   (result :: (Vector (Only Text))) <-
     dbtToEff $
       query_
-        Select
         (_selectWithFields @PackageIndex [[field| repository |]])
   let actualRepositories = Set.fromList $ Vector.toList $ Vector.map fromOnly result
   let missingExpectedIndexes = Set.difference expectedRepositories actualRepositories

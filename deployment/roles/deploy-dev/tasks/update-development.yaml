@@ -1,0 +1,39 @@
+---
+
+- name: "Update development branch"
+  ansible.builtin.command:
+    cmd: git checkout development
+    chdir: flora-server
+
+- name: "Update development branch"
+  ansible.builtin.command:
+    cmd: git pull
+    chdir: flora-server
+
+- name: "Build frontend assets"
+  ansible.builtin.command:
+    cmd: gmake build-assets
+    chdir: flora-server
+
+- name: "Clean build artifacts"
+  ansible.builtin.command:
+    cmd: gmake clean
+    chdir: flora-server
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- name: "Build backend"
+  register: build
+  ansible.builtin.command:
+    cmd: cabal build -O2 --no-semaphore
+    chdir: flora-server
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- debug: msg="{{ build.stdout }}"
+- debug: msg="{{ build.stderr }}"
+
+- name: Restart the process
+  ansible.builtin.command:
+    cmd: supervisorctl -c supervisord.conf restart flora-server
+    chdir: flora-server

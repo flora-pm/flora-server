@@ -6,7 +6,6 @@ import Data.Maybe
 import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (FromRow)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Database.PostgreSQL.Transact (DBT)
 import GHC.Generics
 
 data AdminReport = AdminReport
@@ -17,7 +16,7 @@ data AdminReport = AdminReport
   deriving anyclass (FromRow)
 
 getReport :: DBT IO AdminReport
-getReport = fromJust <$> queryOne_ Select querySpec
+getReport = fromJust <$> queryOne_ querySpec
   where
     querySpec =
       [sql|

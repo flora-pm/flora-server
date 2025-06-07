@@ -1,12 +1,13 @@
 module Flora.CategorySpec (spec) where
 
 import Data.Set qualified as Set
+import RequireCallStack
 import Test.Tasty
 
 import Flora.Normalise
 import Flora.TestUtils
 
-spec :: TestEff TestTree
+spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "Category Normalisation"
@@ -31,7 +32,7 @@ spec =
     , testThis "Text Processing" testNormalisationOfTextProcessingCategories
     ]
 
-testNormalisationOfMathematicsCategories :: TestEff ()
+testNormalisationOfMathematicsCategories :: RequireCallStack => TestEff ()
 testNormalisationOfMathematicsCategories = do
   let mathematicsExceptions =
         Set.fromList
@@ -54,7 +55,7 @@ testNormalisationOfMathematicsCategories = do
     (Set.singleton (Just "Mathematics"))
     (Set.map normaliseCategory mathematicsExceptions)
 
-testNormalisationOfCliAndTuiCategories :: TestEff ()
+testNormalisationOfCliAndTuiCategories :: RequireCallStack => TestEff ()
 testNormalisationOfCliAndTuiCategories = do
   let cliAndTuiExceptions =
         Set.fromList
@@ -65,7 +66,7 @@ testNormalisationOfCliAndTuiCategories = do
     (Set.singleton (Just "CLI & TUI Development"))
     (Set.map normaliseCategory cliAndTuiExceptions)
 
-testNormalisationOfParserCategories :: TestEff ()
+testNormalisationOfParserCategories :: RequireCallStack => TestEff ()
 testNormalisationOfParserCategories = do
   let parserExceptions =
         Set.fromList
@@ -80,7 +81,7 @@ testNormalisationOfParserCategories = do
     (Set.singleton (Just "Parsers"))
     (Set.map normaliseCategory parserExceptions)
 
-testNormalisationOfNetworkCategories :: TestEff ()
+testNormalisationOfNetworkCategories :: RequireCallStack => TestEff ()
 testNormalisationOfNetworkCategories = do
   let networkExceptions =
         Set.fromList
@@ -96,7 +97,7 @@ testNormalisationOfNetworkCategories = do
     (Set.singleton (Just "Network Development"))
     (Set.map normaliseCategory networkExceptions)
 
-testNormalisationOfWebDevelopmentCategories :: TestEff ()
+testNormalisationOfWebDevelopmentCategories :: RequireCallStack => TestEff ()
 testNormalisationOfWebDevelopmentCategories = do
   let webDevelopmentExceptions =
         Set.fromList
@@ -116,7 +117,7 @@ testNormalisationOfWebDevelopmentCategories = do
     (Set.singleton (Just "Web Development"))
     (Set.map normaliseCategory webDevelopmentExceptions)
 
-testNormalisationOfLensesCategories :: TestEff ()
+testNormalisationOfLensesCategories :: RequireCallStack => TestEff ()
 testNormalisationOfLensesCategories = do
   let lensesExceptions =
         Set.fromList
@@ -128,7 +129,7 @@ testNormalisationOfLensesCategories = do
     (Set.singleton (Just "Lenses"))
     (Set.map normaliseCategory lensesExceptions)
 
-testNormalisationOfStreamingCategories :: TestEff ()
+testNormalisationOfStreamingCategories :: RequireCallStack => TestEff ()
 testNormalisationOfStreamingCategories = do
   let streamingExceptions =
         Set.fromList
@@ -141,7 +142,7 @@ testNormalisationOfStreamingCategories = do
     (Set.singleton (Just "Streaming"))
     (Set.map normaliseCategory streamingExceptions)
 
-testNormalisationOfMonadsCategories :: TestEff ()
+testNormalisationOfMonadsCategories :: RequireCallStack => TestEff ()
 testNormalisationOfMonadsCategories = do
   let monadsExceptions =
         Set.fromList
@@ -156,7 +157,7 @@ testNormalisationOfMonadsCategories = do
     (Set.singleton (Just "Monads"))
     (Set.map normaliseCategory monadsExceptions)
 
-testNormalisationOfGUICategories :: TestEff ()
+testNormalisationOfGUICategories :: RequireCallStack => TestEff ()
 testNormalisationOfGUICategories = do
   let guiExceptions =
         Set.fromList
@@ -171,7 +172,7 @@ testNormalisationOfGUICategories = do
     (Set.singleton (Just "GUI"))
     (Set.map normaliseCategory guiExceptions)
 
-testNormalisationOfFFICategories :: TestEff ()
+testNormalisationOfFFICategories :: RequireCallStack => TestEff ()
 testNormalisationOfFFICategories = do
   let ffiExceptions =
         Set.fromList
@@ -192,7 +193,7 @@ testNormalisationOfFFICategories = do
     (Set.singleton (Just "FFI"))
     (Set.map normaliseCategory ffiExceptions)
 
-testNormalisationOfTestingCategories :: TestEff ()
+testNormalisationOfTestingCategories :: RequireCallStack => TestEff ()
 testNormalisationOfTestingCategories = do
   let testingExceptions =
         Set.fromList
@@ -205,7 +206,7 @@ testNormalisationOfTestingCategories = do
     (Set.singleton (Just "Testing"))
     (Set.map normaliseCategory testingExceptions)
 
-testNormalisationOfAudioCategories :: TestEff ()
+testNormalisationOfAudioCategories :: RequireCallStack => TestEff ()
 testNormalisationOfAudioCategories = do
   let audioExceptions =
         Set.fromList
@@ -219,7 +220,7 @@ testNormalisationOfAudioCategories = do
     (Set.singleton (Just "Audio"))
     (Set.map normaliseCategory audioExceptions)
 
-testNormalisationOfCompressionCategories :: TestEff ()
+testNormalisationOfCompressionCategories :: RequireCallStack => TestEff ()
 testNormalisationOfCompressionCategories = do
   let compressionExceptions =
         Set.fromList
@@ -232,7 +233,7 @@ testNormalisationOfCompressionCategories = do
     (Set.singleton (Just "Compression"))
     (Set.map normaliseCategory compressionExceptions)
 
-testNormalisationOfCloudComputingCategories :: TestEff ()
+testNormalisationOfCloudComputingCategories :: RequireCallStack => TestEff ()
 testNormalisationOfCloudComputingCategories = do
   let cloudComputingExceptions =
         Set.fromList
@@ -245,7 +246,7 @@ testNormalisationOfCloudComputingCategories = do
     (Set.singleton (Just "Cloud Computing"))
     (Set.map normaliseCategory cloudComputingExceptions)
 
-testNormalisationOfCompilersCategories :: TestEff ()
+testNormalisationOfCompilersCategories :: RequireCallStack => TestEff ()
 testNormalisationOfCompilersCategories = do
   let compilersExceptions =
         Set.fromList
@@ -259,7 +260,7 @@ testNormalisationOfCompilersCategories = do
     (Set.singleton (Just "Compilers and Interpreters"))
     (Set.map normaliseCategory compilersExceptions)
 
-testNormalisationOfNLPCategories :: TestEff ()
+testNormalisationOfNLPCategories :: RequireCallStack => TestEff ()
 testNormalisationOfNLPCategories = do
   let nlpExceptions =
         Set.fromList
@@ -274,7 +275,7 @@ testNormalisationOfNLPCategories = do
     (Set.singleton (Just "Natural Language Processing"))
     (Set.map normaliseCategory nlpExceptions)
 
-testNormalisationOfSystemsProgrammingCategories :: TestEff ()
+testNormalisationOfSystemsProgrammingCategories :: RequireCallStack => TestEff ()
 testNormalisationOfSystemsProgrammingCategories = do
   let systemsProgrammingExceptions =
         Set.fromList
@@ -289,7 +290,7 @@ testNormalisationOfSystemsProgrammingCategories = do
     (Set.singleton (Just "Systems Programming"))
     (Set.map normaliseCategory systemsProgrammingExceptions)
 
-testNormalisationOfDebuggingCategories :: TestEff ()
+testNormalisationOfDebuggingCategories :: RequireCallStack => TestEff ()
 testNormalisationOfDebuggingCategories = do
   let debuggingExceptions =
         Set.fromList
@@ -303,7 +304,7 @@ testNormalisationOfDebuggingCategories = do
     (Set.singleton (Just "Debugging"))
     (Set.map normaliseCategory debuggingExceptions)
 
-testNormalisationOfTextProcessingCategories :: TestEff ()
+testNormalisationOfTextProcessingCategories :: RequireCallStack => TestEff ()
 testNormalisationOfTextProcessingCategories = do
   let textProcessingExceptions =
         Set.fromList

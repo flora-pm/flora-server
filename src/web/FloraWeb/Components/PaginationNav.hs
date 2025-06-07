@@ -52,7 +52,7 @@ mkURL (SearchPackages searchTerm) pageNumber =
 mkURL (DependentsOf namespace packageName mbSearchString) pageNumber =
   case mbSearchString of
     Nothing -> Links.dependentsPage namespace packageName pageNumber
-    Just searchString -> Links.dependentsPage namespace packageName pageNumber <> "q=" <> toUrlPiece mbSearchString
+    Just searchString -> Links.dependentsPage namespace packageName pageNumber <> "q=" <> toUrlPiece searchString
 mkURL (SearchExecutable searchString) pageNumber =
   "/" <> toUrlPiece (Links.packageWithExecutable pageNumber searchString)
 mkURL (SearchInAdvisories searchString) pageNumber =

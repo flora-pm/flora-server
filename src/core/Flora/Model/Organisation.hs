@@ -10,8 +10,7 @@ import Data.UUID
 import Data.Vector (Vector)
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.DBT
-  ( QueryNature (Select)
-  , query
+  ( query
   , queryOne
   , query_
   )
@@ -73,13 +72,13 @@ deleteOrganisation :: OrganisationId -> DBT IO ()
 deleteOrganisation orgId = delete @Organisation (Only orgId)
 
 getAllUserOrganisations :: DBT IO (Vector UserOrganisation)
-getAllUserOrganisations = query_ Select (_select @UserOrganisation)
+getAllUserOrganisations = query_ (_select @UserOrganisation)
 
 getUserOrganisationById :: UserOrganisationId -> DBT IO (Maybe UserOrganisation)
 getUserOrganisationById uoId = selectById @UserOrganisation (Only uoId)
 
 getUserOrganisation :: UserId -> OrganisationId -> DBT IO (Maybe UserOrganisation)
-getUserOrganisation userId orgId = queryOne Select q (userId, orgId)
+getUserOrganisation userId orgId = queryOne q (userId, orgId)
   where
     q = _selectWhere @UserOrganisation [[field| user_id |], [field| organisation_id |]]
 
@@ -88,7 +87,7 @@ attachUser userId organisationId uoId = do
   insert @UserOrganisation (UserOrganisation uoId userId organisationId False)
 
 getUsers :: OrganisationId -> DBT IO (Vector User)
-getUsers orgId = query Select q (Only orgId)
+getUsers orgId = query q (Only orgId)
   where
     q =
       [sql|
@@ -100,7 +99,7 @@ getUsers orgId = query Select q (Only orgId)
         |]
 
 getAdmins :: OrganisationId -> DBT IO (Vector User)
-getAdmins orgId = query Select q (Only orgId)
+getAdmins orgId = query q (Only orgId)
   where
     q =
       [sql|

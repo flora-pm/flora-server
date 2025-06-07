@@ -6,6 +6,7 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Log.Backend.StandardOutput (withStdOutLogger)
 import Optics.Core
+import RequireCallStack
 
 import Flora.Import.Package (chooseNamespace)
 import Flora.Import.Package.Bulk
@@ -15,38 +16,36 @@ import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
-import Flora.Model.User
 import Flora.TestUtils
 
-spec :: Fixtures -> TestEff TestTree
-spec fixtures =
+spec :: RequireCallStack => TestEff TestTree
+spec =
   testThese
     "Import tests"
-    [ testThis "Import index" $ testImportIndex fixtures
+    [ testThis "Import index" testImportIndex
     , testThis "Namespace chooser" testNamespaceChooser
     ]
 
-testIndex :: FilePath
+testIndex :: RequireCallStack => FilePath
 testIndex = "./test/fixtures/tarballs/test-index.tar.gz"
 
-defaultRepo :: Text
+defaultRepo :: RequireCallStack => Text
 defaultRepo = "test-namespace"
 
-defaultRepoURL :: Text
+defaultRepoURL :: RequireCallStack => Text
 defaultRepoURL = "localhost"
 
-defaultDescription :: Text
+defaultDescription :: RequireCallStack => Text
 defaultDescription = "test-description"
 
-testImportIndex :: Fixtures -> TestEff ()
-testImportIndex fixture = withStdOutLogger $
+testImportIndex :: RequireCallStack => TestEff ()
+testImportIndex = withStdOutLogger $
   \_ -> do
     mIndex <- Query.getPackageIndexByName defaultRepo
     case mIndex of
       Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
       Just _ -> pure ()
     importFromIndex
-      fixture.hackageUser.userId
       defaultRepo
       testIndex
     -- check the packages have been imported
@@ -56,7 +55,7 @@ testImportIndex fixture = withStdOutLogger $
     assertEqual 2 (length releases)
     traverse_ (\x -> assertEqual (x ^. #repository) (Just defaultRepo)) releases
 
-testNamespaceChooser :: TestEff ()
+testNamespaceChooser :: RequireCallStack => TestEff ()
 testNamespaceChooser = do
   assertEqual
     (chooseNamespace (PackageName "tar-a") (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"]))

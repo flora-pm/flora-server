@@ -11,7 +11,7 @@ The following Haskell command-line tools will have to be installed:
 
 * `postgresql-migration`: To perform schema migrations
 * `fourmolu`: To style the code base. Version is 0.17.0.0
-* `hlint` & `apply-refact`: To enforce certain patterns in the code base ("lint")
+* `hlint` v3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-fmt` and `nixfmt`: To style the cabal and nix files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
 * `ghc-tags`: To generate ctags or etags for the project

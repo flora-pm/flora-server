@@ -5,8 +5,8 @@ module Prometheus.Servant.HasEndpoint where
 import Data.Proxy
 import Network.Wai
 import Prometheus.Servant.Internal
+import Servant
 import Servant.API.MultiVerb
-import Servant.API.Verbs
 
 instance ReflectMethod method => HasEndpoint (MultiVerb method requestContentType returnValues responses) where
   getEndpoint _ req = case pathInfo req of
@@ -18,3 +18,8 @@ instance ReflectMethod method => HasEndpoint (MultiVerb method requestContentTyp
   enumerateEndpoints _ = [Endpoint mempty method]
     where
       method = reflectMethod (Proxy :: Proxy method)
+
+instance HasEndpoint sub => HasEndpoint (DeepQuery filterName filter :> sub) where
+  getEndpoint _ = getEndpoint (Proxy :: Proxy sub)
+
+  enumerateEndpoints _ = enumerateEndpoints (Proxy :: Proxy sub)

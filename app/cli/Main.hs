@@ -4,7 +4,6 @@ import Codec.Compression.GZip qualified as GZip
 import Control.Monad.Extra (unlessM)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List.NonEmpty (NonEmpty)
-import Data.Maybe
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -32,6 +31,7 @@ import Log.Backend.StandardOutput qualified as Log
 import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
 import Options.Applicative
+import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
@@ -53,6 +53,7 @@ import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
+import Flora.Monad
 import Flora.Tracing qualified as Tracing
 
 data Options = Options
@@ -96,24 +97,25 @@ main = Log.withStdOutLogger $ \logger -> do
         pure $ Trace.runTrace zipkin.zipkinTracer
       else pure Trace.runNoTrace
   result <-
-    runOptions cliArgs
-      & Reader.runReader env
-      & runLog "flora-cli" logger Log.LogTrace
-      & runFileSystem
-      & ( case env.features.blobStoreImpl of
-            Just (BlobStoreFS fp) -> runBlobStoreFS fp
-            _ -> runBlobStorePure
-        )
-      & runTime
-      & runFailIO
-      & runDB env.pool
-      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-      & runErrorNoCallStack
-      & runTrace
-      & runPrometheusMetrics env.metrics
-      & Concurrent.runConcurrent
-      & runEff
+    provideCallStack $
+      runOptions cliArgs
+        & Reader.runReader env
+        & runLog "flora-cli" logger Log.LogTrace
+        & runFileSystem
+        & ( case env.features.blobStoreImpl of
+              Just (BlobStoreFS fp) -> runBlobStoreFS fp
+              _ -> runBlobStorePure
+          )
+        & runTime
+        & runFailIO
+        & runDB env.pool
+        & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+        & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
+        & runErrorNoCallStack
+        & runTrace
+        & runPrometheusMetrics env.metrics
+        & Concurrent.runConcurrent
+        & runEff
 
   case result of
     Right _ -> pure ()
@@ -206,7 +208,7 @@ runOptions
      , Trace :> es
      )
   => Options
-  -> Eff es ()
+  -> FloraM es ()
 runOptions (Options (Provision Categories)) = importCategories
 runOptions (Options (Provision Advisories)) = do
   dataDir <- getXdgDirectory XdgData ""
@@ -242,7 +244,7 @@ runOptions (Options (ImportIndex path repository)) = importIndex path repository
 runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
 
-provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Eff es ()
+provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> FloraM es ()
 provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
 
 importFolderOfCabalFiles
@@ -253,19 +255,19 @@ importFolderOfCabalFiles
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
   => FilePath
   -> Text
-  -> Eff es ()
+  -> FloraM es ()
 importFolderOfCabalFiles path repository = do
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex ->
-      importAllFilesInRelativeDirectory (user ^. #userId) (repository, packageIndex.url) (path </> Text.unpack repository)
+      importAllFilesInRelativeDirectory (repository, packageIndex.url) (path </> Text.unpack repository)
 
 importIndex
   :: ( Concurrent :> es
@@ -279,25 +281,25 @@ importIndex
      )
   => FilePath
   -> Text
-  -> Eff es ()
+  -> FloraM es ()
 importIndex path repository = do
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just _ ->
-      importFromIndex (user ^. #userId) repository path
+      importFromIndex repository path
 
 importPackageTarball
   :: ( BlobStoreAPI :> es
      , DB :> es
      , IOE :> es
      , Log :> es
+     , RequireCallStack
      )
   => PackageName
   -> Version
   -> FilePath
-  -> Eff es ()
+  -> FloraM es ()
 importPackageTarball pname version path = do
   contents <- liftIO $ GZip.decompress <$> BS.readFile path
   res <- Update.insertTar pname version contents

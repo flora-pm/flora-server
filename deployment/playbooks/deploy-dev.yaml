@@ -1,0 +1,4 @@
+---
+- hosts: dev
+  roles:
+      - deploy-dev

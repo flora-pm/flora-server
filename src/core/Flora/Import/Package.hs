@@ -94,6 +94,7 @@ import Effectful.Time qualified as Time
 import GHC.List (List)
 import Log qualified
 import Optics.Core
+import RequireCallStack
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
@@ -117,7 +118,7 @@ import Flora.Model.Requirement
   ( Requirement (..)
   , deterministicRequirementId
   )
-import Flora.Model.User
+import Flora.Monad
 import Flora.Normalise
 
 coreLibraries :: Set PackageName
@@ -214,7 +215,7 @@ versionList =
     , Version.mkVersion [7, 10, 3]
     ]
 
-loadContent :: Log :> es => FilePath -> BS.ByteString -> Eff es GenericPackageDescription
+loadContent :: Log :> es => FilePath -> BS.ByteString -> FloraM es GenericPackageDescription
 loadContent = parseString parseGenericPackageDescription
 
 loadJSONContent
@@ -222,7 +223,7 @@ loadJSONContent
   => FilePath
   -> BS.ByteString
   -> (Text, Set PackageName)
-  -> Eff es (Namespace, PackageName, Version, Target)
+  -> FloraM es (Namespace, PackageName, Version, Target)
 loadJSONContent path content (repositoryName, repositoryPackages) = do
   case getNameAndVersionFromPath path of
     Left (name, versionText) -> do
@@ -250,7 +251,7 @@ processJSONContent
   -> b
   -> c
   -> BS.ByteString
-  -> Eff es (a, b, c, Target)
+  -> FloraM es (a, b, c, Target)
 processJSONContent field namespace packageName version content = do
   let (mReleaseJSON :: Maybe ReleaseJSONFile) = Aeson.decodeStrict' content
   case mReleaseJSON of
@@ -285,7 +286,7 @@ parseString
   -> String
   -- ^ File name
   -> BS.ByteString
-  -> Eff es a
+  -> FloraM es a
 parseString parser name bs = do
   let (_warnings, result) = runParseResult (parser bs)
   case result of
@@ -298,9 +299,17 @@ parseString parser name bs = do
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
 persistImportOutput
   :: forall es
-   . (Concurrent :> es, DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, State (Set (Namespace, PackageName, Version)) :> es)
+   . ( Concurrent :> es
+     , DB :> es
+     , IOE :> es
+     , Log :> es
+     , Reader FloraEnv :> es
+     , RequireCallStack
+     , State (Set (Namespace, PackageName, Version)) :> es
+     , Time :> es
+     )
   => ImportOutput
-  -> Eff es ()
+  -> FloraM es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
   Log.logInfo "Persisting package" $
     object
@@ -318,22 +327,22 @@ persistImportOutput (ImportOutput package categories release components) = State
           ]
       pure packageCache
     else do
-      Update.upsertRelease release
+      Update.upsertRelease package release
       env <- Reader.ask
       Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections components persistComponent
       let expectedDependencies = foldMap snd components
       unless (null expectedDependencies) sanityCheck
       pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    persistPackage :: PackageId -> Eff es ()
+    persistPackage :: RequireCallStack => PackageId -> FloraM es ()
     persistPackage packageId = do
-      Update.upsertPackage package
+      Update.upsertPackageByNamespaceAndName package
       categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
       forM_
         categoriesByName
         (\c -> Update.addToCategoryByName packageId c.name)
 
-    persistComponent :: (PackageComponent, List ImportDependency) -> Eff es ()
+    persistComponent :: RequireCallStack => (PackageComponent, List ImportDependency) -> FloraM es ()
     persistComponent (packageComponent, deps) = do
       Log.logInfo
         "Persisting component"
@@ -346,12 +355,12 @@ persistImportOutput (ImportOutput package categories release components) = State
       Update.upsertPackageComponent packageComponent
       mapM_ persistImportDependency deps
 
-    persistImportDependency :: ImportDependency -> Eff es ()
+    persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
     persistImportDependency dep = do
-      Update.upsertPackage dep.package
+      Update.upsertPackageByPackageId dep.package
       Update.upsertRequirement dep.requirement
 
-    sanityCheck :: Eff es ()
+    sanityCheck :: RequireCallStack => FloraM es ()
     sanityCheck = do
       dependencies <- Query.getRequirements package.name release.releaseId
       when (Vector.null dependencies) $ do
@@ -376,7 +385,7 @@ persistHashes
      , State (Map (Namespace, PackageName, Version) Text) :> es
      )
   => (Namespace, PackageName, Version, Target)
-  -> Eff es ()
+  -> FloraM es ()
 persistHashes (namespace, packageName, version, target) = do
   mPackage <- Query.getPackageByNamespaceAndName namespace packageName
   case mPackage of
@@ -410,15 +419,15 @@ persistHashes (namespace, packageName, version, target) = do
 extractPackageDataFromCabal
   :: ( IOE :> es
      , Log :> es
+     , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => UserId
-  -> (Text, Set PackageName)
+  => (Text, Set PackageName)
   -> UTCTime
   -> GenericPackageDescription
-  -> Eff es ImportOutput
-extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
+  -> FloraM es ImportOutput
+extractPackageDataFromCabal repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -437,7 +446,6 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
           { packageId
           , namespace
           , name = packageName
-          , ownerId = userId
           , createdAt = timestamp
           , updatedAt = timestamp
           , status = FullyImportedPackage
@@ -506,7 +514,7 @@ extractPackageDataFromCabal userId repository@(repositoryName, repositoryPackage
   case NE.nonEmpty components' of
     Nothing -> do
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
-      extractPackageDataFromCabal userId (repositoryName, repositoryPackages) uploadTime genericDesc
+      extractPackageDataFromCabal (repositoryName, repositoryPackages) uploadTime genericDesc
     Just components -> pure $ ImportOutput package categories release components
 
 extractLibrary
@@ -662,12 +670,11 @@ buildDependency package repository packageComponentId (Cabal.Dependency depName 
   let name = depName & unPackageName & pack & PackageName
       namespace = chooseNamespace name repository
       packageId = deterministicPackageId namespace name
-      ownerId = package.ownerId
       createdAt = package.createdAt
       updatedAt = package.updatedAt
       status = UnknownPackage
       deprecationInfo = Nothing
-      dependencyPackage = Package packageId namespace name ownerId createdAt updatedAt status deprecationInfo
+      dependencyPackage = Package packageId namespace name createdAt updatedAt status deprecationInfo
       requirement =
         Requirement
           { requirementId = deterministicRequirementId packageComponentId packageId

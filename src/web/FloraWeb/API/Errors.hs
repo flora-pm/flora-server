@@ -8,8 +8,9 @@ import Servant (ServerError (..))
 import Servant.Server (err404)
 
 import Flora.Model.Package.Types
+import Flora.Monad
 
-packageNotFound :: Error ServerError :> es => Namespace -> PackageName -> Eff es a
+packageNotFound :: Error ServerError :> es => Namespace -> PackageName -> FloraM es a
 packageNotFound namespace packageName =
   throwError
     err404
@@ -26,7 +27,7 @@ versionNotFound
   => Namespace
   -> PackageName
   -> Version
-  -> Eff es a
+  -> FloraM es a
 versionNotFound namespace packageName version =
   throwError
     err404

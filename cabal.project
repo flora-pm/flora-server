@@ -1,30 +1,47 @@
 packages:
     ./
 
-with-compiler: ghc-9.6
+with-compiler: ghc-9.10.1
 
 active-repositories: hackage.haskell.org
 
 tests: True
 
-allow-newer: hashable:filepath
-           , hsec-sync:lens
-           , hsec-tools:pandoc
-           , qrcode-core:bytestring
-           , qrcode-core:text
-           , qrcode-juicypixels:bytestring
-           , qrcode-juicypixels:text
-           , servant-lucid:text
-           , tasty-test-reporter:ansi-terminal
-           , tasty-test-reporter:tasty
-           , type-errors-pretty:base
+semaphore: True
 
-allow-older: pg-entity:time
+jobs: $ncpus
 
-test-show-details: direct
+multi-repl: True
+
+profiling: True
 
 package *
-  ghc-options: "-L /usr/pgsql-14/lib" +RTS -A32m -RTS -j
+  profiling-detail: none
+  ghc-options: +RTS -A32m -RTS -fprof-auto -fprof-auto-calls
+
+allow-newer: binary:containers
+           , chronos:hashable
+           , feed:*
+           , hashable:filepath
+           , hsec-core:*
+           , hsec-sync:*
+           , hsec-tools:*
+           , insert-ordered-containers:hashable
+           , odd-jobs:async
+           , pandoc:*
+           , prometheus-effectful:bytestring
+           , prometheus-proc:*
+           , qrcode-core:*
+           , qrcode-juicypixels:*
+           , servant-lucid:text
+           , tasty-test-reporter:*
+           , texmath:*
+           , type-errors-pretty:base
+           , wai-middleware-heartbeat:*
+test-show-details: direct
+
+package feed
+  ghc-options: -Wno-tabs
 
 package warp
   flags: -x509
@@ -33,72 +50,77 @@ package zlib
   flags: -pkg-config
 
 source-repository-package
-    type: git
-    location: https://github.com/haskell/security-advisories/
-    tag: d305942f9582bac9f90fb686c2573ba5a0c18cc5
-    subdir:
-      ./code/cvss
-      ./code/osv
-      ./code/hsec-core
-      ./code/hsec-sync
-      ./code/hsec-tools
+  type: git
+  location: https://github.com/haskell/security-advisories/
+  tag: 7da651fe058a19a08faff8d873e73ec2ff4c77a0
+  subdir:
+    ./code/cvss
+    ./code/osv
+    ./code/hsec-core
+    ./code/hsec-sync
+    ./code/hsec-tools
+
+source-repository-package
+  type: git
+  location: https://github.com/scrive/tracing
+  tag: 9c2baa154dbd0ef2c145ee65660261977323c2d8
+  subdir:
+    .
+    ./tracing-effectful
+
+source-repository-package
+  type: git
+  location: https://gitlab.com/dpwiz/raven-haskell.git/
+  tag: 37434cb1b2515a9aa74a0544da9716bfbabea7ca
+  subdir: ./raven-haskell
+
+source-repository-package
+  type: git
+  location: https://github.com/haskell-servant/servant
+  tag: servant-0.20.3.0
+  subdir:
+    ./servant
+    ./servant-server
+    ./servant-client
+    ./servant-client-core
 
 source-repository-package
     type: git
-    location: https://github.com/scrive/tracing
-    tag: 9c2baa154dbd0ef2c145ee65660261977323c2d8
-    subdir:
-        .
-        ./tracing-effectful
+    location: https://github.com/haskell-party/feed
+    tag: f859f8b1bf6f9476c05a906f1a26f87ce6182626
 
 source-repository-package
-    type: git
-    location: https://gitlab.com/dpwiz/raven-haskell.git/
-    tag: 37434cb1b2515a9aa74a0544da9716bfbabea7ca
-    subdir: ./raven-haskell
+  type: git
+  location: https://github.com/composewell/streamly
+  tag: 8500b6446dae07e763370608625f26eff5c84600
+  subdir:
+    ./core
+    ./.
 
 source-repository-package
-    type: git
-    location: https://github.com/haskell-servant/servant
-    tag: bce6b4bd14c4cb953561366cd43600eb6b8fc17c
-    subdir:
-      ./servant
-      ./servant-server
-      ./servant-client
-      ./servant-client-core
+  type: git
+  location: https://github.com/flora-pm/wai-middleware-heartbeat
+  tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
 
 source-repository-package
-    type: git
-    location: https://github.com/composewell/streamly
-    tag: 8500b6446dae07e763370608625f26eff5c84600
-    subdir:
-      ./core
-      ./.
+  type: git
+  location: https://github.com/kleidukos/pg-transact-effectful
+  tag: ea610e9d85a628a19d350397b9e43520e452b4f8
 
 source-repository-package
-    type: git
-    location: https://github.com/flora-pm/wai-middleware-heartbeat
-    tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
+  type: git
+  location: https://github.com/kleidukos/servant-effectful
+  tag: 22af09642078d5296b524495ad8213bf2ace62d2
 
 source-repository-package
-    type: git
-    location: https://github.com/kleidukos/pg-transact-effectful
-    tag: ea610e9d85a628a19d350397b9e43520e452b4f8
+  type: git
+  location: https://github.com/haskell-effectful/prometheus-effectful
+  tag: cd362b4f0a9f1a7dcc743176a9fa663f2cfe33d3
 
 source-repository-package
-    type: git
-    location: https://github.com/kleidukos/servant-effectful
-    tag: 22af09642078d5296b524495ad8213bf2ace62d2
-
-source-repository-package
-    type: git
-    location: https://github.com/haskell-effectful/prometheus-effectful
-    tag: cd362b4f0a9f1a7dcc743176a9fa663f2cfe33d3
-
-source-repository-package
-    type: git
-    location: https://github.com/saurabhnanda/odd-jobs
-    tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
+  type: git
+  location: https://github.com/saurabhnanda/odd-jobs
+  tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
 
 source-repository-package
   type: git

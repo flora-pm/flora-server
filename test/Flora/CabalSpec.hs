@@ -3,6 +3,7 @@ module Flora.CabalSpec where
 import Data.Maybe
 import Data.Set qualified as Set
 import Data.Vector qualified as Vector
+import RequireCallStack
 import Test.Tasty
 
 import Flora.Model.Component.Types
@@ -12,7 +13,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.TestUtils
 
-spec :: TestEff TestTree
+spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "cabal tests"
@@ -23,7 +24,7 @@ spec =
         ]
     ]
 
-testImportSimplePackage :: TestEff ()
+testImportSimplePackage :: RequireCallStack => TestEff ()
 testImportSimplePackage = do
   packageA <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "a")
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
@@ -36,7 +37,7 @@ testImportSimplePackage = do
         ]
     )
 
-testImportMultiplePublicLibraries :: TestEff ()
+testImportMultiplePublicLibraries :: RequireCallStack => TestEff ()
 testImportMultiplePublicLibraries = do
   packageA <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "b")
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)

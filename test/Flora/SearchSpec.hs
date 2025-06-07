@@ -2,17 +2,17 @@ module Flora.SearchSpec where
 
 import Data.Vector qualified as Vector
 import Optics.Core
+import RequireCallStack
 import Test.Tasty
 
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
-import Flora.Model.User (User (..))
 import Flora.Search
 import Flora.TestUtils
 
-spec :: Fixtures -> TestEff TestTree
-spec Fixtures{hackageUser} =
+spec :: RequireCallStack => TestEff TestTree
+spec =
   testThese
     "Search tests"
     [ testThese
@@ -25,54 +25,52 @@ spec Fixtures{hackageUser} =
         ]
     , testThese
         "Search results"
-        [ testThis "Search executable" (testSearchExecutable hackageUser)
+        [ testThis "Search executable" testSearchExecutable
         ]
     ]
 
-testParsingDependsSearchModifier :: TestEff ()
+testParsingDependsSearchModifier :: RequireCallStack => TestEff ()
 testParsingDependsSearchModifier = do
   let result = parseSearchQuery "depends:@haskell/base"
   assertEqual
     (Just $ DependentsOf (Namespace "@haskell") (PackageName "base") Nothing)
     result
 
-testParsingNamespacePackageModifier :: TestEff ()
+testParsingNamespacePackageModifier :: RequireCallStack => TestEff ()
 testParsingNamespacePackageModifier = do
   let result = parseSearchQuery "in:@haskell base"
   assertEqual
     (Just $ SearchInNamespace (Namespace "@haskell") (PackageName "base"))
     result
 
-testParsingNamespaceModifier :: TestEff ()
+testParsingNamespaceModifier :: RequireCallStack => TestEff ()
 testParsingNamespaceModifier = do
   let result = parseSearchQuery "in:@haskell"
   assertEqual
     (Just $ ListAllPackagesInNamespace (Namespace "@haskell"))
     result
 
-testParsingQueryContainingModifier :: TestEff ()
+testParsingQueryContainingModifier :: RequireCallStack => TestEff ()
 testParsingQueryContainingModifier = do
   let result = parseSearchQuery "bah blah blah depends:@haskell/base"
   assertEqual
     (Just (SearchPackages "bah blah blah depends:@haskell/base"))
     result
 
-testParsingExecutableSearch :: TestEff ()
+testParsingExecutableSearch :: RequireCallStack => TestEff ()
 testParsingExecutableSearch = do
   let result = parseSearchQuery "exe:flora-cli"
   assertEqual
     (Just (SearchExecutable "flora-cli"))
     result
 
-testSearchExecutable :: User -> TestEff ()
-testSearchExecutable hackageUser = do
+testSearchExecutable :: RequireCallStack => TestEff ()
+testSearchExecutable = do
   package1 <-
     instantiatePackage $
       randomPackageTemplate
         & #status
         .~ pure FullyImportedPackage
-        & #ownerId
-        .~ pure hackageUser.userId
   release1 <-
     instantiateRelease $
       randomReleaseTemplate
@@ -90,8 +88,6 @@ testSearchExecutable hackageUser = do
       randomPackageTemplate
         & #status
         .~ pure FullyImportedPackage
-        & #ownerId
-        .~ pure hackageUser.userId
   release2 <-
     instantiateRelease $
       randomReleaseTemplate

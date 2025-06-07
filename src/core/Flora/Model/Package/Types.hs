@@ -10,6 +10,7 @@ import Data.Aeson.TH
 import Data.Attoparsec.ByteString.Char8
 import Data.Attoparsec.ByteString.Char8 qualified as Attoparsec
 import Data.ByteString (ByteString)
+import Data.ByteString.Builder qualified as B
 import Data.ByteString.Char8 qualified as B
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
@@ -34,7 +35,7 @@ import Database.PostgreSQL.Simple.FromField
   )
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.Newtypes (Aeson (..))
-import Database.PostgreSQL.Simple.ToField (Action (Escape), ToField (..))
+import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
 import Deriving.Aeson
 import Distribution.Pretty (Pretty (..))
@@ -51,7 +52,6 @@ import Data.Aeson.Orphans ()
 import Distribution.Orphans ()
 import Distribution.Orphans.Version ()
 import Flora.Model.Package.Orphans ()
-import Flora.Model.User
 import JSON
 
 newtype PackageId = PackageId {getPackageId :: UUID}
@@ -178,6 +178,18 @@ namespaceSchema =
     & #description
     ?~ "Namespace containing packages"
 
+instance ToField (Namespace, PackageName) where
+  toField (namespace, packageName) =
+    Many
+      [ litC '('
+      , toField namespace
+      , litC ','
+      , toField packageName
+      , litC ')'
+      ]
+    where
+      litC = Plain . B.char8
+
 data PackageStatus = UnknownPackage | FullyImportedPackage
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
@@ -212,7 +224,6 @@ data Package = Package
   { packageId :: PackageId
   , namespace :: Namespace
   , name :: PackageName
-  , ownerId :: UserId
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   , status :: PackageStatus
@@ -249,6 +260,9 @@ data PackageInfo = PackageInfo
   }
   deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (FromRow, NFData)
+  deriving
+    (FromJSON, ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageInfo)
 
 data ElemRating = ElemRating
   { element :: Text

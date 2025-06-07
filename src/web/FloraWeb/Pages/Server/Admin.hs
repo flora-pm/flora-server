@@ -8,18 +8,21 @@ import Control.Monad (void, when)
 import Control.Monad.IO.Class
 import Data.Maybe (isJust)
 import Database.PostgreSQL.Entity.DBT
+import Effectful (Eff)
 import Effectful.Reader.Static (ask)
 import Log qualified
 import Lucid
 import OddJobs.Endpoints qualified as OddJobs
 import OddJobs.Types qualified as OddJobs
 import Optics.Core
+import RequireCallStack
 import Servant (HasServer (..), Headers (..))
 
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User
+import Flora.Monad
 import FloraJobs.Scheduler
 import FloraWeb.Common.Auth
 import FloraWeb.Common.Utils (handlerToEff, redirect)
@@ -32,9 +35,9 @@ import FloraWeb.Pages.Templates
   , templateFromSession
   )
 import FloraWeb.Pages.Templates.Admin qualified as Templates
-import FloraWeb.Types (FloraEff, fetchFloraEnv)
+import FloraWeb.Types (RouteEffects, fetchFloraEnv)
 
-server :: OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraEff
+server :: RequireCallStack => OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes (Eff RouteEffects)
 server cfg env =
   Routes'
     { index = indexHandler
@@ -42,7 +45,7 @@ server cfg env =
     , fetchMetadata = fetchMetadataHandler
     }
 
-indexHandler :: SessionWithCookies User -> FloraEff (Html ())
+indexHandler :: SessionWithCookies User -> FloraM RouteEffects (Html ())
 indexHandler (Headers session _) = do
   templateEnv <-
     templateFromSession session defaultTemplateEnv
@@ -51,7 +54,7 @@ indexHandler (Headers session _) = do
   report <- liftIO $ withPool pool getReport
   render templateEnv (Templates.index report)
 
-fetchMetadataHandler :: SessionWithCookies User -> FloraEff FetchMetadataResponse
+fetchMetadataHandler :: SessionWithCookies User -> FloraM RouteEffects FetchMetadataResponse
 fetchMetadataHandler (Headers session _) = do
   FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv session.webEnvStore
 

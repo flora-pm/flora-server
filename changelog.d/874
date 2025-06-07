@@ -1,0 +1,9 @@
+synopsis: Rework API route for package prefix search
+prs: #874
+issues:
+
+description: {
+
+- The route /api/experimental/packages/search is changed to take two parameters, `name` and `page`
+
+}

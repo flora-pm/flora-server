@@ -21,14 +21,14 @@ import Distribution.Version
 import Effectful
 import Effectful.Fail
 import Effectful.FileSystem
-import Env
 import Lucid
 import PyF (fmt)
 import Security.Advisories.Core.HsecId qualified as HsecId
 import Security.CVSS
 
 import Advisories.Model.Affected.Types
-import Flora.Environment.Config
+import Flora.Environment
+import Flora.Environment.Env
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category
 import Flora.Model.Package
@@ -48,17 +48,16 @@ newtype ComponentTitle = ComponentTitle Text
 
 generateComponents :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es ()
 generateComponents = do
-  environment <- liftIO $ Env.parse id parseDeploymentEnv
-  assets <- getAssets environment
+  floraEnv <- getFloraEnv
   forM_ components $ \(filename, title, name, template) -> do
-    let html = TL.replace "\"" "\\\"" $ renderHtml assets template
+    let html = TL.replace "\"" "\\\"" $ renderHtml floraEnv template
     writeComponent filename title name html
 
-renderHtml :: Assets -> FloraHTML -> TL.Text
-renderHtml assets template =
+renderHtml :: FloraEnv -> FloraHTML -> TL.Text
+renderHtml floraEnv template =
   runIdentity $ runReaderT (renderTextT template) templateEnv
   where
-    templateEnv = defaultsToEnv assets defaultTemplateEnv
+    templateEnv = defaultsToEnv floraEnv defaultTemplateEnv
 
 writeComponent :: IOE :> es => FilePath -> ComponentTitle -> ComponentName -> TL.Text -> Eff es ()
 writeComponent filename title name html =

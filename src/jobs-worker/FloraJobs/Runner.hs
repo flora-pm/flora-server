@@ -5,7 +5,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
-import Data.Maybe (fromJust)
+import Data.Pool (Pool)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text
@@ -13,29 +13,36 @@ import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Types.Version (Version)
-import Effectful (Eff, IOE, type (:>))
+import Effectful (IOE, Limit (..), Persistence (..), UnliftStrategy (..), runEff, withUnliftStrategy, type (:>))
 import Effectful.Concurrent (Concurrent)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
-import Effectful.Log
-import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Log hiding (LogLevel)
+import Effectful.PostgreSQL.Transact.Effect (DB, getPool)
 import Effectful.Process.Typed
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
-import Log
+import Effectful.Time qualified as Time
+import Log hiding (LogLevel)
 import Network.HTTP.Types (gone410, notFound404, statusCode)
-import OddJobs.Job (Job (..))
+import OddJobs.ConfigBuilder
+import OddJobs.Job (Config (..), Job (..), LogEvent (..), LogLevel (..))
+import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
+import RequireCallStack
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 import System.FilePath
 
 import Data.Text.HTML qualified as HTML
+import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Import.Package.Bulk qualified as Import
+import Flora.Logging qualified as Logging
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
@@ -45,9 +52,9 @@ import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
-import Flora.Model.User (User (..))
-import Flora.Model.User.Query qualified as Query
+import Flora.Monad
 import FloraJobs.Render (renderMarkdown)
+import FloraJobs.Scheduler (scheduleRefreshIndex)
 import FloraJobs.ThirdParties.Hackage.API
   ( HackagePackageInfo (..)
   , HackagePreferredVersions (..)
@@ -70,6 +77,40 @@ runner job = localDomain "job-runner" $
       FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
       RefreshLatestVersions -> Update.refreshLatestVersions
       RefreshIndex indexName -> refreshIndex indexName
+
+makeConfig
+  :: RequireCallStack
+  => JobsRunnerEnv
+  -> FloraEnv
+  -> Logger
+  -> Pool PG.Connection
+  -> Config
+makeConfig runnerEnv floraEnv logger pool =
+  mkConfig
+    (\level event -> structuredLogging floraEnv.config logger level event)
+    jobTableName
+    pool
+    (MaxConcurrentJobs 100)
+    (runJobRunner pool runnerEnv floraEnv logger . runner)
+    (\x -> x{cfgDefaultMaxAttempts = 3, cfgDefaultJobTimeout = 36000})
+
+makeUIConfig :: RequireCallStack => FloraConfig -> Logger -> Pool PG.Connection -> UIConfig
+makeUIConfig cfg logger pool =
+  mkUIConfig (structuredLogging cfg logger) jobTableName pool id
+
+structuredLogging :: RequireCallStack => FloraConfig -> Logger -> LogLevel -> LogEvent -> IO ()
+structuredLogging FloraConfig{environment} logger level event =
+  runEff
+    . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+    . Time.runTime
+    . Logging.runLog environment logger
+    $ localDomain "odd-jobs"
+    $ case level of
+      LevelDebug -> logMessage Log.LogTrace "LevelDebug" (toJSON event)
+      LevelInfo -> logMessage Log.LogInfo "LevelInfo" (toJSON event)
+      LevelWarn -> logMessage Log.LogAttention "LevelWarn" (toJSON event)
+      LevelError -> logMessage Log.LogAttention "LevelError" (toJSON event)
+      (LevelOther x) -> logMessage Log.LogAttention ("LevelOther " <> Text.pack (show x)) (toJSON event)
 
 fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -115,7 +156,7 @@ fetchTarball
      , Reader JobsRunnerEnv :> es
      )
   => TarballJobPayload
-  -> Eff es ()
+  -> FloraM es ()
 fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
   localDomain "fetch-tarball" $ do
     mArchive <- Query.getReleaseTarballArchive releaseId
@@ -236,14 +277,13 @@ refreshIndex
      , TypedProcess :> es
      )
   => Text
-  -> Eff es ()
+  -> FloraM es ()
 refreshIndex indexName = do
   let repoPath =
         if indexName == "hackage"
           then "hackage.haskell.org"
           else Text.unpack indexName
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
-  user <- fromJust <$> Query.getUserByUsername "hackage-user"
   packagesPath <- getCabalPackagesDirectory
   let path = packagesPath </> repoPath </> "01-index.tar.gz"
   mPackageIndex <- Query.getPackageIndexByName indexName
@@ -252,10 +292,12 @@ refreshIndex indexName = do
       Log.logAttention "Package index not found" $
         object ["package_index" .= indexName]
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
-    Just _ ->
-      Import.importFromIndex user.userId indexName path
+    Just _ -> do
+      Import.importFromIndex indexName path
+      pool <- getPool
+      void $ liftIO $ scheduleRefreshIndex pool indexName
 
-getCabalPackagesDirectory :: FileSystem :> es => Eff es FilePath
+getCabalPackagesDirectory :: FileSystem :> es => FloraM es FilePath
 getCabalPackagesDirectory = do
   xdgPath <- FileSystem.getXdgDirectory FileSystem.XdgCache "/packages"
   xdgPathExists <- FileSystem.doesDirectoryExist xdgPath
