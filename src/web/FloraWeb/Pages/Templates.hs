@@ -13,7 +13,6 @@ import Data.ByteString.Lazy
 import Data.Text.Display
 import Lucid
 
-import Flora.Environment.Env (DeploymentEnv (..))
 import FloraWeb.Components.Alert qualified as Alert
 import FloraWeb.Components.Header (header)
 import FloraWeb.Pages.Templates.Types as Types
