@@ -245,7 +245,7 @@ testPackageUpsert = do
   package' <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-demo")
   now <- Time.currentTime
   let package = package' & #updatedAt .~ now
-  Update.upsertPackageByNamespaceAndName package
+  Update.upsertPackage package
   assertBool $
     package'.updatedAt < package.updatedAt
 

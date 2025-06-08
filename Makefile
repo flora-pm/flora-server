@@ -26,6 +26,18 @@ clean-assets: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
 	@cd docs/ && rm -R node_modules
 
+db-start:
+	@rm -rf .postgres
+	@mkdir -p .postgres
+	@initdb -D .postgres
+	@echo "unix_socket_directories = '.'" >> .postgres/postgresql.conf
+	@pg_ctl start -D .postgres -l ./postgres.log
+	@createuser -h localhost postgres -s
+
+db-stop:
+	@pg_ctl stop -D .postgres -l ./postgres.log
+	@rm -rf .postgres
+
 db-setup: db-create db-init db-migrate ## Setup the dev database
 
 db-create: ## Create the database
@@ -51,6 +63,8 @@ db-provision: ## Create categories and repositories
 			--description "Packages of the Cardano project"
 	@cabal run -- flora-cli provision-repository --name "horizon" --url https://packages.horizon-haskell.net \
 			--description "Packages of the Horizon project"
+	@cabal run -- flora-cli provision-repository --name "mlabs" --url https://plutonomicon.github.io/plutarch-plutus \
+			--description "Packages of the MLabs Cardano ecosystem"
 
 db-provision-advisories: ## Load HSEC advisories in the database
 	@cabal run -- flora-cli provision advisories
@@ -58,6 +72,7 @@ db-provision-advisories: ## Load HSEC advisories in the database
 db-provision-packages: ## Load development data in the dev database
 	@cabal run -- flora-cli provision test-packages --repository "hackage"
 	@cabal run -- flora-cli provision test-packages --repository "cardano"
+	@cabal run -- flora-cli provision test-packages --repository "mlabs"
 
 db-test-create: ## Create the test database
 	./scripts/run-with-test-config.sh db-create
