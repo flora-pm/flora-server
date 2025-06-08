@@ -24,42 +24,15 @@ import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
 
-upsertPackageByNamespaceAndName :: (DB :> es, RequireCallStack) => Package -> Eff es ()
-upsertPackageByNamespaceAndName package =
+upsertPackage :: (DB :> es, RequireCallStack) => Package -> Eff es ()
+upsertPackage package =
   E.catch
-    ( dbtToEff $
-        case package.status of
-          UnknownPackage -> upsertWith package [[field| updated_at |]]
-          FullyImportedPackage ->
-            upsertWith
-              package
-              [ [field| updated_at |]
-              , [field| status |]
-              ]
-    )
+    (dbtToEff $ upsertWith package)
     (\sqlError@(SqlError{}) -> E.throwIO $ sqlErrorToDBException sqlError)
   where
-    upsertWith :: Package -> Vector Field -> DBT IO ()
-    upsertWith entity fieldsToReplace =
-      void $ execute @Package (_insert @Package <> _onConflictDoUpdate conflictTarget fieldsToReplace) entity
-    conflictTarget = [[field| namespace |], [field| name |]]
-
-upsertPackageByPackageId :: (DB :> es, RequireCallStack) => Package -> Eff es ()
-upsertPackageByPackageId package =
-  dbtToEff $
-    case package.status of
-      UnknownPackage -> upsertWith package [[field| updated_at |]]
-      FullyImportedPackage ->
-        upsertWith
-          package
-          [ [field| updated_at |]
-          , [field| status |]
-          ]
-  where
-    upsertWith :: Package -> Vector Field -> DBT IO ()
-    upsertWith entity fieldsToReplace =
-      void $ execute @Package (_insert @Package <> _onConflictDoUpdate conflictTarget fieldsToReplace) entity
-    conflictTarget = [[field| package_id |]]
+    upsertWith :: Package -> DBT IO ()
+    upsertWith entity =
+      void $ execute @Package (_insert @Package <> " ON CONFLICT DO NOTHING") entity
 
 deprecatePackages :: (DB :> es, RequireCallStack) => Vector DeprecatedPackage -> Eff es ()
 deprecatePackages dp = dbtToEff $ void $ executeMany q (dp & Vector.map Only & Vector.toList)

@@ -336,7 +336,7 @@ persistImportOutput (ImportOutput package categories release components) = State
   where
     persistPackage :: RequireCallStack => PackageId -> FloraM es ()
     persistPackage packageId = do
-      Update.upsertPackageByNamespaceAndName package
+      Update.upsertPackage package
       categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
       forM_
         categoriesByName
@@ -357,7 +357,7 @@ persistImportOutput (ImportOutput package categories release components) = State
 
     persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
     persistImportDependency dep = do
-      Update.upsertPackageByPackageId dep.package
+      Update.upsertPackage dep.package
       Update.upsertRequirement dep.requirement
 
     sanityCheck :: RequireCallStack => FloraM es ()
