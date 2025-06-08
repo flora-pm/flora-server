@@ -16,7 +16,13 @@ The following Haskell command-line tools will have to be installed:
 * `ghcid`: To automatically reload the Haskell code base upon source changes
 * `ghc-tags`: To generate ctags or etags for the project
 
-(Some of the above packages have incompatible dependencies, so don't try to install them all at once with `cabal install`)
+Outside of the flora root directory run:
+```
+cabal install postgresql-migration hlint cabal-fmt ghcid ghc-tags --semaphore -j
+```
+
+(Some of the above packages could have incompatible dependencies, so consider installing them separately with `cabal install`)
+
 
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
 * `yarn`: The tool that handles the JavaScript code bases
