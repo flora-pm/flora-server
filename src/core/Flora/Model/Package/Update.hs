@@ -27,7 +27,17 @@ import Flora.Model.Requirement (Requirement)
 upsertPackage :: (DB :> es, RequireCallStack) => Package -> Eff es ()
 upsertPackage package =
   E.catch
-    (dbtToEff $ upsertWith package)
+    ( dbtToEff $ do
+        upsertWith package
+        case package.status of
+          UnknownPackage -> pure ()
+          FullyImportedPackage ->
+            void $
+              updateFieldsBy @Package
+                [[field| status |]]
+                ([field| package_id |], package.packageId)
+                (Only package.status)
+    )
     (\sqlError@(SqlError{}) -> E.throwIO $ sqlErrorToDBException sqlError)
   where
     upsertWith :: Package -> DBT IO ()
