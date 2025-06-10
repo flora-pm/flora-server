@@ -3,6 +3,7 @@
 ## UNRELEASED
 
 * Add `@mlabs` namespace ([#904](https://github.com/flora-pm/flora-server/issues/904))
+* Support capturing live events from flora-server ([#908](https://github.com/flora-pm/flora-server/issues/908)).
 
 ## 1.0.26 -- 2025-06-07
 

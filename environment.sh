@@ -35,3 +35,4 @@ export FLORA_COMPATIBILITY_MODE="True"
 #export FLORA_ZIPKIN_ENABLED="true" # Set this variable to true to enable Zipkin traces export
 #export FLORA_ZIPKIN_AGENT_HOST="localhost" # Set this variable to true to set the hostname of the agent to which the traces are shipped
 #export FLORA_ZIPKIN_AGENT_PORT="localhost" # Set this variable to true to set the port of the agent to which the traces are shipped
+#export FLORA_EVENTLOG_SOCKET="/tmp/flora-eventlog.sock"

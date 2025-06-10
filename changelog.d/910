@@ -1,0 +1,5 @@
+synopsis: Disable proc metrics on FreeBSD
+prs: #910
+descrpition: {
+  Support capturing live events from flora-server
+}

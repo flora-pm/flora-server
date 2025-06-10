@@ -383,6 +383,7 @@ library flora-web
     , effectful
     , effectful-core
     , effectful-plugin
+    , eventlog-socket
     , extra
     , feed
     , flora

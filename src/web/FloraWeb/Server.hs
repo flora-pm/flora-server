@@ -4,7 +4,7 @@ import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
-import Control.Monad (void, when)
+import Control.Monad (forM_, void, when)
 import Control.Monad.Except qualified as Except
 import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
@@ -22,6 +22,7 @@ import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
 import Effectful.Trace qualified as Trace
+import GHC.Eventlog.Socket qualified as Socket
 import Log (Logger)
 import Log qualified
 import Monitor.Tracing.Zipkin (Zipkin (..))
@@ -119,6 +120,9 @@ runFlora = do
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
+            liftIO $ do
+              forM_ env.mltp.eventlogSocket Socket.start
+              when (isJust env.mltp.eventlogSocket) (blueMessage "🔥 Sending live events to socket")
             liftIO $ when env.mltp.prometheusEnabled $ do
               blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               void $ P.register P.ghcMetrics
