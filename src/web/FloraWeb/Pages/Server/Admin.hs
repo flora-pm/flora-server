@@ -27,6 +27,7 @@ import FloraJobs.Scheduler
 import FloraWeb.Common.Auth
 import FloraWeb.Common.Utils (handlerToEff, redirect)
 import FloraWeb.Pages.Routes.Admin
+import FloraWeb.Pages.Server.Admin.Groups qualified as Groups
 import FloraWeb.Pages.Templates
   ( ActiveElements (..)
   , TemplateEnv (..)
@@ -37,12 +38,13 @@ import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Admin qualified as Templates
 import FloraWeb.Types (RouteEffects, fetchFloraEnv)
 
-server :: RequireCallStack => OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes (Eff RouteEffects)
-server cfg env =
+server :: RequireCallStack => OddJobs.UIConfig -> OddJobs.Env -> SessionWithCookies User -> ServerT Routes (Eff RouteEffects)
+server cfg env session =
   Routes'
-    { index = indexHandler
-    , oddJobs = \_ -> OddJobs.server cfg env handlerToEff
-    , fetchMetadata = fetchMetadataHandler
+    { index = indexHandler session
+    , oddJobs = OddJobs.server cfg env handlerToEff
+    , fetchMetadata = fetchMetadataHandler session
+    , groups = Groups.server session
     }
 
 indexHandler :: SessionWithCookies User -> FloraM RouteEffects (Html ())

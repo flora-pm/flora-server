@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Flora.Model.PackageGroupPackage.Types where
 
 import Control.DeepSeq (NFData)
@@ -10,7 +12,9 @@ import Database.PostgreSQL.Simple (FromRow)
 import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow)
+import Effectful
 import GHC.Generics
+import Heptapod qualified
 
 import Flora.Model.Package.Types (PackageId)
 import Flora.Model.PackageGroup.Types (PackageGroupId)
@@ -35,3 +39,8 @@ data PackageGroupPackage = PackageGroupPackage
   deriving
     (Entity)
     via (GenericEntity '[TableName "package_group_packages"] PackageGroupPackage)
+
+mkPackageGroupPackage :: IOE :> es => PackageId -> PackageGroupId -> Eff es PackageGroupPackage
+mkPackageGroupPackage packageId packageGroupId = do
+  packageGroupPackageId <- liftIO $ PackageGroupPackageId <$> Heptapod.generate
+  pure PackageGroupPackage{..}

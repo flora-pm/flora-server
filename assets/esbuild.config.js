@@ -77,6 +77,10 @@ const config = {
   entryNames: entryNames,
   plugins: pluginsList(),
   metafile: true,
+  loader:
+    { '.woff2': 'file',
+	  '.ttf': 'file'
+	},
 }
 
 esbuild.build(config).catch(() => process.exit(1));
