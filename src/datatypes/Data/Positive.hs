@@ -7,6 +7,7 @@ import Data.Kind (Constraint)
 import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Database.PostgreSQL.Simple.ToField
 import GHC.Stack (HasCallStack)
 import GHC.TypeLits (ErrorMessage (..), TypeError)
 import GHC.TypeNats (KnownNat, Natural, natVal)
@@ -15,7 +16,7 @@ import Servant (FromHttpApiData (..), ToHttpApiData (..))
 newtype Positive a = PositiveUnsafe {unPositive :: a}
   deriving (Eq, Ord, Show)
   deriving
-    (Num)
+    (Num, ToField)
     via a
 
 -- >>> toPositive 42

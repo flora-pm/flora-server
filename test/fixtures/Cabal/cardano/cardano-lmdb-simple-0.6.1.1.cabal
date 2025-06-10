@@ -1,0 +1,167 @@
+cabal-version:      3.0
+name:               cardano-lmdb-simple
+version:            0.6.1.1
+license:            BSD-3-Clause
+license-file:       LICENSE
+copyright:          © 2017–2018 Robert Leslie
+maintainer:         operations@iohk.io
+author:             Rob Leslie
+stability:          experimental
+tested-with:        ghc ==8.10 || ==9.2 || ==9.4 || ==9.6
+homepage:           https://github.com/input-output-hk/lmdb-simple#readme
+bug-reports:        https://github.com/input-output-hk/lmdb-simple/issues
+synopsis:           Simple API for LMDB
+description:
+    This package provides a simple API for using the
+    Lightning Memory-mapped Database (LMDB).
+
+category:           Database
+build-type:         Simple
+extra-source-files:
+    README.md
+    stack.yaml
+    test/env/.keep
+
+source-repository head
+    type:     git
+    location: https://github.com/input-output-hk/lmdb-simple.git
+
+library
+    exposed-modules:
+        Database.LMDB.Simple
+        Database.LMDB.Simple.Cursor
+        Database.LMDB.Simple.DBRef
+        Database.LMDB.Simple.Extra
+        Database.LMDB.Simple.Internal
+        Database.LMDB.Simple.TransactionHandle
+        Database.LMDB.Simple.View
+
+    hs-source-dirs:     src
+    default-language:   Haskell2010
+    default-extensions: Trustworthy
+    other-extensions:   ConstraintKinds TypeFamilies
+    ghc-options:
+        -Wall -Wno-name-shadowing -Wno-unused-do-bind -Wcompat
+        -Wincomplete-uni-patterns -Wincomplete-record-updates
+        -Wpartial-fields -Widentities -Wredundant-constraints
+        -Wmissing-export-lists -Wno-unticked-promoted-constructors
+
+    build-depends:
+        async,
+        base >=4.7 && <5,
+        bytestring >=0.10 && <0.12,
+        containers,
+        exceptions,
+        cardano-lmdb >=0.3.0.0,
+        mtl,
+        serialise >=0.2 && <0.3,
+        unliftio-core
+
+test-suite test-cursors
+    type:             exitcode-stdio-1.0
+    main-is:          Main.hs
+    hs-source-dirs:   test-cursors
+    other-modules:
+        Test.Database.LMDB.Simple.Cursor
+        Test.Database.LMDB.Simple.Cursor.Lockstep
+        Test.Database.LMDB.Simple.Cursor.Lockstep.Mock
+        Test.Database.LMDB.Simple.TransactionHandle
+
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -threaded -rtsopts -with-rtsopts=-N
+        -Wno-unticked-promoted-constructors
+
+    build-depends:
+        base,
+        cardano-lmdb,
+        cardano-lmdb-simple,
+        containers,
+        directory,
+        exceptions,
+        mtl,
+        QuickCheck,
+        quickcheck-dynamic,
+        quickcheck-lockstep >=0.2,
+        serialise,
+        tasty,
+        tasty-hunit,
+        tasty-quickcheck,
+        temporary
+
+test-suite sample
+    type:             exitcode-stdio-1.0
+    main-is:          sample.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -threaded -rtsopts -with-rtsopts=-N
+        -Wno-unticked-promoted-constructors
+
+    build-depends:
+        base,
+        cardano-lmdb-simple
+
+test-suite hspec
+    type:               exitcode-stdio-1.0
+    main-is:            hspec.hs
+    build-tool-depends: hspec-discover:hspec-discover
+    hs-source-dirs:     test
+    other-modules:
+        Database.LMDB.SimpleSpec
+        Database.LMDB.Simple.DBRefSpec
+        Harness
+
+    default-language:   Haskell2010
+    ghc-options:
+        -Wall -Wno-unused-do-bind -threaded -rtsopts -with-rtsopts=-N
+        -Wno-unticked-promoted-constructors
+
+    build-depends:
+        base,
+        hspec,
+        cardano-lmdb-simple,
+        QuickCheck
+
+benchmark bench
+    type:             exitcode-stdio-1.0
+    main-is:          Main.hs
+    hs-source-dirs:   bench
+    other-modules:
+        Bench.Database.LMDB.Simple.Cursor
+        Bench.Utils
+
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-A32m
+        -Werror -Wno-unticked-promoted-constructors
+
+    build-depends:
+        base,
+        bytestring,
+        cardano-lmdb-simple,
+        containers,
+        deepseq,
+        directory,
+        QuickCheck,
+        random,
+        serialise,
+        tasty,
+        tasty-bench,
+        tasty-quickcheck,
+        temporary
+
+benchmark criterion
+    type:             exitcode-stdio-1.0
+    main-is:          criterion.hs
+    hs-source-dirs:   test
+    other-modules:    Harness
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -Wno-name-shadowing -threaded -rtsopts -with-rtsopts=-N
+        -Wno-unticked-promoted-constructors
+
+    build-depends:
+        base,
+        criterion,
+        cardano-lmdb-simple

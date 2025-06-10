@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Flora.TestUtils
@@ -142,7 +143,7 @@ import Test.Tasty.HUnit qualified as Test
 
 import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
+import Flora.Import.Package.Bulk.Directory (importAllFilesInDirectory)
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
@@ -209,15 +210,14 @@ getFixtures = do
 
 importAllPackages :: RequireCallStack => TestEff ()
 importAllPackages = do
-  importAllFilesInRelativeDirectory
-    ("hackage", "https://hackage.haskell.org")
-    "./test/fixtures/Cabal/hackage"
-  importAllFilesInRelativeDirectory
-    ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
-    "./test/fixtures/Cabal/cardano"
+  importAllFilesInDirectory
+    "mlabs"
+    "mlabs"
+    (Vector.fromList ["cardano", "hackage"])
+    "./test/fixtures/Cabal"
 
-runTestEff :: RequireCallStack => TestEff a -> FloraEnv -> IO a
-runTestEff comp env = runEff $ do
+runTestEff :: TestEff a -> FloraEnv -> IO a
+runTestEff comp env = provideCallStack $ runEff $ do
   let reportException =
         [ E.Handler $ \e@(SomeException exception) -> do
             let context = E.displayExceptionContext $ E.someExceptionContext e
@@ -262,48 +262,48 @@ assertBool boolean = liftIO $ Test.assertBool "" boolean
 --  Usage:
 --
 --  >>> assertEqual expected actual
-assertEqual :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
+assertEqual :: (Eq a, RequireCallStack, Show a) => a -> a -> TestEff ()
 assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
 
-assertFailure :: (HasCallStack, MonadIO m) => String -> m ()
+assertFailure :: (MonadIO m, RequireCallStack) => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
-assertJust :: HasCallStack => Maybe a -> TestEff a
+assertJust :: RequireCallStack => Maybe a -> TestEff a
 assertJust (Just a) = pure a
 assertJust Nothing = liftIO $ Test.assertFailure "Test return Nothing instead of Just"
 
-assertRight :: HasCallStack => Either a b -> TestEff b
+assertRight :: RequireCallStack => Either a b -> TestEff b
 assertRight (Left _a) = liftIO $ Test.assertFailure "Test return Left instead of Right"
 assertRight (Right b) = pure b
 
-assertRight' :: Either a b -> TestEff ()
+assertRight' :: RequireCallStack => Either a b -> TestEff ()
 assertRight' = void . assertRight
 
-assertClientRight :: HasCallStack => String -> TestEff (Either ClientError a) -> TestEff a
+assertClientRight :: RequireCallStack => String -> TestEff (Either ClientError a) -> TestEff a
 assertClientRight name request =
   request
     >>= \case
       Right a -> pure a
       Left err -> throw $ mkUserError $ name <> ": " <> show err <> " " <> prettyCallStack callStack
 
-assertClientRight' :: HasCallStack => String -> TestEff (Either ClientError a) -> TestEff ()
+assertClientRight' :: RequireCallStack => String -> TestEff (Either ClientError a) -> TestEff ()
 assertClientRight' name request = void $ assertClientRight name request
 
-assertLeft :: HasCallStack => Either a b -> TestEff a
+assertLeft :: RequireCallStack => Either a b -> TestEff a
 assertLeft (Left a) = pure a
 assertLeft (Right _b) = liftIO $ Test.assertFailure "Test return Right instead of Left"
 
-assertLeft' :: Either a b -> TestEff ()
+assertLeft' :: RequireCallStack => Either a b -> TestEff ()
 assertLeft' = void . assertLeft
 
-assertClientLeft :: HasCallStack => String -> TestEff (Either ClientError b) -> TestEff ClientError
+assertClientLeft :: RequireCallStack => String -> TestEff (Either ClientError b) -> TestEff ClientError
 assertClientLeft name request =
   request
     >>= \case
       Right _ -> throw $ mkUserError $ name <> " " <> prettyCallStack callStack
       Left err -> pure err
 
-assertClientLeft' :: HasCallStack => String -> TestEff (Either ClientError a) -> TestEff ()
+assertClientLeft' :: RequireCallStack => String -> TestEff (Either ClientError a) -> TestEff ()
 assertClientLeft' name request = void $ assertClientLeft name request
 
 -- assertStatus :: forall (statusCode :: Type) (httpValue :: Type) (a :: Type)

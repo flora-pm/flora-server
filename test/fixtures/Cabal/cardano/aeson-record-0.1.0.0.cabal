@@ -1,0 +1,55 @@
+cabal-version: 3.0
+name:          aeson-record
+version:       0.1.0.0
+synopsis:
+  An Applicative and Alternative interface to Aeson with better errors on Alternatives.
+
+bug-reports:   https://github.com/input-output-hk/marlowe-marlowe/issues
+license:       Apache-2.0
+author:        Jamie Bertram
+maintainer:    jamie.bertram@iohk.io
+stability:     experimental
+category:      Language
+license-files:
+  LICENSE
+  NOTICE
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/marlowe-cardano
+  subdir:   libs/aeson-record
+
+library
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  default-extensions:
+    BlockArguments
+    DeriveAnyClass
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    ExplicitForAll
+    GeneralizedNewtypeDeriving
+    LambdaCase
+    NamedFieldPuns
+    NumericUnderscores
+    OverloadedStrings
+    RecordWildCards
+    ScopedTypeVariables
+    StandaloneDeriving
+    TupleSections
+    TypeApplications
+
+  ghc-options:
+    -Wall -Wnoncanonical-monad-instances -Wunused-packages
+    -Wincomplete-uni-patterns -Wincomplete-record-updates
+    -Wredundant-constraints -Widentities
+
+  exposed-modules:    Data.Aeson.Applicative
+  build-depends:
+    , aeson >=2 && <3
+    , base >=4.9 && <5

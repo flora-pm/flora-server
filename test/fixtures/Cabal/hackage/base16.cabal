@@ -1,0 +1,100 @@
+cabal-version:   3.0
+name:            base16
+x-revision: 3
+version:         1.0
+synopsis:        Fast RFC 4648-compliant Base16 encoding
+description:
+  RFC 4648-compliant Base16 encodings and decodings.
+  This library provides performant encoding and decoding primitives, as well as support for textual values.
+
+homepage:        https://github.com/emilypi/base16
+bug-reports:     https://github.com/emilypi/base16/issues
+license:         BSD-3-Clause
+license-file:    LICENSE
+author:          Emily Pillmore
+maintainer:      emilypi@cohomolo.gy
+copyright:       (c) 2020-2023 Emily Pillmore
+category:        Data
+build-type:      Simple
+extra-doc-files:
+  CHANGELOG.md
+  README.md
+  MIGRATION-1.0.md
+
+tested-with:
+  GHC ==8.10.7
+   || ==9.0.2
+   || ==9.2.5
+   || ==9.4.5
+   || ==9.6.4
+   || ==9.8.1
+   || ==9.10.1
+   || ==9.12.1
+
+source-repository head
+  type:     git
+  location: https://github.com/emilypi/base16.git
+
+library
+  exposed-modules:
+    Data.Base16.Types
+    Data.ByteString.Base16
+    Data.ByteString.Lazy.Base16
+    Data.ByteString.Short.Base16
+    Data.Text.Encoding.Base16
+    Data.Text.Encoding.Base16.Error
+    Data.Text.Lazy.Encoding.Base16
+    Data.Text.Short.Encoding.Base16
+
+  other-modules:
+    Data.Base16.Types.Internal
+    Data.ByteString.Base16.Internal.Head
+    Data.ByteString.Base16.Internal.Utils
+    Data.ByteString.Base16.Internal.W16.Loop
+    Data.ByteString.Base16.Internal.W16.ShortLoop
+
+  build-depends:
+      base        >=4.14 && <4.22
+    , bytestring  >=0.11 && <0.13
+    , deepseq     >=1.4.4.0 && <1.6
+    , primitive   >=0.6  && <0.10
+    , text        >= 2.0 && <2.2
+    , text-short  ^>=0.1
+
+  hs-source-dirs:   src
+  default-language: Haskell2010
+  ghc-options:      -Wall
+
+test-suite base16-tests
+  other-modules:    Internal
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Main.hs
+  build-depends:
+      base               >=4.14 && <4.22
+    , base16
+    , base16-bytestring  >=1.0
+    , bytestring         >=0.11
+    , QuickCheck
+    , random-bytestring
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , text               >=2.0
+    , text-short
+
+benchmark bench
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   benchmarks
+  main-is:          Base16Bench.hs
+  build-depends:
+      base               >=4.14 && <4.22
+    , base16
+    , base16-bytestring  >=1.0
+    , bytestring         >=0.11
+    , criterion
+    , deepseq
+    , random-bytestring
+    , text               >=2.0

@@ -1,0 +1,199 @@
+cabal-version: 3.0
+
+name:                   cardano-testnet
+version:                8.2.0
+synopsis:               The cardano full node
+description:            The cardano full node.
+copyright:              2021-2023 Input Output Global Inc (IOG).
+author:                 IOHK
+maintainer:             operations@iohk.io
+category:               Cardano,
+                        Test,
+license:                Apache-2.0
+license-files:          LICENSE
+                        NOTICE
+build-type:             Simple
+
+
+common project-config
+  default-language:     Haskell2010
+  build-depends:        base >= 4.14 && < 5
+
+  ghc-options:          -Wall
+                        -Wcompat
+                        -Wincomplete-record-updates
+                        -Wincomplete-uni-patterns
+                        -Wno-unticked-promoted-constructors
+                        -Wpartial-fields
+                        -Wredundant-constraints
+                        -Wunused-packages
+
+library
+  import:               project-config
+
+  build-depends:        aeson
+                      , ansi-terminal
+                      , bytestring
+                      , cardano-api ^>= 8.12
+                      , cardano-cli ^>= 8.5
+                      , cardano-crypto-class
+                      , cardano-crypto-wrapper
+                      , cardano-ledger-alonzo
+                      , cardano-ledger-conway
+                      , cardano-ledger-core
+                      , cardano-git-rev
+                      , cardano-ledger-core
+                      , cardano-ledger-byron
+                      , cardano-ledger-shelley
+                      , cardano-node
+                      , containers
+                      , directory
+                      , exceptions
+                      , filepath
+                      , hedgehog
+                      , hedgehog-extras ^>= 0.4.7.0
+                      , mtl
+                      , optparse-applicative-fork
+                      , ouroboros-network ^>= 0.8.2.0
+                      , ouroboros-network-api
+                      , process
+                      , resourcet
+                      , safe-exceptions
+                      , scientific
+                      , stm
+                      , tasty
+                      , tasty-expected-failure
+                      , tasty-hedgehog
+                      , text
+                      , time
+                      , transformers
+                      , unordered-containers
+                      , vector
+
+  hs-source-dirs:       src
+  exposed-modules:      Cardano.Testnet
+                        Parsers.Run
+                        Testnet.Start.Babbage
+                        Testnet.Start.Byron
+                        Testnet.Start.Conway
+                        Testnet.Conf
+                        Testnet.Defaults
+                        Testnet.Filepath
+                        Testnet.Options
+                        Testnet.Property.Assert
+                        Testnet.Property.Run
+                        Testnet.Property.Utils
+                        Testnet.Process.Cli
+                        Testnet.Process.Run
+                        Testnet.Runtime
+                        Testnet.Topology
+
+  other-modules:        Parsers.Babbage
+                        Parsers.Byron
+                        Parsers.Cardano
+                        Parsers.Conway
+                        Parsers.Help
+                        Parsers.Shelley
+                        Parsers.Version
+                        Testnet.Start.Cardano
+                        Testnet.Start.Shelley
+                        Paths_cardano_testnet
+
+  autogen-modules:      Paths_cardano_testnet
+
+
+
+executable cardano-testnet
+  import:               project-config
+
+  hs-source-dirs:       app
+
+  main-is:              cardano-testnet.hs
+
+  build-depends:        cardano-crypto-class
+                      , cardano-cli
+                      , cardano-testnet
+                      , optparse-applicative-fork
+
+  ghc-options:          -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-T
+
+test-suite cardano-testnet-golden
+  import:               project-config
+
+  hs-source-dirs:       test/cardano-testnet-golden
+
+  main-is:              cardano-testnet-golden.hs
+
+  other-modules:        Cardano.Testnet.Test.Golden.Config
+                        Cardano.Testnet.Test.Golden.Help
+                        Cardano.Testnet.Test.Golden.Util
+
+  type:                 exitcode-stdio-1.0
+
+  build-depends:        aeson
+                      , aeson-pretty
+                      , bytestring
+                      , cardano-api
+                      , cardano-crypto-class
+                      , cardano-testnet
+                      , exceptions
+                      , filepath
+                      , hedgehog
+                      , hedgehog-extras ^>= 0.4.7.0
+                      , process
+                      , regex-compat
+                      , tasty
+                      , tasty-hedgehog
+                      , text
+                      , transformers
+
+  ghc-options:          -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-T
+
+  build-tool-depends:   cardano-node:cardano-node
+                      , cardano-cli:cardano-cli ^>= 8.5
+                      , cardano-submit-api:cardano-submit-api
+                      , cardano-testnet:cardano-testnet
+
+test-suite cardano-testnet-test
+  import:               project-config
+
+  hs-source-dirs:       test/cardano-testnet-test
+
+  main-is:              cardano-testnet-test.hs
+
+  other-modules:        Cardano.Testnet.Test.Cli.Alonzo.LeadershipSchedule
+                        Cardano.Testnet.Test.Cli.Babbage.LeadershipSchedule
+                        Cardano.Testnet.Test.Cli.Babbage.StakeSnapshot
+                        Cardano.Testnet.Test.Cli.Conway.StakeSnapshot
+                        Cardano.Testnet.Test.Cli.KesPeriodInfo
+                        Cardano.Testnet.Test.Cli.QuerySlotNumber
+                        Cardano.Testnet.Test.FoldBlocks
+                        Cardano.Testnet.Test.Misc
+                        Cardano.Testnet.Test.Node.Shutdown
+
+  type:                 exitcode-stdio-1.0
+
+  build-depends:        aeson
+                      , async
+                      , bytestring
+                      , cardano-api ^>= 8.12
+                      , cardano-cli ^>= 8.5
+                      , cardano-crypto-class
+                      , cardano-testnet
+                      , containers
+                      , directory
+                      , filepath
+                      , hedgehog
+                      , hedgehog-extras ^>= 0.4.7.0
+                      , process
+                      , tasty
+                      , text
+                      , time
+                      , transformers
+
+  ghc-options:          -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-T
+
+  build-tool-depends:   cardano-node:cardano-node
+                      , cardano-cli:cardano-cli ^>= 8.5
+                      , cardano-submit-api:cardano-submit-api
+                      , cardano-testnet:cardano-testnet

@@ -1,0 +1,66 @@
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 076fc959ff612b7b889c8f02ce5082b559a2a577496054a6777a4b71b2ba1938
+
+name:           inspector
+version:        0.2
+category:       Testing
+homepage:       https://github.com/primetype/inspector#readme
+author:         Nicolas Di Prima
+maintainer:     nicolas@primetype.co.uk
+copyright:      2017-2018 PrimeType Ltd
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    LICENSE
+    README.md
+
+library
+  hs-source-dirs:
+      src
+  default-extensions: NoImplicitPrelude TypeFamilies DataKinds OverloadedStrings
+  ghc-options: -Wall -Werror
+  build-depends:
+      base
+    , basement >=0.0.7
+    , cryptonite
+    , foundation >=0.0.20
+    , memory >=0.14.15
+  exposed-modules:
+      Inspector
+      Inspector.TestVector.Types
+      Inspector.TestVector.Value
+  other-modules:
+      Inspector.Method
+      Inspector.Monad
+      Inspector.Export.Markdown
+      Inspector.Export.Rust
+      Inspector.Export.Types
+      Inspector.Export.RefFile
+      Inspector.Export.Diff
+      Inspector.Parser
+      Inspector.Builder
+      Inspector.TestVector.Key
+      Inspector.TestVector.TestVector
+  default-language: Haskell2010
+
+executable example
+  main-is: Main.hs
+  hs-source-dirs:
+      example/
+  default-extensions: NoImplicitPrelude TypeFamilies DataKinds OverloadedStrings
+  ghc-options: -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base
+    , basement >=0.0.7
+    , cryptonite
+    , foundation >=0.0.20
+    , inspector
+    , memory >=0.14.15
+  other-modules:
+      Paths_inspector
+  default-language: Haskell2010

@@ -57,6 +57,7 @@ main = provideCallStack $ do
           importCategories
           Update.createPackageIndex "hackage" "" "" Nothing
           Update.createPackageIndex "cardano" "" "" Nothing
+          Update.createPackageIndex "mlabs" "" "" Nothing
           password <- liftIO $ Sel.hashText "foobar2000"
           templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
           Update.insertUser templateUser
@@ -109,6 +110,7 @@ cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM package_groups" ()
   void $ execute "DELETE FROM package_feeds" ()
   void $ execute "DELETE FROM packages" ()
+  void $ execute "DELETE FROM index_dependencies" ()
   void $ execute "DELETE FROM package_indexes" ()
   void $ execute "DELETE FROM user_organisation" ()
   void $ execute "DELETE FROM package_publishers" ()

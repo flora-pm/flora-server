@@ -1,0 +1,41 @@
+cabal-version:      >=1.10
+name:               th-extras
+version:            0.0.0.6.0.0.0.0.1
+license:            PublicDomain
+maintainer:         James Cook <mokus@deepbondi.net>
+author:             James Cook <mokus@deepbondi.net>
+stability:          experimental
+tested-with:
+    ghc ==8.2.2 ghc ==8.4.4 ghc ==8.6.5 ghc ==8.8.4 ghc ==8.10.2
+    ghc ==9.0.1
+
+homepage:           https://github.com/mokus0/th-extras
+synopsis:           A grab bag of functions for use with Template Haskell
+description:
+    A grab bag of functions for use with Template Haskell.
+    .
+    This is basically the place I put all my ugly CPP hacks to support
+    the ever-changing interface of the template haskell system by
+    providing high-level operations and making sure they work on as many
+    versions of Template Haskell as I can.
+
+category:           Template Haskell
+build-type:         Simple
+extra-source-files:
+    ReadMe.md
+    ChangeLog.md
+
+source-repository head
+    type:     git
+    location: https://github.com/mokus0/th-extras.git
+
+library
+    exposed-modules:  Language.Haskell.TH.Extras
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    build-depends:
+        base >=4.9 && <5,
+        containers,
+        template-haskell <2.21,
+        th-abstraction >=0.4 && <0.6,
+        syb

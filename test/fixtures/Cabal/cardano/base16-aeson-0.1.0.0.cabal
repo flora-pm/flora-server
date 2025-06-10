@@ -1,0 +1,18 @@
+cabal-version:      2.4
+name:               base16-aeson
+version:            0.1.0.0
+
+library
+    exposed-modules:  Data.ByteString.Base16.Aeson
+
+    build-depends:
+      , aeson >= 2 && < 3
+      , base16 >= 0.3.2 && < 0.4
+      , base >=4.9  && <5
+      , bytestring >= 0.10.12 && < 0.12
+      , text >= 1.2.4 && < 2
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    default-extensions:
+      ImportQualifiedPost
+

@@ -1,0 +1,112 @@
+cabal-version:   2.2
+name:            hkd
+version:         0.2.1
+synopsis:        "higher-kinded data"
+description:
+  "Higher-kinded data" utilities, e.g.
+  .
+  @
+  class FFunctor t where
+  \    ffmap :: (f ~> g) -> t f -> t g
+  @
+  .
+  and other classes and types.
+  .
+  /Note:/ this package is experimental.
+
+homepage:        https://github.com/ekmett/codex/tree/master/hkd#readme
+license:         (BSD-2-Clause OR Apache-2.0)
+license-file:    LICENSE.md
+author:          Edward Kmett <ekmett@gmail.com>
+maintainer:      Oleg Grenrus <oleg.grenrus@iki.fi>
+copyright:       Copyright (c) 2019 Edward Kmett, 2019 Oleg Grenrus
+category:        Data Structures
+build-type:      Simple
+extra-doc-files:
+  README.md
+  CHANGELOG.md
+
+tested-with:
+  GHC ==7.6.3
+   || ==7.8.4
+   || ==7.10.3
+   || ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.5
+   || ==8.8.4
+   || ==8.10.7
+   || ==9.0.2
+   || ==9.2.8
+   || ==9.4.7
+   || ==9.6.3
+   || ==9.8.1
+
+source-repository head
+  type:     git
+  location: https://github.com/phadej/hkd
+  subdir:   hkd
+
+library
+  hs-source-dirs:   src
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  exposed-modules:  Data.HKD
+  other-modules:    Data.Functor.Confusing
+
+  if impl(ghc >=8.0)
+    ghc-options: -Wno-trustworthy-safe
+
+  if impl(ghc >=8.4)
+    ghc-options:
+      -Wincomplete-uni-patterns -Wincomplete-record-updates
+      -Wredundant-constraints -Widentities -Wmissing-export-lists
+
+  build-depends:
+    , base  >=4.6     && <4.20
+    , some  ^>=1.0.0.3
+
+  if !impl(ghc >=7.10)
+    build-depends: transformers >=0.3 && <0.7
+
+  if !impl(ghc >=8.0)
+    build-depends: semigroups >=0.18.5 && <1
+
+  if !impl(ghc >=7.8)
+    build-depends: tagged >=0.8.5 && <1
+
+test-suite example-np
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   example
+  main-is:          NP.hs
+  build-depends:
+    , base
+    , hkd
+
+test-suite example-record
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   example
+  main-is:          Record.hs
+
+  -- build-depends: dump-core
+  -- ghc-options:   -fplugin=DumpCore
+
+  build-depends:
+    , base
+    , hkd
+    , some
+
+test-suite example-issue-12
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  hs-source-dirs:   example
+  main-is:          example-issue-12.hs 
+
+  build-depends:
+    , base
+    , hkd

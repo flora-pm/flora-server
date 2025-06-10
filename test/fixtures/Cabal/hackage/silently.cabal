@@ -1,0 +1,110 @@
+cabal-version: 1.18
+name: silently
+version: 1.2.5.4
+build-type: Simple
+license: BSD3
+license-file: LICENSE
+author: Trystan Spangler
+copyright: (c) Trystan Spangler 2011
+maintainer: Simon Hengel <sol@typeful.net>, Andreas Abel
+homepage: https://github.com/hspec/silently
+package-url: https://github.com/hspec/silently
+bug-reports: https://github.com/hspec/silently/issues
+synopsis: Prevent or capture writing to stdout and other handles.
+description: Prevent or capture writing to stdout, stderr, and other handles.
+category: System, Testing
+
+tested-with:
+  GHC == 9.12.0
+  GHC == 9.10.1
+  GHC == 9.8.3
+  GHC == 9.6.6
+  GHC == 9.4.8
+  GHC == 9.2.8
+  GHC == 9.0.2
+  GHC == 8.10.7
+  GHC == 8.8.4
+  GHC == 8.6.5
+  GHC == 8.4.4
+  GHC == 8.2.2
+  GHC == 8.0.2
+
+extra-doc-files:
+  CHANGELOG.md
+  README.md
+
+source-repository head
+  type: git
+  location: https://github.com/hspec/silently
+
+Library
+  hs-source-dirs:
+      src
+  default-language:
+      Haskell98
+  exposed-modules:
+      System.IO.Silently
+
+  build-depends:
+      base >= 4.3 && < 5
+    , directory
+    , deepseq
+
+  if os(windows)
+    cpp-options: -DWINDOWS
+  if os(linux) || os(osx) || os(freebsd) || os(openbsd) || os(netbsd)
+    cpp-options: -DUNIX
+
+  ghc-options:
+    -Wall
+  if impl(ghc >= 8)
+    ghc-options:
+      -Wcompat
+
+-- This tests the platform specific implementation.
+--
+-- NOTE: Cabal 1.10 can not deal with conditional (== if-else) options.  This
+-- is why we depend on silently to test the platform specific implementation.
+--
+-- As a consequence we can not use Hspec for testing, as this would result in
+-- depending on two different versions of silently at the same time!
+test-suite spec-specific
+  type:
+      exitcode-stdio-1.0
+  hs-source-dirs:
+      test
+  main-is:
+      Spec.hs
+  default-language:
+      Haskell98
+  ghc-options:
+      -Wall -threaded
+  build-depends:
+      base  >= 4.3 && < 5
+    , silently
+    , directory
+    , nanospec
+    , temporary
+
+-- This tests the generic implementation, that should work on all platforms.
+test-suite spec-generic
+  type:
+      exitcode-stdio-1.0
+  hs-source-dirs:
+      src
+    , test
+  main-is:
+      Spec.hs
+  default-language:
+      Haskell98
+  ghc-options:
+      -Wall -threaded
+  other-modules:
+      System.IO.Silently
+
+  build-depends:
+      base  >= 4.3 && < 5
+    , deepseq
+    , directory
+    , nanospec
+    , temporary

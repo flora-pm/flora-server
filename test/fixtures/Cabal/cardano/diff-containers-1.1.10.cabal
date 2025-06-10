@@ -1,0 +1,59 @@
+cabal-version: 3.0
+name:          diff-containers
+version:       1.1.10
+license:       Apache-2.0
+license-file:  LICENSE NOTICE
+copyright:     2022-2023 Input Output (Hong Kong) Ltd.
+maintainer:    operations@iohk.io
+author:        Joris Dral
+tested-with:   ghc ==8.10 || ==9.2 || ==9.4 || ==9.6
+synopsis:      Diffs for containers
+category:      Data Structures
+build-type:    Simple
+
+library
+    exposed-modules:
+        Data.Map.Diff.Strict
+        Data.Map.Diff.Strict.Internal
+
+    hs-source-dirs:   src
+    other-modules:    Data.Sequence.NonEmpty.Extra
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -Wcompat -Wincomplete-uni-patterns
+        -Wincomplete-record-updates -Wpartial-fields -Widentities
+        -Wredundant-constraints -Wmissing-export-lists -Wunused-packages
+        -Wno-unticked-promoted-constructors
+
+    build-depends:
+        base >=4.9 && <4.19,
+        containers,
+        monoid-subclasses,
+        nonempty-containers,
+        nothunks
+
+test-suite test
+    type:             exitcode-stdio-1.0
+    main-is:          Main.hs
+    hs-source-dirs:   test
+    other-modules:
+        Test.Data.Map.Diff.Strict
+        Test.Util
+
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -Wcompat -Wincomplete-uni-patterns
+        -Wincomplete-record-updates -Wpartial-fields -Widentities
+        -Wredundant-constraints -Wmissing-export-lists -Wunused-packages
+        -Wno-unticked-promoted-constructors -fno-ignore-asserts
+
+    build-depends:
+        base >=4.9 && <4.19,
+        containers,
+        diff-containers,
+        nonempty-containers,
+        QuickCheck,
+        quickcheck-classes,
+        quickcheck-monoid-subclasses,
+        tasty,
+        tasty-quickcheck

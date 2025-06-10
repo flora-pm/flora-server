@@ -1,0 +1,70 @@
+cabal-version:      >=1.10
+name:               ekg-wai
+version:            0.1.1.0.0.0.0.1
+license:            BSD3
+license-file:       LICENSE
+maintainer:         tvh@tvholtz.de
+author:             Timo von Holtz, Johan Tibell
+tested-with:
+    ghc ==7.10.3 ghc ==8.0.2 ghc ==8.2.2 ghc ==8.4.1 ghc ==8.8.3
+    ghc ==9.6.5
+
+homepage:           https://github.com/tvh/ekg-wai
+bug-reports:        https://github.com/tvh/ekg-wai/issues
+synopsis:           Remote monitoring of processes
+description:
+    This library lets you remotely monitor a running process over HTTP.
+    It provides a simple way to integrate a monitoring server into any
+    application.
+    This is a port of the ekg library to depend on wai instead of snap.
+
+category:           System, Network
+build-type:         Simple
+data-files:
+    assets/index.html
+    assets/monitor.js
+    assets/monitor.css
+    assets/jquery.flot.min.js
+    assets/jquery-1.6.4.min.js
+    assets/bootstrap-1.4.0.min.css
+    assets/chart_line_add.png
+    assets/cross.png
+
+extra-source-files:
+    LICENSE.icons
+    LICENSE.javascript
+    README.md
+    assets/jquery-1.6.4.js
+    assets/jquery.flot.js
+    assets/bootstrap-1.4.0.css
+    examples/Basic.hs
+
+source-repository head
+    type:     git
+    location: https://github.com/tvh/ekg-wai.git
+
+library
+    exposed-modules:  System.Remote.Monitoring.Wai
+    other-modules:
+        Paths_ekg_wai
+        System.Remote.Monitoring.Wai.Json
+        System.Remote.Monitoring.Wai.App
+
+    default-language: Haskell98
+    ghc-options:      -Wall
+    build-depends:
+        aeson,
+        base >=4.8 && <5,
+        bytestring <1.0,
+        ekg-core >=0.1 && <0.2,
+        ekg-json >=0.1 && <0.2,
+        filepath <1.6,
+        http-types,
+        network,
+        text,
+        time <1.15,
+        transformers,
+        unordered-containers,
+        wai,
+        wai-app-static,
+        warp

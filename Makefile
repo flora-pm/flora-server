@@ -57,21 +57,37 @@ db-reset: db-drop db-setup db-provision ## Reset the dev database
 db-provision: ## Create categories and repositories
 	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
 	@cabal run -- flora-cli provision categories
-	@cabal run -- flora-cli provision-repository --name "hackage" --url https://hackage.haskell.org \
+	@cabal run -- flora-cli provision-repository --name "hackage" \
+			--url https://hackage.haskell.org \
 			--description "Central package repository"
-	@cabal run -- flora-cli provision-repository --name "cardano" --url https://chap.intersectmbo.org \
+	@cabal run -- flora-cli provision-repository --name "cardano" \
+			--url https://chap.intersectmbo.org \
 			--description "Packages of the Cardano project"
-	@cabal run -- flora-cli provision-repository --name "horizon" --url https://packages.horizon-haskell.net \
+	@cabal run -- flora-cli provision-repository --name "horizon" \
+			--url https://packages.horizon-haskell.net \
 			--description "Packages of the Horizon project"
-	@cabal run -- flora-cli provision-repository --name "mlabs" --url https://plutonomicon.github.io/plutarch-plutus \
+	@cabal run -- flora-cli provision-repository --name "mlabs" \
+			--url https://plutonomicon.github.io/plutarch-plutus \
 			--description "Packages of the MLabs Cardano ecosystem"
+	@cabal run -- flora-cli index-dependency --name "cardano"\
+			--depends-on "hackage" \
+			--priority 1
+	@cabal run -- flora-cli index-dependency --name "horizon"\
+			--depends-on "hackage" \
+			--priority 1
+	@cabal run -- flora-cli index-dependency --name "mlabs" \
+			--depends-on "cardano" \
+			--priority 1
+	@cabal run -- flora-cli index-dependency --name "mlabs" \
+			--depends-on "hackage" \
+			--priority 2
 
 db-provision-advisories: ## Load HSEC advisories in the database
 	@cabal run -- flora-cli provision advisories
 
 db-provision-packages: ## Load development data in the dev database
-	@cabal run -- flora-cli provision test-packages --repository "hackage"
-	@cabal run -- flora-cli provision test-packages --repository "cardano"
+	# @cabal run -- flora-cli provision test-packages --repository "hackage"
+	# @cabal run -- flora-cli provision test-packages --repository "cardano"
 	@cabal run -- flora-cli provision test-packages --repository "mlabs"
 
 db-test-create: ## Create the test database

@@ -1,0 +1,110 @@
+cabal-version:   2.2
+name:            infinite-list
+version:         0.1.2
+license:         BSD-3-Clause
+license-file:    LICENSE
+maintainer:      andrew.lelechenko@gmail.com
+author:          Bodigrim
+tested-with:
+    ghc ==8.2.2 ghc ==8.4.4 ghc ==8.6.5 ghc ==8.8.4
+    ghc ==8.10.7 ghc ==9.0.2 ghc ==9.2.8 ghc ==9.4.8 ghc ==9.6.5
+    ghc ==9.8.4 ghc ==9.10.1 ghc ==9.12.1
+
+homepage:        https://github.com/Bodigrim/infinite-list
+synopsis:        Infinite lists
+description:
+    Modern lightweight library for infinite lists with fusion:
+    .
+    * API similar to "Data.List".
+    * No dependencies other than `base`.
+    * Top performance, driven by fusion.
+    * Avoid dangerous instances like `Foldable`.
+    * Use `NonEmpty` where applicable.
+    * Use `Word` for indices.
+    * Be lazy, but not too lazy.
+    .
+    @
+    {\-# LANGUAGE PostfixOperators #-\}
+    import Data.List.Infinite (Infinite(..), (...), (....))
+    import qualified Data.List.Infinite as Inf
+    @
+
+category:        Data
+build-type:      Simple
+extra-doc-files:
+    CHANGELOG.md
+    README.md
+
+source-repository head
+    type:     git
+    location: https://github.com/Bodigrim/infinite-list
+
+library
+    exposed-modules:  Data.List.Infinite
+    hs-source-dirs:   src
+    other-modules:
+        Data.List.Infinite.Internal
+        Data.List.Infinite.Set
+        Data.List.Infinite.Zip
+
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:    base >=4.10 && <5
+
+test-suite infinite-properties
+    type:             exitcode-stdio-1.0
+    main-is:          Properties.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base,
+        containers,
+        infinite-list,
+        QuickCheck,
+        tasty,
+        tasty-quickcheck
+
+test-suite infinite-properties-O0
+    type:             exitcode-stdio-1.0
+    main-is:          Properties.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:      -Wall -O0
+    build-depends:
+        base,
+        containers,
+        infinite-list,
+        QuickCheck,
+        tasty,
+        tasty-quickcheck
+
+test-suite infinite-fusion
+    type:             exitcode-stdio-1.0
+    main-is:          Fusion.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base,
+        infinite-list,
+        tasty,
+        tasty-inspection-testing,
+        tasty-expected-failure
+
+    if impl(ghc <9.2)
+        buildable: False
+
+benchmark infinite-bench
+    type:             exitcode-stdio-1.0
+    main-is:          Bench.hs
+    hs-source-dirs:   bench
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base,
+        infinite-list,
+        tasty-bench
+
+    if impl(ghc >=8.6)
+        ghc-options: -fproc-alignment=64

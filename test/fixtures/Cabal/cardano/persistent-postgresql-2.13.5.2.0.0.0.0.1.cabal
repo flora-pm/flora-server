@@ -1,0 +1,113 @@
+cabal-version:      >=1.10
+name:               persistent-postgresql
+version:            2.13.5.2.0.0.0.0.1
+license:            MIT
+license-file:       LICENSE
+maintainer:         Michael Snoyman <michael@snoyman.com>
+author:             Felipe Lessa, Michael Snoyman <michael@snoyman.com>
+stability:          Stable
+homepage:           http://www.yesodweb.com/book/persistent
+bug-reports:        https://github.com/yesodweb/persistent/issues
+synopsis:           Backend for the persistent library using postgresql.
+description:        Based on the postgresql-simple package
+category:           Database, Yesod
+build-type:         Simple
+extra-source-files: ChangeLog.md
+
+source-repository head
+    type:     git
+    location: git://github.com/yesodweb/persistent.git
+
+library
+    exposed-modules:
+        Database.Persist.Postgresql
+        Database.Persist.Postgresql.Internal
+        Database.Persist.Postgresql.JSON
+
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.9 && <5,
+        persistent >=2.13.3 && <3,
+        aeson >=1.0,
+        attoparsec,
+        blaze-builder,
+        bytestring >=0.10,
+        conduit >=1.2.12,
+        containers >=0.5,
+        monad-logger >=0.3.25,
+        mtl,
+        postgresql-simple >=0.6.1 && <0.7,
+        postgresql-libpq >=0.9.4.2 && <0.10,
+        resourcet >=1.1.9,
+        resource-pool,
+        string-conversions,
+        text >=1.2,
+        time >=1.6,
+        transformers >=0.5,
+        unliftio-core,
+        vault
+
+executable conn-kill
+    main-is:          Main.hs
+    buildable:        False
+    hs-source-dirs:   conn-killed
+    default-language: Haskell2010
+    ghc-options:      -threaded
+    build-depends:
+        base,
+        persistent-postgresql,
+        monad-logger,
+        text,
+        unliftio,
+        time,
+        transformers,
+        persistent,
+        bytestring,
+        resource-pool,
+        mtl
+
+test-suite test
+    type:             exitcode-stdio-1.0
+    main-is:          main.hs
+    hs-source-dirs:   test
+    other-modules:
+        PgInit
+        ArrayAggTest
+        EquivalentTypeTestPostgres
+        JSONTest
+        CustomConstraintTest
+        PgIntervalTest
+        UpsertWhere
+        ImplicitUuidSpec
+        MigrationReferenceSpec
+
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.9 && <5,
+        persistent,
+        persistent-postgresql,
+        persistent-qq,
+        persistent-test,
+        aeson,
+        bytestring,
+        containers,
+        fast-logger,
+        HUnit,
+        hspec >=2.4,
+        hspec-expectations,
+        hspec-expectations-lifted,
+        monad-logger,
+        QuickCheck,
+        quickcheck-instances,
+        resourcet,
+        text,
+        time,
+        transformers,
+        path-pieces,
+        http-api-data,
+        unliftio-core,
+        unliftio,
+        unordered-containers,
+        vector

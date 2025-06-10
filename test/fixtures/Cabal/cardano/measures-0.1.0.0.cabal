@@ -1,0 +1,57 @@
+cabal-version:       >=1.10
+
+name:                measures
+version:             0.1.0.0
+synopsis:            An abstraction for (tuples of) measured quantities
+license:             Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+author:              IOHK
+maintainer:          operations@iohk.io
+copyright:           IOHK
+build-type:          Simple
+
+flag development
+    description: Disable `-Werror`
+    default: False
+    manual: True
+
+library
+  default-language:     Haskell2010
+  hs-source-dirs:       src
+
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Wincomplete-uni-patterns
+    -Wincomplete-record-updates
+    -Wpartial-fields
+    -Widentities
+    -Wredundant-constraints
+    -Wmissing-export-lists
+  if (!flag(development))
+    ghc-options:
+      -Werror
+
+  exposed-modules:
+                        Data.Measure
+                        Data.Measure.Class
+
+  build-depends:        base >= 4.14
+                      , base-deriving-via
+
+test-suite test
+  hs-source-dirs:       test
+  main-is:              Main.hs
+  type:                 exitcode-stdio-1.0
+
+  other-modules:
+                        Test.Data.Measure
+
+  build-depends:        base
+                      , QuickCheck
+                      , tasty
+                      , tasty-quickcheck
+
+                      , measures

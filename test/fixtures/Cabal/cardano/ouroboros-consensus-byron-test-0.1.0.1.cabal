@@ -1,0 +1,121 @@
+name:                  ouroboros-consensus-byron-test
+version:               0.1.0.1
+synopsis:              Test infrastructure for Byron
+-- description:
+license:               Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+copyright:             2020 Input Output (Hong Kong) Ltd.
+author:                IOHK Engineering Team
+maintainer:            operations@iohk.io
+category:              Network
+build-type:            Simple
+cabal-version:         >=1.10
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/ouroboros-network
+
+library
+  hs-source-dirs:      src
+
+  exposed-modules:
+                       Ouroboros.Consensus.ByronDual.Ledger
+                       Ouroboros.Consensus.ByronDual.Node
+                       Ouroboros.Consensus.ByronDual.Node.Serialisation
+
+                       Test.Consensus.Byron.Examples
+                       Test.Consensus.Byron.Generators
+                       Test.ThreadNet.Infra.Byron
+                       Test.ThreadNet.Infra.Byron.Genesis
+                       Test.ThreadNet.Infra.Byron.ProtocolInfo
+                       Test.ThreadNet.Infra.Byron.TrackUpdates
+                       Test.ThreadNet.TxGen.Byron
+
+  build-depends:       base              >=4.9   && <4.15
+                     , bytestring        >=0.10  && <0.11
+                     , cardano-binary
+                     , cardano-crypto-class
+                     , cardano-crypto-test
+                     , cardano-crypto-wrapper
+                     , cardano-ledger-byron
+                     , cardano-ledger-byron-test
+                     , containers        >=0.5   && <0.7
+                     , hedgehog-quickcheck
+                     , mtl               >=2.2   && <2.3
+                     , QuickCheck
+                     , serialise         >=0.2   && <0.3
+
+                     , byron-spec-ledger
+
+                     , ouroboros-network
+                     , ouroboros-consensus
+                     , ouroboros-consensus-test
+                     , ouroboros-consensus-byron
+                     , ouroboros-consensus-byronspec
+
+
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wpartial-fields
+                       -Widentities
+                       -Wredundant-constraints
+                       -Wmissing-export-lists
+                       -fno-ignore-asserts
+
+test-suite test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Main.hs
+  other-modules:
+                       Test.Consensus.Byron.Golden
+                       Test.Consensus.Byron.Serialisation
+                       Test.ThreadNet.Byron
+                       Test.ThreadNet.DualByron
+
+  build-depends:       base
+                     , binary-search
+                     , bytestring
+                     , cardano-binary
+                     , cardano-crypto-class
+                     , cardano-crypto-wrapper
+                     , cardano-ledger-byron
+                     , cardano-ledger-byron-test
+                     , cardano-slotting
+                     , cborg
+                     , containers
+                     , filepath
+                     , hedgehog-quickcheck
+                     , mtl
+                     , QuickCheck
+                     , tasty
+                     , tasty-quickcheck
+
+                     , byron-spec-chain
+                     , byron-spec-ledger
+                     , small-steps
+                     , small-steps-test
+
+                     , ouroboros-network
+                     , ouroboros-consensus
+                     , ouroboros-consensus-test
+                     , ouroboros-consensus-byron
+                     , ouroboros-consensus-byron-test
+                     , ouroboros-consensus-byronspec
+
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wpartial-fields
+                       -Widentities
+                       -Wredundant-constraints
+                       -Wmissing-export-lists
+                       -fno-ignore-asserts
+                       -threaded
+                       -rtsopts

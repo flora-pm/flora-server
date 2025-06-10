@@ -1,0 +1,77 @@
+cabal-version: 2.0
+name:          Unique
+version:       0.4.7.9
+x-revision: 1
+license:       BSD3
+license-file:  LICENSE
+maintainer:    ualinuxcn@gmail.com
+author:        Volodymyr Yashchenko
+tested-with:   ghc >=7.4 && <8.2.1 || >8.2.1 && <8.12
+synopsis:      It provides the functionality like unix "uniq" utility
+description:
+    Library provides the functions to find unique and duplicate elements in the list
+
+category:      Data
+build-type:    Simple
+
+source-repository head
+    type:     git
+    location: https://github.com/kapralVV/Unique.git
+
+library
+    exposed-modules:
+        Data.List.Unique
+        Data.List.UniqueStrict
+        Data.List.UniqueUnsorted
+
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.0 && < 5,
+        containers >=0.5.0.0 && <=0.7,
+        extra >=1.6.2 && <=1.8,
+        hashable >= 1.2.6 && <=1.5,
+        unordered-containers >= 0.2.8 && <=0.3
+
+test-suite HspecTest
+    type:             exitcode-stdio-1.0
+    main-is:          Main.hs
+    hs-source-dirs:   tests
+    other-modules:
+        Unique.Complex
+        Unique.IsUnique
+        Unique.RepeatedBy
+        Unique.SortUniq
+        Unique.AllUnique
+        UniqueStrict.IsUnique
+        UniqueStrict.RepeatedBy
+        UniqueStrict.SortUniq
+        UniqueStrict.AllUnique
+        UniqueUnsorted.IsUnique
+        UniqueUnsorted.RemoveDuplicates
+        UniqueUnsorted.RepeatedBy
+        UniqueUnsorted.AllUnique
+
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.0 && <5,
+        Unique,
+        hspec -any,
+        containers >=0.5.0.0 && <=0.7,
+        QuickCheck    >= 2.10 && <2.15
+
+benchmark Criterion
+    type:             exitcode-stdio-1.0
+    main-is:          Main.hs
+    hs-source-dirs:   bench
+    default-language: Haskell2010
+    ghc-options:      -Wall -rtsopts
+    build-depends:
+        base >=4.0 && <5,
+        Unique,
+        criterion -any,
+        QuickCheck    >= 2.10 && <2.15,
+        quickcheck-instances -any,
+        bytestring -any,
+        hashable -any

@@ -1,0 +1,108 @@
+cabal-version: 3.0
+name:          plutarch-ledger-api
+version:       3.2.1
+
+common common-lang
+  default-language:   Haskell2010
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wredundant-constraints -Werror
+    -Wmissing-deriving-strategies -Wmissing-export-lists
+
+  build-depends:      base
+  default-extensions:
+    BangPatterns
+    BinaryLiterals
+    DataKinds
+    DeriveAnyClass
+    DeriveGeneric
+    DeriveTraversable
+    DerivingVia
+    DuplicateRecordFields
+    EmptyCase
+    FlexibleContexts
+    FlexibleInstances
+    GeneralizedNewtypeDeriving
+    HexFloatLiterals
+    ImportQualifiedPost
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    NoStarIsType
+    NumericUnderscores
+    OverloadedLabels
+    OverloadedStrings
+    PackageImports
+    ScopedTypeVariables
+    StandaloneDeriving
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    UndecidableInstances
+
+common test-lang
+  import:        common-lang
+  ghc-options:   -O2 -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+    , plutarch
+    , plutarch-ledger-api
+    , plutus-ledger-api
+    , QuickCheck
+    , tasty
+    , tasty-quickcheck
+
+library
+  import:          common-lang
+  exposed-modules:
+    Plutarch.LedgerApi.AssocMap
+    Plutarch.LedgerApi.Interval
+    Plutarch.LedgerApi.Utils
+    Plutarch.LedgerApi.V1
+    Plutarch.LedgerApi.V2
+    Plutarch.LedgerApi.V3
+    Plutarch.LedgerApi.Value
+
+  other-modules:
+    Plutarch.LedgerApi.V1.Address
+    Plutarch.LedgerApi.V1.Contexts
+    Plutarch.LedgerApi.V1.Credential
+    Plutarch.LedgerApi.V1.Crypto
+    Plutarch.LedgerApi.V1.DCert
+    Plutarch.LedgerApi.V1.Scripts
+    Plutarch.LedgerApi.V1.Time
+    Plutarch.LedgerApi.V1.Tx
+    Plutarch.LedgerApi.V2.Tx
+    Plutarch.LedgerApi.V3.Contexts
+    Plutarch.LedgerApi.V3.Tx
+
+  build-depends:
+    , bytestring
+    , cryptonite
+    , memory
+    , plutarch
+    , plutus-core
+    , plutus-ledger-api
+    , plutus-tx
+    , serialise
+
+  hs-source-dirs:  src
+
+test-suite tests
+  import:         test-lang
+  type:           exitcode-stdio-1.0
+  main-is:        Main.hs
+  other-modules:
+    Laws
+    Utils
+    V1
+    V2
+    V3
+
+  build-depends:
+    , plutarch-orphanage
+    , plutus-tx
+    , prettyprinter
+
+  hs-source-dirs: test

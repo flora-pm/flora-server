@@ -1,0 +1,154 @@
+cabal-version: 3.0
+name:          cardano-node-emulator
+version:       1.3.0.0
+
+common lang
+  default-language:   Haskell2010
+  default-extensions:
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    ExplicitForAll
+    FlexibleContexts
+    GeneralizedNewtypeDeriving
+    ImportQualifiedPost
+    LambdaCase
+    NamedFieldPuns
+    ScopedTypeVariables
+    StandaloneDeriving
+
+  -- See Plutus Tx readme for why we need the following flags:
+  -- -fobject-code -fno-ignore-interface-pragmas and -fno-omit-interface-pragmas
+  ghc-options:
+    -Wall -Widentities -Wincomplete-record-updates -Wunused-packages
+    -Wincomplete-uni-patterns -Wnoncanonical-monad-instances
+    -Wredundant-constraints -Wmissing-import-lists -fobject-code
+    -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
+    -fplugin-opt PlutusTx.Plugin:target-version=1.0.0
+
+library
+  import:          lang
+  hs-source-dirs:  src
+  exposed-modules:
+    Cardano.Node.Emulator
+    Cardano.Node.Emulator.API
+    Cardano.Node.Emulator.Generators
+    Cardano.Node.Emulator.Internal.API
+    Cardano.Node.Emulator.Internal.Node
+    Cardano.Node.Emulator.Internal.Node.Chain
+    Cardano.Node.Emulator.Internal.Node.Fee
+    Cardano.Node.Emulator.Internal.Node.Params
+    Cardano.Node.Emulator.Internal.Node.TimeSlot
+    Cardano.Node.Emulator.Internal.Node.Validation
+    Cardano.Node.Emulator.LogMessages
+    Cardano.Node.Emulator.Test
+    Cardano.Node.Emulator.Test.Coverage
+    Cardano.Node.Emulator.Test.NoLockedFunds
+
+  --------------------
+  -- Local components
+  --------------------
+  build-depends:
+    , freer-extras         ^>=1.3.0
+    , plutus-ledger        ^>=1.3.0
+    , plutus-script-utils  ^>=1.3.0
+
+  --------------------------
+  -- Other IOG dependencies
+  --------------------------
+  build-depends:
+    , cardano-api:{cardano-api, gen, internal}
+    , cardano-crypto
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-babbage
+    , cardano-ledger-core
+    , cardano-ledger-shelley
+    , cardano-slotting
+    , ouroboros-consensus
+    , plutus-core                               >=1.0.0
+    , plutus-ledger-api                         >=1.0.0
+    , plutus-tx                                 >=1.0.0
+    , sop-extras
+    , strict-sop-core
+
+  ------------------------
+  -- Non-IOG dependencies
+  ------------------------
+  build-depends:
+    , aeson                     >=2
+    , base                      >=4.9     && <5
+    , bytestring
+    , containers
+    , data-default
+    , freer-simple
+    , hedgehog
+    , html-entities
+    , lens
+    , mtl
+    , prettyprinter             >=1.1.0.1
+    , QuickCheck
+    , quickcheck-contractmodel
+    , quickcheck-dynamic
+    , quickcheck-threatmodel
+    , sop-core
+    , tasty
+    , tasty-hunit
+    , text
+    , time
+
+test-suite cardano-node-emulator-test
+  import:           lang
+  type:             exitcode-stdio-1.0
+  main-is:          Spec.hs
+  hs-source-dirs:   test
+  default-language: Haskell2010
+  ghc-options:      -Wno-unused-packages
+  other-modules:
+    Cardano.Node.Emulator.GeneratorsSpec
+    Cardano.Node.Emulator.MTLSpec
+    Plutus.Examples.Escrow
+    Plutus.Examples.EscrowSpec
+    Plutus.Examples.Game
+    Plutus.Examples.GameSpec
+
+  --------------------
+  -- Local components
+  --------------------
+  build-depends:
+    , cardano-node-emulator  ^>=1.3.0
+    , plutus-ledger          ^>=1.3.0
+    , plutus-script-utils    ^>=1.3.0
+
+  --------------------------
+  -- Other IOG dependencies
+  --------------------------
+  build-depends:
+    , cardano-api
+    , plutus-ledger-api  >=1.0.0
+    , plutus-tx          >=1.0.0
+    , plutus-tx-plugin   >=1.0.0
+
+  ------------------------
+  -- Non-IOG dependencies
+  ------------------------
+  build-depends:
+    , aeson
+    , base                      >=4.9 && <5
+    , bytestring
+    , containers
+    , data-default
+    , hedgehog
+    , lens
+    , mtl
+    , QuickCheck
+    , quickcheck-contractmodel
+    , quickcheck-dynamic
+    , tasty
+    , tasty-golden
+    , tasty-hedgehog
+    , tasty-hunit
+    , tasty-quickcheck
+    , text

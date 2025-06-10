@@ -1,0 +1,238 @@
+cabal-version:      >=1.10
+name:               flat
+version:            0.4.4.0.0.0.0.1
+license:            BSD3
+license-file:       LICENSE
+copyright:          Copyright: (c) 2016-2021 Pasqualino `Titto` Assini
+maintainer:         tittoassini@gmail.com
+author:             Pasqualino `Titto` Assini
+tested-with:
+    ghc ==7.10.3 || ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.3
+
+homepage:           http://quid2.org
+synopsis:           Principled and efficient bit-oriented binary serialization.
+description:
+    Reference implementation of `flat`, a principled and efficient binary serialization format.
+
+category:           Data,Parsing,Serialization
+build-type:         Simple
+extra-source-files:
+    stack.yaml
+    stack-6.35.yaml
+    stack-9.21.yaml
+    README.md
+    CHANGELOG
+
+source-repository head
+    type:     git
+    location: https://github.com/Quid2/flat
+
+library
+    exposed-modules:
+        Data.ByteString.Convert
+        Data.FloatCast
+        Data.ZigZag
+        Flat
+        Flat.Bits
+        Flat.Class
+        Flat.Decoder
+        Flat.Decoder.Prim
+        Flat.Decoder.Run
+        Flat.Decoder.Strict
+        Flat.Decoder.Types
+        Flat.Encoder
+        Flat.Encoder.Prim
+        Flat.Encoder.Size
+        Flat.Encoder.Strict
+        Flat.Encoder.Types
+        Flat.Endian
+        Flat.Filler
+        Flat.Instances
+        Flat.Instances.Array
+        Flat.Instances.Base
+        Flat.Instances.ByteString
+        Flat.Instances.Containers
+        Flat.Instances.DList
+        Flat.Instances.Mono
+        Flat.Instances.Test
+        Flat.Instances.Text
+        Flat.Instances.Unordered
+        Flat.Instances.Util
+        Flat.Instances.Vector
+        Flat.Memory
+        Flat.Run
+        Flat.Repr
+        Flat.Tutorial
+        Flat.Types
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    other-extensions:
+        NoMonomorphismRestriction DataKinds DefaultSignatures
+        DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric
+        DeriveTraversable FlexibleContexts FlexibleInstances
+        OverloadedStrings PolyKinds ScopedTypeVariables TupleSections
+        TypeFamilies TypeOperators UndecidableInstances
+
+    ghc-options:
+        -Wall -O2 -funbox-strict-fields -fno-warn-orphans
+        -fno-warn-name-shadowing
+
+    if impl(eta >=0)
+        build-depends:
+            array ==0.5.2.0,
+            base,
+            bytestring ==0.10.8.2,
+            containers ==0.5.9.1,
+            deepseq ==1.4.3.0,
+            dlist,
+            filepath ==1.4.1.1,
+            ghc-prim ==0.4.0.0,
+            hashable >=1.2.4.0 && <=1.2.7.0,
+            HUnit ==1.6.0.0,
+            memory >=0.14.10 && <=0.14.14,
+            mono-traversable ==1.0.1,
+            pretty >=1.1.3.4 && <=1.1.3.6,
+            primitive >=0.6.1.0 && <=0.6.4.0,
+            QuickCheck ==2.10,
+            tasty ==1.1.0.3,
+            text ==1.2.3.0,
+            unordered-containers >=0.2.7.1 && <=0.2.9.0,
+            vector >=0.11.0.0 && <=0.12.0.1
+
+    else
+        build-depends:
+            array >=0.5.1.0,
+            base >=4.8 && <5,
+            bytestring >=0.10.6,
+            containers,
+            deepseq >=1.4,
+            dlist >=0.6,
+            ghc-prim,
+            hashable,
+            mono-traversable,
+            pretty >=1.1.2,
+            primitive,
+            semigroups,
+            text,
+            unordered-containers,
+            vector,
+            QuickCheck,
+            quickcheck-instances,
+            list-t
+
+test-suite spec
+    type:             exitcode-stdio-1.0
+    main-is:          Spec.hs
+    cpp-options:      -DLIST_BIT -DTEST_DECBITS
+    hs-source-dirs:   test
+    other-modules:
+        Test.Data
+        Test.Data.Arbitrary
+        Test.Data.Flat
+        Test.Data.Values
+        Test.Data2
+        Test.Data2.Flat
+        Test.E
+        Test.E.Arbitrary
+        Test.E.Flat
+
+    default-language: Haskell2010
+    build-depends:
+        base,
+        flat,
+        ghc-prim,
+        quickcheck-text,
+        tasty-hunit,
+        tasty-quickcheck,
+        text
+
+    if impl(ghc <8.6)
+        cpp-options: -DENUM_LARGE
+
+    if impl(ghc >8)
+        ghc-options:
+            -Wno-unused-top-binds -Wno-type-defaults -Wno-missing-signatures
+
+    if impl(ghc <8)
+        build-depends: semigroups
+
+    if impl(eta >=0)
+        build-depends:
+            array ==0.5.2.0,
+            bytestring ==0.10.8.2,
+            containers ==0.5.9.1,
+            deepseq ==1.4.3.0,
+            filepath ==1.4.1.1,
+            HUnit ==1.6.0.0,
+            mono-traversable ==1.0.1,
+            QuickCheck ==2.10,
+            tasty ==1.1.0.3,
+            text ==1.2.3.0
+
+    else
+        build-depends:
+            array,
+            bytestring,
+            containers,
+            deepseq,
+            filepath,
+            mono-traversable,
+            QuickCheck,
+            tasty,
+            text,
+            quickcheck-instances
+
+test-suite doc-static
+    type:             exitcode-stdio-1.0
+    main-is:          DocTests.hs
+    hs-source-dirs:   test
+    other-modules:
+        DocTest
+        DocTest.Data.FloatCast
+        DocTest.Data.ZigZag
+        DocTest.Flat.Bits
+        DocTest.Flat.Decoder.Prim
+        DocTest.Flat.Endian
+        DocTest.Flat.Instances.Array
+        DocTest.Flat.Instances.Base
+        DocTest.Flat.Instances.ByteString
+        DocTest.Flat.Instances.Containers
+        DocTest.Flat.Instances.DList
+        DocTest.Flat.Instances.Mono
+        DocTest.Flat.Instances.Text
+        DocTest.Flat.Instances.Unordered
+        DocTest.Flat.Instances.Vector
+        DocTest.Flat.Tutorial
+
+    default-language: Haskell2010
+    build-depends:
+        array,
+        base,
+        bytestring,
+        containers,
+        dlist,
+        flat,
+        pretty,
+        quickcheck-instances,
+        tasty,
+        tasty-hunit,
+        tasty-quickcheck,
+        text,
+        unordered-containers,
+        vector
+
+    if impl(ghc <8)
+        build-depends: semigroups
+
+test-suite Repr
+    type:             exitcode-stdio-1.0
+    main-is:          FlatRepr.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:      -rtsopts
+    build-depends:
+        base,
+        bytestring,
+        flat,
+        list-t

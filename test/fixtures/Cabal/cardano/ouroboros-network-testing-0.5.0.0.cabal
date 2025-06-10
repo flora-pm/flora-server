@@ -1,0 +1,116 @@
+cabal-version:       3.0
+
+name:                   ouroboros-network-testing
+version:                0.5.0.0
+synopsis:               Common modules used for testing in ouroboros-network and ouroboros-consensus
+description:            Common modules used for testing in ouroboros-network and ouroboros-consensus.
+license:                Apache-2.0
+license-files:          LICENSE
+                        NOTICE
+copyright:              2019-2023 Input Output Global Inc (IOG), 2023-2024 Intersect
+author:                 Alexander Vieth, Marcin Szamotulski, Duncan Coutts, Karl Knuttson
+maintainer:             marcin.szamotulski@iohk.io
+category:               Network
+build-type:             Simple
+extra-doc-files:        CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/intersectmbo/ouroboros-network
+
+flag nightly
+  Description: Enable nightly tests
+  Manual:      False
+  Default:     False
+
+library
+  hs-source-dirs:      src
+
+  -- At this experiment/prototype stage everything is exposed.
+  -- This has to be tidied up once the design becomes clear.
+  exposed-modules:
+                       Ouroboros.Network.Testing.Serialise
+                       Ouroboros.Network.Testing.QuickCheck
+                       Ouroboros.Network.Testing.Utils
+                       Ouroboros.Network.Testing.Data.Signal
+                       Ouroboros.Network.Testing.Data.Script
+                       Ouroboros.Network.Testing.Data.AbsBearerInfo
+  default-language:    Haskell2010
+  other-extensions:    BangPatterns,
+                       DataKinds,
+                       EmptyCase,
+                       ExistentialQuantification,
+                       FlexibleContexts,
+                       FlexibleInstances,
+                       FunctionalDependencies,
+                       GADTs,
+                       GADTSyntax,
+                       GeneralizedNewtypeDeriving,
+                       MultiParamTypeClasses,
+                       NamedFieldPuns,
+                       OverloadedStrings,
+                       PolyKinds,
+                       RankNTypes,
+                       RecordWildCards,
+                       ScopedTypeVariables,
+                       TemplateHaskell,
+                       TupleSections,
+                       TypeApplications,
+                       TypeFamilies,
+                       TypeInType
+  build-depends:       base              >=4.14 && <4.20,
+                       containers,
+                       contra-tracer,
+                       deque            ^>=0.4,
+                       io-classes       ^>=1.3.1,
+                       io-sim,
+                       pretty-simple,
+                       psqueues          >=0.2.3 && <0.3,
+                       si-timers,
+                       tasty,
+                       tasty-expected-failure,
+
+                       cborg             >=0.2.1 && <0.3,
+                       serialise         >=0.2 && <0.3,
+                       network-mux,
+                       QuickCheck
+
+  ghc-options:         -Wall
+                       -Wno-unticked-promoted-constructors
+                       -fno-ignore-asserts
+                       -Wcompat
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wpartial-fields
+                       -Widentities
+                       -Wredundant-constraints
+
+  if flag(nightly)
+    cpp-options:       -DNIGHTLY
+
+test-suite test
+  type:                exitcode-stdio-1.0
+  main-is:             Main.hs
+  hs-source-dirs:      test
+  other-modules:       Test.Ouroboros.Network.Testing.Data.AbsBearerInfo
+
+  build-depends:       base              >=4.14 && <4.20
+
+                     , QuickCheck
+                     , tasty
+                     , tasty-quickcheck
+
+                     , ouroboros-network-testing
+
+  default-language:    Haskell2010
+  ghc-options:         -rtsopts
+                       -threaded
+                       -Wall
+                       -Wcompat
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+                       -Wpartial-fields
+                       -Widentities
+                       -Wredundant-constraints
+                       -Wno-unticked-promoted-constructors
+                       -Wunused-packages

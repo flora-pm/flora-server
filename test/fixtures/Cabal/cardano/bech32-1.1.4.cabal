@@ -1,0 +1,116 @@
+name:          bech32
+version:       1.1.4
+synopsis:      Implementation of the Bech32 cryptocurrency address format (BIP 0173).
+description:   Implementation of the Bech32 cryptocurrency address format documented in the
+               BIP (Bitcoin Improvement Proposal) 0173.
+author:        IOHK Engineering Team
+maintainer:    operations@iohk.io, erikd@mega-nerd.com, jonathan.knowles@iohk.io
+copyright:     2017 Marko Bencun, 2019-2023 IOHK
+license:       Apache-2.0
+license-file:  LICENSE
+homepage:      https://github.com/input-output-hk/bech32
+bug-reports:   https://github.com/input-output-hk/bech32/issues
+category:      Web
+build-type:    Simple
+extra-source-files:  ChangeLog.md
+cabal-version: >=1.10
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/bech32.git
+
+flag release
+  description: Strict compiler warning checks.
+  default: False
+  manual: True
+
+flag static
+  description: Try to build a static executable.
+  default: False
+  manual: True
+
+library
+  default-language:
+      Haskell2010
+  default-extensions:
+      NoImplicitPrelude
+      OverloadedStrings
+  ghc-options:
+      -Wall -Wcompat -fwarn-redundant-constraints
+  if flag(release)
+    ghc-options: -Werror
+  build-depends:
+      array
+    , base >= 4.11.1.0 && <5
+    , bytestring
+    , containers
+    , extra
+    , text
+  hs-source-dirs:
+      src
+  exposed-modules:
+      Codec.Binary.Bech32
+      Codec.Binary.Bech32.Internal
+
+executable bech32
+  main-is: Main.hs
+  other-modules:
+      Paths_bech32
+  hs-source-dirs:
+      app
+  build-depends:
+      base
+    , base58-bytestring
+    , bech32
+    , bytestring
+    , extra
+    , memory
+    , optparse-applicative
+    , prettyprinter
+    , prettyprinter-ansi-terminal
+    , text
+  ghc-options:
+      -Wall -Wcompat -fwarn-redundant-constraints
+      -threaded -rtsopts -with-rtsopts=-N
+  if flag(release)
+    ghc-options: -Werror
+  if flag(static)
+    ghc-options: -static
+    cc-options: -static
+    ld-options: -static -pthread
+  default-language: Haskell2010
+
+test-suite bech32-test
+  default-language:
+      Haskell2010
+  type:
+      exitcode-stdio-1.0
+  hs-source-dirs:
+      test
+  ghc-options:
+      -Wall
+      -threaded -rtsopts -with-rtsopts=-N
+  if flag(release)
+    ghc-options: -Werror
+  build-depends:
+      base
+    , base58-bytestring
+    , bech32
+    , bytestring
+    , containers
+    , deepseq
+    , extra
+    , hspec
+    , memory
+    , process
+    , QuickCheck >= 2.12
+    , text
+    , vector
+  build-tools:
+      hspec-discover
+    , bech32
+  main-is:
+      Main.hs
+  other-modules:
+      AppSpec
+      Codec.Binary.Bech32Spec

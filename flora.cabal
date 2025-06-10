@@ -86,7 +86,9 @@ library
     Flora.Environment.Env
     Flora.Import.Categories
     Flora.Import.Package
-    Flora.Import.Package.Bulk
+    Flora.Import.Package.Bulk.Archive
+    Flora.Import.Package.Bulk.Directory
+    Flora.Import.Package.Bulk.Stream
     Flora.Import.Package.Types
     Flora.Import.Types
     Flora.Logging
@@ -122,6 +124,7 @@ library
     Flora.Model.PackageGroupPackage.Query
     Flora.Model.PackageGroupPackage.Types
     Flora.Model.PackageGroupPackage.Update
+    Flora.Model.PackageIndex.Guard
     Flora.Model.PackageIndex.Query
     Flora.Model.PackageIndex.Types
     Flora.Model.PackageIndex.Update
@@ -189,6 +192,7 @@ library
     , pg-entity
     , pg-transact
     , pg-transact-effectful
+    , poolboy
     , postgresql-simple
     , pretty
     , prometheus-client
@@ -270,11 +274,13 @@ library flora-advisories
     , flora
     , hsec-core
     , hsec-tools
+    , log-effectful
     , pandoc-types
     , pg-entity
     , pg-transact-effectful
     , postgresql-simple
     , text
+    , text-display
     , time
     , tracing
     , tracing-effectful

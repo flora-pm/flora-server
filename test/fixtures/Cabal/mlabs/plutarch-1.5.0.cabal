@@ -1,0 +1,159 @@
+cabal-version:      3.0
+name:               plutarch
+version:            1.5.0
+author:             Las Safin <me@las.rs>
+license:            MIT
+extra-source-files: README.md
+tested-with:        GHC ==9.6.3
+
+common c
+  default-language:   GHC2021
+  default-extensions:
+    BlockArguments
+    DataKinds
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingStrategies
+    DerivingVia
+    DisambiguateRecordFields
+    DuplicateRecordFields
+    FunctionalDependencies
+    GADTs
+    ImpredicativeTypes
+    LambdaCase
+    LexicalNegation
+    LiberalTypeSynonyms
+    MonadComprehensions
+    MultiWayIf
+    NegativeLiterals
+    NoFlexibleInstances
+    NoMonomorphismRestriction
+    NoStarIsType
+    NondecreasingIndentation
+    NumDecimals
+    OverloadedLabels
+    OverloadedLists
+    OverloadedRecordDot
+    OverloadedStrings
+    PackageImports
+    PartialTypeSignatures
+    PatternSynonyms
+    QualifiedDo
+    QuantifiedConstraints
+    QuasiQuotes
+    RankNTypes
+    RecordWildCards
+    RecursiveDo
+    RoleAnnotations
+    TypeFamilies
+    TypeFamilyDependencies
+    UnicodeSyntax
+    UnliftedFFITypes
+    UnliftedNewtypes
+    ViewPatterns
+
+  ghc-options:
+    -Weverything -Wno-unused-do-bind -Wno-missing-kind-signatures
+    -Wno-partial-type-signatures -Werror -Wno-implicit-prelude
+    -Wno-name-shadowing -Wno-unsafe -Wno-missing-safe-haskell-mode
+    -Wno-missing-local-signatures -Wno-prepositive-qualified-module
+    -Wno-missing-import-lists -Wno-monomorphism-restriction
+    -Wno-missed-specialisations -Wno-all-missed-specializations
+    -Wno-unrecognised-warning-flags -Wno-unrecognised-pragmas
+    -Wno-operator-whitespace -fprint-equality-relations
+    -fprint-explicit-kinds -fprint-explicit-foralls
+
+library
+  import:          c
+  exposed-modules:
+    Plutarch
+    Plutarch.Api.Internal.Hashing
+    Plutarch.Api.V1
+    Plutarch.Api.V1.Address
+    Plutarch.Api.V1.AssocMap
+    Plutarch.Api.V1.Contexts
+    Plutarch.Api.V1.Crypto
+    Plutarch.Api.V1.DCert
+    Plutarch.Api.V1.Interval
+    Plutarch.Api.V1.Maybe
+    Plutarch.Api.V1.Scripts
+    Plutarch.Api.V1.Time
+    Plutarch.Api.V1.Tuple
+    Plutarch.Api.V1.Tx
+    Plutarch.Api.V1.Value
+    Plutarch.Api.V2
+    Plutarch.Api.V2.Contexts
+    Plutarch.Api.V2.Tx
+    Plutarch.Bool
+    Plutarch.Builtin
+    Plutarch.ByteString
+    Plutarch.Crypto
+    Plutarch.DataRepr
+    Plutarch.DataRepr.Internal
+    Plutarch.DataRepr.Internal.Field
+    Plutarch.DataRepr.Internal.FromData
+    Plutarch.DataRepr.Internal.HList
+    Plutarch.DataRepr.Internal.HList.Utils
+    Plutarch.Either
+    Plutarch.Evaluate
+    Plutarch.FFI
+    Plutarch.Integer
+    Plutarch.Internal
+    Plutarch.Internal.Evaluate
+    Plutarch.Internal.Generic
+    Plutarch.Internal.Newtype
+    Plutarch.Internal.Other
+    Plutarch.Internal.PLam
+    Plutarch.Internal.PlutusType
+    Plutarch.Internal.PrettyStack
+    Plutarch.Internal.Quantification
+    Plutarch.Internal.ScottEncoding
+    Plutarch.Internal.TermCont
+    Plutarch.Internal.Trace
+    Plutarch.Internal.TypeFamily
+    Plutarch.Internal.Witness
+    Plutarch.Lift
+    Plutarch.List
+    Plutarch.Maybe
+    Plutarch.Monadic
+    Plutarch.Num
+    Plutarch.Pair
+    Plutarch.Positive
+    Plutarch.Prelude
+    Plutarch.Pretty
+    Plutarch.Pretty.Internal.BuiltinConstant
+    Plutarch.Pretty.Internal.Config
+    Plutarch.Pretty.Internal.Name
+    Plutarch.Pretty.Internal.TermUtils
+    Plutarch.Pretty.Internal.Types
+    Plutarch.Rational
+    Plutarch.Reducible
+    Plutarch.Script
+    Plutarch.Show
+    Plutarch.String
+    Plutarch.TermCont
+    Plutarch.Trace
+    Plutarch.TryFrom
+    Plutarch.Unit
+    Plutarch.Unsafe
+
+  build-depends:
+    , base               >=4.9      && <5
+    , bytestring
+    , constraints
+    , containers
+    , cryptonite
+    , data-default
+    , flat
+    , generics-sop
+    , lens
+    , memory
+    , mtl
+    , plutus-core        >=1.20.0.0
+    , plutus-ledger-api
+    , plutus-tx
+    , prettyprinter
+    , random
+    , serialise
+    , sop-core
+    , text

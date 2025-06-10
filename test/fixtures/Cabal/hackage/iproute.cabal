@@ -1,0 +1,83 @@
+cabal-version: >=1.10
+name:          iproute
+version:       1.7.15
+license:       BSD3
+license-file:  LICENSE
+maintainer:    Kazu Yamamoto <kazu@iij.ad.jp>
+author:        Kazu Yamamoto <kazu@iij.ad.jp>
+tested-with:
+    ghc ==7.8.4 ghc ==7.10.3 ghc ==8.0.2 ghc ==8.2.2 ghc ==8.4.4
+    ghc ==8.6.5 ghc ==8.8.2
+
+homepage:      http://www.mew.org/~kazu/proj/iproute/
+synopsis:      IP Routing Table
+description:
+    IP Routing Table is a tree of IP ranges
+    to search one of them on the longest
+    match base. It is a kind of TRIE with one
+    way branching removed. Both IPv4 and IPv6
+    are supported.
+
+category:      Algorithms, Network
+build-type:    Simple
+
+source-repository head
+    type:     git
+    location: git://github.com/kazu-yamamoto/iproute.git
+
+library
+    exposed-modules:
+        Data.IP
+        Data.IP.Builder
+        Data.IP.Internal
+        Data.IP.RouteTable
+        Data.IP.RouteTable.Internal
+
+    other-modules:
+        Data.IP.Addr
+        Data.IP.Mask
+        Data.IP.Op
+        Data.IP.Range
+
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.9 && <5,
+        appar,
+        byteorder,
+        bytestring,
+        containers,
+        network
+
+    if impl(ghc <8.0)
+        build-depends: semigroups >=0.17
+
+    if impl(ghc >=8)
+        default-extensions: Strict StrictData
+
+test-suite spec
+    type:               exitcode-stdio-1.0
+    main-is:            Spec.hs
+    build-tool-depends: hspec-discover:hspec-discover
+    hs-source-dirs:     test
+    other-modules:
+        RouteTableSpec
+        BuilderSpec
+        IPSpec
+
+    default-language:   Haskell2010
+    ghc-options:        -Wall
+    build-depends:
+        base >=4.6 && <5,
+        hspec,
+        QuickCheck,
+        appar,
+        byteorder,
+        bytestring,
+        containers,
+        network,
+        safe,
+        iproute
+
+    if impl(ghc <8.0)
+        build-depends: semigroups >=0.17

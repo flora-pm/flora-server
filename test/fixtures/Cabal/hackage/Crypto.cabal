@@ -1,0 +1,154 @@
+cabal-version:   2.2
+name:            Crypto
+version:         4.2.5.2
+build-type:      Simple
+
+Copyright:       © 2003-2007 Dominic Steinitz et al.
+license:         BSD-3-Clause AND GPL-2.0-or-later
+license-file:    ReadMe.tex
+
+author:          Dominic Steinitz
+maintainer:      hvr@gnu.org
+
+category:        Cryptography, Codec
+synopsis:        Common Cryptographic Algorithms in Pure Haskell
+description:
+  This packages provides many of the commonly used cryptographic algorithms, such as
+  .
+  * DES
+  * Blowfish
+  * AES
+  * TEA
+  * SHA-1
+  * SHA-2 (SHA-224, SHA-256, SHA-384, SHA-512)
+  * MD5
+  * RSA
+  * PKCS#5 Padding
+  * HMAC
+  * Ciper Block Chaining (CBC) mode
+  .
+  Moreover, this package also provides an implementation of the /Bubble Babble Binary Data Encoding/ <http://web.mit.edu/kenta/www/one/bubblebabble/spec/jrtrjwzi/draft-huima-01.txt specification> and miscellaneous utilties.
+  .
+  The library in this package is implemented in pure <https://www.haskell.org/onlinereport/haskell2010/ Haskell2010> (plus currently the @FlexibleInstances@ and @TypeSynonymInstances@ extensions) and thus should be fairly portable. However, it shouldn't be expected to be the most performant possible Haskell cryptographic library; for instance, for optimized implementations of Hash algorithms, see the <https://hackage.haskell.org/package/cryptohash-sha512 cryptohash-* family>.
+
+extra-source-files: ChangeLog.md
+
+tested-with: GHC ==7.0.1, GHC ==7.0.4, GHC ==7.2.2, GHC ==7.4.2, GHC ==7.6.3, GHC ==7.8.4, GHC ==7.10.3, GHC ==8.0.2, GHC ==8.2.2, GHC ==8.4.4, GHC ==8.6.5, GHC ==8.8.4, GHC ==8.10.4, GHC ==9.0.2, GHC ==9.2.2, GHC ==9.4.4
+
+------------------
+-- main library --
+------------------
+
+common defaults
+  default-language: Haskell2010
+  other-extensions: FlexibleInstances, TypeSynonymInstances
+
+  -- NB: 'pretty' is needed by the "Codec.Text.Raw" API
+  build-depends:
+    , base    >= 4.3 && < 4.18
+    , pretty ^>= 1.0.1 || ^>= 1.1.0
+
+  ghc-options: -fregs-graph
+
+  -- silence deprecation warnings for Haskell2010 compliant 'bitSize' method
+  -- as well as all the missing typeclass methods warnings
+  ghc-options: -fno-warn-deprecations -fno-warn-missing-methods
+
+library
+  import: defaults
+
+  hs-source-dirs: src
+
+  exposed-modules:
+      Codec.Binary.BubbleBabble
+      Codec.Encryption.RSA
+      Codec.Encryption.RSA.EMEOAEP
+      Codec.Encryption.RSA.MGF
+      Codec.Encryption.RSA.NumberTheory
+      Codec.Encryption.DES
+      Codec.Encryption.AES
+      Codec.Encryption.TEA
+      Codec.Encryption.Blowfish
+      Codec.Encryption.Modes
+      Codec.Encryption.Padding
+      Codec.Text.Raw
+      Codec.Utils
+      Data.Digest.MD5
+      Data.Digest.SHA1
+      Data.Digest.SHA2
+      Data.Digest.SHA224
+      Data.Digest.SHA256
+      Data.Digest.SHA384
+      Data.Digest.SHA512
+      Data.LargeWord,
+      Data.HMAC
+
+  other-modules:
+      Codec.Encryption.BlowfishAux
+      Codec.Encryption.DESAux
+      Codec.Encryption.AESAux
+      Data.Digest.MD5Aux
+
+  -- NB: 'random' is currently /only/ used by the 'getPrime' operation
+  build-depends:
+    , array ^>= 0.3.0 || ^>= 0.4.0 || ^>= 0.5.0
+    , random ^>= 1.0 || ^>= 1.1 || ^>= 1.2
+
+-----------------
+-- test suites --
+-----------------
+
+common test-defaults
+  import: defaults
+
+  hs-source-dirs: src-test
+
+  -- depend on main library
+  build-depends: Crypto
+
+  build-depends:
+    , QuickCheck ^>= 2.14.2
+    , HUnit      ^>= 1.6.2
+
+
+test-suite      SymmetricTest
+  import: test-defaults
+  type: exitcode-stdio-1.0
+
+  Main-Is: SymmetricTest.hs
+
+test-suite      SHA1Test
+  import: test-defaults
+  type: exitcode-stdio-1.0
+
+  Main-Is: SHA1Test.hs
+
+test-suite      SHA2Test
+  import: test-defaults
+  type: exitcode-stdio-1.0
+
+  Main-Is: SHA2Test.hs
+
+test-suite      RSATest
+  import: test-defaults
+  type: exitcode-stdio-1.0
+
+  Main-Is: RSATest.hs
+
+test-suite      QuickTest
+  import: test-defaults
+  type: exitcode-stdio-1.0
+
+  main-is: QuickTest.hs
+
+test-suite      HMACTest
+  import: test-defaults
+  type: exitcode-stdio-1.0
+
+  Main-Is: HMACTest.hs
+
+test-suite      WordListTest
+  import: test-defaults
+  type: exitcode-stdio-1.0
+
+  Main-Is: WordListTest.hs

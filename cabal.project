@@ -7,17 +7,9 @@ active-repositories: hackage.haskell.org
 
 tests: True
 
-semaphore: True
+test-show-details: direct
 
 jobs: $ncpus
-
-multi-repl: True
-
-profiling: True
-
-package *
-  profiling-detail: none
-  ghc-options: +RTS -A32m -RTS -fprof-auto -fprof-auto-calls
 
 allow-newer: binary:containers
            , chronos:hashable
@@ -38,7 +30,6 @@ allow-newer: binary:containers
            , texmath:*
            , type-errors-pretty:base
            , wai-middleware-heartbeat:*
-test-show-details: direct
 
 package feed
   ghc-options: -Wno-tabs
@@ -92,7 +83,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/composewell/streamly
-  tag: 8500b6446dae07e763370608625f26eff5c84600
+  tag: 2045fedc5ade3523dba0c5b595982ba84f2f1a25
   subdir:
     ./core
     ./.

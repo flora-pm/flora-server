@@ -1,0 +1,80 @@
+cabal-version:      3.0
+name:               ekg
+version:            0.4.0.15.0.0.0.0.2
+license:            BSD-3-Clause
+license-file:       LICENSE
+maintainer:
+    Johan Tibell <johan.tibell@gmail.com>,
+    Mikhail Glushenkov <mikhail.glushenkov@gmail.com>
+    operations@iohk.io
+
+author:             Johan Tibell
+tested-with:
+    ghc ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.7 || ==9.2.8 || ==9.4.7 || ==9.6.3 || ==9.8.1
+
+homepage:           https://github.com/input-output-hk/ekg
+bug-reports:        https://github.com/input-output-hk/ekg/issues
+synopsis:           Remote monitoring of processes
+description:
+    This library lets you remotely monitor a running process over HTTP.
+    It provides a simple way to integrate a monitoring server into any
+    application.
+
+category:           System, Network
+build-type:         Simple
+data-files:
+    assets/bootstrap-1.4.0.min.css
+    assets/chart_line_add.png
+    assets/cross.png
+    assets/index.html
+    assets/jquery-1.6.4.min.js
+    assets/jquery.flot.min.js
+    assets/monitor.css
+    assets/monitor.js
+
+extra-source-files:
+    assets/bootstrap-1.4.0.css
+    assets/jquery-1.6.4.js
+    assets/jquery.flot.js
+    examples/Basic.hs
+    LICENSE.icons
+    LICENSE.javascript
+
+extra-doc-files:
+    CHANGELOG.md
+    README.md
+
+source-repository head
+    type:     git
+    location: https://github.com/input-output-hk/ekg.git
+    subdir:   ekg
+
+library
+    exposed-modules:
+        System.Remote.Counter
+        System.Remote.Gauge
+        System.Remote.Label
+        System.Remote.Monitoring
+
+    other-modules:
+        Paths_ekg
+        System.Remote.Json
+        System.Remote.Snap
+
+    autogen-modules:  Paths_ekg
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        aeson ^>=2.2,
+        base >=4.11 && <5,
+        bytestring >=0.10 && <1.0,
+        ekg-core ^>=0.1,
+        ekg-json ^>=0.1,
+        filepath ^>=1.4,
+        network >=2.6 && <3.2,
+        snap-core ^>=1.0.5,
+        snap-server ^>=1.1.2,
+        text >=1.2.4 && <2.2,
+        time >=1.8 && <1.13,
+        transformers >=0.5.5 && <0.7,
+        unordered-containers >=0.2.15 && <0.3

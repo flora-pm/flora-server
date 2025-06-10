@@ -1,0 +1,95 @@
+cabal-version:      3.0
+name:               cardano-ledger-api
+version:            1.0.0.0
+license:            Apache-2.0
+maintainer:         operations@iohk.io
+author:             IOHK
+bug-reports:        https://github.com/input-output-hk/cardano-ledger/issues
+synopsis:           Public API for the cardano ledger codebase
+description:
+    This package a public interface into the cardano ledger codebase. It also
+    provides functionality that works for all eras and is useful for downstream
+    packages.
+
+build-type:         Custom
+extra-source-files: CHANGELOG.md
+
+source-repository head
+    type:     git
+    location: https://github.com/input-output-hk/cardano-ledger
+    subdir:   libs/cardano-ledger-api
+
+custom-setup
+    setup-depends:
+        base >=4 && <5,
+        Cabal,
+        cabal-doctest ^>=1
+
+library
+    exposed-modules:
+        Cardano.Ledger.Api
+        Cardano.Ledger.Api.Era
+        Cardano.Ledger.Api.PParams
+        Cardano.Ledger.Api.Scripts
+        Cardano.Ledger.Api.Scripts.Data
+        Cardano.Ledger.Api.Tx
+        Cardano.Ledger.Api.Tx.AuxData
+        Cardano.Ledger.Api.Tx.Body
+        Cardano.Ledger.Api.Tx.Out
+        Cardano.Ledger.Api.Tx.Wits
+        Cardano.Ledger.Api.UTxO
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -Wcompat -Wincomplete-record-updates
+        -Wincomplete-uni-patterns -Wredundant-constraints -Wpartial-fields
+        -Wunused-packages
+
+    build-depends:
+        base >=4.12 && <4.17,
+        cardano-ledger-allegra >=1.0,
+        cardano-ledger-alonzo >=1.0,
+        cardano-ledger-babbage >=1.0,
+        cardano-ledger-binary >=1.0,
+        cardano-ledger-conway >=1.0,
+        cardano-ledger-core >=1.0,
+        cardano-ledger-mary >=1.0,
+        cardano-ledger-shelley >=1.0,
+        microlens
+
+test-suite cardano-ledger-api-test
+    type:             exitcode-stdio-1.0
+    main-is:          Tests.hs
+    hs-source-dirs:   test
+    other-modules:    Test.Cardano.Ledger.Api.Tx.Out
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -Wcompat -Wincomplete-record-updates
+        -Wincomplete-uni-patterns -Wredundant-constraints -Wpartial-fields
+        -Wunused-packages -rtsopts -threaded
+
+    build-depends:
+        base >=4.12 && <4.17,
+        bytestring,
+        cardano-ledger-api,
+        cardano-ledger-binary,
+        cardano-ledger-babbage-test,
+        cardano-ledger-core:{cardano-ledger-core, testlib},
+        cardano-ledger-conway,
+        microlens
+
+test-suite doctests
+    type:              exitcode-stdio-1.0
+    main-is:           Doctests.hs
+    hs-source-dirs:    doctests
+    default-language:  Haskell2010
+    ghc-options:       -threaded -rtsopts -with-rtsopts=-N
+    x-doctest-options: --no-magic
+    build-depends:
+        base >=4.7 && <5,
+        cardano-ledger-babbage-test,
+        cardano-strict-containers,
+        doctest,
+        template-haskell,
+        QuickCheck

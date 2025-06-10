@@ -1,0 +1,54 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: bfd3822b32b35aee5958f968ae00d57da6247e3734721d63a91d5791126903ef
+
+name:           quiet
+version:        0.2
+synopsis:       Generic deriving of Read/Show with no record labels.
+description:    Please see the README on GitHub at <https://github.com/jacobstanley/quiet#readme>
+category:       Generics
+homepage:       https://github.com/jacobstanley/quiet#readme
+bug-reports:    https://github.com/jacobstanley/quiet/issues
+author:         Jacob Stanley
+maintainer:     jacob@stanley.io
+copyright:      Copyright (c) 2016-2020
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==8.0.2,GHC==8.2.2,GHC==8.4.4,GHC==8.6.5,GHC==8.8.1
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/jacobstanley/quiet
+
+library
+  exposed-modules:
+      Quiet
+      Quiet.Internal
+  other-modules:
+      Paths_quiet
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+test-suite quiet-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_quiet
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , quiet
+  default-language: Haskell2010

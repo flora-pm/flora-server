@@ -1,0 +1,143 @@
+name:                fmt
+version:             0.6.3.0
+synopsis:            A new formatting library
+description:
+  A new formatting library that tries to be simple to understand while still
+  being powerful and providing more convenience features than other libraries
+  (like functions for pretty-printing maps and lists, or a function for
+  printing arbitrary datatypes using generics).
+  .
+  A comparison with other libraries:
+  .
+  * @printf@ (from @Text.Printf@) takes a formatting string and uses some
+    type tricks to accept the rest of the arguments polyvariadically. It's
+    very concise, but there are some drawbacks – it can't produce @Text@
+    (you'd have to @T.pack@ it every time) and it doesn't warn you at
+    compile-time if you pass wrong arguments or not enough of them.
+  .
+  * <https://hackage.haskell.org/package/text-format text-format> takes a
+    formatting string with curly braces denoting places where arguments
+    would be substituted (the arguments themselves are provided via a
+    tuple). If you want to apply formatting to some of the arguments, you
+    have to use one of the provided formatters. Like @printf@, it can fail at
+    runtime, but at least the formatters are first-class (and you can add new
+    ones).
+  .
+  * <https://hackage.haskell.org/package/formatting formatting> takes a
+    formatting template consisting of pieces of strings interleaved with
+    formatters; this ensures that arguments always match their placeholders.
+    @formatting@ provides lots of formatters and generally seems to be the
+    most popular formatting library here. Unfortunately, at least in my
+    experience writing new formatters can be awkward and people sometimes
+    have troubles understanding how @formatting@ works.
+  .
+  * <https://hackage.haskell.org/package/fmt fmt> (i.e. this library)
+    provides formatters that are ordinary functions, and a bunch of operators
+    for concatenating formatted strings; those operators also do automatic
+    conversion. There are some convenience formatters which aren't present in
+    @formatting@ (like ones for formatting maps, lists, converting to base64,
+    etc). Some find the operator syntax annoying, while others like it.
+homepage:            http://github.com/cdornan/fmt
+bug-reports:         http://github.com/cdornan/fmt/issues
+license:             BSD3
+license-file:        LICENSE
+author:              Artyom Kazak <yom@artyom.me>,
+                     Dmitry Kovanikov <kovanikov@gmail.com>
+maintainer:          Chris Dornan <chris@chrisdornan.com>
+-- copyright:
+category:            Text
+tested-with:
+  GHC == 7.10.3
+  GHC == 8.0.2
+  GHC == 8.2.2
+  GHC == 8.4.4
+  GHC == 8.6.4
+  GHC == 8.6.5
+  GHC == 8.10.4
+build-type:          Simple
+extra-source-files:  CHANGELOG.md
+                     tests/doctest-config.json
+cabal-version:       >=1.10
+
+source-repository head
+  type:                git
+  location:            git://github.com/cdornan/fmt.git
+
+library
+  exposed-modules:     Fmt
+                       Fmt.Time
+                       Fmt.Internal
+                       Fmt.Internal.Core
+                       Fmt.Internal.Formatters
+                       Fmt.Internal.Template
+                       Fmt.Internal.Tuple
+                       Fmt.Internal.Numeric
+                       Fmt.Internal.Generic
+
+  build-depends:       base >=4.6 && <5,
+                       base64-bytestring,
+                       bytestring,
+                       call-stack,
+                       containers,
+                       formatting >= 7.0.0,
+                       microlens >= 0.3,
+                       text,
+                       time,
+                       time-locale-compat
+
+  ghc-options:         -Wall -fno-warn-unused-do-bind
+  if impl(ghc > 8.0)
+    ghc-options:       -Wno-redundant-constraints
+  hs-source-dirs:      lib
+  default-language:    Haskell2010
+  if !impl(ghc >= 8.0)
+    build-depends: semigroups == 0.18.*
+
+test-suite tests
+  main-is:             Main.hs
+  type:                exitcode-stdio-1.0
+  build-depends:       base >=4.6 && <5
+                     , bytestring
+                     , call-stack
+                     , containers
+                     , fmt
+                     , hspec >= 2.2
+                     , neat-interpolation
+                     , text
+                     , vector
+
+  ghc-options:         -Wall -fno-warn-unused-do-bind
+
+  hs-source-dirs:      tests
+  default-language:    Haskell2010
+
+test-suite doctests
+  default-language:    Haskell2010
+  type:                exitcode-stdio-1.0
+  ghc-options:         -threaded
+  hs-source-dirs:      tests
+  main-is:             doctests.hs
+  build-depends:       base >=4.6 && <5
+                     , doctest
+                     , QuickCheck
+
+  build-tool-depends:  doctest-discover:doctest-discover
+  if impl(ghc < 8.0)
+    buildable: False
+
+benchmark benches
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      bench
+  main-is:             Main.hs
+  build-depends:       base >=4.6 && <5
+                     , bytestring
+                     , containers
+                     , criterion
+                     , deepseq
+                     , fmt
+                     , formatting
+                     , interpolate
+                     , text
+                     , vector
+  ghc-options:         -Wall
+  default-language:    Haskell2010

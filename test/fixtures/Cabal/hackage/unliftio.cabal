@@ -1,0 +1,156 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           unliftio
+version:        0.2.25.1
+synopsis:       The MonadUnliftIO typeclass for unlifting monads to IO (batteries included)
+description:    Please see the documentation and README at <https://www.stackage.org/package/unliftio>
+category:       Control
+homepage:       https://github.com/fpco/unliftio/tree/master/unliftio#readme
+author:         Michael Snoyman, Francesco Mazzoli
+maintainer:     michael@snoyman.com
+copyright:      2017 FP Complete
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+library
+  exposed-modules:
+      UnliftIO
+      UnliftIO.Async
+      UnliftIO.Chan
+      UnliftIO.Concurrent
+      UnliftIO.Directory
+      UnliftIO.Environment
+      UnliftIO.Exception
+      UnliftIO.Exception.Lens
+      UnliftIO.Foreign
+      UnliftIO.Internals.Async
+      UnliftIO.IO
+      UnliftIO.IO.File
+      UnliftIO.IORef
+      UnliftIO.Memoize
+      UnliftIO.MVar
+      UnliftIO.Process
+      UnliftIO.QSem
+      UnliftIO.QSemN
+      UnliftIO.STM
+      UnliftIO.Temporary
+      UnliftIO.Timeout
+  other-modules:
+      Paths_unliftio
+  hs-source-dirs:
+      src
+  ghc-options: -fwarn-incomplete-uni-patterns
+  build-depends:
+      async >2.1.1
+    , base >=4.9 && <5
+    , bytestring
+    , deepseq
+    , directory
+    , filepath
+    , process >=1.2.0.0
+    , safe-exceptions
+    , stm >=2.5
+    , time
+    , transformers
+    , unliftio-core >=0.1.1.0
+  default-language: Haskell2010
+  if os(windows)
+    cpp-options: -DWINDOWS
+  else
+    build-depends:
+        unix
+  if impl(ghc <= 7.10)
+    build-depends:
+        nats
+  if os(darwin)
+    other-modules:
+        UnliftIO.IO.File.Posix
+    c-sources:
+        cbits/time-osx.c
+        cbits/file-posix.c
+  else
+    if os(windows)
+      c-sources:
+          cbits/time-windows.c
+    else
+      other-modules:
+          UnliftIO.IO.File.Posix
+      c-sources:
+          cbits/file-posix.c
+          cbits/time-posix.c
+
+test-suite unliftio-spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      UnliftIO.AsyncSpec
+      UnliftIO.DirectorySpec
+      UnliftIO.ExceptionSpec
+      UnliftIO.IO.FileSpec
+      UnliftIO.IOSpec
+      UnliftIO.MemoizeSpec
+      UnliftIO.PooledAsyncSpec
+      Paths_unliftio
+  hs-source-dirs:
+      test
+  build-depends:
+      QuickCheck
+    , async >2.1.1
+    , base >=4.9 && <5
+    , bytestring
+    , containers
+    , deepseq
+    , directory
+    , filepath
+    , hspec
+    , process >=1.2.0.0
+    , safe-exceptions
+    , stm >=2.5
+    , time
+    , transformers
+    , unliftio
+    , unliftio-core >=0.1.1.0
+  default-language: Haskell2010
+  if os(windows)
+    cpp-options: -DWINDOWS
+  else
+    build-depends:
+        unix
+
+benchmark conc-bench
+  type: exitcode-stdio-1.0
+  main-is: ConcBench.hs
+  other-modules:
+      Paths_unliftio
+  hs-source-dirs:
+      bench
+  ghc-options: -O2 -threaded -rtsopts
+  build-depends:
+      async >2.1.1
+    , base >=4.9 && <5
+    , bytestring
+    , deepseq
+    , directory
+    , filepath
+    , gauge
+    , process >=1.2.0.0
+    , safe-exceptions
+    , stm >=2.5
+    , time
+    , transformers
+    , unliftio
+    , unliftio-core >=0.1.1.0
+  default-language: Haskell2010
+  if os(windows)
+    cpp-options: -DWINDOWS
+  else
+    build-depends:
+        unix

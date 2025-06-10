@@ -1,7 +1,9 @@
 module Main where
 
 import Codec.Compression.GZip qualified as GZip
-import Control.Monad.Extra (unlessM)
+import Control.Exception.Backtrace
+import Control.Monad.Extra (forM_, unlessM)
+import Data.Bifunctor
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set (Set)
@@ -35,18 +37,22 @@ import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
+import System.IO
+import Text.Read (readMaybe)
 
 import Advisories.Import (importAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
+import Data.Positive
 import DesignSystem (generateComponents)
 import Flora.Environment (getFloraEnv)
--- import Flora.Environment.Config (PoolConfig (..))
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory, importFromIndex)
+import Flora.Import.Package.Bulk.Archive (importFromArchive)
+import Flora.Import.Package.Bulk.Directory (importAllFilesInDirectory)
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Package (Namespace, PackageName)
+import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
@@ -69,6 +75,13 @@ data Command
   | ImportIndex FilePath Text
   | ProvisionRepository Text Text Text
   | ImportPackageTarball PackageName Version FilePath
+  | IndexDependency
+      Text
+      -- ^ Index name
+      Text
+      -- ^ Dependency name
+      (Positive Word)
+      -- ^ Priority
   deriving stock (Eq, Show)
 
 data ProvisionTarget
@@ -88,6 +101,9 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
+  setBacktraceMechanismState CostCentreBacktrace True
+  setBacktraceMechanismState HasCallStackBacktrace False
+  hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv & runFileSystem & runFailIO & runEff
   runTrace <-
@@ -140,6 +156,7 @@ parseCommand =
         ( parseImportPackageTarball
             `withInfo` "Import a single package tarball, useful for testing"
         )
+      <> command "index-dependency" (parseIndexDependency `withInfo` "Declare the dependency of an index on another index, with priority")
 
 parseProvision :: Parser Command
 parseProvision =
@@ -177,6 +194,19 @@ parseImportIndex =
   ImportIndex
     <$> argument str (metavar "PATH")
     <*> option str (long "repository" <> metavar "<repository>" <> help "Which repository we're importing from (hackage, cardano…)")
+
+parseIndexDependency :: Parser Command
+parseIndexDependency =
+  IndexDependency
+    <$> option str (long "name" <> metavar "<repository name>" <> help "Name of the repository")
+    <*> option str (long "depends-on" <> metavar "<index name>" <> help "Index on which to depend")
+    <*> option positiveWord (long "priority" <> metavar "<priority>" <> help "Strictly positive integer")
+
+positiveWord :: ReadM (Positive Word)
+positiveWord = eitherReader $ \arg ->
+  case readMaybe @Word arg of
+    Nothing -> Left "Could not parse"
+    Just word -> first Text.unpack (toPositive word)
 
 parseProvisionRepository :: Parser Command
 parseProvisionRepository =
@@ -243,6 +273,13 @@ runOptions (Options (ImportPackages path repository)) = importFolderOfCabalFiles
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
 runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
+runOptions (Options (IndexDependency indexName dependencyName priority)) = do
+  index <- guardThatPackageIndexExists indexName (\_ -> error $ Text.unpack indexName <> " does not exist in database!")
+  dependency <- guardThatPackageIndexExists dependencyName (\_ -> error $ Text.unpack indexName <> " does not exist in database!")
+  Update.addDependency
+    index.packageIndexId
+    dependency.packageIndexId
+    priority
 
 provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> FloraM es ()
 provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
@@ -262,12 +299,17 @@ importFolderOfCabalFiles
   => FilePath
   -> Text
   -> FloraM es ()
-importFolderOfCabalFiles path repository = do
+importFolderOfCabalFiles baseDir repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
-    Just packageIndex ->
-      importAllFilesInRelativeDirectory (repository, packageIndex.url) (path </> Text.unpack repository)
+    Just packageIndex -> do
+      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
+      importAllFilesInDirectory
+        repository
+        (Text.unpack repository)
+        indexDependencies
+        baseDir
 
 importIndex
   :: ( Concurrent :> es
@@ -286,8 +328,15 @@ importIndex path repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
-    Just _ ->
-      importFromIndex repository path
+    Just packageIndex -> do
+      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
+      forM_
+        indexDependencies
+        (\name -> importIndex path name)
+      importFromArchive
+        repository
+        indexDependencies
+        path
 
 importPackageTarball
   :: ( BlobStoreAPI :> es

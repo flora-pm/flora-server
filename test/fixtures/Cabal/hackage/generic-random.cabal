@@ -1,0 +1,104 @@
+name:                generic-random
+version:             1.5.0.1
+synopsis:            Generic random generators for QuickCheck
+description:
+    Derive instances of @Arbitrary@ for QuickCheck,
+    with various options to customize implementations.
+    .
+    For more information
+    .
+    - See the README
+    .
+    - "Generic.Random.Tutorial"
+    .
+    - http://blog.poisson.chat/posts/2018-01-05-generic-random-tour.html
+
+homepage:            http://github.com/lysxia/generic-random
+license:             MIT
+license-file:        LICENSE
+stability:           Stable
+author:              Li-yao Xia
+maintainer:          lysxia@gmail.com
+category:            Generics, Testing
+build-type:          Simple
+extra-source-files:  README.md CHANGELOG.md
+cabal-version:       >=1.10
+tested-with:         GHC == 8.4.1, GHC == 8.6.1, GHC == 8.8.4, GHC == 8.10.5, GHC == 9.0.1, GHC == 9.2.1
+
+library
+  hs-source-dirs:      src
+  exposed-modules:
+    Generic.Random
+    Generic.Random.DerivingVia
+    Generic.Random.Internal.BaseCase
+    Generic.Random.Internal.Generic
+    Generic.Random.Tutorial
+  build-depends:
+    base >= 4.11 && < 5,
+    QuickCheck >= 2.14
+    -- exports RecursivelyShrink
+  default-language:    Haskell2010
+  ghc-options: -Wall -fno-warn-name-shadowing
+
+source-repository head
+  type:     git
+  location: https://github.com/lysxia/generic-random
+
+test-suite unit
+  hs-source-dirs:  test
+  main-is:         Unit.hs
+  build-depends:
+    base,
+    deepseq,
+    QuickCheck,
+    generic-random
+  type: exitcode-stdio-1.0
+  default-language: Haskell2010
+
+test-suite coherence
+  hs-source-dirs:  test
+  main-is:         coherence.hs
+  build-depends:
+    base,
+    deepseq,
+    QuickCheck,
+    generic-random
+  type: exitcode-stdio-1.0
+  default-language: Haskell2010
+
+test-suite inspect
+  hs-source-dirs:  test
+  main-is:         Inspect.hs
+  build-depends:
+    base,
+    QuickCheck,
+    inspection-testing,
+    generic-random
+  type: exitcode-stdio-1.0
+  default-language: Haskell2010
+  if !flag(enable-inspect)
+    buildable: False
+  else
+    build-depends: random < 1.2
+    -- TODO: this test fails with newer versions of random
+
+test-suite inspect-derivingvia
+  hs-source-dirs:  test
+  main-is:         Inspect/DerivingVia.hs
+  build-depends:
+    base,
+    QuickCheck,
+    inspection-testing,
+    generic-random
+  type: exitcode-stdio-1.0
+  default-language: Haskell2010
+  if !flag(enable-inspect)
+    buildable: False
+  else
+    build-depends: random < 1.2
+    -- TODO: this test fails with newer versions of random
+
+flag enable-inspect
+  description: Enable inspection tests
+  default: False
+  manual: True

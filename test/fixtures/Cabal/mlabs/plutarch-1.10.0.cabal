@@ -1,0 +1,165 @@
+cabal-version:      3.0
+name:               plutarch
+version:            1.10.0
+author:
+  Las Safin <me@las.rs>, Koz Ross <koz@mlabs.city>, Seungheon Oh <seungheon.oh@mlabs.city>, Philip DiSarro <philipdisarro@gmail.com>
+
+license:            MIT
+extra-source-files: README.md
+tested-with:        GHC ==9.6.4
+
+common c
+  default-language:   GHC2021
+  default-extensions:
+    BlockArguments
+    DataKinds
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingStrategies
+    DerivingVia
+    DisambiguateRecordFields
+    DuplicateRecordFields
+    FunctionalDependencies
+    GADTs
+    ImpredicativeTypes
+    LambdaCase
+    LexicalNegation
+    LiberalTypeSynonyms
+    MonadComprehensions
+    MultiWayIf
+    NegativeLiterals
+    NoFlexibleInstances
+    NoMonomorphismRestriction
+    NoStarIsType
+    NondecreasingIndentation
+    NumDecimals
+    OverloadedLabels
+    OverloadedLists
+    OverloadedRecordDot
+    OverloadedStrings
+    PackageImports
+    PartialTypeSignatures
+    PatternSynonyms
+    QualifiedDo
+    QuantifiedConstraints
+    QuasiQuotes
+    RankNTypes
+    RecordWildCards
+    RecursiveDo
+    RoleAnnotations
+    TypeFamilies
+    TypeFamilyDependencies
+    UnicodeSyntax
+    UnliftedFFITypes
+    UnliftedNewtypes
+    ViewPatterns
+
+  build-depends:
+    , base  >=4.9 && <5
+    , text
+
+  ghc-options:
+    -Weverything -Wno-unused-do-bind -Wno-missing-kind-signatures
+    -Wno-partial-type-signatures -Werror -Wno-implicit-prelude
+    -Wno-name-shadowing -Wno-unsafe -Wno-missing-safe-haskell-mode
+    -Wno-missing-local-signatures -Wno-prepositive-qualified-module
+    -Wno-monomorphism-restriction -Wno-missed-specialisations
+    -Wno-all-missed-specializations -Wno-unrecognised-warning-flags
+    -Wno-unrecognised-pragmas -Wno-operator-whitespace
+    -fprint-equality-relations -fprint-explicit-kinds
+    -fprint-explicit-foralls -Wno-missing-import-lists
+    -Wno-missing-export-lists
+
+library
+  import:          c
+  exposed-modules:
+    Plutarch.BitString
+    Plutarch.Builtin
+    Plutarch.Builtin.BLS
+    Plutarch.Builtin.Bool
+    Plutarch.Builtin.ByteString
+    Plutarch.Builtin.Crypto
+    Plutarch.Builtin.Data
+    Plutarch.Builtin.Integer
+    Plutarch.Builtin.Opaque
+    Plutarch.Builtin.String
+    Plutarch.Builtin.Unit
+    Plutarch.DataRepr
+    Plutarch.DataRepr.Internal
+    Plutarch.DataRepr.Internal.Field
+    Plutarch.DataRepr.Internal.FromData
+    Plutarch.DataRepr.Internal.HList
+    Plutarch.DataRepr.Internal.HList.Utils
+    Plutarch.Either
+    Plutarch.Enum
+    Plutarch.Evaluate
+    Plutarch.Internal.Eq
+    Plutarch.Internal.Evaluate
+    Plutarch.Internal.Fix
+    Plutarch.Internal.Generic
+    Plutarch.Internal.IsData
+    Plutarch.Internal.Lift
+    Plutarch.Internal.ListLike
+    Plutarch.Internal.Newtype
+    Plutarch.Internal.Numeric
+    Plutarch.Internal.Ord
+    Plutarch.Internal.Other
+    Plutarch.Internal.PLam
+    Plutarch.Internal.PlutusType
+    Plutarch.Internal.PrettyStack
+    Plutarch.Internal.Quantification
+    Plutarch.Internal.ScottEncoding
+    Plutarch.Internal.Semigroup
+    Plutarch.Internal.Show
+    Plutarch.Internal.Subtype
+    Plutarch.Internal.Term
+    Plutarch.Internal.TermCont
+    Plutarch.Internal.Trace
+    Plutarch.Internal.TryFrom
+    Plutarch.Internal.TypeFamily
+    Plutarch.Internal.Witness
+    Plutarch.List
+    Plutarch.Maybe
+    Plutarch.Monadic
+    Plutarch.Pair
+    Plutarch.Prelude
+    Plutarch.Pretty
+    Plutarch.Pretty.Internal.BuiltinConstant
+    Plutarch.Pretty.Internal.Config
+    Plutarch.Pretty.Internal.Name
+    Plutarch.Pretty.Internal.TermUtils
+    Plutarch.Pretty.Internal.Types
+    Plutarch.Rational
+    Plutarch.Reducible
+    Plutarch.Repr.Data
+    Plutarch.Repr.Internal
+    Plutarch.Repr.Newtype
+    Plutarch.Repr.Scott
+    Plutarch.Repr.SOP
+    Plutarch.Repr.Tag
+    Plutarch.Script
+    Plutarch.String
+    Plutarch.TermCont
+    Plutarch.Trace
+    Plutarch.Unroll
+    Plutarch.Unsafe
+
+  build-depends:
+    , aeson
+    , bytestring
+    , constraints
+    , containers
+    , cryptonite
+    , data-default
+    , flat
+    , generics-sop
+    , lens
+    , mtl
+    , plutus-core        >=1.36.0.0
+    , plutus-ledger-api
+    , plutus-tx
+    , prettyprinter
+    , QuickCheck
+    , random
+    , sop-core
+    , vector

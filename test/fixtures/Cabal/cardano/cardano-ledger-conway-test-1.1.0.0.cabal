@@ -1,0 +1,82 @@
+cabal-version: 3.0
+name:          cardano-ledger-conway-test
+version:       1.1.0.0
+license:       Apache-2.0
+maintainer:    operations@iohk.io
+author:        IOHK
+bug-reports:   https://github.com/input-output-hk/cardano-ledger/issues
+synopsis:      Tests for Cardano ledger Conway era
+description:   This package builds upon the Alonzo ledger
+category:      Network
+build-type:    Simple
+data-files:
+    cddl-files/conway.cddl
+    cddl-files/real/crypto.cddl
+    cddl-files/mock/extras.cddl
+
+source-repository head
+    type:     git
+    location: https://github.com/input-output-hk/cardano-ledger
+    subdir:   eras/conway/test-suite
+
+library
+    exposed-modules:
+        Test.Cardano.Ledger.Conway.Examples.Consensus
+        Test.Cardano.Ledger.Conway.Serialisation.Generators
+        Test.Cardano.Ledger.Conway.Serialisation.Roundtrip
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -Wcompat -Wincomplete-record-updates
+        -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+        -Wunused-packages
+
+    build-depends:
+        base >=4.14 && <4.17,
+        cardano-ledger-alonzo:{cardano-ledger-alonzo, testlib} ^>=1.1,
+        cardano-ledger-babbage ^>=1.1,
+        cardano-ledger-binary:{cardano-ledger-binary, testlib} >=1.0,
+        cardano-strict-containers,
+        cardano-ledger-conway:{cardano-ledger-conway, testlib} ^>=1.1,
+        cardano-ledger-core:{cardano-ledger-core, testlib} ^>=1.1,
+        cardano-ledger-allegra ^>=1.1,
+        cardano-ledger-mary ^>=1.1,
+        cardano-ledger-shelley-ma-test >=1.1,
+        cardano-ledger-shelley-test >=1.1,
+        cardano-ledger-shelley >=1.1,
+        cardano-slotting,
+        containers,
+        data-default-class,
+        small-steps,
+        plutus-tx,
+        microlens,
+        tasty,
+        tasty-quickcheck
+
+test-suite cardano-ledger-conway-test
+    type:             exitcode-stdio-1.0
+    main-is:          Tests.hs
+    hs-source-dirs:   test
+    other-modules:
+        Test.Cardano.Ledger.Conway.Serialisation.CDDL
+        Paths_cardano_ledger_conway_test
+
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -Wcompat -Wincomplete-record-updates
+        -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+        -Wunused-packages -threaded -rtsopts -with-rtsopts=-N
+        "-with-rtsopts=-K4m -M250m"
+
+    build-depends:
+        base,
+        bytestring,
+        cardano-ledger-allegra,
+        cardano-ledger-alonzo,
+        cardano-ledger-babbage,
+        cardano-ledger-conway,
+        cardano-ledger-conway-test,
+        cardano-ledger-core,
+        cardano-ledger-shelley-test,
+        tasty

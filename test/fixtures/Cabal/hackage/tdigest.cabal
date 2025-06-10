@@ -1,0 +1,99 @@
+cabal-version:      2.2
+name:               tdigest
+version:            0.3.1
+synopsis:           On-line accumulation of rank-based statistics
+description:
+  A new data structure for accurate on-line accumulation of rank-based statistics such as quantiles and trimmed means.
+  .
+  See original paper: "Computing extremely accurate quantiles using t-digest" by Ted Dunning and Otmar Ertl
+  for more details <https://github.com/tdunning/t-digest/blob/07b8f2ca2be8d0a9f04df2feadad5ddc1bb73c88/docs/t-digest-paper/histo.pdf>.
+
+category:           Numeric
+homepage:           https://github.com/phadej/haskell-tdigest#readme
+bug-reports:        https://github.com/phadej/haskell-tdigest/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Oleg Grenrus <oleg.grenrus@iki.fi>
+license:            BSD-3-Clause
+license-file:       LICENSE
+tested-with:
+  GHC ==8.6.5
+   || ==8.8.4
+   || ==8.10.7
+   || ==9.0.2
+   || ==9.2.8
+   || ==9.4.8
+   || ==9.6.6
+   || ==9.8.2
+   || ==9.10.1
+
+build-type:         Simple
+extra-source-files:
+  CHANGELOG.md
+  README.md
+
+source-repository head
+  type:     git
+  location: https://github.com/phadej/haskell-tdigest
+  subdir:   tdigest
+
+library
+  default-language: Haskell2010
+  hs-source-dirs:   src
+  ghc-options:      -Wall
+
+  -- GHC boot libraries
+  build-depends:
+    , base          >=4.12.0.0 && <4.22
+    , binary        >=0.8.6.0  && <0.10
+    , deepseq       >=1.4.4.0  && <1.6
+    , transformers  >=0.5.6.2  && <0.7
+
+  if !impl(ghc >=9.6)
+    build-depends: foldable1-classes-compat >=0.1 && <0.2
+
+  -- other dependencies
+  build-depends:
+    , reducers           >=3.12.2   && <3.13
+    , vector             >=0.12.0.1 && <0.14
+    , vector-algorithms  >=0.7.0.1  && <0.10
+
+  exposed-modules:
+    Data.TDigest
+    Data.TDigest.NonEmpty
+    Data.TDigest.Postprocess
+    Data.TDigest.Tree
+    Data.TDigest.Tree.NonEmpty
+    Data.TDigest.Tree.Postprocess
+    Data.TDigest.Vector
+    Data.TDigest.Vector.NonEmpty
+    Data.TDigest.Vector.Postprocess
+
+  -- Internal modules are exposed, but aren't under PVP contract.
+  exposed-modules:
+    Data.TDigest.Internal
+    Data.TDigest.Postprocess.Internal
+    Data.TDigest.Tree.Internal
+    Data.TDigest.Vector.Internal
+
+  other-extensions:
+    DataKinds
+    KindSignatures
+    MultiParamTypeClasses
+    ScopedTypeVariables
+
+test-suite tdigest-tests
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          Tests.hs
+  ghc-options:      -Wall -threaded
+  hs-source-dirs:   tests
+  build-depends:
+    , base
+    , binary
+    , deepseq
+    , semigroups
+    , tasty              >=0.11.0.4 && <1.6
+    , tasty-quickcheck   >=0.8.4    && <0.12
+    , tdigest
+    , vector
+    , vector-algorithms

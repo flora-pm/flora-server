@@ -1,0 +1,44 @@
+cabal-version: 2.2
+name:          hydra-prelude
+version:       0.14.0
+synopsis:      Custom Hydra Prelude used across other Hydra packages.
+author:        IOG
+copyright:     2022 IOG
+license:       Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/hydra
+
+library
+  hs-source-dirs:     src
+  c-sources:          cbits/revision.c
+  exposed-modules:
+    Hydra.Prelude
+    Hydra.Version
+
+  build-depends:
+    , aeson
+    , aeson-pretty
+    , base
+    , base16-bytestring
+    , cardano-binary     >=1.7.0   && <1.8
+    , generic-random
+    , gitrev
+    , io-classes         >=1.0.0.0
+    , QuickCheck
+    , relude
+    , si-timers          >=1.0.0.0
+    , transformers
+
+  default-language:   GHC2021
+  default-extensions:
+    DerivingStrategies
+    LambdaCase
+    NoImplicitPrelude
+
+  ghc-options:
+    -Wall -Wcompat -Wunused-packages -Wmissing-deriving-strategies
