@@ -246,21 +246,24 @@ $ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz 
 
 ### Live Eventlogs
 
-To enable capturing live events from Flora server running locally, run:
+To enable capturing live events from Flora server running locally:
+
+1. Ensure `FLORA_EVENTLOG_SOCKET` is being present in your local environment config script.
+2. Run:
 
 ```
-$ source environment.live-eventlog.sh
+$ source environment.local.sh
 $ cabal run -- flora-server  +RTS -l -hT --eventlog-flush-interval=1 -RTS
 ```
 
-After that, run separately:
+3. After that, run separately:
 
 ```
-$ source environment.live-eventlog.sh
+$ source environment.local.sh
 $ docker compose -f docker-compose.live-eventlog.yml up
 ```
 
-Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
+4. Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
 
 To disable live events, `unset FLORA_EVENTLOG_SOCKET`.
 
