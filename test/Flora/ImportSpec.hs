@@ -4,6 +4,7 @@ import Data.Foldable (traverse_)
 import Data.Maybe (catMaybes)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Vector qualified as Vector
 import Log.Backend.StandardOutput (withStdOutLogger)
 import Optics.Core
 import RequireCallStack
@@ -24,18 +25,20 @@ spec =
     "Import tests"
     [ testThis "Import index" testImportIndex
     , testThis "Namespace chooser" testNamespaceChooser
+    , testThis "MLabs dependencies in Cardano are correctly inserted" testNthLevelDependencies
+    , testThis "Get a list of package names from a directory" testGetListOfPackageNamesFromDirectory
     ]
 
-testIndex :: RequireCallStack => FilePath
+testIndex :: FilePath
 testIndex = "./test/fixtures/tarballs/test-index.tar.gz"
 
-defaultRepo :: RequireCallStack => Text
+defaultRepo :: Text
 defaultRepo = "test-namespace"
 
-defaultRepoURL :: RequireCallStack => Text
+defaultRepoURL :: Text
 defaultRepoURL = "localhost"
 
-defaultDescription :: RequireCallStack => Text
+defaultDescription :: Text
 defaultDescription = "test-description"
 
 testImportIndex :: RequireCallStack => TestEff ()
@@ -47,6 +50,7 @@ testImportIndex = withStdOutLogger $
       Just _ -> pure ()
     importFromIndex
       defaultRepo
+      Vector.empty
       testIndex
     -- check the packages have been imported
     tars <- traverse (Query.getPackageByNamespaceAndName (Namespace defaultRepo) . PackageName) ["tar-a", "tar-b"]
@@ -58,5 +62,21 @@ testImportIndex = withStdOutLogger $
 testNamespaceChooser :: RequireCallStack => TestEff ()
 testNamespaceChooser = do
   assertEqual
-    (chooseNamespace (PackageName "tar-a") (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"]))
+    (chooseNamespace (PackageName "tar-a") (Vector.singleton (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"])))
     (Namespace defaultRepo)
+
+testNthLevelDependencies :: RequireCallStack => TestEff ()
+testNthLevelDependencies = do
+  plutarch <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch")
+  latestRelease <- assertJust =<< Query.getLatestPackageRelease plutarch.packageId
+  dependencies <- Query.getRequirements plutarch.name latestRelease.releaseId
+  assertEqual
+    Vector.empty
+    dependencies
+
+testGetListOfPackageNamesFromDirectory :: RequireCallStack => TestEff ()
+testGetListOfPackageNamesFromDirectory = do
+  result <- buildPackageListFromDirectory "./test/fixtures/Cabal/mlabs"
+  assertEqual
+    Set.empty
+    result

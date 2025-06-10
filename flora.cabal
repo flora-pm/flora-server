@@ -122,6 +122,7 @@ library
     Flora.Model.PackageGroupPackage.Query
     Flora.Model.PackageGroupPackage.Types
     Flora.Model.PackageGroupPackage.Update
+    Flora.Model.PackageIndex.Guard
     Flora.Model.PackageIndex.Query
     Flora.Model.PackageIndex.Types
     Flora.Model.PackageIndex.Update

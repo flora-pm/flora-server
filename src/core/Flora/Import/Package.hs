@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
-
 -- |
 -- Module: Flora.Import.Package
 --
@@ -49,6 +47,7 @@ import Data.Text.Encoding qualified as Text
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Debug.Trace
 import Distribution.Compat.NonEmptySet (toList)
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
@@ -222,9 +221,9 @@ loadJSONContent
   :: (IOE :> es, Log :> es, State (Map (Namespace, PackageName, Version) Text) :> es)
   => FilePath
   -> BS.ByteString
-  -> (Text, Set PackageName)
+  -> Vector (Text, Set PackageName)
   -> FloraM es (Namespace, PackageName, Version, Target)
-loadJSONContent path content (repositoryName, repositoryPackages) = do
+loadJSONContent path content indexPackages = do
   case getNameAndVersionFromPath path of
     Left (name, versionText) -> do
       Log.logAttention "Could not parse version" $
@@ -232,7 +231,7 @@ loadJSONContent path content (repositoryName, repositoryPackages) = do
       error "Parse error"
     Right (name, version) -> do
       let packageName = PackageName name
-      let chosenNamespace = chooseNamespace packageName (repositoryName, repositoryPackages)
+      let chosenNamespace = chooseNamespace packageName indexPackages
       let field = "<repo>/package/" <> display packageName <> "-" <> display version <> ".tar.gz"
       mHashFromCache <- State.state $ \m ->
         case Map.lookup (chosenNamespace, packageName, version) m of
@@ -423,17 +422,18 @@ extractPackageDataFromCabal
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => (Text, Set PackageName)
+  => Text
+  -> Vector (Text, Set PackageName)
   -> UTCTime
   -> GenericPackageDescription
   -> FloraM es ImportOutput
-extractPackageDataFromCabal repository@(repositoryName, repositoryPackages) uploadTime genericDesc = do
+extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
   let buildType = Cabal.buildType genericDesc.packageDescription
   let packageVersion = force packageDesc.package.pkgVersion
-  let namespace = chooseNamespace packageName repository
+  let namespace = chooseNamespace packageName indexPackages
   let packageId = deterministicPackageId namespace packageName
   let releaseId = deterministicReleaseId packageId packageVersion
   timestamp <- Time.currentTime
@@ -483,21 +483,21 @@ extractPackageDataFromCabal repository@(repositoryName, repositoryPackages) uplo
           , buildType = buildType
           }
 
-  let lib = extractLibrary package (repositoryName, repositoryPackages) release Nothing [] <$> allLibraries packageDesc
-  let condLib = maybe [] (extractCondTree extractLibrary package (repositoryName, repositoryPackages) release Nothing) genericDesc.condLibrary
-  let condSubLibs = extractCondTrees extractLibrary package (repositoryName, repositoryPackages) release genericDesc.condSubLibraries
+  let lib = extractLibrary package repositoryName indexPackages release Nothing [] <$> allLibraries packageDesc
+  let condLib = maybe [] (extractCondTree extractLibrary package repositoryName indexPackages release Nothing) genericDesc.condLibrary
+  let condSubLibs = extractCondTrees extractLibrary package repositoryName indexPackages release genericDesc.condSubLibraries
 
-  let foreignLibs = extractForeignLib package (repositoryName, repositoryPackages) release Nothing [] <$> packageDesc.foreignLibs
-  let condForeignLibs = extractCondTrees extractForeignLib package (repositoryName, repositoryPackages) release genericDesc.condForeignLibs
+  let foreignLibs = extractForeignLib package repositoryName indexPackages release Nothing [] <$> packageDesc.foreignLibs
+  let condForeignLibs = extractCondTrees extractForeignLib package repositoryName indexPackages release genericDesc.condForeignLibs
 
-  let executables = extractExecutable package (repositoryName, repositoryPackages) release Nothing [] <$> packageDesc.executables
-  let condExecutables = extractCondTrees extractExecutable package (repositoryName, repositoryPackages) release genericDesc.condExecutables
+  let executables = extractExecutable package repositoryName indexPackages release Nothing [] <$> packageDesc.executables
+  let condExecutables = extractCondTrees extractExecutable package repositoryName indexPackages release genericDesc.condExecutables
 
-  let testSuites = extractTestSuite package (repositoryName, repositoryPackages) release Nothing [] <$> packageDesc.testSuites
-  let condTestSuites = extractCondTrees extractTestSuite package (repositoryName, repositoryPackages) release genericDesc.condTestSuites
+  let testSuites = extractTestSuite package repositoryName indexPackages release Nothing [] <$> packageDesc.testSuites
+  let condTestSuites = extractCondTrees extractTestSuite package repositoryName indexPackages release genericDesc.condTestSuites
 
-  let benchmarks = extractBenchmark package (repositoryName, repositoryPackages) release Nothing [] <$> packageDesc.benchmarks
-  let condBenchmarks = extractCondTrees extractBenchmark package (repositoryName, repositoryPackages) release genericDesc.condBenchmarks
+  let benchmarks = extractBenchmark package repositoryName indexPackages release Nothing [] <$> packageDesc.benchmarks
+  let condBenchmarks = extractCondTrees extractBenchmark package repositoryName indexPackages release genericDesc.condBenchmarks
 
   let components' =
         lib
@@ -514,12 +514,13 @@ extractPackageDataFromCabal repository@(repositoryName, repositoryPackages) uplo
   case NE.nonEmpty components' of
     Nothing -> do
       Log.logAttention "Empty dependencies" $ object ["package" .= package]
-      extractPackageDataFromCabal (repositoryName, repositoryPackages) uploadTime genericDesc
+      extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc
     Just components -> pure $ ImportOutput package categories release components
 
 extractLibrary
   :: Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
   -> List (Condition ConfVar)
@@ -538,7 +539,8 @@ getLibName _ (LSubLibName lname) = Text.pack $ unUnqualComponentName lname
 
 extractForeignLib
   :: Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
   -> List (Condition ConfVar)
@@ -552,7 +554,8 @@ extractForeignLib =
 
 extractExecutable
   :: Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
   -> List (Condition ConfVar)
@@ -566,7 +569,8 @@ extractExecutable =
 
 extractTestSuite
   :: Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
   -> List (Condition ConfVar)
@@ -580,7 +584,8 @@ extractTestSuite =
 
 extractBenchmark
   :: Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
   -> List (Condition ConfVar)
@@ -595,17 +600,18 @@ extractBenchmark =
 -- | Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
 --  to every node, returning a list of '(PackageComponent, List ImportDependency)'
 extractCondTree
-  :: (Package -> (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
+  :: (Package -> Text -> Vector (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
   -> Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
   -> CondTree ConfVar (List Dependency) component
   -> List (PackageComponent, List ImportDependency)
-extractCondTree extractor package repository release defaultComponentName = go []
+extractCondTree extractor package repositoryName indexPackages release defaultComponentName = go []
   where
     go cond tree =
-      let treeComponent = extractor package repository release defaultComponentName cond tree.condTreeData
+      let treeComponent = extractor package repositoryName indexPackages release defaultComponentName cond tree.condTreeData
           treeSubComponents = tree.condTreeComponents >>= extractBranch
        in treeComponent : treeSubComponents
     extractBranch CondBranch{condBranchCondition, condBranchIfTrue, condBranchIfFalse} =
@@ -617,25 +623,26 @@ extractCondTree extractor package repository release defaultComponentName = go [
 --  This function builds upon 'extractCondTree' to make it easier to extract fields such as 'condExecutables', 'condTestSuites' etc.
 --  from a 'GenericPackageDescription'
 extractCondTrees
-  :: (Package -> (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
+  :: (Package -> Text -> Vector (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
   -> Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> Release
   -> List (UnqualComponentName, CondTree ConfVar (List Dependency) component)
   -> List (PackageComponent, List ImportDependency)
-extractCondTrees extractor package repository release trees =
-  trees >>= \case (name, tree) -> extractCondTree extractor package repository release (Just name) tree
+extractCondTrees extractor package repositoryName indexPackages release trees =
+  trees >>= \case (name, tree) -> extractCondTree extractor package repositoryName indexPackages release (Just name) tree
 
 genericComponentExtractor
   :: forall component
-   . ()
-  => ComponentType
+   . ComponentType
   -> (component -> Text)
   -- ^ Extract name from component
   -> (component -> List Dependency)
   -- ^ Extract dependencies
   -> Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> Release
   -> Maybe UnqualComponentName
   -> List (Condition ConfVar)
@@ -646,7 +653,8 @@ genericComponentExtractor
   getName
   getDeps
   package
-  repository
+  repositoryName
+  indexPackages
   release
   defaultComponentName
   condition
@@ -657,18 +665,19 @@ genericComponentExtractor
         componentId = deterministicComponentId releaseId canonicalForm
         metadata = ComponentMetadata (ComponentCondition <$> condition)
         component = PackageComponent componentId releaseId canonicalForm metadata
-        dependencies = buildDependency package repository componentId <$> getDeps rawComponent
+        dependencies = buildDependency package repositoryName indexPackages componentId <$> getDeps rawComponent
      in (component, dependencies)
 
 buildDependency
   :: Package
-  -> (Text, Set PackageName)
+  -> Text
+  -> Vector (Text, Set PackageName)
   -> ComponentId
   -> Cabal.Dependency
   -> ImportDependency
-buildDependency package repository packageComponentId (Cabal.Dependency depName versionRange libs) =
+buildDependency package _repositoryName indexPackages packageComponentId (Cabal.Dependency depName versionRange libs) =
   let name = depName & unPackageName & pack & PackageName
-      namespace = chooseNamespace name repository
+      namespace = chooseNamespace name indexPackages
       packageId = deterministicPackageId namespace name
       createdAt = package.createdAt
       updatedAt = package.updatedAt
@@ -689,12 +698,23 @@ getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty
 getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.repoLocation
 
-chooseNamespace :: PackageName -> (Text, Set PackageName) -> Namespace
-chooseNamespace name (repo, repositoryPackages) =
-  if
-    | name `Set.member` coreLibraries -> Namespace "haskell"
-    | name `Set.member` repositoryPackages -> Namespace repo
-    | otherwise -> Namespace "hackage"
+chooseNamespace
+  :: PackageName
+  -> Vector (Text, Set PackageName)
+  -> Namespace
+chooseNamespace name packages =
+  if name `Set.member` coreLibraries
+    then Namespace "haskell"
+    else
+      let result = Vector.mapMaybe (\(repo, indexPackages) -> isPackageInSet name (repo, indexPackages)) packages
+       in case Vector.uncons result of
+            Just (found, _) -> found
+            Nothing -> traceShow (name, packages) $ error "meeeeh"
+
+isPackageInSet :: PackageName -> (Text, Set PackageName) -> Maybe Namespace
+isPackageInSet packageName (indexName, indexPackages)
+  | packageName `Set.member` indexPackages = Just (Namespace indexName)
+  | otherwise = Nothing
 
 extractTestedWith :: Vector (CompilerFlavor, VersionRange) -> Vector VersionRange
 extractTestedWith testedWithVector =

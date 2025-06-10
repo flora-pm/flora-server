@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Flora.TestUtils
@@ -210,11 +211,9 @@ getFixtures = do
 importAllPackages :: RequireCallStack => TestEff ()
 importAllPackages = do
   importAllFilesInRelativeDirectory
-    ("hackage", "https://hackage.haskell.org")
-    "./test/fixtures/Cabal/hackage"
-  importAllFilesInRelativeDirectory
-    ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
-    "./test/fixtures/Cabal/cardano"
+    "mlabs"
+    (Vector.fromList ["cardano", "hackage"])
+    "./test/fixtures/Cabal"
 
 runTestEff :: RequireCallStack => TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $ do
