@@ -5,6 +5,7 @@ module Flora.Import.Package.Bulk
   ( importAllFilesInDirectory
   , importAllFilesInRelativeDirectory
   , importFromIndex
+  , buildPackageListFromDirectory
   ) where
 
 import Codec.Archive.Tar (Entries)
@@ -12,7 +13,7 @@ import Codec.Archive.Tar qualified as Tar
 import Codec.Archive.Tar.Entry qualified as Tar
 import Codec.Archive.Tar.Index qualified as Tar
 import Codec.Compression.GZip qualified as GZip
-import Control.Monad (when, (>=>))
+import Control.Monad (forM, when, (>=>))
 import Data.Aeson
 import Data.ByteString (StrictByteString)
 import Data.ByteString.Lazy qualified as BL
@@ -25,6 +26,8 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
@@ -79,12 +82,14 @@ importAllFilesInRelativeDirectory
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => (Text, Text)
+  => Text
+  -> Vector Text
   -> FilePath
   -> FloraM es ()
-importAllFilesInRelativeDirectory (repositoryName, repositoryURL) dir = do
-  workdir <- (</> dir) <$> liftIO System.getCurrentDirectory
-  importAllFilesInDirectory (repositoryName, repositoryURL) workdir
+importAllFilesInRelativeDirectory repositoryName indexDependencies dir = do
+  currentDir <- liftIO System.getCurrentDirectory
+  let workdir = currentDir </> dir
+  importAllFilesInDirectory repositoryName indexDependencies workdir
 
 importFromIndex
   :: ( Concurrent :> es
@@ -98,15 +103,23 @@ importFromIndex
      , Time :> es
      )
   => Text
+  -> Vector Text
   -> FilePath
   -> FloraM es ()
-importFromIndex repositoryName index = do
+importFromIndex repositoryName indexDependencies index = do
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
-  let Right repositoryPackages = buildPackageListFromArchive entries
+  indexPackages <- do
+    let Right localPackages = buildPackageListFromArchive entries
+    dependencyPackages <- forM indexDependencies $ \dep -> do
+      indexEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
+      let Right indexPackages = buildPackageListFromArchive indexEntries
+      pure (dep, indexPackages)
+    pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
+
   Log.logInfo "packages" $
     object
       [ "repository" .= repositoryName
-      , "packages" .= repositoryPackages
+      , "packages" .= indexPackages
       ]
   mPackageIndex <- Query.getPackageIndexByName repositoryName
   time <- case mPackageIndex of
@@ -119,7 +132,8 @@ importFromIndex repositoryName index = do
   case Tar.foldlEntries (buildContentStream time) Streamly.nil entries of
     Right stream ->
       importFromStream
-        (repositoryName, repositoryPackages)
+        repositoryName
+        indexPackages
         stream
     Left (err, _) ->
       Log.logAttention_ $
@@ -154,14 +168,21 @@ importAllFilesInDirectory
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => (Text, Text)
+  => Text
+  -> Vector Text
   -> FilePath
   -> FloraM es ()
-importAllFilesInDirectory (repositoryName, _repositoryURL) dir = do
+importAllFilesInDirectory repositoryName indexDependencies dir = do
   liftIO $ System.createDirectoryIfMissing True dir
-  packages <- buildPackageListFromDirectory dir
+  packages <- do
+    localPackages <- buildPackageListFromDirectory dir
+    dependencyPackages <- forM indexDependencies $ \dep -> do
+      let indexDependenciesPath = dir <> "/" <> (Text.unpack dep)
+      packages <- buildPackageListFromDirectory indexDependenciesPath
+      pure (dep, packages)
+    pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
   liftIO . putStrLn $ "🔎  Searching cabal files in " <> dir
-  importFromStream (repositoryName, packages) (findAllCabalFilesInDirectory dir)
+  importFromStream repositoryName packages (findAllCabalFilesInDirectory dir)
 
 importFromStream
   :: forall es
@@ -175,16 +196,17 @@ importFromStream
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => (Text, Set PackageName)
+  => Text
+  -> Vector (Text, Set PackageName)
   -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
   -> FloraM es ()
-importFromStream repository@(repositoryName, _) stream = do
+importFromStream repositoryName indexPackages stream = do
   capabilities <- Concurrent.getNumCapabilities
   let cfg = maxThreads capabilities . ordered True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
-          Streamly.parMapM cfg (processFile repository) stream
+          Streamly.parMapM cfg (processFile repositoryName indexPackages) stream
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
@@ -223,16 +245,17 @@ processFile
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => (Text, Set PackageName)
+  => Text
+  -> Vector (Text, Set PackageName)
   -> (ImportFileType, UTCTime, StrictByteString)
   -> FloraM es ()
-processFile repository importSubject =
+processFile repositoryName indexPackages importSubject =
   case importSubject of
     (CabalFile path, timestamp, content) -> do
       Log.logInfo "importing-package" $
         object ["file_path" .= path]
       loadContent path content
-        >>= ( extractPackageDataFromCabal repository timestamp
+        >>= ( extractPackageDataFromCabal repositoryName indexPackages timestamp
                 >=> \importedPackage -> persistImportOutput importedPackage
             )
 

@@ -111,7 +111,7 @@ processAffectedPackage advisoryId affected = do
         case affected.affectedComponentIdentifier of
           Hackage affectedPackageName -> PackageName affectedPackageName
           GHC _ -> PackageName "ghc"
-  let namespace = chooseNamespace packageName ("hackage", Set.empty)
+  let namespace = chooseNamespace packageName (Vector.singleton ("hackage", Set.empty))
   package <- guardThatPackageExists namespace packageName $ \_ _ ->
     throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
   let declarations =
