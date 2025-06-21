@@ -1,0 +1,85 @@
+cabal-version: 2.2
+
+name:                 cardano-prelude-test
+version:              0.1.0.5
+synopsis:             Utility types and functions for testing Cardano
+description:          Utility types and functions for testing Cardano
+license:              MIT
+license-file:         LICENSE
+author:               IOHK
+maintainer:           operations@iohk.io
+copyright:            2018-2023 Input Output Global Inc (IOG)
+category:             Currency
+build-type:           Simple
+
+flag development
+  description: Disable `-Werror`
+  default: False
+  manual: True
+
+library
+  hs-source-dirs:     src
+  exposed-modules:    Test.Cardano.Prelude
+  other-modules:      Test.Cardano.Prelude.Base16
+                      Test.Cardano.Prelude.Gen
+                      Test.Cardano.Prelude.Golden
+                      Test.Cardano.Prelude.Helpers
+                      Test.Cardano.Prelude.Orphans
+                      Test.Cardano.Prelude.QuickCheck.Arbitrary
+                      Test.Cardano.Prelude.QuickCheck.Property
+                      Test.Cardano.Prelude.Tripping
+
+  build-depends:      base
+                    , aeson
+                    , aeson-pretty            >= 0.8.5
+                    , attoparsec
+                    , base16-bytestring       >= 1
+                    , bytestring
+                    , canonical-json          >= 0.6.0.1
+                    , cardano-prelude
+                    , containers
+                    , crypton
+                    , formatting
+                    , hedgehog
+                    , hspec
+                    , pretty-show
+                    , QuickCheck
+                    , quickcheck-instances
+                    , template-haskell
+                    , th-compat
+                    , text
+                    , time
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+
+  if (!flag(development))
+    ghc-options:      -Werror
+
+-- NOTE: We need to keep the test-suite name short.
+--       If it's too long, we may exceed the path length
+--       on windows... somehow.
+-- => Keep the test-suite name short (and module names as well)
+--    to make this build on windows.
+test-suite prelude-tests
+  hs-source-dirs:     test
+  main-is:            test.hs
+  type:               exitcode-stdio-1.0
+  other-modules:      Test.Cardano.Prelude.GHC.Heap.NormalFormSpec
+                      Test.Cardano.Prelude.GHC.Heap.SizeSpec
+                      Test.Cardano.Prelude.GHC.Heap.TreeSpec
+
+  build-depends:      base
+                    , bytestring
+                    , cardano-prelude
+                    , cardano-prelude-test
+                    , ghc-heap
+                    , ghc-prim
+                    , hedgehog
+                    , text
+  default-language:   Haskell2010
+  ghc-options:        -threaded
+                      -rtsopts
+                      -Wall
+
+  if (!flag(development))
+    ghc-options:      -Werror

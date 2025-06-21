@@ -1,0 +1,86 @@
+cabal-version: 3.0
+name:          hydra-test-utils
+version:       0.14.0
+synopsis:      Hydra utilities for testing, aka. "Test Prelude"
+author:        IOG
+copyright:     2022 IOG
+license:       Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/hydra
+
+common package-config
+  default-language:   GHC2021
+  default-extensions:
+    DataKinds
+    DerivingStrategies
+    LambdaCase
+    NoImplicitPrelude
+    OverloadedStrings
+    PatternSynonyms
+    ViewPatterns
+
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wredundant-constraints -Wunused-packages
+    -Wmissing-deriving-strategies
+
+library
+  import:          package-config
+  hs-source-dirs:  src
+  exposed-modules:
+    Test.Hspec.MarkdownFormatter
+    Test.Hydra.Prelude
+    Test.Network.Ports
+    Test.Plutus.Validator
+
+  build-depends:
+    , base
+    , cardano-ledger-alonzo
+    , cardano-ledger-core
+    , cardano-slotting
+    , containers
+    , data-default
+    , directory
+    , filepath
+    , hspec
+    , hspec-api
+    , hspec-core
+    , hspec-junit-formatter
+    , HUnit
+    , hydra-cardano-api
+    , hydra-prelude
+    , lens
+    , network
+    , plutus-ledger-api      >=1.1.1.0
+    , plutus-tx
+    , port-utils
+    , process
+    , QuickCheck
+    , relude
+    , temporary
+
+test-suite hydra-test-util-tests
+  import:             package-config
+  hs-source-dirs:     test
+  other-modules:
+    HydraTestUtilsSpec
+    Test.HSpec.MarkdownFormatterSpec
+
+  main-is:            Main.hs
+  type:               exitcode-stdio-1.0
+  build-depends:
+    , base
+    , filepath
+    , hspec
+    , hspec-core
+    , hydra-prelude
+    , hydra-test-utils
+    , QuickCheck
+
+  build-tool-depends: hspec-discover:hspec-discover
+  ghc-options:        -threaded -rtsopts

@@ -1,0 +1,93 @@
+cabal-version: 3.0
+name: marlowe-protocols
+version: 0.1.0.0
+synopsis:
+  Protocol definitions for Marlowe
+bug-reports: https://github.com/input-output-hk/marlowe-cardano/issues
+license: Apache-2.0
+author: Jamie Bertram
+maintainer: jamie.bertram@iohk.io
+stability: experimental
+category: Language
+license-files:
+  LICENSE
+  NOTICE
+
+source-repository head
+  type: git
+  location: https://github.com/input-output-hk/marlowe-cardano
+  subdir: marlowe-protocols
+
+library
+  default-language: Haskell2010
+  hs-source-dirs:   src
+  default-extensions:
+    BlockArguments
+    DeriveAnyClass
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    ExplicitForAll
+    GeneralizedNewtypeDeriving
+    LambdaCase
+    NamedFieldPuns
+    NumericUnderscores
+    OverloadedStrings
+    RecordWildCards
+    ScopedTypeVariables
+    StandaloneDeriving
+    TypeApplications
+    TupleSections
+  ghc-options:
+    -Wall -Wnoncanonical-monad-instances -Wunused-packages
+    -Wincomplete-uni-patterns -Wincomplete-record-updates
+    -Wredundant-constraints -Widentities
+    -Wunused-packages
+  exposed-modules:
+    Network.Channel
+    Network.Protocol.ChainSeek.Client
+    Network.Protocol.ChainSeek.Server
+    Network.Protocol.ChainSeek.Types
+    Network.Protocol.Codec
+    Network.Protocol.Codec.Spec
+    Network.Protocol.Connection
+    Network.Protocol.Driver
+    Network.Protocol.Handshake.Client
+    Network.Protocol.Handshake.Server
+    Network.Protocol.Handshake.Types
+    Network.Protocol.Job.Client
+    Network.Protocol.Job.Server
+    Network.Protocol.Job.Types
+    Network.Protocol.Peer
+    Network.Protocol.Query.Client
+    Network.Protocol.Query.Server
+    Network.Protocol.Query.Types
+    Observe.Event.Network.Protocol
+  build-depends:
+      base >= 4.9 && < 5
+    , aeson >= 2 && < 3
+    , async-components ==0.1.0.0
+    , base16 >= 0.3.2 && < 0.4
+    , binary >= 0.8.8 && < 0.9
+    , bytestring >= 0.10.12 && < 0.12
+    , containers >= 0.6.5 && < 0.7
+    , eventuo11y ^>= { 0.9, 0.10 }
+    , eventuo11y-extras ==0.1.0.0
+    , general-allocate ^>= { 0.2 }
+    , hspec >= 2.10 && < 3
+    , hspec-golden >= 0.2 && < 0.3
+    , lifted-base >= 0.2.3 && < 0.3
+    , monad-control >= 1 && < 1.1
+    , network >= 3.1 && < 4
+    , network-run >= 0.2.4 && < 0.3
+    , nonempty-containers >= 0.3.4 && < 0.4
+    , stm >= 2.5 && < 2.6
+    , QuickCheck >= 2.14 && < 3
+    , text >= 1.2.4 && < 2
+    , time >= 1.9 && < 2
+    , transformers-base >= 0.4 && < 0.5
+    , typed-protocols ==0.1.0.0

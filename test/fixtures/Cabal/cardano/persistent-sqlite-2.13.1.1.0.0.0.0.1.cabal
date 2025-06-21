@@ -1,0 +1,173 @@
+cabal-version:      >=1.10
+name:               persistent-sqlite
+version:            2.13.1.1.0.0.0.0.1
+license:            MIT
+license-file:       LICENSE
+maintainer:         Michael Snoyman <michael@snoyman.com>
+author:             Michael Snoyman <michael@snoyman.com>
+stability:          Stable
+homepage:           http://www.yesodweb.com/book/persistent
+bug-reports:        https://github.com/yesodweb/persistent/issues
+synopsis:           Backend for the persistent library using sqlite3.
+description:
+    This package includes a thin sqlite3 wrapper based on the direct-sqlite package, as well as the entire C library, so there are no system dependencies.
+
+category:           Database, Yesod
+build-type:         Simple
+extra-source-files:
+    ChangeLog.md
+    cbits/*.c
+    cbits/*.h
+
+source-repository head
+    type:     git
+    location: git://github.com/yesodweb/persistent.git
+
+flag systemlib
+    description: Use the system-wide sqlite library
+    default:     False
+
+flag use-pkgconfig
+    description: Use pkg-config to find system sqlite library
+    default:     False
+
+flag build-sanity-exe
+    description: Build a sanity check test executable
+    default:     False
+
+flag full-text-search
+    description:
+        Enable full-text search in the vendored SQLite library; has no effect if a system SQLite library is used.
+
+flag uri-filenames
+    description:
+        Enable URI filenames in the vendored SQLite library; has no effect if a system SQLite library is used.
+
+flag have-usleep
+    description:
+        Enable usleep in the vendored SQLite library; has no effect if a system SQLite library is used.
+
+flag json1
+    description:
+        Enable json1 in the vendored SQLite library; has no effect if a system SQLite library is used.
+
+flag use-stat3
+    description:
+        This flag is now a no-op, as the corresponding SQLite option is now a no-op; has no effect if a system SQLite library is used.
+
+    default:     False
+
+flag use-stat4
+    description:
+        Enable STAT4 in the vendored SQLite library (supercedes stat3); has no effect if a system SQLite library is used.
+
+library
+    exposed-modules:
+        Database.Sqlite
+        Database.Sqlite.Internal
+        Database.Persist.Sqlite
+
+    c-sources:        cbits/config.c
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.9 && <5,
+        persistent >=2.13.3 && <3,
+        aeson >=1.0,
+        bytestring >=0.10,
+        conduit >=1.2.12,
+        containers >=0.5,
+        microlens-th >=0.4.1.1,
+        monad-logger >=0.3.25,
+        mtl,
+        resource-pool,
+        resourcet >=1.1.9,
+        text >=1.2,
+        time,
+        transformers >=0.5,
+        unliftio-core,
+        unordered-containers
+
+    if flag(systemlib)
+        if flag(use-pkgconfig)
+            pkgconfig-depends: sqlite3
+
+        else
+            extra-libraries: sqlite3
+
+    else
+        cc-options:       -fPIC -std=c99
+        c-sources:        cbits/sqlite3.c
+        include-dirs:     cbits
+        includes:         sqlite3.h
+        install-includes: sqlite3.h
+
+    if flag(full-text-search)
+        cc-options:
+            -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS
+            -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+
+    if flag(uri-filenames)
+        cc-options: -DSQLITE_USE_URI
+
+    if flag(have-usleep)
+        cc-options: -DHAVE_USLEEP
+
+    if flag(json1)
+        cc-options: -DSQLITE_ENABLE_JSON1
+
+    if flag(use-stat4)
+        cc-options: -DSQLITE_ENABLE_STAT4
+
+    if !os(windows)
+        extra-libraries: pthread
+
+executable sanity
+    main-is:          sanity.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    build-depends:
+        base,
+        persistent-sqlite,
+        monad-logger
+
+    if flag(build-sanity-exe)
+
+    else
+        buildable: False
+
+test-suite test
+    type:             exitcode-stdio-1.0
+    main-is:          main.hs
+    hs-source-dirs:   test
+    other-modules:
+        SqliteInit
+        Database.Persist.Sqlite.CompositeSpec
+
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.9 && <5,
+        persistent,
+        persistent-sqlite,
+        persistent-test,
+        bytestring,
+        containers,
+        conduit,
+        exceptions,
+        fast-logger,
+        hspec >=2.4,
+        HUnit,
+        microlens,
+        monad-logger,
+        mtl,
+        QuickCheck,
+        resourcet,
+        system-fileio,
+        system-filepath,
+        temporary,
+        text,
+        time,
+        transformers,
+        time,
+        unliftio-core

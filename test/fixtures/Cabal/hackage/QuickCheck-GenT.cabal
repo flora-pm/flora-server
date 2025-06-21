@@ -1,0 +1,60 @@
+cabal-version: 3.0
+name:          QuickCheck-GenT
+version:       0.2.2.2
+synopsis:      A GenT monad transformer for QuickCheck library.
+description:
+license:       MIT
+license-file:  LICENSE
+homepage:      https://github.com/nikita-volkov/QuickCheck-GenT
+bug-reports:   https://github.com/nikita-volkov/QuickCheck-GenT/issues
+author:        Nikita Volkov <nikita.y.volkov@mail.ru>
+maintainer:    Nikita Volkov <nikita.y.volkov@mail.ru>
+copyright:     (c) 2013, Nikita Volkov
+category:      Testing
+
+source-repository head
+  type:     git
+  location: git://github.com/nikita-volkov/QuickCheck-GenT.git
+
+library
+  hs-source-dirs:     src
+  default-language:   Haskell2010
+  default-extensions:
+    NoImplicitPrelude
+    NoMonomorphismRestriction
+    Arrows
+    BangPatterns
+    ConstraintKinds
+    DataKinds
+    DefaultSignatures
+    DeriveDataTypeable
+    DeriveGeneric
+    EmptyDataDecls
+    FlexibleContexts
+    FlexibleInstances
+    GADTs
+    GeneralizedNewtypeDeriving
+    LambdaCase
+    LiberalTypeSynonyms
+    MultiParamTypeClasses
+    MultiWayIf
+    OverloadedStrings
+    PatternGuards
+    QuasiQuotes
+    RankNTypes
+    RecordWildCards
+    ScopedTypeVariables
+    StandaloneDeriving
+    TemplateHaskell
+    TupleSections
+    TypeFamilies
+    TypeOperators
+
+  exposed-modules:    QuickCheck.GenT
+  other-modules:      QuickCheck.GenT.Prelude
+  build-depends:
+    , base >=4.13 && <5
+    , mmorph >=1.1 && <2
+    , QuickCheck >=2.7 && <3
+    , random >=1.2 && <2
+    , transformers >=0.5 && <2

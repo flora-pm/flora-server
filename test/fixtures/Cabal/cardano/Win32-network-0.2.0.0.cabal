@@ -1,0 +1,98 @@
+cabal-version:          3.0
+name:                   Win32-network
+version:                0.2.0.0
+synopsis:               Win32 network API
+license:                Apache-2.0
+license-files:          LICENSE NOTICE
+author:                 Duncan Coutts, Marcin Szamotulski
+maintainer:             duncan@well-typed.com, marcin.szamotulski@iohk.io
+copyright:              2019-2023 Input Output Global Inc (IOG), 2023-2024 Intersect
+category:               System
+build-type:             Simple
+extra-source-files:     README.md
+                        ChangeLog.md
+                        include/Win32-network.h
+tested-with:            GHC == {8.10, 9.2, 9.4, 9.6, 9.8}
+
+source-repository head
+  type:                 git
+  location:             https://github.com/haskell-works/Win32-network
+
+flag demo
+  description:  Build the named pipe demos
+  default:      False
+
+common project-config
+  default-language:     Haskell2010
+  ghc-options:          -Wall
+                        -Wcompat
+                        -Wincomplete-uni-patterns
+                        -Wincomplete-record-updates
+                        -Wpartial-fields
+                        -Widentities
+                        -Wredundant-constraints
+
+library
+  import:               project-config
+  hs-source-dirs:       src
+  exposed-modules:      System.IOManager
+  build-depends:        base >=4.5 && <5
+
+  if os(windows)
+    exposed-modules:    System.Win32.Async
+                        System.Win32.Async.File
+                        System.Win32.Async.ErrCode
+                        System.Win32.Async.Socket
+                        System.Win32.Async.Socket.ByteString
+                        System.Win32.Async.Socket.ByteString.Lazy
+                        System.Win32.Async.Internal
+    other-modules:      System.Win32.Async.IOData
+                        System.Win32.Async.IOManager
+                        System.Win32.Async.Overlapped
+                        System.Win32.Async.Socket.Syscalls
+                        System.Win32.Async.WSABuf
+    build-depends:    , bytestring >=0.10    && <0.13
+                      , network
+                      , Win32      ^>=2.14
+    include-dirs:       include
+    extra-libraries:    ws2_32
+
+executable named-pipe-demo
+  import:               project-config
+  hs-source-dirs:       demo
+  main-is:              named-pipe-demo.hs
+  ghc-options:          -threaded
+  build-depends:        base
+  if os(windows)
+    build-depends:      binary
+                      , bytestring
+                      , Win32
+                      , Win32-network
+
+test-suite test
+  import:               project-config
+  type:                 exitcode-stdio-1.0
+  hs-source-dirs:       test
+  main-is:              Main.hs
+  build-depends:        base
+
+  if os(windows)
+    build-depends:    , async
+                      , binary
+                      , bytestring
+                      , network
+                      , stm
+                      , tasty
+                      , tasty-hunit
+                      , tasty-quickcheck
+                      , QuickCheck
+                      , quickcheck-instances
+                      , Win32
+                      , Win32-network
+
+    other-modules:      Test.Generators
+                        Test.Async.PingPong
+                        Test.Async.Handle
+                        Test.Async.Socket
+
+  ghc-options:          -threaded

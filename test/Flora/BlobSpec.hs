@@ -41,8 +41,8 @@ toList = right reverse . left fst . Tar.foldlEntries (\acc x -> x : acc) []
 readTarball :: RequireCallStack => FilePath -> TestEff LazyByteString
 readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/tarballs" </> tarball)
 
-testImportTarball :: RequireCallStack => TestEff ()
-testImportTarball = do
+testImportTarball :: TestEff ()
+testImportTarball = provideCallStack $ do
   content <- readTarball "b-0.1.0.0.tar.gz"
   let pname = PackageName "b"
       version = mkVersion [0, 1, 0, 0]
@@ -74,8 +74,9 @@ testImportTarball = do
     -- traverse the two lists asserting equality of the results of a
     -- function on each element
     checkAll f xs ys =
-      traverse_ (uncurry assertEqual . (f *** f)) $
-        zip xs ys
+      provideCallStack $
+        traverse_ (uncurry assertEqual . (f *** f)) $
+          zip xs ys
 
 testBadTarball :: RequireCallStack => TestEff ()
 testBadTarball = do

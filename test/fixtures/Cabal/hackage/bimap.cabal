@@ -1,0 +1,58 @@
+cabal-version:       >= 1.10
+name:                bimap
+version:             0.5.0
+synopsis:            Bidirectional mapping between two key types
+description:
+  A data structure representing a bidirectional mapping between two
+  key types. Each value in the bimap is associated with exactly one
+  value of the opposite type.
+category:            Data
+license:             BSD3
+license-file:        LICENSE
+copyright:           Stuart Cook and contributors 2008, Joel Williamson 2015
+author:              Stuart Cook and contributors 2008, Joel Williamson 2015
+maintainer:          Joel Williamson <joel@joelwilliamson.ca>
+homepage:            https://github.com/joelwilliamson/bimap
+build-type:          Simple
+tested-with:         GHC <= 8.6.4 && >= 7.0
+extra-source-files:
+    HISTORY
+
+Library
+  build-depends:       base >= 4 && <5, containers, deepseq, exceptions
+  if impl(ghc < 7.6.1)
+    build-depends: ghc-prim
+    default-extensions:  CPP
+                         DeriveGeneric
+                         TypeFamilies
+  else
+    default-extensions: CPP
+                        TypeFamilies
+  default-language:    Haskell98   
+  ghc-options:         -Wall
+  exposed-modules:
+      Data.Bimap
+
+  if impl(ghc >= 7.8)
+    other-modules:
+      Data.BimapExt
+
+test-suite tests
+    type:            exitcode-stdio-1.0
+    main-is:         Test/RunTests.hs
+    other-modules:   Test.Tests
+                     Test.Util
+    build-depends:   base >= 4 && < 5,
+                     containers,
+                     deepseq,
+                     exceptions,
+                     QuickCheck >= 2 && < 3,
+                     template-haskell >= 2 && < 3
+    if impl(ghc < 7.6.1)
+      build-depends: ghc-prim
+  default-extensions:  TemplateHaskell
+  default-language:    Haskell98   
+
+source-repository head
+    type:         git
+    location:     https://github.com/joelwilliamson/bimap.git

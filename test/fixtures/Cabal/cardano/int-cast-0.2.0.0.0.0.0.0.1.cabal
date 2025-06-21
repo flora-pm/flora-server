@@ -1,0 +1,48 @@
+cabal-version:      1.12
+name:               int-cast
+version:            0.2.0.0.0.0.0.0.1
+license:            BSD3
+license-file:       LICENSE
+maintainer:         hvr@gnu.org
+author:             Herbert Valerio Riedel
+homepage:           https://github.com/hvr/int-cast
+bug-reports:        https://github.com/hvr/int-cast/issues
+synopsis:           Checked conversions between integral types
+description:
+    Provides statically or dynamically checked conversions between integral types. See documentation in "Data.IntCast" for more details.
+
+category:           Data
+build-type:         Simple
+extra-source-files: changelog.md
+
+source-repository head
+    type:     git
+    location: https://github.com/hvr/int-cast.git
+
+library
+    exposed-modules:  Data.IntCast
+    default-language: Haskell2010
+    other-extensions:
+        CPP DataKinds TypeFamilies TypeOperators UndecidableInstances
+
+    ghc-options:      -Wall
+    build-depends:    base >=4.7 && <4.17
+
+    if !impl(ghc >=7.10)
+        build-depends: nats >=0.1 && <1.1
+
+test-suite int-cast-test
+    type:             exitcode-stdio-1.0
+    main-is:          Suite.hs
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        int-cast,
+        base,
+        QuickCheck >=2.14 && <2.15,
+        test-framework >=0.8 && <0.9,
+        test-framework-quickcheck2 >=0.3 && <0.4
+
+    if !impl(ghc >=7.10)
+        build-depends: nats

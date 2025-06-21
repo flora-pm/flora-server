@@ -1,0 +1,52 @@
+cabal-version: 2.2
+name:          latex-svg-image
+version:       0.2.0.0.0.1
+license:       BSD-3-Clause
+license-file:  LICENSE
+copyright:     2020 Oleg Grenrus, 2015-2019 Liam O'Connor
+maintainer:    Oleg Grenrus <oleg.grenrus@iki.fi>
+author:        Oleg Grenrus, Liam O'Connor
+tested-with:   ghc ==8.10.7 || ==9.6.4 || ==9.8.1
+homepage:      http://github.com/phadej/latex-svg#readme
+synopsis:
+    A library for rendering LaTeX formulae as SVG using an actual LaTeX
+
+description:
+    This library provides the basic infrastructure necessary to convert LaTeX
+    formulae into SVG images, using a real LaTeX installation. This is useful in
+    particular for showing formulae on websites, where using alternatives like
+    MathJax is not an option (e.g, when you want to use various LaTeX packages that
+    MathJax doesn't support).
+    .
+    This library requires @latex@, @dvisvgm@ to be present in the system.
+    .
+    The companion library to this, @latex-svg-pandoc@, provides useful tools to
+    integrate this library with pandoc, when generating HTML documents.
+    .
+    This is a fork of https://github.com/liamoc/latex-formulae
+
+category:      Image
+build-type:    Simple
+
+source-repository head
+    type:     git
+    location: https://github.com/phadej/latex-svg
+    subdir:   latex-svg-image
+
+library
+    exposed-modules:  Image.LaTeX.Render
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    ghc-options:      -Wall
+    build-depends:
+        base >=4.14.3 && <4.22,
+        deepseq >=1.4.4 && <1.6,
+        directory ^>=1.3.6,
+        filepath >=1.4.2.1 && <1.6,
+        parsec ^>=3.1.14,
+        process ^>=1.6.13.2,
+        temporary ^>=1.3,
+        transformers >=0.5.6.2 && <1.7,
+        base64-bytestring ^>=1.2.1,
+        bytestring >=0.10.12 && <0.13,
+        cryptohash-sha256 ^>=0.11.102.1

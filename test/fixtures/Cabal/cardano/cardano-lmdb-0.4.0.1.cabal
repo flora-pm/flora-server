@@ -1,0 +1,75 @@
+cabal-version:   3.0
+name:            cardano-lmdb
+version:         0.4.0.1
+synopsis:        Lightning MDB bindings
+category:        Database
+description:
+  LMDB is a read-optimized Berkeley DB replacement developed by Symas
+  for the OpenLDAP project. LMDB has impressive performance characteristics
+  and a friendly BSD-style OpenLDAP license. See <http://symas.com/mdb/>.
+  .
+  This library has Haskell bindings to the LMDB library. You must install
+  the lmdb development files before installing this library,
+  e.g. `sudo apt-get install liblmdb-dev` works for Ubuntu.
+
+author:          David Barbour
+maintainer:      operations@iohk.io
+homepage:        http://github.com/input-output-hk/haskell-lmdb
+copyright:       (c) 2014 by David Barbour
+license:         BSD-2-Clause
+license-file:    LICENSE
+stability:       experimental
+build-type:      Simple
+tested-with:     GHC ==8.10 || ==9.2 || ==9.4 || ==9.6 || ==9.8
+extra-doc-files:
+  CHANGELOG.md
+  INPUT-OUTPUT-FORK.md
+  README.md
+
+source-repository head
+  type:     git
+  location: http://github.com/input-output-hk/haskell-lmdb.git
+
+common warnings
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-uni-patterns
+    -Wincomplete-record-updates -Wpartial-fields -Widentities
+    -Wredundant-constraints -Wmissing-export-lists
+    -Wno-unticked-promoted-constructors -Wunused-packages
+
+library
+  import:           warnings
+  hs-source-dirs:   src
+  default-language: Haskell2010
+  build-depends:
+    , base              >=4.14 && <4.20
+    , cardano-lmdb:ffi
+
+  exposed-modules:  Database.LMDB.Raw
+
+library ffi
+  import:             warnings
+  visibility:         private
+  hs-source-dirs:     src
+  default-language:   Haskell2010
+  build-depends:      base >=4.14 && <4.20
+  build-tool-depends: hsc2hs:hsc2hs
+  exposed-modules:    Database.LMDB.FFI
+  pkgconfig-depends:  lmdb >=0.9 && <0.10
+
+test-suite test
+  import:           warnings
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Main.hs
+  build-depends:
+    , async
+    , base              >=4.14 && <4.20
+    , cardano-lmdb
+    , cardano-lmdb:ffi
+    , tasty
+    , tasty-hunit
+    , temporary
+
+  ghc-options:      -fno-ignore-asserts -threaded

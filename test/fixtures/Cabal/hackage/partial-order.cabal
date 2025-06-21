@@ -1,0 +1,62 @@
+name:                partial-order
+version:             0.2.0.0
+synopsis:            Provides typeclass suitable for types admitting a partial order
+description:         This packages provides the PartialOrd typeclass suitable for
+                     types admitting a partial order.
+
+                     The only module exposed by this package is
+                     Data.PartialOrd. Along with the PartialOrd
+                     typeclass and some utility functions for working
+                     with partially ordered types, it exports
+                     instances for certain numeric types along with
+                     instances for lists and sets.
+homepage:            https://github.com/mtesseract/haskell-partial-order
+license:             BSD3
+license-file:        LICENSE
+author:              Moritz Clasmeier
+maintainer:          mtesseract@silverratio.net
+copyright:           (c) 2016-2020 Moritz Clasmeier
+category:            Data
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+flag extra-instances
+  description:
+    Include additional instances of PartialOrd in Data.Set
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Data.PartialOrd
+  build-depends:       base >= 4.7 && < 5
+  default-language:    Haskell2010
+
+  default-extensions:  CPP
+
+  if flag(extra-instances)
+    build-depends:     containers >= 0.5.0.0 && < 0.7
+    CPP-Options:       -DEXTRA_INSTANCES
+
+test-suite partial-order-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , partial-order
+                     , HUnit >= 1.5.0.0 && < 1.7
+                     , test-framework >= 0.8.1.1 && < 0.9
+                     , test-framework-hunit >= 0.3.0.2 && < 0.4
+                     , test-framework-quickcheck2 >= 0.3.0.3 && < 0.4
+                     , containers >= 0.5.0.0 && < 0.7
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+  default-extensions:  CPP
+
+  if flag(extra-instances)
+    build-depends:     containers >= 0.5.0.0 && < 0.7
+    CPP-Options:       -DEXTRA_INSTANCES
+
+source-repository head
+  type:     git
+ location: https://github.com/mtesseract/haskell-partial-order

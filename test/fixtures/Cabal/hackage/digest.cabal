@@ -1,0 +1,131 @@
+cabal-version:      2.4
+name:               digest
+version:            0.0.2.1
+copyright:          (c) 2009 Eugene Kirpichov
+license:            BSD-2-Clause
+license-file:       LICENSE
+author:             Eugene Kirpichov <ekirpichov@gmail.com>
+maintainer:         Eugene Kirpichov <ekirpichov@gmail.com>
+category:           Cryptography
+synopsis:           CRC32 and Adler32 hashes for bytestrings
+description:
+  This package provides efficient hash implementations for
+  strict and lazy bytestrings. For now, CRC32 and Adler32 are supported;
+  they are implemented as FFI bindings to efficient code from zlib.
+
+stability:          provisional
+build-type:         Simple
+tested-with:        GHC ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.3 || ==9.8.1
+extra-source-files:
+  CHANGELOG.md
+  external/crc32c/include/crc32c/crc32c.h
+  external/crc32c/LICENSE
+  external/crc32c/src/*.h
+  include/crc32c/crc32c_config.h
+  testing/trivial-reference.c
+  testing/trivial.expected
+  testing/trivial.hs
+
+flag pkg-config
+  default:     True
+  manual:      False
+  description: Use @pkg-config(1)@ to locate @zlib@ library.
+
+-- TODO: auto detect
+flag have_builtin_prefetch
+  default:     False
+  manual:      True
+  description: The cxx compiler has the __builtin_prefetch intrinsic.
+
+-- TODO: auto detect
+flag have_mm_prefetch
+  default:     False
+  manual:      True
+  description:
+    Targeting X86 and the compiler has the _mm_prefetch intrinsic.
+
+-- TODO: auto detect
+flag have_sse42
+  default:     False
+  manual:      True
+  description:
+    Can be enabled to improve performance of CRC32C if targeting X86 and
+    the compiler has the _mm_crc32_u{8,32,64} intrinsics.
+
+-- TODO: auto detect
+flag have_arm64_crc32c
+  default:     False
+  manual:      True
+  description:
+    Targeting ARM and the compiler has the __crc32c{b,h,w,d} and the
+    vmull_p64 intrinsics.
+
+-- TODO: auto detect
+flag have_strong_getauxval
+  default:     False
+  manual:      True
+  description:
+    The system libraries have the getauxval function in the <sys/auxv.h> header.
+    Should be true on Linux and Android API level 20+.
+
+-- TODO: auto detect
+flag have_weak_getauxval
+  default:     False
+  manual:      True
+  description:
+    The compiler supports defining getauxval as a weak symbol.
+    Should be true for any compiler that supports __attribute__((weak)).
+
+source-repository head
+  type:     git
+  location: https://github.com/TeofilC/digest
+
+library
+  exposed-modules:
+    Data.Digest.Adler32
+    Data.Digest.CRC32
+    Data.Digest.CRC32C
+
+  default-extensions:
+    CPP
+    ForeignFunctionInterface
+
+  default-language:   Haskell2010
+  build-depends:
+    , base        >=4.12 && <5
+    , bytestring  >=0.10 && <0.13
+
+  includes:           zlib.h
+  include-dirs:       include external/crc32c/include
+  cxx-options:        -std=c++11
+  cxx-sources:
+    external/crc32c/src/crc32c.cc
+    external/crc32c/src/crc32c_portable.cc
+
+  if flag(have_builtin_prefetch)
+    cxx-options: -DHAVE_BUILTIN_PREFETCH
+
+  if flag(have_mm_prefetch)
+    cxx-options: -DHAVE_MM_PREFETCH
+
+  if (arch(x86_64) && flag(have_sse42))
+    cxx-options: -DHAVE_SSE42 -msse4.2
+    cxx-sources: external/crc32c/src/crc32c_sse42.cc
+
+  if (arch(aarch64) && flag(have_arm64_crc32c))
+    cxx-options: -DHAVE_ARM64_CRC32C
+    cxx-sources: external/crc32c/src/crc32c_arm64.cc
+
+  if flag(have_strong_getauxval)
+    cxx-options: -DHAVE_STRONG_GETAUXVAL
+
+  if flag(have_weak_getauxval)
+    cxx-options: -DHAVE_WEAK_GETAUXVAL
+
+  ghc-options:        -Wall
+
+  if ((flag(pkg-config) && !os(windows)) && !os(freebsd))
+    pkgconfig-depends: zlib
+
+  else
+    build-depends: zlib

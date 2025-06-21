@@ -1,0 +1,92 @@
+cabal-version: 2.2
+name: marlowe-cardano
+version: 0.1.0.3
+license: Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+build-type: Simple
+maintainer: alexander.nemish@iohk.io
+stability: experimental
+author: Alexander Nemish
+synopsis:
+  Marlowe: financial contracts on Cardano Computation Layer
+description:
+  A reference implementation of Marlowe, domain-specific language targeted at
+  the execution of financial contracts in the style of Peyton Jones et al
+  on Cardano Computation Layer.
+category: Language
+extra-doc-files: README.md
+                 CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/input-output-hk/marlowe-cardano
+
+flag defer-plugin-errors
+    description:
+        Defer errors from the plugin, useful for things like Haddock that can't handle it.
+    default: False
+    manual: True
+
+common lang
+  default-language: Haskell2010
+  default-extensions: ExplicitForAll ScopedTypeVariables
+                      DeriveGeneric StandaloneDeriving DeriveLift
+                      DeriveFunctor DeriveFoldable
+                      DeriveTraversable
+  ghc-options:
+    -Wall -Wnoncanonical-monad-instances
+    -Wincomplete-uni-patterns -Wincomplete-record-updates
+    -Wredundant-constraints -Widentities
+    -Wunused-packages
+
+library
+  import: lang
+  hs-source-dirs: src
+
+  if !(impl(ghcjs) || os(ghcjs))
+    build-depends: plutus-tx-plugin ==1.0.0.0
+
+  build-depends:
+    base >= 4.9 && < 5,
+    aeson >= 2 && < 3,
+    base16-aeson == 0.1.0.0,
+    base16-bytestring >= 1 && < 2,
+    bech32 >= 1.1 && < 2,
+    bytestring >= 0.10.12 && < 0.12,
+    containers >= 0.6.5 && < 0.7,
+    deriving-aeson >= 0.2.9 && < 0.3,
+    mtl >= 2.2 && < 3,
+    multiplate ==0.0.3,
+    newtype-generics >= 0.6.2 && < 0.7,
+    ordered-containers >= 0.2 && < 0.3,
+    plutus-ledger ^>= 1.2,
+    plutus-ledger-api ==1.0.0.1,
+    plutus-script-utils ==1.2.0.0,
+    plutus-tx ==1.0.0.0,
+    sbv >=8.4,
+    scientific >= 0.3.7 && < 0.4,
+    serialise >= 0.2.6 && < 0.3,
+    template-haskell >= 2.16 && < 3,
+    text >= 1.2.4 && < 2,
+    transformers >= 0.5.6 && < 0.6,
+    wl-pprint >= 1.2 && < 2,
+
+  exposed-modules:
+    Language.Marlowe
+    Language.Marlowe.Extended.V1
+    Language.Marlowe.Extended.V1.Metadata.Types
+    Language.Marlowe.Core.V1.Plate
+    Language.Marlowe.Core.V1.Semantics
+    Language.Marlowe.Core.V1.Semantics.Types
+    Language.Marlowe.Core.V1.Semantics.Types.Address
+    Language.Marlowe.FindInputs
+    Language.Marlowe.Client
+    Language.Marlowe.Client.History
+    Language.Marlowe.Util
+    Language.Marlowe.ParserUtil
+    Language.Marlowe.Scripts
+    Language.Marlowe.Pretty
+    Language.Marlowe.Analysis.FSSemantics
+    Plutus.Debug

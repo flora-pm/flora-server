@@ -1,0 +1,85 @@
+name:                FailT
+version:             0.1.2.0
+synopsis:            A 'FailT' monad transformer that plays well with 'MonadFail'
+description:
+    Fail gracefully when stuck in a 'MonadFail'
+    .
+    >>> runFailT (fail "Failure!?" >> pure "Success!!")
+    Left "Failure!?"
+    >>> runFailT (fail "Failure!?" <|> pure "Success!!")
+    Right "Success!!"
+    >>> runFailT (pure ["Success!!"] <> fail "Failure!?" <> pure ["At", "Last!"])
+    Right ["Success!!","At","Last!"]
+    .
+
+
+homepage:             https://github.com/lehins/FailT
+license:              BSD3
+license-file:         LICENSE
+author:               Alexey Kuleshevich
+maintainer:           alexey@kuleshevi.ch
+copyright:            2022-2023 Alexey Kuleshevich
+category:             Control, Failure
+build-type:           Simple
+extra-source-files:   README.md
+                    , CHANGELOG.md
+cabal-version:        1.18
+tested-with:          GHC == 8.0.2
+                    , GHC == 8.2.2
+                    , GHC == 8.4.4
+                    , GHC == 8.6.5
+                    , GHC == 8.8.4
+                    , GHC == 8.10.7
+                    , GHC == 9.0.2
+                    , GHC == 9.2.5
+                    , GHC == 9.4.4
+
+library
+  hs-source-dirs:     src
+  exposed-modules:    Control.Monad.Trans.Fail
+                    , Control.Monad.Trans.Fail.String
+                    , Control.Monad.Trans.Fail.Text
+
+  build-depends:      base >= 4.9 && < 5
+                    , exceptions
+                    , mtl
+                    , text
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+
+
+test-suite doctests
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     tests
+  main-is:            doctests.hs
+  build-depends:      base
+                    , doctest >= 0.15
+                    , exceptions
+                    , FailT
+  default-language:   Haskell2010
+  ghc-options:       -Wall
+                     -fno-warn-orphans
+                     -threaded
+
+test-suite tests
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     tests
+  main-is:            Main.hs
+  other-modules:      Test.Control.Monad.Trans.FailSpec
+  build-depends:      base
+                    , FailT
+                    , hspec
+                    , mtl
+                    , QuickCheck
+                    , quickcheck-classes >= 0.6
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall
+                      -fno-warn-orphans
+                      -threaded
+                      -with-rtsopts=-N2
+
+source-repository head
+  type:     git
+  location: https://github.com/lehins/FailT

@@ -1,0 +1,57 @@
+cabal-version: 3.0
+name: sop-extras
+synopsis: Type-level and data utilities that build upon SOP.
+description:
+  This package provides some more constructs that are not present on the
+  @sop-core@ package but built upon the same foundations.
+
+version: 0.2.0.0
+license: Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+copyright: 2023 Input Output Global Inc (IOG), INTERSECT 2023-2024.
+author: IOG Engineering Team
+maintainer: operations@iohk.io
+category: Data
+build-type: Simple
+extra-doc-files: CHANGELOG.md
+
+common warnings
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Wincomplete-uni-patterns
+    -Wincomplete-record-updates
+    -Wpartial-fields
+    -Widentities
+    -Wredundant-constraints
+    -Wmissing-export-lists
+    -Wunused-packages
+    -Wno-unticked-promoted-constructors
+
+library
+  import: warnings
+  hs-source-dirs: src
+  exposed-modules:
+    Data.SOP.Counting
+    Data.SOP.Functors
+    Data.SOP.InPairs
+    Data.SOP.Index
+    Data.SOP.Lenses
+    Data.SOP.Match
+    Data.SOP.NonEmpty
+    Data.SOP.OptNP
+    Data.SOP.Tails
+    Data.SOP.Telescope
+
+  build-depends:
+    base >=4.14 && <4.21,
+    constraints ^>=0.14,
+    nothunks ^>=0.1,
+    sop-core ^>=0.5,
+    strict-sop-core ^>=0.1,
+    these ^>=1.2,
+
+  default-language: Haskell2010

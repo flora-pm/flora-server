@@ -1,0 +1,114 @@
+cabal-version:   3.4
+name:            marlowe-cardano
+version:         0.2.0.0
+license:         Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+build-type:      Simple
+maintainer:      alexander.nemish@iohk.io
+stability:       experimental
+author:          Alexander Nemish
+synopsis:        Marlowe: financial contracts on Cardano Computation Layer
+description:
+  A reference implementation of Marlowe, domain-specific language targeted at
+  the execution of financial contracts in the style of Peyton Jones et al
+  on Cardano Computation Layer.
+
+category:        Language
+extra-doc-files:
+  CHANGELOG.md
+  README.md
+
+data-files:      scripts/*.plutus
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/marlowe-cardano
+
+flag defer-plugin-errors
+  description:
+    Defer errors from the plugin, useful for things like Haddock that can't handle it.
+
+  default:     False
+  manual:      True
+
+flag trace-plutus
+  description: Enable Plutus trace log for Marlowe validators.
+  default:     False
+  manual:      True
+
+common lang
+  default-language:   Haskell2010
+  default-extensions:
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    ExplicitForAll
+    ScopedTypeVariables
+    StandaloneDeriving
+
+  ghc-options:
+    -Wall -Wnoncanonical-monad-instances -Wincomplete-uni-patterns
+    -Wincomplete-record-updates -Wredundant-constraints -Widentities
+    -Wunused-packages -Werror
+
+library
+  import:          lang
+  hs-source-dirs:  src
+  build-depends:
+    , aeson >=2 && <3
+    , base >=4.9 && <5
+    , base16-aeson ==0.1.0.0
+    , bech32 >=1.1 && <2
+    , bytestring >=0.10.12 && <0.12
+    , cardano-api ^>=8.2
+    , containers ^>=0.6.5
+    , deriving-aeson ^>=0.2.9
+    , ilist ==0.4.0.1
+    , mtl >=2.2 && <3
+    , multiplate ==0.0.3
+    , newtype-generics ^>=0.6.2
+    , ordered-containers ^>=0.2
+    , plutus-ledger-api ^>=1.5
+    , plutus-tx ^>=1.5
+    , range ==0.3.0.2
+    , sbv ^>=9.2
+    , scientific ^>=0.3.7
+    , text ^>=1.2
+    , time >=1.9.3 && <2
+    , transformers ^>=0.5.6
+    , wl-pprint >=1.2 && <2
+
+  exposed-modules:
+    Language.Marlowe
+    Language.Marlowe.Analysis.FSSemantics
+    Language.Marlowe.Analysis.Safety.Ledger
+    Language.Marlowe.Analysis.Safety.Transaction
+    Language.Marlowe.Analysis.Safety.Types
+    Language.Marlowe.Client
+    Language.Marlowe.Core.V1.Merkle
+    Language.Marlowe.Core.V1.Next
+    Language.Marlowe.Core.V1.Next.Applicables
+    Language.Marlowe.Core.V1.Next.Applicables.Bound
+    Language.Marlowe.Core.V1.Next.Applicables.CanChoose
+    Language.Marlowe.Core.V1.Next.Applicables.CanDeposit
+    Language.Marlowe.Core.V1.Next.Applicables.CanNotify
+    Language.Marlowe.Core.V1.Next.CanReduce
+    Language.Marlowe.Core.V1.Next.Indexed
+    Language.Marlowe.Core.V1.Next.IsMerkleizedContinuation
+    Language.Marlowe.Core.V1.Plate
+    Language.Marlowe.Core.V1.Semantics
+    Language.Marlowe.Core.V1.Semantics.Types
+    Language.Marlowe.Core.V1.Semantics.Types.Address
+    Language.Marlowe.Extended.V1
+    Language.Marlowe.Extended.V1.Metadata.Types
+    Language.Marlowe.FindInputs
+    Language.Marlowe.ParserUtil
+    Language.Marlowe.Pretty
+    Language.Marlowe.Scripts.Types
+    Language.Marlowe.Util
+    Paths_marlowe_cardano

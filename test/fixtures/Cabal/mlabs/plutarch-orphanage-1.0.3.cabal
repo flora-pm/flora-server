@@ -1,0 +1,82 @@
+cabal-version:      3.0
+name:               plutarch-orphanage
+version:            1.0.3
+author:
+  Koz Ross <koz@mlabs.city>, Seungheon Oh <seungheon.oh@mlabs.city>
+
+license:            MIT
+extra-source-files: README.md
+tested-with:        GHC ==9.6.4
+
+common lang
+  default-language:   Haskell2010
+  build-depends:      base >=4.9 && <5
+  default-extensions:
+    BangPatterns
+    BinaryLiterals
+    DataKinds
+    DeriveTraversable
+    DerivingVia
+    DuplicateRecordFields
+    EmptyCase
+    FlexibleContexts
+    FlexibleInstances
+    GeneralizedNewtypeDeriving
+    HexFloatLiterals
+    ImportQualifiedPost
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    NoFieldSelectors
+    NoStarIsType
+    NumericUnderscores
+    OverloadedLabels
+    OverloadedStrings
+    PackageImports
+    ScopedTypeVariables
+    StandaloneDeriving
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    UndecidableInstances
+
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Werror -Wredundant-bang-patterns
+    -Wredundant-strictness-flags -Wmissing-deriving-strategies
+    -Wredundant-constraints
+
+library
+  import:          lang
+  exposed-modules:
+    PlutusLedgerApi.QuickCheck.Utils
+    PlutusLedgerApi.V1.Orphans
+    PlutusLedgerApi.V2.Orphans
+    PlutusLedgerApi.V3.Orphans
+
+  other-modules:
+    PlutusLedgerApi.Orphans.Common
+    PlutusLedgerApi.V1.Orphans.Address
+    PlutusLedgerApi.V1.Orphans.Contexts
+    PlutusLedgerApi.V1.Orphans.Credential
+    PlutusLedgerApi.V1.Orphans.Crypto
+    PlutusLedgerApi.V1.Orphans.DCert
+    PlutusLedgerApi.V1.Orphans.Interval
+    PlutusLedgerApi.V1.Orphans.Scripts
+    PlutusLedgerApi.V1.Orphans.Time
+    PlutusLedgerApi.V1.Orphans.Tx
+    PlutusLedgerApi.V1.Orphans.Value
+    PlutusLedgerApi.V2.Orphans.Contexts
+    PlutusLedgerApi.V2.Orphans.Tx
+
+  build-depends:
+    , bytestring
+    , containers
+    , plutus-core           >=1.30.0.0
+    , plutus-ledger-api
+    , plutus-tx
+    , QuickCheck
+    , quickcheck-instances
+
+  hs-source-dirs:  src

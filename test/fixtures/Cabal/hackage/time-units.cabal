@@ -1,0 +1,29 @@
+Name: time-units
+Version: 1.0.0
+Build-Type: Simple
+Cabal-Version: >= 1.6
+License: BSD3
+License-File: LICENSE
+Author: Adam Wick <awick@uhsure.com>
+Maintainer: Adam Wick <awick@uhusre.com>
+Homepage: http://github.com/acw/time-units
+Category: Data
+Synopsis: A basic library for defining units of time as types.
+
+Description:
+  In many cases, it is useful (either for error checking or documentation
+  reasons) to define input and output types as having a particular unit of
+  time. In addition, by creating a type class defining type units, this
+  library should make it easier to separate the units of time the developer
+  wants to think in versus the units of time the library author wants to
+  think in.
+
+Library
+  Build-Depends: base >= 4.0 && < 5.0
+  Exposed-Modules: Data.Time.Units
+  Extensions: DeriveDataTypeable,GeneralizedNewtypeDeriving
+
+source-repository head
+  type: git
+  location: http://github.com/acw/time-units
+

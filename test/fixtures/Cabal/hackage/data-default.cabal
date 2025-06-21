@@ -1,0 +1,33 @@
+cabal-version:   3.0
+name:            data-default
+version:         0.8.0.1
+category:        Data
+synopsis:        A class for types with a default value
+description:
+    This module defines a class for types with a default value. Instances are
+    provided for @()@, 'Data.Set.Set', 'Data.Map.Map', 'Int', 'Integer',
+    'Float', 'Double', and many others.
+build-type:      Simple
+license:         BSD-3-Clause
+license-file:    LICENSE
+copyright:       (c) 2013 Lukas Mai
+author:          Lukas Mai
+maintainer:      <lukasmai.403+hackage@gmail.com>
+bug-reports:     https://codeberg.org/mauke/data-default/issues
+extra-doc-files: Changes.md
+
+source-repository head
+    type: git
+    location: https://codeberg.org/mauke/data-default
+
+library
+    build-depends:     base >=4.8 && <5, containers >=0.1 && <0.8
+    exposed-modules:   Data.Default, Data.Default.Internal
+    default-language:  Haskell98
+
+test-suite test
+    type:              exitcode-stdio-1.0
+    main-is:           basics.hs
+    build-depends:     base, containers, data-default, mtl
+    hs-source-dirs:    t
+    default-language:  Haskell98

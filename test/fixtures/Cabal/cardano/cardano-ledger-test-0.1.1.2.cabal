@@ -1,0 +1,240 @@
+cabal-version: 3.0
+
+name:                cardano-ledger-test
+version:             0.1.1.2
+synopsis:
+  Testing harness, tests and benchmarks for Shelley style cardano ledgers
+-- description:
+-- bug-reports:
+license:             Apache-2.0
+author:              IOHK Formal Methods Team
+maintainer:          nicholas.clarke@iohk.io
+copyright:           2020 Input Output (Hong Kong) Ltd.
+-- category:
+build-type:          Simple
+extra-source-files:
+  CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/cardano-ledger
+  subdir:   libs/cardano-ledger-test
+
+common base
+  build-depends:      base >= 4.12 && < 4.17
+
+common project-config
+  default-language:   Haskell2010
+
+  ghc-options:        -Wall
+                      -Wcompat
+                      -Wincomplete-record-updates
+                      -Wincomplete-uni-patterns
+                      -Wpartial-fields
+                      -Wredundant-constraints
+                      -Wunused-packages
+
+
+library
+  import:             base, project-config
+  hs-source-dirs:     src
+  other-modules:
+    Data.Group.GrpMap
+    Data.Functor.PiecewiseConstant
+    Test.Cardano.Ledger.Orphans
+  exposed-modules:
+    Test.Cardano.Ledger.Alonzo.Tools
+    Test.Cardano.Ledger.BaseTypes
+    Test.Cardano.Ledger.Examples.BabbageFeatures
+    Test.Cardano.Ledger.Examples.TwoPhaseValidation
+    Test.Cardano.Ledger.Generic.AggPropTests
+    Test.Cardano.Ledger.Generic.ApplyTx
+    Test.Cardano.Ledger.Generic.Indexed
+    Test.Cardano.Ledger.Generic.Fields
+    Test.Cardano.Ledger.Generic.Functions
+    Test.Cardano.Ledger.Generic.GenState
+    Test.Cardano.Ledger.Generic.TxGen
+    Test.Cardano.Ledger.Generic.Types
+    Test.Cardano.Ledger.Generic.Proof
+    Test.Cardano.Ledger.Generic.MockChain
+    Test.Cardano.Ledger.Generic.ModelState
+    Test.Cardano.Ledger.Generic.PrettyCore
+    Test.Cardano.Ledger.Generic.Properties
+    Test.Cardano.Ledger.Generic.Scriptic
+    Test.Cardano.Ledger.Generic.Trace
+    Test.Cardano.Ledger.Generic.Updaters
+    Test.Cardano.Ledger.Model.API
+    Test.Cardano.Ledger.Model.Acnt
+    Test.Cardano.Ledger.Model.BaseTypes
+    Test.Cardano.Ledger.Model.Elaborators
+    Test.Cardano.Ledger.Model.Elaborators.Alonzo
+    Test.Cardano.Ledger.Model.Elaborators.Shelley
+    Test.Cardano.Ledger.Model.FeatureSet
+    Test.Cardano.Ledger.Model.Fixup
+    Test.Cardano.Ledger.Model.Generators
+    Test.Cardano.Ledger.Model.Generators.Address
+    Test.Cardano.Ledger.Model.Generators.Certificates
+    Test.Cardano.Ledger.Model.Generators.Chain
+    Test.Cardano.Ledger.Model.Generators.Script
+    Test.Cardano.Ledger.Model.Generators.Shrinking
+    Test.Cardano.Ledger.Model.Generators.Tx
+    Test.Cardano.Ledger.Model.Generators.TxOut
+    Test.Cardano.Ledger.Model.Generators.Value
+    Test.Cardano.Ledger.Model.LedgerState
+    Test.Cardano.Ledger.Model.PParams
+    Test.Cardano.Ledger.Model.Properties
+    Test.Cardano.Ledger.Model.Properties.Utils
+    Test.Cardano.Ledger.Model.Prov
+    Test.Cardano.Ledger.Model.Rewards
+    Test.Cardano.Ledger.Model.Rules
+    Test.Cardano.Ledger.Model.Script
+    Test.Cardano.Ledger.Model.Snapshot
+    Test.Cardano.Ledger.Model.Tx
+    Test.Cardano.Ledger.Model.TxOut
+    Test.Cardano.Ledger.Model.UTxO
+    Test.Cardano.Ledger.Model.Value
+    Test.Cardano.Ledger.NoThunks
+    Test.Cardano.Ledger.Rational
+    Test.Cardano.Ledger.TestableEra
+    Test.Cardano.Ledger.ValueFromList
+  build-depends:
+    aeson >= 2,
+    array,
+    bytestring,
+    cardano-binary,
+    cardano-crypto-class,
+    cardano-data,
+    cardano-ledger-alonzo,
+    cardano-ledger-alonzo-test,
+    cardano-ledger-babbage,
+    cardano-ledger-conway,
+    cardano-ledger-core,
+    cardano-ledger-pretty,
+    cardano-ledger-shelley-ma,
+    cardano-protocol-tpraos,
+    cardano-slotting,
+    containers,
+    vector-map,
+    data-default-class,
+    deepseq,
+    genvalidity,
+    genvalidity-scientific,
+    groups,
+    hkd,
+    lens,
+    microlens,
+    monad-supply,
+    mtl,
+    nothunks,
+    plutus-ledger-api:{plutus-ledger-api, plutus-ledger-api-testlib} ^>=1.1,
+    plutus-core,
+    plutus-tx,
+    prettyprinter,
+    profunctors,
+    QuickCheck,
+    quickcheck-instances,
+    QuickCheck-GenT,
+    quiet,
+    random,
+    scientific,
+    cardano-ledger-shelley,
+    cardano-ledger-shelley-test,
+    cardano-ledger-babbage-test,
+    semigroupoids,
+    small-steps,
+    small-steps-test,
+    set-algebra,
+    some,
+    cardano-strict-containers,
+    tagged,
+    tasty,
+    tasty-hunit,
+    tasty-quickcheck,
+    text,
+    time,
+    transformers,
+    vector,
+    writer-cps-mtl,
+
+
+test-suite cardano-ledger-test
+  import:             base, project-config
+
+  type:                exitcode-stdio-1.0
+  main-is:             Tests.hs
+  ghc-options: -rtsopts -threaded
+
+  hs-source-dirs:      test
+  other-modules:
+  build-depends:
+    cardano-ledger-test,
+    cardano-ledger-shelley-test,
+    tasty,
+    data-default-class,
+
+
+
+benchmark bench
+  import:             base, project-config
+
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:
+    bench
+  main-is:          Main.hs
+  other-modules:
+    Bench.Cardano.Ledger.ApplyTx
+    Bench.Cardano.Ledger.ApplyTx.Gen
+    -- Bench.Cardano.Ledger.Balance
+    Bench.Cardano.Ledger.EpochBoundary
+    Bench.Cardano.Ledger.Serialisation.Generators
+    Bench.Cardano.Ledger.SumStake
+    Bench.Cardano.Ledger.TxOut
+  build-depends:
+    bytestring,
+    cardano-binary,
+    cardano-crypto-class,
+    cardano-data,
+    cardano-ledger-alonzo,
+    cardano-ledger-alonzo-test,
+    cardano-ledger-core,
+    cardano-ledger-shelley-ma-test,
+    cardano-ledger-shelley-ma,
+    vector-map,
+    containers,
+    criterion,
+    data-default-class,
+    deepseq,
+    QuickCheck,
+    cardano-ledger-shelley,
+    cardano-ledger-shelley-test,
+    microlens,
+    random,
+    small-steps,
+    small-steps-test,
+    text
+  ghc-options:
+      -threaded
+      -rtsopts
+      -O2
+
+benchmark benchProperty
+  import:             base, project-config
+
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:
+    benchProperty
+  main-is:          Main.hs
+  other-modules:
+  build-depends:
+    cardano-ledger-alonzo,
+    cardano-ledger-alonzo-test,
+    cardano-ledger-shelley-ma-test,
+    small-steps,
+    cardano-ledger-shelley,
+    cardano-ledger-shelley-test,
+    tasty-quickcheck,
+    tasty
+  ghc-options:
+      -threaded
+      -rtsopts
+      -O2

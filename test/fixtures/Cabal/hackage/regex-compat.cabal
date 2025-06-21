@@ -1,0 +1,67 @@
+cabal-version:          1.24
+name:                   regex-compat
+version:                0.95.2.2
+
+build-type:             Simple
+license:                BSD3
+license-file:           LICENSE
+copyright:              Copyright (c) 2006, Christopher Kuklewicz
+author:                 Christopher Kuklewicz
+maintainer:             Andreas Abel
+homepage:               https://wiki.haskell.org/Regular_expressions
+bug-reports:            https://github.com/haskell-hvr/regex-compat/issues
+synopsis:               Replaces/enhances "Text.Regex"
+category:               Text
+description:
+  One module compat layer over <//hackage.haskell.org/package/regex-posix regex-posix> to replace "Text.Regex".
+  .
+  See also <https://wiki.haskell.org/Regular_expressions> for more information.
+
+extra-doc-files:
+  ChangeLog.md
+  README.md
+
+tested-with:
+  GHC == 9.12.1
+  GHC == 9.10.1
+  GHC == 9.8.4
+  GHC == 9.6.6
+  GHC == 9.4.8
+  GHC == 9.2.8
+  GHC == 9.0.2
+  GHC == 8.10.7
+  GHC == 8.8.4
+  GHC == 8.6.5
+  GHC == 8.4.4
+  GHC == 8.2.2
+  GHC == 8.0.2
+
+source-repository head
+  type:     git
+  location: https://github.com/haskell-hvr/regex-compat.git
+
+source-repository this
+  type:     git
+  location: https://github.com/haskell-hvr/regex-compat.git
+  tag:      v0.95.2.2
+
+library
+  exposed-modules: Text.Regex
+
+  build-depends:
+      base        >= 4.9 && < 5
+    , regex-base  == 0.94.*
+    , regex-posix == 0.96.*
+    , array       >= 0.5 && < 1
+
+  default-language:
+    Haskell2010
+  default-extensions:
+    NoImplicitPrelude
+    Trustworthy
+    MultiParamTypeClasses
+    FunctionalDependencies
+
+  ghc-options:
+    -Wall
+    -Wcompat

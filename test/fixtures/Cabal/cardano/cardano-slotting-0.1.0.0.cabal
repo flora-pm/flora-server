@@ -1,0 +1,72 @@
+cabal-version: 3.0
+
+name:                cardano-slotting
+version:             0.1.0.0
+synopsis:            Key slotting types for cardano libraries
+-- description:
+-- bug-reports:
+license:             Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+author:              IOHK Formal Methods Team
+maintainer:          formal.methods@iohk.io
+copyright:           IOHK
+-- category:
+build-type:          Simple
+
+flag development
+    description: Disable `-Werror`
+    default: False
+    manual: True
+
+common base                         { build-depends: base                             >= 4.14       && < 4.15     }
+
+common project-config
+  default-language:     Haskell2010
+  ghc-options:          -Wall
+                        -Wcompat
+                        -Wincomplete-record-updates
+                        -Wincomplete-uni-patterns
+                        -Wredundant-constraints
+                        -Wunused-packages
+
+  if (!flag(development))
+    ghc-options:        -Werror
+
+library
+  import:               base, project-config
+  hs-source-dirs:       src
+
+  exposed-modules:
+                        Cardano.Slotting.Block
+                        Cardano.Slotting.EpochInfo
+                        Cardano.Slotting.EpochInfo.API
+                        Cardano.Slotting.EpochInfo.Extend
+                        Cardano.Slotting.EpochInfo.Impl
+                        Cardano.Slotting.Slot
+                        Cardano.Slotting.Time
+
+  build-depends:        aeson
+                      , base
+                      , cardano-binary
+                      , cborg
+                      , deepseq
+                      , mmorph
+                      , nothunks
+                      , quiet
+                      , serialise
+                      , time             >=1.9.1 && <1.11
+
+test-suite tests
+  import:               base, project-config
+  type:                 exitcode-stdio-1.0
+  hs-source-dirs:       test
+  main-is:              Main.hs
+  other-modules:      Test.Cardano.Slotting.EpochInfo
+  build-depends:        base
+                      , cardano-slotting
+                      , tasty
+                      , tasty-quickcheck
+
+  ghc-options:          -threaded -rtsopts -with-rtsopts=-N

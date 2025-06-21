@@ -1,0 +1,140 @@
+cabal-version:      >=1.8
+name:               moo
+version:            1.2.0.0.0.0.1
+license:            BSD3
+license-file:       LICENSE
+maintainer:         Sergey Astanin <s.astanin@gmail.com>
+author:             Sergey Astanin <s.astanin@gmail.com>
+stability:          experimental
+homepage:           http://www.github.com/astanin/moo/
+synopsis:           Genetic algorithm library
+description:
+    Moo library provides building blocks to build custom
+    genetic algorithms in Haskell. They can be used to
+    find solutions to optimization and search problems.
+    .
+    Variants supported out of the box: binary (using
+    bit-strings) and continuous (real-coded).
+    Potentially supported variants: permutation,
+    tree, hybrid encodings (require customizations).
+    .
+    Binary GAs: binary and Gray encoding; point mutation;
+    one-point, two-point, and uniform crossover.
+    Continuous GAs: Gaussian mutation; BLX-α, UNDX, and
+    SBX crossover.
+    Selection operators: roulette, tournament, and
+    stochastic universal sampling (SUS);
+    with optional niching, ranking, and scaling.
+    Replacement strategies: generational with elitism
+    and steady state.
+    Constrained optimization: random constrained
+    initialization, death penalty, constrained
+    selection without a penalty function.
+    Multi-objective optimization: NSGA-II
+    and constrained NSGA-II.
+
+category:           AI, Algorithms, Optimisation, Optimization
+build-type:         Simple
+extra-source-files:
+    README.md
+    examples/README.md
+    examples/ExampleMain.hs
+    examples/beale.hs
+    examples/cp_himmelblau.hs
+    examples/cp_sphere2.hs
+    examples/knapsack.hs
+    examples/mop_constr2.hs
+    examples/mop_kursawe.hs
+    examples/mop_minsum_maxprod.hs
+    examples/rosenbrock.hs
+    examples/schaffer2.hs
+
+source-repository head
+    type:     git
+    location: git://github.com/astanin/moo.git
+
+library
+    exposed-modules:
+        Moo.GeneticAlgorithm
+        Moo.GeneticAlgorithm.Binary
+        Moo.GeneticAlgorithm.Constraints
+        Moo.GeneticAlgorithm.Continuous
+        Moo.GeneticAlgorithm.Multiobjective
+        Moo.GeneticAlgorithm.Random
+        Moo.GeneticAlgorithm.Run
+        Moo.GeneticAlgorithm.Statistics
+        Moo.GeneticAlgorithm.Types
+
+    other-modules:
+        Moo.GeneticAlgorithm.Crossover
+        Moo.GeneticAlgorithm.LinAlg
+        Moo.GeneticAlgorithm.Multiobjective.NSGA2
+        Moo.GeneticAlgorithm.Multiobjective.Types
+        Moo.GeneticAlgorithm.Multiobjective.Metrics
+        Moo.GeneticAlgorithm.Selection
+        Moo.GeneticAlgorithm.StopCondition
+        Moo.GeneticAlgorithm.Utilities
+        Moo.GeneticAlgorithm.Niching
+
+    ghc-options:     -Wall -fno-warn-name-shadowing -fno-warn-orphans
+    build-depends:
+        base >=4 && <5,
+        MonadRandom,
+        mersenne-random-pure64,
+        gray-code >=0.2.1,
+        random >=0.1,
+        random-shuffle >=0.0.2,
+        mtl >=2,
+        time,
+        array,
+        parallel >=3.0,
+        vector,
+        containers
+
+test-suite moo-tests
+    type:          exitcode-stdio-1.0
+    main-is:       moo-tests.hs
+    other-modules:
+        Tests.Common
+        Tests.Internals.TestControl
+        Tests.Internals.TestCrossover
+        Tests.Internals.TestFundamentals
+        Tests.Internals.TestMultiobjective
+        Tests.Internals.TestSelection
+        Tests.Internals.TestConstraints
+        Tests.Problems.Rosenbrock
+        Moo.GeneticAlgorithm
+        Moo.GeneticAlgorithm.Binary
+        Moo.GeneticAlgorithm.Constraints
+        Moo.GeneticAlgorithm.Continuous
+        Moo.GeneticAlgorithm.Crossover
+        Moo.GeneticAlgorithm.Niching
+        Moo.GeneticAlgorithm.Run
+        Moo.GeneticAlgorithm.Random
+        Moo.GeneticAlgorithm.Utilities
+        Moo.GeneticAlgorithm.LinAlg
+        Moo.GeneticAlgorithm.Multiobjective
+        Moo.GeneticAlgorithm.Multiobjective.NSGA2
+        Moo.GeneticAlgorithm.Multiobjective.Types
+        Moo.GeneticAlgorithm.Multiobjective.Metrics
+        Moo.GeneticAlgorithm.Selection
+        Moo.GeneticAlgorithm.Statistics
+        Moo.GeneticAlgorithm.StopCondition
+        Moo.GeneticAlgorithm.Types
+
+    build-depends:
+        moo,
+        base <5,
+        HUnit,
+        random >=0.1,
+        random-shuffle >=0.0.2,
+        MonadRandom,
+        mersenne-random-pure64,
+        gray-code >=0.2.1,
+        mtl,
+        time,
+        array,
+        containers,
+        parallel >=3.0,
+        vector,
+        containers

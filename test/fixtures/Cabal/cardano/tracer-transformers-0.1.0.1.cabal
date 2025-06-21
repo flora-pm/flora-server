@@ -1,0 +1,54 @@
+cabal-version:       >=1.10
+name:                tracer-transformers
+version:             0.1.0.1
+synopsis:            tracer transformers and examples showing their use
+-- description:
+-- bug-reports:
+license:             Apache-2.0
+license-files:       LICENSE, NOTICE
+author:              Neil Davies, Alexander Diemand, Andreas Triantafyllos
+maintainer:          operations@iohk.io
+copyright:           2019 IOHK
+category:            Logging
+build-type:          Simple
+-- extra-source-files:
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Control.Tracer.Transformers
+                       Control.Tracer.Transformers.ObserveOutcome
+                       Control.Tracer.Transformers.WithThreadAndTime
+
+  default-extensions:  OverloadedStrings
+  default-language:    Haskell2010
+  build-depends:       base
+                     , contra-tracer
+                     , time
+                     , safe-exceptions
+  if impl(ghc < 8.5)
+    build-depends:     contravariant
+  ghc-options:         -Wall -Werror
+
+executable tracer-transfomers-example1
+  main-is:             Main.hs
+  hs-source-dirs:      example1
+  -- other-modules:
+  -- other-extensions:
+  build-depends:       base
+                     , contra-tracer
+                     , time
+                     , tracer-transformers
+  default-extensions:  OverloadedStrings
+  default-language:    Haskell2010
+
+executable tracer-transfomers-example2
+  main-is:             Main.hs
+  hs-source-dirs:      example2
+  -- other-modules:
+  -- other-extensions:
+  build-depends:       base
+                     , contra-tracer
+                     , text
+                     , tracer-transformers
+  default-extensions:  OverloadedStrings
+  default-language:    Haskell2010

@@ -1,0 +1,45 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 522a344e5b14c30ac172bd9ebb6ea7c7e3f1d5ebcd889f7326611c19eaf9c565
+
+name:           writer-cps-mtl
+version:        0.1.1.6
+x-revision: 1
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC == 7.10.3, GHC == 8.0.1, GHC == 8.2.1, GHC == 8.4.3, GHC == 8.6.1
+author:         Andy Gill, Edward Kmett, Daniel Mendler
+maintainer:     mail@daniel-mendler.de
+copyright:      2016 Daniel Mendler
+category:       Control
+synopsis:       MonadWriter orphan instances for writer-cps-transformers
+homepage:       https://github.com/minad/writer-cps-mtl#readme
+bug-reports:    https://github.com/minad/writer-cps-mtl/issues
+description:    The WriterT and RWST monad transformers provided by writer-cps-transformers are written in continuation passing style and avoid the space-leak problem of the traditional Control.Monad.Trans.Writer.Strict and Control.Monad.Trans.Writer.Lazy. See also (<http://hackage.haskell.org/package/writer-cps-transformers>).
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/minad/writer-cps-mtl
+
+library
+  build-depends: mtl <2.3
+
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base <6
+    , mtl >=2.2 && <2.4
+    , transformers >=0.4 && <0.6
+    , writer-cps-transformers >=0.1.1.1 && <0.6
+  exposed-modules:
+      Control.Monad.RWS.CPS
+      Control.Monad.Writer.CPS
+  other-modules:
+      Paths_writer_cps_mtl
+  default-language: Haskell2010

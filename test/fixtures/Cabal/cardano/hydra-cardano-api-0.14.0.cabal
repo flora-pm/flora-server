@@ -1,0 +1,106 @@
+cabal-version: 3.0
+name:          hydra-cardano-api
+version:       0.14.0
+synopsis:      A Haskell API for Cardano, tailored to the Hydra project.
+author:        IOG
+copyright:     2022 IOG
+license:       Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/hydra
+
+common project-config
+  default-language:   GHC2021
+  default-extensions:
+    DataKinds
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingStrategies
+    FunctionalDependencies
+    GADTs
+    LambdaCase
+    MultiWayIf
+    OverloadedStrings
+    PartialTypeSignatures
+    PatternSynonyms
+    TypeFamilies
+    ViewPatterns
+
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wredundant-constraints -Wunused-packages
+    -Wmissing-deriving-strategies -fprint-potential-instances
+
+library
+  import:          project-config
+  hs-source-dirs:  src
+  ghc-options:     -haddock
+  exposed-modules:
+    Cardano.Api.UTxO
+    Hydra.Cardano.Api
+    Hydra.Cardano.Api.Address
+    Hydra.Cardano.Api.AddressInEra
+    Hydra.Cardano.Api.BlockHeader
+    Hydra.Cardano.Api.ChainPoint
+    Hydra.Cardano.Api.CtxTx
+    Hydra.Cardano.Api.CtxUTxO
+    Hydra.Cardano.Api.ExecutionUnits
+    Hydra.Cardano.Api.Hash
+    Hydra.Cardano.Api.KeyWitness
+    Hydra.Cardano.Api.Lovelace
+    Hydra.Cardano.Api.MultiAssetSupportedInEra
+    Hydra.Cardano.Api.Network
+    Hydra.Cardano.Api.NetworkId
+    Hydra.Cardano.Api.PlutusScript
+    Hydra.Cardano.Api.PolicyId
+    Hydra.Cardano.Api.Prelude
+    Hydra.Cardano.Api.Pretty
+    Hydra.Cardano.Api.ReferenceScript
+    Hydra.Cardano.Api.ReferenceTxInsScriptsInlineDatumsSupportedInEra
+    Hydra.Cardano.Api.ScriptData
+    Hydra.Cardano.Api.ScriptDataSupportedInEra
+    Hydra.Cardano.Api.ScriptDatum
+    Hydra.Cardano.Api.ScriptHash
+    Hydra.Cardano.Api.ScriptLanguageInEra
+    Hydra.Cardano.Api.Tx
+    Hydra.Cardano.Api.TxBody
+    Hydra.Cardano.Api.TxId
+    Hydra.Cardano.Api.TxIn
+    Hydra.Cardano.Api.TxOut
+    Hydra.Cardano.Api.TxOutDatum
+    Hydra.Cardano.Api.TxOutValue
+    Hydra.Cardano.Api.TxScriptValidity
+    Hydra.Cardano.Api.UTxO
+    Hydra.Cardano.Api.ValidityInterval
+    Hydra.Cardano.Api.Value
+    Hydra.Cardano.Api.VerificationKey
+    Hydra.Cardano.Api.Witness
+
+  -- NOTE: We use very narrow bounds on cardano libraries as they tend to break
+  -- their interfaces often.
+  build-depends:
+    , aeson                   >=2
+    , base                    >=4.16
+    , base16-bytestring
+    , bytestring
+    , cardano-api             >=8.20.0 && <8.21
+    , cardano-binary          >=1.7.0  && <1.8
+    , cardano-crypto-class    >=2.1.1  && <2.2
+    , cardano-ledger-allegra  >=1.2.1  && <1.3
+    , cardano-ledger-alonzo   >=1.4    && <1.5
+    , cardano-ledger-api      >=1.5    && <1.6
+    , cardano-ledger-babbage  >=1.4.2  && <1.5
+    , cardano-ledger-binary   >=1.1.1  && <1.2
+    , cardano-ledger-byron    >=1.0.0  && <1.1
+    , cardano-ledger-core     >=1.6    && <1.7
+    , cardano-ledger-mary     >=1.3.1  && <1.4
+    , cardano-ledger-shelley  >=1.6    && <1.7
+    , containers
+    , plutus-ledger-api       >=1.9.0  && <1.10
+    , QuickCheck
+    , serialise
+    , text                    >=2

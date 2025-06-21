@@ -57,7 +57,6 @@ upsertRelease package newRelease = do
           newRelease.testedWith
           newRelease.updatedAt
     Nothing -> do
-      Log.logInfo "Inserting new release" $ object ["new_release" .= newRelease]
       insertRelease newRelease
       env <- Reader.ask
       let instanceInfo =

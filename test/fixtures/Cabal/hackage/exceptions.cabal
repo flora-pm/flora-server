@@ -1,0 +1,76 @@
+name:          exceptions
+category:      Control, Exceptions, Monad
+version:       0.10.9
+x-revision: 2
+cabal-version: >= 1.10
+license:       BSD3
+license-file:  LICENSE
+author:        Edward A. Kmett
+maintainer:    Edward A. Kmett <ekmett@gmail.com>
+stability:     provisional
+homepage:      http://github.com/ekmett/exceptions/
+bug-reports:   http://github.com/ekmett/exceptions/issues
+copyright:     Copyright (C) 2013-2015 Edward A. Kmett
+               Copyright (C) 2012 Google Inc.
+build-type:    Simple
+tested-with:   GHC == 8.0.2
+             , GHC == 8.2.2
+             , GHC == 8.4.4
+             , GHC == 8.6.5
+             , GHC == 8.8.4
+             , GHC == 8.10.7
+             , GHC == 9.0.2
+             , GHC == 9.2.8
+             , GHC == 9.4.8
+             , GHC == 9.6.6
+             , GHC == 9.8.2
+             , GHC == 9.10.1
+synopsis:      Extensible optionally-pure exceptions
+description:   Extensible optionally-pure exceptions.
+
+extra-source-files:
+  .ghci
+  .gitignore
+  .vim.custom
+  AUTHORS.markdown
+  README.markdown
+  CHANGELOG.markdown
+
+source-repository head
+  type: git
+  location: https://github.com/ekmett/exceptions.git
+
+library
+  build-depends:
+    base                       >= 4.9      && < 5,
+    mtl                        >= 2.2      && < 2.4,
+    stm                        >= 2.2      && < 3,
+    template-haskell           >= 2.11     && < 2.25,
+    transformers               >= 0.5.2.0  && < 0.7
+
+  exposed-modules:
+    Control.Monad.Catch
+    Control.Monad.Catch.Pure
+
+  ghc-options: -Wall -Wtabs -O2
+  hs-source-dirs: src
+  default-language: Haskell2010
+
+test-suite exceptions-tests
+  main-is: Tests.hs
+  other-modules: Control.Monad.Catch.Tests
+  hs-source-dirs: tests
+  ghc-options: -Wall -Wtabs
+  default-language: Haskell2010
+  type: exitcode-stdio-1.0
+  build-depends:
+    base,
+    exceptions,
+    mtl,
+    stm,
+    template-haskell,
+    transformers               >= 0.5.2.0  && < 0.7,
+    test-framework             >= 0.8      && < 0.9,
+    test-framework-hunit       >= 0.3      && < 0.4,
+    test-framework-quickcheck2 >= 0.3      && < 0.4,
+    QuickCheck                 >= 2.5      && < 2.16

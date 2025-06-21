@@ -1,0 +1,24 @@
+cabal-version:       2.4
+name:                groups
+version:             0.5.3
+synopsis:            Groups
+description:
+  A group is a monoid with invertibility.
+license:             BSD-3-Clause
+license-file:        LICENSE
+author:              Nathan "Taneb" van Doorn
+maintainer:          nvd1234@gmail.com
+copyright:           Copyright (C) 2013 Nathan van Doorn
+category:            Algebra, Data, Math
+build-type:          Simple
+
+source-repository head
+  type:     git
+  location: https://github.com/Taneb/groups.git
+
+library
+  exposed-modules:     Data.Group
+  -- other-modules:
+  build-depends:       base >= 4.6 && < 5
+  hs-source-dirs:      src
+  default-language:    Haskell2010

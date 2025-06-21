@@ -5,7 +5,7 @@ task:
   name: "Backend build on FreeBSD 14.2"
   env:
     GHCUP_VERSION: 0.1.40.0
-    CABAL_PROJECT: cabal.project.release
+    CABAL_PROJECT: cabal.project
     PATH: $HOME/.local/bin:$HOME/.ghcup/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/opt/curl/bin
     BOOTSTRAP_HASKELL_NONINTERACTIVE: 1
     BOOTSTRAP_HASKELL_GHC_VERSION: 9.10.1
@@ -27,4 +27,4 @@ task:
       - sha256sum < dist-newstyle/cache/plan.json
 
   build_script: |
-      gmake build-release
+      gmake build

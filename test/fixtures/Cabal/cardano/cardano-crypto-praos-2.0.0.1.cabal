@@ -1,0 +1,102 @@
+cabal-version: 2.2
+
+name:                cardano-crypto-praos
+version:             2.0.0.1
+synopsis:            Crypto primitives from libsodium
+description:         VRF (and KES, tba) primitives from libsodium.
+license:             Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+author:              IOHK
+maintainer:          operations@iohk.io
+copyright:           2019-2021 IOHK
+category:            Currency
+build-type:          Simple
+extra-source-files:  README.md
+
+extra-source-files:    cbits/crypto_vrf.h
+
+                       cbits/vrf03/crypto_vrf_ietfdraft03.h
+                       cbits/vrf03/vrf_ietfdraft03.h
+
+                       -- cbits/vrf10_batchcompat/crypto_vrf_ietfdraft10.h
+                       -- cbits/vrf10_batchcompat/vrf_ietfdraft10.h
+
+                       cbits/private/common.h
+                       cbits/private/quirks.h
+                       cbits/private/ed25519_ref10.h
+                       --cbits/private/hash_to_curve.h
+                       cbits/private/ed25519_ref10_fe_25_5.h
+                       cbits/private/ed25519_ref10_fe_51.h
+
+                       cbits/private/fe_25_5/constants.h
+                       cbits/private/fe_25_5/base.h
+                       cbits/private/fe_25_5/base2.h
+                       cbits/private/fe_25_5/fe.h
+                       cbits/private/fe_51/constants.h
+                       cbits/private/fe_51/base.h
+                       cbits/private/fe_51/base2.h
+                       cbits/private/fe_51/fe.h
+
+flag development
+    description: Disable `-Werror`
+    default: False
+    manual: True
+
+flag external-libsodium-vrf
+    description: Rely on a special libsodium fork containing the VRF code.
+                 Otherwise expect a normal unaltered system libsodium, and
+                 bundle the VRF code.
+    default: True
+    manual: True
+
+common base                         { build-depends: base >= 4.14 && < 4.17 }
+
+common project-config
+  default-language:     Haskell2010
+
+  ghc-options:          -Wall
+                        -Wcompat
+                        -Wincomplete-record-updates
+                        -Wincomplete-uni-patterns
+                        -Wpartial-fields
+                        -Wredundant-constraints
+                        -Wunused-packages
+
+  if (!flag(development))
+    ghc-options:        -Werror
+
+library
+  import:               base, project-config
+  hs-source-dirs:       src
+  exposed-modules:      Cardano.Crypto.VRF.Praos
+                 -- Disabled until the full audit is complete:
+                 -- ,      Cardano.Crypto.VRF.PraosBatchCompat
+                 ,      Cardano.Crypto.RandomBytes
+
+  build-depends:        base
+                      , bytestring
+                      , cardano-binary
+                      , cardano-crypto-class <2.2
+                      , deepseq
+                      , nothunks
+
+  pkgconfig-depends: libsodium
+
+  if !flag(external-libsodium-vrf)
+    c-sources:          cbits/crypto_vrf.c
+                        cbits/vrf03/convert.c
+                        cbits/vrf03/keypair.c
+                        cbits/vrf03/prove.c
+                        cbits/vrf03/verify.c
+                        cbits/vrf03/vrf.c
+
+                        -- cbits/vrf10_batchcompat/convert.c
+                        -- cbits/vrf10_batchcompat/verify.c
+                        -- cbits/vrf10_batchcompat/keypair.c
+                        -- cbits/vrf10_batchcompat/prove.c
+                        -- cbits/vrf10_batchcompat/vrf.c
+
+                        -- cbits/private/hash_to_curve.c
+                        cbits/private/ed25519_ref10.c

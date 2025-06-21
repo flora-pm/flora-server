@@ -1,0 +1,59 @@
+name:                http-client-tls
+version:             0.3.6.4
+x-revision: 2
+synopsis:            http-client backend using the connection package and tls library
+description:         Hackage documentation generation is not reliable. For up to date documentation, please see: <https://www.stackage.org/package/http-client-tls>.
+homepage:            https://github.com/snoyberg/http-client
+license:             MIT
+license-file:        LICENSE
+author:              Michael Snoyman
+maintainer:          michael@snoyman.com
+category:            Network
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+                     ChangeLog.md
+
+library
+  exposed-modules:     Network.HTTP.Client.TLS
+  other-extensions:    ScopedTypeVariables
+  build-depends:       base >= 4.10 && < 5
+                     , data-default
+                     , http-client >= 0.7.11
+                     , crypton-connection
+                     , network
+                     , tls (>=1.2 && < 2.1) || >= 2.1.2
+                     , bytestring
+                     , case-insensitive
+                     , transformers
+                     , http-types
+                     , crypton
+                     , memory
+                     , exceptions
+                     , containers
+                     , text
+                     , network-uri
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+test-suite spec
+  main-is:             Spec.hs
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  default-language:    Haskell2010
+  build-depends:       base
+                     , hspec
+                     , http-client
+                     , http-client-tls
+                     , http-types
+                     , crypton-connection
+
+benchmark benchmark
+  main-is:             Bench.hs
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      bench
+  default-language:    Haskell2010
+  build-depends:       base
+                     , gauge
+                     , http-client
+                     , http-client-tls

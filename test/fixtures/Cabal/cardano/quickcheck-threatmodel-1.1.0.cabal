@@ -1,0 +1,95 @@
+cabal-version:      2.4
+name:               quickcheck-threatmodel
+version:            1.1.0
+
+-- A short (one-line) description of the package.
+-- synopsis:
+
+-- A longer description of the package.
+-- description:
+
+-- A URL where users can report bugs.
+-- bug-reports:
+
+-- The license under which the package is released.
+-- license:
+author:             Maximilian Algehed
+maintainer:         maximilian.algehed@quviq.com
+
+-- A copyright notice.
+-- copyright:
+-- category:
+
+common lang
+  default-language:   Haskell2010
+  default-extensions:
+    FunctionalDependencies
+    RecordWildCards
+    ViewPatterns
+    DeriveFunctor
+    DeriveDataTypeable
+    StandaloneDeriving
+    ImportQualifiedPost
+    TupleSections
+    LambdaCase
+    PatternSynonyms
+    GADTs
+    TypeApplications
+    ScopedTypeVariables
+    TypeFamilies
+    FlexibleContexts
+    FlexibleInstances
+    MultiParamTypeClasses
+    RankNTypes
+    GeneralizedNewtypeDeriving
+    PolyKinds
+    TemplateHaskell
+    DataKinds
+    DefaultSignatures
+    ConstraintKinds
+    DeriveGeneric
+    DerivingVia
+    TypeOperators
+    OverloadedStrings
+    DeriveAnyClass
+
+  ghc-options:
+    -Wall -Wnoncanonical-monad-instances -Wunused-packages
+    -Wincomplete-uni-patterns -Wincomplete-record-updates
+    -Wredundant-constraints -Widentities -Wno-name-shadowing
+    -Wno-orphans -Wno-redundant-constraints
+
+library
+    import: lang
+    hs-source-dirs: src
+    exposed-modules:
+      Test.QuickCheck.ThreatModel
+      Test.QuickCheck.ThreatModel.Cardano.Api
+      Test.QuickCheck.ThreatModel.DoubleSatisfaction
+      Test.QuickCheck.ThreatModel.Pretty
+      Test.QuickCheck.ThreatModel.TxModifier
+    -- General dependencies
+    build-depends:
+      base >=4.7 && <5,
+      bytestring >=0.10.12 && <0.12,
+      containers ^>= 0.6.5.1,
+      pretty ^>= 1.1.3.6,
+      time >= 1.9.3 && <1.12,
+    -- QuickCheck dependencies
+    build-depends:
+      QuickCheck ^>= 2.14,
+    -- Plutus and Cardano dependencies
+    build-depends:
+      plutus-tx                                       >= 1.5.0 && < 1.8,
+      cardano-api                                     >= 8.2.0 && < 8.9,
+      cardano-strict-containers                       >= 0.1.2 && < 0.2,
+      cardano-slotting                                >= 0.1.1 && < 0.2,
+      cardano-ledger-binary                           >= 1.1.1 && < 1.2,
+      cardano-ledger-allegra                          >= 1.1.1 && < 1.3,
+      cardano-ledger-core                             >= 1.2.0 && < 1.5,
+      cardano-ledger-shelley                          >= 1.2.0 && < 1.5,
+      cardano-ledger-alonzo                           >= 1.2.1 && < 1.4,
+      cardano-ledger-api                              >= 1.2.0 && < 1.4,
+      cardano-ledger-babbage                          >= 1.2.1 && < 1.5,
+      ouroboros-consensus                             >= 0.7.0 && < 0.10,
+      ouroboros-consensus-cardano                     >= 0.6.0 && < 0.8,

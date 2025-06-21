@@ -1,0 +1,38 @@
+cabal-version:   3.0
+name:            strict-sop-core
+synopsis:        Strict replacement for NS and NP.
+description:     Strict replacement for NS and NP from @sop-core@.
+version:         0.1.0.0
+license:         Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+copyright:       2023 Input Output Global Inc (IOG), INTERSECT 2023-2024.
+author:          IOG Engineering Team
+maintainer:      operations@iohk.io
+category:        Data
+build-type:      Simple
+extra-doc-files: CHANGELOG.md
+
+common warnings
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-uni-patterns
+    -Wincomplete-record-updates -Wpartial-fields -Widentities
+    -Wredundant-constraints -Wmissing-export-lists -Wunused-packages
+    -Wno-unticked-promoted-constructors
+
+library
+  import:           warnings
+  hs-source-dirs:   src
+  exposed-modules:
+    Data.SOP.Strict
+    Data.SOP.Strict.NP
+    Data.SOP.Strict.NS
+
+  build-depends:
+    , base      >=4.14 && <4.20
+    , nothunks  ^>=0.1
+    , sop-core  ^>=0.5
+
+  default-language: Haskell2010

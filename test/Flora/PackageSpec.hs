@@ -205,7 +205,7 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: RequireCallStack => TestEff ()
 testReleaseDeprecation = do
   result <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  assertEqual 89 (length result)
+  assertEqual 214 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
   deprecatedBinaryVersion' <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])

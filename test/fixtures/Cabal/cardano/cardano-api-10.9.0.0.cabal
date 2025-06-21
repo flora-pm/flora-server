@@ -1,0 +1,421 @@
+cabal-version: 3.4
+name: cardano-api
+version: 10.9.0.0
+synopsis: The cardano API
+description: The cardano API.
+category:
+  Cardano,
+  API,
+
+copyright: 2020-2024 Input Output Global Inc (IOG).
+author: IOHK
+maintainer: operations@iohk.io
+license: Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+build-type: Simple
+extra-doc-files:
+  CHANGELOG.md
+  README.md
+
+common project-config
+  default-language: Haskell2010
+  default-extensions: OverloadedStrings
+  build-depends: base >=4.14 && <4.21
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wno-unticked-promoted-constructors
+    -Wpartial-fields
+    -Wredundant-constraints
+    -Wunused-packages
+
+  if impl(ghc < 9)
+    ghc-options: -Wno-incomplete-patterns
+
+common maybe-unix
+  if !os(windows)
+    build-depends: unix
+
+common maybe-Win32
+  if os(windows)
+    build-depends: Win32
+
+common text
+  if impl(ghc == 8.10.7)&& os(osx)&& arch(aarch64)
+    build-depends: text >=1.2.5.0
+  else
+    build-depends: text >=2.0
+
+library
+  import: project-config, maybe-unix, maybe-Win32, text
+  hs-source-dirs:
+    src
+
+  -- Do not expose any additional modules. The correct way
+  -- to expose new functionality is via Cardano.Api or
+  -- Cardano.Api.Shelley
+  exposed-modules:
+    Cardano.Api
+    Cardano.Api.Byron
+    Cardano.Api.ChainSync.Client
+    Cardano.Api.ChainSync.ClientPipelined
+    Cardano.Api.Compatible
+    Cardano.Api.Consensus
+    Cardano.Api.Crypto.Ed25519Bip32
+    Cardano.Api.Experimental
+    Cardano.Api.Internal.Address
+    Cardano.Api.Internal.Block
+    Cardano.Api.Internal.DRepMetadata
+    Cardano.Api.Internal.Eon.ShelleyBasedEra
+    Cardano.Api.Internal.Eras
+    Cardano.Api.Internal.Error
+    Cardano.Api.Internal.Fees
+    Cardano.Api.Internal.Genesis
+    Cardano.Api.Internal.GenesisParameters
+    Cardano.Api.Internal.Governance.Metadata.Validation
+    Cardano.Api.Internal.IO
+    Cardano.Api.Internal.LedgerState
+    Cardano.Api.Internal.Modes
+    Cardano.Api.Internal.Orphans
+    Cardano.Api.Internal.Plutus
+    Cardano.Api.Internal.Pretty
+    Cardano.Api.Internal.ProtocolParameters
+    Cardano.Api.Internal.Query
+    Cardano.Api.Internal.Script
+    Cardano.Api.Internal.SerialiseLedgerCddl
+    Cardano.Api.Internal.SerialiseTextEnvelope
+    Cardano.Api.Internal.Tx.Sign
+    Cardano.Api.Ledger
+    Cardano.Api.Ledger.Lens
+    Cardano.Api.Network
+    Cardano.Api.Shelley
+    Cardano.Api.Tx.UTxO
+
+  build-depends:
+    FailT,
+    aeson >=1.5.6.0,
+    aeson-pretty >=0.8.5,
+    attoparsec,
+    base16-bytestring >=1.0,
+    base58-bytestring,
+    base64-bytestring,
+    bech32 >=1.1.0,
+    bytestring,
+    cardano-binary,
+    cardano-crypto,
+    cardano-crypto-class ^>=2.1.2,
+    cardano-crypto-wrapper ^>=1.5,
+    cardano-data >=1.0,
+    cardano-ledger-allegra >=1.6,
+    cardano-ledger-alonzo >=1.10.2,
+    cardano-ledger-api >=1.9.3,
+    cardano-ledger-babbage >=1.9,
+    cardano-ledger-binary >=1.3,
+    cardano-ledger-byron >=1.0.1,
+    cardano-ledger-conway >=1.16,
+    cardano-ledger-core:{cardano-ledger-core, testlib} >=1.14,
+    cardano-ledger-mary >=1.7,
+    cardano-ledger-shelley >=1.13,
+    cardano-protocol-tpraos >=1.2,
+    cardano-slotting >=0.2.0.0,
+    cardano-strict-containers >=0.1,
+    cborg,
+    containers,
+    contra-tracer,
+    cryptonite,
+    data-default-class,
+    deepseq,
+    directory,
+    either,
+    errors,
+    filepath,
+    formatting,
+    groups,
+    iproute,
+    memory,
+    microlens,
+    microlens-aeson,
+    mtl,
+    network,
+    network-mux,
+    nothunks,
+    ordered-containers,
+    ouroboros-consensus ^>=0.22,
+    ouroboros-consensus-cardano ^>=0.21,
+    ouroboros-consensus-diffusion ^>=0.19 || ^>=0.20,
+    ouroboros-consensus-protocol ^>=0.10,
+    ouroboros-network,
+    ouroboros-network-api ^>=0.12,
+    ouroboros-network-framework,
+    ouroboros-network-protocols,
+    parsec,
+    plutus-ledger-api:{plutus-ledger-api, plutus-ledger-api-testlib} ^>=1.37,
+    prettyprinter,
+    prettyprinter-ansi-terminal,
+    prettyprinter-configurable ^>=1.36,
+    random,
+    safe-exceptions,
+    scientific,
+    serialise,
+    small-steps ^>=1.1,
+    sop-core,
+    stm,
+    strict-sop-core,
+    time,
+    transformers,
+    transformers-except ^>=0.1.3,
+    typed-protocols ^>=0.3,
+    vector,
+    yaml,
+
+  other-modules:
+    Cardano.Api.Internal.Anchor
+    Cardano.Api.Internal.Certificate
+    Cardano.Api.Internal.Convenience.Construction
+    Cardano.Api.Internal.Convenience.Query
+    Cardano.Api.Internal.DeserialiseAnyOf
+    Cardano.Api.Internal.Eon.AllegraEraOnwards
+    Cardano.Api.Internal.Eon.AlonzoEraOnwards
+    Cardano.Api.Internal.Eon.BabbageEraOnwards
+    Cardano.Api.Internal.Eon.ByronToAlonzoEra
+    Cardano.Api.Internal.Eon.Convert
+    Cardano.Api.Internal.Eon.ConwayEraOnwards
+    Cardano.Api.Internal.Eon.MaryEraOnwards
+    Cardano.Api.Internal.Eon.ShelleyEraOnly
+    Cardano.Api.Internal.Eon.ShelleyToAllegraEra
+    Cardano.Api.Internal.Eon.ShelleyToAlonzoEra
+    Cardano.Api.Internal.Eon.ShelleyToBabbageEra
+    Cardano.Api.Internal.Eon.ShelleyToMaryEra
+    Cardano.Api.Internal.Eras.Case
+    Cardano.Api.Internal.Eras.Core
+    Cardano.Api.Internal.Experimental.Eras
+    Cardano.Api.Internal.Experimental.Tx
+    Cardano.Api.Internal.Feature
+    Cardano.Api.Internal.Governance.Actions.ProposalProcedure
+    Cardano.Api.Internal.Governance.Actions.VotingProcedure
+    Cardano.Api.Internal.Governance.Metadata.DrepRegistration
+    Cardano.Api.Internal.Governance.Metadata.GovAction
+    Cardano.Api.Internal.Governance.Metadata.Parsers
+    Cardano.Api.Internal.Governance.Poll
+    Cardano.Api.Internal.HasTypeProxy
+    Cardano.Api.Internal.Hash
+    Cardano.Api.Internal.IO.Base
+    Cardano.Api.Internal.IO.Compat
+    Cardano.Api.Internal.IO.Compat.Posix
+    Cardano.Api.Internal.IO.Compat.Win32
+    Cardano.Api.Internal.IPC
+    Cardano.Api.Internal.IPC.Monad
+    Cardano.Api.Internal.IPC.Version
+    Cardano.Api.Internal.InMode
+    Cardano.Api.Internal.Json
+    Cardano.Api.Internal.Keys.Byron
+    Cardano.Api.Internal.Keys.Class
+    Cardano.Api.Internal.Keys.Praos
+    Cardano.Api.Internal.Keys.Read
+    Cardano.Api.Internal.Keys.Shelley
+    Cardano.Api.Internal.LedgerEvents.ConvertLedgerEvent
+    Cardano.Api.Internal.LedgerEvents.LedgerEvent
+    Cardano.Api.Internal.LedgerEvents.Rule.BBODY.DELEGS
+    Cardano.Api.Internal.LedgerEvents.Rule.BBODY.LEDGER
+    Cardano.Api.Internal.LedgerEvents.Rule.BBODY.UTXOW
+    Cardano.Api.Internal.LedgerEvents.Rule.TICK.NEWEPOCH
+    Cardano.Api.Internal.LedgerEvents.Rule.TICK.RUPD
+    Cardano.Api.Internal.Monad.Error
+    Cardano.Api.Internal.NetworkId
+    Cardano.Api.Internal.OperationalCertificate
+    Cardano.Api.Internal.Protocol
+    Cardano.Api.Internal.Query.Expr
+    Cardano.Api.Internal.Query.Types
+    Cardano.Api.Internal.ReexposeConsensus
+    Cardano.Api.Internal.ReexposeLedger
+    Cardano.Api.Internal.ReexposeNetwork
+    Cardano.Api.Internal.Rewards
+    Cardano.Api.Internal.ScriptData
+    Cardano.Api.Internal.SerialiseBech32
+    Cardano.Api.Internal.SerialiseCBOR
+    Cardano.Api.Internal.SerialiseJSON
+    Cardano.Api.Internal.SerialiseRaw
+    Cardano.Api.Internal.SerialiseUsing
+    Cardano.Api.Internal.SpecialByron
+    Cardano.Api.Internal.StakePoolMetadata
+    Cardano.Api.Internal.Tx.Body
+    Cardano.Api.Internal.Tx.Compatible
+    Cardano.Api.Internal.Tx.UTxO
+    Cardano.Api.Internal.TxIn
+    Cardano.Api.Internal.TxMetadata
+    Cardano.Api.Internal.Utils
+    Cardano.Api.Internal.Value
+    Cardano.Api.Internal.ValueParser
+    Cardano.Api.Internal.Via.ShowOf
+
+library gen
+  import: project-config
+  visibility: public
+  hs-source-dirs: gen
+  exposed-modules:
+    Test.Gen.Cardano.Api
+    Test.Gen.Cardano.Api.Byron
+    Test.Gen.Cardano.Api.Era
+    Test.Gen.Cardano.Api.Hardcoded
+    Test.Gen.Cardano.Api.Metadata
+    Test.Gen.Cardano.Api.ProtocolParameters
+    Test.Gen.Cardano.Api.Typed
+    Test.Gen.Cardano.Crypto.Seed
+    Test.Hedgehog.Golden.ErrorMessage
+    Test.Hedgehog.Roundtrip.Bech32
+    Test.Hedgehog.Roundtrip.CBOR
+
+  build-depends:
+    Diff,
+    QuickCheck,
+    aeson >=1.5.6.0,
+    base16-bytestring,
+    bytestring,
+    cardano-api,
+    cardano-binary >=1.6 && <1.8,
+    cardano-crypto-class ^>=2.1.2,
+    cardano-crypto-test ^>=1.5,
+    cardano-ledger-alonzo:{cardano-ledger-alonzo, testlib} >=1.8.1,
+    cardano-ledger-byron-test >=1.5,
+    cardano-ledger-conway:testlib,
+    cardano-ledger-core:{cardano-ledger-core, testlib} >=1.14,
+    cardano-ledger-shelley >=1.13,
+    containers,
+    directory,
+    filepath,
+    hedgehog >=1.1,
+    hedgehog-extras,
+    hedgehog-quickcheck,
+    tasty,
+    tasty-hedgehog,
+    text,
+
+test-suite cardano-api-test
+  import: project-config
+  hs-source-dirs: test/cardano-api-test
+  main-is: cardano-api-test.hs
+  type: exitcode-stdio-1.0
+  build-depends:
+    QuickCheck,
+    aeson >=1.5.6.0,
+    base16-bytestring,
+    bytestring,
+    cardano-api,
+    cardano-api:gen,
+    cardano-binary,
+    cardano-crypto,
+    cardano-crypto-class ^>=2.1.2,
+    cardano-crypto-test ^>=1.5,
+    cardano-crypto-tests ^>=2.1,
+    cardano-ledger-alonzo,
+    cardano-ledger-api >=1.9,
+    cardano-ledger-binary,
+    cardano-ledger-core:{cardano-ledger-core, testlib} >=1.14,
+    cardano-ledger-mary,
+    cardano-protocol-tpraos,
+    cardano-slotting,
+    cborg,
+    containers,
+    data-default,
+    directory,
+    hedgehog >=1.1,
+    hedgehog-extras,
+    hedgehog-quickcheck,
+    interpolatedstring-perl6,
+    microlens,
+    mtl,
+    ouroboros-consensus,
+    ouroboros-consensus-cardano,
+    ouroboros-consensus-protocol,
+    ouroboros-network-api,
+    plutus-ledger-api,
+    tasty,
+    tasty-hedgehog,
+    tasty-quickcheck,
+    text,
+    time,
+
+  other-modules:
+    Test.Cardano.Api.Address
+    Test.Cardano.Api.Bech32
+    Test.Cardano.Api.CBOR
+    Test.Cardano.Api.Crypto
+    Test.Cardano.Api.Envelope
+    Test.Cardano.Api.EpochLeadership
+    Test.Cardano.Api.Eras
+    Test.Cardano.Api.Experimental
+    Test.Cardano.Api.Genesis
+    Test.Cardano.Api.GovAnchorValidation
+    Test.Cardano.Api.IO
+    Test.Cardano.Api.Json
+    Test.Cardano.Api.KeysByron
+    Test.Cardano.Api.Ledger
+    Test.Cardano.Api.Metadata
+    Test.Cardano.Api.Ord
+    Test.Cardano.Api.Orphans
+    Test.Cardano.Api.ProtocolParameters
+    Test.Cardano.Api.RawBytes
+    Test.Cardano.Api.Transaction.Autobalance
+    Test.Cardano.Api.TxBody
+    Test.Cardano.Api.Value
+
+  ghc-options:
+    -threaded
+    -rtsopts
+    "-with-rtsopts=-N -T"
+
+test-suite cardano-api-golden
+  import: project-config
+  hs-source-dirs: test/cardano-api-golden
+  main-is: cardano-api-golden.hs
+  type: exitcode-stdio-1.0
+  build-depends:
+    aeson,
+    base64-bytestring,
+    bech32 >=1.1.0,
+    bytestring,
+    cardano-api,
+    cardano-api:gen,
+    cardano-binary,
+    cardano-crypto-class ^>=2.1.2,
+    cardano-data >=1.0,
+    cardano-ledger-alonzo,
+    cardano-ledger-api >=1.9,
+    cardano-ledger-babbage >=1.9,
+    cardano-ledger-binary,
+    cardano-ledger-core:{cardano-ledger-core, testlib} >=1.14,
+    cardano-ledger-shelley,
+    cardano-ledger-shelley-test >=1.2.0.1,
+    cardano-slotting ^>=0.2.0.0,
+    containers,
+    errors,
+    filepath,
+    hedgehog >=1.1,
+    hedgehog-extras ^>=0.7,
+    microlens,
+    parsec,
+    plutus-core ^>=1.37,
+    plutus-ledger-api,
+    tasty,
+    tasty-hedgehog,
+    text,
+    time,
+
+  ghc-options:
+    -threaded
+    -rtsopts
+    "-with-rtsopts=-N -T"
+
+  build-tool-depends: tasty-discover:tasty-discover
+  other-modules:
+    Test.Golden.Cardano.Api.Genesis
+    Test.Golden.Cardano.Api.Ledger
+    Test.Golden.Cardano.Api.ProtocolParameters
+    Test.Golden.Cardano.Api.Script
+    Test.Golden.Cardano.Api.Value
+    Test.Golden.ErrorsSpec

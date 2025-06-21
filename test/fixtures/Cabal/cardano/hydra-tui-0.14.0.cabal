@@ -1,0 +1,119 @@
+cabal-version: 2.2
+name:          hydra-tui
+version:       0.14.0
+synopsis:      TUI for managing a Hydra node
+description:   TUI for managing a Hydra node
+author:        IOG
+copyright:     2022 IOG
+license:       Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/hydra
+
+common project-config
+  default-language:   GHC2021
+  default-extensions:
+    DataKinds
+    DefaultSignatures
+    DeriveAnyClass
+    DerivingStrategies
+    FunctionalDependencies
+    GADTs
+    LambdaCase
+    MultiWayIf
+    NoImplicitPrelude
+    OverloadedStrings
+    PartialTypeSignatures
+    TypeFamilies
+    ViewPatterns
+
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wredundant-constraints -Wunused-packages
+    -fprint-potential-instances
+
+library
+  import:          project-config
+  hs-source-dirs:  src
+  exposed-modules:
+    Hydra.Client
+    Hydra.TUI
+    Hydra.TUI.Drawing
+    Hydra.TUI.Drawing.Utils
+    Hydra.TUI.Forms
+    Hydra.TUI.Handlers
+    Hydra.TUI.Handlers.Global
+    Hydra.TUI.Logging.Handlers
+    Hydra.TUI.Logging.Types
+    Hydra.TUI.Model
+    Hydra.TUI.Options
+    Hydra.TUI.Style
+
+  other-modules:   Paths_hydra_tui
+  build-depends:
+    , aeson
+    , async
+    , base
+    , brick                 ==1.10
+    , containers
+    , hydra-cardano-api
+    , hydra-node
+    , hydra-prelude
+    , io-classes
+    , microlens
+    , microlens-mtl
+    , microlens-th
+    , optparse-applicative
+    , req
+    , text
+    , time
+    , vty
+    , websockets
+
+executable hydra-tui
+  import:         project-config
+  hs-source-dirs: exe
+  main-is:        Main.hs
+  build-depends:
+    , hydra-prelude
+    , hydra-tui
+    , optparse-applicative
+
+  ghc-options:    -threaded -rtsopts
+
+test-suite tests
+  import:             project-config
+  hs-source-dirs:     test
+  other-modules:
+    Hydra.TUI.OptionsSpec
+    Hydra.TUISpec
+    Spec
+
+  main-is:            Main.hs
+  type:               exitcode-stdio-1.0
+  build-depends:
+    , blaze-builder
+    , bytestring
+    , filepath
+    , hspec
+    , hydra-cardano-api
+    , hydra-cluster
+    , hydra-node
+    , hydra-prelude
+    , hydra-test-utils
+    , hydra-tui
+    , io-classes
+    , optparse-applicative
+    , regex-tdfa
+    , unix
+    , vty
+
+  build-tool-depends:
+    , hspec-discover:hspec-discover
+    , hydra-node:hydra-node
+
+  ghc-options:        -threaded -rtsopts

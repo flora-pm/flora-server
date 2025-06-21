@@ -1,0 +1,192 @@
+cabal-version:   3.0
+name:            plutus-ledger
+version:         1.3.0.0
+license:         Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+maintainer:      michael.peyton-jones@iohk.io
+author:          Michael Peyton Jones, Jann Mueller
+synopsis:        Wallet API
+description:     Plutus ledger library
+category:        Language
+build-type:      Simple
+extra-doc-files: README.md
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/plutus-apps
+
+common lang
+  default-language:   Haskell2010
+  default-extensions:
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    ExplicitForAll
+    FlexibleContexts
+    GeneralizedNewtypeDeriving
+    ImportQualifiedPost
+    MultiParamTypeClasses
+    ScopedTypeVariables
+    StandaloneDeriving
+
+  -- See Plutus Tx readme for why we need the following flags:
+  -- -fobject-code -fno-ignore-interface-pragmas and -fno-omit-interface-pragmas
+  ghc-options:
+    -Wall -Wnoncanonical-monad-instances -Wno-unused-packages
+    -Wincomplete-uni-patterns -Wincomplete-record-updates
+    -Wredundant-constraints -Widentities -fobject-code
+    -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
+    -fplugin-opt PlutusTx.Plugin:target-version=1.0.0
+
+flag defer-plugin-errors
+  description:
+    Defer errors from the plugin, useful for things like Haddock that can't handle it.
+
+  default:     False
+  manual:      True
+
+library
+  import:           lang
+  hs-source-dirs:   src
+  default-language: Haskell2010
+  exposed-modules:
+    Data.Aeson.Extras
+    Data.Time.Units.Extra
+    Ledger
+    Ledger.Address
+    Ledger.Address.Orphans
+    Ledger.AddressMap
+    Ledger.Blockchain
+    Ledger.Builtins.Orphans
+    Ledger.CardanoWallet
+    Ledger.Contexts.Orphans
+    Ledger.Credential.Orphans
+    Ledger.Crypto
+    Ledger.Crypto.Orphans
+    Ledger.DCert.Orphans
+    Ledger.Index
+    Ledger.Index.Internal
+    Ledger.Orphans
+    Ledger.Scripts
+    Ledger.Scripts.Orphans
+    Ledger.Slot
+    Ledger.Test
+    Ledger.Tx
+    Ledger.Tx.CardanoAPI
+    Ledger.Tx.CardanoAPI.Internal
+    Ledger.Tx.Internal
+    Ledger.Tx.Orphans
+    Ledger.Tx.Orphans.V1
+    Ledger.Tx.Orphans.V2
+    Ledger.Typed.Scripts
+    Ledger.Typed.Scripts.Orphans
+    Ledger.Typed.Scripts.Validators
+    Ledger.Typed.Tx
+    Ledger.Typed.TypeUtils
+    Ledger.Value.CardanoAPI
+    Ledger.Value.Orphans
+
+  -- The rest of the plutus-ledger-api modules are reexported from within
+  -- the Haskell modules and not in the current cabal file.
+  -- For example: PlutusLedgerApi.V1.Address is reexported by Ledger.Address
+  other-modules:    Codec.CBOR.Extras
+
+  --------------------
+  -- Local components
+  --------------------
+  build-depends:    plutus-script-utils ^>=1.3.0
+
+  --------------------------
+  -- Other IOG dependencies
+  --------------------------
+  build-depends:
+    , cardano-api:{cardano-api, internal} ^>=8.37
+    , cardano-binary
+    , cardano-crypto                      ^>=1.1
+    , cardano-ledger-alonzo
+    , cardano-ledger-babbage
+    , cardano-ledger-byron
+    , cardano-ledger-core
+    , cardano-ledger-shelley
+    , data-default
+    , iohk-monitoring
+    , plutus-core                          >=1.0.0
+    , plutus-ledger-api                    >=1.0.0
+    , plutus-tx                            >=1.0.0
+
+  ------------------------
+  -- Non-IOG dependencies
+  ------------------------
+  -- TODO: remove the contractmodel dependency once the dependency on cardano-node
+  -- has been bumped to include the instance of Ord for AddressInEra
+  -- defined there.
+  build-depends:
+    , aeson
+    , base               >=4.9  && <5
+    , base16-bytestring
+    , bytestring
+    , cborg
+    , containers
+    , cryptonite         >=0.25
+    , flat
+    , hashable
+    , http-api-data
+    , lens
+    , memory
+    , newtype-generics
+    , prettyprinter
+    , scientific
+    , serialise
+    , servant
+    , text
+    , time-units
+    , vector
+
+  ghc-options:      -fprint-potential-instances
+
+  if !(impl(ghcjs) || os(ghcjs))
+    build-depends: plutus-tx-plugin >=1.0.0
+
+  if flag(defer-plugin-errors)
+    ghc-options: -fplugin-opt PlutusTx.Plugin:defer-errors
+
+test-suite plutus-ledger-test
+  import:             lang
+  type:               exitcode-stdio-1.0
+  main-is:            Spec.hs
+  hs-source-dirs:     test
+  default-language:   Haskell2010
+  default-extensions: ImportQualifiedPost
+  other-modules:      Ledger.Tx.CardanoAPISpec
+
+  --------------------
+  -- Local components
+  --------------------
+  build-depends:
+    , plutus-ledger        ^>=1.3.0
+    , plutus-script-utils  ^>=1.3.0
+
+  --------------------------
+  -- Other IOG dependencies
+  --------------------------
+  build-depends:
+    , cardano-api:{cardano-api, gen}
+    , plutus-ledger-api               >=1.0.0
+    , plutus-tx                       >=1.0.0
+
+  ------------------------
+  -- Non-IOG dependencies
+  ------------------------
+  build-depends:
+    , aeson
+    , base            >=4.9 && <5
+    , bytestring
+    , hedgehog
+    , tasty
+    , tasty-hedgehog
+    , tasty-hunit

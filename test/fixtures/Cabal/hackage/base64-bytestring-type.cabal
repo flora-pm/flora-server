@@ -1,0 +1,126 @@
+cabal-version:      1.12
+name:               base64-bytestring-type
+version:            1.0.1
+x-revision: 21
+synopsis:           A newtype around ByteString, for base64 encoding
+description:
+  A newtype around ByteString, for base64 encoding.
+  Strict and lazy, normal and url alphabet variants.
+
+category:           Data
+homepage:           https://github.com/erikd/base64-bytestring-type#readme
+bug-reports:        https://github.com/erikd/base64-bytestring-type/issues
+author:             Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:         Erik de Castro Lopo <erikd@mega-nerd.com>
+license:            BSD3
+license-file:       LICENSE
+build-type:         Simple
+tested-with:
+  GHC ==7.8.4
+   || ==7.10.3
+   || ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.5
+   || ==8.8.4
+   || ==8.10.7
+   || ==9.0.2
+   || ==9.2.8
+   || ==9.4.8
+   || ==9.6.3
+   || ==9.8.1
+
+extra-source-files:
+  README.md
+  CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/erikd/base64-bytestring-type
+
+flag cereal
+  description: Instances for @Serialize@ from @cereal@ package
+  manual:      True
+  default:     True
+
+flag serialise
+  description: Instances for @Serialise@ from @serialise@ package
+  manual:      True
+  default:     True
+
+flag http-api-data
+  description:
+    Instances for @To/FromHttpApiData@ from @http-api-data@ package
+
+  manual:      True
+  default:     True
+
+library
+  hs-source-dirs:   src
+  ghc-options:      -Wall
+
+  -- boot libraries
+  -- https://ghc.haskell.org/trac/ghc/wiki/Commentary/Libraries/VersionHistory
+  build-depends:
+      base        >=4.7.0.0  && <4.22
+    , binary      >=0.7.1.0  && <0.10
+    , bytestring  >=0.10.4.0 && <0.13
+    , deepseq     >=1.3.0.2  && <1.6
+    , text        >=1.2.3.0  && <1.3 || >=2.0 && <2.2
+
+  -- other dependencies:
+  build-depends:
+      aeson              >=1.2.3.0 && <1.6 || >=2.0 && <2.3
+    , base-compat        >=0.9.3   && <0.14
+    , base64-bytestring  >=1.0.0.1 && <1.3
+    , hashable           >=1.2.6.1 && <1.6
+    , QuickCheck         >=2.11.3  && <2.16
+
+  if !impl(ghc >=8.0)
+    build-depends: semigroups >=0.18.5 && <0.21
+
+  if flag(cereal)
+    build-depends: cereal >=0.5.5.0 && <0.6
+
+  if flag(serialise)
+    build-depends: serialise >=0.2.1.0 && <0.3
+
+  if flag(http-api-data)
+    build-depends: http-api-data >=0.4 && <0.7
+
+  exposed-modules:
+    Data.ByteString.Base64.Lazy.Type
+    Data.ByteString.Base64.Type
+    Data.ByteString.Base64.URL.Lazy.Type
+    Data.ByteString.Base64.URL.Type
+
+  default-language: Haskell2010
+
+test-suite tests
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          Tests.hs
+  hs-source-dirs:   test
+  ghc-options:      -Wall
+
+  -- dependencies with bounds inherited from library:
+  build-depends:
+      aeson
+    , base
+    , base64-bytestring-type
+    , binary
+    , bytestring
+
+  if flag(cereal)
+    build-depends: cereal
+
+  if flag(serialise)
+    build-depends: serialise
+
+  if flag(http-api-data)
+    build-depends: http-api-data
+
+  -- other dependencies
+  build-depends:
+      tasty             >=1.2.1 && <1.6
+    , tasty-quickcheck  >=0.10  && <0.12

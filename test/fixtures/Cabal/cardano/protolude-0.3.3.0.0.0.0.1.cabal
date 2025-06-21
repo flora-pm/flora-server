@@ -1,0 +1,74 @@
+cabal-version:      >=1.10
+name:               protolude
+version:            0.3.3.0.0.0.0.1
+license:            MIT
+license-file:       LICENSE
+copyright:          2016-2022 Stephen Diehl
+maintainer:         adamwespiser@gmail.com, stephen.m.diehl@gmail.com
+author:             Stephen Diehl
+tested-with:
+    ghc ==7.6.3 || ==7.8.4 || ==7.10.3 || ==8.0.1 || ==8.2.1 || ==8.4.1 || ==8.6.1 || ==8.8.1 || ==8.10.1 || ==9.0.1 || ==9.2.2 || ==9.6.1
+
+homepage:           https://github.com/sdiehl/protolude
+bug-reports:        https://github.com/sdiehl/protolude/issues
+synopsis:           A small prelude.
+description:        A sensible set of defaults for writing custom Preludes.
+category:           Prelude
+build-type:         Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+    type:     git
+    location: git@github.com:protolude/protolude.git
+
+library
+    exposed-modules:
+        Protolude
+        Protolude.Applicative
+        Protolude.Base
+        Protolude.Bifunctor
+        Protolude.Bool
+        Protolude.CallStack
+        Protolude.Conv
+        Protolude.ConvertText
+        Protolude.Debug
+        Protolude.Either
+        Protolude.Error
+        Protolude.Exceptions
+        Protolude.Functor
+        Protolude.List
+        Protolude.Monad
+        Protolude.Panic
+        Protolude.Partial
+        Protolude.Safe
+        Protolude.Semiring
+        Protolude.Show
+        Protolude.Unsafe
+
+    hs-source-dirs:     src
+    default-language:   Haskell2010
+    default-extensions:
+        NoImplicitPrelude FlexibleContexts MultiParamTypeClasses
+        OverloadedStrings
+
+    ghc-options:        -Wall -fwarn-implicit-prelude
+    build-depends:
+        array >=0.4 && <0.6,
+        async >=2.0 && <2.3,
+        base >=4.6 && <4.20,
+        bytestring >=0.10 && <0.12,
+        containers >=0.5 && <0.8,
+        deepseq >=1.3 && <1.5,
+        ghc-prim >=0.3 && <0.11,
+        hashable >=1.2 && <1.5,
+        mtl >=2.1 && <2.4,
+        mtl-compat >=0.2 && <0.3,
+        stm >=2.4 && <2.6,
+        text >=1.2 && <2.1,
+        transformers >=0.2 && <0.7,
+        transformers-compat >=0.4 && <0.8
+
+    if !impl(ghc >=8.0)
+        build-depends: fail >=4.9 && <4.10

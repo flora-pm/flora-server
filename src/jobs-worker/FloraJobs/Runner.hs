@@ -41,7 +41,7 @@ import Data.Text.HTML qualified as HTML
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package (coreLibraries, persistImportOutput)
-import Flora.Import.Package.Bulk qualified as Import
+import Flora.Import.Package.Bulk.Archive qualified as Import
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
@@ -49,6 +49,7 @@ import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Query qualified as Query
+import Flora.Model.PackageIndex.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
@@ -292,8 +293,9 @@ refreshIndex indexName = do
       Log.logAttention "Package index not found" $
         object ["package_index" .= indexName]
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
-    Just _ -> do
-      Import.importFromIndex indexName path
+    Just packageIndex -> do
+      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
+      Import.importFromArchive indexName indexDependencies path
       pool <- getPool
       void $ liftIO $ scheduleRefreshIndex pool indexName
 

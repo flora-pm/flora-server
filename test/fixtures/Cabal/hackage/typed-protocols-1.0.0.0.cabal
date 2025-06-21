@@ -1,0 +1,204 @@
+cabal-version:       3.4
+name:                typed-protocols
+version:             1.0.0.0
+synopsis:            A framework for strongly typed protocols
+description:         A robust session type framework which supports protocol pipelining.
+license:             Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+copyright:           2019-2025 Input Output Global Inc (IOG)
+author:              Alexander Vieth, Duncan Coutts, Marcin Szamotulski
+maintainer:          alex@well-typed.com, duncan@well-typed.com, marcin.szamotulski@iohk.io
+category:            Control
+build-type:          Simple
+tested-with:         GHC == {9.6, 9.8, 9.10, 9.12}
+extra-doc-files:     CHANGELOG.md
+                     README.md
+
+library
+  exposed-modules:   Network.TypedProtocol
+                   , Network.TypedProtocol.Core
+                   , Network.TypedProtocol.Peer
+                   , Network.TypedProtocol.Peer.Client
+                   , Network.TypedProtocol.Peer.Server
+                   , Network.TypedProtocol.Codec
+                   , Network.TypedProtocol.Driver
+                   , Network.TypedProtocol.Proofs
+  other-modules:     Network.TypedProtocol.Lemmas
+  build-depends:     base >=4.12 && <4.22,
+                     io-classes:io-classes ^>= 1.8,
+                     singletons ^>= 3.0
+
+  hs-source-dirs:    src
+  default-language:  GHC2021
+  default-extensions: DataKinds
+                      GADTs
+                      LambdaCase
+  ghc-options:       -Wall
+                     -Wno-unticked-promoted-constructors
+                     -Wcompat
+                     -Wincomplete-uni-patterns
+                     -Wincomplete-record-updates
+                     -Wpartial-fields
+                     -Widentities
+                     -Wredundant-constraints
+
+library cborg
+  visibility:        public
+  exposed-modules:   Network.TypedProtocol.Codec.CBOR
+
+  build-depends:     base,
+                     bytestring      >=0.10  && <0.13,
+                     cborg           >=0.2.1 && <0.3,
+                     singletons,       
+                     primitive,
+
+                     io-classes:io-classes,
+                     typed-protocols:typed-protocols
+
+  hs-source-dirs:    cborg
+  default-language:  GHC2021
+  default-extensions: LambdaCase
+  ghc-options:       -Wall
+                     -Wno-unticked-promoted-constructors
+                     -Wcompat
+                     -Wincomplete-uni-patterns
+                     -Wincomplete-record-updates
+                     -Wpartial-fields
+                     -Widentities
+                     -Wredundant-constraints
+
+library stateful
+  visibility:         public
+  exposed-modules:    Network.TypedProtocol.Stateful.Peer
+                    , Network.TypedProtocol.Stateful.Peer.Client
+                    , Network.TypedProtocol.Stateful.Peer.Server
+                    , Network.TypedProtocol.Stateful.Driver
+                    , Network.TypedProtocol.Stateful.Proofs
+                    , Network.TypedProtocol.Stateful.Codec
+  build-depends:      base,
+                      singletons,
+                      io-classes:io-classes,
+                      typed-protocols:typed-protocols
+
+  hs-source-dirs:     stateful
+  default-language:   GHC2021
+  default-extensions: DataKinds
+                      GADTs
+                      ImportQualifiedPost
+  ghc-options:        -Wall
+                      -Wno-unticked-promoted-constructors
+                      -Wcompat
+                      -Wincomplete-uni-patterns
+                      -Wincomplete-record-updates
+                      -Wpartial-fields
+                      -Widentities
+                      -Wredundant-constraints
+
+library stateful-cborg
+  visibility:        public
+  exposed-modules:   Network.TypedProtocol.Stateful.Codec.CBOR
+
+  build-depends:     base,
+                     bytestring,
+                     cborg,
+                     singletons,       
+
+                     io-classes:io-classes,
+                     typed-protocols:{typed-protocols,cborg,stateful}
+
+  hs-source-dirs:    stateful-cborg
+  default-language:  GHC2021
+  default-extensions: ImportQualifiedPost
+  ghc-options:       -Wall
+                     -Wno-unticked-promoted-constructors
+                     -Wcompat
+                     -Wincomplete-uni-patterns
+                     -Wincomplete-record-updates
+                     -Wpartial-fields
+                     -Widentities
+                     -Wredundant-constraints
+
+library examples
+  visibility:        public
+  exposed-modules:   Network.TypedProtocol.Channel
+                   , Network.TypedProtocol.Driver.Simple
+
+                   , Network.TypedProtocol.PingPong.Type
+                   , Network.TypedProtocol.PingPong.Client
+                   , Network.TypedProtocol.PingPong.Server
+                   , Network.TypedProtocol.PingPong.Codec
+                   , Network.TypedProtocol.PingPong.Codec.CBOR
+                   , Network.TypedProtocol.PingPong.Examples
+
+                   , Network.TypedProtocol.ReqResp.Type
+                   , Network.TypedProtocol.ReqResp.Client
+                   , Network.TypedProtocol.ReqResp.Server
+                   , Network.TypedProtocol.ReqResp.Codec
+                   , Network.TypedProtocol.ReqResp.Codec.CBOR
+                   , Network.TypedProtocol.ReqResp.Examples
+
+                   , Network.TypedProtocol.ReqResp2.Type
+                   , Network.TypedProtocol.ReqResp2.Client
+
+                   , Network.TypedProtocol.Stateful.ReqResp.Type
+                   , Network.TypedProtocol.Stateful.ReqResp.Client
+                   , Network.TypedProtocol.Stateful.ReqResp.Server
+                   , Network.TypedProtocol.Stateful.ReqResp.Codec
+                   , Network.TypedProtocol.Stateful.ReqResp.Examples
+
+                   , Network.TypedProtocol.Trans.Wedge
+  build-depends:     base,
+                     bytestring,
+                     cborg,
+                     serialise,
+                     singletons,
+                     contra-tracer,
+                     io-classes:{io-classes, si-timers},
+                     network,
+                     time,
+                     typed-protocols:{typed-protocols,cborg,stateful}
+
+  hs-source-dirs:    examples
+  default-language:  GHC2021
+  default-extensions: DataKinds
+                      GADTs
+                      LambdaCase
+  ghc-options:       -Wall
+                     -Wno-unticked-promoted-constructors
+                     -Wcompat
+                     -Wincomplete-uni-patterns
+                     -Wincomplete-record-updates
+                     -Wpartial-fields
+                     -Widentities
+                     -Wredundant-constraints
+
+test-suite test
+  type:              exitcode-stdio-1.0
+  main-is:           Main.hs
+  hs-source-dirs:    test
+  default-language:  GHC2021
+  default-extensions: GADTs
+                      LambdaCase
+  other-modules:     Network.TypedProtocol.PingPong.Tests
+                   , Network.TypedProtocol.ReqResp.Tests
+  build-depends:     base
+                   , bytestring
+                   , contra-tracer
+                   , typed-protocols:{typed-protocols,cborg,examples}
+                   , io-classes:{io-classes,si-timers}
+                   , io-sim
+                   , QuickCheck
+                   , tasty
+                   , tasty-quickcheck
+
+  if !os(windows)
+      build-depends: directory
+                   , network
+                   , unix
+
+  ghc-options:       -rtsopts
+                     -Wall
+                     -Wno-unticked-promoted-constructors
+                     -Wno-orphans

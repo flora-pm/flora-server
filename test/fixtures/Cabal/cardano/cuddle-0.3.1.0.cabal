@@ -1,0 +1,132 @@
+cabal-version:   3.4
+name:            cuddle
+version:         0.3.1.0
+synopsis:        CDDL Generator and test utilities
+
+-- description:
+license:         Apache-2.0
+license-file:    LICENSE
+author:          IOG Ledger Team
+maintainer:      nicholas.clarke@iohk.io
+
+-- copyright:
+category:        Codec
+build-type:      Simple
+extra-doc-files: CHANGELOG.md
+
+-- extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+
+common ghc2021
+    -- These options are all on by default in GHC2021, so once we drop GHC8 we
+    -- can remove this section.
+    default-extensions:
+        DataKinds
+        DeriveGeneric
+        DeriveTraversable
+        FlexibleContexts
+        FlexibleInstances
+        GeneralizedNewtypeDeriving
+        ImportQualifiedPost
+        InstanceSigs
+        MultiParamTypeClasses
+        NamedFieldPuns
+        PolyKinds
+        RankNTypes
+        ScopedTypeVariables
+        StandaloneDeriving
+        TypeApplications
+        TypeSynonymInstances
+
+library
+    import:           warnings, ghc2021
+    exposed-modules:
+        Codec.CBOR.Cuddle.CBOR.Gen
+        Codec.CBOR.Cuddle.CDDL
+        Codec.CBOR.Cuddle.CDDL.CtlOp
+        Codec.CBOR.Cuddle.CDDL.CTree
+        Codec.CBOR.Cuddle.CDDL.Postlude
+        Codec.CBOR.Cuddle.CDDL.Resolve
+        Codec.CBOR.Cuddle.Huddle
+        Codec.CBOR.Cuddle.Parser
+        Codec.CBOR.Cuddle.Pretty
+
+    other-modules:
+
+    -- other-extensions:
+    build-depends:
+        , base                >=4.14.0.0
+        , base16-bytestring
+        , bytestring
+        , capability
+        , cborg
+        , containers
+        , data-default-class
+        , generic-optics
+        , hashable
+        , megaparsec
+        , mtl
+        , mutable-containers
+        , optics-core
+        , parser-combinators
+        , prettyprinter
+        , random
+        , text
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
+
+executable example
+    import:           warnings, ghc2021
+    default-language: Haskell2010
+    other-modules:    Conway
+
+    -- other-extensions:
+    hs-source-dirs:   example
+    main-is:          Main.hs
+    build-depends:
+        , base           >=4.14.0.0
+        , cuddle
+        , megaparsec
+        , prettyprinter
+        , random
+        , text
+
+executable cuddle
+    import:           warnings, ghc2021
+    default-language: Haskell2010
+    hs-source-dirs:   ./bin/
+    main-is:          Main.hs
+    build-depends:
+        , base                  >=4.14.0.0
+        , cborg
+        , cuddle
+        , megaparsec
+        , optparse-applicative
+        , prettyprinter
+        , random
+        , text
+
+test-suite cuddle-test
+    import:           warnings, ghc2021
+    default-language: Haskell2010
+    other-modules:
+        Test.Codec.CBOR.Cuddle.CDDL.Gen
+        Test.Codec.CBOR.Cuddle.CDDL.Parser
+        Test.Codec.CBOR.Cuddle.Huddle
+
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        , base              >=4.14.0.0
+        , cuddle
+        , hspec
+        , hspec-megaparsec
+        , megaparsec
+        , prettyprinter
+        , QuickCheck
+        , text

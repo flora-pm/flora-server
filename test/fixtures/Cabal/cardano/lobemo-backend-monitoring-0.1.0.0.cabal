@@ -1,0 +1,79 @@
+cabal-version:       2.0
+name:                lobemo-backend-monitoring
+version:             0.1.0.0
+synopsis:            provides a backend implementation for monitoring
+-- description:
+homepage:            https://github.com/input-output-hk/iohk-monitoring-framework
+-- bug-reports:
+license:             Apache-2.0
+license-files:       LICENSE, NOTICE
+author:              Alexander Diemand
+maintainer:          operations@iohk.io
+copyright:           2019 IOHK
+category:            Benchmarking
+build-type:          Simple
+extra-source-files:  README.md
+
+library
+  exposed-modules:     Cardano.BM.Backend.Monitoring
+  -- other-modules:
+  -- other-extensions:
+  default-extensions:  OverloadedStrings
+  build-depends:       base >=4.11,
+                       iohk-monitoring,
+                       aeson,
+                       async,
+                       safe-exceptions,
+                       stm,
+                       text,
+                       time,
+                       unordered-containers
+  if os(windows)
+     build-depends:    Win32
+  else
+     build-depends:    unix
+
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+test-suite tests
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Test.lhs
+  other-modules:       Cardano.BM.Test.Monitoring
+
+  default-language:    Haskell2010
+  default-extensions:  OverloadedStrings
+  build-depends:       base,
+                       contra-tracer,
+                       iohk-monitoring,
+                       lobemo-backend-monitoring,
+                       aeson,
+                       array,
+                       async,
+                       bytestring,
+                       clock,
+                       containers,
+                       directory,
+                       filepath,
+                       mtl,
+                       process,
+                       QuickCheck,
+                       random,
+                       semigroups,
+                       split,
+                       stm,
+                       tasty,
+                       tasty-hunit,
+                       tasty-quickcheck,
+                       temporary,
+                       text,
+                       time,
+                       time-units,
+                       transformers,
+                       unordered-containers,
+                       vector,
+                       void,
+                       yaml, libyaml
+  ghc-options:         -Wall -Werror
+

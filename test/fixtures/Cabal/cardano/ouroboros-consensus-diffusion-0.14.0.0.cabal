@@ -1,0 +1,282 @@
+cabal-version:   3.0
+name:            ouroboros-consensus-diffusion
+version:         0.14.0.0
+synopsis:        Integration for the Ouroboros Network layer
+description:
+  Top level integration for consensus & network layers of the Ouroboros blockchain protocol.
+
+license:         Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+copyright:
+  2022-2023 Input Output Global Inc (IOG), INTERSECT 2023-2024.
+
+author:          IOG Engineering Team
+maintainer:      operations@iohk.io
+category:        Network
+build-type:      Simple
+extra-doc-files: CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/IntersectMBO/ouroboros-consensus
+
+flag asserts
+  description: Enable assertions
+  manual:      False
+  default:     False
+
+common common-lib
+  default-language: Haskell2010
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-uni-patterns
+    -Wincomplete-record-updates -Wpartial-fields -Widentities
+    -Wredundant-constraints -Wmissing-export-lists -Wunused-packages
+    -Wno-unticked-promoted-constructors
+
+  if flag(asserts)
+    ghc-options: -fno-ignore-asserts
+    cpp-options: -DENABLE_ASSERTIONS
+
+common common-test
+  import:      common-lib
+  ghc-options: -threaded -rtsopts
+
+library
+  import:             common-lib
+  hs-source-dirs:     src/ouroboros-consensus-diffusion
+  exposed-modules:
+    Ouroboros.Consensus.Network.NodeToClient
+    Ouroboros.Consensus.Network.NodeToNode
+    Ouroboros.Consensus.Node
+    Ouroboros.Consensus.Node.DbLock
+    Ouroboros.Consensus.Node.DbMarker
+    Ouroboros.Consensus.Node.ErrorPolicy
+    Ouroboros.Consensus.Node.Exit
+    Ouroboros.Consensus.Node.ExitPolicy
+    Ouroboros.Consensus.Node.GSM
+    Ouroboros.Consensus.Node.Recovery
+    Ouroboros.Consensus.Node.RethrowPolicy
+    Ouroboros.Consensus.Node.Tracers
+    Ouroboros.Consensus.NodeKernel
+
+  reexported-modules:
+    Ouroboros.Consensus.Block
+    , Ouroboros.Consensus.Node.Run
+    , Ouroboros.Consensus.Node.NetworkProtocolVersion
+
+  build-depends:
+    , base                         >=4.14   && <4.20
+    , bytestring                   >=0.10   && <0.13
+    , cardano-slotting
+    , cborg                        ^>=0.2.2
+    , containers                   >=0.5    && <0.7
+    , contra-tracer
+    , deepseq
+    , filepath
+    , fs-api                       ^>=0.2
+    , hashable
+    , io-classes                   ^>=1.4.1
+    , mtl
+    , ouroboros-consensus          ^>=0.16
+    , ouroboros-network            ^>=0.14 || ^>=0.15
+    , ouroboros-network-api        ^>=0.7.1
+    , ouroboros-network-framework  ^>=0.12 || ^>=0.13
+    , ouroboros-network-protocols  ^>=0.8.1
+    , random
+    , serialise                    ^>=0.2
+    , si-timers                    ^>=1.4
+    , strict-stm                   ^>=1.4
+    , text
+    , time
+    , transformers
+    , typed-protocols
+
+  -- GHC 8.10.7 on aarch64-darwin cannot use text-2
+  build-depends:      text >=1.2.5.0 && <2.2
+
+library unstable-diffusion-testlib
+  import:          common-lib
+  visibility:      public
+  hs-source-dirs:  src/unstable-diffusion-testlib
+  exposed-modules:
+    Test.ThreadNet.General
+    Test.ThreadNet.Network
+    Test.ThreadNet.Ref.PBFT
+    Test.ThreadNet.Rekeying
+    Test.ThreadNet.TxGen
+    Test.ThreadNet.Util
+    Test.ThreadNet.Util.Expectations
+    Test.ThreadNet.Util.HasCreator
+    Test.ThreadNet.Util.NodeJoinPlan
+    Test.ThreadNet.Util.NodeRestarts
+    Test.ThreadNet.Util.NodeToNodeVersion
+    Test.ThreadNet.Util.NodeTopology
+    Test.ThreadNet.Util.Seed
+
+  build-depends:
+    , base
+    , bytestring
+    , cborg
+    , containers
+    , contra-tracer
+    , fgl
+    , fs-sim                                                                 ^>=0.2
+    , graphviz                                                               >=2999.20.1.0
+    , io-classes
+    , io-sim
+    , mtl
+    , ouroboros-consensus-diffusion
+    , ouroboros-consensus:{ouroboros-consensus, unstable-consensus-testlib}
+    , ouroboros-network
+    , ouroboros-network-api
+    , ouroboros-network-framework
+    , ouroboros-network-mock
+    , ouroboros-network-protocols
+    , QuickCheck
+    , quiet                                                                  ^>=0.2
+    , random
+    , si-timers
+    , sop-core                                                               ^>=0.5
+    , sop-extras                                                             ^>=0.1
+    , strict-sop-core                                                        ^>=0.1
+    , text
+    , typed-protocols
+
+library unstable-mock-testlib
+  import:          common-lib
+  visibility:      public
+  hs-source-dirs:  src/unstable-mock-testlib
+  exposed-modules:
+    Test.Consensus.Ledger.Mock.Generators
+    Test.ThreadNet.TxGen.Mock
+    Test.ThreadNet.Util.HasCreator.Mock
+    Test.ThreadNet.Util.SimpleBlock
+
+  build-depends:
+    , base
+    , bytestring
+    , cardano-crypto-class
+    , cardano-crypto-tests
+    , containers
+    , ouroboros-consensus:{ouroboros-consensus, unstable-consensus-testlib, unstable-mock-block}
+    , ouroboros-network-protocols:testlib
+    , QuickCheck
+    , serialise
+    , unstable-diffusion-testlib
+
+test-suite infra-test
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test/infra-test
+  main-is:        Main.hs
+  other-modules:  Test.ThreadNet.Util.Tests
+  build-depends:
+    , base
+    , ouroboros-consensus:{ouroboros-consensus, unstable-consensus-testlib}
+    , tasty
+    , tasty-quickcheck
+    , unstable-diffusion-testlib
+
+test-suite mock-test
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test/mock-test
+  main-is:        Main.hs
+  other-modules:
+    Test.Consensus.Ledger.Mock
+    Test.ThreadNet.BFT
+    Test.ThreadNet.LeaderSchedule
+    Test.ThreadNet.PBFT
+    Test.ThreadNet.Praos
+
+  build-depends:
+    , base
+    , bytestring
+    , cborg
+    , constraints
+    , containers
+    , ouroboros-consensus:{ouroboros-consensus, unstable-consensus-testlib, unstable-mock-block}
+    , ouroboros-network-mock
+    , QuickCheck
+    , serialise
+    , tasty
+    , tasty-quickcheck
+    , unstable-diffusion-testlib
+    , unstable-mock-testlib
+
+test-suite consensus-test
+  import:         common-test
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test/consensus-test
+  main-is:        Main.hs
+  other-modules:
+    Test.Consensus.BlockTree
+    Test.Consensus.Genesis.Setup
+    Test.Consensus.Genesis.Setup.Classifiers
+    Test.Consensus.Genesis.Setup.GenChains
+    Test.Consensus.Genesis.Tests
+    Test.Consensus.Genesis.Tests.LongRangeAttack
+    Test.Consensus.GSM
+    Test.Consensus.GSM.Model
+    Test.Consensus.HardFork.Combinator
+    Test.Consensus.HardFork.Combinator.A
+    Test.Consensus.HardFork.Combinator.B
+    Test.Consensus.IOSimQSM.Test.StateMachine.Sequential
+    Test.Consensus.Network.AnchoredFragment.Extras
+    Test.Consensus.Network.Driver.Limits.Extras
+    Test.Consensus.Node
+    Test.Consensus.PeerSimulator.BlockFetch
+    Test.Consensus.PeerSimulator.Config
+    Test.Consensus.PeerSimulator.Handlers
+    Test.Consensus.PeerSimulator.Resources
+    Test.Consensus.PeerSimulator.Run
+    Test.Consensus.PeerSimulator.ScheduledChainSyncServer
+    Test.Consensus.PeerSimulator.Trace
+    Test.Consensus.PointSchedule
+
+  build-depends:
+    , base
+    , binary
+    , bytestring
+    , cardano-crypto-class
+    , cardano-slotting
+    , containers
+    , contra-tracer
+    , directory
+    , fs-api                                                                 ^>=0.2
+    , fs-sim                                                                 ^>=0.2
+    , hashable
+    , io-classes
+    , io-sim
+    , mtl
+    , nothunks
+    , ouroboros-consensus-diffusion
+    , ouroboros-consensus:{ouroboros-consensus, unstable-consensus-testlib}
+    , ouroboros-network
+    , ouroboros-network-api
+    , ouroboros-network-framework
+    , ouroboros-network-mock
+    , ouroboros-network-protocols
+    , pretty-show
+    , QuickCheck
+    , quickcheck-state-machine:no-vendored-treediff
+    , quiet
+    , serialise
+    , si-timers
+    , sop-extras
+    , strict-checked-vars
+    , strict-sop-core
+    , strict-stm
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
+    , temporary
+    , time
+    , tree-diff
+    , typed-protocols
+    , typed-protocols-examples
+    , unstable-diffusion-testlib
+    , vector

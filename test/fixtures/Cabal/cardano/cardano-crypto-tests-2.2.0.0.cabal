@@ -1,0 +1,135 @@
+cabal-version: 2.2
+name: cardano-crypto-tests
+version: 2.2.0.0
+synopsis: Tests for cardano-crypto-class and -praos
+description: Tests for cardano-crypto-class and -praos
+license: Apache-2.0
+license-files:
+  LICENSE
+  NOTICE
+
+author: IOHK
+maintainer: operations@iohk.io
+copyright: 2020-2021 IOHK
+category: Currency
+build-type: Simple
+extra-source-files:
+  CHANGELOG.md
+  README.md
+
+data-files:
+  bls12-381-test-vectors/test_vectors/bls_sig_aug_test_vectors
+  bls12-381-test-vectors/test_vectors/ec_operations_test_vectors
+  bls12-381-test-vectors/test_vectors/h2c_large_dst
+  bls12-381-test-vectors/test_vectors/pairing_test_vectors
+  bls12-381-test-vectors/test_vectors/serde_test_vectors
+
+flag secp256k1-support
+  description:
+    Enable support for functions from libsecp256k1. Requires
+    a recent libsecp256k1 with support for Schnorr signatures.
+
+  default: True
+  manual: True
+
+common base
+  build-depends: base >=4.14 && <5
+
+common project-config
+  default-language: Haskell2010
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -Wredundant-constraints
+    -Wunused-packages
+
+library
+  import: base, project-config
+  hs-source-dirs: src
+  exposed-modules:
+    Bench.Crypto.BenchData
+    Bench.Crypto.DSIGN
+    Bench.Crypto.HASH
+    Bench.Crypto.KES
+    Bench.Crypto.VRF
+    Paths_cardano_crypto_tests
+    Test.Crypto.AllocLog
+    Test.Crypto.DSIGN
+    Test.Crypto.EllipticCurve
+    Test.Crypto.EqST
+    Test.Crypto.Hash
+    Test.Crypto.Instances
+    Test.Crypto.KES
+    Test.Crypto.Regressions
+    Test.Crypto.RunIO
+    Test.Crypto.Util
+    Test.Crypto.VRF
+    Test.Crypto.Vector.SerializationUtils
+
+  build-depends:
+    QuickCheck,
+    base,
+    base16-bytestring,
+    bytestring >=0.10.12.0,
+    cardano-binary,
+    cardano-crypto-class ^>=2.2,
+    cardano-crypto-praos,
+    cborg,
+    containers,
+    contra-tracer ==0.1.0.1,
+    criterion,
+    crypton,
+    deepseq,
+    formatting,
+    io-classes >=1.4.0,
+    mempack,
+    mtl,
+    nothunks,
+    pretty-show,
+    quickcheck-instances,
+    tasty,
+    tasty-hunit,
+    tasty-quickcheck,
+    vector,
+
+  if flag(secp256k1-support)
+    cpp-options: -DSECP256K1_ENABLED
+    exposed-modules:
+      Test.Crypto.Vector.Secp256k1DSIGN
+      Test.Crypto.Vector.StringConstants
+      Test.Crypto.Vector.Vectors
+
+test-suite test-crypto
+  import: base, project-config
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  build-depends:
+    base,
+    cardano-crypto-class,
+    cardano-crypto-tests,
+    tasty,
+    tasty-quickcheck,
+
+  if flag(secp256k1-support)
+    cpp-options: -DSECP256K1_ENABLED
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+benchmark bench-crypto
+  import: base, project-config
+  type: exitcode-stdio-1.0
+  hs-source-dirs: bench
+  main-is: Main.hs
+  build-depends:
+    base,
+    cardano-crypto-class,
+    cardano-crypto-tests,
+    criterion,
+
+  ghc-options: -threaded

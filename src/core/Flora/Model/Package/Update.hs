@@ -69,6 +69,10 @@ upsertPackageComponent :: (DB :> es, RequireCallStack) => PackageComponent -> Ef
 upsertPackageComponent packageComponent =
   dbtToEff $ upsert @PackageComponent packageComponent (fields @PackageComponent)
 
+upsertPackageComponents :: (DB :> es, RequireCallStack) => [PackageComponent] -> Eff es ()
+upsertPackageComponents packageComponents =
+  dbtToEff $ void $ executeMany (_insert @PackageComponent <> " ON CONFLICT DO NOTHING") packageComponents
+
 bulkInsertPackageComponents :: (DB :> es, RequireCallStack) => [PackageComponent] -> Eff es ()
 bulkInsertPackageComponents = dbtToEff . insertMany @PackageComponent
 

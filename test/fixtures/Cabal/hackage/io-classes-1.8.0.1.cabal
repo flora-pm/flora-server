@@ -1,0 +1,231 @@
+cabal-version:       3.4
+name:                io-classes
+version:             1.8.0.1
+synopsis:            Type classes for concurrency with STM, ST and timing
+description:
+  IO Monad class hierarchy compatible with:
+
+    * [io-sim](https://hackage.haskell.org/package/io-sim),
+    * [base](https://hackage.haskell.org/package/base),
+    * [async](https://hackage.haskell.org/package/async),
+    * [stm](https://hackage.haskell.org/package/stm),
+    * [exceptions](https://hackage.haskell.org/package/exceptions) &
+    * [time](https://hackage.haskell.org/package/time)
+
+  packages.
+
+  = Sublibraries
+  @io-classes@ provides non-standard extensions distributed in public
+  sublibraries
+
+    * @io-classes:io-classes@ - the main library compatible with the above
+      packages
+    * @io-classes:strict-stm@ - strict @STM@ API
+    * @io-classes:strict-mvar@ - strict @MVar@ API
+    * @io-classes:si-timers@ - SI-unit based time / timers API, cancellable timers
+    * @io-classes:mtl@ - MTL instances, some of which are experiemental
+
+  = Documentation
+  Haddocks of all public sublibraries are published
+  [here](https://input-output-hk.github.io/io-sim).
+
+license:             Apache-2.0
+license-files:       LICENSE NOTICE
+copyright:           2019-2025 Input Output Global Inc (IOG)
+author:              Alexander Vieth, Duncan Coutts, Marcin Szamotulski, Neil Davies, Thomas Winant
+maintainer:          Duncan Coutts duncan@well-typed.com, Marcin Szamotulski coot@coot.me
+category:            Control
+build-type:          Simple
+extra-doc-files:     CHANGELOG.md README.md strict-stm/README.md strict-mvar/README.md
+bug-reports:         https://github.com/input-output-hk/io-sim/issues
+tested-with:         GHC == { 9.6, 9.8, 9.10, 9.12 }
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/io-sim
+  subdir:   io-classes
+
+flag asserts
+  description: Enable assertions
+  manual:      False
+  default:     False
+
+common warnings
+    ghc-options: -Wall
+                 -Wcompat
+                 -Wincomplete-uni-patterns
+                 -Wincomplete-record-updates
+                 -Wpartial-fields
+                 -Widentities
+                 -Wunused-packages
+                 -Wno-redundant-constraints
+                 -Wno-unticked-promoted-constructors
+
+library
+  import:              warnings
+  hs-source-dirs:      src
+
+  -- At this experiment/prototype stage everything is exposed.
+  -- This has to be tidied up once the design becomes clear.
+  exposed-modules:     Control.Concurrent.Class.MonadMVar
+                       Control.Concurrent.Class.MonadSTM
+                       Control.Concurrent.Class.MonadSTM.TArray
+                       Control.Concurrent.Class.MonadSTM.TBQueue
+                       Control.Concurrent.Class.MonadSTM.TChan
+                       Control.Concurrent.Class.MonadSTM.TMVar
+                       Control.Concurrent.Class.MonadSTM.TQueue
+                       Control.Concurrent.Class.MonadSTM.TSem
+                       Control.Concurrent.Class.MonadSTM.TVar
+                       Control.Monad.Class.MonadAsync
+                       Control.Monad.Class.MonadEventlog
+                       Control.Monad.Class.MonadFork
+                       Control.Monad.Class.MonadSay
+                       Control.Monad.Class.MonadST
+                       Control.Monad.Class.MonadSTM
+                       Control.Monad.Class.MonadSTM.Internal
+                       Control.Monad.Class.MonadThrow
+                       Control.Monad.Class.MonadTime
+                       Control.Monad.Class.MonadTimer
+                       Control.Monad.Class.MonadTest
+  default-language:    GHC2021
+  default-extensions:  LambdaCase
+  build-depends:       base  >=4.16 && <4.22,
+                       array,
+                       async >=2.1 && <2.3,
+                       bytestring,
+                       mtl   >=2.2 && <2.4,
+                       primitive >= 0.7 && <0.11,
+                       stm   >=2.5 && <2.5.2 || ^>=2.5.3,
+                       time  >=1.9.1 && <1.13
+  if impl(ghc >= 9.10)
+    build-depends:     ghc-internal
+
+  if flag(asserts)
+    ghc-options: -fno-ignore-asserts
+
+library strict-stm
+  import:              warnings
+  visibility:          public
+  hs-source-dirs:      strict-stm
+
+  exposed-modules:     Control.Concurrent.Class.MonadSTM.Strict
+                       Control.Concurrent.Class.MonadSTM.Strict.TArray
+                       Control.Concurrent.Class.MonadSTM.Strict.TBQueue
+                       Control.Concurrent.Class.MonadSTM.Strict.TChan
+                       Control.Concurrent.Class.MonadSTM.Strict.TMVar
+                       Control.Concurrent.Class.MonadSTM.Strict.TQueue
+                       Control.Concurrent.Class.MonadSTM.Strict.TVar
+  reexported-modules:  Control.Concurrent.Class.MonadSTM.TSem as Control.Concurrent.Class.MonadSTM.Strict.TSem
+  default-language:    GHC2021
+  default-extensions:  LambdaCase
+  if impl(ghc < 9.4)
+    default-extensions: GADTs
+  build-depends:       base,
+                       array,
+
+                       io-classes:io-classes,
+
+  if flag(asserts)
+    ghc-options: -fno-ignore-asserts
+
+library strict-mvar
+  import:              warnings
+  visibility:          public
+  hs-source-dirs:      strict-mvar/src
+
+  exposed-modules:     Control.Concurrent.Class.MonadMVar.Strict
+  default-language:    GHC2021
+  default-extensions:  LambdaCase
+  if impl(ghc < 9.4)
+    default-extensions: GADTs
+  build-depends:       base,
+                       io-classes:io-classes,
+
+library si-timers
+  import:              warnings
+  visibility:          public
+  hs-source-dirs:      si-timers/src
+  exposed-modules:     Control.Monad.Class.MonadTime.SI
+                       Control.Monad.Class.MonadTimer.SI
+  other-modules:       Control.Monad.Class.MonadTimer.NonStandard
+  default-language:    GHC2021
+  default-extensions:  LambdaCase
+  build-depends:       base,
+                       deepseq,
+                       mtl,
+                       nothunks,
+                       stm,
+                       time,
+
+                       io-classes:io-classes
+  if flag(asserts)
+     ghc-options:      -fno-ignore-asserts
+
+library mtl
+    import:           warnings
+    visibility:       public
+    exposed-modules:  Control.Monad.Class.Trans
+                   ,  Control.Monad.Class.MonadEventlog.Trans
+                   ,  Control.Monad.Class.MonadSay.Trans
+                   ,  Control.Monad.Class.MonadST.Trans
+                   ,  Control.Monad.Class.MonadSTM.Trans
+                   ,  Control.Monad.Class.MonadThrow.Trans
+                   ,  Control.Monad.Class.MonadTime.Trans
+                   ,  Control.Monad.Class.MonadTime.SI.Trans
+                   ,  Control.Monad.Class.MonadTimer.Trans
+                   ,  Control.Monad.Class.MonadTimer.SI.Trans
+    build-depends:    base,
+                      array,
+                      mtl,
+
+                      io-classes:{io-classes,si-timers}
+
+    hs-source-dirs:   mtl
+    default-language: GHC2021
+    default-extensions: LambdaCase
+
+library testlib
+  import:              warnings
+  visibility:          public
+  hs-source-dirs:      test
+  exposed-modules:     Test.Control.Concurrent.Class.MonadMVar.Strict.WHNF
+  default-language:    GHC2021
+  default-extensions:  LambdaCase
+  build-depends:       base,
+                       nothunks,
+                       QuickCheck,
+                       io-classes:strict-mvar
+  if flag(asserts)
+     ghc-options:      -fno-ignore-asserts
+
+test-suite test-strict-mvar
+  import:              warnings
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      strict-mvar/test
+  main-is:             Main.hs
+  default-language:    GHC2021
+  default-extensions:  LambdaCase
+  build-depends:       base,
+                       QuickCheck,
+                       tasty,
+                       tasty-quickcheck,
+                       io-classes:testlib
+
+-- Since `io-sim` depends on `si-times` (`io-sim` depends on `Time`) some tests of
+-- are in `io-sim:test`: this is a good enough reason to pull `io-sim:test`
+-- into a seprate package.
+test-suite test-si-timers
+  import:              warnings
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      si-timers/test
+  main-is:             Main.hs
+  other-modules:       Test.MonadTimer
+  default-language:    GHC2021
+  default-extensions:  LambdaCase
+  build-depends:       base,
+
+                       QuickCheck,
+                       tasty,
+                       tasty-quickcheck,
+
+                       io-classes:si-timers

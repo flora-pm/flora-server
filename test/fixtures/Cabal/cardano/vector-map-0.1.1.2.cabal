@@ -1,0 +1,73 @@
+cabal-version: 2.2
+
+name:                vector-map
+version:             0.1.1.2
+synopsis:            An efficient VMap that is backed by two vectors: one for keys and another for values.
+homepage:            https://github.com/input-output-hk/cardano-legder-specs
+license:             Apache-2.0
+author:              IOHK Formal Methods Team
+maintainer:          formal.methods@iohk.io
+category:            Control
+build-type:          Simple
+extra-source-files:  CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/input-output-hk/cardano-ledger
+  subdir:   libs/vector-map
+
+common project-config
+  default-language:   Haskell2010
+
+  ghc-options:        -Wall
+                      -Wcompat
+                      -Wincomplete-record-updates
+                      -Wincomplete-uni-patterns
+                      -Wredundant-constraints
+                      -Wunused-packages
+
+library
+  import:             project-config
+
+  exposed-modules:     Data.VMap
+  other-modules:       Data.VMap.KVVector
+  build-depends:       base >=4.11 && <5
+                     , cardano-binary
+                     , containers
+                     , deepseq
+                     , nothunks
+                     , primitive
+                     , vector
+                     , vector-algorithms
+  hs-source-dirs:      src
+
+test-suite tests
+  import:             project-config
+
+  hs-source-dirs:      test
+  main-is:             Main.hs
+  other-modules:       Test.Common
+                     , Test.VMap
+  type:                exitcode-stdio-1.0
+  default-language:    Haskell2010
+  build-depends:       base
+                     , containers
+                     , tasty
+                     , tasty-quickcheck
+                     , vector-map
+                     , QuickCheck
+                     , quickcheck-classes-base
+  ghc-options:        -threaded
+
+benchmark bench
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      bench
+  main-is:             Bench.hs
+  ghc-options:         -Wall -threaded -O2 -rtsopts
+  build-depends:       base
+                     , criterion
+                     , vector-map
+                     , containers
+                     , random
+  default-language:    Haskell2010
+
