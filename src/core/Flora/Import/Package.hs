@@ -345,22 +345,14 @@ persistImportOutput (ImportOutput package categories release components) = State
 
     sanityCheck :: RequireCallStack => FloraM es ()
     sanityCheck = do
-      dependencies <- Query.getRequirements package.name release.releaseId
-      when (Vector.null dependencies) $ do
+      dependencies <- Query.getAllRequirements release.releaseId
+      when (Map.null dependencies) $ do
         Log.logAttention "No dependencies found after inserting release!" $
           object
             [ "namespace" .= package.namespace
             , "package" .= package.name
             , "version" .= release.version
             ]
-        error $
-          Text.unpack $
-            "No dependencies found after inserting release: "
-              <> display package.namespace
-              <> "/"
-              <> display package.name
-              <> "-"
-              <> display release.version
 
 persistHashes
   :: ( DB :> es

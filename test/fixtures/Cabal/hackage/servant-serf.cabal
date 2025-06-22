@@ -1,0 +1,138 @@
+cabal-version: 2.0
+
+name: servant-serf
+version: 0.3.1.6
+synopsis: Automatically generate Servant API modules.
+description:
+  = servant-serf
+  .
+  servant-serf is a preprocessor for GHC that automatically generates Servant
+  API modules. It is similar to the @hspec-discover@ package.
+  .
+  == Example input
+  .
+  > {-# OPTIONS_GHC -F -pgmF servant-serf #-}
+  .
+  == Example output
+  .
+  > {-# LINE 1 "Example.hs" #-}
+  > {-# OPTIONS_GHC -w #-}
+  >
+  > module Example where
+  >
+  > import qualified Servant
+  >
+  > import qualified Example.One
+  > import qualified Example.Two
+  >
+  > type API
+  >   = Example.One.API
+  >   Servant.:<|> Example.Two.API
+  >
+  > server
+  >   = Example.One.server
+  >   Servant.:<|> Example.Two.server
+  .
+  == Options
+  .
+  To pass options into servant-serf, use @-optF@. For example:
+  .
+  > {-# OPTIONS_GHC -F -pgmF servant-serf -optF --depth=shallow #-}
+  .
+  - @--module-name=STRING@: Sets the name to use for the generated module. By
+  default this is determined from the source file path. For example @src/X.hs@
+  would use the module name @X@.
+  .
+  - @--depth=deep|shallow@: Controls whether to search through only one
+  dierctory (@shallow@) or recursively (@deep@). Defaults to @deep@.
+  .
+  - @--api-name=STRING@: Sets the name to use for the API type. Defaults to
+  @API@. Note that the same name is used for both referenced API types and the
+  generated API type.
+  .
+  - @--server-name=STRING@: Sets the name to use for the server value. Defaults
+  to @server@. Note that the same name is used for both referenced server
+  values and the generated server value.
+  .
+  == Notes
+  .
+  - The input module is completely ignored.
+  .
+  - Modules are sorted by name. There is no way to customize how they are
+  sorted.
+  .
+  - All modules below the current module are included. There is no way to
+  customize which modules are included or excluded.
+  .
+  - The generated server value does not have a type signature. It should have
+  type @Servant.ServerT API m@ for some @m@, but that @m@ can change and is
+  easily inferred by GHC.
+
+build-type: Simple
+category: Web
+extra-source-files: CHANGELOG.markdown README.markdown
+license-file: LICENSE.markdown
+license: MIT
+maintainer: ACI Learning
+
+source-repository head
+  location: https://github.com/acilearning/servant-serf
+  type: git
+
+flag pedantic
+  default: False
+  description: Enables @-Werror@, which turns warnings into errors.
+  manual: True
+
+library
+  autogen-modules: Paths_servant_serf
+  build-depends:
+    base >= 4.15.0 && < 4.20
+    , Cabal-syntax >= 3.6.0 && < 3.11
+    , directory >= 1.3.6 && < 1.4
+    , exceptions >= 0.10.4 && < 0.11
+    , filepath >= 1.4.2 && < 1.5
+  default-language: Haskell2010
+  ghc-options:
+    -Weverything
+    -Wno-all-missed-specialisations
+    -Wno-implicit-prelude
+    -Wno-missing-deriving-strategies
+    -Wno-missing-export-lists
+    -Wno-missing-exported-signatures
+    -Wno-missing-safe-haskell-mode
+    -Wno-prepositive-qualified-module
+    -Wno-safe
+    -Wno-unsafe
+  exposed-modules:
+    ServantSerf
+    ServantSerf.Directory
+    ServantSerf.Exception.ExtraArgument
+    ServantSerf.Exception.InvalidDepth
+    ServantSerf.Exception.InvalidModuleName
+    ServantSerf.Exception.InvalidOption
+    ServantSerf.Exception.MissingArgument
+    ServantSerf.Exception.UnknownOption
+    ServantSerf.Main
+    ServantSerf.Module
+    ServantSerf.Type.Config
+    ServantSerf.Type.Context
+    ServantSerf.Type.Depth
+    ServantSerf.Type.Flag
+    ServantSerf.Type.ModuleName
+    ServantSerf.Version
+  hs-source-dirs: source/library
+  other-modules: Paths_servant_serf
+
+  if impl(ghc >= 9.2)
+    ghc-options: -Wno-missing-kind-signatures
+
+  if flag(pedantic)
+    ghc-options: -Werror
+
+executable servant-serf
+  build-depends: base, servant-serf
+  default-language: Haskell2010
+  ghc-options: -rtsopts -threaded
+  hs-source-dirs: source/executable
+  main-is: Main.hs
