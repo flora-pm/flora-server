@@ -21,7 +21,7 @@ registerMetrics = do
         P.vector "package_index" $
           P.counter
             P.Info
-              { metricName = "flora_packages_imported_total"
+              { metricName = "flora_imported_packages_total"
               , metricHelp = "Packages imported and their index"
               }
   packageImportCounter <- P.register packageImportCount
