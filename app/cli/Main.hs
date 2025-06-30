@@ -17,6 +17,7 @@ import Effectful.Concurrent qualified as Concurrent
 import Effectful.Error.Static (Error, runErrorNoCallStack)
 import Effectful.Fail
 import Effectful.FileSystem
+import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Prometheus
@@ -247,7 +248,12 @@ runOptions (Options (Provision Advisories)) = do
     Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
     liftIO exitFailure
   importAdvisories advisoriesDirectory
-runOptions (Options (Provision (TestPackages repository))) = importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
+runOptions (Options (Provision (TestPackages repository))) = do
+  let indexArchivePath = Text.unpack $ "./test/fixtures/Cabal/" <> repository <> "/01-index.tar.gz"
+  indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
+  if indexArchiveExists
+    then importIndex indexArchivePath repository
+    else importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
