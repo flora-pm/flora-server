@@ -17,6 +17,7 @@ import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Types.Version (Version)
 import Effectful (IOE, Limit (..), Persistence (..), UnliftStrategy (..), runEff, withUnliftStrategy, type (:>))
 import Effectful.Concurrent (Concurrent)
+import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log hiding (LogLevel)
@@ -42,6 +43,7 @@ import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package (coreLibraries, persistImportOutput)
 import Flora.Import.Package.Bulk.Archive qualified as Import
+import Flora.Import.Types
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
@@ -268,6 +270,7 @@ assignNamespace =
 refreshIndex
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es

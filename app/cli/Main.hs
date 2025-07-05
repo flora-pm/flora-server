@@ -14,9 +14,10 @@ import Distribution.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Concurrent qualified as Concurrent
-import Effectful.Error.Static (Error, runErrorNoCallStack)
+import Effectful.Error.Static (Error, prettyCallStack, runErrorWith)
 import Effectful.Fail
 import Effectful.FileSystem
+import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Prometheus
@@ -49,6 +50,7 @@ import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Import.Package.Bulk.Directory (importAllFilesInDirectory)
+import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Package (Namespace, PackageName)
@@ -101,7 +103,6 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
-  setBacktraceMechanismState CostCentreBacktrace True
   setBacktraceMechanismState HasCallStackBacktrace False
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
@@ -112,31 +113,29 @@ main = Log.withStdOutLogger $ \logger -> do
         zipkin <- liftIO $ Tracing.newZipkin env.mltp.zipkinHost "flora-cli"
         pure $ Trace.runTrace zipkin.zipkinTracer
       else pure Trace.runNoTrace
-  result <-
-    provideCallStack $
-      runOptions cliArgs
-        & Reader.runReader env
-        & runLog "flora-cli" logger Log.LogTrace
-        & runFileSystem
-        & ( case env.features.blobStoreImpl of
-              Just (BlobStoreFS fp) -> runBlobStoreFS fp
-              _ -> runBlobStorePure
-          )
-        & runTime
-        & runFailIO
-        & runDB env.pool
-        & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-        & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-        & runErrorNoCallStack
-        & runTrace
-        & runPrometheusMetrics env.metrics
-        & Concurrent.runConcurrent
-        & runEff
-
-  case result of
-    Right _ -> pure ()
-    Left errors ->
-      error $ show errors
+  provideCallStack $
+    runOptions cliArgs
+      & Reader.runReader env
+      & runLog "flora-cli" logger Log.LogTrace
+      & runFileSystem
+      & ( case env.features.blobStoreImpl of
+            Just (BlobStoreFS fp) -> runBlobStoreFS fp
+            _ -> runBlobStorePure
+        )
+      & runTime
+      & runFailIO
+      & runDB env.pool
+      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
+      & runErrorWith
+        ( \callstack err -> do
+            liftIO $ putStrLn $ prettyCallStack callstack
+            pure $ error $ show err
+        )
+      & runTrace
+      & runPrometheusMetrics env.metrics
+      & Concurrent.runConcurrent
+      & runEff
 
 parseOptions :: Parser Options
 parseOptions =
@@ -227,6 +226,7 @@ runOptions
      , Concurrent :> es
      , DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , Error ImportError :> es
      , Fail :> es
      , FileSystem :> es
      , IOE :> es
@@ -247,7 +247,12 @@ runOptions (Options (Provision Advisories)) = do
     Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
     liftIO exitFailure
   importAdvisories advisoriesDirectory
-runOptions (Options (Provision (TestPackages repository))) = importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
+runOptions (Options (Provision (TestPackages repository))) = do
+  let indexArchivePath = Text.unpack $ "./test/fixtures/Cabal/" <> repository <> "/01-index.tar.gz"
+  indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
+  if indexArchiveExists
+    then importIndex indexArchivePath repository
+    else importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
@@ -287,6 +292,7 @@ provisionRepository name url description = Update.upsertPackageIndex name url de
 importFolderOfCabalFiles
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es

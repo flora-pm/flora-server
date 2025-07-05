@@ -11,6 +11,7 @@ import Data.Vector (Vector)
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
+import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Prometheus
@@ -25,7 +26,7 @@ import UnliftIO (finally)
 
 import Flora.Environment.Env
 import Flora.Import.Package
-import Flora.Import.Types (ImportFileType (..))
+import Flora.Import.Types
 import Flora.Model.Package hiding (PackageName)
 import Flora.Model.Package qualified as Flora
 import Flora.Model.Package.Update qualified as Update
@@ -39,6 +40,7 @@ importFromStream
   :: forall es
    . ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
@@ -88,6 +90,7 @@ displayStats currentCount = do
 processFile
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
