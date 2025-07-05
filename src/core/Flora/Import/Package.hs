@@ -393,7 +393,8 @@ persistHashes (namespace, packageName, version, target) = do
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
-  :: ( IOE :> es
+  :: ( Error ImportError :> es
+     , IOE :> es
      , Log :> es
      , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
@@ -412,8 +413,13 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
   let packageVersion = force packageDesc.package.pkgVersion
   case chooseNamespace packageName indexPackages of
     Nothing -> do
-      Log.logAttention "Could not select namespace" $ object ["package_name" .= display packageName]
-      undefined
+      Log.logAttention "Could not select namespace" $
+        object
+          [ "package_name" .= display packageName
+          , "index" .= repositoryName
+          , "index_packages" .= indexPackages
+          ]
+      Error.throwError $ CouldNotSelectNamespace repositoryName packageName
     Just namespace -> do
       let packageId = deterministicPackageId namespace packageName
       let releaseId = deterministicReleaseId packageId packageVersion

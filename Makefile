@@ -86,8 +86,8 @@ db-provision-advisories: ## Load HSEC advisories in the database
 	@cabal run -- flora-cli provision advisories
 
 db-provision-packages: ## Load development data in the dev database
-	# @cabal run -- flora-cli provision test-packages --repository "hackage"
-	# @cabal run -- flora-cli provision test-packages --repository "cardano"
+	@cabal run -- flora-cli provision test-packages --repository "hackage"
+	@cabal run -- flora-cli provision test-packages --repository "cardano"
 	@cabal run -- flora-cli provision test-packages --repository "mlabs"
 
 db-test-create: ## Create the test database

@@ -29,7 +29,7 @@ import Effectful.Time (Time, runTime)
 import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
 import GHC.Generics (Generic)
-import Log qualified
+import Log
 import Log.Backend.StandardOutput qualified as Log
 import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
@@ -103,7 +103,6 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
-  setBacktraceMechanismState CostCentreBacktrace True
   setBacktraceMechanismState HasCallStackBacktrace False
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
@@ -128,7 +127,12 @@ main = Log.withStdOutLogger $ \logger -> do
       & runDB env.pool
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-      & runErrorWith
+      & runErrorWith @(NonEmpty AdvisoryImportError)
+        ( \callstack err -> do
+            liftIO $ putStrLn $ prettyCallStack callstack
+            pure $ error $ show err
+        )
+      & runErrorWith @ImportError
         ( \callstack err -> do
             liftIO $ putStrLn $ prettyCallStack callstack
             pure $ error $ show err
@@ -227,6 +231,7 @@ runOptions
      , Concurrent :> es
      , DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , Error ImportError :> es
      , Fail :> es
      , FileSystem :> es
      , IOE :> es
@@ -320,6 +325,7 @@ importFolderOfCabalFiles baseDir repository = do
 importIndex
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
@@ -339,6 +345,8 @@ importIndex path repository = do
       forM_
         indexDependencies
         (\name -> importIndex path name)
+      Log.logInfo "index dependencies" $
+        object ["index_dependencies" .= indexDependencies]
       importFromArchive
         repository
         indexDependencies

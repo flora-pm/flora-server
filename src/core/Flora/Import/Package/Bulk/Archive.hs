@@ -76,7 +76,7 @@ importFromArchive repositoryName indexDependencies index = do
       pure (dep, indexPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
-  Log.logInfo "packages" $
+  Log.logInfo "importing packages" $
     object
       [ "repository" .= repositoryName
       , "packages" .= indexPackages

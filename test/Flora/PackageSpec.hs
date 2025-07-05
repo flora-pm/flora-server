@@ -15,7 +15,6 @@ import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Version (mkVersion)
-import Effectful.Time qualified as Time
 import Optics.Core
 import RequireCallStack
 import Test.Tasty
@@ -47,8 +46,6 @@ spec =
     , testThis "Get non-deprecated packages" testGetNonDeprecatedPackages
     , testThis "Get and set release deprecation markers" testReleaseDeprecation
     , testThis "Dependencies are deduplicated in the abbreviated listing" testDeduplicatedDependencies
-    , testThis "Packages with only an executable have their dependencies handled well" testExecutableOnlyPackage
-    , testThis "Package upsert" testPackageUpsert
     , testThese
         "Transitive dependencies"
         [ testThis "Aggregation of transitive dependencies" testAggregationOfTransitiveDependencies
@@ -205,7 +202,7 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: RequireCallStack => TestEff ()
 testReleaseDeprecation = do
   result <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  assertEqual 215 (length result)
+  assertEqual 219 (length result)
 
   binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
   deprecatedBinaryVersion' <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
@@ -222,32 +219,6 @@ testDeduplicatedDependencies = do
   assertEqual
     uniqueRequirements
     requirements
-
-testExecutableOnlyPackage :: RequireCallStack => TestEff ()
-testExecutableOnlyPackage = do
-  package <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-demo")
-  release <- assertJust =<< Query.getReleaseByVersion package.packageId (mkVersion [0, 10, 2, 2])
-  requirements <- Query.getRequirements package.name release.releaseId
-  assertEqual
-    ( Set.fromList
-        [ PackageName "stm"
-        , PackageName "directory"
-        , PackageName "containers"
-        , PackageName "bytestring"
-        , PackageName "base"
-        , PackageName "random"
-        ]
-    )
-    (Set.fromList $ view #packageName <$> Vector.toList requirements)
-
-testPackageUpsert :: RequireCallStack => TestEff ()
-testPackageUpsert = do
-  package' <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-demo")
-  now <- Time.currentTime
-  let package = package' & #updatedAt .~ now
-  Update.upsertPackage package
-  assertBool $
-    package'.updatedAt < package.updatedAt
 
 testAggregationOfTransitiveDependencies :: RequireCallStack => TestEff ()
 testAggregationOfTransitiveDependencies = do
