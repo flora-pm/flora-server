@@ -22,6 +22,7 @@ import Distribution.Types.PackageName as Cabal
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
+import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.FileSystem.IO.ByteString qualified as FileSystem
@@ -39,11 +40,9 @@ import System.Directory qualified as System
 import System.FilePath
 
 import Flora.Environment.Env
-import Flora.Import.Package
-  ( loadContent
-  )
-import Flora.Import.Package.Bulk.Stream
-import Flora.Import.Types (ImportFileType (..))
+import Flora.Import.Package (loadContent)
+import Flora.Import.Package.Bulk.Stream (importFromStream)
+import Flora.Import.Types (ImportError, ImportFileType (..))
 import Flora.Model.Package hiding (PackageName)
 import Flora.Model.Package qualified as Flora
 import Flora.Monad
@@ -52,6 +51,7 @@ import Flora.Monad
 importAllFilesInDirectory
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es
@@ -103,7 +103,7 @@ findAllCabalFilesInDirectory workdir = Streamly.concatMapM traversePath $ Stream
         _ -> pure Streamly.nil
 
 buildPackageListFromDirectory
-  :: (FileSystem :> es, Log :> es, RequireCallStack)
+  :: (Error ImportError :> es, FileSystem :> es, Log :> es, RequireCallStack)
   => FilePath
   -> FloraM es (Set Flora.PackageName)
 buildPackageListFromDirectory dir = do

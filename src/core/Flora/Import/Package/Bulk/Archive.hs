@@ -27,6 +27,7 @@ import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
+import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
@@ -42,7 +43,7 @@ import System.FilePath
 
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Stream
-import Flora.Import.Types (ImportFileType (..))
+import Flora.Import.Types (ImportError, ImportFileType (..))
 import Flora.Model.Package hiding (PackageName)
 import Flora.Model.Package qualified as Flora
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -52,6 +53,7 @@ import Flora.Monad
 importFromArchive
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es

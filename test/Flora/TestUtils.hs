@@ -108,6 +108,8 @@ import Distribution.Types.Version (Version)
 import Distribution.Types.Version qualified as Version
 import Effectful
 import Effectful.Concurrent
+import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Exception qualified as E
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
@@ -144,6 +146,7 @@ import Test.Tasty.HUnit qualified as Test
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Directory (importAllFilesInDirectory)
+import Flora.Import.Types (ImportError)
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
@@ -194,6 +197,7 @@ type TestEff a =
      , State (Set (Namespace, PackageName, Version))
      , Metrics AppMetrics
      , Concurrent
+     , Error ImportError
      , IOE
      ]
     a
@@ -241,6 +245,11 @@ runTestEff comp env = provideCallStack $ runEff $ do
       & State.evalState mempty
       & runPrometheusMetrics env.metrics
       & runConcurrent
+      & Error.runErrorWith
+        ( \callstack err -> do
+            liftIO $ putStrLn $ prettyCallStack callstack
+            pure $ error $ show err
+        )
 
 testThis :: RequireCallStack => String -> TestEff () -> TestEff TestTree
 testThis name assertion = do

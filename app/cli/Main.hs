@@ -14,7 +14,7 @@ import Distribution.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Concurrent qualified as Concurrent
-import Effectful.Error.Static (Error, runErrorNoCallStack)
+import Effectful.Error.Static (Error, prettyCallStack, runErrorWith)
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.FileSystem qualified as FileSystem
@@ -50,6 +50,7 @@ import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Import.Package.Bulk.Directory (importAllFilesInDirectory)
+import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Package (Namespace, PackageName)
@@ -113,31 +114,29 @@ main = Log.withStdOutLogger $ \logger -> do
         zipkin <- liftIO $ Tracing.newZipkin env.mltp.zipkinHost "flora-cli"
         pure $ Trace.runTrace zipkin.zipkinTracer
       else pure Trace.runNoTrace
-  result <-
-    provideCallStack $
-      runOptions cliArgs
-        & Reader.runReader env
-        & runLog "flora-cli" logger Log.LogTrace
-        & runFileSystem
-        & ( case env.features.blobStoreImpl of
-              Just (BlobStoreFS fp) -> runBlobStoreFS fp
-              _ -> runBlobStorePure
-          )
-        & runTime
-        & runFailIO
-        & runDB env.pool
-        & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-        & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-        & runErrorNoCallStack
-        & runTrace
-        & runPrometheusMetrics env.metrics
-        & Concurrent.runConcurrent
-        & runEff
-
-  case result of
-    Right _ -> pure ()
-    Left errors ->
-      error $ show errors
+  provideCallStack $
+    runOptions cliArgs
+      & Reader.runReader env
+      & runLog "flora-cli" logger Log.LogTrace
+      & runFileSystem
+      & ( case env.features.blobStoreImpl of
+            Just (BlobStoreFS fp) -> runBlobStoreFS fp
+            _ -> runBlobStorePure
+        )
+      & runTime
+      & runFailIO
+      & runDB env.pool
+      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
+      & runErrorWith
+        ( \callstack err -> do
+            liftIO $ putStrLn $ prettyCallStack callstack
+            pure $ error $ show err
+        )
+      & runTrace
+      & runPrometheusMetrics env.metrics
+      & Concurrent.runConcurrent
+      & runEff
 
 parseOptions :: Parser Options
 parseOptions =
@@ -293,6 +292,7 @@ provisionRepository name url description = Update.upsertPackageIndex name url de
 importFolderOfCabalFiles
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es

@@ -14,7 +14,7 @@ import Data.Text.Display (display)
 import Effectful
 import Effectful.Concurrent
 import Effectful.Dispatch.Static
-import Effectful.Error.Static (runErrorNoCallStack, runErrorWith)
+import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (runDB)
@@ -260,7 +260,11 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
                 _ -> runBlobStorePure
             )
           & Logging.runLog floraEnv.environment logger
-          & runErrorWith (\_callstack err -> pure $ Left err)
+          & runErrorWith
+            ( \callstack err -> do
+                liftIO $ putStrLn $ prettyCallStack callstack
+                pure $ Left err
+            )
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
           & runReader floraEnv
