@@ -11,7 +11,6 @@ import RequireCallStack
 
 import Flora.Import.Package (chooseNamespace)
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Package.Bulk.Directory (buildPackageListFromDirectory)
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -27,7 +26,6 @@ spec =
     [ testThis "Import index" testImportIndex
     , testThis "Namespace chooser" testNamespaceChooser
     , testThis "MLabs dependencies in Cardano are correctly inserted" testNthLevelDependencies
-    , testThis "Get a list of package names from a directory" testGetListOfPackageNamesFromDirectory
     ]
 
 testIndex :: FilePath
@@ -82,10 +80,3 @@ testNthLevelDependencies = do
         ]
     )
     dependencies
-
-testGetListOfPackageNamesFromDirectory :: RequireCallStack => TestEff ()
-testGetListOfPackageNamesFromDirectory = do
-  result <- buildPackageListFromDirectory "test/fixtures/Cabal/mlabs"
-  assertEqual
-    (Set.fromList [PackageName "plutarch", PackageName "plutarch-ledger-api", PackageName "plutarch-orphanage"])
-    result

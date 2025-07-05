@@ -103,7 +103,6 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
-  setBacktraceMechanismState CostCentreBacktrace True
   setBacktraceMechanismState HasCallStackBacktrace False
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
@@ -227,6 +226,7 @@ runOptions
      , Concurrent :> es
      , DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , Error ImportError :> es
      , Fail :> es
      , FileSystem :> es
      , IOE :> es
