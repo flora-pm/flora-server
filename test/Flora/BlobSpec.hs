@@ -39,7 +39,7 @@ toList :: RequireCallStack => Tar.Entries e -> Either e [Tar.Entry]
 toList = right reverse . left fst . Tar.foldlEntries (\acc x -> x : acc) []
 
 readTarball :: RequireCallStack => FilePath -> TestEff LazyByteString
-readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/tarballs" </> tarball)
+readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/test-namespace" </> tarball)
 
 testImportTarball :: TestEff ()
 testImportTarball = provideCallStack $ do
@@ -62,9 +62,9 @@ testImportTarball = provideCallStack $ do
           checkAll Tar.entryContent (sortByPath tarEntries) tarEntries'
 
           -- check that we also archived the initial tarball along with the release
-          package <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") pname
-          release <- fromJust <$> Query.getReleaseByVersion package.packageId version
-          archivedContent <- fromJust <$> Query.getReleaseTarballArchive release.releaseId
+          package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") pname
+          release <- assertJust_ =<< Query.getReleaseByVersion package.packageId version
+          archivedContent <- assertJust_ =<< Query.getReleaseTarballArchive release.releaseId
           assertEqual content archivedContent
         [Left _, _] -> assertFailure "Input tar is corrupted"
         [_, Left _] -> assertFailure "Generated corrupted tarball"

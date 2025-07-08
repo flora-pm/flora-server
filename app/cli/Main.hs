@@ -1,7 +1,6 @@
 module Main where
 
 import Codec.Compression.GZip qualified as GZip
-import Control.Exception.Backtrace
 import Control.Monad.Extra (forM_, unlessM)
 import Data.Bifunctor
 import Data.ByteString.Lazy.Char8 qualified as BS
@@ -102,7 +101,6 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
-  setBacktraceMechanismState HasCallStackBacktrace True
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv & runFileSystem & runFailIO & runEff
@@ -141,12 +139,11 @@ main = Log.withStdOutLogger $ \logger -> do
       & runPrometheusMetrics env.metrics
       & Concurrent.runConcurrent
       & runEff
-
-exceptionHandlers :: MonadLog m => [E.Handler m ()]
-exceptionHandlers =
-  [ E.Handler $ \(ex :: E.SomeException) -> do
-      logAttention "Unhandled exception" $ object ["exception" .= show ex]
-  ]
+  where
+    exceptionHandlers =
+      [ E.Handler $ \(ex :: E.SomeException) -> do
+          logAttention "Unhandled exception" $ object ["exception" .= show ex]
+      ]
 
 parseOptions :: Parser Options
 parseOptions =

@@ -26,14 +26,14 @@ spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "Import tests"
-    [ testThis "Import index" testImportIndex
-    , testThis "Namespace chooser" testNamespaceChooser
+    [ testThis "Namespace chooser" testNamespaceChooser
+    , testThis "Import index" testImportIndex
     , testThis "Package list from archive" testPackageListFromArchive
     , testThis "MLabs dependencies in Cardano are correctly inserted" testNthLevelDependencies
     ]
 
 testIndex :: FilePath
-testIndex = "./test/fixtures/tarballs/test-index.tar.gz"
+testIndex = "test/fixtures/test-namespace/test-index.tar.gz"
 
 defaultRepo :: Text
 defaultRepo = "test-namespace"
@@ -52,9 +52,10 @@ testImportIndex = withStdOutLogger $
       Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
       Just _ -> pure ()
     importFromArchive
-      defaultRepo
+      "test-namespace"
       Vector.empty
-      testIndex
+      "test/fixtures"
+
     -- check the packages have been imported
     tars <- traverse (Query.getPackageByNamespaceAndName (Namespace defaultRepo) . PackageName) ["tar-a", "tar-b"]
     releases <- fmap mconcat . traverse (\x -> Query.getReleases (x ^. #packageId)) $ catMaybes tars
@@ -74,13 +75,13 @@ testPackageListFromArchive = do
   packages <- assertRight $ buildPackageListFromArchive entries
 
   assertEqual
-    Set.empty
+    (Set.fromList [PackageName "plutarch", PackageName "plutarch-ledger-api", PackageName "plutarch-orphanage"])
     packages
 
 testNthLevelDependencies :: RequireCallStack => TestEff ()
 testNthLevelDependencies = do
-  plutarch <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch")
-  latestRelease <- assertJust =<< Query.getLatestPackageRelease plutarch.packageId
+  plutarch <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch")
+  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease plutarch.packageId
   dependencies <- Query.getRequirements plutarch.name latestRelease.releaseId
   assertEqual
     ( Vector.fromList
