@@ -54,9 +54,8 @@ spec =
         ]
     , testThese
         "Package index dependencies"
-          [ "Dependencies are computed with expected dependency order" testDependencyComputationWithOrder
-
-          ]
+        [ testThis "Dependencies are computed with expected dependency order" testDependencyComputationWithOrder
+        ]
         -- Disable until conditions are properly supported everywhere
         -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
@@ -359,5 +358,4 @@ testSerialiseDependenciesTree = do
     expectedJSON
 
 testDependencyComputationWithOrder :: TestEff ()
-testDependencyComputationWithOrder = do
-
+testDependencyComputationWithOrder = undefined

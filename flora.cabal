@@ -87,7 +87,6 @@ library
     Flora.Import.Categories
     Flora.Import.Package
     Flora.Import.Package.Bulk.Archive
-    Flora.Import.Package.Bulk.Directory
     Flora.Import.Package.Bulk.Stream
     Flora.Import.Package.Types
     Flora.Import.Types

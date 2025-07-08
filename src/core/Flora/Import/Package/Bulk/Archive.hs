@@ -3,6 +3,7 @@
 
 module Flora.Import.Package.Bulk.Archive
   ( importFromArchive
+  , buildPackageListFromArchive
   ) where
 
 import Codec.Archive.Tar (Entries)
@@ -71,10 +72,12 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile indexArchivePath)
   indexPackages <- do
     let Right localPackages = buildPackageListFromArchive entries
+    when (null localPackages) $ error $ "Index " <> Text.unpack repositoryName <> " has no entries!"
     dependencyPackages <- forM indexDependencies $ \dep -> do
       let depArchivePath = indexArchiveBasePath <> "/" <> (Text.unpack dep) <> "/01-index.tar.gz"
-      indexEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile depArchivePath)
-      let Right indexPackages = buildPackageListFromArchive indexEntries
+      indexDependencyEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile depArchivePath)
+      let Right indexPackages = buildPackageListFromArchive indexDependencyEntries
+      when (null indexPackages) $ error $ "Index dependency " <> Text.unpack dep <> " has no entries!"
       pure (dep, indexPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
@@ -128,8 +131,8 @@ buildPackageListFromArchive entries =
     Left e -> Left e
     Right tarIndex ->
       Tar.toList tarIndex
+        & filter (\(filename, _) -> ".cabal" `isSuffixOf` filename)
         & fmap (takeDirectory . takeDirectory . fst)
-        & filter (/= ".")
         & fmap (Flora.PackageName . Text.pack)
         & Set.fromList
         & Right

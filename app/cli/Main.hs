@@ -15,6 +15,7 @@ import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Concurrent qualified as Concurrent
 import Effectful.Error.Static (Error, prettyCallStack, runErrorWith)
+import Effectful.Exception qualified as E
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.FileSystem qualified as FileSystem
@@ -49,7 +50,6 @@ import Flora.Environment (getFloraEnv)
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Package.Bulk.Directory (importAllFilesInDirectory)
 import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
@@ -63,7 +63,6 @@ import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Monad
 import Flora.Tracing qualified as Tracing
-import qualified Effectful.Exception as E
 
 data Options = Options
   { cliCommand :: Command
@@ -74,7 +73,6 @@ data Command
   = Provision ProvisionTarget
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
-  | ImportPackages FilePath Text
   | ImportIndex FilePath Text
   | ProvisionRepository Text Text Text
   | ImportPackageTarball PackageName Version FilePath
@@ -144,12 +142,11 @@ main = Log.withStdOutLogger $ \logger -> do
       & Concurrent.runConcurrent
       & runEff
 
-exceptionHandlers :: (MonadLog m) => [E.Handler m ()]
+exceptionHandlers :: MonadLog m => [E.Handler m ()]
 exceptionHandlers =
-      [ E.Handler $ \(ex :: E.SomeException) -> do
-          logAttention "Unhandled exception" $ object ["exception" .= show ex]
-      ]
-
+  [ E.Handler $ \(ex :: E.SomeException) -> do
+      logAttention "Unhandled exception" $ object ["exception" .= show ex]
+  ]
 
 parseOptions :: Parser Options
 parseOptions =
@@ -161,7 +158,6 @@ parseCommand =
     command "provision" (parseProvision `withInfo` "Load the test fixtures into the database")
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
       <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
-      <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
       <> command "import-index" (parseImportIndex `withInfo` "Import cabal packages from the index tarball")
       <> command "provision-repository" (parseProvisionRepository `withInfo` "Create a package repository")
       <> command
@@ -195,12 +191,6 @@ parseCreateUser =
 
 parseGenDesignSystem :: Parser Command
 parseGenDesignSystem = pure GenDesignSystemComponents
-
-parseImportPackages :: Parser Command
-parseImportPackages =
-  ImportPackages
-    <$> argument str (metavar "PATH")
-    <*> option str (long "repository" <> metavar "<repository>" <> help "Which repository we're importing from (hackage, cardano…)")
 
 parseImportIndex :: Parser Command
 parseImportIndex =
@@ -267,7 +257,7 @@ runOptions (Options (Provision (TestPackages repository))) = do
   indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
   if indexArchiveExists
     then importIndex indexArchiveBasePath repository
-    else importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
+    else error $ "Could not find " <> indexArchivePath
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
@@ -289,7 +279,6 @@ runOptions (Options (CreateUser opts)) = do
           let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
-runOptions (Options (ImportPackages path repository)) = importFolderOfCabalFiles path repository
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
 runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
@@ -303,34 +292,6 @@ runOptions (Options (IndexDependency indexName dependencyName priority)) = do
 
 provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> FloraM es ()
 provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
-
-importFolderOfCabalFiles
-  :: ( Concurrent :> es
-     , DB :> es
-     , Error ImportError :> es
-     , FileSystem :> es
-     , IOE :> es
-     , Log :> es
-     , Metrics AppMetrics :> es
-     , Reader FloraEnv :> es
-     , RequireCallStack
-     , State (Set (Namespace, PackageName, Version)) :> es
-     , Time :> es
-     )
-  => FilePath
-  -> Text
-  -> FloraM es ()
-importFolderOfCabalFiles baseDir repository = do
-  mPackageIndex <- Query.getPackageIndexByName repository
-  case mPackageIndex of
-    Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
-    Just packageIndex -> do
-      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
-      importAllFilesInDirectory
-        repository
-        (Text.unpack repository)
-        indexDependencies
-        baseDir
 
 importIndex
   :: ( Concurrent :> es

@@ -1,5 +1,8 @@
 module Flora.ImportSpec where
 
+import Codec.Archive.Tar qualified as Tar
+import Codec.Compression.GZip qualified as GZip
+import Data.ByteString.Lazy qualified as BL
 import Data.Foldable (traverse_)
 import Data.Maybe (catMaybes)
 import Data.Set qualified as Set
@@ -10,7 +13,7 @@ import Optics.Core
 import RequireCallStack
 
 import Flora.Import.Package (chooseNamespace)
-import Flora.Import.Package.Bulk.Archive (importFromArchive)
+import Flora.Import.Package.Bulk.Archive
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -25,6 +28,7 @@ spec =
     "Import tests"
     [ testThis "Import index" testImportIndex
     , testThis "Namespace chooser" testNamespaceChooser
+    , testThis "Package list from archive" testPackageListFromArchive
     , testThis "MLabs dependencies in Cardano are correctly inserted" testNthLevelDependencies
     ]
 
@@ -63,6 +67,15 @@ testNamespaceChooser = do
   assertEqual
     (chooseNamespace (PackageName "tar-a") (Vector.singleton (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"])))
     (Just (Namespace defaultRepo))
+
+testPackageListFromArchive :: RequireCallStack => TestEff ()
+testPackageListFromArchive = do
+  entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile "test/fixtures/Cabal/mlabs/01-index.tar.gz")
+  packages <- assertRight $ buildPackageListFromArchive entries
+
+  assertEqual
+    Set.empty
+    packages
 
 testNthLevelDependencies :: RequireCallStack => TestEff ()
 testNthLevelDependencies = do

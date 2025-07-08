@@ -146,7 +146,6 @@ import Test.Tasty.HUnit qualified as Test
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Package.Bulk.Directory (importAllFilesInDirectory)
 import Flora.Import.Types (ImportError)
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
@@ -215,19 +214,18 @@ getFixtures = do
 
 importAllPackages :: RequireCallStack => TestEff ()
 importAllPackages = do
-  importAllFilesInDirectory
-    "hackage"
+  importFromArchive
     "hackage"
     (Vector.empty)
-    "test/fixtures/Cabal/"
+    "test/fixtures/Cabal"
   importFromArchive
     "cardano"
     (Vector.fromList ["hackage"])
-    "test/fixtures/Cabal/cardano/01-index.tar.gz"
+    "test/fixtures/Cabal"
   importFromArchive
     "mlabs"
     (Vector.fromList ["cardano", "hackage"])
-    "test/fixtures/Cabal/mlabs/01-index.tar.gz"
+    "test/fixtures/Cabal"
 
 runTestEff :: TestEff a -> FloraEnv -> IO a
 runTestEff comp env = provideCallStack $ runEff $ do
