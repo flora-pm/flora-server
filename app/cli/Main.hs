@@ -63,6 +63,7 @@ import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Monad
 import Flora.Tracing qualified as Tracing
+import qualified Effectful.Exception as E
 
 data Options = Options
   { cliCommand :: Command
@@ -103,7 +104,7 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
-  setBacktraceMechanismState HasCallStackBacktrace False
+  setBacktraceMechanismState HasCallStackBacktrace True
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv & runFileSystem & runFailIO & runEff
@@ -116,6 +117,7 @@ main = Log.withStdOutLogger $ \logger -> do
   provideCallStack $
     runOptions cliArgs
       & Reader.runReader env
+      & (`E.catches` exceptionHandlers)
       & runLog "flora-cli" logger Log.LogTrace
       & runFileSystem
       & ( case env.features.blobStoreImpl of
@@ -141,6 +143,13 @@ main = Log.withStdOutLogger $ \logger -> do
       & runPrometheusMetrics env.metrics
       & Concurrent.runConcurrent
       & runEff
+
+exceptionHandlers :: (MonadLog m) => [E.Handler m ()]
+exceptionHandlers =
+      [ E.Handler $ \(ex :: E.SomeException) -> do
+          logAttention "Unhandled exception" $ object ["exception" .= show ex]
+      ]
+
 
 parseOptions :: Parser Options
 parseOptions =
@@ -253,10 +262,11 @@ runOptions (Options (Provision Advisories)) = do
     liftIO exitFailure
   importAdvisories advisoriesDirectory
 runOptions (Options (Provision (TestPackages repository))) = do
-  let indexArchivePath = Text.unpack $ "./test/fixtures/Cabal/" <> repository <> "/01-index.tar.gz"
+  let indexArchiveBasePath = "./test/fixtures/Cabal"
+  let indexArchivePath = indexArchiveBasePath <> "/" <> (Text.unpack repository) <> "/01-index.tar.gz"
   indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
   if indexArchiveExists
-    then importIndex indexArchivePath repository
+    then importIndex indexArchiveBasePath repository
     else importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
@@ -336,7 +346,7 @@ importIndex
   => FilePath
   -> Text
   -> FloraM es ()
-importIndex path repository = do
+importIndex indexArchivebasePath repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
@@ -344,13 +354,13 @@ importIndex path repository = do
       indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
       forM_
         indexDependencies
-        (\name -> importIndex path name)
+        (\name -> importIndex indexArchivebasePath name)
       Log.logInfo "index dependencies" $
         object ["index_dependencies" .= indexDependencies]
       importFromArchive
         repository
         indexDependencies
-        path
+        indexArchivebasePath
 
 importPackageTarball
   :: ( BlobStoreAPI :> es

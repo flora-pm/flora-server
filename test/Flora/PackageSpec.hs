@@ -52,6 +52,11 @@ spec =
         , testThis "Transitive dependencies are properly computed" testTransitiveDependencies
         , testThis "Serialise dependencies tree" testSerialiseDependenciesTree
         ]
+    , testThese
+        "Package index dependencies"
+          [ "Dependencies are computed with expected dependency order" testDependencyComputationWithOrder
+
+          ]
         -- Disable until conditions are properly supported everywhere
         -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
@@ -352,3 +357,7 @@ testSerialiseDependenciesTree = do
   assertEqual
     actualJSON
     expectedJSON
+
+testDependencyComputationWithOrder :: TestEff ()
+testDependencyComputationWithOrder = do
+

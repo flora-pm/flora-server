@@ -66,12 +66,14 @@ importFromArchive
   -> Vector Text
   -> FilePath
   -> FloraM es ()
-importFromArchive repositoryName indexDependencies index = do
-  entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
+importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
+  let indexArchivePath = indexArchiveBasePath <> "/" <> (Text.unpack repositoryName) <> "/01-index.tar.gz"
+  entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile indexArchivePath)
   indexPackages <- do
     let Right localPackages = buildPackageListFromArchive entries
     dependencyPackages <- forM indexDependencies $ \dep -> do
-      indexEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
+      let depArchivePath = indexArchiveBasePath <> "/" <> (Text.unpack dep) <> "/01-index.tar.gz"
+      indexEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile depArchivePath)
       let Right indexPackages = buildPackageListFromArchive indexEntries
       pure (dep, indexPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
