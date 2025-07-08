@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Flora.Import.Package.Bulk.Archive
@@ -45,8 +46,8 @@ import System.FilePath
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Stream
 import Flora.Import.Types (ImportError, ImportFileType (..))
-import Flora.Model.Package hiding (PackageName)
-import Flora.Model.Package qualified as Flora
+import Flora.Model.Package.Types (Namespace)
+import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Monad
@@ -68,13 +69,13 @@ importFromArchive
   -> FilePath
   -> FloraM es ()
 importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
-  let indexArchivePath = indexArchiveBasePath <> "/" <> (Text.unpack repositoryName) <> "/01-index.tar.gz"
+  let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repositoryName <> "/01-index.tar.gz"
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile indexArchivePath)
   indexPackages <- do
     let Right localPackages = buildPackageListFromArchive entries
     when (null localPackages) $ error $ "Index " <> Text.unpack repositoryName <> " has no entries!"
     dependencyPackages <- forM indexDependencies $ \dep -> do
-      let depArchivePath = indexArchiveBasePath <> "/" <> (Text.unpack dep) <> "/01-index.tar.gz"
+      let depArchivePath = indexArchiveBasePath <> "/" <> Text.unpack dep <> "/01-index.tar.gz"
       indexDependencyEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile depArchivePath)
       let Right indexPackages = buildPackageListFromArchive indexDependencyEntries
       when (null indexPackages) $ error $ "Index dependency " <> Text.unpack dep <> " has no entries!"
@@ -125,6 +126,7 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
 --     loadJSONContent path content repository
 --     >>= persistHashes
 
+{-# HLINT ignore "Functor law" #-}
 buildPackageListFromArchive :: Entries e -> Either e (Set Flora.PackageName)
 buildPackageListFromArchive entries =
   case Tar.build entries of

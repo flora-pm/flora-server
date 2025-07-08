@@ -216,7 +216,7 @@ importAllPackages :: RequireCallStack => TestEff ()
 importAllPackages = do
   importFromArchive
     "hackage"
-    (Vector.empty)
+    Vector.empty
     "test/fixtures/Cabal"
   importFromArchive
     "cardano"

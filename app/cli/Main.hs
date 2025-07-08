@@ -253,7 +253,7 @@ runOptions (Options (Provision Advisories)) = do
   importAdvisories advisoriesDirectory
 runOptions (Options (Provision (TestPackages repository))) = do
   let indexArchiveBasePath = "./test/fixtures/Cabal"
-  let indexArchivePath = indexArchiveBasePath <> "/" <> (Text.unpack repository) <> "/01-index.tar.gz"
+  let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repository <> "/01-index.tar.gz"
   indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
   if indexArchiveExists
     then importIndex indexArchiveBasePath repository
