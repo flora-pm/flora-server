@@ -12,6 +12,7 @@ import Effectful.Reader.Static (Reader)
 import Lucid
 import Network.HTTP.Types.Status
 import Optics.Core
+import RequireCallStack
 import Servant (ServerError (..))
 
 import Flora.Environment.Env (FeatureEnv)
@@ -21,7 +22,7 @@ import FloraWeb.Session
 
 renderError
   :: forall (es :: [Effect]) (a :: Type)
-   . Error ServerError :> es
+   . (Error ServerError :> es, RequireCallStack)
   => TemplateEnv
   -> Status
   -> Eff es a
@@ -40,6 +41,7 @@ web404
   :: ( Error ServerError :> es
      , IOE :> es
      , Reader FeatureEnv :> es
+     , RequireCallStack
      )
   => Session (Maybe User)
   -> Eff es a
