@@ -20,7 +20,7 @@ spec =
 testFetchingAllBiscuitHaskellAdvisories :: RequireCallStack => TestEff ()
 testFetchingAllBiscuitHaskellAdvisories = do
   package <-
-    assertJust
+    assertJust_
       =<< Query.getPackageByNamespaceAndName
         (Namespace "hackage")
         (PackageName "biscuit-haskell")
@@ -30,7 +30,7 @@ testFetchingAllBiscuitHaskellAdvisories = do
 testFetchingAllBaseAdvisories :: RequireCallStack => TestEff ()
 testFetchingAllBaseAdvisories = do
   package <-
-    assertJust
+    assertJust_
       =<< Query.getPackageByNamespaceAndName
         (Namespace "haskell")
         (PackageName "base")
@@ -40,7 +40,7 @@ testFetchingAllBaseAdvisories = do
 testFetchingAdvisoryPreviewByPackageId :: RequireCallStack => TestEff ()
 testFetchingAdvisoryPreviewByPackageId = do
   package <-
-    assertJust
+    assertJust_
       =<< Query.getPackageByNamespaceAndName
         (Namespace "haskell")
         (PackageName "base")

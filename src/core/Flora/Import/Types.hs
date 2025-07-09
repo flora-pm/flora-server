@@ -21,6 +21,7 @@ data ImportError
   | RequirementNotFound (Namespace, PackageName)
   | CabalFileNotFound FilePath
   | CabalFileCouldNotBeParsed FilePath
+  | CouldNotSelectNamespace Text PackageName
   deriving stock (Eq, Show)
   deriving anyclass (Exception)
 

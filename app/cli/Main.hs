@@ -1,7 +1,6 @@
 module Main where
 
 import Codec.Compression.GZip qualified as GZip
-import Control.Exception.Backtrace
 import Control.Monad.Extra (forM_, unlessM)
 import Data.Bifunctor
 import Data.ByteString.Lazy.Char8 qualified as BS
@@ -14,9 +13,11 @@ import Distribution.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Concurrent qualified as Concurrent
-import Effectful.Error.Static (Error, runErrorNoCallStack)
+import Effectful.Error.Static (Error, prettyCallStack, runErrorWith)
+import Effectful.Exception qualified as E
 import Effectful.Fail
 import Effectful.FileSystem
+import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Prometheus
@@ -28,7 +29,7 @@ import Effectful.Time (Time, runTime)
 import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
 import GHC.Generics (Generic)
-import Log qualified
+import Log
 import Log.Backend.StandardOutput qualified as Log
 import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
@@ -48,7 +49,7 @@ import Flora.Environment (getFloraEnv)
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Package.Bulk.Directory (importAllFilesInDirectory)
+import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Package (Namespace, PackageName)
@@ -71,7 +72,6 @@ data Command
   = Provision ProvisionTarget
   | CreateUser UserCreationOptions
   | GenDesignSystemComponents
-  | ImportPackages FilePath Text
   | ImportIndex FilePath Text
   | ProvisionRepository Text Text Text
   | ImportPackageTarball PackageName Version FilePath
@@ -101,8 +101,6 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
-  setBacktraceMechanismState CostCentreBacktrace True
-  setBacktraceMechanismState HasCallStackBacktrace False
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv & runFileSystem & runFailIO & runEff
@@ -112,31 +110,40 @@ main = Log.withStdOutLogger $ \logger -> do
         zipkin <- liftIO $ Tracing.newZipkin env.mltp.zipkinHost "flora-cli"
         pure $ Trace.runTrace zipkin.zipkinTracer
       else pure Trace.runNoTrace
-  result <-
-    provideCallStack $
-      runOptions cliArgs
-        & Reader.runReader env
-        & runLog "flora-cli" logger Log.LogTrace
-        & runFileSystem
-        & ( case env.features.blobStoreImpl of
-              Just (BlobStoreFS fp) -> runBlobStoreFS fp
-              _ -> runBlobStorePure
-          )
-        & runTime
-        & runFailIO
-        & runDB env.pool
-        & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-        & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
-        & runErrorNoCallStack
-        & runTrace
-        & runPrometheusMetrics env.metrics
-        & Concurrent.runConcurrent
-        & runEff
-
-  case result of
-    Right _ -> pure ()
-    Left errors ->
-      error $ show errors
+  provideCallStack $
+    runOptions cliArgs
+      & Reader.runReader env
+      & (`E.catches` exceptionHandlers)
+      & runLog "flora-cli" logger Log.LogTrace
+      & runFileSystem
+      & ( case env.features.blobStoreImpl of
+            Just (BlobStoreFS fp) -> runBlobStoreFS fp
+            _ -> runBlobStorePure
+        )
+      & runTime
+      & runFailIO
+      & runDB env.pool
+      & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
+      & runErrorWith @(NonEmpty AdvisoryImportError)
+        ( \callstack err -> do
+            liftIO $ putStrLn $ prettyCallStack callstack
+            pure $ error $ show err
+        )
+      & runErrorWith @ImportError
+        ( \callstack err -> do
+            liftIO $ putStrLn $ prettyCallStack callstack
+            pure $ error $ show err
+        )
+      & runTrace
+      & runPrometheusMetrics env.metrics
+      & Concurrent.runConcurrent
+      & runEff
+  where
+    exceptionHandlers =
+      [ E.Handler $ \(ex :: E.SomeException) -> do
+          logAttention "Unhandled exception" $ object ["exception" .= show ex]
+      ]
 
 parseOptions :: Parser Options
 parseOptions =
@@ -148,7 +155,6 @@ parseCommand =
     command "provision" (parseProvision `withInfo` "Load the test fixtures into the database")
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
       <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
-      <> command "import-packages" (parseImportPackages `withInfo` "Import cabal packages from a directory")
       <> command "import-index" (parseImportIndex `withInfo` "Import cabal packages from the index tarball")
       <> command "provision-repository" (parseProvisionRepository `withInfo` "Create a package repository")
       <> command
@@ -182,12 +188,6 @@ parseCreateUser =
 
 parseGenDesignSystem :: Parser Command
 parseGenDesignSystem = pure GenDesignSystemComponents
-
-parseImportPackages :: Parser Command
-parseImportPackages =
-  ImportPackages
-    <$> argument str (metavar "PATH")
-    <*> option str (long "repository" <> metavar "<repository>" <> help "Which repository we're importing from (hackage, cardano…)")
 
 parseImportIndex :: Parser Command
 parseImportIndex =
@@ -227,6 +227,7 @@ runOptions
      , Concurrent :> es
      , DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
+     , Error ImportError :> es
      , Fail :> es
      , FileSystem :> es
      , IOE :> es
@@ -247,7 +248,13 @@ runOptions (Options (Provision Advisories)) = do
     Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
     liftIO exitFailure
   importAdvisories advisoriesDirectory
-runOptions (Options (Provision (TestPackages repository))) = importFolderOfCabalFiles "./test/fixtures/Cabal/" repository
+runOptions (Options (Provision (TestPackages repository))) = do
+  let indexArchiveBasePath = "./test/fixtures/Cabal"
+  let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repository <> "/01-index.tar.gz"
+  indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
+  if indexArchiveExists
+    then importIndex indexArchiveBasePath repository
+    else error $ "Could not find " <> indexArchivePath
 runOptions (Options (CreateUser opts)) = do
   let username = opts ^. #username
       email = opts ^. #email
@@ -269,7 +276,6 @@ runOptions (Options (CreateUser opts)) = do
           let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
-runOptions (Options (ImportPackages path repository)) = importFolderOfCabalFiles path repository
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
 runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
@@ -284,36 +290,10 @@ runOptions (Options (IndexDependency indexName dependencyName priority)) = do
 provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> FloraM es ()
 provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
 
-importFolderOfCabalFiles
-  :: ( Concurrent :> es
-     , DB :> es
-     , FileSystem :> es
-     , IOE :> es
-     , Log :> es
-     , Metrics AppMetrics :> es
-     , Reader FloraEnv :> es
-     , RequireCallStack
-     , State (Set (Namespace, PackageName, Version)) :> es
-     , Time :> es
-     )
-  => FilePath
-  -> Text
-  -> FloraM es ()
-importFolderOfCabalFiles baseDir repository = do
-  mPackageIndex <- Query.getPackageIndexByName repository
-  case mPackageIndex of
-    Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
-    Just packageIndex -> do
-      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
-      importAllFilesInDirectory
-        repository
-        (Text.unpack repository)
-        indexDependencies
-        baseDir
-
 importIndex
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
@@ -324,7 +304,7 @@ importIndex
   => FilePath
   -> Text
   -> FloraM es ()
-importIndex path repository = do
+importIndex indexArchivebasePath repository = do
   mPackageIndex <- Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
@@ -332,11 +312,13 @@ importIndex path repository = do
       indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
       forM_
         indexDependencies
-        (\name -> importIndex path name)
+        (\name -> importIndex indexArchivebasePath name)
+      Log.logInfo "index dependencies" $
+        object ["index_dependencies" .= indexDependencies]
       importFromArchive
         repository
         indexDependencies
-        path
+        indexArchivebasePath
 
 importPackageTarball
   :: ( BlobStoreAPI :> es

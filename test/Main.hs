@@ -1,6 +1,5 @@
 module Main where
 
-import Control.Exception.Backtrace
 import Control.Monad.Extra
 import Data.List.NonEmpty
 import Data.Text qualified as Text
@@ -16,7 +15,6 @@ import Sel.Hashing.Password qualified as Sel
 import System.Exit
 import System.IO
 import Test.Tasty
-import Test.Tasty.Runners.Reporter qualified as Reporter
 
 import Advisories.Import qualified as Advisories
 import Advisories.Import.Error
@@ -41,8 +39,6 @@ import Flora.UserSpec qualified as UserSpec
 
 main :: IO ()
 main = provideCallStack $ do
-  setBacktraceMechanismState CostCentreBacktrace True
-  setBacktraceMechanismState HasCallStackBacktrace True
   hSetBuffering stdout LineBuffering
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv
   fixtures <-
@@ -73,7 +69,7 @@ main = provideCallStack $ do
       )
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
-  defaultMainWithIngredients [Reporter.ingredient] $
+  defaultMain $
     testGroup "Flora Tests" $
       OddJobSpec.spec : spec
 

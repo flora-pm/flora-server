@@ -26,8 +26,10 @@ common common-extensions
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
+    GADTs
     LambdaCase
     NoStarIsType
+    NumericUnderscores
     OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
@@ -87,7 +89,6 @@ library
     Flora.Import.Categories
     Flora.Import.Package
     Flora.Import.Package.Bulk.Archive
-    Flora.Import.Package.Bulk.Directory
     Flora.Import.Package.Bulk.Stream
     Flora.Import.Package.Types
     Flora.Import.Types
@@ -192,7 +193,6 @@ library
     , pg-entity
     , pg-transact
     , pg-transact-effectful
-    , poolboy
     , postgresql-simple
     , pretty
     , prometheus-client
@@ -610,7 +610,6 @@ test-suite flora-test
     , prometheus-effectful
     , require-callstack
     , resource-pool
-    , say
     , sel
     , servant
     , servant-client
@@ -618,9 +617,7 @@ test-suite flora-test
     , tar
     , tasty
     , tasty-hunit
-    , tasty-test-reporter
     , text
-    , text-display
     , time
     , tracing-effectful
     , uuid

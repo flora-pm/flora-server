@@ -79,7 +79,8 @@ import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Concurrent.Async qualified as Concurrent
-import Effectful.Exception
+import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
@@ -212,7 +213,7 @@ versionList =
     , Version.mkVersion [7, 10, 3]
     ]
 
-loadContent :: Log :> es => FilePath -> BS.ByteString -> FloraM es GenericPackageDescription
+loadContent :: (Error ImportError :> es, Log :> es) => FilePath -> BS.ByteString -> FloraM es GenericPackageDescription
 loadContent = parseString parseGenericPackageDescription
 
 loadJSONContent
@@ -279,7 +280,7 @@ getNameAndVersionFromPath path =
     _ -> Left ("", "")
 
 parseString
-  :: Log :> es
+  :: (Error ImportError :> es, Log :> es)
   => (BS.ByteString -> ParseResult a)
   -- ^ File contents to final value parser
   -> String
@@ -292,7 +293,7 @@ parseString parser name bs = do
     Right x -> pure x
     Left err -> do
       Log.logAttention_ (display $ show err)
-      throwIO $ CabalFileCouldNotBeParsed name
+      Error.throwError $ CabalFileCouldNotBeParsed name
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
 --  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
@@ -392,7 +393,8 @@ persistHashes (namespace, packageName, version, target) = do
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
-  :: ( IOE :> es
+  :: ( Error ImportError :> es
+     , IOE :> es
      , Log :> es
      , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
@@ -411,8 +413,13 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
   let packageVersion = force packageDesc.package.pkgVersion
   case chooseNamespace packageName indexPackages of
     Nothing -> do
-      Log.logAttention "Could not select namespace" $ object ["package_name" .= display packageName]
-      undefined
+      Log.logAttention "Could not select namespace" $
+        object
+          [ "package_name" .= display packageName
+          , "index" .= repositoryName
+          , "index_packages" .= indexPackages
+          ]
+      Error.throwError $ CouldNotSelectNamespace repositoryName packageName
     Just namespace -> do
       let packageId = deterministicPackageId namespace packageName
       let releaseId = deterministicReleaseId packageId packageVersion

@@ -1,8 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Flora.Import.Package.Bulk.Archive
   ( importFromArchive
+  , buildPackageListFromArchive
   ) where
 
 import Codec.Archive.Tar (Entries)
@@ -27,6 +29,7 @@ import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
+import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
@@ -42,9 +45,9 @@ import System.FilePath
 
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Stream
-import Flora.Import.Types (ImportFileType (..))
-import Flora.Model.Package hiding (PackageName)
-import Flora.Model.Package qualified as Flora
+import Flora.Import.Types (ImportError, ImportFileType (..))
+import Flora.Model.Package.Types (Namespace)
+import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Monad
@@ -52,6 +55,7 @@ import Flora.Monad
 importFromArchive
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
@@ -64,17 +68,21 @@ importFromArchive
   -> Vector Text
   -> FilePath
   -> FloraM es ()
-importFromArchive repositoryName indexDependencies index = do
-  entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
+importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
+  let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repositoryName <> "/01-index.tar.gz"
+  entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile indexArchivePath)
   indexPackages <- do
     let Right localPackages = buildPackageListFromArchive entries
+    when (null localPackages) $ error $ "Index " <> Text.unpack repositoryName <> " has no entries!"
     dependencyPackages <- forM indexDependencies $ \dep -> do
-      indexEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile index)
-      let Right indexPackages = buildPackageListFromArchive indexEntries
+      let depArchivePath = indexArchiveBasePath <> "/" <> Text.unpack dep <> "/01-index.tar.gz"
+      indexDependencyEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile depArchivePath)
+      let Right indexPackages = buildPackageListFromArchive indexDependencyEntries
+      when (null indexPackages) $ error $ "Index dependency " <> Text.unpack dep <> " has no entries!"
       pure (dep, indexPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
-  Log.logInfo "packages" $
+  Log.logInfo "importing packages" $
     object
       [ "repository" .= repositoryName
       , "packages" .= indexPackages
@@ -118,14 +126,15 @@ importFromArchive repositoryName indexDependencies index = do
 --     loadJSONContent path content repository
 --     >>= persistHashes
 
+{-# HLINT ignore "Functor law" #-}
 buildPackageListFromArchive :: Entries e -> Either e (Set Flora.PackageName)
 buildPackageListFromArchive entries =
   case Tar.build entries of
     Left e -> Left e
     Right tarIndex ->
       Tar.toList tarIndex
+        & filter (\(filename, _) -> ".cabal" `isSuffixOf` filename)
         & fmap (takeDirectory . takeDirectory . fst)
-        & filter (/= ".")
         & fmap (Flora.PackageName . Text.pack)
         & Set.fromList
         & Right

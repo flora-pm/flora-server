@@ -1,5 +1,8 @@
 module Flora.ImportSpec where
 
+import Codec.Archive.Tar qualified as Tar
+import Codec.Compression.GZip qualified as GZip
+import Data.ByteString.Lazy qualified as BL
 import Data.Foldable (traverse_)
 import Data.Maybe (catMaybes)
 import Data.Set qualified as Set
@@ -10,8 +13,7 @@ import Optics.Core
 import RequireCallStack
 
 import Flora.Import.Package (chooseNamespace)
-import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Package.Bulk.Directory (buildPackageListFromDirectory)
+import Flora.Import.Package.Bulk.Archive
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -24,14 +26,14 @@ spec :: RequireCallStack => TestEff TestTree
 spec =
   testThese
     "Import tests"
-    [ testThis "Import index" testImportIndex
-    , testThis "Namespace chooser" testNamespaceChooser
+    [ testThis "Namespace chooser" testNamespaceChooser
+    , testThis "Import index" testImportIndex
+    , testThis "Package list from archive" testPackageListFromArchive
     , testThis "MLabs dependencies in Cardano are correctly inserted" testNthLevelDependencies
-    , testThis "Get a list of package names from a directory" testGetListOfPackageNamesFromDirectory
     ]
 
 testIndex :: FilePath
-testIndex = "./test/fixtures/tarballs/test-index.tar.gz"
+testIndex = "test/fixtures/test-namespace/test-index.tar.gz"
 
 defaultRepo :: Text
 defaultRepo = "test-namespace"
@@ -50,9 +52,10 @@ testImportIndex = withStdOutLogger $
       Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
       Just _ -> pure ()
     importFromArchive
-      defaultRepo
+      "test-namespace"
       Vector.empty
-      testIndex
+      "test/fixtures"
+
     -- check the packages have been imported
     tars <- traverse (Query.getPackageByNamespaceAndName (Namespace defaultRepo) . PackageName) ["tar-a", "tar-b"]
     releases <- fmap mconcat . traverse (\x -> Query.getReleases (x ^. #packageId)) $ catMaybes tars
@@ -66,10 +69,19 @@ testNamespaceChooser = do
     (chooseNamespace (PackageName "tar-a") (Vector.singleton (defaultRepo, Set.fromList [PackageName "tar-a", PackageName "tar-b"])))
     (Just (Namespace defaultRepo))
 
+testPackageListFromArchive :: RequireCallStack => TestEff ()
+testPackageListFromArchive = do
+  entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile "test/fixtures/Cabal/mlabs/01-index.tar.gz")
+  packages <- assertRight $ buildPackageListFromArchive entries
+
+  assertEqual
+    (Set.fromList [PackageName "plutarch", PackageName "plutarch-ledger-api", PackageName "plutarch-orphanage"])
+    packages
+
 testNthLevelDependencies :: RequireCallStack => TestEff ()
 testNthLevelDependencies = do
-  plutarch <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch")
-  latestRelease <- assertJust =<< Query.getLatestPackageRelease plutarch.packageId
+  plutarch <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch")
+  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease plutarch.packageId
   dependencies <- Query.getRequirements plutarch.name latestRelease.releaseId
   assertEqual
     ( Vector.fromList
@@ -82,10 +94,3 @@ testNthLevelDependencies = do
         ]
     )
     dependencies
-
-testGetListOfPackageNamesFromDirectory :: RequireCallStack => TestEff ()
-testGetListOfPackageNamesFromDirectory = do
-  result <- buildPackageListFromDirectory "test/fixtures/Cabal/mlabs"
-  assertEqual
-    (Set.fromList [PackageName "plutarch", PackageName "plutarch-ledger-api", PackageName "plutarch-orphanage"])
-    result

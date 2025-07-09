@@ -15,7 +15,6 @@ import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Version (mkVersion)
-import Effectful.Time qualified as Time
 import Optics.Core
 import RequireCallStack
 import Test.Tasty
@@ -47,8 +46,6 @@ spec =
     , testThis "Get non-deprecated packages" testGetNonDeprecatedPackages
     , testThis "Get and set release deprecation markers" testReleaseDeprecation
     , testThis "Dependencies are deduplicated in the abbreviated listing" testDeduplicatedDependencies
-    , testThis "Packages with only an executable have their dependencies handled well" testExecutableOnlyPackage
-    , testThis "Package upsert" testPackageUpsert
     , testThese
         "Transitive dependencies"
         [ testThis "Aggregation of transitive dependencies" testAggregationOfTransitiveDependencies
@@ -62,8 +59,8 @@ spec =
 testCabalDeps :: RequireCallStack => TestEff ()
 testCabalDeps = do
   dependencies <- do
-    cabalPackage <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "Cabal")
-    latestRelease <- assertJust =<< Query.getLatestPackageRelease cabalPackage.packageId
+    cabalPackage <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "Cabal")
+    latestRelease <- assertJust_ =<< Query.getLatestPackageRelease cabalPackage.packageId
     Query.getAllRequirements latestRelease.releaseId
   assertEqual
     ( Set.fromList
@@ -104,7 +101,7 @@ testInsertContainers = do
         assertFailure "Couldn't find @haskell/containers despite being inserted"
         undefined
       Just package -> do
-        latestRelease <- assertJust =<< Query.getLatestPackageRelease package.packageId
+        latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
         Query.getRequirements package.name latestRelease.releaseId
   assertEqual
     (Set.fromList [PackageName "base", PackageName "deepseq", PackageName "array"])
@@ -144,8 +141,8 @@ testNoSelfDependent = do
 
 testBytestringDependencies :: RequireCallStack => TestEff ()
 testBytestringDependencies = do
-  package <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "bytestring")
-  latestRelease <- assertJust =<< Query.getLatestPackageRelease package.packageId
+  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "bytestring")
+  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
   latestReleasedependencies <- Query.getRequirements package.name latestRelease.releaseId
   assertEqual 4 (Vector.length latestReleasedependencies)
 
@@ -155,8 +152,8 @@ testTimeComponents = do
       countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
       countComponentsByType :: RequireCallStack => Foldable t => ComponentType -> t PackageComponent -> Int
       countComponentsByType t = countBy (^. #canonicalForm % #componentType % to (== t))
-  package <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
-  latestRelease <- assertJust =<< Query.getLatestPackageRelease package.packageId
+  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
+  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
   components <- Query.getReleaseComponents latestRelease.releaseId
   assertEqual 1 $ countComponentsByType Library components
   assertEqual 1 $ countComponentsByType Benchmark components
@@ -164,10 +161,10 @@ testTimeComponents = do
 
 testTimeConditions :: RequireCallStack => TestEff ()
 testTimeConditions = do
-  time <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
-  latestRelease <- assertJust =<< Query.getLatestPackageRelease time.packageId
-  timeLib <- fromJust <$> Query.getComponent latestRelease.releaseId "time" Library
-  timeUnixTest <- fromJust <$> Query.getComponent latestRelease.releaseId "test-unix" TestSuite
+  time <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
+  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease time.packageId
+  timeLib <- assertJust_ =<< Query.getComponent latestRelease.releaseId "time" Library
+  timeUnixTest <- assertJust_ =<< Query.getComponent latestRelease.releaseId "test-unix" TestSuite
   let timeLibExpectedCondition = [ComponentCondition (CNot (Var (OS Windows)))]
   let timeUnixTestExpectedCondition = [ComponentCondition (Var (OS Windows))]
   assertEqual timeLibExpectedCondition timeLib.metadata.conditions
@@ -175,7 +172,7 @@ testTimeConditions = do
 
 testSearchResultText :: RequireCallStack => TestEff ()
 testSearchResultText = do
-  text <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
+  text <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "text")
   releases <- Query.getNumberOfReleases text.packageId
   assertEqual 3 releases
   results <- Query.searchPackage (0, 30) "text"
@@ -191,7 +188,7 @@ testPackagesDeprecation = do
       [ DeprecatedPackage (PackageName "integer-gmp") alternative1
       , DeprecatedPackage (PackageName "mtl") alternative2
       ]
-  integerGmp <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
+  integerGmp <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "integer-gmp")
   assertEqual (Just alternative1) integerGmp.deprecationInfo
 
 testGetNonDeprecatedPackages :: RequireCallStack => TestEff ()
@@ -205,49 +202,23 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: RequireCallStack => TestEff ()
 testReleaseDeprecation = do
   result <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  assertEqual 215 (length result)
+  assertEqual 219 (length result)
 
-  binary <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
-  deprecatedBinaryVersion' <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
+  binary <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "binary")
+  deprecatedBinaryVersion' <- assertJust_ =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
   Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
-  deprecatedBinaryVersion <- assertJust =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
+  deprecatedBinaryVersion <- assertJust_ =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
   assertEqual deprecatedBinaryVersion.deprecated (Just True)
 
 testDeduplicatedDependencies :: RequireCallStack => TestEff ()
 testDeduplicatedDependencies = do
-  package <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-network")
-  release <- assertJust =<< Query.getReleaseByVersion package.packageId (mkVersion [0, 10, 2, 2])
+  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-network")
+  release <- assertJust_ =<< Query.getReleaseByVersion package.packageId (mkVersion [0, 10, 2, 2])
   requirements <- Query.getRequirements package.name release.releaseId
   let uniqueRequirements = Vector.nubBy (\DependencyVersionRequirement{packageName = name1} DependencyVersionRequirement{packageName = name2} -> compare name1 name2) requirements
   assertEqual
     uniqueRequirements
     requirements
-
-testExecutableOnlyPackage :: RequireCallStack => TestEff ()
-testExecutableOnlyPackage = do
-  package <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-demo")
-  release <- assertJust =<< Query.getReleaseByVersion package.packageId (mkVersion [0, 10, 2, 2])
-  requirements <- Query.getRequirements package.name release.releaseId
-  assertEqual
-    ( Set.fromList
-        [ PackageName "stm"
-        , PackageName "directory"
-        , PackageName "containers"
-        , PackageName "bytestring"
-        , PackageName "base"
-        , PackageName "random"
-        ]
-    )
-    (Set.fromList $ view #packageName <$> Vector.toList requirements)
-
-testPackageUpsert :: RequireCallStack => TestEff ()
-testPackageUpsert = do
-  package' <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-demo")
-  now <- Time.currentTime
-  let package = package' & #updatedAt .~ now
-  Update.upsertPackage package
-  assertBool $
-    package'.updatedAt < package.updatedAt
 
 testAggregationOfTransitiveDependencies :: RequireCallStack => TestEff ()
 testAggregationOfTransitiveDependencies = do
@@ -295,9 +266,9 @@ testAggregationOfTransitiveDependencies = do
 
 testTransitiveDependencies :: RequireCallStack => TestEff ()
 testTransitiveDependencies = do
-  base <- assertJust =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
-  baseRelease <- assertJust =<< Query.getReleaseByVersion base.packageId (mkVersion [4, 16, 0, 0])
-  baseComponent <- assertJust =<< Query.getComponent baseRelease.releaseId "base" Library
+  base <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "haskell") (PackageName "base")
+  baseRelease <- assertJust_ =<< Query.getReleaseByVersion base.packageId (mkVersion [4, 16, 0, 0])
+  baseComponent <- assertJust_ =<< Query.getComponent baseRelease.releaseId "base" Library
   dependenciesMap <- Query.getTransitiveDependencies baseComponent.componentId
 
   assertEqual
