@@ -271,7 +271,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
                     , "exception" .= prettyCallStack callstack
                     ]
                 pure . Left $ err
-          )
+            )
           & Logging.runLog floraEnv.environment logger
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
