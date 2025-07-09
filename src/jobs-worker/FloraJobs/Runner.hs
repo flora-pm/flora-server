@@ -283,13 +283,8 @@ refreshIndex
   => Text
   -> FloraM es ()
 refreshIndex indexName = do
-  let repoPath =
-        if indexName == "hackage"
-          then "hackage.haskell.org"
-          else Text.unpack indexName
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
   packagesPath <- getCabalPackagesDirectory
-  let path = packagesPath </> repoPath </> "01-index.tar.gz"
   mPackageIndex <- Query.getPackageIndexByName indexName
   case mPackageIndex of
     Nothing -> do
@@ -298,7 +293,7 @@ refreshIndex indexName = do
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
     Just packageIndex -> do
       indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
-      Import.importFromArchive indexName indexDependencies path
+      Import.importFromArchive indexName indexDependencies packagesPath
       pool <- getPool
       void $ liftIO $ scheduleRefreshIndex pool indexName
 

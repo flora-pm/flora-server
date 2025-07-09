@@ -271,7 +271,11 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
           & runEff
   either Except.throwError pure result
 
-genAuthServerContext :: Logger -> FloraEnv -> Context FloraAuthContext
+genAuthServerContext
+  :: RequireCallStack
+  => Logger
+  -> FloraEnv
+  -> Context FloraAuthContext
 genAuthServerContext logger floraEnv =
   optionalAuthHandler logger floraEnv
     :. strictAuthHandler logger floraEnv
@@ -279,11 +283,11 @@ genAuthServerContext logger floraEnv =
     :. errorFormatters floraEnv
     :. EmptyContext
 
-errorFormatters :: FloraEnv -> ErrorFormatters
+errorFormatters :: RequireCallStack => FloraEnv -> ErrorFormatters
 errorFormatters floraEnv =
   defaultErrorFormatters{notFoundErrorFormatter = notFoundPage floraEnv}
 
-notFoundPage :: FloraEnv -> NotFoundErrorFormatter
+notFoundPage :: RequireCallStack => FloraEnv -> NotFoundErrorFormatter
 notFoundPage floraEnv _req =
   let result =
         runPureEff $
