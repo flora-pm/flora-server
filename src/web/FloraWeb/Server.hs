@@ -6,6 +6,7 @@ import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (forM_, void, when)
 import Control.Monad.Except qualified as Except
+import Data.Aeson
 import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
@@ -55,6 +56,7 @@ import Servant
   , Handler
   , NotFoundErrorFormatter
   , Proxy (Proxy)
+  , ServerError (..)
   , defaultErrorFormatters
   , err404
   , notFoundErrorFormatter
@@ -259,12 +261,18 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
                 Just (BlobStoreFS fp) -> runBlobStoreFS fp
                 _ -> runBlobStorePure
             )
-          & Logging.runLog floraEnv.environment logger
           & runErrorWith
             ( \callstack err -> do
-                liftIO $ putStrLn $ prettyCallStack callstack
-                pure $ Left err
-            )
+                Log.logInfo "Server error" $
+                  object
+                    [ "error_headers" .= map show (errHeaders err)
+                    , "error_http_code" .= errHTTPCode err
+                    , "error_reason_phrase" .= errReasonPhrase err
+                    , "exception" .= prettyCallStack callstack
+                    ]
+                pure . Left $ err
+          )
+          & Logging.runLog floraEnv.environment logger
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
           & runReader floraEnv
