@@ -67,3 +67,10 @@ To setup a local installation, see [CONTRIBUTING.md#project-setup](https://githu
 ## 🫶 Special Collaborations
 
 We would like to thank our dear friends at Guérilla.Studio ([www](https://guerilla.studio/), [GitHub](https://github.com/GuerillaStudio)) for help with accessibility and CSS integration.
+
+## Civil Clause
+
+(*See [Civil Clause](https://en.wikipedia.org/wiki/Civil_clause) on Wikipedia*)
+
+The Flora project is committed to peace and justice, and therefore cannot accept donations or partnerships for the benefit of warfare or surveillance systems.
+This includes civilian police forces.
