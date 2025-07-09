@@ -53,5 +53,5 @@ aboutHandler (Headers session _) = do
           .~ True
   render templateEnv Home.about
 
-serveNotFound :: SessionWithCookies (Maybe User) -> FloraEff (Html ())
+serveNotFound :: RequireCallStack => SessionWithCookies (Maybe User) -> FloraEff (Html ())
 serveNotFound (Headers session _) = web404 session
