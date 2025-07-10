@@ -12,6 +12,7 @@ import Flora.Model.PackageGroup.Types
 import FloraWeb.Components.Button
 import FloraWeb.Components.Icons qualified as Icon
 import FloraWeb.Components.Utils
+import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates
 
 linkToGroups :: FloraHTML
@@ -30,6 +31,19 @@ groupListItem PackageGroup{packageGroupId, groupName} =
         span_ [class_ ""] (toHtml groupName)
     td_ [class_ "group-table-actions"] $ do
       form_ [action_ ("/admin/groups/delete/" <> toUrlPiece packageGroupId), method_ "POST"]
+        $ button_
+          [class_ "delete-group", ariaLabel_ "Delete"]
+        $ i_ [class_ "fa-solid fa-trash"] mempty
+
+groupPackageListItem :: PackageGroupId -> PackageInfo -> FloraHTML
+groupPackageListItem packageGroupId packageInfo = do
+  let formattedPackageName = display packageInfo.namespace <> "/" <> display packageInfo.name
+  tr_ [class_ "package-group divider"] $ do
+    td_ [] $
+      a_ [class_ "", href_ (Links.renderLink $ Links.packageLink packageInfo.namespace packageInfo.name)] $ do
+        span_ [class_ ""] (toHtml @Text formattedPackageName)
+    td_ [class_ "group-table-actions"] $ do
+      form_ [action_ ("/admin/groups/" <> toUrlPiece packageGroupId <> "/remove/" <> toUrlPiece packageInfo.packageId), method_ "POST"]
         $ button_
           [class_ "delete-group", ariaLabel_ "Delete"]
         $ i_ [class_ "fa-solid fa-trash"] mempty

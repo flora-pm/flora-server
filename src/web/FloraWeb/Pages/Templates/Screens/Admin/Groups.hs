@@ -7,7 +7,6 @@ import Lucid
 import Flora.Model.Package
 import Flora.Model.PackageGroup.Types
 import FloraWeb.Components.PackageGroup
-import FloraWeb.Components.PackageListItem
 import FloraWeb.Pages.Templates
 
 index :: Vector PackageGroup -> FloraHTML
@@ -34,7 +33,11 @@ showGroup :: PackageGroup -> Vector PackageInfo -> FloraHTML
 showGroup packageGroup packageInfo = do
   packageGroupHeader packageGroup packageInfo
   addPackageToGroupForm packageGroup.packageGroupId
-  ul_ [class_ "package-list"] $ do
-    Vector.forM_
-      packageInfo
-      (\PackageInfo{namespace, name, synopsis, version, license, uploadedAt, revisedAt} -> packageListItem (namespace, name, synopsis, version, license, uploadedAt, revisedAt))
+  table_ [class_ "group-packages-list"] $ do
+    thead_ [] $
+      tr_ [] $ do
+        th_ [] $ span_ [] "Package"
+        th_ [] $ span_ [] "Actions"
+    tbody_ [] $
+      Vector.forM_ packageInfo $ \package ->
+        groupPackageListItem packageGroup.packageGroupId package

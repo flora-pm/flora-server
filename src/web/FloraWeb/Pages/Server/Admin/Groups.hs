@@ -35,6 +35,7 @@ server session =
     , deleteGroup = deleteGroupHandler session
     , showGroup = showGroupHandler session
     , addPackageToGroup = addPackageToGroupHandler session
+    , removePackageFromGroup = removePackageFromGroupHandler session
     }
 
 indexHandler
@@ -63,14 +64,25 @@ deleteGroupHandler
   -> PackageGroupId
   -> FloraEff DeleteGroupResult
 deleteGroupHandler (Headers sessionWithUser _) packageGroupId = do
-  Update.deletePackageGroup packageGroupId
-  templateDefaults <- templateFromSession sessionWithUser defaultTemplateEnv
-  let templateEnv =
-        templateDefaults
-          & (#flashInfo ?~ mkInfo "Package group deleted")
-  groups <- Query.listPackageGroups
-  body <- render templateEnv $ Templates.index groups
-  pure $ GroupDeletionSuccess body
+  mGroup <- Query.getPackageGroupById packageGroupId
+  case mGroup of
+    Nothing -> do
+      templateDefaults <- templateFromSession sessionWithUser defaultTemplateEnv
+      let templateEnv =
+            templateDefaults
+              & (#flashError ?~ mkError "Could not find package group")
+      groups <- Query.listPackageGroups
+      body <- render templateEnv $ Templates.index groups
+      pure $ GroupDeletionFailure body
+    Just group -> do
+      Update.deletePackageGroup group.packageGroupId
+      templateDefaults <- templateFromSession sessionWithUser defaultTemplateEnv
+      let templateEnv =
+            templateDefaults
+              & (#flashInfo ?~ mkInfo "Package group deleted")
+      groups <- Query.listPackageGroups
+      body <- render templateEnv $ Templates.index groups
+      pure $ GroupDeletionSuccess body
 
 addPackageToGroupHandler
   :: RequireCallStack
@@ -106,3 +118,41 @@ showGroupHandler (Headers session _) packageGroupId = do
   templateEnv <- templateFromSession session defaultTemplateEnv
   render templateEnv $
     Templates.showGroup group packages
+
+removePackageFromGroupHandler
+  :: RequireCallStack
+  => SessionWithCookies User
+  -> PackageGroupId
+  -> PackageId
+  -> FloraEff RemovePackageFromGroupResult
+removePackageFromGroupHandler (Headers sessionWithUser _) groupId packageId = do
+  mGroup <- Query.getPackageGroupById groupId
+  case mGroup of
+    Nothing -> do
+      templateDefaults <- templateFromSession sessionWithUser defaultTemplateEnv
+      let templateEnv =
+            templateDefaults
+              & (#flashError ?~ mkError "Could not find package group")
+      groups <- Query.listPackageGroups
+      body <- render templateEnv $ Templates.index groups
+      pure $ PackageRemovalFromGroupFailure body
+    Just group -> do
+      mPackage <- Query.getPackageById packageId
+      case mPackage of
+        Nothing -> do
+          templateDefaults <- templateFromSession sessionWithUser defaultTemplateEnv
+          let templateEnv =
+                templateDefaults
+                  & (#flashError ?~ mkError "Package not found")
+          packages <- Query.listPackageGroupPackages group.packageGroupId
+          body <- render templateEnv $ Templates.showGroup group packages
+          pure $ PackageRemovalFromGroupFailure body
+        Just package -> do
+          Update.removePackageFromPackageGroup package.packageId group.packageGroupId
+          templateDefaults <- templateFromSession sessionWithUser defaultTemplateEnv
+          let templateEnv =
+                templateDefaults
+                  & (#flashInfo ?~ mkInfo "Package removed from group")
+          packages <- Query.listPackageGroupPackages group.packageGroupId
+          body <- render templateEnv $ Templates.showGroup group packages
+          pure $ PackageRemovalFromGroupSuccess body

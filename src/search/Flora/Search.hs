@@ -73,22 +73,7 @@ searchPackageByName
   -> Text
   -> Eff es (Word, Vector PackageInfo)
 searchPackageByName (offset, limit) queryString = do
-  (results, duration) <- timeAction $ Query.searchPackage (offset, limit) queryString
-  Log.logInfo "search-results" $
-    object
-      [ "search_string" .= queryString
-      , "duration" .= duration
-      , "results_count" .= Vector.length results
-      , "results"
-          .= List.map
-            ( \PackageInfo{namespace, name, rating} ->
-                object
-                  [ "package" .= formatPackage namespace name
-                  , "score" .= rating
-                  ]
-            )
-            (Vector.toList results)
-      ]
+  results <- Query.searchPackage (offset, limit) queryString
   count <- Query.countPackagesByName queryString
   pure (count, results)
 
@@ -181,6 +166,7 @@ searchInAdvisories (offset, limit) queryString = do
 dependencyInfoToPackageInfo :: DependencyInfo -> PackageInfo
 dependencyInfoToPackageInfo dep =
   PackageInfo
+    dep.packageId
     dep.namespace
     dep.name
     dep.latestSynopsis
