@@ -218,7 +218,7 @@ WITH dependents AS (
   SELECT row_number() OVER (
     PARTITION BY p.name
       ORDER BY r.version DESC) AS rank
-       , package_id
+       , p.package_id
        , p.namespace
        , p.name
        , r.version
@@ -233,7 +233,7 @@ WITH dependents AS (
     AND dep.name = ?
 )
 
-SELECT d.packageId
+SELECT d.package_id
      , d.namespace
      , d.name
      , ''
@@ -254,7 +254,7 @@ WITH dependents AS (
   SELECT row_number() OVER (
     PARTITION BY p.name
       ORDER BY r.version DESC) AS rank
-       , package_id
+       , p.package_id
        , p.namespace
        , p.name
        , r.version
@@ -465,7 +465,7 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query q (Only c
                     , lv."version"
                     , lv."license"
                     , 1
-                    , lv."uploaded_a"t
+                    , lv."uploaded_at"
                     , lv."revised_at"
       from latest_versions as lv
         inner join package_categories as p1 on p1.package_id = lv.package_id
