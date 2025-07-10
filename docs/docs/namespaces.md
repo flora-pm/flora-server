@@ -5,12 +5,6 @@ slug: namespaces
 
 In Flora, packages are categorised in a namespace to mark their provenance. They start with a `@` and allow us to refer to packages unambiguously or mark their importance.
 
-## @haskell Packages
-
-Some packages are foundational to the ecosystem and maintained by either the Core Libraries Committee or the GHC team, and this makes them unique in terms of the expectations we have from them.
-
-These packages live in the [`@haskell`] namespace to show that they are stable and reliable. Some example of packages are `base`, `text`, `bytestring`, and `mtl`.
-
 ## @hackage Packages
 
 This is where most third-party packages live, which you will find on [Hackage](https://hackage.haskell.org).
@@ -70,11 +64,10 @@ repository mlabs
 ```
 and run `cabal update`.
 
-[`@haskell`]: https://flora.pm/packages/@haskell
 [`@cardano`]: https://flora.pm/packages/@cardano
 [`@hackage`]: https://flora.pm/packages/@hackage
 [`@horizon`]: https://flora.pm/packages/@horizon
 [`@mlabs`]: https://flora.pm/packages/@mlabs
 [`@hackage/servant-server`]: https://flora.pm/packages/@hackage/servant-server
-[`@haskell/text`]: https://flora.pm/packages/@haskell/text
+[`@hackage/text`]: https://flora.pm/packages/@hackage/text
 [CHaP]: https://input-output-hk.github.io/cardano-haskell-packages
