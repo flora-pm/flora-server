@@ -218,7 +218,7 @@ WITH dependents AS (
   SELECT row_number() OVER (
     PARTITION BY p.name
       ORDER BY r.version DESC) AS rank
-       , p.packageId
+       , package_id
        , p.namespace
        , p.name
        , r.version
@@ -254,7 +254,7 @@ WITH dependents AS (
   SELECT row_number() OVER (
     PARTITION BY p.name
       ORDER BY r.version DESC) AS rank
-       , p.packageId
+       , package_id
        , p.namespace
        , p.name
        , r.version
