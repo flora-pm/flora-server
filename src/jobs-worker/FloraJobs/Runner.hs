@@ -7,7 +7,6 @@ import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Pool (Pool)
 import Data.Set (Set)
-import Data.Set qualified as Set
 import Data.Text
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -41,7 +40,7 @@ import System.FilePath
 import Data.Text.HTML qualified as HTML
 import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Import.Package (coreLibraries, persistImportOutput)
+import Flora.Import.Package (persistImportOutput)
 import Flora.Import.Package.Bulk.Archive qualified as Import
 import Flora.Import.Types
 import Flora.Logging qualified as Logging
@@ -226,6 +225,10 @@ fetchPackageDeprecationList = do
       throw e
     Left e -> throw e
 
+assignNamespace :: Vector PackageName -> PackageAlternatives
+assignNamespace =
+  PackageAlternatives . Vector.map (\p -> PackageAlternative (Namespace "hackage") p)
+
 fetchReleaseDeprecationList :: PackageName -> Vector ReleaseId -> JobsRunner ()
 fetchReleaseDeprecationList packageName releases = do
   result <- Hackage.request $ Hackage.getDeprecatedReleasesList packageName
@@ -256,16 +259,6 @@ fetchReleaseDeprecationList packageName releases = do
           ]
       throw e
     Left e -> throw e
-
-assignNamespace :: Vector PackageName -> PackageAlternatives
-assignNamespace =
-  PackageAlternatives
-    . Vector.map
-      ( \p ->
-          if Set.member p coreLibraries
-            then PackageAlternative (Namespace "haskell") p
-            else PackageAlternative (Namespace "hackage") p
-      )
 
 refreshIndex
   :: ( Concurrent :> es

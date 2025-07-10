@@ -19,7 +19,6 @@ import Optics.Core
 import RequireCallStack
 import Test.Tasty
 
-import Flora.Import.Package
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Component.Types
 import Flora.Model.Package
@@ -38,7 +37,6 @@ spec =
     "package tests"
     [ testThis "Check Cabal dependencies" testCabalDeps
     , testThis "Insert containers and its dependencies" testInsertContainers
-    , testThis "The \"haskell\" namespace has the correct number of packages" testCorrectNumberInHaskellNamespace
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns expected results by namespace/package name" testSearchResultText
     , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
@@ -126,11 +124,6 @@ testThatBaseisInPreludeCategory :: RequireCallStack => TestEff ()
 testThatBaseisInPreludeCategory = do
   result <- Query.getPackagesFromCategorySlug "prelude"
   assertBool $ Set.member (PackageName "base") (Set.fromList $ Vector.toList $ fmap (view #name) result)
-
-testCorrectNumberInHaskellNamespace :: RequireCallStack => TestEff ()
-testCorrectNumberInHaskellNamespace = do
-  results <- Query.getPackagesByNamespace (Namespace "haskell")
-  assertEqual_ (Set.size coreLibraries) (Vector.length results)
 
 testNoSelfDependent :: RequireCallStack => TestEff ()
 testNoSelfDependent = do
