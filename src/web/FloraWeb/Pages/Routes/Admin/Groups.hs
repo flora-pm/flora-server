@@ -40,15 +40,12 @@ type PostAddGroup =
          CreateGroupResult
 
 type DeleteGroupResponses =
-  '[ WithHeaders
-       '[Header "Location" Text]
-       Text
-       (RespondEmpty 301 "Group Deleted")
+  '[ Respond 200 "Group Deleted" (Html ())
    , Respond 409 "Conflict" (Html ())
    ]
 
 data DeleteGroupResult
-  = GroupDeletionSuccess Text
+  = GroupDeletionSuccess (Html ())
   | GroupDeletionFailure (Html ())
   deriving stock (Generic)
   deriving
@@ -61,7 +58,7 @@ type DeleteGroup =
   "delete"
     :> Capture "group_id" PackageGroupId
     :> MultiVerb
-         'DELETE
+         'POST
          '[HTML]
          DeleteGroupResponses
          DeleteGroupResult

@@ -62,7 +62,15 @@ deleteGroupHandler
   :: SessionWithCookies User
   -> PackageGroupId
   -> FloraEff DeleteGroupResult
-deleteGroupHandler (Headers session _) packageGroupId = undefined
+deleteGroupHandler (Headers sessionWithUser _) packageGroupId = do
+  Update.deletePackageGroup packageGroupId
+  templateDefaults <- templateFromSession sessionWithUser defaultTemplateEnv
+  let templateEnv =
+        templateDefaults
+          & (#flashInfo ?~ mkInfo "Package group deleted")
+  groups <- Query.listPackageGroups
+  body <- render templateEnv $ Templates.index groups
+  pure $ GroupDeletionSuccess body
 
 addPackageToGroupHandler
   :: RequireCallStack

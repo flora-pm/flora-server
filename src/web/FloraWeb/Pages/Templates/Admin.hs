@@ -1,5 +1,6 @@
 module FloraWeb.Pages.Templates.Admin where
 
+import Data.Text (Text)
 import Data.Text.Display
 import Lucid
 
@@ -47,3 +48,8 @@ dataReport adminReport = do
           "Odd jobs ui"
         dd_ [class_ ""] $
           button_ [class_ "on-readmes"] "odd jobs ui"
+
+    a_ [href_ "/admin/groups"] $
+      div_ [class_ "admin-card"] $
+        h2_ $
+          toHtml @Text "Package Groups"

@@ -4,7 +4,6 @@ import Data.Text (Text)
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Htmx.Lucid.Extra
 import Lucid
 import Web.HttpApiData
 
@@ -29,10 +28,11 @@ groupListItem PackageGroup{packageGroupId, groupName} =
     td_ [] $
       a_ [class_ "", href_ ("/admin/groups/" <> toUrlPiece packageGroupId)] $ do
         span_ [class_ ""] (toHtml groupName)
-    td_ [class_ "group-table-actions"]
-      $ button_
-        [class_ "delete-group", hxDelete_ ("/admin/groups/delete/" <> toUrlPiece packageGroupId), ariaLabel_ "Delete"]
-      $ i_ [class_ "fa-solid fa-trash"] mempty
+    td_ [class_ "group-table-actions"] $ do
+      form_ [action_ ("/admin/groups/delete/" <> toUrlPiece packageGroupId), method_ "POST"]
+        $ button_
+          [class_ "delete-group", ariaLabel_ "Delete"]
+        $ i_ [class_ "fa-solid fa-trash"] mempty
 
 packageGroupHeader :: PackageGroup -> Vector PackageInfo -> FloraHTML
 packageGroupHeader packageGroup packages = div_ [class_ "divider"] $ do
