@@ -40,6 +40,7 @@ import Flora.Model.BlobStore.API (BlobStoreAPI)
 import Flora.Model.Package
 import Flora.Model.Package.Guard
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.PackageGroupPackage.Query qualified as Query
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import Flora.Model.Release.Guard
@@ -210,6 +211,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
       Tracing.childSpan "Query.getNumberOfPackageDependents" $
         Query.getNumberOfPackageDependents packageNamespace packageName Nothing
     numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+    groups <- Query.getPackageGroupsForPackage package.packageId
 
     let templateEnv =
           templateEnv'
@@ -252,6 +254,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
           releaseDependencies
           numberOfDependencies
           categories
+          groups
 
 showDependentsHandler
   :: ( DB :> es
