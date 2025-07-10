@@ -25,7 +25,7 @@ testFetchingAllBiscuitHaskellAdvisories = do
         (Namespace "hackage")
         (PackageName "biscuit-haskell")
   advisories <- Query.getAdvisoriesByPackageId package.packageId
-  assertEqual 2 (Vector.length advisories)
+  assertEqual_ 2 (Vector.length advisories)
 
 testFetchingAllBaseAdvisories :: RequireCallStack => TestEff ()
 testFetchingAllBaseAdvisories = do
@@ -35,7 +35,7 @@ testFetchingAllBaseAdvisories = do
         (Namespace "haskell")
         (PackageName "base")
   advisories <- Query.getAdvisoriesByPackageId package.packageId
-  assertEqual 1 (Vector.length advisories)
+  assertEqual_ 1 (Vector.length advisories)
 
 testFetchingAdvisoryPreviewByPackageId :: RequireCallStack => TestEff ()
 testFetchingAdvisoryPreviewByPackageId = do
@@ -45,4 +45,4 @@ testFetchingAdvisoryPreviewByPackageId = do
         (Namespace "haskell")
         (PackageName "base")
   advisories <- Query.getAdvisoryPreviewsByPackageId package.packageId
-  assertEqual 1 (Vector.length advisories)
+  assertEqual_ 1 (Vector.length advisories)

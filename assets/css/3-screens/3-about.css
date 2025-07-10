@@ -84,6 +84,13 @@
 			line-height: 2.25rem;
 			margin-top: 0.25rem;
 		}
+
+		h2 {
+			font-weight: 600;
+			font-size: 1.875rem;
+			line-height: 2.25rem;
+			margin-top: 0.25rem;
+		}
 	}
 }
 

@@ -119,6 +119,7 @@ library
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
+    Flora.Model.PackageGroup.Guards
     Flora.Model.PackageGroup.Query
     Flora.Model.PackageGroup.Types
     Flora.Model.PackageGroup.Update
@@ -319,6 +320,7 @@ library flora-web
     FloraWeb.Components.Icons
     FloraWeb.Components.MainSearchBar
     FloraWeb.Components.Navbar
+    FloraWeb.Components.PackageGroup
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
@@ -334,6 +336,7 @@ library flora-web
     FloraWeb.LiveReload
     FloraWeb.Pages.Routes
     FloraWeb.Pages.Routes.Admin
+    FloraWeb.Pages.Routes.Admin.Groups
     FloraWeb.Pages.Routes.Categories
     FloraWeb.Pages.Routes.Packages
     FloraWeb.Pages.Routes.Search
@@ -341,6 +344,7 @@ library flora-web
     FloraWeb.Pages.Routes.Settings
     FloraWeb.Pages.Server
     FloraWeb.Pages.Server.Admin
+    FloraWeb.Pages.Server.Admin.Groups
     FloraWeb.Pages.Server.Categories
     FloraWeb.Pages.Server.Packages
     FloraWeb.Pages.Server.Search
@@ -353,6 +357,7 @@ library flora-web
     FloraWeb.Pages.Templates.Error
     FloraWeb.Pages.Templates.Haddock
     FloraWeb.Pages.Templates.Packages
+    FloraWeb.Pages.Templates.Screens.Admin.Groups
     FloraWeb.Pages.Templates.Screens.Categories
     FloraWeb.Pages.Templates.Screens.Categories.Index
     FloraWeb.Pages.Templates.Screens.Categories.Show

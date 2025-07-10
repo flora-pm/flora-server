@@ -1,0 +1,69 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+.package-group-list {
+	margin-left: 1.5rem;
+}
+
+.new-group-input {
+	background-color: var(--search-bar-background-color);
+	margin-left: 1rem;
+	border-radius: 0.75rem;
+  border-width: 2px;
+  max-width: 28rem;
+  outline-offset: -2px;
+  overflow: hidden;
+  padding: 0.3rem;
+}
+
+.new-group-input:hover {
+	background-color: var(--search-bar-background-hover-color);
+}
+
+.new-group-input:focus {
+	background-color: var(--search-bar-background-focus-color);
+	outline: 2px solid transparent;
+	outline-offset: 2px;
+}
+
+.new-group-form form button {
+	border-color: rgb(90 141 220);
+	border-width: 2px;
+	border-radius: .4rem;
+	gap: .5rem;
+	margin-left: 0.3rem;
+	margin-right: 0.3rem;
+	padding-left: 0.3rem;
+	padding-right: 0.3rem;
+}
+
+.package-group {
+	margin-bottom: 1rem;
+
+	.delete-group {
+		height: 1.8rem;
+		width: 1.8rem;
+
+		i {
+			height: 100%;
+			width: 100%;
+			color: var(--red-60);
+		}
+	}
+}
+
+.package-group:hover {
+	background-color: (--focused-background);
+}
+
+.group-table-actions {
+	padding-left: 2rem;
+}
+
+.add-package-to-group-form {
+	margin-left: 1rem;
+
+	div {
+		margin-bottom: 1rem;
+	}
+}

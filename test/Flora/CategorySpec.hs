@@ -51,7 +51,7 @@ testNormalisationOfMathematicsCategories = do
           , "Tropical Geometry"
           , "mathematics"
           ]
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Mathematics"))
     (Set.map normaliseCategory mathematicsExceptions)
 
@@ -62,7 +62,7 @@ testNormalisationOfCliAndTuiCategories = do
           [ "CLI"
           , "TUI"
           ]
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "CLI & TUI Development"))
     (Set.map normaliseCategory cliAndTuiExceptions)
 
@@ -77,7 +77,7 @@ testNormalisationOfParserCategories = do
           , "Parsers"
           , "Parsing Text"
           ]
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Parsers"))
     (Set.map normaliseCategory parserExceptions)
 
@@ -93,7 +93,7 @@ testNormalisationOfNetworkCategories = do
           , "NetworkAPIs"
           , "Networking"
           ]
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Network Development"))
     (Set.map normaliseCategory networkExceptions)
 
@@ -113,7 +113,7 @@ testNormalisationOfWebDevelopmentCategories = do
           , "Semantic Web"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Web Development"))
     (Set.map normaliseCategory webDevelopmentExceptions)
 
@@ -125,7 +125,7 @@ testNormalisationOfLensesCategories = do
           , "Lens"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Lenses"))
     (Set.map normaliseCategory lensesExceptions)
 
@@ -138,7 +138,7 @@ testNormalisationOfStreamingCategories = do
           , "Pipes"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Streaming"))
     (Set.map normaliseCategory streamingExceptions)
 
@@ -153,7 +153,7 @@ testNormalisationOfMonadsCategories = do
           , "Mtl"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Monads"))
     (Set.map normaliseCategory monadsExceptions)
 
@@ -168,7 +168,7 @@ testNormalisationOfGUICategories = do
           , "User Interfaces"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "GUI"))
     (Set.map normaliseCategory guiExceptions)
 
@@ -189,7 +189,7 @@ testNormalisationOfFFICategories = do
           , "language"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "FFI"))
     (Set.map normaliseCategory ffiExceptions)
 
@@ -202,7 +202,7 @@ testNormalisationOfTestingCategories = do
           , "Test"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Testing"))
     (Set.map normaliseCategory testingExceptions)
 
@@ -216,7 +216,7 @@ testNormalisationOfAudioCategories = do
           , "Music"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Audio"))
     (Set.map normaliseCategory audioExceptions)
 
@@ -229,7 +229,7 @@ testNormalisationOfCompressionCategories = do
           , "Tar"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Compression"))
     (Set.map normaliseCategory compressionExceptions)
 
@@ -242,7 +242,7 @@ testNormalisationOfCloudComputingCategories = do
           , "AWS"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Cloud Computing"))
     (Set.map normaliseCategory cloudComputingExceptions)
 
@@ -256,7 +256,7 @@ testNormalisationOfCompilersCategories = do
           , "DSL"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Compilers and Interpreters"))
     (Set.map normaliseCategory compilersExceptions)
 
@@ -271,7 +271,7 @@ testNormalisationOfNLPCategories = do
           , "Natural-language-processing"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Natural Language Processing"))
     (Set.map normaliseCategory nlpExceptions)
 
@@ -286,7 +286,7 @@ testNormalisationOfSystemsProgrammingCategories = do
           , "Embedded"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Systems Programming"))
     (Set.map normaliseCategory systemsProgrammingExceptions)
 
@@ -300,7 +300,7 @@ testNormalisationOfDebuggingCategories = do
           , "Metrics"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Debugging"))
     (Set.map normaliseCategory debuggingExceptions)
 
@@ -313,6 +313,6 @@ testNormalisationOfTextProcessingCategories = do
           , "Text"
           ]
 
-  assertEqual
+  assertEqual_
     (Set.singleton (Just "Text Processing"))
     (Set.map normaliseCategory textProcessingExceptions)

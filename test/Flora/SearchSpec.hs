@@ -32,35 +32,35 @@ spec =
 testParsingDependsSearchModifier :: RequireCallStack => TestEff ()
 testParsingDependsSearchModifier = do
   let result = parseSearchQuery "depends:@haskell/base"
-  assertEqual
+  assertEqual_
     (Just $ DependentsOf (Namespace "@haskell") (PackageName "base") Nothing)
     result
 
 testParsingNamespacePackageModifier :: RequireCallStack => TestEff ()
 testParsingNamespacePackageModifier = do
   let result = parseSearchQuery "in:@haskell base"
-  assertEqual
+  assertEqual_
     (Just $ SearchInNamespace (Namespace "@haskell") (PackageName "base"))
     result
 
 testParsingNamespaceModifier :: RequireCallStack => TestEff ()
 testParsingNamespaceModifier = do
   let result = parseSearchQuery "in:@haskell"
-  assertEqual
+  assertEqual_
     (Just $ ListAllPackagesInNamespace (Namespace "@haskell"))
     result
 
 testParsingQueryContainingModifier :: RequireCallStack => TestEff ()
 testParsingQueryContainingModifier = do
   let result = parseSearchQuery "bah blah blah depends:@haskell/base"
-  assertEqual
+  assertEqual_
     (Just (SearchPackages "bah blah blah depends:@haskell/base"))
     result
 
 testParsingExecutableSearch :: RequireCallStack => TestEff ()
 testParsingExecutableSearch = do
   let result = parseSearchQuery "exe:flora-cli"
-  assertEqual
+  assertEqual_
     (Just (SearchExecutable "flora-cli"))
     result
 
@@ -101,8 +101,8 @@ testSearchExecutable = do
       .~ pure (CanonicalComponent "turbulence42" Executable)
 
   (count, results) <- searchExecutable (0, 30) "turbulence"
-  assertEqual 2 count
+  assertEqual_ 2 count
 
-  assertEqual
+  assertEqual_
     (Vector.fromList [ElemRating{element = "turbulence", rating = 1.0}, ElemRating{element = "turbulence42", rating = 0.7692308}])
     (Vector.concatMap id $ fmap (.executables) results)

@@ -29,7 +29,7 @@ type NewSessionResponses =
        Text
        (RespondEmpty 301 "Already logged-in")
    , -- User is not logged-in, dispay the login page
-     Respond 200 "Log-in required" (Html ())
+     Respond 401 "Log-in required" (Html ())
    ]
 
 data NewSessionResult

@@ -8,7 +8,9 @@ import RequireCallStack
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
-import Flora.Model.PackageGroupPackage.Update as Update
+import Flora.Model.PackageGroupPackage.Query qualified as Query
+import Flora.Model.PackageGroupPackage.Update qualified as Update
+import Flora.Model.Release.Update
 import Flora.TestUtils
 
 spec :: RequireCallStack => TestEff TestTree
@@ -35,11 +37,13 @@ testInsertPackageGroup = do
       assertFailure
         "No Package Group Found in `testInsertPackageGroup`"
     Just pg ->
-      assertEqual pg.packageGroupId packageGroup.packageGroupId
+      assertEqual_ pg.packageGroupId packageGroup.packageGroupId
 
 testAddPackageToPackageGroup :: RequireCallStack => TestEff ()
 testAddPackageToPackageGroup = do
-  package <- instantiatePackage randomPackageTemplate
+  package <- instantiatePackage $ randomPackageTemplate & #status .~ pure FullyImportedPackage
+  void $ instantiateRelease $ randomReleaseTemplate & #packageId .~ pure package.packageId
+  refreshLatestVersions
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -51,9 +55,9 @@ testAddPackageToPackageGroup = do
         .~ pure package.packageId
 
   results <-
-    Query.getPackagesByPackageGroupId packageGroup.packageGroupId
+    Query.listPackageGroupPackages packageGroup.packageGroupId
 
-  assertEqual 1 (Vector.length results)
+  assertEqual ("Could not find any package in group " <> show packageGroup.packageGroupId) 1 (Vector.length results)
 
 testRemovePackageFromPackageGroup :: RequireCallStack => TestEff ()
 testRemovePackageFromPackageGroup = do
@@ -70,13 +74,15 @@ testRemovePackageFromPackageGroup = do
 
   Update.removePackageFromPackageGroup package.packageId packageGroup.packageGroupId
 
-  results <- Query.getPackagesByPackageGroupId packageGroup.packageGroupId
+  results <- Query.listPackageGroupPackages packageGroup.packageGroupId
 
-  assertBool (Vector.notElem package results)
+  assertBool (Vector.notElem package.name (fmap (.name) results))
 
 testGetPackagesByPackageGroupId :: RequireCallStack => TestEff ()
 testGetPackagesByPackageGroupId = do
-  package <- instantiatePackage randomPackageTemplate
+  package <- instantiatePackage $ randomPackageTemplate & #status .~ pure FullyImportedPackage
+  void $ instantiateRelease $ randomReleaseTemplate & #packageId .~ pure package.packageId
+  refreshLatestVersions
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -88,9 +94,9 @@ testGetPackagesByPackageGroupId = do
         .~ pure package.packageId
 
   results <-
-    Query.getPackagesByPackageGroupId packageGroup.packageGroupId
+    Query.listPackageGroupPackages packageGroup.packageGroupId
 
-  assertEqual (Vector.length results) 1
+  assertEqual_ (Vector.length results) 1
 
 testGetPackageGroupByPackageGroupName :: RequireCallStack => TestEff ()
 testGetPackageGroupByPackageGroupName = do
@@ -105,4 +111,4 @@ testGetPackageGroupByPackageGroupName = do
       assertFailure
         "No Package Group Name found in `testGetPackageGroupByPackageGroupName"
     Just pg ->
-      assertEqual pg.groupName packageGroup.groupName
+      assertEqual_ pg.groupName packageGroup.groupName

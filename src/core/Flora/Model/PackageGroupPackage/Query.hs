@@ -1,13 +1,41 @@
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE QuasiQuotes #-}
+
 module Flora.Model.PackageGroupPackage.Query
   ( getPackageGroupPackage
+  , listPackageGroupPackages
   ) where
 
+import Data.Vector (Vector)
 import Database.PostgreSQL.Entity (selectById)
+import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple (Only (..))
-import Effectful (Eff, type (:>))
+import Database.PostgreSQL.Simple.SqlQQ
+import Effectful
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
-import Flora.Model.PackageGroupPackage.Types (PackageGroupPackage (..), PackageGroupPackageId (..))
+import Flora.Model.Package.Types
+import Flora.Model.PackageGroup.Types
+import Flora.Model.PackageGroupPackage.Types
 
 getPackageGroupPackage :: DB :> es => PackageGroupPackageId -> Eff es (Maybe PackageGroupPackage)
 getPackageGroupPackage packageGroupPackageId = dbtToEff $ selectById @PackageGroupPackage (Only packageGroupPackageId)
+
+listPackageGroupPackages :: DB :> es => PackageGroupId -> Eff es (Vector PackageInfo)
+listPackageGroupPackages groupId = dbtToEff $ query q (Only groupId)
+  where
+    q =
+      [sql|
+    select lv.namespace
+                  , lv.name
+                  , lv.synopsis
+                  , lv.version
+                  , lv.license
+                  , 1
+                  , lv.uploaded_at
+                  , lv.revised_at
+    from package_group_packages as p1
+    inner join latest_versions as lv
+         on p1.package_group_id = ?
+         and p1.package_id = lv.package_id
+    |]

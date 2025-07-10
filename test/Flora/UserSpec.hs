@@ -19,9 +19,9 @@ spec fixtures =
 fetchUserById :: RequireCallStack => Fixtures -> TestEff ()
 fetchUserById Fixtures{hackageUser} = do
   result <- Query.getUserById (hackageUser ^. #userId)
-  assertEqual (Just hackageUser) result
+  assertEqual_ (Just hackageUser) result
 
 fetchUserByEmail :: RequireCallStack => Fixtures -> TestEff ()
 fetchUserByEmail Fixtures{hackageUser} = do
   result <- Query.getUserByEmail (hackageUser ^. #email)
-  assertEqual (Just hackageUser) result
+  assertEqual_ (Just hackageUser) result

@@ -54,7 +54,7 @@ testImportTarball = provideCallStack $ do
       case toList . Tar.read <$> [content, content'] of
         [Right tarEntries, Right tarEntries'] -> do
           -- check we've not lost or gained any entries
-          assertEqual (length tarEntries) (length tarEntries')
+          assertEqual_ (length tarEntries) (length tarEntries')
           -- Check the output order is sorted
           checkAll Tar.entryPath (sortByPath tarEntries') tarEntries'
           -- Check both paths and content are the same in input and output
@@ -65,7 +65,7 @@ testImportTarball = provideCallStack $ do
           package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") pname
           release <- assertJust_ =<< Query.getReleaseByVersion package.packageId version
           archivedContent <- assertJust_ =<< Query.getReleaseTarballArchive release.releaseId
-          assertEqual content archivedContent
+          assertEqual_ content archivedContent
         [Left _, _] -> assertFailure "Input tar is corrupted"
         [_, Left _] -> assertFailure "Generated corrupted tarball"
         _ -> assertFailure "Something impossible happened!"
@@ -75,7 +75,7 @@ testImportTarball = provideCallStack $ do
     -- function on each element
     checkAll f xs ys =
       provideCallStack $
-        traverse_ (uncurry assertEqual . (f *** f)) $
+        traverse_ (uncurry assertEqual_ . (f *** f)) $
           zip xs ys
 
 testBadTarball :: RequireCallStack => TestEff ()
@@ -87,7 +87,7 @@ testBadTarball = do
   case res of
     Right _ -> assertFailure "Imported bad tarball"
     Left (BlobStoreTarError _ _ (TarUnsupportedEntry entry)) ->
-      assertEqual entry (Tar.SymbolicLink $ fromJust $ Tar.toLinkTarget "src/Lib.hs")
+      assertEqual_ entry (Tar.SymbolicLink $ fromJust $ Tar.toLinkTarget "src/Lib.hs")
     Left err -> assertFailure $ "Unexpected error " <> show err
 
 testMalformedTarball :: RequireCallStack => TestEff ()
@@ -98,5 +98,5 @@ testMalformedTarball = do
   res <- Update.insertTar pname version content
   case res of
     Right _ -> assertFailure "Imported malformed tarball"
-    Left (BlobStoreTarError _ _ (TarUnexpectedLayout path)) -> assertEqual path "b-0.1.0.0"
+    Left (BlobStoreTarError _ _ (TarUnexpectedLayout path)) -> assertEqual_ path "b-0.1.0.0"
     Left _ -> assertFailure "Unexpected error"
