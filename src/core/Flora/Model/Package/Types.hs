@@ -249,7 +249,8 @@ data Dependent = Dependent
 -- | A record specifically crafted for
 --  templates usage.
 data PackageInfo = PackageInfo
-  { namespace :: Namespace
+  { packageId :: PackageId
+  , namespace :: Namespace
   , name :: PackageName
   , synopsis :: Text
   , version :: Version

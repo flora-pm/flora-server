@@ -18,7 +18,6 @@ module Flora.Model.Package.Query
   , getPackageCategories
   , getPackageDependents
   , getPackageDependentsByName
-  , getPackageDependentsWithLatestVersion
   , getPackagesByNamespace
   , getPackagesFromCategoryWithLatestVersion
   , getRequirements
@@ -32,11 +31,11 @@ module Flora.Model.Package.Query
   , unsafeGetComponent
   , getNumberOfExecutablesByName
   , getTransitiveDependencies
+  , getPackageById
   ) where
 
 import Data.Aeson
 import Data.Text (Text)
-import Data.Text.Display (display)
 import Data.Tuple.Optics
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -85,6 +84,9 @@ getAllPackages = do
     object
       ["duration" .= duration]
   pure result
+
+getPackageById :: DB :> es => PackageId -> Eff es (Maybe Package)
+getPackageById packageId = dbtToEff $ selectById @Package (Only packageId)
 
 getPackagesByNamespace :: DB :> es => Namespace -> Eff es (Vector Package)
 getPackagesByNamespace namespace = dbtToEff $ selectManyByField @Package [field| namespace |] (Only namespace)
@@ -209,23 +211,6 @@ getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) m
       where
         q = searchPackageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
 
-getPackageDependentsWithLatestVersion
-  :: (DB :> es, Log :> es, Time :> es)
-  => Namespace
-  -> PackageName
-  -> Eff es (Vector PackageInfo)
-getPackageDependentsWithLatestVersion namespace packageName = do
-  (result, duration) <-
-    timeAction $
-      dbtToEff $
-        query (packageDependentsWithLatestVersionQuery <> " LIMIT 6") (namespace, packageName)
-  Log.logInfo "Retrieving package dependents" $
-    object
-      [ "duration" .= duration
-      , "package" .= (display namespace <> "/" <> display packageName)
-      ]
-  pure result
-
 packageDependentsWithLatestVersionQuery :: Query
 packageDependentsWithLatestVersionQuery =
   [sql|
@@ -233,6 +218,7 @@ WITH dependents AS (
   SELECT row_number() OVER (
     PARTITION BY p.name
       ORDER BY r.version DESC) AS rank
+       , p.packageId
        , p.namespace
        , p.name
        , r.version
@@ -247,7 +233,8 @@ WITH dependents AS (
     AND dep.name = ?
 )
 
-SELECT d.namespace
+SELECT d.packageId
+     , d.namespace
      , d.name
      , ''
      , (ARRAY[]::text[])
@@ -267,6 +254,7 @@ WITH dependents AS (
   SELECT row_number() OVER (
     PARTITION BY p.name
       ORDER BY r.version DESC) AS rank
+       , p.packageId
        , p.namespace
        , p.name
        , r.version
@@ -348,7 +336,8 @@ getRequirements (PackageName packageName) releaseId = do
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
-WITH requirements AS (SELECT DISTINCT p1.component_type
+WITH requirements AS (SELECT DISTINCT p0.package_id
+                                    , p1.component_type
                                     , p1.component_name
                                     , p0.namespace
                                     , p0.name
@@ -360,7 +349,8 @@ WITH requirements AS (SELECT DISTINCT p1.component_type
                            INNER JOIN releases AS r1 ON r1.release_id = p1.release_id
                       WHERE r1.release_id = ?)
 
-  SELECT req.component_type
+  SELECT req.package_id
+       , req.component_type
        , req.component_name
        , req.namespace
        , req.name
@@ -378,7 +368,7 @@ WITH requirements AS (SELECT DISTINCT p1.component_type
   WHERE r3.version = (SELECT max(version)
                       FROM releases
                       WHERE package_id = p2.package_id)
-  GROUP BY req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license, r3.uploaded_at, r3.revised_at
+  GROUP BY req.package_id, req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license, r3.uploaded_at, r3.revised_at
   ORDER BY req.component_type
          , req.component_name DESC
 |]
@@ -468,14 +458,15 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query q (Only c
   where
     q =
       [sql|
-      select distinct lv.namespace
-                    , lv.name
-                    , lv.synopsis
-                    , lv.version
-                    , lv.license
+      select distinct lv."package_id"
+                    , lv."namespace"
+                    , lv."name"
+                    , lv."synopsis"
+                    , lv."version"
+                    , lv."license"
                     , 1
-                    , lv.uploaded_at
-                    , lv.revised_at
+                    , lv."uploaded_a"t
+                    , lv."revised_at"
       from latest_versions as lv
         inner join package_categories as p1 on p1.package_id = lv.package_id
         inner join categories as c2 on c2.category_id = p1.category_id
@@ -491,7 +482,8 @@ searchPackage (offset, limit) searchString =
   dbtToEff $
     query
       [sql|
-        SELECT  lv."namespace"
+        SELECT  lv."package_id"
+              , lv."namespace"
               , lv."name"
               , lv."synopsis"
               , lv."version"
@@ -502,7 +494,8 @@ searchPackage (offset, limit) searchString =
         FROM latest_versions as lv
         WHERE ? <% lv.name
         GROUP BY
-            lv."namespace"
+            lv."package_id"
+          , lv."namespace"
           , lv."name"
           , lv."synopsis"
           , lv."version"
@@ -526,7 +519,8 @@ searchPackageByNamespace (offset, limit) namespace searchString =
   dbtToEff $
     query
       [sql|
-        SELECT  lv."namespace"
+        SELECT  lv."package_id"
+              , lv."namespace"
               , lv."name"
               , lv."synopsis"
               , lv."version"
@@ -539,7 +533,8 @@ searchPackageByNamespace (offset, limit) namespace searchString =
         ? <% lv."name"
         AND lv."namespace" = ?
         GROUP BY
-            lv."namespace"
+            lv."package_id"
+          , lv."namespace"
           , lv."name"
           , lv."synopsis"
           , lv."version"
@@ -631,7 +626,8 @@ listAllPackages (offset, limit) =
     let
      in query
           [sql|
-    SELECT  lv."namespace"
+    SELECT  lv."package_id"
+          , lv."namespace"
           , lv."name"
           , lv."synopsis"
           , lv."version"
@@ -641,7 +637,8 @@ listAllPackages (offset, limit) =
           , lv."revised_at"
     FROM latest_versions as lv
     GROUP BY
-        lv."namespace"
+        lv."package_id"
+      , lv."namespace"
       , lv."name"
       , lv."synopsis"
       , lv."version"
@@ -666,7 +663,8 @@ listAllPackagesInNamespace (offset, limit) namespace =
   dbtToEff $
     query
       [sql|
-    SELECT  lv."namespace"
+    SELECT  lv."package_id"
+          , lv."namespace"
           , lv."name"
           , lv."synopsis"
           , lv."version"
@@ -677,7 +675,8 @@ listAllPackagesInNamespace (offset, limit) namespace =
     FROM latest_versions as lv
     WHERE lv."namespace" = ?
     GROUP BY
-        lv."namespace"
+        lv."package_id"
+      , lv."namespace"
       , lv."name"
       , lv."synopsis"
       , lv."version"

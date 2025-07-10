@@ -95,6 +95,31 @@ data AddPackageToGroupResult
 
 instance GSOP.Generic AddPackageToGroupResult
 
+type RemovePackageFromGroup =
+  Capture "group_id" PackageGroupId
+    :> "remove"
+    :> Capture "package_id" PackageId
+    :> MultiVerb
+         'POST
+         '[HTML]
+         RemovePackageFromGroupResponses
+         RemovePackageFromGroupResult
+
+type RemovePackageFromGroupResponses =
+  '[ Respond 200 "Package removed from group" (Html ())
+   , Respond 409 "Conflict" (Html ())
+   ]
+
+data RemovePackageFromGroupResult
+  = PackageRemovalFromGroupSuccess (Html ())
+  | PackageRemovalFromGroupFailure (Html ())
+  deriving stock (Generic)
+  deriving
+    (AsUnion RemovePackageFromGroupResponses)
+    via GenericAsUnion RemovePackageFromGroupResponses RemovePackageFromGroupResult
+
+instance GSOP.Generic RemovePackageFromGroupResult
+
 type Routes = NamedRoutes Routes'
 
 data Routes' mode = Routes'
@@ -103,6 +128,7 @@ data Routes' mode = Routes'
   , deleteGroup :: mode :- DeleteGroup
   , showGroup :: mode :- GetPackageGroup
   , addPackageToGroup :: mode :- PostAddPackageToGroup
+  , removePackageFromGroup :: mode :- RemovePackageFromGroup
   }
   deriving stock (Generic)
 

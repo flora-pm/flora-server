@@ -40,16 +40,17 @@ listPackageGroupPackages groupId = dbtToEff $ query q (Only groupId)
   where
     q =
       [sql|
-    select lv.namespace
-                  , lv.name
-                  , lv.synopsis
-                  , lv.version
-                  , lv.license
-                  , 1
-                  , lv.uploaded_at
-                  , lv.revised_at
-    from package_group_packages as p1
-    inner join latest_versions as lv
-         on p1.package_group_id = ?
-         and p1.package_id = lv.package_id
+SELECT lv.package_id
+     , lv.namespace
+     , lv.name
+     , lv.synopsis
+     , lv.version
+     , lv.license
+     , 1
+     , lv.uploaded_at
+     , lv.revised_at
+FROM package_group_packages AS p1
+     INNER JOIN latest_versions AS lv
+         ON p1.package_group_id = ?
+        AND p1.package_id = lv.package_id
     |]
