@@ -87,7 +87,7 @@ instance KnownNat i => ToSchema (PackageDTO i) where
 packageDTOExample :: PackageDTO 0
 packageDTOExample =
   PackageDTO
-    { namespace = Namespace "haskell"
+    { namespace = Namespace "hackage"
     , packageName = PackageName "text"
     , version = mkVersion [2, 0]
     , license = SPDX.License (SPDX.ELicense (SPDX.ELicenseId SPDX.BSD_2_Clause) Nothing)

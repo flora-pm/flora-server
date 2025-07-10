@@ -32,7 +32,7 @@ testFetchingAllBaseAdvisories = do
   package <-
     assertJust_
       =<< Query.getPackageByNamespaceAndName
-        (Namespace "haskell")
+        (Namespace "hackage")
         (PackageName "base")
   advisories <- Query.getAdvisoriesByPackageId package.packageId
   assertEqual_ 1 (Vector.length advisories)
@@ -42,7 +42,7 @@ testFetchingAdvisoryPreviewByPackageId = do
   package <-
     assertJust_
       =<< Query.getPackageByNamespaceAndName
-        (Namespace "haskell")
+        (Namespace "hackage")
         (PackageName "base")
   advisories <- Query.getAdvisoryPreviewsByPackageId package.packageId
   assertEqual_ 1 (Vector.length advisories)

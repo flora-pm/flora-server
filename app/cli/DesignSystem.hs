@@ -122,7 +122,7 @@ categoryExample =
   Category.mkCategory (CategoryId UUID.nil) "Prelude" Nothing "Libraries that provide default imports"
 
 namespaceExample :: Namespace
-namespaceExample = Namespace "haskell"
+namespaceExample = Namespace "hackage"
 
 packageNameExample :: PackageName
 packageNameExample = PackageName "base"

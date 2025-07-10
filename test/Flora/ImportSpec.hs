@@ -82,15 +82,9 @@ testNthLevelDependencies :: RequireCallStack => TestEff ()
 testNthLevelDependencies = do
   plutarch <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch")
   latestRelease <- assertJust_ =<< Query.getLatestPackageRelease plutarch.packageId
-  dependencies <- Query.getRequirements plutarch.name latestRelease.releaseId
+  dependencies <- Set.fromList . Vector.toList <$> Query.getRequirements plutarch.name latestRelease.releaseId
   assertEqual_
-    ( Vector.fromList
-        [ DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "base", version = ">=4.9 && <5"}
-        , DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "bytestring", version = ">=0"}
-        , DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "containers", version = ">=0"}
-        , DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "mtl", version = ">=0"}
-        , DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "random", version = ">=0"}
-        , DependencyVersionRequirement{namespace = Namespace "haskell", packageName = PackageName "text", version = ">=0"}
-        ]
+    ( Set.fromList
+        [DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "aeson", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "base", version = ">=4.9 && <5"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "bytestring", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "constraints", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "containers", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "cryptonite", version = ">=0"}]
     )
     dependencies

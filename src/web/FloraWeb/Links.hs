@@ -1,6 +1,7 @@
 module FloraWeb.Links where
 
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Distribution.Version (Version)
 import Servant.API
@@ -17,6 +18,10 @@ import FloraWeb.Pages.Routes.Search qualified as Search
 
 links :: Pages.Routes' (Links.AsLink Link)
 links = Links.allFieldLinks
+
+renderLink :: Link -> Text
+renderLink l =
+  Text.replace "%40" "@" $ toUrlPiece l
 
 namespaceLink :: Namespace -> Positive Word -> Link
 namespaceLink namespace pageNumber =
