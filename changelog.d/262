@@ -1,0 +1,6 @@
+synopsis: Display package group as a tag in the package page title
+prs: #921
+description: {
+  Remove the hard-coded core libraries and advertise package groups
+  on the package page title instead
+}
