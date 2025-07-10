@@ -336,7 +336,8 @@ getRequirements (PackageName packageName) releaseId = do
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
-WITH requirements AS (SELECT DISTINCT p1.component_type
+WITH requirements AS (SELECT DISTINCT p0.package_id
+                                    , p1.component_type
                                     , p1.component_name
                                     , p0.namespace
                                     , p0.name
@@ -348,7 +349,8 @@ WITH requirements AS (SELECT DISTINCT p1.component_type
                            INNER JOIN releases AS r1 ON r1.release_id = p1.release_id
                       WHERE r1.release_id = ?)
 
-  SELECT req.component_type
+  SELECT req.package_id
+       , req.component_type
        , req.component_name
        , req.namespace
        , req.name
@@ -366,7 +368,7 @@ WITH requirements AS (SELECT DISTINCT p1.component_type
   WHERE r3.version = (SELECT max(version)
                       FROM releases
                       WHERE package_id = p2.package_id)
-  GROUP BY req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license, r3.uploaded_at, r3.revised_at
+  GROUP BY req.package_id, req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license, r3.uploaded_at, r3.revised_at
   ORDER BY req.component_type
          , req.component_name DESC
 |]
