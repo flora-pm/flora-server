@@ -366,7 +366,7 @@ data DependencyVersionRequirement = DependencyVersionRequirement
   , packageName :: PackageName
   , version :: Text
   }
-  deriving stock (Eq, Generic, Show)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving anyclass (NFData)
   deriving
     (ToJSON)
@@ -381,7 +381,7 @@ data PackageDependencies = PackageDependencies
   , packageName :: PackageName
   , requirements :: Vector DependencyVersionRequirement
   }
-  deriving stock (Eq, Generic, Show)
+  deriving stock (Eq, Generic, Ord, Show)
   deriving
     (ToJSON)
     via CustomJSON '[FieldLabelModifier '[CamelToSnake]] PackageDependencies

@@ -1,5 +1,6 @@
 module FloraWeb.Pages.Templates.Screens.Packages where
 
+import Control.Monad
 import Data.Function ((&))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
@@ -11,8 +12,10 @@ import Lucid
 
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
+import Flora.Model.PackageGroup.Types
 import Flora.Model.Release.Types (Release (..))
 import FloraWeb.Components.Icons (chevronRightOutline)
+import FloraWeb.Components.Pill qualified as Pill
 import FloraWeb.Pages.Templates.Packages
   ( displayCategories
   , displayDependencies
@@ -43,6 +46,7 @@ showPackage
   -> Vector DependencyVersionRequirement
   -> Word
   -> Vector Category
+  -> Vector PackageGroupName
   -> FloraHTML
 showPackage
   latestRelease
@@ -54,9 +58,10 @@ showPackage
   numberOfDependents
   dependencies
   numberOfDependencies
-  categories =
+  categories
+  groups =
     div_ [class_ "container"] $ do
-      presentationHeader latestRelease namespace name latestRelease.synopsis
+      presentationHeader latestRelease namespace name latestRelease.synopsis groups
       packageBody
         package
         packageIndexURL
@@ -69,8 +74,8 @@ showPackage
         numberOfDependents
         categories
 
-presentationHeader :: Release -> Namespace -> PackageName -> Text -> FloraHTML
-presentationHeader release namespace name synopsis =
+presentationHeader :: Release -> Namespace -> PackageName -> Text -> Vector PackageGroupName -> FloraHTML
+presentationHeader release namespace name synopsis groups =
   div_ [class_ "divider"] $ do
     div_ [class_ "page-title"] $ do
       h1_ [class_ "package-title"] $ do
@@ -80,6 +85,8 @@ presentationHeader release namespace name synopsis =
           toHtml name
         let versionClass = "version" <> if Just True == release.deprecated then " release-deprecated" else ""
         span_ [class_ versionClass] $ toHtml release.version
+        unless (null groups) $
+          Pill.groupPill (Vector.head groups)
     div_ [class_ "synopsis"] $
       p_ [class_ ""] (toHtml synopsis)
 

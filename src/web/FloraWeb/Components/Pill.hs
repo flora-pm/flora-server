@@ -6,12 +6,14 @@ module FloraWeb.Components.Pill
   , ratingLow
   , ratingMedium
   , ratingNone
+  , groupPill
   ) where
 
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Lucid
 
+import Flora.Model.PackageGroup.Types
 import FloraWeb.Components.Utils (dataText_)
 import FloraWeb.Pages.Templates.Types (FloraHTML)
 
@@ -42,3 +44,7 @@ ratingMedium score =
 ratingNone :: FloraHTML
 ratingNone =
   span_ [dataText_ "None", class_ "advisory-list-item__severity-pill advisory-list-item__severity-none"] "None"
+
+groupPill :: PackageGroupName -> FloraHTML
+groupPill groupName =
+  span_ [dataText_ (display groupName), class_ "package-group-pill"] $ toHtml @Text (display groupName)

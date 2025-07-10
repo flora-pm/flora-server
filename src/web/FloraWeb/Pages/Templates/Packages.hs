@@ -49,7 +49,6 @@ import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Types.Version (Version, mkVersion, versionNumbers)
 import Lucid
-import Servant (ToHttpApiData (..))
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
@@ -275,7 +274,7 @@ linkToPackageWithVersion namespace packageName version =
   a_
     [ class_ "breadcrumb-segment"
     , href_
-        ("/" <> toUrlPiece (Links.packageVersionLink namespace packageName version))
+        ("/" <> Links.renderLink (Links.packageVersionLink namespace packageName version))
     ]
     (toHtml $ display packageName)
 
@@ -284,7 +283,7 @@ linkToPackage namespace packageName =
   a_
     [ class_ "breadcrumb-segment"
     , href_
-        ("/" <> toUrlPiece (Links.packageLink namespace packageName))
+        ("/" <> Links.renderLink (Links.packageLink namespace packageName))
     ]
     (toHtml $ display packageName)
 
@@ -321,10 +320,10 @@ displaySourceRepos x
 
 displayChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 displayChangelog _ _ _ Nothing = toHtml @Text ""
-displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> toUrlPiece (Links.packageVersionChangelog namespace packageName version))] "Changelog"
+displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> Links.renderLink (Links.packageVersionChangelog namespace packageName version))] "Changelog"
 
 displaySecurity :: Namespace -> PackageName -> FloraHTML
-displaySecurity namespace packageName = a_ [href_ ("/" <> toUrlPiece (Links.packageSecurity namespace packageName))] "Security"
+displaySecurity namespace packageName = a_ [href_ ("/" <> Links.renderLink (Links.packageSecurity namespace packageName))] "Security"
 
 displayReadme :: Release -> FloraHTML
 displayReadme release =

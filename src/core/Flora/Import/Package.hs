@@ -16,8 +16,7 @@
 -- If and when that package is fully imported later, we complete its data and change its status to "fully imported" without
 -- altering its id.
 module Flora.Import.Package
-  ( coreLibraries
-  , versionList
+  ( versionList
   , loadContent
   , persistImportOutput
   , extractPackageDataFromCabal
@@ -118,40 +117,6 @@ import Flora.Model.Requirement
   )
 import Flora.Monad
 import Flora.Normalise
-
-coreLibraries :: Set PackageName
-coreLibraries =
-  Set.fromList
-    [ PackageName "Cabal"
-    , PackageName "Win32"
-    , PackageName "array"
-    , PackageName "base"
-    , PackageName "binary"
-    , PackageName "bytestring"
-    , PackageName "containers"
-    , PackageName "deepseq"
-    , PackageName "directory"
-    , PackageName "entropy"
-    , PackageName "filepath"
-    , PackageName "ghc-bignum"
-    , PackageName "ghc-boot-th"
-    , PackageName "ghc-prim"
-    , PackageName "integer-gmp"
-    , PackageName "integer-simple"
-    , PackageName "mtl"
-    , PackageName "parallel"
-    , PackageName "parsec"
-    , PackageName "primitive"
-    , PackageName "process"
-    , PackageName "random"
-    , PackageName "rts"
-    , PackageName "stm"
-    , PackageName "template-haskell"
-    , PackageName "text"
-    , PackageName "transformers"
-    , PackageName "unix"
-    , PackageName "vector"
-    ]
 
 versionList :: Set Version
 versionList =
@@ -680,13 +645,10 @@ chooseNamespace
   -> Vector (Text, Set PackageName)
   -> Maybe Namespace
 chooseNamespace name packages =
-  if name `Set.member` coreLibraries
-    then Just (Namespace "haskell")
-    else
-      let result = Vector.mapMaybe (\(repo, indexPackages) -> isPackageInSet name (repo, indexPackages)) packages
-       in case Vector.uncons result of
-            Just (found, _) -> Just found
-            Nothing -> Nothing
+  let result = Vector.mapMaybe (\(repo, indexPackages) -> isPackageInSet name (repo, indexPackages)) packages
+   in case Vector.uncons result of
+        Just (found, _) -> Just found
+        Nothing -> Nothing
 
 isPackageInSet :: PackageName -> (Text, Set PackageName) -> Maybe Namespace
 isPackageInSet packageName (indexName, indexPackages)

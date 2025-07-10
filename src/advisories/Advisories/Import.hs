@@ -5,7 +5,6 @@ import Data.Foldable (forM_, traverse_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
-import Data.Set qualified as Set
 import Data.Text.Display
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
@@ -26,7 +25,6 @@ import Advisories.Model.Advisory.Types
 import Advisories.Model.Advisory.Update qualified as Update
 import Advisories.Model.Affected.Types
 import Advisories.Model.Affected.Update qualified as Update
-import Flora.Import.Package
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
@@ -104,12 +102,6 @@ processAffectedPackages
 processAffectedPackages advisoryId affectedPackages = do
   forM_ affectedPackages (processAffectedPackage advisoryId)
 
-pickNamespace :: PackageName -> Namespace
-pickNamespace p =
-  if p `Set.member` coreLibraries
-    then Namespace "haskell"
-    else Namespace "hackage"
-
 processAffectedPackage
   :: ( DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
@@ -126,7 +118,7 @@ processAffectedPackage advisoryId affected = do
         case affected.affectedComponentIdentifier of
           Hackage affectedPackageName -> PackageName affectedPackageName
           GHC _ -> PackageName "ghc"
-  let namespace = pickNamespace packageName
+  let namespace = Namespace "hackage"
   package <- guardThatPackageExists namespace packageName $ \_ _ -> do
     packages <- Query.getPackagesByNamespace namespace
     Log.logAttention "packages of namespace" $

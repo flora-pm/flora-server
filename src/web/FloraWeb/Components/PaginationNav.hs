@@ -46,7 +46,8 @@ mkURL :: SearchAction -> Positive Word -> Text
 mkURL ListAllPackages pageNumber =
   "/" <> toUrlPiece (Links.packageIndexLink pageNumber)
 mkURL (ListAllPackagesInNamespace namespace) pageNumber =
-  Links.namespacePage namespace pageNumber
+  Links.renderLink $
+    Links.namespaceLink namespace pageNumber
 mkURL (SearchPackages searchTerm) pageNumber =
   "/" <> toUrlPiece (Links.packageSearchLink searchTerm pageNumber)
 mkURL (DependentsOf namespace packageName mbSearchString) pageNumber =

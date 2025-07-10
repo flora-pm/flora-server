@@ -4,6 +4,7 @@
 module Flora.Model.PackageGroupPackage.Query
   ( getPackageGroupPackage
   , listPackageGroupPackages
+  , getPackageGroupsForPackage
   ) where
 
 import Data.Vector (Vector)
@@ -20,6 +21,19 @@ import Flora.Model.PackageGroupPackage.Types
 
 getPackageGroupPackage :: DB :> es => PackageGroupPackageId -> Eff es (Maybe PackageGroupPackage)
 getPackageGroupPackage packageGroupPackageId = dbtToEff $ selectById @PackageGroupPackage (Only packageGroupPackageId)
+
+getPackageGroupsForPackage :: DB :> es => PackageId -> Eff es (Vector PackageGroupName)
+getPackageGroupsForPackage packageId = do
+  results :: Vector (Only PackageGroupName) <- dbtToEff $ query q (Only packageId)
+  pure $ fmap fromOnly results
+  where
+    q =
+      [sql|
+        SELECT p1.group_name
+        FROM package_group_packages AS p0
+          INNER JOIN package_groups AS p1 ON p0.package_group_id = p1.package_group_id
+        WHERE p0.package_id = ?
+      |]
 
 listPackageGroupPackages :: DB :> es => PackageGroupId -> Eff es (Vector PackageInfo)
 listPackageGroupPackages groupId = dbtToEff $ query q (Only groupId)
