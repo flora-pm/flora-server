@@ -51,11 +51,10 @@ services:
     env_file:
       - database.env
     volumes:
-      - database-data:/var/lib/postgresql/data    
+      - database-data:/var/lib/postgresql/data
     profiles:
       - local
       - dev
-    restart: always
 
 volumes:
   database-data:
