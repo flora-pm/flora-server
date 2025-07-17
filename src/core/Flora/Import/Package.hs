@@ -291,7 +291,9 @@ persistImportOutput (ImportOutput package categories release components) = State
       env <- Reader.ask
       let componentsList = NE.toList $ fmap fst components
       let dependencies = foldMap snd components
+      let dependencyPackages = fmap (.package) dependencies
       Update.upsertPackageComponents componentsList
+      Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencyPackages Update.upsertPackage
       Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencies persistImportDependency
       unless (null dependencies) sanityCheck
       pure $ Set.insert (package.namespace, package.name, release.version) packageCache
@@ -313,7 +315,6 @@ persistImportOutput (ImportOutput package categories release components) = State
         , "dependency_name" .= display dep.package.name
         ]
         $ do
-          Update.upsertPackage dep.package
           Update.upsertRequirement dep.requirement
 
     sanityCheck :: RequireCallStack => FloraM es ()
