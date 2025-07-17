@@ -40,7 +40,7 @@ groupPackageListItem packageGroupId packageInfo = do
   let formattedPackageName = display packageInfo.namespace <> "/" <> display packageInfo.name
   tr_ [class_ "package-group divider"] $ do
     td_ [] $
-      a_ [class_ "", href_ ("/" <> (Links.renderLink $ Links.packageLink packageInfo.namespace packageInfo.name))] $ do
+      a_ [class_ "", href_ ("/" <> Links.renderLink (Links.packageLink packageInfo.namespace packageInfo.name))] $ do
         span_ [class_ ""] (toHtml @Text formattedPackageName)
     td_ [class_ "group-table-actions"] $ do
       form_ [action_ ("/admin/groups/" <> toUrlPiece packageGroupId <> "/remove/" <> toUrlPiece packageInfo.packageId), method_ "POST"]

@@ -305,9 +305,16 @@ persistImportOutput (ImportOutput package categories release components) = State
         (\c -> Update.addToCategoryByName packageId c.name)
 
     persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
-    persistImportDependency dep = do
-      Update.upsertPackage dep.package
-      Update.upsertRequirement dep.requirement
+    persistImportDependency dep =
+      Log.localData
+        [ "dependent_namespace" .= display package.namespace
+        , "dependent_name" .= (display package.name)
+        , "dependency_namespace" .= display dep.package.namespace
+        , "dependency_name" .= display dep.package.name
+        ]
+        $ do
+          Update.upsertPackage dep.package
+          Update.upsertRequirement dep.requirement
 
     sanityCheck :: RequireCallStack => FloraM es ()
     sanityCheck = do
