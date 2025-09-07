@@ -53,7 +53,7 @@
 }
 
 .package-group:hover {
-	background-color: (--focused-background);
+	background-color: var(--focused-background);
 }
 
 .group-table-actions {

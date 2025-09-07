@@ -1,0 +1,23 @@
+[data-theme] .theme-button--light {
+	display: none;
+}
+
+[data-theme="dark"] .theme-button--light {
+	display: inline-flex;
+	background-color: hsl(294 40% 30%);
+}
+
+.theme-button--dark {
+	display: inline-flex;
+}
+
+[data-theme="dark"] .theme-button--dark {
+	display: none;
+}
+
+/* Dark mode-specific rules */
+.dark {
+	.social-button:hover {
+		color: hsl(254.3 95% 76.7%);
+	}
+}

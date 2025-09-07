@@ -61,6 +61,30 @@
 	color: var(--deprecated-version);
 }
 
+.category a:hover {
+	text-decoration: underline;
+}
+
+.package-link a:hover {
+	text-decoration: underline;
+}
+
+.version-link a:hover {
+	text-decoration: underline;
+}
+
+.dependency {
+	white-space: nowrap;
+
+	a:hover {
+		text-decoration: underline;
+	}
+}
+
+.dependents a.dependent:hover {
+	text-decoration: underline;
+}
+
 .package-body {
 	--package-layout-gap: 10px;
 
@@ -105,7 +129,7 @@
 		margin-bottom: 1.25rem;
 	}
 
-	a {
+	a:link {
 		font-weight: 500;
 	}
 

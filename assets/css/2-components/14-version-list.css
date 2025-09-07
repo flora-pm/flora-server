@@ -1,0 +1,21 @@
+
+.version-list-item {
+	a {
+		display: block;
+		margin-top: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	a:hover h4.version-list-item__name {
+		text-decoration: underline;
+	}
+
+	.version-list-item__name {
+		margin-right: 0.5rem;
+		display: inline;
+		color: var(--link-color);
+		font-weight: bolder;
+		font-size: 1.25rem;
+		line-height: 1.75rem;
+	}
+}
