@@ -38,9 +38,6 @@
 @import "4-helpers/3-spacing.css";
 @import "4-helpers/4-typography.css";
 @import "4-helpers/5-state.css";
-@import "prism.css";
-@import "fontawesome.css";
-@import "solid.css";
 
 /* Used for the sessions page */
 .login-form {
@@ -116,6 +113,9 @@
 		box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
 	}
 }
+/* External vendors */
+@import "5-vendors/prism.css";
+@import "5-vendors/font-awesome.css";
 
 .version-list-item {
 	a {
