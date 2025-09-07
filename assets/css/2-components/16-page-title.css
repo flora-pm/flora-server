@@ -1,0 +1,26 @@
+
+.page-title {
+	padding: 1rem 2rem;
+
+	h1 {
+		font-size: 3rem;
+		line-height: 1;
+		letter-spacing: -0.025rem;
+		text-align: center;
+		overflow-wrap: anywhere;
+	}
+
+	.version {
+		font-size: 0.5em;
+		line-height: 1.3rem;
+		padding-left: 4px;
+	}
+}
+
+@media (max-width: 48rem) {
+	.page-title {
+		h1 {
+			font-size: 2rem;
+		}
+	}
+}

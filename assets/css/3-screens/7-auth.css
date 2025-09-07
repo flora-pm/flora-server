@@ -1,0 +1,70 @@
+.login-form {
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 3rem;
+	max-width: 28rem;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+}
+
+.login-form	h2 {
+	color: var(--text-color);
+	font-weight: 800;
+	font-size: 1.875rem;
+	line-height: 2.25rem;
+	text-align: center;
+	margin-bottom: 0.75rem;
+}
+
+.login-form	button {
+	color: var(--text-color);
+}
+
+.login-form	.form-input {
+	border-color: rgb(107 114 128);
+	border-radius: 6px;
+	border-width: 2px;
+	color: rgb(17 24 39);
+	display: block;
+	margin-bottom: 0.25rem;
+	margin-top: 0.25rem;
+	padding: 0.5rem;
+	width: 100%;
+}
+
+.login-form	.password {
+	margin-bottom: 1rem;
+}
+
+.login-form	.totp-zone {
+	display: none;
+}
+
+.login-form	input[type="checkbox"]:checked + div.totp-zone {
+	display: block;
+}
+
+.login-form	.login-button {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	margin-top: 1rem;
+}
+
+.login-form	div.login-button button {
+	background-color: var(--main-page-button-background);
+	border-radius: 50rem;
+	border-width: 1px;
+	color: var(--text-color);
+	font-weight: bolder;
+	padding: 1rem 2rem;
+}
+
+.login-form	div.login-button button:hover {
+	border-color: var(--main-page-button-focus-border-color);
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-duration: 200ms;
+
+	/* offset-x | offset-y | blur-radius | spread-radius | color */
+	box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
+}
