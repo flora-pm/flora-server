@@ -173,7 +173,7 @@ start-tmux: ## Start a Tmux session with hot code reloading
 	./scripts/start-tmux.sh
 
 tags: ## Generate ctags for the project with `ghc-tags`
-	@ghc-tags -c
+	@ghc-tags -c src app
 
 design-system: ## Generate the HTML components used by the design system
 	@cabal run -- flora-cli gen-design-system
