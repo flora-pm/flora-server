@@ -72,6 +72,8 @@ RUN cabal install --install-method=copy --installdir=out/ --semaphore -j postgre
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j fourmolu-$FOURMOLU_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$HLINT_VERSION
 RUN ghcup run --ghc 9.6.7 -- cabal install --install-method=copy --installdir=out/ -j apply-refact-$APPLY_REFACT_VERSION
+RUN ghcup rm ghc 9.6.7
+RUN ghcup gc -t -p -s -c
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghc-tags-$GHC_TAGS_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghcid-$GHCID_VERSION
 
