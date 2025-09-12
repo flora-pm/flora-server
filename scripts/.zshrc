@@ -8,6 +8,7 @@ ZSH_THEME="robbyrussell"
 plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
+[ -f /flora-server/environment.local.sh ] && source /flora-server/environment.local.sh || source /flora-server/environment.sh
 source /flora-server/environment.docker.sh
 export PATH=${PATH}:~/.cabal/bin
 
