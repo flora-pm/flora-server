@@ -18,7 +18,6 @@ mainSearchBar =
         , name_ "q"
         , placeholder_ "Find a package"
         , value_ ""
-        , tabindex_ "1"
         , autofocus_
         ]
       button_ [class_ "search-btn", type_ "submit"] $
