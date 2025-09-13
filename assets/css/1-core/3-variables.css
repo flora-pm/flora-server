@@ -106,6 +106,55 @@
 	--focused-background: var(--pale-blue);
 }
 
+@media(prefers-color-scheme: dark) {
+	html:not([data-theme="light"]) {
+		--background-color: var(--blue-20);
+		--brand-border: var(--purple-30);
+		--category-card-name-color: var(--purple-60);
+		--category-card-synopsis-color: var(--gray-90);
+		--category-card-background-hover: var(--blue-15);
+		--error-button: var(--purple-30);
+		--error-code: var(--gray-90);
+		--link-color: var(--purple-60);
+		--link-hover-color: var(--blue-15);
+		--navbar-background-color: var(--blue-15);
+		--navbar-border-color: transparent;
+		--navbar-search-color: var(--gray-90);
+		--navbar-search-background-color: var(--blue-20);
+		--navbar-search-border-color: var(--blue-20);
+		--package-list-item-background-hover-color: var(--blue-15);
+		--package-list-item-name-color: var(--purple-60);
+		--package-list-item-metadata-color: var(--gray-90);
+		--package-list-item-synopsis-color: var(--gray-90);
+		--package-list-item-version-color: var(--green-40);
+		--search-bar-color: var(--gray-90);
+		--search-bar-background-color: var(--blue-20);
+		--search-bar-background-hover-color: var(--blue-20);
+		--search-bar-background-focus-color: var(--blue-20);
+		--search-bar-focus-border-color: var(--purple-30);
+		--readme-pre-background-color: var(--blue-30);
+		--readme-code-background-color: var(--blue-30);
+		--changelog-pre-background-color: var(--blue-30);
+		--changelog-code-background-color: var(--blue-30);
+
+		/* --install-string-border: hsl(215 28% 17%); */
+		--compiler-badge-background: var(--blue-30);
+		--text-color: var(--gray-80);
+		--main-page-button-background: var(--blue-20);
+		--main-page-button-focus-border-color: var(--purple-30);
+		--main-page-button-divider: var(--blue-15);
+		--deprecated-version: var(--red-60);
+		--breadcrumb-color: hsl(221 9% 60%);
+		--severity-critical: var(--red-60);
+		--severity-high: orange;
+		--severity-medium: gold;
+		--severity-low: var(--pale-blue);
+		--severity-none: hsl(156 100% 99%);
+		--severity-rating-colour: black;
+		--focused-background: var(--blue-80);
+	}
+}
+
 html[data-theme="dark"] {
 	--background-color: var(--blue-20);
 	--brand-border: var(--purple-30);

@@ -1,35 +1,36 @@
 module Flora.Environment.Env
-  ( FloraEnv (..)
-  , AppMetrics (..)
-  , DeploymentEnv (..)
-  , MLTP (..)
-  , FeatureEnv (..)
-  , BlobStoreImpl (..)
-  ) where
+  ( FloraEnv (..),
+    AppMetrics (..),
+    DeploymentEnv (..),
+    MLTP (..),
+    FeatureEnv (..),
+    BlobStoreImpl (..),
+  )
+where
 
 import Data.Aeson
 import Data.Pool (Pool)
 import Data.Text (Text)
 import Data.Word
 import Database.PostgreSQL.Simple qualified as PG
+import Flora.Environment.Config
 import GHC.Generics
 import Prometheus qualified as P
 
-import Flora.Environment.Config
-
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
-  { pool :: Pool PG.Connection
-  , dbConfig :: PoolConfig
-  , jobsPool :: Pool PG.Connection
-  , httpPort :: Word16
-  , domain :: Text
-  , mltp :: MLTP
-  , environment :: DeploymentEnv
-  , features :: FeatureEnv
-  , config :: FloraConfig
-  , assets :: Assets
-  , metrics :: AppMetrics
+  { pool :: Pool PG.Connection,
+    dbConfig :: PoolConfig,
+    jobsPool :: Pool PG.Connection,
+    httpPort :: Word16,
+    domain :: Text,
+    mltp :: MLTP,
+    environment :: DeploymentEnv,
+    features :: FeatureEnv,
+    config :: FloraConfig,
+    assets :: Assets,
+    metrics :: AppMetrics,
+    theme :: Maybe Text
   }
   deriving stock (Generic)
 

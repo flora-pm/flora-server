@@ -5,31 +5,49 @@ module FloraWeb.Components.Header where
 import Control.Monad (unless)
 import Control.Monad.Reader
 import Data.Text (Text)
-import Htmx.Lucid.Core (hxGet_, hxTrigger_)
-import Lucid
-import PyF
-
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
+import Htmx.Lucid.Core (hxGet_, hxTrigger_)
+import Lucid
+import PyF
 
 header :: FloraHTML
 header = do
-  TemplateEnv{environment, title, indexPage} <- ask
+  TemplateEnv {environment, title, indexPage, theme} <- ask
   doctype_
+  let theme' = case theme of
+        Nothing -> []
+        Just a -> [data_ "theme" a]
   html_
-    [ lang_ "en"
-    , class_ "no-js"
-    , xData_
-        "{ theme: \
-        \ localStorage.getItem('theme') \
-        \   || (window.matchMedia('(prefers-color-scheme: dark)').matches \
-        \   ? 'dark' : 'light') \
-        \ }"
-    , xBind_ "data-theme" "(theme === 'dark') ? 'dark' : 'light'"
-    , xInit_ "$watch('theme', val => localStorage.setItem('theme', val))"
-    ]
+    ( [ lang_ "en",
+        class_ "no-js",
+        xData_
+          "{ updateTheme() { \
+          \ const customTheme = document.documentElement.getAttribute('data-theme'); \
+          \ const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches; \
+          \ const applyTheme = (theme) => { \
+          \   document.documentElement.setAttribute('data-theme', theme); \
+          \   console.log(\"theme switch\"); \
+          \   (async () => { await cookieStore.set('theme', theme) })(); \
+          \ }; \
+          \ switch (customTheme) { \
+          \   case 'light': \
+          \     applyTheme('dark'); \
+          \      break; \
+          \   case 'dark': \
+          \    applyTheme('light'); \
+          \    break; \
+          \   default: \
+          \     isSystemDark ? applyTheme('light') : applyTheme('dark'); \
+          \     break; \
+          \  } \
+          \  } \
+          \}"
+      ]
+        <> theme'
+    )
     $ do
       head_ $ do
         meta_ [charset_ "UTF-8"]
@@ -57,14 +75,14 @@ header = do
         cssLink
         meta_ [name_ "color-scheme", content_ "light dark"]
         link_
-          [ rel_ "search"
-          , type_ "application/opensearchdescription+xml"
-          , title_ "Flora"
-          , href_ "/opensearch.xml"
+          [ rel_ "search",
+            type_ "application/opensearchdescription+xml",
+            title_ "Flora",
+            href_ "/opensearch.xml"
           ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
-        theme
+        themeHtml
         -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
         meta_ [name_ "twitter:dnt", content_ "on"]
 
@@ -77,7 +95,7 @@ header = do
 
 jsLink :: FloraHTML
 jsLink = do
-  TemplateEnv{assets, environment} <- ask
+  TemplateEnv {assets, environment} <- ask
   let jsURL = "/static/" <> assets.jsBundle.name
   case environment of
     Production ->
@@ -87,7 +105,7 @@ jsLink = do
 
 cssLink :: FloraHTML
 cssLink = do
-  TemplateEnv{assets, environment} <- ask
+  TemplateEnv {assets, environment} <- ask
   let cssURL = "/static/" <> assets.cssBundle.name
   case environment of
     Production ->
@@ -97,7 +115,7 @@ cssLink = do
 
 ogTags :: FloraHTML
 ogTags = do
-  TemplateEnv{title, description} <- ask
+  TemplateEnv {title, description} <- ask
   meta_ [property_ "og:title", content_ title]
   meta_ [property_ "og:site_name", content_ "Flora"]
   meta_ [property_ "og:description", content_ description]
@@ -108,7 +126,7 @@ ogTags = do
   meta_ [property_ "og:locale", content_ "en_GB"]
   meta_ [property_ "og:type", content_ "website"]
 
-theme :: FloraHTML
-theme = do
+themeHtml :: FloraHTML
+themeHtml = do
   meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
   meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]
