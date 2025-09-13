@@ -138,23 +138,23 @@ themeToggle = do
   let moonIcon = do
         img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6", alt_ ""]
 
-  let buttonBaseClasses = "navbar-themeBtn p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
+  let buttonBaseClasses = "navbar-themeBtn p-2 m-4 md:m-0 rounded-md items-center"
 
   button_
-    [ xOn_ "click" "theme = 'light'; menuOpen = false"
+    [ xOn_ "click" "updateTheme()"
     , class_ $ "theme-button--light " <> buttonBaseClasses
     , ariaLabel_ "Switch to light theme"
     ]
     sunIcon
 
   button_
-    [ xOn_ "click" "theme = 'dark'; menuOpen = false"
+    [ xOn_ "click" "updateTheme()"
     , class_ $ "theme-button--dark " <> buttonBaseClasses
     , ariaLabel_ "Switch to dark theme"
     ]
     moonIcon
 
-  input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "theme"]
+  input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden"]
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
 getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login" False

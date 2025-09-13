@@ -64,6 +64,7 @@ data TemplateEnv = TemplateEnv
   , navbarSearchContent :: Maybe Text
   , domain :: Text
   , httpPort :: Word16
+  , theme :: Maybe Text
   }
   deriving stock (Generic, Show)
 
@@ -125,6 +126,7 @@ defaultsToEnv floraEnv TemplateDefaults{..} =
       sessionId = PersistentSessionId UUID.nil
       domain = floraEnv.domain
       httpPort = floraEnv.httpPort
+      theme = floraEnv.theme
    in TemplateEnv{..}
 
 class FromSession a where
@@ -140,6 +142,7 @@ instance FromSession (Session User) where
     let assets = floraEnv.assets
     let domain = floraEnv.domain
         httpPort = floraEnv.httpPort
+        theme = floraEnv.theme
     let TemplateDefaults{..} =
           defaults
             & (#mUser .~ muser)
@@ -157,6 +160,7 @@ instance FromSession (Session (Maybe User)) where
     let assets = floraEnv.assets
     let domain = floraEnv.domain
         httpPort = floraEnv.httpPort
+        theme = floraEnv.theme
     let TemplateDefaults{..} =
           defaults
             & (#mUser .~ muser)

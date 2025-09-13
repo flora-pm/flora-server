@@ -114,10 +114,6 @@
 	border-color: rgb(229 231 235 / 100%);
 }
 
-.bg-slate-200 {
-	background-color: rgb(226 232 240 / 100%);
-}
-
 @media (--viewport-sm) {
 	.sm\:rounded-lg {
 		border-radius: var(--space-lg);

@@ -1,6 +1,7 @@
 module Flora.Environment
   ( getFloraEnv
-  ) where
+  )
+where
 
 import Data.ByteString (ByteString)
 import Data.Pool (Pool)
@@ -62,6 +63,7 @@ configToEnv floraConfig = do
       , assets = assets
       , config = floraConfig
       , metrics = metrics
+      , theme = Nothing
       }
 
 getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv

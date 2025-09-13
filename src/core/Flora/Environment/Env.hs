@@ -5,7 +5,8 @@ module Flora.Environment.Env
   , MLTP (..)
   , FeatureEnv (..)
   , BlobStoreImpl (..)
-  ) where
+  )
+where
 
 import Data.Aeson
 import Data.Pool (Pool)
@@ -30,6 +31,7 @@ data FloraEnv = FloraEnv
   , config :: FloraConfig
   , assets :: Assets
   , metrics :: AppMetrics
+  , theme :: Maybe Text
   }
   deriving stock (Generic)
 
