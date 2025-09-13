@@ -11,6 +11,7 @@ import PyF
 
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
+import FloraWeb.Components.SkipLink (skipLink)
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
 
@@ -92,6 +93,7 @@ header = do
           Development ->
             div_ [hxGet_ "/livereload", hxTrigger_ "every 2s"] mempty
           _ -> mempty
+        skipLink
         navbar
 
 jsLink :: FloraHTML

@@ -38,7 +38,7 @@ rendered target = do
     Alert.info (display msg)
   whenJust flashError $ \msg -> do
     Alert.exception (display msg)
-  main_ [class_ "container-fluid"] target
+  main_ [class_ "container-fluid", id_ "main"] target
   prismLink
 
 prismLink :: FloraHTML

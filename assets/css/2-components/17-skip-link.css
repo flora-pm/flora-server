@@ -1,0 +1,19 @@
+.skipLink {
+	z-index: 42;
+	position: absolute;
+	top: .5625rem;
+	left: 50%;
+	transform: translate(-50%, -120%);
+	max-width: 95vw;
+	padding: .666rem 1.5rem;
+	color: var(--purple-60);
+	background-color: var(--gray-100);
+	text-decoration: underline;
+	border-radius: .1875rem;
+	outline-offset: .1rem;
+}
+
+.skipLink:is(:focus, :active) {
+	transition: .1s transform;
+	transform: translate(-50%, 0);
+}
