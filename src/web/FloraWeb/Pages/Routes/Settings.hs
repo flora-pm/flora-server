@@ -39,13 +39,13 @@ type GetTwoFactorSettingsPage =
 
 type TwoFactorSetupResponses =
   '[ WithHeaders
-      '[Header "Location" Text]
-      Text
-      (RespondEmpty 301 "2FA Validation Success")
+       '[Header "Location" Text]
+       Text
+       (RespondEmpty 301 "2FA Validation Success")
    , WithHeaders
-      '[Header "Location" Text]
-      Text
-      (RespondEmpty 301 "")
+       '[Header "Location" Text]
+       Text
+       (RespondEmpty 301 "")
    , Respond 400 "2FA Validation Failed" (Html ())
    ]
 
