@@ -21,8 +21,7 @@ mainSearchBar =
         , tabindex_ "1"
         , autofocus_
         ]
-      button_ [class_ "search-btn", type_ "submit"] $
-        Icons.lookingGlass
+      button_ [class_ "search-btn", type_ "submit"] Icons.lookingGlass
     p_ [class_ "search-hint"] $ do
       Icons.lightbulb
       "Use " <> a_ [href_ "/documentation/search-features"] "search modifiers" <> " to enhance your queries"
