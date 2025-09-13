@@ -1,8 +1,9 @@
 module FloraWeb.Components.MainSearchBar where
 
+import Lucid
+
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Pages.Templates.Types (FloraHTML)
-import Lucid
 
 mainSearchBar :: FloraHTML
 mainSearchBar =
@@ -11,13 +12,13 @@ mainSearchBar =
       label_ [for_ "search"] ""
       input_
         [ class_
-            "search-bar",
-          type_ "search",
-          id_ "search",
-          name_ "q",
-          placeholder_ "Find a package",
-          value_ "",
-          autofocus_
+            "search-bar"
+        , type_ "search"
+        , id_ "search"
+        , name_ "q"
+        , placeholder_ "Find a package"
+        , value_ ""
+        , autofocus_
         ]
       button_ [class_ "search-btn", type_ "submit"] Icons.lookingGlass
     p_ [class_ "search-hint"] $ do
