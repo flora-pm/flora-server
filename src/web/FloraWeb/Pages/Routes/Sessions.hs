@@ -17,17 +17,17 @@ type Routes = NamedRoutes Routes'
 type NewSession =
   "new"
     :> MultiVerb
-         'GET
-         '[HTML]
-         NewSessionResponses
-         NewSessionResult
+        'GET
+        '[HTML]
+        NewSessionResponses
+        NewSessionResult
 
 type NewSessionResponses =
   '[ -- User is already logged-in, redirect to home page
      WithHeaders
-       '[Header "Location" Text]
-       Text
-       (RespondEmpty 301 "Already logged-in")
+      '[Header "Location" Text]
+      Text
+      (RespondEmpty 301 "Already logged-in")
    , -- User is not logged-in, dispay the login page
      Respond 401 "Log-in required" (Html ())
    ]
@@ -46,19 +46,19 @@ type CreateSession =
   "new"
     :> ReqBody '[FormUrlEncoded] LoginForm
     :> MultiVerb
-         'POST
-         '[HTML]
-         CreateSessionResponses
-         CreateSessionResult
+        'POST
+        '[HTML]
+        CreateSessionResponses
+        CreateSessionResult
 
 type CreateSessionResponses =
   '[ -- Failure, send login page back
      Respond 401 "Authentication failed" (Html ())
    , -- Success, redirected to home page
      WithHeaders
-       '[Header "Location" Text, Header "Set-Cookie" SetCookie]
-       (Text, SetCookie)
-       (RespondEmpty 301 "Authentication succeeded")
+      '[Header "Location" Text, Header "Set-Cookie" SetCookie]
+      (Text, SetCookie)
+      (RespondEmpty 301 "Authentication succeeded")
    ]
 
 data CreateSessionResult

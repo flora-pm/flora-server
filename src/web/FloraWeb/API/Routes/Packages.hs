@@ -14,20 +14,20 @@ type API = NamedRoutes API'
 type GetPackage =
   Summary "Get information about a package"
     :> Description
-         "Return information about a package and its latest version"
+        "Return information about a package and its latest version"
     :> Get '[JSON] (PackageDTO 0)
 
 type GetVersionedPackage =
   Summary "Get information about a package and version"
     :> Description
-         "Return information about a package and the specified version"
+        "Return information about a package and the specified version"
     :> Capture "version" Version
     :> Get '[JSON] (PackageDTO 0)
 
 type GetPackageDependencies =
   Summary "Get dependencies of a package"
     :> Description
-         "Return dependencies of a package"
+        "Return dependencies of a package"
     :> Capture "version" Version
     :> "dependencies"
     :> QueryFlag "transitive"
@@ -36,7 +36,7 @@ type GetPackageDependencies =
 type GetPackagesByPrefix =
   Summary "Get a list of packages"
     :> Description
-         "Return a list of packages, given a prefix"
+        "Return a list of packages, given a prefix"
     :> Get '[JSON] (Vector PackageName)
 
 data API' mode = API'

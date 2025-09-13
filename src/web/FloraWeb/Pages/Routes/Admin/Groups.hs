@@ -14,9 +14,9 @@ import Flora.Model.PackageGroup.Types
 
 type CreateGroupResponses =
   '[ WithHeaders
-       '[Header "Location" Text]
-       Text
-       (RespondEmpty 301 "Group created")
+      '[Header "Location" Text]
+      Text
+      (RespondEmpty 301 "Group created")
    , Respond 409 "Conflict" (Html ())
    ]
 
@@ -34,10 +34,10 @@ type PostAddGroup =
   "new"
     :> ReqBody '[FormUrlEncoded] GroupCreationForm
     :> MultiVerb
-         'POST
-         '[HTML]
-         CreateGroupResponses
-         CreateGroupResult
+        'POST
+        '[HTML]
+        CreateGroupResponses
+        CreateGroupResult
 
 type DeleteGroupResponses =
   '[ Respond 200 "Group Deleted" (Html ())
@@ -58,10 +58,10 @@ type DeleteGroup =
   "delete"
     :> Capture "group_id" PackageGroupId
     :> MultiVerb
-         'POST
-         '[HTML]
-         DeleteGroupResponses
-         DeleteGroupResult
+        'POST
+        '[HTML]
+        DeleteGroupResponses
+        DeleteGroupResult
 
 type GetPackageGroup =
   Capture "group_id" PackageGroupId
@@ -72,16 +72,16 @@ type PostAddPackageToGroup =
     :> "add"
     :> ReqBody '[FormUrlEncoded] AddPackageToGroupForm
     :> MultiVerb
-         'POST
-         '[HTML]
-         AddPackageToGroupResponses
-         AddPackageToGroupResult
+        'POST
+        '[HTML]
+        AddPackageToGroupResponses
+        AddPackageToGroupResult
 
 type AddPackageToGroupResponses =
   '[ WithHeaders
-       '[Header "Location" Text]
-       Text
-       (RespondEmpty 301 "Package added to group")
+      '[Header "Location" Text]
+      Text
+      (RespondEmpty 301 "Package added to group")
    , Respond 409 "Conflict" (Html ())
    ]
 
@@ -100,10 +100,10 @@ type RemovePackageFromGroup =
     :> "remove"
     :> Capture "package_id" PackageId
     :> MultiVerb
-         'POST
-         '[HTML]
-         RemovePackageFromGroupResponses
-         RemovePackageFromGroupResult
+        'POST
+        '[HTML]
+        RemovePackageFromGroupResponses
+        RemovePackageFromGroupResult
 
 type RemovePackageFromGroupResponses =
   '[ Respond 200 "Package removed from group" (Html ())
