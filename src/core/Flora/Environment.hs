@@ -1,5 +1,5 @@
 module Flora.Environment
-  ( getFloraEnv,
+  ( getFloraEnv
   )
 where
 
@@ -13,16 +13,17 @@ import Effectful
 import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
 import Env (parse)
+
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Monitoring
 
-mkPool ::
-  (IOE :> es) =>
-  ByteString -> -- Database access information
-  NominalDiffTime -> -- Allowed timeout
-  Int -> -- Number of connections
-  Eff es (Pool PG.Connection)
+mkPool
+  :: IOE :> es
+  => ByteString -- Database access information
+  -> NominalDiffTime -- Allowed timeout
+  -> Int -- Number of connections
+  -> Eff es (Pool PG.Connection)
 mkPool connectionInfo timeout' connections =
   liftIO $
     Pool.newPool $
@@ -34,7 +35,7 @@ mkPool connectionInfo timeout' connections =
 
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
-featureConfigToEnv FeatureConfig {blobStoreFS, tarballsEnabled} =
+featureConfigToEnv FeatureConfig{blobStoreFS, tarballsEnabled} =
   case blobStoreFS of
     Just fp | tarballsEnabled -> pure . FeatureEnv . Just $ BlobStoreFS fp
     _ ->
@@ -43,7 +44,7 @@ featureConfigToEnv FeatureConfig {blobStoreFS, tarballsEnabled} =
 
 configToEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FloraConfig -> Eff es FloraEnv
 configToEnv floraConfig = do
-  let PoolConfig {connectionTimeout, connections} = floraConfig.dbConfig
+  let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   jobsPool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   assets <- getAssets floraConfig.environment
@@ -51,18 +52,18 @@ configToEnv floraConfig = do
   metrics <- registerMetrics
   pure
     FloraEnv
-      { pool = pool,
-        dbConfig = floraConfig.dbConfig,
-        jobsPool = jobsPool,
-        httpPort = floraConfig.httpPort,
-        domain = floraConfig.domain,
-        mltp = floraConfig.mltp,
-        environment = floraConfig.environment,
-        features = featureEnv,
-        assets = assets,
-        config = floraConfig,
-        metrics = metrics,
-        theme = Nothing
+      { pool = pool
+      , dbConfig = floraConfig.dbConfig
+      , jobsPool = jobsPool
+      , httpPort = floraConfig.httpPort
+      , domain = floraConfig.domain
+      , mltp = floraConfig.mltp
+      , environment = floraConfig.environment
+      , features = featureEnv
+      , assets = assets
+      , config = floraConfig
+      , metrics = metrics
+      , theme = Nothing
       }
 
 getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv

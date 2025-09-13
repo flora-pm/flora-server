@@ -109,7 +109,7 @@ handler floraEnv req = do
         nSessionId <- liftIO newPersistentSessionId
         pure (Nothing, nSessionId)
       Just (user, userSession) -> pure (Just user, userSession.persistentSessionId)
-  webEnvStore <- liftIO $ newWebEnvStore (WebEnv $ floraEnv { theme = theme })
+  webEnvStore <- liftIO $ newWebEnvStore (WebEnv $ floraEnv{theme = theme})
   let sessionCookie = craftSessionCookie sessionId False
   pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
