@@ -25,7 +25,6 @@ navbar = do
         navBarLink' "/about" "About" aboutNav
         a_ [href_ "/documentation", class_ "navbar-link", target_ "_blank"] (text "Documentation")
         navBarLink' "/categories" "Categories" packagesNav
-        a_ [href_ "https://github.com/flora-pm/flora-server", class_ "navbar-link", target_ "_blank"] (text "Source")
         navBarLink' "/packages" "Packages" packagesNav
         userMenu
         themeToggle
