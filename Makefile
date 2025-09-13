@@ -178,7 +178,7 @@ tags: ## Generate ctags for the project with `ghc-tags`
 design-system: ## Generate the HTML components used by the design system
 	@cabal run -- flora-cli gen-design-system
 
-start-design-sysytem: ## Start storybook.js
+start-design-system: ## Start storybook.js
 	@cd design; yarn storybook
 
 migration: ## Generate timestamped database migration boilerplate files
