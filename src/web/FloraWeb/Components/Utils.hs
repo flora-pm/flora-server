@@ -127,3 +127,18 @@ key_
   :: Text
   -> Attributes
 key_ = makeAttributes ":key"
+
+popover_
+  :: Text
+  -> Attributes
+popover_ = makeAttributes "popover"
+
+popovertarget_
+  :: Text
+  -> Attributes
+popovertarget_ = makeAttributes "popovertarget"
+
+popovertargetaction_
+  :: Text
+  -> Attributes
+popovertargetaction_ = makeAttributes "popovertargetaction"
