@@ -23,6 +23,7 @@
 @import "2-components/14-version-list.css";
 @import "2-components/15-theme-switch.css";
 @import "2-components/16-page-title.css";
+@import "2-components/17-skip-link.css";
 
 /* Screens/Pages specific style */
 @import "3-screens/1-package/1-package.css";

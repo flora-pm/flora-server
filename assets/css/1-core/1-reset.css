@@ -235,6 +235,13 @@ Remove the inner padding in Chrome and Safari on macOS.
 }
 
 /*
+Smooth scroll for focus-based navigation
+*/
+html:focus-within {
+	scroll-behavior: smooth;
+}
+
+/*
 Add the correct display in Chrome and Safari.
 */
 summary {

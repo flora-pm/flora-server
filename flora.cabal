@@ -311,6 +311,7 @@ library flora-web
     FloraWeb.Common.Pagination
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
+    FloraWeb.Components.SkipLink
     FloraWeb.Components.AdvisoryListItem
     FloraWeb.Components.Alert
     FloraWeb.Components.Button
