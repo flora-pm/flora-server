@@ -51,3 +51,8 @@ a {
 	text-decoration: none;
 	color: var(--link-color);
 }
+
+a:not([class]) {
+	text-decoration: underline;
+	text-decoration-color: var(--link-decoration-color);
+}

@@ -60,6 +60,7 @@
 	--error-button: var(--purple-20);
 	--error-code: var(--purple-20);
 	--link-color: var(--blue-40);
+	--link-decoration-color: var(--blue-60);
 	--link-hover-color: hsl(220 13% 91%);
 	--navbar-background-color: var(--purple-20);
 	--navbar-border-color: var(--gray-90);
@@ -117,6 +118,7 @@
 		--error-button: var(--purple-30);
 		--error-code: var(--gray-90);
 		--link-color: var(--purple-60);
+		--link-decoration-color: var(--purple-70);
 		--link-hover-color: var(--blue-15);
 		--navbar-background-color: var(--blue-15);
 		--navbar-border-color: transparent;
@@ -165,6 +167,7 @@ html[data-theme="dark"] {
 	--error-button: var(--purple-30);
 	--error-code: var(--gray-90);
 	--link-color: var(--purple-60);
+	--link-decoration-color: var(--purple-70);
 	--link-hover-color: var(--blue-15);
 	--navbar-background-color: var(--blue-15);
 	--navbar-border-color: transparent;

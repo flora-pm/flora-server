@@ -61,28 +61,26 @@
 	color: var(--deprecated-version);
 }
 
-.category a:hover {
-	text-decoration: underline;
+.dependency a,
+.dependents a.dependent,
+.category a,
+.package-link a,
+.version-link a {
+	text-decoration: none;
 }
 
-.package-link a:hover {
+.dependency a:is(:hover, :active),
+a.dependency:is(:hover, :active),
+.dependents a.dependent:is(:hover, :active),
+.category a:is(:hover, :active),
+.package-link a:is(:hover, :active),
+.version-link a:is(:hover, :active) {
 	text-decoration: underline;
-}
-
-.version-link a:hover {
-	text-decoration: underline;
+	text-decoration-color: var(--link-decoration-color);
 }
 
 .dependency {
 	white-space: nowrap;
-
-	a:hover {
-		text-decoration: underline;
-	}
-}
-
-.dependents a.dependent:hover {
-	text-decoration: underline;
 }
 
 .package-body {
