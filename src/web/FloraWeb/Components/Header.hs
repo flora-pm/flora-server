@@ -33,10 +33,16 @@ header = do
         meta_ [charset_ "UTF-8"]
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
         unless indexPage $ meta_ [name_ "robots", content_ "noindex"]
-        -- link_ [rel_ "icon", href_ "/static/icons/favicon.svg", type_ "image/svg+xml"]
         link_ [rel_ "apple-touch-icon", sizes_ "180x180", href_ "/static/icons/apple-touch-icon.png"]
-        link_ [rel_ "icon", type_ "image/png", sizes_ "32x32", href_ "/static/icons/favicon-32x32.png"]
-        link_ [rel_ "icon", type_ "image/png", sizes_ "16x16", href_ "/static/icons/favicon-16x16.png"]
+        case environment of
+          Development -> do
+            link_ [rel_ "icon", href_ "/static/icons/favicon-dev.svg", type_ "image/svg+xml"]
+            link_ [rel_ "icon", type_ "image/png", sizes_ "32x32", href_ "/static/icons/favicon-dev-32x32.png"]
+            link_ [rel_ "icon", type_ "image/png", sizes_ "16x16", href_ "/static/icons/favicon-dev-16x16.png"]
+          _ -> do
+            link_ [rel_ "icon", href_ "/static/icons/favicon.svg", type_ "image/svg+xml"]
+            link_ [rel_ "icon", type_ "image/png", sizes_ "32x32", href_ "/static/icons/favicon-32x32.png"]
+            link_ [rel_ "icon", type_ "image/png", sizes_ "16x16", href_ "/static/icons/favicon-16x16.png"]
         link_ [rel_ "manifest", href_ "/static/icons/site.webmanifest"]
         link_ [rel_ "mask-icon", href_ "/static/icons/safari-pinned-tab.svg", color_ "#5bbad5"]
         meta_ [name_ "msapplication-TileColor", content_ "#da532c"]
