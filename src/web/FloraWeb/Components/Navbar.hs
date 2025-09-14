@@ -48,7 +48,6 @@ navbar = do
         div_ [class_ "navbar-right"] $ do
           navBarLink "navbar-menu-button" "/" "Search on Flora" False
           navBarLink' "/about" "About" aboutNav
-          a_ [href_ "/documentation", class_ "navbar-link", target_ "_blank"] (text "Documentation")
           navBarLink' "/categories" "Categories" packagesNav
           navBarLink' "/packages" "Packages" packagesNav
           userMenu
