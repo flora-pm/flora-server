@@ -1,7 +1,0 @@
-synopsis: Package feeds
-description: {
-  This PR introduces Atom feeds for packages. The packages are dynamically selected from the `package_feeds` table according to a query parameter array. New releases are inserted in the `package_feeds` table.
-}
-
-prs: #881
-issues: #329

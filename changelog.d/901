@@ -1,5 +1,0 @@
-synopsis: Disable proc metrics on FreeBSD
-prs: #901
-description: {
-  prometheus-proc uses procfs, which is deprecated on FreeBSD
-}
