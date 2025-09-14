@@ -12,13 +12,13 @@ The following Haskell command-line tools will have to be installed:
 * `postgresql-migration`: To perform schema migrations
 * `fourmolu`: To style the code base. Version is 0.17.0.0
 * `hlint` v3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
-* `cabal-fmt` and `nixfmt`: To style the cabal and nix files
+* `cabal-gild` and `nixfmt`: To style the cabal and nix files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
 * `ghc-tags`: To generate ctags or etags for the project
 
 Outside of the flora root directory run:
 ```
-cabal install postgresql-migration hlint cabal-fmt ghcid ghc-tags --semaphore -j
+cabal install postgresql-migration hlint cabal-gild ghcid ghc-tags --semaphore -j
 ```
 
 (Some of the above packages could have incompatible dependencies, so consider installing them separately with `cabal install`)
