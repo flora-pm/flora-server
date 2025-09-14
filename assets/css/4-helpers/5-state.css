@@ -1,6 +1,6 @@
 .hidden { display: none; }
 
-.sr-only {
+.sr-only:not(:focus, :active) {
 	position: absolute;
 	width: 1px;
 	height: 1px;

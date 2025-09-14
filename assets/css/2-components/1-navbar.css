@@ -80,22 +80,31 @@
 
 	.navbar-search {
 		background-color: var(--navbar-search-background-color);
-		border-color: var(--navbar-search-border-color);
-		border-radius: 9999px;
-		border-width: 2px;
+		border-radius: var(--space-md) 0 0 var(--space-md);
+		border: none;
 		color: var(--navbar-search-color);
-		line-height: 1.25;
-		margin-right: 0.75rem;
-		padding-bottom: 0.25rem;
+		line-height: 1.5;
+		padding: 0.5rem;
 		padding-left: 0.75rem;
-		padding-right: 0.25rem;
-		padding-top: 0.25rem;
 		width: 100%;
+		font-size: 1rem;
 	}
 
-	.navbar-search:focus {
-		border-color: var(--search-bar-focus-border-color);
+	.navbar-searchBtn {
+		background-color: var(--navbar-search-background-color);
+		border: none;
+		color: var(--navbar-search-color);
+		line-height: 1.5;
+		margin-right: 0.75rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0 var(--space-md) var(--space-md) 0;
+		font-size: 1rem;
 	}
+
+	.navbar-searchBtn svg {
+		color: currentcolor !important;
+	}
+
 
 	#navbar-search-package-name {
 		padding-left: 20px;

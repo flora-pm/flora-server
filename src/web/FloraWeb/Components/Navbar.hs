@@ -8,6 +8,7 @@ import Lucid
 import PyF (str)
 
 import Flora.Model.User (User (..), UserFlags (..))
+import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types
 
@@ -138,7 +139,7 @@ navbarSearch = do
               Just content -> [value_ content]
       form_ [action_ "/search", method_ "GET"] $ do
         div_ [class_ "flex items-center py-2"] $ do
-          label_ [for_ "search"] ""
+          label_ [for_ "search", class_ "sr-only"] "Search a package"
           input_ $
             [ class_ "navbar-search"
             , id_ "search"
@@ -147,6 +148,12 @@ navbarSearch = do
             , placeholder_ "Search a package"
             ]
               ++ contentValue
+          button_
+            [ class_ "navbar-searchBtn"
+            , type_ "submit"
+            , label_ "Search"
+            ]
+            Icons.lookingGlass
     else pure mempty
 
 adminLink :: Bool -> Maybe User -> FloraHTML
