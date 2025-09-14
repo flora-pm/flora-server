@@ -5,48 +5,25 @@ module FloraWeb.Components.Header where
 import Control.Monad (unless)
 import Control.Monad.Reader
 import Data.Text (Text)
-import Htmx.Lucid.Core (hxGet_, hxTrigger_)
-import Lucid
-import PyF
-
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.SkipLink (skipLink)
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
+import Htmx.Lucid.Core (hxGet_, hxTrigger_)
+import Lucid
+import PyF
 
 header :: FloraHTML
 header = do
-  TemplateEnv{environment, title, indexPage, theme} <- ask
+  TemplateEnv {environment, title, indexPage, theme} <- ask
   doctype_
   let theme' = case theme of
         Nothing -> []
         Just a -> [data_ "theme" a]
   html_
-    ( [ lang_ "en"
-      , class_ "no-js"
-      , xData_
-          "{ updateTheme() { \
-          \ const customTheme = document.documentElement.getAttribute('data-theme'); \
-          \ const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches; \
-          \ const applyTheme = (theme) => { \
-          \   document.documentElement.setAttribute('data-theme', theme); \
-          \   console.log(\"theme switch\"); \
-          \   (async () => { await cookieStore.set('theme', theme) })(); \
-          \ }; \
-          \ switch (customTheme) { \
-          \   case 'light': \
-          \     applyTheme('dark'); \
-          \      break; \
-          \   case 'dark': \
-          \    applyTheme('light'); \
-          \    break; \
-          \   default: \
-          \     isSystemDark ? applyTheme('light') : applyTheme('dark'); \
-          \     break; \
-          \  } \
-          \  } \
-          \}"
+    ( [ lang_ "en",
+        class_ "no-js"
       ]
         <> theme'
     )
@@ -77,10 +54,10 @@ header = do
         cssLink
         meta_ [name_ "color-scheme", content_ "light dark"]
         link_
-          [ rel_ "search"
-          , type_ "application/opensearchdescription+xml"
-          , title_ "Flora"
-          , href_ "/opensearch.xml"
+          [ rel_ "search",
+            type_ "application/opensearchdescription+xml",
+            title_ "Flora",
+            href_ "/opensearch.xml"
           ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
@@ -98,7 +75,7 @@ header = do
 
 jsLink :: FloraHTML
 jsLink = do
-  TemplateEnv{assets, environment} <- ask
+  TemplateEnv {assets, environment} <- ask
   let jsURL = "/static/" <> assets.jsBundle.name
   case environment of
     Production ->
@@ -108,7 +85,7 @@ jsLink = do
 
 cssLink :: FloraHTML
 cssLink = do
-  TemplateEnv{assets, environment} <- ask
+  TemplateEnv {assets, environment} <- ask
   let cssURL = "/static/" <> assets.cssBundle.name
   case environment of
     Production ->
@@ -118,7 +95,7 @@ cssLink = do
 
 ogTags :: FloraHTML
 ogTags = do
-  TemplateEnv{title, description} <- ask
+  TemplateEnv {title, description} <- ask
   meta_ [property_ "og:title", content_ title]
   meta_ [property_ "og:site_name", content_ "Flora"]
   meta_ [property_ "og:description", content_ description]

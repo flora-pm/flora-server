@@ -4,35 +4,59 @@ module FloraWeb.Components.Navbar where
 
 import Control.Monad.Reader (ask, asks)
 import Data.Text (Text)
-import Lucid
-import PyF (str)
-
 import Flora.Model.User (User (..), UserFlags (..))
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types
+import Lucid
+import PyF (str)
 
 navbar :: FloraHTML
 navbar = do
-  ActiveElements{aboutNav, packagesNav} <- asks activeElements
-  nav_ [class_ "top-navbar"] $ do
-    div_ [class_ "navbar-content"] $ do
-      navbarDropdown aboutNav packagesNav
-      div_ [class_ "navbar-left"] $ do
-        brand
-        navbarSearch
-      div_ [class_ "navbar-right"] $ do
-        navBarLink "navbar-menu-button" "/" "Search on Flora" False
-        navBarLink' "/about" "About" aboutNav
-        a_ [href_ "/documentation", class_ "navbar-link", target_ "_blank"] (text "Documentation")
-        navBarLink' "/categories" "Categories" packagesNav
-        navBarLink' "/packages" "Packages" packagesNav
-        userMenu
-        themeToggle
+  ActiveElements {aboutNav, packagesNav} <- asks activeElements
+  nav_
+    [ class_ "top-navbar",
+      xData_
+        "{ updateTheme() { \
+        \ const customTheme = document.documentElement.getAttribute('data-theme'); \
+        \ const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches; \
+        \ const applyTheme = (theme) => { \
+        \   document.documentElement.setAttribute('data-theme', theme); \
+        \   console.log(\"theme switch\"); \
+        \   (async () => { await cookieStore.set('theme', theme) })(); \
+        \ }; \
+        \ switch (customTheme) { \
+        \   case 'light': \
+        \     applyTheme('dark'); \
+        \      break; \
+        \   case 'dark': \
+        \    applyTheme('light'); \
+        \    break; \
+        \   default: \
+        \     isSystemDark ? applyTheme('light') : applyTheme('dark'); \
+        \     break; \
+        \  } \
+        \  } \
+        \}"
+    ]
+    $ do
+      div_ [class_ "navbar-content"] $ do
+        navbarDropdown aboutNav packagesNav
+        div_ [class_ "navbar-left"] $ do
+          brand
+          navbarSearch
+        div_ [class_ "navbar-right"] $ do
+          navBarLink "navbar-menu-button" "/" "Search on Flora" False
+          navBarLink' "/about" "About" aboutNav
+          a_ [href_ "/documentation", class_ "navbar-link", target_ "_blank"] (text "Documentation")
+          navBarLink' "/categories" "Categories" packagesNav
+          navBarLink' "/packages" "Packages" packagesNav
+          userMenu
+          themeToggle
 
 brand :: FloraHTML
 brand = do
   div_ [class_ "brand"] $
-    link defaultLinkOptions{href = "/", classes = "", childNode = text "Flora :: [Package]"}
+    link defaultLinkOptions {href = "/", classes = "", childNode = text "Flora :: [Package]"}
 
 navbarDropdown :: Bool -> Bool -> FloraHTML
 navbarDropdown aboutNav packagesNav = do
@@ -50,25 +74,25 @@ navbarDropdown aboutNav packagesNav = do
   |]
 
   div_
-    [ class_ "navbar-dropdown"
-    , xData_ xData
-    , xOn_ "keydown.escape.prevent.stop" "close()"
-    , xId_ "['dropdown-button']"
+    [ class_ "navbar-dropdown",
+      xData_ xData,
+      xOn_ "keydown.escape.prevent.stop" "close()",
+      xId_ "['dropdown-button']"
     ]
     $ do
       button_
-        [ class_ "navbar-dropdown__button"
-        , type_ "button"
-        , xOn_ "click" "toggle()"
-        , ariaExpanded_ "open"
-        , ariaControls_ "$id('dropdown-button')"
+        [ class_ "navbar-dropdown__button",
+          type_ "button",
+          xOn_ "click" "toggle()",
+          ariaExpanded_ "open",
+          ariaControls_ "$id('dropdown-button')"
         ]
         $ text "☰ Flora"
       div_
-        [ class_ "navbar-dropdown__menu"
-        , xShow_ "open"
-        , xOn_ "click.outside" "close()"
-        , id'_ "$id('dropdown-button')"
+        [ class_ "navbar-dropdown__menu",
+          xShow_ "open",
+          xOn_ "click.outside" "close()",
+          id'_ "$id('dropdown-button')"
         ]
         $ do
           navBarLink "navbar-menu-button" "/" "Search on Flora" False
@@ -77,16 +101,16 @@ navbarDropdown aboutNav packagesNav = do
           navBarLink' "/packages" "Packages" packagesNav
           themeToggle
 
-navBarLink
-  :: Text
-  -- ^ Additional classes
-  -> Text
-  -- ^ href attribute
-  -> Text
-  -- ^ label
-  -> Bool
-  -- ^ is the element active
-  -> FloraHTML
+navBarLink ::
+  -- | Additional classes
+  Text ->
+  -- | href attribute
+  Text ->
+  -- | label
+  Text ->
+  -- | is the element active
+  Bool ->
+  FloraHTML
 navBarLink additionalClasses href label isActive' =
   a_
     [href_ href, class_ ("navbar-link " <> additionalClasses <> " " <> isActive isActive')]
@@ -97,8 +121,8 @@ navBarLink' = navBarLink ""
 
 userMenu :: FloraHTML
 userMenu = do
-  ActiveElements{adminDashboard} <- asks activeElements
-  TemplateEnv{mUser} <- ask
+  ActiveElements {adminDashboard} <- asks activeElements
+  TemplateEnv {mUser} <- ask
   getUsernameOrLogin mUser
   adminLink adminDashboard mUser
 
@@ -116,11 +140,11 @@ navbarSearch = do
         div_ [class_ "flex items-center py-2"] $ do
           label_ [for_ "search"] ""
           input_ $
-            [ class_ "navbar-search"
-            , id_ "search"
-            , type_ "search"
-            , name_ "q"
-            , placeholder_ "Search a package"
+            [ class_ "navbar-search",
+              id_ "search",
+              type_ "search",
+              name_ "q",
+              placeholder_ "Search a package"
             ]
               ++ contentValue
     else pure mempty
@@ -141,16 +165,16 @@ themeToggle = do
   let buttonBaseClasses = "navbar-themeBtn p-2 m-4 md:m-0 rounded-md items-center"
 
   button_
-    [ xOn_ "click" "updateTheme()"
-    , class_ $ "theme-button--light " <> buttonBaseClasses
-    , ariaLabel_ "Switch to light theme"
+    [ xOn_ "click" "updateTheme()",
+      class_ $ "theme-button--light " <> buttonBaseClasses,
+      ariaLabel_ "Switch to light theme"
     ]
     sunIcon
 
   button_
-    [ xOn_ "click" "updateTheme()"
-    , class_ $ "theme-button--dark " <> buttonBaseClasses
-    , ariaLabel_ "Switch to dark theme"
+    [ xOn_ "click" "updateTheme()",
+      class_ $ "theme-button--dark " <> buttonBaseClasses,
+      ariaLabel_ "Switch to dark theme"
     ]
     moonIcon
 
