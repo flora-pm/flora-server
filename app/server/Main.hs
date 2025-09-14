@@ -66,6 +66,7 @@ checkExpectedTables = do
           , "blob_relations"
           , "categories"
           , "downloads"
+          , "index_dependencies"
           , "oddjobs"
           , "organisations"
           , "package_categories"
@@ -127,7 +128,7 @@ checkExpectedTables = do
 
 checkRepositoriesAreConfigured :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
 checkRepositoriesAreConfigured = do
-  let expectedRepositories = Set.fromList ["hackage", "cardano", "horizon"]
+  let expectedRepositories = Set.fromList ["hackage", "cardano", "horizon", "mlabs"]
   (result :: (Vector (Only Text))) <-
     dbtToEff $
       query_

@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Flora.TestUtils
@@ -12,6 +13,7 @@ module Flora.TestUtils
   , assertEqual
   , assertFailure
   , assertJust
+  , assertJust_
   , assertRight
   , assertRight'
   , assertClientRight
@@ -82,6 +84,7 @@ module Flora.TestUtils
     -- ** HUnit re-exports
   , TestTree
   , liftIO
+  , assertEqual_
   )
 where
 
@@ -107,7 +110,8 @@ import Distribution.Types.Version (Version)
 import Distribution.Types.Version qualified as Version
 import Effectful
 import Effectful.Concurrent
-import Effectful.Exception qualified as E
+import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log)
@@ -129,12 +133,10 @@ import Hedgehog.Range qualified as Range
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import RequireCallStack
-import Say
 import Sel.Hashing.Password
 import Sel.Hashing.Password qualified as Sel
 import Servant.API ()
 import Servant.Client
-import System.Exit
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
@@ -142,27 +144,15 @@ import Test.Tasty.HUnit qualified as Test
 
 import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Import.Package.Bulk (importAllFilesInRelativeDirectory)
+import Flora.Import.Package.Bulk.Archive (importFromArchive)
+import Flora.Import.Types (ImportError)
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
 import Flora.Model.Component.Types
-  ( CanonicalComponent (..)
-  , ComponentId (..)
-  , ComponentMetadata (..)
-  , ComponentType (..)
-  , PackageComponent (..)
-  )
-import Flora.Model.Package
-  ( Namespace (..)
-  , Package (..)
-  , PackageAlternatives
-  , PackageId (..)
-  , PackageName (..)
-  , PackageStatus
-  )
+import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
-import Flora.Model.PackageGroup.Types (PackageGroup (..), PackageGroupId (..))
+import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroup.Update qualified as Update
 import Flora.Model.PackageGroupPackage.Types (PackageGroupPackage (..), PackageGroupPackageId (..))
 import Flora.Model.PackageGroupPackage.Update qualified as Update
@@ -193,6 +183,7 @@ type TestEff a =
      , State (Set (Namespace, PackageName, Version))
      , Metrics AppMetrics
      , Concurrent
+     , Error ImportError
      , IOE
      ]
     a
@@ -207,24 +198,23 @@ getFixtures = do
   Just hackageUser <- Query.getUserByUsername "hackage-user"
   pure Fixtures{hackageUser}
 
-importAllPackages :: RequireCallStack => TestEff ()
+importAllPackages :: (HasCallStack, RequireCallStack) => TestEff ()
 importAllPackages = do
-  importAllFilesInRelativeDirectory
-    ("hackage", "https://hackage.haskell.org")
-    "./test/fixtures/Cabal/hackage"
-  importAllFilesInRelativeDirectory
-    ("cardano", "https://input-output-hk.github.io/cardano-haskell-packages")
-    "./test/fixtures/Cabal/cardano"
+  importFromArchive
+    "hackage"
+    Vector.empty
+    "test/fixtures/Cabal"
+  importFromArchive
+    "cardano"
+    (Vector.fromList ["hackage"])
+    "test/fixtures/Cabal"
+  importFromArchive
+    "mlabs"
+    (Vector.fromList ["cardano", "hackage"])
+    "test/fixtures/Cabal"
 
-runTestEff :: RequireCallStack => TestEff a -> FloraEnv -> IO a
+runTestEff :: (HasCallStack, RequireCallStack) => TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $ do
-  let reportException =
-        [ E.Handler $ \e@(SomeException exception) -> do
-            let context = E.displayExceptionContext $ E.someExceptionContext e
-            sayErrString $ "Exception: " <> E.displayException exception
-            sayErrString $ "Context: " <> context
-            liftIO exitFailure
-        ]
   let withLogger = Logging.makeLogger env.mltp.logger
   withLogger $ \logger ->
     comp
@@ -234,15 +224,19 @@ runTestEff comp env = runEff $ do
       & runBlobStorePure
       & runReader env
       & runDB env.pool
-      & (`E.catches` reportException)
       & Log.runLog "flora-test" logger LogAttention
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime
       & State.evalState mempty
       & runPrometheusMetrics env.metrics
       & runConcurrent
+      & Error.runErrorWith
+        ( \callstack err -> do
+            liftIO $ putStrLn $ prettyCallStack callstack
+            pure $ error $ show err
+        )
 
-testThis :: RequireCallStack => String -> TestEff () -> TestEff TestTree
+testThis :: (HasCallStack, RequireCallStack) => String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
   env <- ask @FloraEnv
   let test = runTestEff assertion env
@@ -261,49 +255,64 @@ assertBool boolean = liftIO $ Test.assertBool "" boolean
 --
 --  Usage:
 --
+--  >>> assertEqual message expected actual
+assertEqual :: (Eq a, HasCallStack, Show a) => String -> a -> a -> TestEff ()
+assertEqual message expected actual = liftIO $ Test.assertEqual message expected actual
+
+--
+
+-- | Make sure an expected value is the same as the actual one.
+--  Without message
+--
+--  Usage:
+--
 --  >>> assertEqual expected actual
-assertEqual :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
-assertEqual expected actual = liftIO $ Test.assertEqual "" expected actual
+assertEqual_ :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
+assertEqual_ expected actual = liftIO $ Test.assertEqual "" expected actual
 
 assertFailure :: (HasCallStack, MonadIO m) => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
-assertJust :: HasCallStack => Maybe a -> TestEff a
-assertJust (Just a) = pure a
-assertJust Nothing = liftIO $ Test.assertFailure "Test return Nothing instead of Just"
+assertJust :: (HasCallStack, RequireCallStack) => String -> Maybe a -> TestEff a
+assertJust _ (Just a) = pure a
+assertJust message Nothing = liftIO $ Test.assertFailure message
 
-assertRight :: HasCallStack => Either a b -> TestEff b
+assertJust_ :: (HasCallStack, RequireCallStack) => Maybe a -> TestEff a
+assertJust_ (Just a) = pure a
+assertJust_ Nothing = liftIO $ Test.assertFailure "Test return Nothing instead of Just"
+
+assertRight :: (HasCallStack, RequireCallStack) => Either a b -> TestEff b
 assertRight (Left _a) = liftIO $ Test.assertFailure "Test return Left instead of Right"
 assertRight (Right b) = pure b
 
-assertRight' :: Either a b -> TestEff ()
+assertRight' :: (HasCallStack, RequireCallStack) => Either a b -> TestEff ()
 assertRight' = void . assertRight
 
-assertClientRight :: HasCallStack => String -> TestEff (Either ClientError a) -> TestEff a
+assertClientRight :: (HasCallStack, RequireCallStack) => String -> TestEff (Either ClientError a) -> TestEff a
 assertClientRight name request =
   request
     >>= \case
       Right a -> pure a
       Left err -> throw $ mkUserError $ name <> ": " <> show err <> " " <> prettyCallStack callStack
 
-assertClientRight' :: HasCallStack => String -> TestEff (Either ClientError a) -> TestEff ()
+assertClientRight' :: (HasCallStack, RequireCallStack) => String -> TestEff (Either ClientError a) -> TestEff ()
 assertClientRight' name request = void $ assertClientRight name request
 
-assertLeft :: HasCallStack => Either a b -> TestEff a
+assertLeft :: (HasCallStack, RequireCallStack) => Either a b -> TestEff a
 assertLeft (Left a) = pure a
 assertLeft (Right _b) = liftIO $ Test.assertFailure "Test return Right instead of Left"
 
-assertLeft' :: Either a b -> TestEff ()
+assertLeft' :: (HasCallStack, RequireCallStack) => Either a b -> TestEff ()
 assertLeft' = void . assertLeft
 
-assertClientLeft :: HasCallStack => String -> TestEff (Either ClientError b) -> TestEff ClientError
+assertClientLeft :: (HasCallStack, RequireCallStack) => String -> TestEff (Either ClientError b) -> TestEff ClientError
 assertClientLeft name request =
   request
     >>= \case
       Right _ -> throw $ mkUserError $ name <> " " <> prettyCallStack callStack
       Left err -> pure err
 
-assertClientLeft' :: HasCallStack => String -> TestEff (Either ClientError a) -> TestEff ()
+assertClientLeft' :: (HasCallStack, RequireCallStack) => String -> TestEff (Either ClientError a) -> TestEff ()
 assertClientLeft' name request = void $ assertClientLeft name request
 
 -- assertStatus :: forall (statusCode :: Type) (httpValue :: Type) (a :: Type)
@@ -483,7 +492,7 @@ instantiatePackage
     status <- generatePackageStatus
     deprecationInfo <- generatePackageDeprecationInfo
     let package = Package{..}
-    Update.upsertPackageByNamespaceAndName package
+    Update.upsertPackage package
     pure package
 
 genPackageName :: MonadGen m => m PackageName
@@ -700,7 +709,7 @@ instantiateRequirement
 
 data PackageGroupTemplate m = PackageGroupTemplate
   { packageGroupId :: m PackageGroupId
-  , groupName :: m Text
+  , groupName :: m PackageGroupName
   }
   deriving stock (Generic)
 
@@ -708,7 +717,7 @@ randomPackageGroupTemplate :: MonadIO m => PackageGroupTemplate m
 randomPackageGroupTemplate =
   PackageGroupTemplate
     { packageGroupId = PackageGroupId <$> H.sample genUUID
-    , groupName = H.sample genDisplayName
+    , groupName = PackageGroupName <$> H.sample genDisplayName
     }
 
 instantiatePackageGroup

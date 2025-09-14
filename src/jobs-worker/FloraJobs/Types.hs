@@ -13,6 +13,8 @@ import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent.Async
+import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.FileSystem
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
@@ -30,6 +32,7 @@ import Network.HTTP.Client
 import RequireCallStack
 
 import Flora.Environment.Env
+import Flora.Import.Types (ImportError)
 import Flora.Model.BlobStore.API
 import Flora.Model.Job ()
 import Flora.Model.Package.Types (Namespace, PackageName)
@@ -48,6 +51,7 @@ type JobsRunner a =
      , Reader FloraEnv
      , Concurrent
      , Metrics AppMetrics
+     , Error ImportError
      , IOE
      ]
     a
@@ -77,6 +81,11 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
     & Reader.runReader floraEnv
     & runConcurrent
     & runPrometheusMetrics floraEnv.metrics
+    & Error.runErrorWith
+      ( \callstack err -> do
+          liftIO $ putStrLn $ prettyCallStack callstack
+          pure $ error $ show err
+      )
     & runEff
 
 data OddJobException where

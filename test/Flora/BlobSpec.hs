@@ -39,10 +39,10 @@ toList :: RequireCallStack => Tar.Entries e -> Either e [Tar.Entry]
 toList = right reverse . left fst . Tar.foldlEntries (\acc x -> x : acc) []
 
 readTarball :: RequireCallStack => FilePath -> TestEff LazyByteString
-readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/tarballs" </> tarball)
+readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/test-namespace" </> tarball)
 
-testImportTarball :: RequireCallStack => TestEff ()
-testImportTarball = do
+testImportTarball :: TestEff ()
+testImportTarball = provideCallStack $ do
   content <- readTarball "b-0.1.0.0.tar.gz"
   let pname = PackageName "b"
       version = mkVersion [0, 1, 0, 0]
@@ -54,7 +54,7 @@ testImportTarball = do
       case toList . Tar.read <$> [content, content'] of
         [Right tarEntries, Right tarEntries'] -> do
           -- check we've not lost or gained any entries
-          assertEqual (length tarEntries) (length tarEntries')
+          assertEqual_ (length tarEntries) (length tarEntries')
           -- Check the output order is sorted
           checkAll Tar.entryPath (sortByPath tarEntries') tarEntries'
           -- Check both paths and content are the same in input and output
@@ -62,10 +62,10 @@ testImportTarball = do
           checkAll Tar.entryContent (sortByPath tarEntries) tarEntries'
 
           -- check that we also archived the initial tarball along with the release
-          package <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") pname
-          release <- fromJust <$> Query.getReleaseByVersion package.packageId version
-          archivedContent <- fromJust <$> Query.getReleaseTarballArchive release.releaseId
-          assertEqual content archivedContent
+          package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") pname
+          release <- assertJust_ =<< Query.getReleaseByVersion package.packageId version
+          archivedContent <- assertJust_ =<< Query.getReleaseTarballArchive release.releaseId
+          assertEqual_ content archivedContent
         [Left _, _] -> assertFailure "Input tar is corrupted"
         [_, Left _] -> assertFailure "Generated corrupted tarball"
         _ -> assertFailure "Something impossible happened!"
@@ -74,8 +74,9 @@ testImportTarball = do
     -- traverse the two lists asserting equality of the results of a
     -- function on each element
     checkAll f xs ys =
-      traverse_ (uncurry assertEqual . (f *** f)) $
-        zip xs ys
+      provideCallStack $
+        traverse_ (uncurry assertEqual_ . (f *** f)) $
+          zip xs ys
 
 testBadTarball :: RequireCallStack => TestEff ()
 testBadTarball = do
@@ -86,7 +87,7 @@ testBadTarball = do
   case res of
     Right _ -> assertFailure "Imported bad tarball"
     Left (BlobStoreTarError _ _ (TarUnsupportedEntry entry)) ->
-      assertEqual entry (Tar.SymbolicLink $ fromJust $ Tar.toLinkTarget "src/Lib.hs")
+      assertEqual_ entry (Tar.SymbolicLink $ fromJust $ Tar.toLinkTarget "src/Lib.hs")
     Left err -> assertFailure $ "Unexpected error " <> show err
 
 testMalformedTarball :: RequireCallStack => TestEff ()
@@ -97,5 +98,5 @@ testMalformedTarball = do
   res <- Update.insertTar pname version content
   case res of
     Right _ -> assertFailure "Imported malformed tarball"
-    Left (BlobStoreTarError _ _ (TarUnexpectedLayout path)) -> assertEqual path "b-0.1.0.0"
+    Left (BlobStoreTarError _ _ (TarUnexpectedLayout path)) -> assertEqual_ path "b-0.1.0.0"
     Left _ -> assertFailure "Unexpected error"

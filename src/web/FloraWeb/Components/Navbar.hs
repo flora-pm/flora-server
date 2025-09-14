@@ -8,26 +8,51 @@ import Lucid
 import PyF (str)
 
 import Flora.Model.User (User (..), UserFlags (..))
+import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types
 
 navbar :: FloraHTML
 navbar = do
   ActiveElements{aboutNav, packagesNav} <- asks activeElements
-  nav_ [class_ "top-navbar"] $ do
-    div_ [class_ "navbar-content"] $ do
-      navbarDropdown aboutNav packagesNav
-      div_ [class_ "navbar-left"] $ do
-        brand
-        navbarSearch
-      div_ [class_ "navbar-right"] $ do
-        navBarLink "navbar-menu-button" "/" "Search on Flora" False
-        navBarLink' "/about" "About" aboutNav
-        a_ [href_ "/documentation", class_ "navbar-link", target_ "_blank"] (text "Documentation")
-        navBarLink' "/categories" "Categories" packagesNav
-        navBarLink' "/packages" "Packages" packagesNav
-        userMenu
-        themeToggle
+  nav_
+    [ class_ "top-navbar"
+    , xData_
+        "{ updateTheme() { \
+        \ const customTheme = document.documentElement.getAttribute('data-theme'); \
+        \ const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches; \
+        \ const applyTheme = (theme) => { \
+        \   document.documentElement.setAttribute('data-theme', theme); \
+        \   console.log(\"theme switch\"); \
+        \   (async () => { await cookieStore.set('theme', theme) })(); \
+        \ }; \
+        \ switch (customTheme) { \
+        \   case 'light': \
+        \     applyTheme('dark'); \
+        \      break; \
+        \   case 'dark': \
+        \    applyTheme('light'); \
+        \    break; \
+        \   default: \
+        \     isSystemDark ? applyTheme('light') : applyTheme('dark'); \
+        \     break; \
+        \  } \
+        \  } \
+        \}"
+    ]
+    $ do
+      div_ [class_ "navbar-content"] $ do
+        navbarDropdown aboutNav packagesNav
+        div_ [class_ "navbar-left"] $ do
+          brand
+          navbarSearch
+        div_ [class_ "navbar-right"] $ do
+          navBarLink "navbar-menu-button" "/" "Search on Flora" False
+          navBarLink' "/about" "About" aboutNav
+          navBarLink' "/categories" "Categories" packagesNav
+          navBarLink' "/packages" "Packages" packagesNav
+          userMenu
+          themeToggle
 
 brand :: FloraHTML
 brand = do
@@ -114,7 +139,7 @@ navbarSearch = do
               Just content -> [value_ content]
       form_ [action_ "/search", method_ "GET"] $ do
         div_ [class_ "flex items-center py-2"] $ do
-          label_ [for_ "search"] ""
+          label_ [for_ "search", class_ "sr-only"] "Search a package"
           input_ $
             [ class_ "navbar-search"
             , id_ "search"
@@ -123,6 +148,12 @@ navbarSearch = do
             , placeholder_ "Search a package"
             ]
               ++ contentValue
+          button_
+            [ class_ "navbar-searchBtn"
+            , type_ "submit"
+            , label_ "Search"
+            ]
+            Icons.lookingGlass
     else pure mempty
 
 adminLink :: Bool -> Maybe User -> FloraHTML
@@ -138,23 +169,23 @@ themeToggle = do
   let moonIcon = do
         img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6", alt_ ""]
 
-  let buttonBaseClasses = "navbar-themeBtn p-2 m-4 md:m-0 rounded-md inline-flex items-center bg-slate-200"
+  let buttonBaseClasses = "navbar-themeBtn p-2 m-4 md:m-0 rounded-md items-center"
 
   button_
-    [ xOn_ "click" "theme = 'light'; menuOpen = false"
+    [ xOn_ "click" "updateTheme()"
     , class_ $ "theme-button--light " <> buttonBaseClasses
     , ariaLabel_ "Switch to light theme"
     ]
     sunIcon
 
   button_
-    [ xOn_ "click" "theme = 'dark'; menuOpen = false"
+    [ xOn_ "click" "updateTheme()"
     , class_ $ "theme-button--dark " <> buttonBaseClasses
     , ariaLabel_ "Switch to dark theme"
     ]
     moonIcon
 
-  input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden", xModel_ [] "theme"]
+  input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden"]
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
 getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login" False

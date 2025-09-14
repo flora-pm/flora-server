@@ -63,6 +63,7 @@ server {
     }
 
     location / {
+        rewrite ^.*(\/packages\/(@|%40)haskell\/(.*))$ /packages/@hackage/$3 permanent;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Host $http_host;

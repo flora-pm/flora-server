@@ -26,6 +26,10 @@
 		min-width: 0;
 	}
 
+	.search-bar::placeholder {
+		color: var(--gray-60);
+	}
+
 	.search-bar:hover {
 		background-color: var(--search-bar-background-hover-color);
 	}
@@ -47,7 +51,7 @@
 	box-shadow: 5px 5px 5px 2px var(--search-bar-focus-border-color);
 }
 
-.main-search button {
+.main-search .search-btn {
 	margin-bottom: 1.25rem;
 	margin-right: 1rem;
 	margin-top: 1.25rem;
@@ -57,5 +61,6 @@
 		height: 1.5rem;
 		margin-top: auto;
 		margin-bottom: auto;
+		color: var(--gray-60);
 	}
 }

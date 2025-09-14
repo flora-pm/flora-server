@@ -1,0 +1,694 @@
+services:
+  #
+  # Current setup is based on <https://github.com/FinleyMcIlwaine/eventlog-live-infra>.
+  #
+  # **Note**: due to all the macOS-related issues flora server itself is not included
+  # into the current configuration configuration because it was nearly impossible to test it.
+  #
+  # See <https://github.com/FinleyMcIlwaine/eventlog-live-infra/issues/2>
+  # and project README for more details.
+  #
+  eventlog-live:
+    image: "finleymcilwaine/eventlog-live:0.1.0"
+    restart: "always"
+    depends_on:
+      influxdb:
+        condition: "service_started"
+    environment:
+      FLORA_EVENTLOG_SOCKET: "/tmp/flora-eventlog.sock"
+      GHC_EVENTLOG_SOCKET: "${FLORA_EVENTLOG_SOCKET}"
+      GHC_EVENTLOG_INFLUXDB_HOST: "influxdb"
+      GHC_EVENTLOG_INFLUXDB_DB: "eventlog"
+      GHC_EVENTLOG_INFLUXDB_USERNAME: "admin"
+      GHC_EVENTLOG_INFLUXDB_PASSWORD: "admin"
+    volumes:
+    - "${GHC_EVENTLOG_SOCKET:-/tmp/flora-eventlog.sock}:/tmp/flora-eventlog.sock"
+    command: "bash -c \"sleep 10s && eventlog-influxdb\""
+
+  influxdb:
+    image: "influxdb:1.8"
+    restart: "always"
+    ports:
+    - "8086:8086"
+    environment:
+      INFLUXDB_HTTP_AUTH_ENABLED: "true"
+      INFLUXDB_DB: "eventlog"
+      INFLUXDB_ADMIN_USER: "admin"
+      INFLUXDB_ADMIN_PASSWORD: "admin"
+
+  grafana:
+    # Necessary to get around `database` datasource provisioning bug
+    # See: https://github.com/grafana/grafana/issues/64795
+    image: "grafana/grafana-oss-dev:9.5.0-107958pre"
+    restart: "always"
+    ports:
+    - "3000:3000"
+    environment:
+      DATASOURCE_PROVISIONING_CONTENT: |
+        apiVersion: 1
+        datasources:
+          - name: InfluxDB
+            type: influxdb
+            access: proxy
+            database: eventlog
+            url: http://influxdb:8086
+            basicAuth: true
+            basicAuthUser: admin
+            jsonData:
+              httpMode: POST
+            secureJsonData:
+              basicAuthPassword: admin
+      DASHBOARD_PROVISIONING_CONTENT: |
+        apiVersion: 1
+        providers:
+          - name: Dashboards
+            orgId: 1
+            type: file
+            disableDeletion: false
+            updateIntervalSeconds: 10
+            allowUiUpdates: false
+            options:
+              path: /var/lib/grafana/dashboards
+              foldersFromFilesStructure: true
+      DEFAULT_DASHBOARD_CONTENT: |
+        {
+          "annotations": {
+            "list": [
+              {
+                "builtIn": 1,
+                "datasource": {
+                  "type": "grafana",
+                  "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+              },
+              {
+                "datasource": {
+                  "type": "influxdb",
+                  "uid": "InfluxDB"
+                },
+                "enable": true,
+                "iconColor": "red",
+                "name": "Trace Events",
+                "target": {
+                  "fromAnnotations": true,
+                  "limit": 100,
+                  "matchAny": false,
+                  "query": "select value from \"label.eventlog.user_markers\"",
+                  "tags": [],
+                  "textColumn": "",
+                  "textEditor": true,
+                  "type": "dashboard"
+                }
+              }
+            ]
+          },
+          "editable": true,
+          "fiscalYearStartMonth": 0,
+          "graphTooltip": 0,
+          "id": 2,
+          "links": [],
+          "liveNow": false,
+          "panels": [
+            {
+              "collapsed": false,
+              "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+              },
+              "id": 6,
+              "panels": [],
+              "title": "Memory",
+              "type": "row"
+            },
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "InfluxDB"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "always",
+                    "spanNulls": 60000,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "decbytes"
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 10,
+                "w": 14,
+                "x": 0,
+                "y": 1
+              },
+              "id": 2,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "targets": [
+                {
+                  "alias": "Heap Size",
+                  "datasource": {
+                    "type": "influxdb",
+                    "uid": "$${DS_INFLUXDB}"
+                  },
+                  "groupBy": [
+                    {
+                      "params": [
+                        "$$__interval"
+                      ],
+                      "type": "time"
+                    },
+                    {
+                      "params": [
+                        "null"
+                      ],
+                      "type": "fill"
+                    }
+                  ],
+                  "measurement": "gauge.eventlog.heap_size",
+                  "orderByTime": "ASC",
+                  "policy": "autogen",
+                  "refId": "Heap Size",
+                  "resultFormat": "time_series",
+                  "select": [
+                    [
+                      {
+                        "params": [
+                          "value"
+                        ],
+                        "type": "field"
+                      },
+                      {
+                        "params": [],
+                        "type": "mean"
+                      }
+                    ]
+                  ],
+                  "tags": []
+                },
+                {
+                  "alias": "Live Bytes",
+                  "datasource": {
+                    "type": "influxdb",
+                    "uid": "$${DS_INFLUXDB}"
+                  },
+                  "groupBy": [
+                    {
+                      "params": [
+                        "$$__interval"
+                      ],
+                      "type": "time"
+                    },
+                    {
+                      "params": [
+                        "null"
+                      ],
+                      "type": "fill"
+                    }
+                  ],
+                  "hide": false,
+                  "measurement": "gauge.eventlog.live_bytes",
+                  "orderByTime": "ASC",
+                  "policy": "autogen",
+                  "refId": "Live Bytes",
+                  "resultFormat": "time_series",
+                  "select": [
+                    [
+                      {
+                        "params": [
+                          "value"
+                        ],
+                        "type": "field"
+                      },
+                      {
+                        "params": [],
+                        "type": "mean"
+                      }
+                    ]
+                  ],
+                  "tags": []
+                },
+                {
+                  "alias": "Blocks Size",
+                  "datasource": {
+                    "type": "influxdb",
+                    "uid": "$${DS_INFLUXDB}"
+                  },
+                  "groupBy": [
+                    {
+                      "params": [
+                        "$$__interval"
+                      ],
+                      "type": "time"
+                    },
+                    {
+                      "params": [
+                        "null"
+                      ],
+                      "type": "fill"
+                    }
+                  ],
+                  "hide": false,
+                  "measurement": "gauge.eventlog.blocks_size",
+                  "orderByTime": "ASC",
+                  "policy": "autogen",
+                  "refId": "Blocks Size",
+                  "resultFormat": "time_series",
+                  "select": [
+                    [
+                      {
+                        "params": [
+                          "value"
+                        ],
+                        "type": "field"
+                      },
+                      {
+                        "params": [],
+                        "type": "mean"
+                      }
+                    ]
+                  ],
+                  "tags": []
+                }
+              ],
+              "title": "Memory Usage",
+              "type": "timeseries"
+            },
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "InfluxDB"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "pattern": "gauge.eventlog.heap_prof_sample.(.*)",
+                        "result": {
+                          "index": 0,
+                          "text": "$$1"
+                        }
+                      },
+                      "type": "regex"
+                    }
+                  ],
+                  "noValue": "No heap samples available",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Residency"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 130
+                      }
+                    ]
+                  }
+                ]
+              },
+              "gridPos": {
+                "h": 17,
+                "w": 10,
+                "x": 14,
+                "y": 1
+              },
+              "id": 8,
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "countRows": false,
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true,
+                "showRowNums": false,
+                "sortBy": []
+              },
+              "pluginVersion": "9.5.0-107958pre",
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "influxdb",
+                    "uid": "InfluxDB"
+                  },
+                  "groupBy": [],
+                  "limit": "1",
+                  "measurement": "/^$$heap_items$/",
+                  "orderByTime": "ASC",
+                  "policy": "autogen",
+                  "refId": "A",
+                  "resultFormat": "table",
+                  "select": [
+                    [
+                      {
+                        "params": [
+                          "value"
+                        ],
+                        "type": "field"
+                      },
+                      {
+                        "params": [],
+                        "type": "last"
+                      }
+                    ],
+                    [
+                      {
+                        "params": [
+                          "measurement_name"
+                        ],
+                        "type": "field"
+                      }
+                    ]
+                  ],
+                  "tags": []
+                }
+              ],
+              "title": "Latest Heap Census",
+              "transformations": [
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true
+                    },
+                    "indexByName": {
+                      "Time": 0,
+                      "measurement_name": 1,
+                      "value": 2
+                    },
+                    "renameByName": {
+                      "Time": "",
+                      "last": "Residency",
+                      "measurement_name": "Heap Item",
+                      "value": "Residency"
+                    }
+                  }
+                },
+                {
+                  "id": "sortBy",
+                  "options": {
+                    "fields": {},
+                    "sort": [
+                      {
+                        "desc": true,
+                        "field": "Residency"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "type": "table"
+            },
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "InfluxDB"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "pattern": "gauge.eventlog.heap_prof_sample.(.*)",
+                        "result": {
+                          "index": 0,
+                          "text": "$$1"
+                        }
+                      },
+                      "type": "regex"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 14,
+                "x": 0,
+                "y": 11
+              },
+              "id": 4,
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "influxdb",
+                    "uid": "InfluxDB"
+                  },
+                  "groupBy": [
+                    {
+                      "params": [
+                        "$$__interval"
+                      ],
+                      "type": "time"
+                    },
+                    {
+                      "params": [
+                        "null"
+                      ],
+                      "type": "fill"
+                    }
+                  ],
+                  "hide": false,
+                  "measurement": "/^$$heap_items$/",
+                  "orderByTime": "ASC",
+                  "policy": "autogen",
+                  "query": "SELECT mean(\"value\") FROM /heap_prof_sample/ WHERE $$timeFilter GROUP BY time($$__interval) fill(null)",
+                  "rawQuery": false,
+                  "refId": "A",
+                  "resultFormat": "time_series",
+                  "select": [
+                    [
+                      {
+                        "params": [
+                          "value"
+                        ],
+                        "type": "field"
+                      },
+                      {
+                        "params": [],
+                        "type": "mean"
+                      }
+                    ]
+                  ],
+                  "tags": []
+                }
+              ],
+              "title": "Heap Samples",
+              "transformations": [
+                {
+                  "id": "renameByRegex",
+                  "options": {
+                    "regex": "gauge.eventlog.heap_prof_sample.(.*).mean",
+                    "renamePattern": "$$1"
+                  }
+                }
+              ],
+              "type": "timeseries"
+            }
+          ],
+          "refresh": "5s",
+          "schemaVersion": 38,
+          "style": "dark",
+          "tags": [],
+          "templating": {
+            "list": [
+              {
+                "current": {
+                  "selected": true,
+                  "text": [
+                    "All"
+                  ],
+                  "value": [
+                    "$$__all"
+                  ]
+                },
+                "datasource": {
+                  "type": "influxdb",
+                  "uid": "InfluxDB"
+                },
+                "definition": "SHOW MEASUREMENTS ON eventlog WITH MEASUREMENT =~ /heap_prof_sample/",
+                "description": "Heap items broken down by the class with which profiling is being performed",
+                "hide": 0,
+                "includeAll": true,
+                "label": "Heap Items",
+                "multi": true,
+                "name": "heap_items",
+                "options": [],
+                "query": "SHOW MEASUREMENTS ON eventlog WITH MEASUREMENT =~ /heap_prof_sample/",
+                "refresh": 2,
+                "regex": "",
+                "skipUrlSync": false,
+                "sort": 1,
+                "type": "query"
+              }
+            ]
+          },
+          "time": {
+            "from": "now-15m",
+            "to": "now"
+          },
+          "timepicker": {},
+          "timezone": "",
+          "title": "Heap Stats",
+          "uid": "c0823cfa-e349-4b5f-9a68-972f2c7557ee",
+          "version": 2,
+          "weekStart": ""
+        }
+
+    entrypoint:
+    - bash
+    - -c
+    - |
+      echo "creating initialization files"
+      echo "$$DATASOURCE_PROVISIONING_CONTENT" > /etc/grafana/provisioning/datasources/datasources.yml
+      echo "created datasources.yml"
+      echo "$$DASHBOARD_PROVISIONING_CONTENT" > /etc/grafana/provisioning/dashboards/dashboards.yml
+      echo "created dashboards.yml"
+      mkdir -p /var/lib/grafana/dashboards
+      echo "$$DEFAULT_DASHBOARD_CONTENT" > /var/lib/grafana/dashboards/default.json
+      echo "created default dashboard file"
+      exec /run.sh

@@ -7,7 +7,7 @@
     statix.enable = true;
 
     # haskell hooks
-    cabal-fmt = {
+    cabal-gild = {
       enable = true;
       excludes = [ "^test/fixtures" ];
     };

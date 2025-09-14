@@ -107,6 +107,7 @@ data MLTP = MLTP
   , zipkinEnabled :: Bool
   , zipkinHost :: Maybe HostName
   , zipkinPort :: Maybe PortNumber
+  , eventlogSocket :: Maybe FilePath
   }
   deriving stock (Generic, Show)
 
@@ -164,6 +165,7 @@ parseMLTP =
     <*> switch "FLORA_ZIPKIN_ENABLED" (help "Is Zipkin trace collection enabled? (default false)")
     <*> var (pure . Just <=< nonempty) "FLORA_ZIPKIN_AGENT_HOST" (help "The hostname of the Zipkin collection agent" <> def Nothing)
     <*> var (pure . Just <=< auto) "FLORA_ZIPKIN_AGENT_PORT" (help "The port of the Zipkin collection agent" <> def Nothing)
+    <*> var (pure . Just <=< filepath) "FLORA_EVENTLOG_SOCKET" (help "The path of the GC eventlog socket" <> def Nothing)
 
 parseFeatures :: Parser Error FeatureConfig
 parseFeatures =

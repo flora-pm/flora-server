@@ -1,0 +1,29 @@
+.theme-button--light {
+	display: inline-flex;
+	background-color: hsl(294 40% 30%);
+}
+
+.theme-button--dark {
+	display: inline-flex;
+	background-color: rgb(226 232 240);
+}
+
+@media (prefers-color-scheme: light) {
+	.top-navbar .theme-button--light { display: none; }
+}
+
+@media (prefers-color-scheme: dark) {
+	.top-navbar .theme-button--dark { display: none; }
+}
+
+html[data-theme="light"] .theme-button--light { display: none; }
+html[data-theme="light"] .theme-button--dark { display: inline-flex; }
+html[data-theme="dark"] .theme-button--dark { display: none; }
+html[data-theme="dark"] .theme-button--light { display: inline-flex; }
+
+/* Dark mode-specific rules */
+.dark {
+	.social-button:hover {
+		color: hsl(254.3 95% 76.7%);
+	}
+}

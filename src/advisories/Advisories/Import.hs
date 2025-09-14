@@ -1,15 +1,18 @@
 module Advisories.Import where
 
+import Data.Aeson hiding (Result (..))
 import Data.Foldable (forM_, traverse_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
-import Data.Set qualified as Set
+import Data.Text.Display
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful
 import Effectful.Error.Static
+import Effectful.Log (Log)
+import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Trace
 import Monitor.Tracing qualified as Tracing
@@ -22,8 +25,8 @@ import Advisories.Model.Advisory.Types
 import Advisories.Model.Advisory.Update qualified as Update
 import Advisories.Model.Affected.Types
 import Advisories.Model.Affected.Update qualified as Update
-import Flora.Import.Package
 import Flora.Model.Package.Guard (guardThatPackageExists)
+import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import OSV.Reference.Orphans
 
@@ -32,6 +35,7 @@ importAdvisories
   :: ( DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
+     , Log :> es
      , Trace :> es
      )
   => FilePath
@@ -51,6 +55,7 @@ importAdvisory
   :: ( DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
+     , Log :> es
      , Trace :> es
      )
   => Advisory
@@ -88,6 +93,7 @@ processAffectedPackages
   :: ( DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
+     , Log :> es
      , Trace :> es
      )
   => AdvisoryId
@@ -100,6 +106,7 @@ processAffectedPackage
   :: ( DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
+     , Log :> es
      , Trace :> es
      )
   => AdvisoryId
@@ -111,8 +118,14 @@ processAffectedPackage advisoryId affected = do
         case affected.affectedComponentIdentifier of
           Hackage affectedPackageName -> PackageName affectedPackageName
           GHC _ -> PackageName "ghc"
-  let namespace = chooseNamespace packageName ("hackage", Set.empty)
-  package <- guardThatPackageExists namespace packageName $ \_ _ ->
+  let namespace = Namespace "hackage"
+  package <- guardThatPackageExists namespace packageName $ \_ _ -> do
+    packages <- Query.getPackagesByNamespace namespace
+    Log.logAttention "packages of namespace" $
+      object
+        [ "namespace" .= display namespace
+        , "packages" .= display ((.name) <$> Vector.toList packages)
+        ]
     throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
   let declarations =
         affected.affectedDeclarations

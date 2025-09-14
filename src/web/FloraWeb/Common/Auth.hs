@@ -98,6 +98,7 @@ handler
   -> Eff es (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
 handler floraEnv req = do
   let cookies = getCookies req
+  let theme = getTheme cookies
   mbPersistentSessionId <- handlerToEff $ getSessionId cookies
   mbPersistentSession <- getInTheFuckingSessionShinji mbPersistentSessionId
   mUserInfo <- fetchUser mbPersistentSession
@@ -108,7 +109,7 @@ handler floraEnv req = do
         nSessionId <- liftIO newPersistentSessionId
         pure (Nothing, nSessionId)
       Just (user, userSession) -> pure (Just user, userSession.persistentSessionId)
-  webEnvStore <- liftIO $ newWebEnvStore (WebEnv floraEnv)
+  webEnvStore <- liftIO $ newWebEnvStore (WebEnv $ floraEnv{theme = theme})
   let sessionCookie = craftSessionCookie sessionId False
   pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
@@ -146,6 +147,12 @@ getRequestID req = do
   case List.lookup "X-Request-ID" headers of
     Nothing -> fmap UUID.toText UUID.nextRandom
     Just requestID -> pure $ Text.decodeUtf8 requestID
+
+getTheme :: Cookies -> Maybe Text
+getTheme cookies =
+  case List.lookup "theme" cookies of
+    Nothing -> Nothing
+    Just theme -> pure $ Text.decodeUtf8 theme
 
 getSessionId :: Cookies -> Handler (Maybe PersistentSessionId)
 getSessionId cookies =

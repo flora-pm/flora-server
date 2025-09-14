@@ -12,21 +12,24 @@ import Effectful.Reader.Static (Reader)
 import Lucid
 import Network.HTTP.Types.Status
 import Optics.Core
+import RequireCallStack
 import Servant (ServerError (..))
 
 import Flora.Environment.Env (FeatureEnv)
-import Flora.Model.User (User)
 import FloraWeb.Pages.Templates
-import FloraWeb.Session
 
 renderError
   :: forall (es :: [Effect]) (a :: Type)
-   . Error ServerError :> es
+   . (Error ServerError :> es, RequireCallStack)
   => TemplateEnv
   -> Status
   -> Eff es a
 renderError env status = do
-  let templateEnv = env & (#title .~ "Flora :: *** Exception")
+  let templateEnv' = env & (#title .~ "Flora :: *** Exception")
+  let templateEnv =
+        templateEnv'
+          { title = "404 — Flora.pm"
+          }
   let body = mkErrorPage templateEnv $ showError status
   throwError $
     ServerError
@@ -38,10 +41,12 @@ renderError env status = do
 
 web404
   :: ( Error ServerError :> es
+     , FromSession s
      , IOE :> es
      , Reader FeatureEnv :> es
+     , RequireCallStack
      )
-  => Session (Maybe User)
+  => s
   -> Eff es a
 web404 session = do
   templateEnv <- templateFromSession session defaultTemplateEnv

@@ -18,6 +18,21 @@
 	}
 }
 
+.package-group-pill {
+		display: inline-block;
+		background-color: var(--green-30);
+		border-radius: 0.25rem;
+		color: white;
+		font-size: medium;
+		font-weight: 700;
+		line-height: 1.3rem;
+		margin-left: 0.5rem;
+		padding-left: 0.5rem;
+		padding-right: 0.5rem;
+		padding-bottom: 0.2rem;
+		padding-top: 0.1rem;
+}
+
 .package-install-string {
 	background-color: transparent;
 	border-color: var(--install-string-border);
@@ -44,6 +59,28 @@
 
 .release-deprecated {
 	color: var(--deprecated-version);
+}
+
+.dependency a,
+.dependents a.dependent,
+.category a,
+.package-link a,
+.version-link a {
+	text-decoration: none;
+}
+
+.dependency a:is(:hover, :active),
+a.dependency:is(:hover, :active),
+.dependents a.dependent:is(:hover, :active),
+.category a:is(:hover, :active),
+.package-link a:is(:hover, :active),
+.version-link a:is(:hover, :active) {
+	text-decoration: underline;
+	text-decoration-color: var(--link-decoration-color);
+}
+
+.dependency {
+	white-space: nowrap;
 }
 
 .package-body {
@@ -90,7 +127,7 @@
 		margin-bottom: 1.25rem;
 	}
 
-	a {
+	a:link {
 		font-weight: 500;
 	}
 

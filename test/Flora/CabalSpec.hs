@@ -1,6 +1,5 @@
 module Flora.CabalSpec where
 
-import Data.Maybe
 import Data.Set qualified as Set
 import Data.Vector qualified as Vector
 import RequireCallStack
@@ -26,10 +25,10 @@ spec =
 
 testImportSimplePackage :: RequireCallStack => TestEff ()
 testImportSimplePackage = do
-  packageA <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "a")
+  packageA <- assertJust "Search for package a" =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "a")
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
   componentsA <- Query.getReleaseComponents (releaseA.releaseId)
-  assertEqual
+  assertEqual_
     (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
     ( Set.fromList
         [ CanonicalComponent{componentName = "a", componentType = Library}
@@ -39,10 +38,10 @@ testImportSimplePackage = do
 
 testImportMultiplePublicLibraries :: RequireCallStack => TestEff ()
 testImportMultiplePublicLibraries = do
-  packageA <- fromJust <$> Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "b")
+  packageA <- assertJust "Search for package b" =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "b")
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
   componentsA <- Query.getReleaseComponents (releaseA.releaseId)
-  assertEqual
+  assertEqual_
     (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
     ( Set.fromList
         [ CanonicalComponent{componentName = "b", componentType = Library}

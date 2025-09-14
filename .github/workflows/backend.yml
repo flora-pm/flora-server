@@ -47,14 +47,12 @@ jobs:
         ports:
           - 5432:5432
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - name: Set up Haskell
-      id: setup-haskell
-      uses: haskell-actions/setup@v2
+    - uses: haskell/ghcup-setup@v1
       with:
-        ghc-version: "${{ matrix.ghc }}"
-        cabal-version: "latest"
+        ghc: ${{ matrix.ghc }}
+        cabal: "latest"
 
     - name: Configure environment
       run: |
@@ -64,6 +62,7 @@ jobs:
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
+        echo "STORE_PATH=$(cabal -v0 path --store-dir)" >> $GITHUB_ENV
         sudo apt install libsodium-dev
         source ./environment.ci.sh
         touch ~/.pgpass
@@ -81,10 +80,11 @@ jobs:
       run: |
         cabal freeze --enable-tests
 
+
     - name: Cache
       uses: actions/cache@v4
       with:
-        path: ${{ steps.setup-haskell.outputs.cabal-store }}
+        path: ${{ env.STORE_PATH }}
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 

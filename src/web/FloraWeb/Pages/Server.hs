@@ -51,7 +51,12 @@ aboutHandler (Headers session _) = do
           & #activeElements
           % #aboutNav
           .~ True
-  render templateEnv Home.about
+  render
+    templateEnv
+      { title = "About — Flora.pm"
+      , description = "About the Flora.pm project"
+      }
+    Home.about
 
-serveNotFound :: SessionWithCookies (Maybe User) -> FloraEff (Html ())
+serveNotFound :: RequireCallStack => SessionWithCookies (Maybe User) -> FloraEff (Html ())
 serveNotFound (Headers session _) = web404 session

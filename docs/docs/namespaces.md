@@ -5,12 +5,6 @@ slug: namespaces
 
 In Flora, packages are categorised in a namespace to mark their provenance. They start with a `@` and allow us to refer to packages unambiguously or mark their importance.
 
-## @haskell Packages
-
-Some packages are foundational to the ecosystem and maintained by either the Core Libraries Committee or the GHC team, and this makes them unique in terms of the expectations we have from them.
-
-These packages live in the [`@haskell`] namespace to show that they are stable and reliable. Some example of packages are `base`, `text`, `bytestring`, and `mtl`.
-
 ## @hackage Packages
 
 This is where most third-party packages live, which you will find on [Hackage](https://hackage.haskell.org).
@@ -53,10 +47,27 @@ repository horizon
 ```
 and run `cabal update`.
 
-[`@haskell`]: https://flora.pm/packages/@haskell
+## @mlabs Packages
+
+Additionally, Flora also indexes the packages from the MLabs Cardano ecosystem.
+These packages live under the [`@mlabs`] namespace.
+
+To use them in your own project, insert the following configuration in your `cabal.project` file:
+```
+repository mlabs
+  url: https://plutonomicon.github.io/plutarch-plutus/
+  secure: True
+  root-keys:
+    369731baba254a80079d42d3e8448fd77da5e551169ef8a7ff10cdb9ca1031d8
+    af39b444bdf664096ee5fc4bd89319b0f027346828567837954ce16a16cde2fc
+    e02083ae6794b540ea648606c4a42b467d7e761c6c727bb71fb0e5caa335b36c
+```
+and run `cabal update`.
+
 [`@cardano`]: https://flora.pm/packages/@cardano
 [`@hackage`]: https://flora.pm/packages/@hackage
 [`@horizon`]: https://flora.pm/packages/@horizon
+[`@mlabs`]: https://flora.pm/packages/@mlabs
 [`@hackage/servant-server`]: https://flora.pm/packages/@hackage/servant-server
-[`@haskell/text`]: https://flora.pm/packages/@haskell/text
+[`@hackage/text`]: https://flora.pm/packages/@hackage/text
 [CHaP]: https://input-output-hk.github.io/cardano-haskell-packages

@@ -31,7 +31,7 @@ showAllPackagesInNamespace
   -> FloraHTML
 showAllPackagesInNamespace namespace description count currentPage packagesInfo = do
   div_ [class_ "container"] $ do
-    presentationHeader (display namespace) description count
+    presentationHeader (toHtml $ display namespace) description count
     div_ [class_ ""] $ packageListing Nothing packagesInfo
     paginationNav count currentPage (ListAllPackagesInNamespace namespace)
 
@@ -46,7 +46,7 @@ showResults
   -> FloraHTML
 showResults searchString count currentPage exactMatches results = do
   div_ [class_ "container"] $ do
-    presentationHeader searchString "" count
+    presentationHeader (toHtml searchString) "" count
     packageListing (Just exactMatches) results
     when (count > 30) $
       paginationNav count currentPage (SearchPackages searchString)
@@ -60,7 +60,7 @@ showExecutableResults
   -> FloraHTML
 showExecutableResults executableName count currentPage results = do
   div_ [class_ "container"] $ do
-    presentationHeader executableName "" count
+    presentationHeader (toHtml executableName) "" count
     packageWithExecutableListing results
     when (count > 30) $
       paginationNav count currentPage (SearchExecutable executableName)
@@ -74,7 +74,7 @@ showAdvisorySearchResults
   -> FloraHTML
 showAdvisorySearchResults searchTerm count currentPage results = do
   div_ [class_ "container"] $ do
-    presentationHeader searchTerm "" count
+    presentationHeader (toHtml searchTerm) "" count
     packageAdvisoriesListing True results
     when (count > 30) $
       paginationNav count currentPage (SearchInAdvisories searchTerm)

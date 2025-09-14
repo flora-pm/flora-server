@@ -47,7 +47,7 @@ jobs:
         ports:
           - 5432:5432
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Haskell
       id: setup-haskell

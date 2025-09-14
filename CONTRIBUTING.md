@@ -12,11 +12,17 @@ The following Haskell command-line tools will have to be installed:
 * `postgresql-migration`: To perform schema migrations
 * `fourmolu`: To style the code base. Version is 0.17.0.0
 * `hlint` v3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
-* `cabal-fmt` and `nixfmt`: To style the cabal and nix files
+* `cabal-gild` and `nixfmt`: To style the cabal and nix files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
 * `ghc-tags`: To generate ctags or etags for the project
 
-(Some of the above packages have incompatible dependencies, so don't try to install them all at once with `cabal install`)
+Outside of the flora root directory run:
+```
+cabal install postgresql-migration hlint cabal-gild ghcid ghc-tags --semaphore -j
+```
+
+(Some of the above packages could have incompatible dependencies, so consider installing them separately with `cabal install`)
+
 
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
 * `yarn`: The tool that handles the JavaScript code bases
@@ -89,6 +95,8 @@ Here are the steps:
 1. `$ cabal build flora-server -f prof` (or `flora-cli`)
 2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
 3. `$ eventlog2html flora-server.eventlog`
+
+Also consider [capturing live eventlogs](#live-eventlogs) during developement.
 
 ## Installation and Configuration
 
@@ -215,7 +223,7 @@ $ make db-setup
 $ make db-provision
 $ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
     --email "admin@localhost" --password "password123"
-$ make db-provision-test-packages
+$ make db-provision-packages
 ```
 
 ### Importing a package index
@@ -235,6 +243,29 @@ Similarly if you have the [cardano packages index](https://input-output-hk.githu
 $ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz \
   --repository "cardano"
 ```
+
+### Live Eventlogs
+
+To enable capturing live events from Flora server running locally:
+
+1. Ensure `FLORA_EVENTLOG_SOCKET` is being present in your local environment config script.
+2. Run:
+
+```
+$ source environment.local.sh
+$ cabal run -- flora-server  +RTS -l -hT --eventlog-flush-interval=1 -RTS
+```
+
+3. After that, run separately:
+
+```
+$ source environment.local.sh
+$ docker compose -f docker-compose.live-eventlog.yml up
+```
+
+4. Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
+
+To disable live events, `unset FLORA_EVENTLOG_SOCKET`.
 
 ### Nix
 

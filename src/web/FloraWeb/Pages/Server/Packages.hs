@@ -40,6 +40,7 @@ import Flora.Model.BlobStore.API (BlobStoreAPI)
 import Flora.Model.Package
 import Flora.Model.Package.Guard
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.PackageGroupPackage.Query qualified as Query
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import Flora.Model.Release.Guard
@@ -90,9 +91,14 @@ listPackagesHandler
 listPackagesHandler (Headers session _) pageParam = do
   Tracing.rootSpan alwaysSampled "list-all-packages" $ do
     let pageNumber = pageParam ?: PositiveUnsafe 1
-    templateDefaults <- templateFromSession session defaultTemplateEnv
+    templateEnv' <- templateFromSession session defaultTemplateEnv
     (count', results) <- Search.listAllPackages (fromPage pageNumber)
-    render templateDefaults $ Search.showAllPackages count' pageNumber results
+    let templateEnv =
+          templateEnv'
+            { title = "Packages — Flora.pm"
+            , description = "List of packages"
+            }
+    render templateEnv $ Search.showAllPackages count' pageNumber results
 
 showNamespaceHandler
   :: ( DB :> es
@@ -118,6 +124,7 @@ showNamespaceHandler (Headers session _) packageNamespace pageParam =
         let templateEnv =
               templateDefaults
                 { navbarSearchContent = Just $ "in:" <> display packageNamespace <> " "
+                , title = "Core packages — Flora.pm"
                 , description = description
                 }
         render templateEnv $
@@ -135,6 +142,7 @@ showNamespaceHandler (Headers session _) packageNamespace pageParam =
             let templateEnv =
                   templateDefaults
                     { navbarSearchContent = Just $ "in:" <> display packageNamespace <> " "
+                    , title = "Packages in " <> display packageNamespace <> " — Flora.pm"
                     , description = packageIndex.description
                     }
             render templateEnv $
@@ -210,10 +218,11 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
       Tracing.childSpan "Query.getNumberOfPackageDependents" $
         Query.getNumberOfPackageDependents packageNamespace packageName Nothing
     numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+    groups <- Query.getPackageGroupsForPackage package.packageId
 
     let templateEnv =
           templateEnv'
-            { title = display packageNamespace <> "/" <> display packageName
+            { title = display packageNamespace <> " › " <> display packageName <> " — Flora.pm"
             , description = release.synopsis
             , indexPage = isNothing mversion
             }
@@ -252,6 +261,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
           releaseDependencies
           numberOfDependencies
           categories
+          groups
 
 showDependentsHandler
   :: ( DB :> es
@@ -364,7 +374,7 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
     release <- guardThatReleaseExists package.packageId version $ const (web404 session)
     let templateEnv =
           templateEnv'
-            { title = display packageNamespace <> "/" <> display packageName
+            { title = display packageNamespace <> " › " <> display packageName <> " › dependencies — Flora.pm"
             , description = "Dependencies of " <> display packageNamespace <> display packageName
             }
     releaseDependencies <-

@@ -63,7 +63,8 @@ data Requirement = Requirement
 
 -- | This datatype holds information about the latest version of a dependency
 data DependencyInfo = DependencyInfo
-  { namespace :: Namespace
+  { packageId :: PackageId
+  , namespace :: Namespace
   , name :: PackageName
   , requirement :: Text
   , components :: Vector Text
@@ -78,7 +79,8 @@ data DependencyInfo = DependencyInfo
 
 -- | Data Access Object for component dependencies to read from db
 data ComponentDependency' = ComponentDependency'
-  { componentType :: ComponentType
+  { packageId :: PackageId
+  , componentType :: ComponentType
   , componentName :: Text
   , namespace :: Namespace
   , name :: PackageName

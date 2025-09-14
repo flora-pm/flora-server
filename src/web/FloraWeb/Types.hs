@@ -44,8 +44,8 @@ type RouteEffects =
    , Time
    , Reader FeatureEnv
    , BlobStoreAPI
-   , Log
    , Error ServerError
+   , Log
    , Concurrent
    , Metrics AppMetrics
    , Reader FloraEnv

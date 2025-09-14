@@ -46,7 +46,7 @@
 	box-shadow: 4px 4px 4px 1px var(--search-bar-focus-border-color);
 }
 
-.secondary-search button {
+.secondary-search .search-btn {
 	margin-bottom: 1.25rem;
 	margin-right: 1rem;
 	margin-top: 1.25rem;

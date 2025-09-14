@@ -26,6 +26,18 @@ clean-assets: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
 	@cd docs/ && rm -R node_modules
 
+db-start:
+	@rm -rf .postgres
+	@mkdir -p .postgres
+	@initdb -D .postgres
+	@echo "unix_socket_directories = '.'" >> .postgres/postgresql.conf
+	@pg_ctl start -D .postgres -l ./postgres.log
+	@createuser -h localhost postgres -s
+
+db-stop:
+	@pg_ctl stop -D .postgres -l ./postgres.log
+	@rm -rf .postgres
+
 db-setup: db-create db-init db-migrate ## Setup the dev database
 
 db-create: ## Create the database
@@ -45,12 +57,30 @@ db-reset: db-drop db-setup db-provision ## Reset the dev database
 db-provision: ## Create categories and repositories
 	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
 	@cabal run -- flora-cli provision categories
-	@cabal run -- flora-cli provision-repository --name "hackage" --url https://hackage.haskell.org \
+	@cabal run -- flora-cli provision-repository --name "hackage" \
+			--url https://hackage.haskell.org \
 			--description "Central package repository"
-	@cabal run -- flora-cli provision-repository --name "cardano" --url https://chap.intersectmbo.org \
+	@cabal run -- flora-cli provision-repository --name "cardano" \
+			--url https://chap.intersectmbo.org \
 			--description "Packages of the Cardano project"
-	@cabal run -- flora-cli provision-repository --name "horizon" --url https://packages.horizon-haskell.net \
+	@cabal run -- flora-cli provision-repository --name "horizon" \
+			--url https://packages.horizon-haskell.net \
 			--description "Packages of the Horizon project"
+	@cabal run -- flora-cli provision-repository --name "mlabs" \
+			--url https://plutonomicon.github.io/plutarch-plutus \
+			--description "Packages of the MLabs Cardano ecosystem"
+	@cabal run -- flora-cli index-dependency --name "cardano"\
+			--depends-on "hackage" \
+			--priority 1
+	@cabal run -- flora-cli index-dependency --name "horizon"\
+			--depends-on "hackage" \
+			--priority 1
+	@cabal run -- flora-cli index-dependency --name "mlabs" \
+			--depends-on "cardano" \
+			--priority 1
+	@cabal run -- flora-cli index-dependency --name "mlabs" \
+			--depends-on "hackage" \
+			--priority 2
 
 db-provision-advisories: ## Load HSEC advisories in the database
 	@cabal run -- flora-cli provision advisories
@@ -58,6 +88,7 @@ db-provision-advisories: ## Load HSEC advisories in the database
 db-provision-packages: ## Load development data in the dev database
 	@cabal run -- flora-cli provision test-packages --repository "hackage"
 	@cabal run -- flora-cli provision test-packages --repository "cardano"
+	@cabal run -- flora-cli provision test-packages --repository "mlabs"
 
 db-test-create: ## Create the test database
 	./scripts/run-with-test-config.sh db-create
@@ -107,12 +138,12 @@ watch-server: ## Start flora-server in ghcid
 lint-hs: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
-style-hs-quick: ## Run the haskell code formatters (fourmolu, cabal-fmt)
-	@cabal-fmt -i flora.cabal
+style-hs-quick: ## Run the haskell code formatters (fourmolu, cabal-gild)
+	@cabal-gild --io=flora.cabal
 	@git diff origin --name-only src test/**/*.hs app | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
-style-hs: ## Run the haskell code formatters (fourmolu, cabal-fmt)
-	@cabal-fmt -i flora.cabal
+style-hs: ## Run the haskell code formatters (fourmolu, cabal-gild)
+	@cabal-gild --io=flora.cabal
 	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
 style-css: ## Run the CSS code formatter (stylelint)
@@ -124,7 +155,7 @@ nix-shell: ## Enter the Nix shell
 	@nix-shell
 
 docker-build: ## Build and start the container cluster
-	@docker build .
+	@docker compose build devel
 
 docker-up: ## Start the container cluster
 	@docker compose up -d
@@ -136,18 +167,18 @@ docker-down: ## Stop and remove the container cluster
 	@docker compose down
 
 docker-enter: ## Enter the docker environment
-	docker compose exec server zsh
+	docker compose exec devel zsh
 
 start-tmux: ## Start a Tmux session with hot code reloading
 	./scripts/start-tmux.sh
 
 tags: ## Generate ctags for the project with `ghc-tags`
-	@ghc-tags -c
+	@ghc-tags -c src app
 
 design-system: ## Generate the HTML components used by the design system
 	@cabal run -- flora-cli gen-design-system
 
-start-design-sysytem: ## Start storybook.js
+start-design-system: ## Start storybook.js
 	@cd design; yarn storybook
 
 migration: ## Generate timestamped database migration boilerplate files

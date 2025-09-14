@@ -1,43 +1,29 @@
 services:
-  server:
-    image: ghcr.io/flora-pm/flora-server:latest
-    ports:
-      - "8084:8084"
-    volumes:
-      - database-data:/flora-server/pgdata/
-      - .:/flora-server:Z
-    links:
-      - database
-    command: sleep infinity
-    profiles:
-      - local
-    depends_on:
-      - database
-
-  dev-server:
-    ports:
-      - "8084:8084"
+  devel:
+    image: $USER-flora-devel
+    pull_policy: never
     build:
       dockerfile: Dockerfile
       args:
         - USER=${USER}
         - UID=${UID:-1000}
         - GID=${GID:-1000}
+    ports:
+      - "8084:8084"
     volumes:
       - database-data:/flora-server/pgdata/
       - .:/flora-server:Z
     links:
-      - database
+      - flora-database
     command: sleep infinity
     profiles:
-      - dev
+      - local
     depends_on:
-      - database
+      - flora-database
 
-  database:
-    # Pinned postgres:14.7
-    image: "postgres@sha256:577d48a963bdd16e8b93e853aa830c78fc4622ebe9717bc95f6736d9aa5003e3"
-    container_name: database
+  flora-database:
+    image: docker.io/library/postgres:17.5
+    container_name: flora-database
     user: postgres
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready" ]
@@ -51,11 +37,9 @@ services:
     env_file:
       - database.env
     volumes:
-      - database-data:/var/lib/postgresql/data    
+      - database-data:/var/lib/postgresql/data
     profiles:
       - local
-      - dev
-    restart: always
 
 volumes:
   database-data:

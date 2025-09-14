@@ -1,6 +1,5 @@
 module Main where
 
-import Control.Exception.Backtrace
 import Control.Monad.Extra
 import Data.List.NonEmpty
 import Data.Text qualified as Text
@@ -16,7 +15,6 @@ import Sel.Hashing.Password qualified as Sel
 import System.Exit
 import System.IO
 import Test.Tasty
-import Test.Tasty.Runners.Reporter qualified as Reporter
 
 import Advisories.Import qualified as Advisories
 import Advisories.Import.Error
@@ -41,8 +39,6 @@ import Flora.UserSpec qualified as UserSpec
 
 main :: IO ()
 main = provideCallStack $ do
-  setBacktraceMechanismState CostCentreBacktrace True
-  setBacktraceMechanismState HasCallStackBacktrace True
   hSetBuffering stdout LineBuffering
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv
   fixtures <-
@@ -57,6 +53,7 @@ main = provideCallStack $ do
           importCategories
           Update.createPackageIndex "hackage" "" "" Nothing
           Update.createPackageIndex "cardano" "" "" Nothing
+          Update.createPackageIndex "mlabs" "" "" Nothing
           password <- liftIO $ Sel.hashText "foobar2000"
           templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
           Update.insertUser templateUser
@@ -72,7 +69,7 @@ main = provideCallStack $ do
       )
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
-  defaultMainWithIngredients [Reporter.ingredient] $
+  defaultMain $
     testGroup "Flora Tests" $
       OddJobSpec.spec : spec
 
@@ -109,6 +106,7 @@ cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM package_groups" ()
   void $ execute "DELETE FROM package_feeds" ()
   void $ execute "DELETE FROM packages" ()
+  void $ execute "DELETE FROM index_dependencies" ()
   void $ execute "DELETE FROM package_indexes" ()
   void $ execute "DELETE FROM user_organisation" ()
   void $ execute "DELETE FROM package_publishers" ()

@@ -24,42 +24,25 @@ import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
 
-upsertPackageByNamespaceAndName :: (DB :> es, RequireCallStack) => Package -> Eff es ()
-upsertPackageByNamespaceAndName package =
+upsertPackage :: (DB :> es, RequireCallStack) => Package -> Eff es ()
+upsertPackage package =
   E.catch
-    ( dbtToEff $
+    ( dbtToEff $ do
+        upsertWith package
         case package.status of
-          UnknownPackage -> upsertWith package [[field| updated_at |]]
+          UnknownPackage -> pure ()
           FullyImportedPackage ->
-            upsertWith
-              package
-              [ [field| updated_at |]
-              , [field| status |]
-              ]
+            void $
+              updateFieldsBy @Package
+                [[field| status |]]
+                ([field| package_id |], package.packageId)
+                (Only package.status)
     )
     (\sqlError@(SqlError{}) -> E.throwIO $ sqlErrorToDBException sqlError)
   where
-    upsertWith :: Package -> Vector Field -> DBT IO ()
-    upsertWith entity fieldsToReplace =
-      void $ execute @Package (_insert @Package <> _onConflictDoUpdate conflictTarget fieldsToReplace) entity
-    conflictTarget = [[field| namespace |], [field| name |]]
-
-upsertPackageByPackageId :: (DB :> es, RequireCallStack) => Package -> Eff es ()
-upsertPackageByPackageId package =
-  dbtToEff $
-    case package.status of
-      UnknownPackage -> upsertWith package [[field| updated_at |]]
-      FullyImportedPackage ->
-        upsertWith
-          package
-          [ [field| updated_at |]
-          , [field| status |]
-          ]
-  where
-    upsertWith :: Package -> Vector Field -> DBT IO ()
-    upsertWith entity fieldsToReplace =
-      void $ execute @Package (_insert @Package <> _onConflictDoUpdate conflictTarget fieldsToReplace) entity
-    conflictTarget = [[field| package_id |]]
+    upsertWith :: Package -> DBT IO ()
+    upsertWith entity =
+      void $ execute @Package (_insert @Package <> " ON CONFLICT DO NOTHING") entity
 
 deprecatePackages :: (DB :> es, RequireCallStack) => Vector DeprecatedPackage -> Eff es ()
 deprecatePackages dp = dbtToEff $ void $ executeMany q (dp & Vector.map Only & Vector.toList)
@@ -85,6 +68,10 @@ insertPackageComponent = dbtToEff . insert @PackageComponent
 upsertPackageComponent :: (DB :> es, RequireCallStack) => PackageComponent -> Eff es ()
 upsertPackageComponent packageComponent =
   dbtToEff $ upsert @PackageComponent packageComponent (fields @PackageComponent)
+
+upsertPackageComponents :: (DB :> es, RequireCallStack) => [PackageComponent] -> Eff es ()
+upsertPackageComponents packageComponents =
+  dbtToEff $ void $ executeMany (_insert @PackageComponent <> " ON CONFLICT DO NOTHING") packageComponents
 
 bulkInsertPackageComponents :: (DB :> es, RequireCallStack) => [PackageComponent] -> Eff es ()
 bulkInsertPackageComponents = dbtToEff . insertMany @PackageComponent

@@ -61,6 +61,24 @@
           };
           flora = floraShell;
           default = flora;
+          minimal = pkgs.mkShell {
+            inherit (pre-commit-check) shellHook;
+
+            nativeBuildInputs = [
+              pkgs.cabal-install
+              pkgs.haskell.compiler.ghc9101
+              pkgs.haskellPackages.fourmolu
+              pkgs.haskellPackages.postgresql-migration
+              pkgs.pkg-config
+              pkgs.postgresql
+              pkgs.yarn
+            ];
+
+            buildInputs = [
+              pkgs.libsodium
+              pkgs.zlib
+            ];
+          };
         };
         packages = rec {
           inherit (hsPkgs) flora;

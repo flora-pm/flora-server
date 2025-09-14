@@ -28,4 +28,4 @@ slimSearchBar SearchBarOptions{actionUrl, placeholder, value} =
         , tabindex_ "1"
         , autofocus_
         ]
-      lookingGlass
+      button_ [class_ "search-btn", type_ "submit"] lookingGlass

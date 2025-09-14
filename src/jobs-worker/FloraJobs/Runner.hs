@@ -7,7 +7,6 @@ import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Pool (Pool)
 import Data.Set (Set)
-import Data.Set qualified as Set
 import Data.Text
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -17,6 +16,7 @@ import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Types.Version (Version)
 import Effectful (IOE, Limit (..), Persistence (..), UnliftStrategy (..), runEff, withUnliftStrategy, type (:>))
 import Effectful.Concurrent (Concurrent)
+import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log hiding (LogLevel)
@@ -40,8 +40,9 @@ import System.FilePath
 import Data.Text.HTML qualified as HTML
 import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Import.Package (coreLibraries, persistImportOutput)
-import Flora.Import.Package.Bulk qualified as Import
+import Flora.Import.Package (persistImportOutput)
+import Flora.Import.Package.Bulk.Archive qualified as Import
+import Flora.Import.Types
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
@@ -49,6 +50,7 @@ import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Query qualified as Query
+import Flora.Model.PackageIndex.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
@@ -223,6 +225,10 @@ fetchPackageDeprecationList = do
       throw e
     Left e -> throw e
 
+assignNamespace :: Vector PackageName -> PackageAlternatives
+assignNamespace =
+  PackageAlternatives . Vector.map (\p -> PackageAlternative (Namespace "hackage") p)
+
 fetchReleaseDeprecationList :: PackageName -> Vector ReleaseId -> JobsRunner ()
 fetchReleaseDeprecationList packageName releases = do
   result <- Hackage.request $ Hackage.getDeprecatedReleasesList packageName
@@ -254,19 +260,10 @@ fetchReleaseDeprecationList packageName releases = do
       throw e
     Left e -> throw e
 
-assignNamespace :: Vector PackageName -> PackageAlternatives
-assignNamespace =
-  PackageAlternatives
-    . Vector.map
-      ( \p ->
-          if Set.member p coreLibraries
-            then PackageAlternative (Namespace "haskell") p
-            else PackageAlternative (Namespace "hackage") p
-      )
-
 refreshIndex
   :: ( Concurrent :> es
      , DB :> es
+     , Error ImportError :> es
      , FileSystem :> es
      , IOE :> es
      , Log :> es
@@ -279,21 +276,17 @@ refreshIndex
   => Text
   -> FloraM es ()
 refreshIndex indexName = do
-  let repoPath =
-        if indexName == "hackage"
-          then "hackage.haskell.org"
-          else Text.unpack indexName
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
   packagesPath <- getCabalPackagesDirectory
-  let path = packagesPath </> repoPath </> "01-index.tar.gz"
   mPackageIndex <- Query.getPackageIndexByName indexName
   case mPackageIndex of
     Nothing -> do
       Log.logAttention "Package index not found" $
         object ["package_index" .= indexName]
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
-    Just _ -> do
-      Import.importFromIndex indexName path
+    Just packageIndex -> do
+      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
+      Import.importFromArchive indexName indexDependencies packagesPath
       pool <- getPool
       void $ liftIO $ scheduleRefreshIndex pool indexName
 

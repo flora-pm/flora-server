@@ -4,8 +4,9 @@ import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
-import Control.Monad (void, when)
+import Control.Monad (forM_, void, when)
 import Control.Monad.Except qualified as Except
+import Data.Aeson
 import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
@@ -14,7 +15,7 @@ import Data.Text.Display (display)
 import Effectful
 import Effectful.Concurrent
 import Effectful.Dispatch.Static
-import Effectful.Error.Static (runErrorNoCallStack, runErrorWith)
+import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
 import Effectful.PostgreSQL.Transact.Effect (runDB)
@@ -22,6 +23,7 @@ import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
 import Effectful.Trace qualified as Trace
+import GHC.Eventlog.Socket qualified as Socket
 import Log (Logger)
 import Log qualified
 import Monitor.Tracing.Zipkin (Zipkin (..))
@@ -54,6 +56,7 @@ import Servant
   , Handler
   , NotFoundErrorFormatter
   , Proxy (Proxy)
+  , ServerError (..)
   , defaultErrorFormatters
   , err404
   , notFoundErrorFormatter
@@ -119,6 +122,9 @@ runFlora = do
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
+            liftIO $ do
+              forM_ env.mltp.eventlogSocket Socket.start
+              when (isJust env.mltp.eventlogSocket) (blueMessage "🔥 Sending live events to socket")
             liftIO $ when env.mltp.prometheusEnabled $ do
               blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               void $ P.register P.ghcMetrics
@@ -255,15 +261,29 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
                 Just (BlobStoreFS fp) -> runBlobStoreFS fp
                 _ -> runBlobStorePure
             )
+          & runErrorWith
+            ( \callstack err -> do
+                Log.logInfo "Server error" $
+                  object
+                    [ "error_headers" .= map show (errHeaders err)
+                    , "error_http_code" .= errHTTPCode err
+                    , "error_reason_phrase" .= errReasonPhrase err
+                    , "exception" .= prettyCallStack callstack
+                    ]
+                pure . Left $ err
+            )
           & Logging.runLog floraEnv.environment logger
-          & runErrorWith (\_callstack err -> pure $ Left err)
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
           & runReader floraEnv
           & runEff
   either Except.throwError pure result
 
-genAuthServerContext :: Logger -> FloraEnv -> Context FloraAuthContext
+genAuthServerContext
+  :: RequireCallStack
+  => Logger
+  -> FloraEnv
+  -> Context FloraAuthContext
 genAuthServerContext logger floraEnv =
   optionalAuthHandler logger floraEnv
     :. strictAuthHandler logger floraEnv
@@ -271,11 +291,11 @@ genAuthServerContext logger floraEnv =
     :. errorFormatters floraEnv
     :. EmptyContext
 
-errorFormatters :: FloraEnv -> ErrorFormatters
+errorFormatters :: RequireCallStack => FloraEnv -> ErrorFormatters
 errorFormatters floraEnv =
   defaultErrorFormatters{notFoundErrorFormatter = notFoundPage floraEnv}
 
-notFoundPage :: FloraEnv -> NotFoundErrorFormatter
+notFoundPage :: RequireCallStack => FloraEnv -> NotFoundErrorFormatter
 notFoundPage floraEnv _req =
   let result =
         runPureEff $

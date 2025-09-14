@@ -11,34 +11,38 @@ import PyF
 
 import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
+import FloraWeb.Components.SkipLink (skipLink)
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
 
 header :: FloraHTML
 header = do
-  TemplateEnv{environment, title, indexPage} <- ask
+  TemplateEnv{environment, title, indexPage, theme} <- ask
   doctype_
+  let theme' = case theme of
+        Nothing -> []
+        Just a -> [data_ "theme" a]
   html_
-    [ lang_ "en"
-    , class_ "no-js"
-    , xData_
-        "{ theme: \
-        \ localStorage.getItem('theme') \
-        \   || (window.matchMedia('(prefers-color-scheme: dark)').matches \
-        \   ? 'dark' : 'light') \
-        \ }"
-    , xBind_ "data-theme" "(theme === 'dark') ? 'dark' : 'light'"
-    , xInit_ "$watch('theme', val => localStorage.setItem('theme', val))"
-    ]
+    ( [ lang_ "en"
+      , class_ "no-js"
+      ]
+        <> theme'
+    )
     $ do
       head_ $ do
         meta_ [charset_ "UTF-8"]
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
         unless indexPage $ meta_ [name_ "robots", content_ "noindex"]
-        -- link_ [rel_ "icon", href_ "/static/icons/favicon.svg", type_ "image/svg+xml"]
         link_ [rel_ "apple-touch-icon", sizes_ "180x180", href_ "/static/icons/apple-touch-icon.png"]
-        link_ [rel_ "icon", type_ "image/png", sizes_ "32x32", href_ "/static/icons/favicon-32x32.png"]
-        link_ [rel_ "icon", type_ "image/png", sizes_ "16x16", href_ "/static/icons/favicon-16x16.png"]
+        case environment of
+          Development -> do
+            link_ [rel_ "icon", href_ "/static/icons/favicon-dev.svg", type_ "image/svg+xml"]
+            link_ [rel_ "icon", type_ "image/png", sizes_ "32x32", href_ "/static/icons/favicon-dev-32x32.png"]
+            link_ [rel_ "icon", type_ "image/png", sizes_ "16x16", href_ "/static/icons/favicon-dev-16x16.png"]
+          _ -> do
+            link_ [rel_ "icon", href_ "/static/icons/favicon.svg", type_ "image/svg+xml"]
+            link_ [rel_ "icon", type_ "image/png", sizes_ "32x32", href_ "/static/icons/favicon-32x32.png"]
+            link_ [rel_ "icon", type_ "image/png", sizes_ "16x16", href_ "/static/icons/favicon-16x16.png"]
         link_ [rel_ "manifest", href_ "/static/icons/site.webmanifest"]
         link_ [rel_ "mask-icon", href_ "/static/icons/safari-pinned-tab.svg", color_ "#5bbad5"]
         meta_ [name_ "msapplication-TileColor", content_ "#da532c"]
@@ -64,7 +68,7 @@ header = do
           ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
-        theme
+        themeHtml
         -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
         meta_ [name_ "twitter:dnt", content_ "on"]
 
@@ -73,6 +77,7 @@ header = do
           Development ->
             div_ [hxGet_ "/livereload", hxTrigger_ "every 2s"] mempty
           _ -> mempty
+        skipLink
         navbar
 
 jsLink :: FloraHTML
@@ -108,7 +113,7 @@ ogTags = do
   meta_ [property_ "og:locale", content_ "en_GB"]
   meta_ [property_ "og:type", content_ "website"]
 
-theme :: FloraHTML
-theme = do
+themeHtml :: FloraHTML
+themeHtml = do
   meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
   meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]
