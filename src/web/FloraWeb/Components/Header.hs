@@ -25,28 +25,6 @@ header = do
   html_
     ( [ lang_ "en"
       , class_ "no-js"
-      , xData_
-          "{ updateTheme() { \
-          \ const customTheme = document.documentElement.getAttribute('data-theme'); \
-          \ const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches; \
-          \ const applyTheme = (theme) => { \
-          \   document.documentElement.setAttribute('data-theme', theme); \
-          \   console.log(\"theme switch\"); \
-          \   (async () => { await cookieStore.set('theme', theme) })(); \
-          \ }; \
-          \ switch (customTheme) { \
-          \   case 'light': \
-          \     applyTheme('dark'); \
-          \      break; \
-          \   case 'dark': \
-          \    applyTheme('light'); \
-          \    break; \
-          \   default: \
-          \     isSystemDark ? applyTheme('light') : applyTheme('dark'); \
-          \     break; \
-          \  } \
-          \  } \
-          \}"
       ]
         <> theme'
     )
