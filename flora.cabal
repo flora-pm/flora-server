@@ -1,21 +1,21 @@
-cabal-version:      3.0
-name:               flora
-version:            1.0.26
-homepage:           https://github.com/flora-pm/flora-server/#readme
-bug-reports:        https://github.com/flora-pm/flora-server/issues
-author:             Théophile Choutri
-maintainer:         Théophile Choutri
-license:            BSD-3-Clause
-build-type:         Simple
+cabal-version: 3.0
+name: flora
+version: 1.0.26
+homepage: https://github.com/flora-pm/flora-server/#readme
+bug-reports: https://github.com/flora-pm/flora-server/issues
+author: Théophile Choutri
+maintainer: Théophile Choutri
+license: BSD-3-Clause
+build-type: Simple
 extra-source-files: LICENSE
 extra-doc-files:
   CHANGELOG.md
   README.md
 
-tested-with:        GHC ==9.10.1
+tested-with: ghc ==9.10.1
 
 source-repository head
-  type:     git
+  type: git
   location: https://github.com/flora-pm/flora-server
 
 common common-extensions
@@ -40,28 +40,44 @@ common common-extensions
     UndecidableInstances
     ViewPatterns
 
-  default-language:   GHC2021
+  default-language: GHC2021
 
 common common-ghc-options
   ghc-options:
-    -Wall -Wcompat -Widentities -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -Wpartial-fields -fhide-source-paths
-    -Wno-unused-do-bind -fshow-hole-constraints
-    -Wno-unticked-promoted-constructors -Werror=unused-imports
-    -fdicts-strict -fmax-worker-args=16 -fspec-constr-recursive=16
-    -Wunused-packages -flate-specialise -funbox-strict-fields
-    -finline-generics-aggressively -fexpose-all-unfoldings
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -fhide-source-paths
+    -Wno-unused-do-bind
+    -fshow-hole-constraints
+    -Wno-unticked-promoted-constructors
+    -Werror=unused-imports
+    -fdicts-strict
+    -fmax-worker-args=16
+    -fspec-constr-recursive=16
+    -Wunused-packages
+    -flate-specialise
+    -funbox-strict-fields
+    -finline-generics-aggressively
+    -fexpose-all-unfoldings
 
 common common-rts-options
-  ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
+  ghc-options:
+    -rtsopts
+    -threaded
+    "-with-rtsopts=-N -T"
 
 library
-  import:          common-extensions
-  import:          common-ghc-options
-  hs-source-dirs:  ./src/core ./src/datatypes
+  import: common-extensions
+  import: common-ghc-options
+  hs-source-dirs:
+    ./src/core
+    ./src/datatypes
 
-  -- cabal-fmt: expand src/core
-  -- cabal-fmt: expand src/datatypes
+  -- cabal-gild: discover src/core src/datatypes
   exposed-modules:
     Advisories.AffectedVersionRange.Orphans
     Advisories.CAPEC.Orphans
@@ -154,106 +170,104 @@ library
     Servant.API.ContentTypes.GZip
 
   build-depends:
-    , aeson
-    , attoparsec
-    , base                   ^>=4.20
-    , base16-bytestring
-    , base64
-    , bytestring
-    , Cabal-syntax
-    , containers
-    , cryptohash-md5
-    , cryptohash-sha256
-    , cvss
-    , dani-servant-lucid2
-    , deepseq
-    , deriving-aeson
-    , directory
-    , effectful
-    , effectful-core
-    , effectful-plugin
-    , envparse
-    , filepath
-    , heptapod               ^>=1.1.0.0
-    , hsec-core
-    , http-api-data
-    , http-media
-    , iso8601-time
-    , JuicyPixels
-    , log-base
-    , log-effectful
-    , lucid2
-    , monad-time-effectful
-    , network
-    , odd-jobs
-    , openapi3
-    , optics-core
-    , osv
-    , pandoc-types
-    , pcre2
-    , pg-entity
-    , pg-transact
-    , pg-transact-effectful
-    , postgresql-simple
-    , pretty
-    , prometheus-client
-    , prometheus-effectful
-    , qrcode-core
-    , qrcode-juicypixels
-    , require-callstack
-    , resource-pool
-    , sel
-    , servant
-    , servant-prometheus
-    , servant-server
-    , slugify
-    , streamly
-    , streamly-core
-    , tar
-    , text
-    , text-builder-linear
-    , text-display
-    , time
-    , tracing
-    , tracing-effectful
-    , unliftio
-    , utf8-string
-    , uuid
-    , vector
-    , wai
-    , zlib
+    Cabal-syntax,
+    JuicyPixels,
+    aeson,
+    attoparsec,
+    base ^>=4.20,
+    base16-bytestring,
+    base64,
+    bytestring,
+    containers,
+    cryptohash-md5,
+    cryptohash-sha256,
+    cvss,
+    dani-servant-lucid2,
+    deepseq,
+    deriving-aeson,
+    directory,
+    effectful,
+    effectful-core,
+    effectful-plugin,
+    envparse,
+    filepath,
+    heptapod ^>=1.1.0.0,
+    hsec-core,
+    http-api-data,
+    http-media,
+    iso8601-time,
+    log-base,
+    log-effectful,
+    lucid2,
+    monad-time-effectful,
+    network,
+    odd-jobs,
+    openapi3,
+    optics-core,
+    osv,
+    pandoc-types,
+    pcre2,
+    pg-entity,
+    pg-transact,
+    pg-transact-effectful,
+    postgresql-simple,
+    pretty,
+    prometheus-client,
+    prometheus-effectful,
+    qrcode-core,
+    qrcode-juicypixels,
+    require-callstack,
+    resource-pool,
+    sel,
+    servant,
+    servant-prometheus,
+    servant-server,
+    slugify,
+    streamly,
+    streamly-core,
+    tar,
+    text,
+    text-builder-linear,
+    text-display,
+    time,
+    tracing,
+    tracing-effectful,
+    unliftio,
+    utf8-string,
+    uuid,
+    vector,
+    wai,
+    zlib,
 
-  ghc-options:     -fplugin=Effectful.Plugin
+  ghc-options: -fplugin=Effectful.Plugin
 
 library flora-search
-  import:          common-extensions
-  import:          common-ghc-options
-  hs-source-dirs:  ./src/search
-
-  -- cabal-fmt: expand src/search
+  import: common-extensions
+  import: common-ghc-options
+  hs-source-dirs: ./src/search
+  -- cabal-gild: discover src/search
   exposed-modules: Flora.Search
   build-depends:
-    , aeson
-    , base
-    , effectful-core
-    , flora
-    , flora-advisories
-    , log-base
-    , log-effectful
-    , monad-time-effectful
-    , pg-transact-effectful
-    , text
-    , text-display
-    , tracing
-    , tracing-effectful
-    , vector
+    aeson,
+    base,
+    effectful-core,
+    flora,
+    flora-advisories,
+    log-base,
+    log-effectful,
+    monad-time-effectful,
+    pg-transact-effectful,
+    text,
+    text-display,
+    tracing,
+    tracing-effectful,
+    vector,
 
 library flora-advisories
-  import:          common-extensions
-  import:          common-ghc-options
-  hs-source-dirs:  ./src/advisories
-
-  -- cabal-fmt: expand src/advisories
+  import: common-extensions
+  import: common-ghc-options
+  hs-source-dirs: ./src/advisories
+  -- cabal-gild: discover src/advisories
   exposed-modules:
     Advisories.Import
     Advisories.Import.Error
@@ -265,35 +279,34 @@ library flora-advisories
     Advisories.Model.Affected.Update
 
   build-depends:
-    , aeson
-    , base
-    , Cabal-syntax
-    , cvss
-    , deepseq
-    , effectful
-    , flora
-    , hsec-core
-    , hsec-tools
-    , log-effectful
-    , pandoc-types
-    , pg-entity
-    , pg-transact-effectful
-    , postgresql-simple
-    , text
-    , text-display
-    , time
-    , tracing
-    , tracing-effectful
-    , uuid
-    , validation-selective
-    , vector
+    Cabal-syntax,
+    aeson,
+    base,
+    cvss,
+    deepseq,
+    effectful,
+    flora,
+    hsec-core,
+    hsec-tools,
+    log-effectful,
+    pandoc-types,
+    pg-entity,
+    pg-transact-effectful,
+    postgresql-simple,
+    text,
+    text-display,
+    time,
+    tracing,
+    tracing-effectful,
+    uuid,
+    validation-selective,
+    vector,
 
 library flora-web
-  import:          common-extensions
-  import:          common-ghc-options
-  hs-source-dirs:  ./src/web
-
-  -- cabal-fmt: expand src/web
+  import: common-extensions
+  import: common-ghc-options
+  hs-source-dirs: ./src/web
+  -- cabal-gild: discover src/web
   exposed-modules:
     FloraWeb.API.Errors
     FloraWeb.API.Routes
@@ -374,98 +387,97 @@ library flora-web
     FloraWeb.Types
 
   build-depends:
-    , aeson
-    , async
-    , base                       ^>=4.20
-    , base32
-    , bytestring
-    , Cabal-syntax
-    , chronos
-    , cmark-gfm
-    , colourista
-    , containers
-    , cookie
-    , cvss
-    , dani-servant-lucid2
-    , data-default
-    , deepseq
-    , deriving-aeson
-    , dlist
-    , effectful
-    , effectful-core
-    , effectful-plugin
-    , eventlog-socket
-    , extra
-    , feed
-    , flora
-    , flora-advisories
-    , flora-jobs
-    , flora-search
-    , generics-sop
-    , haddock-library
-    , htmx-lucid
-    , http-api-data
-    , http-client
-    , http-client-tls
-    , http-media
-    , http-types
-    , log-base
-    , log-effectful
-    , lucid2
-    , monad-time
-    , monad-time-effectful
-    , mtl
-    , network-uri
-    , odd-jobs
-    , one-time-password          ==3.0.1.0
-    , openapi3
-    , optics-core
-    , pg-entity
-    , pg-transact-effectful
-    , postgresql-simple
-    , pretty
-    , prometheus-client
-    , prometheus-effectful
-    , prometheus-metrics-ghc
-    , prometheus-proc
-    , PyF
-    , raven-haskell
-    , require-callstack
-    , resource-pool
-    , safe-exceptions
-    , sel
-    , servant
-    , servant-client
-    , servant-client-core
-    , servant-openapi3
-    , servant-prometheus
-    , servant-server
-    , text
-    , text-display
-    , time
-    , time-manager
-    , torsor
-    , tracing
-    , tracing-effectful
-    , uuid
-    , vector
-    , vector-algorithms
-    , wai
-    , wai-app-static
-    , wai-log
-    , wai-middleware-heartbeat
-    , wai-middleware-prometheus
-    , warp
-    , xml-conduit
+    Cabal-syntax,
+    PyF,
+    aeson,
+    async,
+    base ^>=4.20,
+    base32,
+    bytestring,
+    chronos,
+    cmark-gfm,
+    colourista,
+    containers,
+    cookie,
+    cvss,
+    dani-servant-lucid2,
+    data-default,
+    deepseq,
+    deriving-aeson,
+    dlist,
+    effectful,
+    effectful-core,
+    effectful-plugin,
+    eventlog-socket,
+    extra,
+    feed,
+    flora,
+    flora-advisories,
+    flora-jobs,
+    flora-search,
+    generics-sop,
+    haddock-library,
+    htmx-lucid,
+    http-api-data,
+    http-client,
+    http-client-tls,
+    http-media,
+    http-types,
+    log-base,
+    log-effectful,
+    lucid2,
+    monad-time,
+    monad-time-effectful,
+    mtl,
+    network-uri,
+    odd-jobs,
+    one-time-password ==3.0.1.0,
+    openapi3,
+    optics-core,
+    pg-entity,
+    pg-transact-effectful,
+    postgresql-simple,
+    pretty,
+    prometheus-client,
+    prometheus-effectful,
+    prometheus-metrics-ghc,
+    prometheus-proc,
+    raven-haskell,
+    require-callstack,
+    resource-pool,
+    safe-exceptions,
+    sel,
+    servant,
+    servant-client,
+    servant-client-core,
+    servant-openapi3,
+    servant-prometheus,
+    servant-server,
+    text,
+    text-display,
+    time,
+    time-manager,
+    torsor,
+    tracing,
+    tracing-effectful,
+    uuid,
+    vector,
+    vector-algorithms,
+    wai,
+    wai-app-static,
+    wai-log,
+    wai-middleware-heartbeat,
+    wai-middleware-prometheus,
+    warp,
+    xml-conduit,
 
-  ghc-options:     -fplugin=Effectful.Plugin
+  ghc-options: -fplugin=Effectful.Plugin
 
 library flora-jobs
-  import:          common-extensions
-  import:          common-ghc-options
-  hs-source-dirs:  src/jobs-worker
-
-  -- cabal-fmt expand: src/jobs-worker
+  import: common-extensions
+  import: common-ghc-options
+  hs-source-dirs: src/jobs-worker
+  -- cabal-gild: discover src/jobs-worker
   exposed-modules:
     FloraJobs.Render
     FloraJobs.Runner
@@ -475,161 +487,162 @@ library flora-jobs
     FloraJobs.Types
 
   build-depends:
-    , aeson
-    , base
-    , bytestring
-    , Cabal-syntax
-    , commonmark
-    , commonmark-extensions
-    , containers
-    , effectful
-    , effectful-core
-    , effectful-plugin
-    , filepath
-    , flora
-    , http-client
-    , http-media
-    , http-types
-    , log-base
-    , log-effectful
-    , monad-time-effectful
-    , odd-jobs
-    , pg-entity
-    , pg-transact-effectful
-    , postgresql-simple
-    , prometheus-effectful
-    , req
-    , require-callstack
-    , resource-pool
-    , servant
-    , servant-client
-    , servant-client-core
-    , text
-    , text-display
-    , time
-    , typed-process-effectful
-    , vector
+    Cabal-syntax,
+    aeson,
+    base,
+    bytestring,
+    commonmark,
+    commonmark-extensions,
+    containers,
+    effectful,
+    effectful-core,
+    effectful-plugin,
+    filepath,
+    flora,
+    http-client,
+    http-media,
+    http-types,
+    log-base,
+    log-effectful,
+    monad-time-effectful,
+    odd-jobs,
+    pg-entity,
+    pg-transact-effectful,
+    postgresql-simple,
+    prometheus-effectful,
+    req,
+    require-callstack,
+    resource-pool,
+    servant,
+    servant-client,
+    servant-client-core,
+    text,
+    text-display,
+    time,
+    typed-process-effectful,
+    vector,
 
-  ghc-options:     -fplugin=Effectful.Plugin
+  ghc-options: -fplugin=Effectful.Plugin
 
 executable flora-server
-  import:         common-extensions
-  import:         common-ghc-options
-  import:         common-rts-options
-  main-is:        Main.hs
+  import: common-extensions
+  import: common-ghc-options
+  import: common-rts-options
+  main-is: Main.hs
   hs-source-dirs: app/server
   build-depends:
-    , base
-    , containers
-    , effectful
-    , flora
-    , flora-jobs
-    , flora-web
-    , log-base
-    , log-effectful
-    , pg-entity
-    , pg-transact-effectful
-    , postgresql-simple
-    , text
-    , vector
+    base,
+    containers,
+    effectful,
+    flora,
+    flora-jobs,
+    flora-web,
+    log-base,
+    log-effectful,
+    pg-entity,
+    pg-transact-effectful,
+    postgresql-simple,
+    text,
+    vector,
 
 executable flora-cli
-  import:         common-extensions
-  import:         common-ghc-options
-  import:         common-rts-options
-  main-is:        Main.hs
-  other-modules:  DesignSystem
+  import: common-extensions
+  import: common-ghc-options
+  import: common-rts-options
+  main-is: Main.hs
+  other-modules: DesignSystem
   hs-source-dirs: app/cli
   build-depends:
-    , base
-    , bytestring
-    , Cabal-syntax
-    , containers
-    , cvss
-    , effectful
-    , effectful-core
-    , effectful-plugin
-    , extra
-    , filepath
-    , flora
-    , flora-advisories
-    , flora-search
-    , flora-web
-    , hsec-core
-    , log-base
-    , log-effectful
-    , lucid2
-    , monad-time-effectful
-    , optics-core
-    , optparse-applicative
-    , pg-transact-effectful
-    , prometheus-effectful
-    , PyF
-    , require-callstack
-    , sel
-    , text
-    , text-display
-    , time
-    , tracing
-    , tracing-effectful
-    , transformers
-    , uuid
-    , vector
-    , zlib
+    Cabal-syntax,
+    PyF,
+    base,
+    bytestring,
+    containers,
+    cvss,
+    effectful,
+    effectful-core,
+    effectful-plugin,
+    extra,
+    filepath,
+    flora,
+    flora-advisories,
+    flora-search,
+    flora-web,
+    hsec-core,
+    log-base,
+    log-effectful,
+    lucid2,
+    monad-time-effectful,
+    optics-core,
+    optparse-applicative,
+    pg-transact-effectful,
+    prometheus-effectful,
+    require-callstack,
+    sel,
+    text,
+    text-display,
+    time,
+    tracing,
+    tracing-effectful,
+    transformers,
+    uuid,
+    vector,
+    zlib,
 
-  ghc-options:    -fplugin=Effectful.Plugin
+  ghc-options: -fplugin=Effectful.Plugin
 
 test-suite flora-test
-  import:         common-extensions
-  import:         common-ghc-options
-  import:         common-rts-options
-  type:           exitcode-stdio-1.0
-  main-is:        Main.hs
+  import: common-extensions
+  import: common-ghc-options
+  import: common-rts-options
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
   hs-source-dirs: test
+  -- cabal-gild: discover test --exclude "test/Main.hs"
   build-depends:
-    , aeson
-    , base
-    , bytestring
-    , Cabal-syntax
-    , containers
-    , effectful
-    , effectful-core
-    , effectful-plugin
-    , exceptions
-    , extra
-    , filepath
-    , flora
-    , flora-advisories
-    , flora-search
-    , flora-web
-    , hedgehog
-    , http-client
-    , log-base
-    , log-effectful
-    , monad-time-effectful
-    , optics-core
-    , pg-entity
-    , pg-transact
-    , pg-transact-effectful
-    , postgresql-migration
-    , prometheus-effectful
-    , require-callstack
-    , resource-pool
-    , sel
-    , servant
-    , servant-client
-    , tar
-    , tasty
-    , tasty-hunit
-    , text
-    , time
-    , tracing-effectful
-    , uuid
-    , vector
-    , vector-algorithms
-    , zlib
+    Cabal-syntax,
+    aeson,
+    base,
+    bytestring,
+    containers,
+    effectful,
+    effectful-core,
+    effectful-plugin,
+    exceptions,
+    extra,
+    filepath,
+    flora,
+    flora-advisories,
+    flora-search,
+    flora-web,
+    hedgehog,
+    http-client,
+    log-base,
+    log-effectful,
+    monad-time-effectful,
+    optics-core,
+    pg-entity,
+    pg-transact,
+    pg-transact-effectful,
+    postgresql-migration,
+    prometheus-effectful,
+    require-callstack,
+    resource-pool,
+    sel,
+    servant,
+    servant-client,
+    tar,
+    tasty,
+    tasty-hunit,
+    text,
+    time,
+    tracing-effectful,
+    uuid,
+    vector,
+    vector-algorithms,
+    zlib,
 
-  ghc-options:    -fplugin=Effectful.Plugin
+  ghc-options: -fplugin=Effectful.Plugin
   other-modules:
     Flora.AdvisorySpec
     Flora.BlobSpec

@@ -43,7 +43,8 @@ indexHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      )
-  => SessionWithCookies User -> Eff es (Html ())
+  => SessionWithCookies User
+  -> Eff es (Html ())
 indexHandler (Headers session _) = do
   groups <- Query.listPackageGroups
   templateEnv <- templateFromSession session defaultTemplateEnv

@@ -138,12 +138,12 @@ watch-server: ## Start flora-server in ghcid
 lint-hs: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
-style-hs-quick: ## Run the haskell code formatters (fourmolu, cabal-fmt)
-	@cabal-fmt -i flora.cabal
+style-hs-quick: ## Run the haskell code formatters (fourmolu, cabal-gild)
+	@cabal-gild --io=flora.cabal
 	@git diff origin --name-only src test/**/*.hs app | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
-style-hs: ## Run the haskell code formatters (fourmolu, cabal-fmt)
-	@cabal-fmt -i flora.cabal
+style-hs: ## Run the haskell code formatters (fourmolu, cabal-gild)
+	@cabal-gild --io=flora.cabal
 	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
 style-css: ## Run the CSS code formatter (stylelint)
