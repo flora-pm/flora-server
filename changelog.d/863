@@ -1,6 +1,0 @@
-synopsis: Remove one-to-many relationship between users and packages
-prs: #863
-description: {
-  Packages have multiple maintainers and this model is too restrictive.
-  It's better to refer to a multitude of users who have upload privileges.
-}

@@ -1,6 +1,6 @@
 cabal-version: 3.0
 name: flora
-version: 1.0.26
+version: 1.0.27
 homepage: https://github.com/flora-pm/flora-server/#readme
 bug-reports: https://github.com/flora-pm/flora-server/issues
 author: Théophile Choutri

@@ -1,9 +1,53 @@
 # CHANGELOG
 
-## UNRELEASED
+## 1.0.27 -- 2025-09-14
 
-* Add `@mlabs` namespace ([#904](https://github.com/flora-pm/flora-server/issues/904))
-* Support capturing live events from flora-server ([#908](https://github.com/flora-pm/flora-server/issues/908)).
+- Add `@mlabs` namespace ([#904](https://github.com/flora-pm/flora-server/issues/904))
+
+- Support capturing live events from flora-server ([#908](https://github.com/flora-pm/flora-server/issues/908)).
+
+- Display package group as a tag in the package page title [#921](https://github.com/flora-pm/flora-server/pull/921)
+
+  Remove the hard-coded core libraries and advertise package groups
+  on the package page title instead
+
+- Add a button to remove packages from package groups [#923](https://github.com/flora-pm/flora-server/pull/923)
+- Remove one-to-many relationship between users and packages [#863](https://github.com/flora-pm/flora-server/pull/863)
+
+  Packages have multiple maintainers and this model is too restrictive.
+  It's better to refer to a multitude of users who have upload privileges.
+
+- Improve tmux script [#864](https://github.com/flora-pm/flora-server/pull/864)
+
+  - Rewrite the tmux script so it only make one single invocation to tmux.
+    Session name / Window name / Pane name are all specified in each tmux command, so you can nest it (given that you use zsh).
+
+- Implement API route for package prefix search [#835](https://github.com/flora-pm/flora-server/issue/835) [#873](https://github.com/flora-pm/flora-server/pull/873)
+
+  - A new route under /api/experimental/packages/search/:packageNamePrefix is added.
+    It returns a vector of names of packages matching the prefix.
+
+- Package feeds [#329](https://github.com/flora-pm/flora-server/issue/329) [#881](https://github.com/flora-pm/flora-server/pull/881)
+
+  This PR introduces Atom feeds for packages. The packages are dynamically selected from the `package_feeds` table according to a query parameter array. New releases are inserted in the `package_feeds` table.
+
+- Advertise package feeds in search [#889](https://github.com/flora-pm/flora-server/issue/889) [#890](https://github.com/flora-pm/flora-server/pull/890)
+
+- Rework API route for package prefix search [#874](https://github.com/flora-pm/flora-server/pull/874)
+
+  - The route /api/experimental/packages/search is changed to take two parameters, `name` and `page`
+
+- Disable proc metrics on FreeBSD [#901](https://github.com/flora-pm/flora-server/pull/901)
+
+  * prometheus-proc uses procfs, which is deprecated on FreeBSD
+
+- Disable proc metrics on FreeBSD [#910](https://github.com/flora-pm/flora-server/pull/910)
+
+- Add title for pages and use chevron when sensible in headings [#602](https://github.com/flora-pm/flora-server/issue/602) [#943](https://github.com/flora-pm/flora-server/pull/943)
+
+  - Add title for about, categories, specific categories, sign in, 404, searching
+  - Change title for packages (add "— Flora.pm")
+  - For specific categories have heading "Categories > Audio" instead of "Audio"
 
 ## 1.0.26 -- 2025-06-07
 
