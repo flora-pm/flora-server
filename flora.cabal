@@ -77,8 +77,8 @@ library
     ./src/core
     ./src/datatypes
 
-  -- cabal-fmt: expand src/core
-  -- cabal-fmt: expand src/datatypes
+  -- cabal-gild: discover src/core 
+  -- cabal-gild: discover src/datatypes
   exposed-modules:
     Advisories.AffectedVersionRange.Orphans
     Advisories.CAPEC.Orphans
