@@ -324,7 +324,6 @@ library flora-web
     FloraWeb.Common.Pagination
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
-    FloraWeb.Components.SkipLink
     FloraWeb.Components.AdvisoryListItem
     FloraWeb.Components.Alert
     FloraWeb.Components.Button
@@ -338,6 +337,7 @@ library flora-web
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
     FloraWeb.Components.Pill
+    FloraWeb.Components.SkipLink
     FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
