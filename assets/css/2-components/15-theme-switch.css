@@ -5,7 +5,7 @@
 
 .theme-button--dark {
 	display: inline-flex;
-	background-color: hsl(226 232 240);
+	background-color: rgb(226 232 240);
 }
 
 @media (prefers-color-scheme: light) {
