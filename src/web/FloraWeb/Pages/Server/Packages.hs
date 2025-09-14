@@ -118,35 +118,18 @@ showNamespaceHandler (Headers session _) packageNamespace pageParam =
     let pageNumber = pageParam ?: PositiveUnsafe 1
     templateDefaults <- templateFromSession session defaultTemplateEnv
     (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) packageNamespace
-    if extractNamespaceText packageNamespace == "haskell"
-      then do
-        let description = "Core Haskell packages"
+    mPackageIndex <- Query.getPackageIndexByName (extractNamespaceText packageNamespace)
+    case mPackageIndex of
+      Nothing -> renderError templateDefaults notFound404
+      Just packageIndex -> do
         let templateEnv =
               templateDefaults
                 { navbarSearchContent = Just $ "in:" <> display packageNamespace <> " "
-                , title = "Core packages — Flora.pm"
-                , description = description
+                , title = "Packages in " <> display packageNamespace <> " — Flora.pm"
+                , description = packageIndex.description
                 }
         render templateEnv $
-          Search.showAllPackagesInNamespace
-            packageNamespace
-            description
-            count'
-            pageNumber
-            results
-      else do
-        mPackageIndex <- Query.getPackageIndexByName (extractNamespaceText packageNamespace)
-        case mPackageIndex of
-          Nothing -> renderError templateDefaults notFound404
-          Just packageIndex -> do
-            let templateEnv =
-                  templateDefaults
-                    { navbarSearchContent = Just $ "in:" <> display packageNamespace <> " "
-                    , title = "Packages in " <> display packageNamespace <> " — Flora.pm"
-                    , description = packageIndex.description
-                    }
-            render templateEnv $
-              Search.showAllPackagesInNamespace packageNamespace packageIndex.description count' pageNumber results
+          Search.showAllPackagesInNamespace packageNamespace packageIndex.description count' pageNumber results
 
 showPackageHandler
   :: ( DB :> es
