@@ -17,7 +17,7 @@ import Flora.Model.Package.Query qualified as Query
 import Flora.Model.User (User)
 import FloraWeb.Common.Auth.Types (SessionWithCookies)
 import FloraWeb.Pages.Routes.Categories (Routes, Routes' (..))
-import FloraWeb.Pages.Templates (defaultTemplateEnv, render, templateFromSession)
+import FloraWeb.Pages.Templates (TemplateEnv (..), defaultTemplateEnv, render, templateFromSession)
 import FloraWeb.Pages.Templates.Error
 import FloraWeb.Pages.Templates.Screens.Categories qualified as Template
 import FloraWeb.Types (FloraEff)
@@ -34,8 +34,13 @@ indexHandler
   => SessionWithCookies (Maybe User)
   -> Eff es (Html ())
 indexHandler (Headers session _) = do
-  templateEnv <- templateFromSession session defaultTemplateEnv
+  templateEnv' <- templateFromSession session defaultTemplateEnv
   categories <- Query.getAllCategories
+  let templateEnv =
+        templateEnv'
+          { title = "Categories — Flora.pm"
+          , description = "Categories of packages in the Haskell ecosystem"
+          }
   render templateEnv $ Template.index categories
 
 showHandler
@@ -49,10 +54,16 @@ showHandler
   -> Text
   -> Eff es (Html ())
 showHandler (Headers session _) categorySlug = do
-  templateEnv <- templateFromSession session defaultTemplateEnv
+  templateEnv' <- templateFromSession session defaultTemplateEnv
+
   result <- Query.getCategoryBySlug categorySlug
   case result of
-    Nothing -> renderError templateEnv notFound404
+    Nothing -> renderError templateEnv' notFound404
     Just cat -> do
       packagesInfo <- Query.getPackagesFromCategoryWithLatestVersion cat.categoryId
+      let templateEnv =
+            templateEnv'
+              { title = "Categories › " <> cat.name <> " — Flora.pm"
+              , description = "Categories of packages in the Haskell ecosystem"
+              }
       render templateEnv $ Template.showCategory cat packagesInfo

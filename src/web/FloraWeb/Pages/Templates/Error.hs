@@ -25,7 +25,11 @@ renderError
   -> Status
   -> Eff es a
 renderError env status = do
-  let templateEnv = env & (#title .~ "Flora :: *** Exception")
+  let templateEnv' = env & (#title .~ "Flora :: *** Exception")
+  let templateEnv =
+        templateEnv'
+          { title = "404 — Flora.pm"
+          }
   let body = mkErrorPage templateEnv $ showError status
   throwError $
     ServerError
