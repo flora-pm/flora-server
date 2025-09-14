@@ -77,8 +77,7 @@ library
     ./src/core
     ./src/datatypes
 
-  -- cabal-gild: discover src/core 
-  -- cabal-gild: discover src/datatypes
+  -- cabal-gild: discover src/core src/datatypes
   exposed-modules:
     Advisories.AffectedVersionRange.Orphans
     Advisories.CAPEC.Orphans
@@ -246,7 +245,7 @@ library flora-search
   import: common-extensions
   import: common-ghc-options
   hs-source-dirs: ./src/search
-  -- cabal-fmt: expand src/search
+  -- cabal-gild: discover src/search
   exposed-modules: Flora.Search
   build-depends:
     aeson,
@@ -268,7 +267,7 @@ library flora-advisories
   import: common-extensions
   import: common-ghc-options
   hs-source-dirs: ./src/advisories
-  -- cabal-fmt: expand src/advisories
+  -- cabal-gild: discover src/advisories
   exposed-modules:
     Advisories.Import
     Advisories.Import.Error
@@ -307,7 +306,7 @@ library flora-web
   import: common-extensions
   import: common-ghc-options
   hs-source-dirs: ./src/web
-  -- cabal-fmt: expand src/web
+  -- cabal-gild: discover src/web
   exposed-modules:
     FloraWeb.API.Errors
     FloraWeb.API.Routes
@@ -477,7 +476,7 @@ library flora-jobs
   import: common-extensions
   import: common-ghc-options
   hs-source-dirs: src/jobs-worker
-  -- cabal-fmt expand: src/jobs-worker
+  -- cabal-gild: discover src/jobs-worker
   exposed-modules:
     FloraJobs.Render
     FloraJobs.Runner
@@ -598,6 +597,7 @@ test-suite flora-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
+  -- cabal-gild: discover test --exclude "test/Main.hs"
   build-depends:
     Cabal-syntax,
     aeson,
