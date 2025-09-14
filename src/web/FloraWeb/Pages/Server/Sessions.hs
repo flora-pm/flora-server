@@ -38,8 +38,13 @@ newSessionHandler (Headers session _) = do
   case mUser of
     Nothing -> do
       Log.logInfo_ "[+] No user logged-in"
-      templateDefaults <- templateFromSession session defaultTemplateEnv
-      html <- render templateDefaults Sessions.newSession
+      templateEnv' <- templateFromSession session defaultTemplateEnv
+      let templateEnv =
+            templateEnv'
+              { title = "Sign in — Flora.pm"
+              , description = "Sign in page"
+              }
+      html <- render templateEnv Sessions.newSession
       pure $ AuthenticationRequired html
     Just u -> do
       Log.logInfo_ $ "[+] User is already logged: " <> display u

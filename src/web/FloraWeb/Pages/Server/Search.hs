@@ -31,6 +31,7 @@ searchHandler (Headers session _) (Just searchString) pageParam = do
   let templateEnv =
         templateDefaults
           { navbarSearchContent = Just searchString
+          , title = "'" <> searchString <> "' search — Flora.pm"
           }
   let pagination = fromPage pageNumber
   case Search.parseSearchQuery searchString of
