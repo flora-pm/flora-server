@@ -17,8 +17,9 @@ import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Flora.Model.PackageIndex.Types
 
 getPackageIndexByName :: DB :> es => Text -> Eff es (Maybe PackageIndex)
-getPackageIndexByName repository = dbtToEff $
-        selectOneByField [field| repository |] (Only repository)
+getPackageIndexByName repository =
+  dbtToEff $
+    selectOneByField [field| repository |] (Only repository)
 
 listPackageIndexes :: DB :> es => Eff es (Vector PackageIndex)
 listPackageIndexes =
