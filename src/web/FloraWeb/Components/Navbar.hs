@@ -14,31 +14,35 @@ import FloraWeb.Pages.Templates.Types
 
 navbar :: FloraHTML
 navbar = do
+  let xData =
+        [str|
+    {
+      updateTheme() {
+        const customTheme = document.documentElement.getAttribute('data-theme');
+        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const applyTheme = (theme) => {
+          document.documentElement.setAttribute('data-theme', theme);
+          (async () => { await cookieStore.set('theme', theme) })();
+        };
+        switch (customTheme) {
+          case 'light':
+            applyTheme('dark');
+            break;
+          case 'dark':
+            applyTheme('light');
+            break;
+          default:
+            isSystemDark ? applyTheme('light') : applyTheme('dark');
+            break;
+        }
+      }
+    }
+  |]
+
   ActiveElements{aboutNav, packagesNav} <- asks activeElements
   nav_
     [ class_ "top-navbar"
-    , xData_
-        "{ updateTheme() { \
-        \ const customTheme = document.documentElement.getAttribute('data-theme'); \
-        \ const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches; \
-        \ const applyTheme = (theme) => { \
-        \   document.documentElement.setAttribute('data-theme', theme); \
-        \   console.log(\"theme switch\"); \
-        \   (async () => { await cookieStore.set('theme', theme) })(); \
-        \ }; \
-        \ switch (customTheme) { \
-        \   case 'light': \
-        \     applyTheme('dark'); \
-        \      break; \
-        \   case 'dark': \
-        \    applyTheme('light'); \
-        \    break; \
-        \   default: \
-        \     isSystemDark ? applyTheme('light') : applyTheme('dark'); \
-        \     break; \
-        \  } \
-        \  } \
-        \}"
+    , xData_ xData
     ]
     $ do
       div_ [class_ "navbar-content"] $ do
