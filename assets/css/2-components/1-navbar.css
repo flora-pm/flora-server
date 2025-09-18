@@ -195,12 +195,15 @@
 				margin-left: auto;
 			}
 
-			.navbar-dropdown__menu:is(
-				:not(:popover-open),
-				:not(.\:popover-open)
-			) {
+			.navbar-dropdown__menu:not(:popover-open) {
 				display: none;
 			}
+
+			@supports not selector(:popover-open) {
+				.navbar-dropdown__menu:not(.\:popover-open) {
+				display: none;
+			}
+		}
 		}
 	}
 }
