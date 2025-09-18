@@ -74,6 +74,8 @@ const config = {
   sourcemap: sourcemap,
   minify: minify,
   target: "es2018",
+  format: 'esm',
+  splitting: true,
   entryNames: entryNames,
   plugins: pluginsList(),
   metafile: true,
