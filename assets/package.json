@@ -20,6 +20,7 @@
     "stylelint-config-standard": "^36.0.1"
   },
   "dependencies": {
+    "@oddbird/popover-polyfill": "^0.6.1",
     "alpinejs": "^3.14.9",
     "htmx-ext-sse": "^2.2.2",
     "htmx.org": "^2.0.2"

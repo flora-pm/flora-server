@@ -46,9 +46,9 @@ navbar = do
     ]
     $ do
       div_ [class_ "navbar-content"] $ do
-        navbarDropdown aboutNav packagesNav
         div_ [class_ "navbar-left"] $ do
           brand
+          navbarDropdown aboutNav packagesNav
           navbarSearch
         div_ [class_ "navbar-right"] $ do
           navBarLink "navbar-menu-button" "/" "Search on Flora" False
@@ -65,42 +65,22 @@ brand = do
 
 navbarDropdown :: Bool -> Bool -> FloraHTML
 navbarDropdown aboutNav packagesNav = do
-  let xData =
-        [str|
-    {
-      open: false,
-      toggle() {
-        this.open = this.open ? this.close() : true
-      },
-      close() {
-        this.open = false;
-      }
-    }
-  |]
-
   div_
     [ class_ "navbar-dropdown"
-    , xData_ xData
-    , xOn_ "keydown.escape.prevent.stop" "close()"
-    , xId_ "['dropdown-button']"
     ]
     $ do
       button_
         [ class_ "navbar-dropdown__button"
         , type_ "button"
-        , xOn_ "click" "toggle()"
-        , ariaExpanded_ "open"
-        , ariaControls_ "$id('dropdown-button')"
+        , popovertarget_ "navbar_dropdown_menu"
         ]
-        $ text "☰ Flora"
+        $ text "Menu"
       div_
         [ class_ "navbar-dropdown__menu"
-        , xShow_ "open"
-        , xOn_ "click.outside" "close()"
-        , id'_ "$id('dropdown-button')"
+        , id_ "navbar_dropdown_menu"
+        , popover_ ""
         ]
         $ do
-          navBarLink "navbar-menu-button" "/" "Search on Flora" False
           navBarLink' "/about" "About" aboutNav
           navBarLink' "/categories" "Categories" packagesNav
           navBarLink' "/packages" "Packages" packagesNav
@@ -141,23 +121,22 @@ navbarSearch = do
             case mContent of
               Nothing -> []
               Just content -> [value_ content]
-      form_ [action_ "/search", method_ "GET"] $ do
-        div_ [class_ "flex items-center py-2"] $ do
-          label_ [for_ "search", class_ "sr-only"] "Search a package"
-          input_ $
-            [ class_ "navbar-search"
-            , id_ "search"
-            , type_ "search"
-            , name_ "q"
-            , placeholder_ "Search a package"
-            ]
-              ++ contentValue
-          button_
-            [ class_ "navbar-searchBtn"
-            , type_ "submit"
-            , label_ "Search"
-            ]
-            Icons.lookingGlass
+      form_ [class_ "navbar-search", action_ "/search", method_ "GET"] $ do
+        label_ [for_ "search", class_ "sr-only"] "Search a package"
+        input_ $
+          [ class_ "navbar-searchInput"
+          , id_ "search"
+          , type_ "search"
+          , name_ "q"
+          , placeholder_ "Search a package"
+          ]
+            ++ contentValue
+        button_
+          [ class_ "navbar-searchBtn"
+          , type_ "submit"
+          , label_ "Search"
+          ]
+          Icons.lookingGlass
     else pure mempty
 
 adminLink :: Bool -> Maybe User -> FloraHTML
@@ -188,8 +167,6 @@ themeToggle = do
     , ariaLabel_ "Switch to dark theme"
     ]
     moonIcon
-
-  input_ [type_ "checkbox", name_ "", id_ "darkmode-toggle", class_ "hidden"]
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
 getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login" False
