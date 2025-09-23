@@ -310,9 +310,11 @@ persistImportOutput (ImportOutput package categories release components) = State
     persistImportDependency dep =
       Log.localData
         [ "dependent_namespace" .= display package.namespace
-        , "dependent_name" .= (display package.name)
+        , "dependent_name" .= display package.name
+        , "dependent_id" .= display package.packageId
         , "dependency_namespace" .= display dep.package.namespace
         , "dependency_name" .= display dep.package.name
+        , "dependency_id" .= display dep.package.packageId
         ]
         $ do
           Update.upsertRequirement dep.requirement
@@ -325,6 +327,7 @@ persistImportOutput (ImportOutput package categories release components) = State
           object
             [ "namespace" .= package.namespace
             , "package" .= package.name
+            , "package_id" .= display package.packageId
             , "version" .= release.version
             ]
 
