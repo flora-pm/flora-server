@@ -818,3 +818,22 @@ WITH RECURSIVE transitive_dependencies(  dependent_id, dependent_namespace, depe
   FROM transitive_dependencies AS t3
   GROUP BY (t3.dependent_id, t3.dependent_namespace, t3.dependent_name)
 |]
+
+getDependentsOfPackage :: DB :> es => PackageId -> Vector (PackageId, Version, VersionRange)
+getDependentsOfPackage dependencyId = dbtToEff $ query getDependentsOfPackageQuery (Only dependencyId)
+
+getDependentsOfPackageQuery :: SQL
+getDependentsOfPackageQuery =
+  [sql|
+SELECT lv.package_id
+     , r1.version
+     , r3.requirement
+FROM latest_versions AS lv
+     INNER JOIN releases AS r1 ON r1.package_id = lv.package_id
+                              AND r1.version = lv.version
+     INNER JOIN package_components AS p2 ON p2.release_id = r1.release_id
+     INNER JOIN requirements AS r3 ON r3.package_component_id = p2.package_component_id
+WHERE r3.package_id = ?
+  AND r3.requirement <> '>=0'
+GROUP BY lv.name, r1.version, r3.requirement
+  |]
