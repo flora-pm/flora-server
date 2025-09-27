@@ -32,6 +32,7 @@ assets/fonts
 assets/node_modules
 assets/yarn-error.log
 design/node_modules
+design/storybook-static
 
 *.dump-timings
 _build/cabal-store
