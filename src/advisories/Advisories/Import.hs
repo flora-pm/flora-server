@@ -120,11 +120,10 @@ processAffectedPackage advisoryId affected = do
           GHC _ -> PackageName "ghc"
   let namespace = Namespace "hackage"
   package <- guardThatPackageExists namespace packageName $ \_ _ -> do
-    packages <- Query.getPackagesByNamespace namespace
-    Log.logAttention "packages of namespace" $
+    Log.logAttention "Affected package does not not exist" $
       object
         [ "namespace" .= display namespace
-        , "packages" .= display ((.name) <$> Vector.toList packages)
+        , "package" .= display packageName
         ]
     throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
   let declarations =

@@ -126,7 +126,6 @@ postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = u
           Log.logInfo_ "Code validation succeeded"
           pure $ TwoFactorSetupSuccess "/settings/security/two-factor"
         else do
-          Log.logAttention_ "Code validation failed"
           let templateEnv =
                 templateEnv'
                   & #title
