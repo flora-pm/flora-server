@@ -25,7 +25,7 @@
 - name: "Build backend"
   register: build
   ansible.builtin.command:
-    cmd: cabal build -O2 --no-semaphore
+    cmd: cabal build --no-semaphore
     chdir: flora-server
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
