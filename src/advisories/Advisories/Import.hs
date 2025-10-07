@@ -26,7 +26,6 @@ import Advisories.Model.Advisory.Update qualified as Update
 import Advisories.Model.Affected.Types
 import Advisories.Model.Affected.Update qualified as Update
 import Flora.Model.Package.Guard (guardThatPackageExists)
-import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import OSV.Reference.Orphans
 
