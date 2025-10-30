@@ -64,19 +64,20 @@ ENV GHCUP_INSTALL_BASE_PREFIX="/opt/ghcup"
 
 COPY --from=ghcup /out/ghcup /opt/ghcup
 
-RUN ghcup install ghc $GHC_VERSION
-RUN ghcup install ghc 9.6.7
-RUN ghcup set ghc $GHC_VERSION
-
 RUN cabal update
+
+RUN ghcup install ghc 9.6.7
+RUN ghcup run --ghc 9.6.7 -- cabal install --install-method=copy --installdir=out/ -j apply-refact-$APPLY_REFACT_VERSION
+RUN ghcup rm ghc 9.6.7
+RUN ghcup gc -t -p -s -c
+
+RUN ghcup install ghc $GHC_VERSION
+RUN ghcup set ghc $GHC_VERSION
 
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j postgresql-migration-$POSTGRESQL_MIGRATION_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j fourmolu-$FOURMOLU_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$HLINT_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j cabal-gild-$CABAL_GILD_VERSION
-RUN ghcup run --ghc 9.6.7 -- cabal install --install-method=copy --installdir=out/ -j apply-refact-$APPLY_REFACT_VERSION
-RUN ghcup rm ghc 9.6.7
-RUN ghcup gc -t -p -s -c
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghc-tags-$GHC_TAGS_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghcid-$GHCID_VERSION
 
