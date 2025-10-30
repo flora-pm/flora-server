@@ -7,7 +7,7 @@ import Data.Aeson.TH
 import Data.Bifunctor qualified as Bifunctor
 import Data.ByteString.Lazy as ByteString
 import Data.List.NonEmpty
-import Data.Text
+import Data.Text (Text)
 import Data.Text.Display
 import Data.Text.Encoding qualified as Text
 import Data.Time (UTCTime)
