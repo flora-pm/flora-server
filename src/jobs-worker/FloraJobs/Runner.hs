@@ -7,7 +7,7 @@ import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Pool (Pool)
 import Data.Set (Set)
-import Data.Text
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Vector (Vector)

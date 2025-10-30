@@ -121,7 +121,9 @@ import Flora.Normalise
 versionList :: Set Version
 versionList =
   Set.fromList
-    [ Version.mkVersion [9, 12, 1]
+    [ Version.mkVersion [9, 12, 2]
+    , Version.mkVersion [9, 12, 1]
+    , Version.mkVersion [9, 10, 3]
     , Version.mkVersion [9, 10, 2]
     , Version.mkVersion [9, 10, 1]
     , Version.mkVersion [9, 8, 4]
