@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Extract the tested GHC versions
         id: set-matrix
-        uses: kleidukos/get-tested@v0.1.9.0
+        uses: kleidukos/get-tested@v0.1.9.1
         with:
           cabal-file: flora.cabal
           ubuntu-version: "22.04"
