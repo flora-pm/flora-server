@@ -15,7 +15,7 @@ jobs:
       - name: Delete huge unnecessary tools folder
         run: rm -rf /opt/hostedtoolcache
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Build the Docker image
         run: make docker-build
