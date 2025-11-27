@@ -489,6 +489,7 @@ library flora-jobs
   build-depends:
     Cabal-syntax,
     aeson,
+    async,
     base,
     bytestring,
     commonmark,
