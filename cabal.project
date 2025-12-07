@@ -35,7 +35,7 @@ package zlib
 source-repository-package
   type: git
   location: https://github.com/haskell/security-advisories/
-  tag: 0452a2180f3c6d3e7875d2f391136ef92c8eab69
+  tag: fc3453aa95edb296b1e4409f53d1c1210b479fc8
   subdir:
     ./code/cvss
     ./code/osv
