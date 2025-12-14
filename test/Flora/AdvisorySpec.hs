@@ -45,4 +45,4 @@ testFetchingAdvisoryPreviewByPackageId = do
         (Namespace "hackage")
         (PackageName "base")
   advisories <- Query.getAdvisoryPreviewsByPackageId package.packageId
-  assertEqual_ 1 (Vector.length advisories)
+  assertEqual_ 2 (Vector.length advisories)

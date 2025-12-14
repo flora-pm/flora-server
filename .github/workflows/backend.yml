@@ -72,9 +72,6 @@ jobs:
         cabal update
         mkdir -p ~/.local/share
         git clone https://github.com/haskell/security-advisories.git ~/.local/share/security-advisories
-        cd ~/.local/share/security-advisories
-        git checkout df64e86a39668c057031fe7e2c679b1003090e03
-        cd -
 
     - name: "Create freeze file"
       run: |
