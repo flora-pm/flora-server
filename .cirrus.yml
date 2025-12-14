@@ -1,8 +1,8 @@
 freebsd_instance:
-  image_family: freebsd-14-2
+  image_family: freebsd-14-3
 
 task:
-  name: "Backend build on FreeBSD 14.2"
+  name: "Backend build on FreeBSD 14.3"
   env:
     GHCUP_VERSION: 0.1.50.2
     CABAL_PROJECT: cabal.project

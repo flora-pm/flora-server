@@ -5,6 +5,7 @@ import Data.Foldable (forM_, traverse_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Text qualified as Text
 import Data.Text.Display
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
@@ -115,7 +116,7 @@ processAffectedPackage advisoryId affected = do
   affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
   let packageName =
         case affected.affectedComponentIdentifier of
-          Hackage affectedPackageName -> PackageName affectedPackageName
+          Repository _ ((RepositoryName "hackage")) affectedPackageName -> PackageName (Text.pack . unPackageName $ affectedPackageName)
           GHC _ -> PackageName "ghc"
   let namespace = Namespace "hackage"
   package <- guardThatPackageExists namespace packageName $ \_ _ -> do
