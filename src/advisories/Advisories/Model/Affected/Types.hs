@@ -14,7 +14,7 @@ import Database.PostgreSQL.Simple.ToField
 import Distribution.Types.Version
 import Distribution.Types.VersionRange (VersionRange)
 import GHC.Generics
-import Security.Advisories.Core.Advisory
+import Security.Advisories.Core.Advisory (Architecture, OS)
 import Security.Advisories.Core.HsecId
 import Security.CVSS (CVSS)
 

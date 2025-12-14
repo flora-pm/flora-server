@@ -15,6 +15,7 @@ import Codec.Compression.GZip qualified as GZip
 import Control.Monad
 import Data.Aeson
 import Data.ByteString (StrictByteString)
+import Data.ByteString.Lazy (LazyByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.List (isSuffixOf)
 import Data.Maybe (fromMaybe)
@@ -108,7 +109,7 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
     buildContentStream
       :: UTCTime
       -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
-      -> Tar.GenEntry Tar.TarPath linkTarget
+      -> Tar.GenEntry LazyByteString Tar.TarPath linkTarget
       -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
     buildContentStream time acc entry =
       let entryPath = Tar.entryPath entry

@@ -34,17 +34,6 @@ package zlib
 
 source-repository-package
   type: git
-  location: https://github.com/haskell/security-advisories/
-  tag: fc3453aa95edb296b1e4409f53d1c1210b479fc8
-  subdir:
-    ./code/cvss
-    ./code/osv
-    ./code/hsec-core
-    ./code/hsec-sync
-    ./code/hsec-tools
-
-source-repository-package
-  type: git
   location: https://github.com/scrive/tracing
   tag: 9c2baa154dbd0ef2c145ee65660261977323c2d8
   subdir:
