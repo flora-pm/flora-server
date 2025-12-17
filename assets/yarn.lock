@@ -304,9 +304,9 @@ ajv@^8.0.1:
     require-from-string "^2.0.2"
 
 alpinejs@^3.14.9:
-  version "3.15.2"
-  resolved "https://registry.yarnpkg.com/alpinejs/-/alpinejs-3.15.2.tgz#e1009a72c9956bccf48bfe61995b3e2eb720a55f"
-  integrity sha512-2kYF2aG+DTFkE6p0rHG5XmN4VEb6sO9b02aOdU4+i8QN6rL0DbRZQiypDE1gBcGO65yDcqMz5KKYUYgMUxgNkw==
+  version "3.15.3"
+  resolved "https://registry.yarnpkg.com/alpinejs/-/alpinejs-3.15.3.tgz#667bce66914f8a11a786bffba9081c25ee3692d8"
+  integrity sha512-fSI6F5213FdpMC4IWaup92KhuH3jBX0VVqajRJ6cOTCy1cL6888KyXdGO+seAAkn+g6fnrxBqQEx6gRpQ5EZoQ==
   dependencies:
     "@vue/reactivity" "~3.1.1"
 
@@ -427,9 +427,9 @@ base@^0.11.1:
     pascalcase "^0.1.1"
 
 baseline-browser-mapping@^2.9.0:
-  version "2.9.7"
-  resolved "https://registry.yarnpkg.com/baseline-browser-mapping/-/baseline-browser-mapping-2.9.7.tgz#d36ce64f2a2c468f6f743c8db495d319120007db"
-  integrity sha512-k9xFKplee6KIio3IDbwj+uaCLpqzOwakOgmqzPezM0sFJlFKcg30vk2wOiAJtkTSfx0SSQDSe8q+mWA/fSH5Zg==
+  version "2.9.9"
+  resolved "https://registry.yarnpkg.com/baseline-browser-mapping/-/baseline-browser-mapping-2.9.9.tgz#68c17013c33ba9e8264c5f2ae107d506228428ee"
+  integrity sha512-V8fbOCSeOFvlDj7LLChUcqbZrdKD9RU/VR260piF1790vT0mfLSwGc/Qzxv3IqiTukOpNtItePa0HBpMAj7MDg==
 
 binary-extensions@^2.0.0:
   version "2.3.0"
@@ -506,15 +506,15 @@ cache-base@^1.0.1:
     unset-value "^1.0.0"
 
 cacheable@^2.2.0:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/cacheable/-/cacheable-2.3.0.tgz#4b4737cfff71df9834d8be75284860bf3abc85ec"
-  integrity sha512-HHiAvOBmlcR2f3SQ7kdlYD8+AUJG+wlFZ/Ze8tl1Vzvz0MdOh8IYA/EFU4ve8t1/sZ0j4MGi7ST5MoTwHessQA==
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/cacheable/-/cacheable-2.3.1.tgz#db374342fbb48b032d57a2a7d296555be4ad574e"
+  integrity sha512-yr+FSHWn1ZUou5LkULX/S+jhfgfnLbuKQjE40tyEd4fxGZVMbBL5ifno0J0OauykS8UiCSgHi+DV/YD+rjFxFg==
   dependencies:
     "@cacheable/memory" "^2.0.6"
     "@cacheable/utils" "^2.3.2"
-    hookified "^1.13.0"
-    keyv "^5.5.4"
-    qified "^0.5.2"
+    hookified "^1.14.0"
+    keyv "^5.5.5"
+    qified "^0.5.3"
 
 callsites@^3.0.0:
   version "3.1.0"
@@ -1287,7 +1287,7 @@ hasown@^2.0.0, hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-hookified@^1.13.0:
+hookified@^1.13.0, hookified@^1.14.0:
   version "1.14.0"
   resolved "https://registry.yarnpkg.com/hookified/-/hookified-1.14.0.tgz#815ca3b9f3e77c782f583bf3974e966df7a9fd7b"
   integrity sha512-pi1ynXIMFx/uIIwpWJ/5CEtOHLGtnUB0WhGeeYT+fKcQ+WCQbm3/rrkAXnpfph++PgepNqPdTC2WTj8A6k6zoQ==
@@ -1525,7 +1525,7 @@ just-kebab-case@^4.2.0:
   resolved "https://registry.yarnpkg.com/just-kebab-case/-/just-kebab-case-4.2.0.tgz#82c32b27dcbeccbb93802c37dfdd28d1c436e52a"
   integrity sha512-p2BdO7o4BI+pMun3J+dhaOfYan5JsZrw9wjshRjkWY9+p+u+kKSMhNWYnot2yHDR9CSahZ9iT3dcqJ+V72qHMw==
 
-keyv@^5.5.4:
+keyv@^5.5.4, keyv@^5.5.5:
   version "5.5.5"
   resolved "https://registry.yarnpkg.com/keyv/-/keyv-5.5.5.tgz#a975b32fc03e300a0e443c705b103d8b05220834"
   integrity sha512-FA5LmZVF1VziNc0bIdCSA1IoSVnDCqE8HJIZZv2/W8YmoAM50+tnUgJR/gQZwEeIMleuIOnRnHA/UaZRNeV4iQ==
@@ -2157,7 +2157,7 @@ postcss@^8.2.4, postcss@^8.4.31, postcss@^8.5.6:
     picocolors "^1.1.1"
     source-map-js "^1.2.1"
 
-qified@^0.5.2:
+qified@^0.5.3:
   version "0.5.3"
   resolved "https://registry.yarnpkg.com/qified/-/qified-0.5.3.tgz#2d01866eb99c8de3a18965a4a809d9349e26210a"
   integrity sha512-kXuQdQTB6oN3KhI6V4acnBSZx8D2I4xzZvn9+wFLLFCoBNQY/sFnCW6c43OL7pOQ2HvGV4lnWIXNmgfp7cTWhQ==
@@ -2625,9 +2625,9 @@ unset-value@^1.0.0:
     isobject "^3.0.0"
 
 update-browserslist-db@^1.2.0:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/update-browserslist-db/-/update-browserslist-db-1.2.2.tgz#cfb4358afa08b3d5731a2ecd95eebf4ddef8033e"
-  integrity sha512-E85pfNzMQ9jpKkA7+TJAi4TJN+tBCuWh5rUcS/sv6cFi+1q9LYDwDI5dpUL0u/73EElyQ8d3TEaeW4sPedBqYA==
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/update-browserslist-db/-/update-browserslist-db-1.2.3.tgz#64d76db58713136acbeb4c49114366cc6cc2e80d"
+  integrity sha512-Js0m9cx+qOgDxo0eMiFGEueWztz+d4+M3rGlmKPT+T4IS/jP4ylw3Nwpu6cpTTP8R1MAC1kF4VbdLt3ARf209w==
   dependencies:
     escalade "^3.2.0"
     picocolors "^1.1.1"
