@@ -66,7 +66,7 @@
 
             nativeBuildInputs = [
               pkgs.cabal-install
-              pkgs.haskell.compiler.ghc9101
+              pkgs.haskell.compiler.ghc9103
               pkgs.haskellPackages.fourmolu
               pkgs.haskellPackages.postgresql-migration
               pkgs.pkg-config

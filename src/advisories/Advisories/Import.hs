@@ -5,6 +5,7 @@ import Data.Foldable (forM_, traverse_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Text qualified as Text
 import Data.Text.Display
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
@@ -26,7 +27,6 @@ import Advisories.Model.Advisory.Update qualified as Update
 import Advisories.Model.Affected.Types
 import Advisories.Model.Affected.Update qualified as Update
 import Flora.Model.Package.Guard (guardThatPackageExists)
-import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import OSV.Reference.Orphans
 
@@ -116,15 +116,14 @@ processAffectedPackage advisoryId affected = do
   affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
   let packageName =
         case affected.affectedComponentIdentifier of
-          Hackage affectedPackageName -> PackageName affectedPackageName
+          Repository _ ((RepositoryName "hackage")) affectedPackageName -> PackageName (Text.pack . unPackageName $ affectedPackageName)
           GHC _ -> PackageName "ghc"
   let namespace = Namespace "hackage"
   package <- guardThatPackageExists namespace packageName $ \_ _ -> do
-    packages <- Query.getPackagesByNamespace namespace
-    Log.logAttention "packages of namespace" $
+    Log.logAttention "Affected package does not not exist" $
       object
         [ "namespace" .= display namespace
-        , "packages" .= display ((.name) <$> Vector.toList packages)
+        , "package" .= display packageName
         ]
     throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
   let declarations =

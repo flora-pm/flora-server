@@ -121,7 +121,9 @@ import Flora.Normalise
 versionList :: Set Version
 versionList =
   Set.fromList
-    [ Version.mkVersion [9, 12, 1]
+    [ Version.mkVersion [9, 12, 2]
+    , Version.mkVersion [9, 12, 1]
+    , Version.mkVersion [9, 10, 3]
     , Version.mkVersion [9, 10, 2]
     , Version.mkVersion [9, 10, 1]
     , Version.mkVersion [9, 8, 4]
@@ -307,15 +309,17 @@ persistImportOutput (ImportOutput package categories release components) = State
         (\c -> Update.addToCategoryByName packageId c.name)
 
     persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
-    persistImportDependency dep =
-      Log.localData
-        [ "dependent_namespace" .= display package.namespace
-        , "dependent_name" .= (display package.name)
-        , "dependency_namespace" .= display dep.package.namespace
-        , "dependency_name" .= display dep.package.name
-        ]
-        $ do
-          Update.upsertRequirement dep.requirement
+    persistImportDependency dep = do
+      Log.logInfo "Inserting requirement" $
+        object
+          [ "dependent_namespace" .= display package.namespace
+          , "dependent_name" .= display package.name
+          , "dependent_id" .= display package.packageId
+          , "dependency_namespace" .= display dep.package.namespace
+          , "dependency_name" .= display dep.package.name
+          , "dependency_id" .= display dep.package.packageId
+          ]
+      Update.upsertRequirement dep.requirement
 
     sanityCheck :: RequireCallStack => FloraM es ()
     sanityCheck = do
@@ -325,6 +329,7 @@ persistImportOutput (ImportOutput package categories release components) = State
           object
             [ "namespace" .= package.namespace
             , "package" .= package.name
+            , "package_id" .= display package.packageId
             , "version" .= release.version
             ]
 

@@ -233,7 +233,6 @@ floraServer cfg jobsRunnerEnv environment ioref =
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
     , livereload = LiveReload.livereloadHandler environment ioref
-    , favicon = serveDirectoryWebApp "./static"
     }
 
 naturalTransform

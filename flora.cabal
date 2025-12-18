@@ -1,6 +1,6 @@
 cabal-version: 3.0
 name: flora
-version: 1.0.27
+version: 1.0.28
 homepage: https://github.com/flora-pm/flora-server/#readme
 bug-reports: https://github.com/flora-pm/flora-server/issues
 author: Théophile Choutri
@@ -12,7 +12,7 @@ extra-doc-files:
   CHANGELOG.md
   README.md
 
-tested-with: ghc ==9.10.1
+tested-with: ghc ==9.10.3
 
 source-repository head
   type: git
@@ -489,6 +489,7 @@ library flora-jobs
   build-depends:
     Cabal-syntax,
     aeson,
+    async,
     base,
     bytestring,
     commonmark,

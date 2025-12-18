@@ -353,3 +353,12 @@ Ensure the default browser behavior of the `hidden` attribute.
 [hidden] {
 	display: none;
 }
+
+/*
+Hide polyfilled popovers
+*/
+@supports not selector(:popover-open) {
+  [popover]:not(.\:popover-open) {
+    display: none;
+  }
+}

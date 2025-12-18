@@ -47,7 +47,7 @@ upsertRelease package newRelease = do
   case mReleaseFromDB of
     Just releaseFromDB ->
       when (releaseFromDB.testedWith == newRelease.testedWith) $ do
-        Log.logAttention "Duplicate releases found" $
+        Log.logInfo "Duplicate releases found" $
           object
             [ "new_release" .= newRelease
             , "release_from_db" .= releaseFromDB

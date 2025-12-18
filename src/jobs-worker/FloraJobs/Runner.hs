@@ -1,5 +1,7 @@
 module FloraJobs.Runner where
 
+import Control.Concurrent (forkIO)
+import Control.Concurrent.Async qualified as Async
 import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
@@ -7,7 +9,7 @@ import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
 import Data.Pool (Pool)
 import Data.Set (Set)
-import Data.Text
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Vector (Vector)
@@ -56,7 +58,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
 import FloraJobs.Render (renderMarkdown)
-import FloraJobs.Scheduler (scheduleRefreshIndex)
+import FloraJobs.Scheduler
 import FloraJobs.ThirdParties.Hackage.API
   ( HackagePackageInfo (..)
   , HackagePreferredVersions (..)
@@ -285,9 +287,43 @@ refreshIndex indexName = do
         object ["package_index" .= indexName]
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
     Just packageIndex -> do
+      pool <- getPool
       indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
       Import.importFromArchive indexName indexDependencies packagesPath
-      pool <- getPool
+
+      releasesWithoutReadme <- Query.getHackagePackageReleasesWithoutReadme
+      liftIO $
+        void $
+          forkIO $
+            Async.forConcurrently_
+              releasesWithoutReadme
+              (\(releaseId, version, packagename) -> scheduleReadmeJob pool releaseId packagename version)
+
+      releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
+      liftIO $
+        void $
+          forkIO $
+            Async.forConcurrently_
+              releasesWithoutUploadTime
+              (\(releaseId, version, packagename) -> scheduleUploadTimeJob pool releaseId packagename version)
+
+      releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
+      liftIO $
+        void $
+          forkIO $
+            Async.forConcurrently_
+              releasesWithoutChangelog
+              (\(releaseId, version, packagename) -> scheduleChangelogJob pool releaseId packagename version)
+
+      packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
+      liftIO $
+        void $
+          forkIO $ do
+            Async.forConcurrently_
+              packagesWithoutDeprecationInformation
+              (\a -> scheduleReleaseDeprecationListJob pool a)
+            void $ scheduleRefreshLatestVersions pool
+
       void $ liftIO $ scheduleRefreshIndex pool indexName
 
 getCabalPackagesDirectory :: FileSystem :> es => FloraM es FilePath

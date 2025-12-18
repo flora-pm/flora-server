@@ -1,7 +1,7 @@
 packages:
     ./
 
-with-compiler: ghc-9.10.1
+with-compiler: ghc-9.10.3
 
 active-repositories: hackage.haskell.org
 
@@ -11,24 +11,16 @@ test-show-details: direct
 
 jobs: $ncpus
 
-allow-newer: binary:containers
-           , chronos:hashable
+allow-newer: chronos:hashable
            , feed:*
-           , hashable:filepath
-           , hsec-core:*
-           , hsec-sync:*
-           , hsec-tools:*
            , insert-ordered-containers:hashable
            , odd-jobs:async
-           , pandoc:*
            , prometheus-effectful:bytestring
            , prometheus-proc:*
            , qrcode-core:*
            , qrcode-juicypixels:*
            , servant-lucid:text
            , tasty-test-reporter:*
-           , texmath:*
-           , type-errors-pretty:base
            , wai-middleware-heartbeat:*
 
 package feed
@@ -39,17 +31,6 @@ package warp
 
 package zlib
   flags: -pkg-config
-
-source-repository-package
-  type: git
-  location: https://github.com/haskell/security-advisories/
-  tag: 7da651fe058a19a08faff8d873e73ec2ff4c77a0
-  subdir:
-    ./code/cvss
-    ./code/osv
-    ./code/hsec-core
-    ./code/hsec-sync
-    ./code/hsec-tools
 
 source-repository-package
   type: git
@@ -83,7 +64,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/composewell/streamly
-  tag: 2045fedc5ade3523dba0c5b595982ba84f2f1a25
+  tag: 6a596733e1eb022d8b4134bd2b123cdcd4dc05e8
   subdir:
     ./core
     ./.
@@ -111,9 +92,9 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/saurabhnanda/odd-jobs
-  tag: a159d7a17913725a0cb2a2251fa0b812acd3d160
+  tag: d6d37e2eabafcb1e286a190d98d73c4d12ff6e53
 
 source-repository-package
   type: git
-  location: https://github.com/worm2fed/servant-prometheus
-  tag: 9f967b3b42b183653b91f0ba9097621797ad107d
+  location: https://github.com/ocharles/servant-prometheus
+  tag: 0b1c705bbbf640ac7571e5b7c0a710075a7a0e88

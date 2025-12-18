@@ -1,12 +1,12 @@
 ARG APPLY_REFACT_VERSION=0.15.0.0
 ARG BASE_IMAGE_VERSION=22.04
-ARG CABAL_VERSION=3.14.1.1
+ARG CABAL_VERSION=3.16.0.0
 ARG FOURMOLU_VERSION=0.18.0.0
 ARG GHCID_VERSION=0.8.9
 ARG GHC_TAGS_VERSION=1.9
-ARG GHC_VERSION=9.10.1
+ARG GHC_VERSION=9.10.3
 ARG HLINT_VERSION=3.10
-ARG HLS_VERSION=2.11.0.0
+ARG HLS_VERSION=2.12.0.0
 ARG POSTGRESQL_MIGRATION_VERSION=0.2.1.8
 ARG CABAL_GILD_VERSION=1.6.0.2
 
@@ -64,19 +64,20 @@ ENV GHCUP_INSTALL_BASE_PREFIX="/opt/ghcup"
 
 COPY --from=ghcup /out/ghcup /opt/ghcup
 
-RUN ghcup install ghc $GHC_VERSION
-RUN ghcup install ghc 9.6.7
-RUN ghcup set ghc $GHC_VERSION
-
 RUN cabal update
+
+RUN ghcup install ghc 9.6.7
+RUN ghcup run --ghc 9.6.7 -- cabal install --install-method=copy --installdir=out/ -j apply-refact-$APPLY_REFACT_VERSION
+RUN ghcup rm ghc 9.6.7
+RUN ghcup gc -t -p -s -c
+
+RUN ghcup install ghc $GHC_VERSION
+RUN ghcup set ghc $GHC_VERSION
 
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j postgresql-migration-$POSTGRESQL_MIGRATION_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j fourmolu-$FOURMOLU_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$HLINT_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j cabal-gild-$CABAL_GILD_VERSION
-RUN ghcup run --ghc 9.6.7 -- cabal install --install-method=copy --installdir=out/ -j apply-refact-$APPLY_REFACT_VERSION
-RUN ghcup rm ghc 9.6.7
-RUN ghcup gc -t -p -s -c
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghc-tags-$GHC_TAGS_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghcid-$GHCID_VERSION
 
@@ -98,7 +99,7 @@ RUN ghcup install ghc $GHC_VERSION
 RUN ghcup set ghc $GHC_VERSION
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 RUN apt update
 RUN apt install -y direnv \

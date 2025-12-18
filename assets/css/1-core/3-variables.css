@@ -121,7 +121,7 @@
 		--link-decoration-color: var(--purple-70);
 		--link-hover-color: var(--blue-15);
 		--navbar-background-color: var(--blue-15);
-		--navbar-border-color: transparent;
+		--navbar-border-color: var(--blue-30);
 		--navbar-search-color: var(--gray-90);
 		--navbar-search-background-color: var(--blue-20);
 		--navbar-search-border-color: var(--blue-20);
@@ -170,7 +170,7 @@ html[data-theme="dark"] {
 	--link-decoration-color: var(--purple-70);
 	--link-hover-color: var(--blue-15);
 	--navbar-background-color: var(--blue-15);
-	--navbar-border-color: transparent;
+	--navbar-border-color: var(--blue-30);
 	--navbar-search-color: var(--gray-90);
 	--navbar-search-background-color: var(--blue-20);
 	--navbar-search-border-color: var(--blue-20);
