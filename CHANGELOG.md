@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.0.28 -- 2025-12-18
+
+- Use GHC 9.10.3, HLS 2.12, cabal 3.16 for the dev environment [#953](https://github.com/flora-pm/flora-server/pull/953)
+
 ## 1.0.27 -- 2025-09-14
 
 - Add `@mlabs` namespace ([#904](https://github.com/flora-pm/flora-server/issues/904))
