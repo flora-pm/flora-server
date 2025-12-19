@@ -21,13 +21,6 @@ export FLORA_DOMAIN="localhost"
 # Either "stdout", "json" or "json-file"
 export FLORA_LOGGING_DESTINATION="stdout"
 
-# Compatibility mode for Hackage.
-# This includes:
-#
-#   * Accept multiple packages with the same name but different case
-#   * Accept multiple users with the same name but different case
-export FLORA_COMPATIBILITY_MODE="True"
-
 # Set these variables in `environment.local.sh`, which is not tracked by git.
 #export SENTRY_DSN="" # Set this variable to connect to to your Sentry instance
 #export FLORA_PROMETHEUS_ENABLED="true" # Set this variable to true or false to enable Prometheus metrics export
