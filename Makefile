@@ -7,8 +7,11 @@ start: ## Start flora-server
 build: ## Build the server
 	@cabal build
 
+install: ## Install the executable and data files
+	@cabal install --overwrite-policy=always
+
 clean: ## Remove the cabal build artifacts
-	@rm -rf assets/node_modules
+	@rm -rf static
 	@cabal clean
 
 assets-deps: ## Install the dependencies of the frontend
