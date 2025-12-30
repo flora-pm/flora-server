@@ -7,7 +7,7 @@ start: ## Start flora-server
 build: ## Build the server
 	@cabal build
 
-install: ## Install the executable and data files
+install: build-assets ## Install the executable and data files
 	@cabal install --overwrite-policy=always
 
 clean: ## Remove the cabal build artifacts

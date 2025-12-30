@@ -1,6 +1,8 @@
 packages:
     ./
 
+datasubdir: static
+
 with-compiler: ghc-9.10.3
 
 active-repositories: hackage.haskell.org
