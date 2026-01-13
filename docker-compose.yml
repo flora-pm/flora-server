@@ -22,7 +22,7 @@ services:
       - flora-database
 
   flora-database:
-    image: docker.io/library/postgres:17.5
+    image: docker.io/library/postgres:17.7
     container_name: flora-database
     user: postgres
     healthcheck:
