@@ -12,18 +12,17 @@ extra-doc-files:
   CHANGELOG.md
   README.md
 
-data-dir: static
 data-files:
-  *.css
-  *.ico
-  *.js
-  *.json
-  *.ttf
-  *.woff2
-  feed/*.xsl
-  icons/*.png
-  icons/*.svg
-  icons/site.webmanifest
+  static/*.css
+  static/*.ico
+  static/*.js
+  static/*.json
+  static/*.ttf
+  static/*.woff2
+  static/feed/*.xsl
+  static/icons/*.png
+  static/icons/*.svg
+  static/icons/site.webmanifest
 
 tested-with: ghc ==9.10.3
 
