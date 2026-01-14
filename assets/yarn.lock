@@ -304,9 +304,9 @@ ajv@^8.0.1:
     require-from-string "^2.0.2"
 
 alpinejs@^3.14.9:
-  version "3.15.3"
-  resolved "https://registry.yarnpkg.com/alpinejs/-/alpinejs-3.15.3.tgz#667bce66914f8a11a786bffba9081c25ee3692d8"
-  integrity sha512-fSI6F5213FdpMC4IWaup92KhuH3jBX0VVqajRJ6cOTCy1cL6888KyXdGO+seAAkn+g6fnrxBqQEx6gRpQ5EZoQ==
+  version "3.15.4"
+  resolved "https://registry.yarnpkg.com/alpinejs/-/alpinejs-3.15.4.tgz#c66fd08a0b1aab51f0758e21bce5d442652013dc"
+  integrity sha512-lDpOdoVo0bhFjgl310k1qw3kbpUYwM/v0WByvAchsO93bl3o1rrgr0P/ssx3CimwEtNfXbmwKbtHbqTRCTTH9g==
   dependencies:
     "@vue/reactivity" "~3.1.1"
 
