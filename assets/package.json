@@ -17,7 +17,7 @@
     "postcss-import": "^16.0.0",
     "postcss-nesting": "^14.0.0",
     "stylelint": "^17.0.0",
-    "stylelint-config-standard": "^36.0.1"
+    "stylelint-config-standard": "^40.0.0"
   },
   "dependencies": {
     "@oddbird/popover-polyfill": "^0.6.1",
