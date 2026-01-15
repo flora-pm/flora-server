@@ -3,7 +3,7 @@
   "devDependencies": {
     "@deanc/esbuild-plugin-postcss": "deanc/esbuild-plugin-postcss#v2.0.0",
     "autoprefixer": "^10.4.0",
-    "concurrently": "^6.4.0",
+    "concurrently": "^9.0.0",
     "cpx2": "^8.0.0",
     "cssnano": "^7.0.0",
     "esbuild": "^0.27.0",
