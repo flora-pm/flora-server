@@ -18,7 +18,7 @@ import Servant (ToHttpApiData)
 
 import Distribution.Orphans.Version ()
 import Flora.Import.Package.Types (ImportOutput)
-import Flora.Model.Package (PackageName (..))
+import Flora.Model.Package
 import Flora.Model.Release.Types (ReleaseId (..))
 
 newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
@@ -87,6 +87,7 @@ data FloraOddJobs
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
   | RefreshIndex Text
+  | ComputeIncompatibleReleasesWith Namespace PackageName
   deriving stock (Generic)
 
 -- TODO: Upstream these two ToJSON instances
