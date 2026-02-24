@@ -40,9 +40,7 @@
 - debug: msg="{{ build.stdout }}"
 - debug: msg="{{ build.stderr }}"
 
-- name: Restart the process
+- name: Kill the process
   ansible.builtin.command:
-    cmd: daemon -p ~/.local/run/flora-server.pid $(cabal list-bin flora-server)
+    cmd: kill $(cat ~/.local/run/flora-server.pid)
     chdir: flora-server
-  environment:
-    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
