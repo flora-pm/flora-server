@@ -40,7 +40,7 @@
 - debug: msg="{{ build.stdout }}"
 - debug: msg="{{ build.stderr }}"
 
-- name: Restart the process
+- name: Kill the process
   ansible.builtin.command:
-    cmd: supervisorctl -c supervisord.conf restart flora-server
+    cmd: kill $(cat ~/.local/run/flora-server.pid)
     chdir: flora-server
