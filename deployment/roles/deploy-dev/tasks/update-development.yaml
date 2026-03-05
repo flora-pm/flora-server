@@ -41,6 +41,6 @@
 - debug: msg="{{ build.stderr }}"
 
 - name: Kill the process
-  ansible.builtin.command:
+  ansible.builtin.shell:
     cmd: kill $(cat ~/.local/run/flora-server.pid)
     chdir: flora-server
