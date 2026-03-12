@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.29 -- 2026-03-12
+
+- Add prometheus to docker compose environment [#968](https://github.com/flora-pm/flora-server/pull/968)
+- Update to Cabal-syntax 3.14 [#1041](https://github.com/flora-pm/flora-server/pull/1041)
+
 ## 1.0.28 -- 2025-12-18
 
 - Use GHC 9.10.3, HLS 2.12, cabal 3.16 for the dev environment [#953](https://github.com/flora-pm/flora-server/pull/953)
