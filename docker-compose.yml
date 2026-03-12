@@ -22,7 +22,7 @@ services:
       - flora-database
 
   flora-database:
-    image: docker.io/library/postgres:17.5
+    image: docker.io/library/postgres:17.7
     container_name: flora-database
     user: postgres
     healthcheck:
@@ -41,5 +41,11 @@ services:
     profiles:
       - local
 
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+    ports:
+      - 9090:9090
 volumes:
   database-data:
