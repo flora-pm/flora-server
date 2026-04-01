@@ -12,6 +12,18 @@ extra-doc-files:
   CHANGELOG.md
   README.md
 
+data-files:
+  static/*.css
+  static/*.ico
+  static/*.js
+  static/*.json
+  static/*.ttf
+  static/*.woff2
+  static/feed/*.xsl
+  static/icons/*.png
+  static/icons/*.svg
+  static/icons/site.webmanifest
+
 tested-with: ghc ==9.10.3
 
 source-repository head
@@ -169,6 +181,8 @@ library
     Prometheus.Servant.HasEndpoint
     Servant.API.ContentTypes.GZip
 
+  other-modules: Paths_flora
+  autogen-modules: Paths_flora
   build-depends:
     Cabal-syntax,
     JuicyPixels,

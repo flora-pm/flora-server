@@ -57,6 +57,8 @@ import Sel.Hashing.SHA256 qualified as Sel
 import System.FilePath (isValid)
 import Text.Read (readMaybe)
 
+import Paths_flora
+
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
   , connectPort :: Word16
@@ -91,6 +93,7 @@ data Assets = Assets
   { jsBundle :: AssetBundle
   , cssBundle :: AssetBundle
   , prism :: AssetBundle
+  , assetsDir :: FilePath
   }
   deriving stock (Generic, Show)
 
@@ -243,23 +246,24 @@ filepath :: Reader Error FilePath
 filepath fp = if isValid fp then Right fp else Left $ unread fp
 
 getAssets :: (Fail :> es, FileSystem :> es, IOE :> es) => DeploymentEnv -> Eff es Assets
-getAssets environment =
+getAssets environment = do
   case environment of
     Production -> do
       Assets
         <$> getAsset "app.js"
         <*> getAsset "styles.css"
         <*> getAsset "prism.js"
+        <*> liftIO getDataDir
     _ -> do
       Assets
         <$> getStaticAsset "app.js"
         <*> getStaticAsset "styles.css"
         <*> getStaticAsset "prism.js"
+        <*> liftIO getDataDir
 
 getStaticAsset :: Text -> Eff es AssetBundle
-getStaticAsset key =
-  pure $
-    AssetBundle key ""
+getStaticAsset key = do
+  pure $ AssetBundle key ""
 
 -- | Get the asset name with its hash
 --
@@ -267,13 +271,13 @@ getStaticAsset key =
 --  "app-U6EOZTZG.js"
 getAsset :: (Fail :> es, FileSystem :> es, IOE :> es) => Text -> Eff es AssetBundle
 getAsset key = do
-  let path = "./static/manifest.json"
+  path <- liftIO $ getDataFileName "./static/manifest.json"
   Just (json :: Map Text Text) <- liftIO $ Aeson.decodeFileStrict path
   case Map.lookup key json of
     Nothing -> error $ "Could not find an entry for " <> Text.unpack key
     Just fullPath -> do
       let name = last $ Text.splitOn "/" fullPath
-      hash <- getAssetHash ("./static/" <> name)
+      hash <- getAssetHash ("static/" <> name)
       pure $ AssetBundle{name, hash}
 
 -- Get the SHA-256 hash of an asset bundle.
