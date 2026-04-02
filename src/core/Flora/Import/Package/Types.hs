@@ -7,6 +7,8 @@ import Data.Text (Text)
 import GHC.Generics
 import GHC.List (List)
 
+import Distribution.PackageDescription hiding (PackageName)
+
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
@@ -16,6 +18,8 @@ import Flora.Model.Requirement
 data ImportDependency = ImportDependency
   { package :: Package
   -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
+  , condition :: Maybe (Condition ConfVar)
+  -- ^ The union of all the conditional flags guarding the requirement (dependency) behind.
   , requirement :: Requirement
   }
   deriving stock (Eq, Generic, Show)

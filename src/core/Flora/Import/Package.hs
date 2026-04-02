@@ -23,6 +23,7 @@ module Flora.Import.Package
   , chooseNamespace
   , loadJSONContent
   , persistHashes
+  , condTreeToFloraCondTree
   ) where
 
 import Control.DeepSeq (force)
@@ -49,30 +50,12 @@ import Data.Vector qualified as Vector
 import Distribution.Compat.NonEmptySet qualified as NESet
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
-import Distribution.PackageDescription
-  ( CondBranch (..)
-  , CondTree (condTreeData)
-  , Condition (CNot)
-  , ConfVar
-  , UnqualComponentName
-  , allLibraries
-  , unPackageName
-  , unUnqualComponentName
-  )
+import Distribution.PackageDescription hiding (PackageName, PackageId)
 import Distribution.PackageDescription qualified as Cabal
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Parsec qualified as Parsec
-import Distribution.Types.Benchmark
-import Distribution.Types.Dependency
-import Distribution.Types.Executable
-import Distribution.Types.ForeignLib
-import Distribution.Types.GenericPackageDescription (GenericPackageDescription)
-import Distribution.Types.Library
-import Distribution.Types.LibraryName
 import Distribution.Types.PackageDescription ()
-import Distribution.Types.TestSuite
-import Distribution.Types.Version (Version)
-import Distribution.Types.VersionRange (VersionRange, withinRange)
+import Distribution.Version (Version, VersionRange, withinRange)
 import Distribution.Utils.ShortText (fromShortText)
 import Distribution.Version qualified as Version
 import Effectful
@@ -117,6 +100,25 @@ import Flora.Model.Requirement
   )
 import Flora.Monad
 import Flora.Normalise
+
+
+condTreeToFloraCondTree
+  :: Condition ConfVar -- ^ Condition accumulator.
+  -> CondTree ConfVar [Dependency] Cabal.BuildInfo
+  -> [(Condition ConfVar, [Dependency])]
+condTreeToFloraCondTree condAcc (Cabal.CondNode bi _ components) =
+  let components' = condBranchToFloraCondTree condAcc =<< components
+  in  (condAcc, bi) : components'
+
+condBranchToFloraCondTree
+  :: Condition ConfVar -- ^ Condition accumulator.
+  -> CondBranch ConfVar [Dependency] Cabal.BuildInfo
+  -> [(Condition ConfVar, [Dependency])]
+condBranchToFloraCondTree condAcc (CondBranch cond ifTrue maybeIfFalse) =
+  let ifTrue' = condTreeToFloraCondTree (condAcc `cAnd` cond) ifTrue
+      ifFalse' = condTreeToFloraCondTree (condAcc `cAnd` cond) =<< maybeToList maybeIfFalse
+  in  ifTrue' ++ ifFalse'
+
 
 versionList :: Set Version
 versionList =
@@ -623,6 +625,9 @@ genericComponentExtractor
         component = PackageComponent componentId releaseId canonicalForm metadata
         dependencies = mapMaybe (buildDependency package indexPackages componentId) (getDeps rawComponent)
      in (component, dependencies)
+
+foo :: L.HasBuildInfo component => component
+foo comp =
 
 buildDependency
   :: Package
