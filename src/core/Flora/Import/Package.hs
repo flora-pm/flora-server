@@ -478,26 +478,23 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
                 ) <$> genericDesc.condExecutables
 
 
-          -- TODO(leana8959): these two don't have buildinfo, useless to create import dependency
-          -- just do lhs
+          testSuites :: [PackageComponent]
+          testSuites =
+                ( \compName -> mkPackageComponent Component.TestSuite (display compName) release
+                ) . fst <$> genericDesc.condTestSuites
 
-          -- testSuites :: [(PackageComponent, [ImportDependency])]
-          -- testSuites =
-          --       ( \(compName, ts) -> extractCondTreeComponent' Component.TestSuite (display compName) ts
-          --       ) <$> genericDesc.condTestSuites
-          --
-          -- benchmarks :: [(PackageComponent, [ImportDependency])]
-          -- benchmarks =
-          --       ( \(compName, bm) -> extractCondTreeComponent' Component.Benchmark (display compName) bm
-          --       ) <$> genericDesc.condBenchMarks
+          benchmarks :: [PackageComponent]
+          benchmarks =
+                ( \compName -> mkPackageComponent Component.Benchmark (display compName) release
+                ) . fst <$> genericDesc.condBenchmarks
 
       let components' =
             lib
               <> subLibs
               <> foreignLibs
               <> executables
-              -- <> testSuites
-              -- <> benchmarks
+              <> fmap (,[]) testSuites
+              <> fmap (,[]) benchmarks
       case NE.nonEmpty components' of
         Nothing -> do
           Log.logAttention "Empty dependencies" $ object ["package" .= package]
