@@ -180,7 +180,7 @@ testFloraBuildInfo = do
             }
 
   pPrint
-    $ condTreeToFloraCondTree (Lit True) condTreeMock
+    $ flattenCondTree condTreeMock
 
 testImportSimplePackage :: RequireCallStack => TestEff ()
 testImportSimplePackage = do

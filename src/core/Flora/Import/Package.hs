@@ -23,7 +23,7 @@ module Flora.Import.Package
   , chooseNamespace
   , loadJSONContent
   , persistHashes
-  , condTreeToFloraCondTree
+  , flattenCondTree
   ) where
 
 import Control.DeepSeq (force)
@@ -103,23 +103,29 @@ import Flora.Model.Requirement
 import Flora.Monad
 import Flora.Normalise
 
-condTreeToFloraCondTree
+flattenCondTree
+  :: L.HasBuildInfo component
+  => CondTree ConfVar c component
+  -> [(Condition ConfVar, [Dependency])]
+flattenCondTree = flattenCondTreeAcc (Lit True)
+
+flattenCondTreeAcc
   :: L.HasBuildInfo component
   => Condition ConfVar -- ^ Condition accumulator.
-  -> CondTree ConfVar [Dependency] component
+  -> CondTree ConfVar c component
   -> [(Condition ConfVar, [Dependency])]
-condTreeToFloraCondTree condAcc (Cabal.CondNode comp _ components) =
-  let components' = condBranchToFloraCondTree condAcc =<< components
+flattenCondTreeAcc condAcc (Cabal.CondNode comp _ components) =
+  let components' = flattenCondBranchAcc condAcc =<< components
   in  (condAcc, L.view L.targetBuildDepends comp) : components'
 
-condBranchToFloraCondTree
+flattenCondBranchAcc
   :: L.HasBuildInfo component
   => Condition ConfVar -- ^ Condition accumulator.
-  -> CondBranch ConfVar [Dependency] component
+  -> CondBranch ConfVar c component
   -> [(Condition ConfVar, [Dependency])]
-condBranchToFloraCondTree condAcc (CondBranch cond ifTrue maybeIfFalse) =
-  let ifTrue' = condTreeToFloraCondTree (condAcc `cAnd` cond) ifTrue
-      ifFalse' = condTreeToFloraCondTree (condAcc `cAnd` cNot cond) =<< maybeToList maybeIfFalse
+flattenCondBranchAcc condAcc (CondBranch cond ifTrue maybeIfFalse) =
+  let ifTrue' = flattenCondTreeAcc (condAcc `cAnd` cond) ifTrue
+      ifFalse' = flattenCondTreeAcc (condAcc `cAnd` cNot cond) =<< maybeToList maybeIfFalse
   in  ifTrue' ++ ifFalse'
 
 versionList :: Set Version
@@ -501,21 +507,36 @@ extractLibrary package =
     (^. #libBuildInfo % #targetBuildDepends)
     package
 
--- TODO(leana8959): generalize this for all components
-extractLibrarySimple
-  :: Package
-  -> Vector (Text, Set PackageName)
-  -> Release
-  -> Maybe UnqualComponentName
-  -> CondTree ConfVar (List Dependency) component
-  -> List (PackageComponent, List ImportDependency)
-extractLibrarySimple
-  package
-  indexPackages
-  release
-  defaultComponentName
-  component
-  = undefined
+-- -- TODO(leana8959): generalize this for all components
+-- extractLibrarySimple
+--   :: L.HasBuildInfo component
+--   => Package
+--   -> Vector (Text, Set PackageName)
+--   -> Release
+--   -> Maybe UnqualComponentName
+--   -> CondTree ConfVar (List Dependency) component
+--   -> Text
+--   -> (PackageComponent, List ImportDependency)
+-- extractLibrarySimple
+--   package
+--   indexPackages
+--   release
+--   defaultComponentName
+--   condTreeComponent
+--   componentName
+--   =
+--     let -- TODO(leana8959): parametize
+--        componentType = Component.Library
+--     in
+--     let releaseId = release.releaseId
+--         componentName = maybe componentName display defaultComponentName
+--         canonicalForm = CanonicalComponent componentName componentType
+--         componentId = deterministicComponentId releaseId canonicalForm
+--         -- TODO(leana8959): do we lose the structure of the condition here?
+--         metadata = ComponentMetadata []
+--         component = PackageComponent componentId releaseId canonicalForm metadata
+--         dependencies = mapMaybe (buildDependency package indexPackages componentId) (L.view L.targetBuildDepends undefined)
+--      in (component, dependencies)
 
 getLibName :: PackageName -> LibraryName -> Text
 getLibName pname LMainLibName = display pname
@@ -675,7 +696,46 @@ buildDependency package indexPackages packageComponentId (Cabal.Dependency depNa
           , requirement = display versionRange
           , components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
           }
-   in Just (ImportDependency{package = dependencyPackage, requirement})
+   in Just (ImportDependency{package = dependencyPackage, requirement, condition = Nothing})
+
+mkImportDependency
+  :: Package
+  -> Vector (Text, Set PackageName)
+  -> ComponentId
+  -> Condition ConfVar
+  -> Cabal.Dependency
+  -> Maybe ImportDependency
+mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependency depName versionRange libs) = do
+  let name = depName & unPackageName & pack & PackageName
+  namespace <- chooseNamespace name indexPackages
+  let packageId = deterministicPackageId namespace name
+      createdAt = package.createdAt
+      updatedAt = package.updatedAt
+      status = UnknownPackage
+      deprecationInfo = Nothing
+      dependencyPackage = Package packageId namespace name createdAt updatedAt status deprecationInfo
+      requirement =
+        Requirement
+          { requirementId = deterministicRequirementId packageComponentId packageId
+          , packageComponentId
+          , packageId
+          , requirement = display versionRange
+          , components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
+          }
+   in Just (ImportDependency{package = dependencyPackage, requirement, condition = Just cond})
+
+mkImportDependencies
+  :: L.HasBuildInfo component
+  => Package
+  -> Vector (Text, Set PackageName)
+  -> ComponentId
+  -> CondTree ConfVar [Dependency] component
+  -> [ImportDependency]
+mkImportDependencies package indexPackages packageComponentId comp =
+  let conditionalDeps :: [(Condition ConfVar, [Dependency])]
+      conditionalDeps = flattenCondTree comp
+      mkImportDependency' = mkImportDependency package indexPackages packageComponentId
+  in  (\(cond, deps) -> mkImportDependency' cond `mapMaybe` deps) =<< conditionalDeps
 
 getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty
