@@ -52,6 +52,8 @@ import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
 import Distribution.PackageDescription hiding (PackageName, PackageId)
 import Distribution.PackageDescription qualified as Cabal
+import Distribution.Compat.Lens qualified as L
+import Distribution.Types.BuildInfo.Lens qualified as L
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Parsec qualified as Parsec
 import Distribution.Types.PackageDescription ()
@@ -101,24 +103,24 @@ import Flora.Model.Requirement
 import Flora.Monad
 import Flora.Normalise
 
-
 condTreeToFloraCondTree
-  :: Condition ConfVar -- ^ Condition accumulator.
-  -> CondTree ConfVar [Dependency] Cabal.BuildInfo
+  :: L.HasBuildInfo component
+  => Condition ConfVar -- ^ Condition accumulator.
+  -> CondTree ConfVar [Dependency] component
   -> [(Condition ConfVar, [Dependency])]
-condTreeToFloraCondTree condAcc (Cabal.CondNode bi _ components) =
+condTreeToFloraCondTree condAcc (Cabal.CondNode comp _ components) =
   let components' = condBranchToFloraCondTree condAcc =<< components
-  in  (condAcc, bi) : components'
+  in  (condAcc, L.view L.targetBuildDepends comp) : components'
 
 condBranchToFloraCondTree
-  :: Condition ConfVar -- ^ Condition accumulator.
-  -> CondBranch ConfVar [Dependency] Cabal.BuildInfo
+  :: L.HasBuildInfo component
+  => Condition ConfVar -- ^ Condition accumulator.
+  -> CondBranch ConfVar [Dependency] component
   -> [(Condition ConfVar, [Dependency])]
 condBranchToFloraCondTree condAcc (CondBranch cond ifTrue maybeIfFalse) =
   let ifTrue' = condTreeToFloraCondTree (condAcc `cAnd` cond) ifTrue
-      ifFalse' = condTreeToFloraCondTree (condAcc `cAnd` cond) =<< maybeToList maybeIfFalse
+      ifFalse' = condTreeToFloraCondTree (condAcc `cAnd` cNot cond) =<< maybeToList maybeIfFalse
   in  ifTrue' ++ ifFalse'
-
 
 versionList :: Set Version
 versionList =
@@ -499,6 +501,22 @@ extractLibrary package =
     (^. #libBuildInfo % #targetBuildDepends)
     package
 
+-- TODO(leana8959): generalize this for all components
+extractLibrarySimple
+  :: Package
+  -> Vector (Text, Set PackageName)
+  -> Release
+  -> Maybe UnqualComponentName
+  -> CondTree ConfVar (List Dependency) component
+  -> List (PackageComponent, List ImportDependency)
+extractLibrarySimple
+  package
+  indexPackages
+  release
+  defaultComponentName
+  component
+  = undefined
+
 getLibName :: PackageName -> LibraryName -> Text
 getLibName pname LMainLibName = display pname
 getLibName _ (LSubLibName lname) = Text.pack $ unUnqualComponentName lname
@@ -562,7 +580,14 @@ extractBenchmark =
 -- | Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
 --  to every node, returning a list of '(PackageComponent, List ImportDependency)'
 extractCondTree
-  :: (Package -> Vector (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
+  :: ( Package
+      -> Vector (Text, Set PackageName)
+      -> Release
+      -> Maybe UnqualComponentName
+      -> List (Condition ConfVar)
+      -> component
+      -> (PackageComponent, List ImportDependency)
+     )
   -> Package
   -> Vector (Text, Set PackageName)
   -> Release
@@ -579,6 +604,7 @@ extractCondTree extractor package indexPackages release defaultComponentName = g
       let condIfTrueComponents = go [condBranchCondition] condBranchIfTrue
           condIfFalseComponents = maybe [] (go [CNot condBranchCondition]) condBranchIfFalse
        in condIfTrueComponents <> condIfFalseComponents
+
 
 -- | Cabal often models conditional components as a list of 'CondTree' associated with an 'UnqualComponentName'.
 --  This function builds upon 'extractCondTree' to make it easier to extract fields such as 'condExecutables', 'condTestSuites' etc.
@@ -625,9 +651,6 @@ genericComponentExtractor
         component = PackageComponent componentId releaseId canonicalForm metadata
         dependencies = mapMaybe (buildDependency package indexPackages componentId) (getDeps rawComponent)
      in (component, dependencies)
-
-foo :: L.HasBuildInfo component => component
-foo comp =
 
 buildDependency
   :: Package
