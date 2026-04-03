@@ -104,25 +104,22 @@ import Flora.Monad
 import Flora.Normalise
 
 flattenCondTree
-  :: L.HasBuildInfo component
-  => CondTree ConfVar c component
-  -> [(Condition ConfVar, [Dependency])]
+  :: CondTree ConfVar c component
+  -> [(Condition ConfVar, component)]
 flattenCondTree = flattenCondTreeAcc (Lit True)
 
 flattenCondTreeAcc
-  :: L.HasBuildInfo component
-  => Condition ConfVar -- ^ Condition accumulator.
+  :: Condition ConfVar -- ^ Condition accumulator.
   -> CondTree ConfVar c component
-  -> [(Condition ConfVar, [Dependency])]
+  -> [(Condition ConfVar, component)]
 flattenCondTreeAcc condAcc (Cabal.CondNode comp _ components) =
   let components' = flattenCondBranchAcc condAcc =<< components
-  in  (condAcc, L.view L.targetBuildDepends comp) : components'
+  in  (condAcc, comp) : components'
 
 flattenCondBranchAcc
-  :: L.HasBuildInfo component
-  => Condition ConfVar -- ^ Condition accumulator.
+  :: Condition ConfVar -- ^ Condition accumulator.
   -> CondBranch ConfVar c component
-  -> [(Condition ConfVar, [Dependency])]
+  -> [(Condition ConfVar, component)]
 flattenCondBranchAcc condAcc (CondBranch cond ifTrue maybeIfFalse) =
   let ifTrue' = flattenCondTreeAcc (condAcc `cAnd` cond) ifTrue
       ifFalse' = flattenCondTreeAcc (condAcc `cAnd` cNot cond) =<< maybeToList maybeIfFalse
@@ -742,7 +739,7 @@ mkImportDependencies
   -> [ImportDependency]
 mkImportDependencies package indexPackages packageComponentId comp =
   let conditionalDeps :: [(Condition ConfVar, [Dependency])]
-      conditionalDeps = flattenCondTree comp
+      conditionalDeps = fmap (L.view L.targetBuildDepends) <$> flattenCondTree comp
       mkImportDependency' = mkImportDependency package indexPackages packageComponentId
   in  (\(cond, deps) -> mkImportDependency' cond `mapMaybe` deps) =<< conditionalDeps
 
