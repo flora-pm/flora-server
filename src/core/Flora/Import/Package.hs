@@ -673,6 +673,15 @@ genericComponentExtractor
         dependencies = mapMaybe (buildDependency package indexPackages componentId) (getDeps rawComponent)
      in (component, dependencies)
 
+mkPackageComponent :: ComponentType -> Text -> Release -> PackageComponent
+mkPackageComponent componentType componentName release =
+    let releaseId = release.releaseId
+        canonicalForm = CanonicalComponent componentName componentType
+        componentId = deterministicComponentId releaseId canonicalForm
+        -- TODO(leana8959): dosen't make sense. remove metadata field.
+        metadata = ComponentMetadata []
+     in PackageComponent componentId releaseId canonicalForm metadata
+
 buildDependency
   :: Package
   -> Vector (Text, Set PackageName)
