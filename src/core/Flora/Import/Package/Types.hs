@@ -4,10 +4,9 @@ import Control.DeepSeq
 import Data.Aeson
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
+import Distribution.PackageDescription hiding (PackageName)
 import GHC.Generics
 import GHC.List (List)
-
-import Distribution.PackageDescription hiding (PackageName)
 
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types

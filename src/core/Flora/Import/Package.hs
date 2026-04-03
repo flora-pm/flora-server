@@ -47,18 +47,18 @@ import Data.Text.Encoding qualified as Text
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Distribution.Compat.Lens qualified as L
 import Distribution.Compat.NonEmptySet qualified as NESet
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
-import Distribution.PackageDescription hiding (PackageName, PackageId)
+import Distribution.PackageDescription hiding (PackageId, PackageName)
 import Distribution.PackageDescription qualified as Cabal
-import Distribution.Compat.Lens qualified as L
-import Distribution.Types.BuildInfo.Lens qualified as L
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Parsec qualified as Parsec
+import Distribution.Types.BuildInfo.Lens qualified as L
 import Distribution.Types.PackageDescription ()
-import Distribution.Version (Version, VersionRange, withinRange)
 import Distribution.Utils.ShortText (fromShortText)
+import Distribution.Version (Version, VersionRange, withinRange)
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Concurrent (Concurrent)
@@ -109,21 +109,23 @@ flattenCondTree
 flattenCondTree = flattenCondTreeAcc (Lit True)
 
 flattenCondTreeAcc
-  :: Condition ConfVar -- ^ Condition accumulator.
+  :: Condition ConfVar
+  -- ^ Condition accumulator.
   -> CondTree ConfVar c component
   -> [(Condition ConfVar, component)]
 flattenCondTreeAcc condAcc (Cabal.CondNode comp _ components) =
   let components' = flattenCondBranchAcc condAcc =<< components
-  in  (condAcc, comp) : components'
+   in (condAcc, comp) : components'
 
 flattenCondBranchAcc
-  :: Condition ConfVar -- ^ Condition accumulator.
+  :: Condition ConfVar
+  -- ^ Condition accumulator.
   -> CondBranch ConfVar c component
   -> [(Condition ConfVar, component)]
 flattenCondBranchAcc condAcc (CondBranch cond ifTrue maybeIfFalse) =
   let ifTrue' = flattenCondTreeAcc (condAcc `cAnd` cond) ifTrue
       ifFalse' = flattenCondTreeAcc (condAcc `cAnd` cNot cond) =<< maybeToList maybeIfFalse
-  in  ifTrue' ++ ifFalse'
+   in ifTrue' ++ ifFalse'
 
 versionList :: Set Version
 versionList =
@@ -464,29 +466,30 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
 
           subLibs :: [(PackageComponent, [ImportDependency])]
           subLibs =
-                ( \(compName, subLibrary) -> extractCondTreeComponent' Component.Library (display compName) subLibrary
-                ) <$> genericDesc.condSubLibraries
+            (\(compName, subLibrary) -> extractCondTreeComponent' Component.Library (display compName) subLibrary)
+              <$> genericDesc.condSubLibraries
 
           foreignLibs :: [(PackageComponent, [ImportDependency])]
           foreignLibs =
-                ( \(compName, fLib) -> extractCondTreeComponent' Component.ForeignLib (display compName) fLib
-                ) <$> genericDesc.condForeignLibs
+            (\(compName, fLib) -> extractCondTreeComponent' Component.ForeignLib (display compName) fLib)
+              <$> genericDesc.condForeignLibs
 
           executables :: [(PackageComponent, [ImportDependency])]
           executables =
-                ( \(compName, exe) -> extractCondTreeComponent' Component.Executable (display compName) exe
-                ) <$> genericDesc.condExecutables
-
+            (\(compName, exe) -> extractCondTreeComponent' Component.Executable (display compName) exe)
+              <$> genericDesc.condExecutables
 
           testSuites :: [PackageComponent]
           testSuites =
-                ( \compName -> mkPackageComponent Component.TestSuite (display compName) release
-                ) . fst <$> genericDesc.condTestSuites
+            (\compName -> mkPackageComponent Component.TestSuite (display compName) release)
+              . fst
+              <$> genericDesc.condTestSuites
 
           benchmarks :: [PackageComponent]
           benchmarks =
-                ( \compName -> mkPackageComponent Component.Benchmark (display compName) release
-                ) . fst <$> genericDesc.condBenchmarks
+            (\compName -> mkPackageComponent Component.Benchmark (display compName) release)
+              . fst
+              <$> genericDesc.condBenchmarks
 
       let components' =
             lib
@@ -507,7 +510,8 @@ extractCondTreeComponent
   -> Vector (Text, Set PackageName)
   -> Release
   -> ComponentType
-  -> Text -- ^ component name
+  -> Text
+  -- ^ component name
   -> CondTree ConfVar c component
   -> (PackageComponent, List ImportDependency)
 extractCondTreeComponent
@@ -517,11 +521,11 @@ extractCondTreeComponent
   componentType
   componentName
   conditionalComp =
-    ( mkPackageComponent componentType componentName  release
+    ( mkPackageComponent componentType componentName release
     , mkImportDependencies
         package
         indexPackages
-        (mkComponentId componentType componentName  release)
+        (mkComponentId componentType componentName release)
         conditionalComp
     )
 
@@ -531,12 +535,12 @@ getLibName _ (LSubLibName lname) = Text.pack $ unUnqualComponentName lname
 
 mkPackageComponent :: ComponentType -> Text -> Release -> PackageComponent
 mkPackageComponent componentType componentName release =
-    let releaseId = release.releaseId
-        canonicalForm = CanonicalComponent componentName componentType
-        componentId = deterministicComponentId releaseId canonicalForm
-        -- TODO(leana8959): dosen't make sense. remove metadata field.
-        metadata = ComponentMetadata []
-     in PackageComponent componentId releaseId canonicalForm metadata
+  let releaseId = release.releaseId
+      canonicalForm = CanonicalComponent componentName componentType
+      componentId = deterministicComponentId releaseId canonicalForm
+      -- TODO(leana8959): dosen't make sense. remove metadata field.
+      metadata = ComponentMetadata []
+   in PackageComponent componentId releaseId canonicalForm metadata
 
 mkImportDependency
   :: Package
@@ -572,7 +576,7 @@ mkComponentId
 mkComponentId componentType componentName release =
   let canonicalForm = CanonicalComponent componentName componentType
       releaseId = release.releaseId
-  in  deterministicComponentId releaseId canonicalForm
+   in deterministicComponentId releaseId canonicalForm
 
 mkImportDependencies
   :: L.HasBuildInfo component
@@ -585,7 +589,7 @@ mkImportDependencies package indexPackages packageComponentId comp =
   let conditionalDeps :: [(Condition ConfVar, [Dependency])]
       conditionalDeps = fmap (L.view L.targetBuildDepends) <$> flattenCondTree comp
       mkImportDependency' = mkImportDependency package indexPackages packageComponentId
-  in  (\(cond, deps) -> mkImportDependency' cond `mapMaybe` deps) =<< conditionalDeps
+   in (\(cond, deps) -> mkImportDependency' cond `mapMaybe` deps) =<< conditionalDeps
 
 getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty

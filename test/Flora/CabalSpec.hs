@@ -1,21 +1,19 @@
 module Flora.CabalSpec where
 
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Set qualified as Set
 import Data.Vector qualified as Vector
-import Data.List.NonEmpty (NonEmpty (..))
+import Distribution.Compat.NonEmptySet qualified as NES
+import Distribution.Compiler (CompilerFlavor (..))
+import Distribution.PackageDescription hiding (PackageId, PackageName)
+import Distribution.System (Arch (..), OS (..))
+import Distribution.Version (earlierVersion, intersectVersionRanges, mkVersion, orLaterVersion)
 import RequireCallStack
 import Test.Tasty
-
-import qualified Distribution.Compat.NonEmptySet as NES
-import Distribution.PackageDescription hiding (PackageName, PackageId)
-import Distribution.System (Arch (..), OS (..))
-import Distribution.Version (mkVersion, earlierVersion, intersectVersionRanges, orLaterVersion)
-import Distribution.Compiler (CompilerFlavor (..))
-
 import Text.Pretty.Simple (pPrint)
 
 import Flora.Import.Package
-import qualified Flora.Model.Component.Types as Flora.Model
+import Flora.Model.Component.Types qualified as Flora.Model
 import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
@@ -39,12 +37,14 @@ testFloraBuildInfo = do
   let condTreeMock :: CondTree ConfVar [Dependency] BuildInfo
       condTreeMock =
         CondNode
-            { condTreeData = mempty
-            , condTreeConstraints = mempty
-            , condTreeComponents =
-                [ CondBranch
-                    { condBranchCondition = Var
-                        ( Impl GHC
+          { condTreeData = mempty
+          , condTreeConstraints = mempty
+          , condTreeComponents =
+              [ CondBranch
+                  { condBranchCondition =
+                      Var
+                        ( Impl
+                            GHC
                             ( earlierVersion
                                 ( mkVersion
                                     [ 9
@@ -53,12 +53,14 @@ testFloraBuildInfo = do
                                 )
                             )
                         )
-                    , condBranchIfTrue = CondNode
-                        { condTreeData = mempty
+                  , condBranchIfTrue =
+                      CondNode
+                        { condTreeData =
+                            mempty
                               { buildable = True
                               , targetBuildDepends =
                                   [ Dependency
-                                      ( mkPackageName "data-array-byte" )
+                                      (mkPackageName "data-array-byte")
                                       ( intersectVersionRanges
                                           ( orLaterVersion
                                               ( mkVersion
@@ -76,111 +78,121 @@ testFloraBuildInfo = do
                                           )
                                       )
                                       ( NES.fromNonEmpty
-                                          ( LMainLibName :| [] )
+                                          (LMainLibName :| [])
                                       )
                                   ]
                               }
                         , condTreeConstraints = mempty
-                        , condTreeComponents = [
-                            CondBranch
-                              { condBranchCondition = COr
-                                  ( Var ( Arch JavaScript ) )
-                                  ( Var
-                                      ( PackageFlag
-                                          ( mkFlagName "pure-haskell" )
+                        , condTreeComponents =
+                            [ CondBranch
+                                { condBranchCondition =
+                                    COr
+                                      (Var (Arch JavaScript))
+                                      ( Var
+                                          ( PackageFlag
+                                              (mkFlagName "pure-haskell")
+                                          )
                                       )
-                                  )
-                              , condBranchIfTrue = CondNode
-                                  { condTreeData = mempty
-                                        { buildable = True
-                                        , otherModules = [ "Data.ByteString.Internal.Pure" ]
-                                        , targetBuildDepends =
-                                            [ Dependency
-                                                ( mkPackageName "base" )
-                                                ( intersectVersionRanges
-                                                    ( orLaterVersion
-                                                        ( mkVersion
-                                                            [ 4
-                                                            , 18
-                                                            ]
+                                , condBranchIfTrue =
+                                    CondNode
+                                      { condTreeData =
+                                          mempty
+                                            { buildable = True
+                                            , otherModules = ["Data.ByteString.Internal.Pure"]
+                                            , targetBuildDepends =
+                                                [ Dependency
+                                                    (mkPackageName "base")
+                                                    ( intersectVersionRanges
+                                                        ( orLaterVersion
+                                                            ( mkVersion
+                                                                [ 4
+                                                                , 18
+                                                                ]
+                                                            )
+                                                        )
+                                                        ( earlierVersion
+                                                            (mkVersion [5])
                                                         )
                                                     )
-                                                    ( earlierVersion
-                                                        ( mkVersion [ 5 ] )
+                                                    ( NES.fromNonEmpty
+                                                        (LMainLibName :| [])
                                                     )
-                                                )
-                                                ( NES.fromNonEmpty
-                                                    ( LMainLibName :| [] )
-                                                )
-                                            ]
-                                        , mixins = []
-                                        }
-                                  , condTreeConstraints = []
-                                  , condTreeComponents = []
-                                  }
-                              , condBranchIfFalse = Just
-                                  ( CondNode
-                                      { condTreeData = mempty
-                                            { buildable = True
-                                            , cppOptions = [ "-DPURE_HASKELL=0" ]
-                                            , ccOptions =
-                                                [ "-std=c11"
-                                                , "-DNDEBUG=1"
-                                                , "-fno-strict-aliasing"
-                                                , "-Wundef"
                                                 ]
+                                            , mixins = []
                                             }
                                       , condTreeConstraints = []
-                                      , condTreeComponents =
-                                          [ CondBranch
-                                              { condBranchCondition = Var ( Arch AArch64 )
-                                              , condBranchIfTrue = CondNode
-                                                  { condTreeData = mempty
-                                                  , condTreeConstraints = []
-                                                  , condTreeComponents = []
-                                                  }
-                                              , condBranchIfFalse = Just
-                                                  ( CondNode
-                                                      { condTreeData = mempty
-                                                      , condTreeConstraints = []
-                                                      , condTreeComponents = []
-                                                      }
-                                                  )
-                                              }
-                                          , CondBranch
-                                              { condBranchCondition = CAnd
-                                                  ( Var ( OS Windows ) )
-                                                  ( Var
-                                                      ( Impl GHC
-                                                          ( earlierVersion
-                                                              ( mkVersion
-                                                                  [ 9
-                                                                  , 3
-                                                                  ]
-                                                              )
-                                                          )
-                                                      )
-                                                  )
-                                              , condBranchIfTrue = CondNode
-                                                  { condTreeData = mempty
-                                                  , condTreeConstraints = []
-                                                  , condTreeComponents = []
-                                                  }
-                                              , condBranchIfFalse = Nothing
-                                              }
-                                          ]
+                                      , condTreeComponents = []
                                       }
-                                  )
-                              }
-                          ]
+                                , condBranchIfFalse =
+                                    Just
+                                      ( CondNode
+                                          { condTreeData =
+                                              mempty
+                                                { buildable = True
+                                                , cppOptions = ["-DPURE_HASKELL=0"]
+                                                , ccOptions =
+                                                    [ "-std=c11"
+                                                    , "-DNDEBUG=1"
+                                                    , "-fno-strict-aliasing"
+                                                    , "-Wundef"
+                                                    ]
+                                                }
+                                          , condTreeConstraints = []
+                                          , condTreeComponents =
+                                              [ CondBranch
+                                                  { condBranchCondition = Var (Arch AArch64)
+                                                  , condBranchIfTrue =
+                                                      CondNode
+                                                        { condTreeData = mempty
+                                                        , condTreeConstraints = []
+                                                        , condTreeComponents = []
+                                                        }
+                                                  , condBranchIfFalse =
+                                                      Just
+                                                        ( CondNode
+                                                            { condTreeData = mempty
+                                                            , condTreeConstraints = []
+                                                            , condTreeComponents = []
+                                                            }
+                                                        )
+                                                  }
+                                              , CondBranch
+                                                  { condBranchCondition =
+                                                      CAnd
+                                                        (Var (OS Windows))
+                                                        ( Var
+                                                            ( Impl
+                                                                GHC
+                                                                ( earlierVersion
+                                                                    ( mkVersion
+                                                                        [ 9
+                                                                        , 3
+                                                                        ]
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                  , condBranchIfTrue =
+                                                      CondNode
+                                                        { condTreeData = mempty
+                                                        , condTreeConstraints = []
+                                                        , condTreeComponents = []
+                                                        }
+                                                  , condBranchIfFalse = Nothing
+                                                  }
+                                              ]
+                                          }
+                                      )
+                                }
+                            ]
                         }
-                    , condBranchIfFalse = Nothing
-                    }
-                ]
-            }
+                  , condBranchIfFalse = Nothing
+                  }
+              ]
+          }
 
-  pPrint
-    $ flattenCondTree condTreeMock
+  pPrint $
+    flattenCondTree condTreeMock
 
 testImportSimplePackage :: RequireCallStack => TestEff ()
 testImportSimplePackage = do
