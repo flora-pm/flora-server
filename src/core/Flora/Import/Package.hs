@@ -455,9 +455,8 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
               , buildType = buildType
               }
 
-      let
-          lib :: [(PackageComponent, [ImportDependency])] =
-            extractLibrarySimple package indexPackages release <$> maybeToList genericDesc.condLibrary
+      let lib :: [(PackageComponent, [ImportDependency])]
+          lib = extractLibrarySimple package indexPackages release <$> maybeToList genericDesc.condLibrary
 
           condSubLibs = extractCondTrees extractLibrary package indexPackages release genericDesc.condSubLibraries
 
@@ -512,18 +511,16 @@ extractLibrarySimple
   -> CondTree ConfVar c Library
   -> (PackageComponent, List ImportDependency)
 extractLibrarySimple package indexPackages release gpdLibrary =
-  -- TODO(leana8959): Bad condtree design hits us
-  -- without evaluating the condtree we cannot know the library name
-  --
-  -- We can fix this by making the flattening function generic
-  let componentName :: Text = "fixme"
-  in  ( mkPackageComponent Component.Library (display componentName) release
-      , mkImportDependencies
-          package
-          indexPackages
-          (mkComponentId Component.Library (display componentName) release)
-          gpdLibrary
-      )
+    ( mkPackageComponent Component.Library resolvedLibName release
+    , mkImportDependencies
+        package
+        indexPackages
+        (mkComponentId Component.Library resolvedLibName release)
+        gpdLibrary
+    )
+  where
+    resolvedLibName :: Text
+    resolvedLibName = getLibName package.name . libName . mconcat . snd . unzip $ flattenCondTree gpdLibrary
 
 getLibName :: PackageName -> LibraryName -> Text
 getLibName pname LMainLibName = display pname
