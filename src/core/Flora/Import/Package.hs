@@ -460,7 +460,6 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
       let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List ImportDependency)
           extractCondTreeComponent' = extractCondTreeComponent package indexPackages release
 
-          -- TODO(leana8959): refactor out the tedious getName
           lib :: [(PackageComponent, [ImportDependency])]
           lib = extractCondTreeComponent' Component.Library (display package.name) <$> maybeToList genericDesc.condLibrary
 
@@ -538,9 +537,7 @@ mkPackageComponent componentType componentName release =
   let releaseId = release.releaseId
       canonicalForm = CanonicalComponent componentName componentType
       componentId = deterministicComponentId releaseId canonicalForm
-      -- TODO(leana8959): dosen't make sense. remove metadata field.
-      metadata = ComponentMetadata []
-   in PackageComponent componentId releaseId canonicalForm metadata
+   in PackageComponent componentId releaseId canonicalForm
 
 mkImportDependency
   :: Package
