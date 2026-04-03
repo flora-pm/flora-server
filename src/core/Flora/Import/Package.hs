@@ -458,9 +458,11 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
               , buildType = buildType
               }
 
-      let lib = extractLibrary package indexPackages release Nothing [] <$> allLibraries packageDesc
-      let condLib = maybe [] (extractCondTree extractLibrary package indexPackages release Nothing) genericDesc.condLibrary
-      let condSubLibs = extractCondTrees extractLibrary package indexPackages release genericDesc.condSubLibraries
+      let
+          lib :: [(PackageComponent, [ImportDependency])] =
+            extractLibrarySimple package indexPackages release <$> maybeToList genericDesc.condLibrary
+
+          condSubLibs = extractCondTrees extractLibrary package indexPackages release genericDesc.condSubLibraries
 
       let foreignLibs = extractForeignLib package indexPackages release Nothing [] <$> packageDesc.foreignLibs
       let condForeignLibs = extractCondTrees extractForeignLib package indexPackages release genericDesc.condForeignLibs
@@ -476,7 +478,6 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
 
       let components' =
             lib
-              <> condLib
               <> condSubLibs
               <> executables
               <> condExecutables
@@ -507,36 +508,25 @@ extractLibrary package =
     (^. #libBuildInfo % #targetBuildDepends)
     package
 
--- -- TODO(leana8959): generalize this for all components
--- extractLibrarySimple
---   :: L.HasBuildInfo component
---   => Package
---   -> Vector (Text, Set PackageName)
---   -> Release
---   -> Maybe UnqualComponentName
---   -> CondTree ConfVar (List Dependency) component
---   -> Text
---   -> (PackageComponent, List ImportDependency)
--- extractLibrarySimple
---   package
---   indexPackages
---   release
---   defaultComponentName
---   condTreeComponent
---   componentName
---   =
---     let -- TODO(leana8959): parametize
---        componentType = Component.Library
---     in
---     let releaseId = release.releaseId
---         componentName = maybe componentName display defaultComponentName
---         canonicalForm = CanonicalComponent componentName componentType
---         componentId = deterministicComponentId releaseId canonicalForm
---         -- TODO(leana8959): do we lose the structure of the condition here?
---         metadata = ComponentMetadata []
---         component = PackageComponent componentId releaseId canonicalForm metadata
---         dependencies = mapMaybe (buildDependency package indexPackages componentId) (L.view L.targetBuildDepends undefined)
---      in (component, dependencies)
+extractLibrarySimple
+  :: Package
+  -> Vector (Text, Set PackageName)
+  -> Release
+  -> CondTree ConfVar c Library
+  -> (PackageComponent, List ImportDependency)
+extractLibrarySimple package indexPackages release gpdLibrary =
+  -- TODO(leana8959): Bad condtree design hits us
+  -- without evaluating the condtree we cannot know the library name
+  --
+  -- We can fix this by making the flattening function generic
+  let componentName :: Text = "fixme"
+  in  ( mkPackageComponent Component.Library (display componentName) release
+      , mkImportDependencies
+          package
+          indexPackages
+          (mkComponentId Component.Library (display componentName) release)
+          gpdLibrary
+      )
 
 getLibName :: PackageName -> LibraryName -> Text
 getLibName pname LMainLibName = display pname
@@ -733,12 +723,22 @@ mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependen
           }
    in Just (ImportDependency{package = dependencyPackage, requirement, condition = Just cond})
 
+mkComponentId
+  :: ComponentType
+  -> Text
+  -> Release
+  -> ComponentId
+mkComponentId componentType componentName release =
+  let canonicalForm = CanonicalComponent componentName componentType
+      releaseId = release.releaseId
+  in  deterministicComponentId releaseId canonicalForm
+
 mkImportDependencies
   :: L.HasBuildInfo component
   => Package
   -> Vector (Text, Set PackageName)
   -> ComponentId
-  -> CondTree ConfVar [Dependency] component
+  -> CondTree ConfVar c component
   -> [ImportDependency]
 mkImportDependencies package indexPackages packageComponentId comp =
   let conditionalDeps :: [(Condition ConfVar, [Dependency])]
