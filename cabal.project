@@ -11,6 +11,9 @@ test-show-details: direct
 
 jobs: $ncpus
 
+package *
+  ghc-options: +RTS -I0 -RTS
+
 allow-newer: chronos:hashable
            , feed:*
            , insert-ordered-containers:hashable
