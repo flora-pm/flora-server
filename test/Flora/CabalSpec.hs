@@ -57,22 +57,10 @@ testFlattenCondTree = do
   flip
     assertEqual_
     (flattenCondTree condTreeMock)
-    [
-      ( Nothing
-      , 0
-      )
-    ,
-      ( Just (Lit True)
-      , 1
-      )
-    ,
-      ( Just (COr (Var (Arch JavaScript)) (Var (PackageFlag (mkFlagName "pure-haskell"))))
-      , 2
-      )
-    ,
-      ( Just (CNot (COr (Var (Arch JavaScript)) (Var (PackageFlag (mkFlagName "pure-haskell")))))
-      , 3
-      )
+    [ (Nothing, 0)
+    , (Just (Lit True), 1)
+    , (Just (COr (Var (Arch JavaScript)) (Var (PackageFlag (mkFlagName "pure-haskell")))), 2)
+    , (Just (CNot (COr (Var (Arch JavaScript)) (Var (PackageFlag (mkFlagName "pure-haskell"))))), 3)
     ]
 
 testImportSimplePackage :: RequireCallStack => TestEff ()
