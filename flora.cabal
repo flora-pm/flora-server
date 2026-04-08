@@ -191,6 +191,7 @@ library
     effectful-plugin,
     envparse,
     filepath,
+    gitrev,
     heptapod ^>=1.1.0.0,
     hsec-core,
     http-api-data,

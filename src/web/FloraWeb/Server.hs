@@ -79,6 +79,7 @@ import Flora.Environment.Env
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Monad
+import Flora.Monitoring (setGitHash)
 import Flora.Tracing qualified as Tracing
 import FloraJobs.Runner
 import FloraJobs.Types (JobsRunnerEnv (..))
@@ -125,11 +126,13 @@ runFlora = do
             liftIO $ do
               forM_ env.mltp.eventlogSocket Socket.start
               when (isJust env.mltp.eventlogSocket) (blueMessage "🔥 Sending live events to socket")
-            liftIO $ when env.mltp.prometheusEnabled $ do
-              blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
-              void $ P.register P.ghcMetrics
-              when (System.os == "linux") $ void $ P.register P.procMetrics
-              void $ P.register (P.counter (P.Info "flora_imported_packages_total" "The number of imported packages"))
+            when env.mltp.prometheusEnabled $ do
+              liftIO $ blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
+              runPrometheusMetrics env.metrics $ do
+                void $ P.register P.ghcMetrics
+                when (System.os == "linux") $ void $ P.register P.procMetrics
+                setGitHash
+
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             let withLogger = Logging.makeLogger env.mltp.logger

@@ -37,6 +37,7 @@ data FloraEnv = FloraEnv
 
 data AppMetrics = AppMetrics
   { packageImportCounter :: P.Vector P.Label1 P.Counter
+  , gitRevision :: P.Vector P.Label1 P.Gauge
   }
 
 data BlobStoreImpl = BlobStoreFS FilePath | BlobStorePure

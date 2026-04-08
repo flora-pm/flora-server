@@ -1,13 +1,17 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Flora.Monitoring
   ( increaseCounter
   , increasePackageImportCounter
   , registerMetrics
   , increaseCounterBy
   , increasePackageImportCounterBy
+  , setGitHash
   ) where
 
 import Control.Monad (replicateM_)
 import Data.Text
+import Development.GitRev (gitHash)
 import Effectful
 import Effectful.Prometheus
 import Prometheus
@@ -24,8 +28,22 @@ registerMetrics = do
               { metricName = "flora_imported_packages_total"
               , metricHelp = "Packages imported and their index"
               }
+  let gitHashMetric =
+        P.vector "git_revision" $
+          P.gauge
+            P.Info
+              { metricName = "git_revision"
+              , metricHelp = "Git revision"
+              }
   packageImportCounter <- P.register packageImportCount
-  pure $ AppMetrics packageImportCounter
+  gitHashText <- P.register gitHashMetric
+  pure $ AppMetrics packageImportCounter gitHashText
+
+setGitHash
+  :: Metrics AppMetrics :> es
+  => Eff es ()
+setGitHash =
+  setLabelledGauge gitRevision $(gitHash) 1.0
 
 increaseCounterBy
   :: Metrics AppMetrics :> es
