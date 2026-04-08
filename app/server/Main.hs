@@ -5,6 +5,7 @@
 module Main where
 
 import Control.Monad (forM_, unless)
+import Data.Function ((&))
 import Data.List qualified as List
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -21,41 +22,39 @@ import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff, runDB)
-import GHC.Debug.Stub
 import Log qualified
 import System.Exit
-import UnliftIO.IO
+import System.IO
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Env
+import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.PackageIndex.Types
 import FloraJobs.Scheduler (checkIfIndexRefreshJobIsPlanned)
 import FloraWeb.Server
 
 main :: IO ()
-main = runEff $ runFailIO $ runFileSystem $ do
-  env <- getFloraEnv
+main = do
   hSetBuffering stdout LineBuffering
-  preFlightChecks env
-  case env.environment of
-    Production -> liftIO runFlora
-    _ -> liftIO $ withGhcDebug runFlora
+  preFlightChecks
+  runFlora
 
-preFlightChecks :: IOE :> es => FloraEnv -> Eff es ()
-preFlightChecks env = do
-  let withLogger = Logging.makeLogger env.mltp.logger
-  withLogger $ \appLogger ->
-    runDB env.pool
-      . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      $ runLog
-        "flora-server"
-        appLogger
-        Log.LogTrace
-      $ do
-        checkExpectedTables
-        checkRepositoriesAreConfigured
-        checkIfIndexRefreshJobIsPlanned env.pool
+preFlightChecks :: IO ()
+preFlightChecks = do
+  env <- getFloraEnv & runFileSystem & runFailIO & runEff
+  runEff $ do
+    let withLogger = Logging.makeLogger env.mltp.logger
+    withLogger $ \appLogger ->
+      runDB env.pool
+        . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
+        $ runLog
+          "flora-server"
+          appLogger
+          Log.LogTrace
+        $ do
+          checkExpectedTables
+          checkRepositoriesAreConfigured
+          checkIfIndexRefreshJobIsPlanned env.pool
 
 checkExpectedTables :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
 checkExpectedTables = do

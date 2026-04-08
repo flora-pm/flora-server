@@ -545,14 +545,12 @@ executable flora-server
     flora,
     flora-jobs,
     flora-web,
-    ghc-debug-stub,
     log-base,
     log-effectful,
     pg-entity,
     pg-transact-effectful,
     postgresql-simple,
     text,
-    unliftio,
     vector,
 
 executable flora-cli
