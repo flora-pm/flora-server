@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.0.30 -- 2026-04-08
+
+- Add build information to Prometheus metrics [#1052](https://github.com/flora-pm/flora-server/pull/1052) [#1053](https://github.com/flora-pm/flora-server/pull/1053)
+
 ## 1.0.29 -- 2026-03-12
 
 - Add prometheus to docker compose environment [#968](https://github.com/flora-pm/flora-server/pull/968)
