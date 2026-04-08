@@ -563,8 +563,9 @@ mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependen
           , packageId
           , requirement = display versionRange
           , components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
+          , condition = cond
           }
-   in Just (ImportDependency{package = dependencyPackage, requirement, condition = cond})
+   in Just (ImportDependency{package = dependencyPackage, requirement})
 
 mkComponentId
   :: ComponentType

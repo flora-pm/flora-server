@@ -669,6 +669,7 @@ data RequirementTemplate m = RequirementTemplate
   , packageId :: m PackageId
   , requirement :: m Text
   , components :: m (Vector Text)
+  , condition :: m (Maybe (Condition ConfVar))
   }
   deriving stock (Generic)
 
@@ -680,6 +681,7 @@ randomRequirementTemplate =
     , packageId = PackageId <$> H.sample genUUID
     , requirement = undefined
     , components = undefined
+    , condition = pure Nothing
     }
 
 instantiateRequirement

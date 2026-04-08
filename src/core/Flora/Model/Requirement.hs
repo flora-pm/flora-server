@@ -23,6 +23,8 @@ import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.ToField (ToField)
 import Deriving.Aeson
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.Condition (Condition)
+import Distribution.Types.ConfVar (ConfVar)
 import Distribution.Types.Version (Version)
 
 import Flora.Model.Component.Types
@@ -40,6 +42,13 @@ deterministicRequirementId componentId packageId =
   where
     concatenated = display componentId <> display packageId
 
+-- TODO(leana8959): orphans
+deriving instance ToField ConfVar
+deriving instance FromField ConfVar
+
+deriving instance ToField c => ToField (Condition c)
+deriving instance FromField c => FromField (Condition c)
+
 data Requirement = Requirement
   { requirementId :: RequirementId
   -- ^ Unique identifier to this requirement in the database
@@ -51,6 +60,8 @@ data Requirement = Requirement
   -- ^ The human-readable version range expression of this requirement
   , components :: Vector Text
   -- ^ Components that are depended on
+  , condition :: Maybe (Condition ConfVar)
+  -- ^ The union of all the conditional flags guarding the requirement (dependency) behind.
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, FromRow, NFData, ToJSON, ToRow)

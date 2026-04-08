@@ -4,7 +4,6 @@ import Control.DeepSeq
 import Data.Aeson
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
-import Distribution.PackageDescription hiding (PackageName)
 import GHC.Generics
 import GHC.List (List)
 
@@ -17,8 +16,6 @@ import Flora.Model.Requirement
 data ImportDependency = ImportDependency
   { package :: Package
   -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
-  , condition :: Maybe (Condition ConfVar)
-  -- ^ The union of all the conditional flags guarding the requirement (dependency) behind.
   , requirement :: Requirement
   }
   deriving stock (Eq, Generic, Show)
