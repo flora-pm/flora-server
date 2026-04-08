@@ -142,7 +142,6 @@ instance Entity PackageComponent where
     , [field| release_id |]
     , [field| component_name |]
     , [field| component_type |]
-    , [field| component_metadata |]
     ]
 
 instance ToRow PackageComponent where
