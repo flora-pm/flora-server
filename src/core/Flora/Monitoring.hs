@@ -11,6 +11,8 @@ module Flora.Monitoring
 
 import Control.Monad (replicateM_)
 import Data.Text
+import Data.Text qualified as T
+import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import Effectful
 import Effectful.Prometheus
@@ -18,6 +20,7 @@ import Prometheus
 import Prometheus qualified as P
 
 import Flora.Environment.Env
+import Paths_flora (version)
 
 registerMetrics :: IOE :> es => Eff es AppMetrics
 registerMetrics = do
@@ -29,11 +32,11 @@ registerMetrics = do
               , metricHelp = "Packages imported and their index"
               }
   let gitHashMetric =
-        P.vector "git_revision" $
+        P.vector ("git_revision", "version") $
           P.gauge
             P.Info
-              { metricName = "git_revision"
-              , metricHelp = "Git revision"
+              { metricName = "build_information"
+              , metricHelp = "Build information"
               }
   packageImportCounter <- P.register packageImportCount
   gitHashText <- P.register gitHashMetric
@@ -43,7 +46,7 @@ setGitHash
   :: Metrics AppMetrics :> es
   => Eff es ()
 setGitHash =
-  setLabelledGauge gitRevision $(gitHash) 1.0
+  setLabelledGauge buildInformation ($(gitHash), T.pack (showVersion version)) 1.0
 
 increaseCounterBy
   :: Metrics AppMetrics :> es

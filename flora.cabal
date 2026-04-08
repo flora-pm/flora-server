@@ -77,6 +77,12 @@ library
     ./src/core
     ./src/datatypes
 
+  other-modules:
+    Paths_flora
+
+  autogen-modules:
+    Paths_flora
+
   -- cabal-gild: discover src/core src/datatypes
   exposed-modules:
     Advisories.AffectedVersionRange.Orphans
