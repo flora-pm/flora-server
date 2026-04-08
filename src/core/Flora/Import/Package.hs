@@ -26,6 +26,7 @@ module Flora.Import.Package
   , flattenCondTree
   ) where
 
+import Control.Applicative ((<|>))
 import Control.DeepSeq (force)
 import Control.Exception ()
 import Control.Monad
@@ -105,26 +106,26 @@ import Flora.Normalise
 
 flattenCondTree
   :: CondTree ConfVar c component
-  -> [(Condition ConfVar, component)]
-flattenCondTree = flattenCondTreeAcc (Lit True)
+  -> [(Maybe (Condition ConfVar), component)]
+flattenCondTree = flattenCondTreeAcc Nothing
 
 flattenCondTreeAcc
-  :: Condition ConfVar
+  :: Maybe (Condition ConfVar)
   -- ^ Condition accumulator.
   -> CondTree ConfVar c component
-  -> [(Condition ConfVar, component)]
+  -> [(Maybe (Condition ConfVar), component)]
 flattenCondTreeAcc condAcc (Cabal.CondNode comp _ components) =
   let components' = flattenCondBranchAcc condAcc =<< components
    in (condAcc, comp) : components'
 
 flattenCondBranchAcc
-  :: Condition ConfVar
+  :: Maybe (Condition ConfVar)
   -- ^ Condition accumulator.
   -> CondBranch ConfVar c component
-  -> [(Condition ConfVar, component)]
+  -> [(Maybe (Condition ConfVar), component)]
 flattenCondBranchAcc condAcc (CondBranch cond ifTrue maybeIfFalse) =
-  let ifTrue' = flattenCondTreeAcc (condAcc `cAnd` cond) ifTrue
-      ifFalse' = flattenCondTreeAcc (condAcc `cAnd` cNot cond) =<< maybeToList maybeIfFalse
+  let ifTrue' = flattenCondTreeAcc ((`cAnd` cond) <$> condAcc <|> Just cond) ifTrue
+      ifFalse' = flattenCondTreeAcc ((`cAnd` cNot cond) <$> condAcc <|> Just (cNot cond)) =<< maybeToList maybeIfFalse
    in ifTrue' ++ ifFalse'
 
 versionList :: Set Version
@@ -543,7 +544,7 @@ mkImportDependency
   :: Package
   -> Vector (Text, Set PackageName)
   -> ComponentId
-  -> Condition ConfVar
+  -> Maybe (Condition ConfVar)
   -> Cabal.Dependency
   -> Maybe ImportDependency
 mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependency depName versionRange libs) = do
@@ -563,7 +564,7 @@ mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependen
           , requirement = display versionRange
           , components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
           }
-   in Just (ImportDependency{package = dependencyPackage, requirement, condition = Just cond})
+   in Just (ImportDependency{package = dependencyPackage, requirement, condition = cond})
 
 mkComponentId
   :: ComponentType
@@ -583,7 +584,7 @@ mkImportDependencies
   -> CondTree ConfVar c component
   -> [ImportDependency]
 mkImportDependencies package indexPackages packageComponentId comp =
-  let conditionalDeps :: [(Condition ConfVar, [Dependency])]
+  let conditionalDeps :: [(Maybe (Condition ConfVar), [Dependency])]
       conditionalDeps = fmap (L.view L.targetBuildDepends) <$> flattenCondTree comp
       mkImportDependency' = mkImportDependency package indexPackages packageComponentId
    in (\(cond, deps) -> mkImportDependency' cond `mapMaybe` deps) =<< conditionalDeps
