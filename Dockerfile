@@ -22,6 +22,7 @@ RUN apt update \
         git \
         libffi-dev \
         libffi8 \
+        libgoogle-perftools-dev \
         libgmp-dev \
         libgmp10 \
         libncurses-dev \

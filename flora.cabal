@@ -68,7 +68,10 @@ common common-rts-options
   ghc-options:
     -rtsopts
     -threaded
-    "-with-rtsopts=-N -T"
+    "-with-rtsopts=-N -Iw1 --disable-delayed-os-memory-return -T"
+  -- Use TCMalloc instead of glibc's malloc.
+  if !(os(osx) && arch(aarch64))
+    pkgconfig-depends: libtcmalloc
 
 library
   import: common-extensions
