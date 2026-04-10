@@ -635,7 +635,6 @@ data PackageComponentTemplate m = PackageComponentTemplate
   { componentId :: m ComponentId
   , releaseId :: m ReleaseId
   , canonicalForm :: m CanonicalComponent
-  , metadata :: m ComponentMetadata
   }
   deriving stock (Generic)
 
@@ -645,7 +644,6 @@ randomPackageComponentTemplate =
     { componentId = ComponentId <$> H.sample genUUID
     , releaseId = ReleaseId <$> H.sample genUUID
     , canonicalForm = pure $ CanonicalComponent "" Library
-    , metadata = pure $ ComponentMetadata []
     }
 
 instantiatePackageComponent
@@ -657,12 +655,10 @@ instantiatePackageComponent
     { componentId = generateComponentId
     , releaseId = generatereleaseId
     , canonicalForm = generatecanonicalForm
-    , metadata = generatemetadata
     } = do
     componentId <- generateComponentId
     releaseId <- generatereleaseId
     canonicalForm <- generatecanonicalForm
-    metadata <- generatemetadata
     let packageComponent = PackageComponent{..}
     Update.insertPackageComponent packageComponent
     pure packageComponent
@@ -673,6 +669,7 @@ data RequirementTemplate m = RequirementTemplate
   , packageId :: m PackageId
   , requirement :: m Text
   , components :: m (Vector Text)
+  , condition :: m (Maybe (Condition ConfVar))
   }
   deriving stock (Generic)
 
@@ -684,6 +681,7 @@ randomRequirementTemplate =
     , packageId = PackageId <$> H.sample genUUID
     , requirement = undefined
     , components = undefined
+    , condition = pure Nothing
     }
 
 instantiateRequirement

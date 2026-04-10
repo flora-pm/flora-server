@@ -23,8 +23,10 @@ module Flora.Import.Package
   , chooseNamespace
   , loadJSONContent
   , persistHashes
+  , flattenCondTree
   ) where
 
+import Control.Applicative ((<|>))
 import Control.DeepSeq (force)
 import Control.Exception ()
 import Control.Monad
@@ -46,34 +48,18 @@ import Data.Text.Encoding qualified as Text
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Distribution.Compat.Lens qualified as L
 import Distribution.Compat.NonEmptySet qualified as NESet
 import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
-import Distribution.PackageDescription
-  ( CondBranch (..)
-  , CondTree (condTreeData)
-  , Condition (CNot)
-  , ConfVar
-  , UnqualComponentName
-  , allLibraries
-  , unPackageName
-  , unUnqualComponentName
-  )
+import Distribution.PackageDescription hiding (PackageId, PackageName)
 import Distribution.PackageDescription qualified as Cabal
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Parsec qualified as Parsec
-import Distribution.Types.Benchmark
-import Distribution.Types.Dependency
-import Distribution.Types.Executable
-import Distribution.Types.ForeignLib
-import Distribution.Types.GenericPackageDescription (GenericPackageDescription)
-import Distribution.Types.Library
-import Distribution.Types.LibraryName
+import Distribution.Types.BuildInfo.Lens qualified as L
 import Distribution.Types.PackageDescription ()
-import Distribution.Types.TestSuite
-import Distribution.Types.Version (Version)
-import Distribution.Types.VersionRange (VersionRange, withinRange)
 import Distribution.Utils.ShortText (fromShortText)
+import Distribution.Version (Version, VersionRange, withinRange)
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Concurrent (Concurrent)
@@ -117,6 +103,30 @@ import Flora.Model.Requirement
   )
 import Flora.Monad
 import Flora.Normalise
+
+flattenCondTree
+  :: CondTree ConfVar c component
+  -> [(Maybe (Condition ConfVar), component)]
+flattenCondTree = flattenCondTreeAcc Nothing
+
+flattenCondTreeAcc
+  :: Maybe (Condition ConfVar)
+  -- ^ Condition accumulator.
+  -> CondTree ConfVar c component
+  -> [(Maybe (Condition ConfVar), component)]
+flattenCondTreeAcc condAcc (Cabal.CondNode comp _ components) =
+  let components' = flattenCondBranchAcc condAcc =<< components
+   in (condAcc, comp) : components'
+
+flattenCondBranchAcc
+  :: Maybe (Condition ConfVar)
+  -- ^ Condition accumulator.
+  -> CondBranch ConfVar c component
+  -> [(Maybe (Condition ConfVar), component)]
+flattenCondBranchAcc condAcc (CondBranch cond ifTrue maybeIfFalse) =
+  let ifTrue' = flattenCondTreeAcc ((`cAnd` cond) <$> condAcc <|> Just cond) ifTrue
+      ifFalse' = flattenCondTreeAcc ((`cAnd` cNot cond) <$> condAcc <|> Just (cNot cond)) =<< maybeToList maybeIfFalse
+   in ifTrue' ++ ifFalse'
 
 versionList :: Set Version
 versionList =
@@ -448,189 +458,96 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
               , buildType = buildType
               }
 
-      let lib = extractLibrary package indexPackages release Nothing [] <$> allLibraries packageDesc
-      let condLib = maybe [] (extractCondTree extractLibrary package indexPackages release Nothing) genericDesc.condLibrary
-      let condSubLibs = extractCondTrees extractLibrary package indexPackages release genericDesc.condSubLibraries
+      let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List ImportDependency)
+          extractCondTreeComponent' = extractCondTreeComponent package indexPackages release
 
-      let foreignLibs = extractForeignLib package indexPackages release Nothing [] <$> packageDesc.foreignLibs
-      let condForeignLibs = extractCondTrees extractForeignLib package indexPackages release genericDesc.condForeignLibs
+          lib :: [(PackageComponent, [ImportDependency])]
+          lib = extractCondTreeComponent' Component.Library (display package.name) <$> maybeToList genericDesc.condLibrary
 
-      let executables = extractExecutable package indexPackages release Nothing [] <$> packageDesc.executables
-      let condExecutables = extractCondTrees extractExecutable package indexPackages release genericDesc.condExecutables
+          subLibs :: [(PackageComponent, [ImportDependency])]
+          subLibs =
+            (\(compName, subLibrary) -> extractCondTreeComponent' Component.Library (display compName) subLibrary)
+              <$> genericDesc.condSubLibraries
 
-      let testSuites = extractTestSuite package indexPackages release Nothing [] <$> packageDesc.testSuites
-      let condTestSuites = extractCondTrees extractTestSuite package indexPackages release genericDesc.condTestSuites
+          foreignLibs :: [(PackageComponent, [ImportDependency])]
+          foreignLibs =
+            (\(compName, fLib) -> extractCondTreeComponent' Component.ForeignLib (display compName) fLib)
+              <$> genericDesc.condForeignLibs
 
-      let benchmarks = extractBenchmark package indexPackages release Nothing [] <$> packageDesc.benchmarks
-      let condBenchmarks = extractCondTrees extractBenchmark package indexPackages release genericDesc.condBenchmarks
+          executables :: [(PackageComponent, [ImportDependency])]
+          executables =
+            (\(compName, exe) -> extractCondTreeComponent' Component.Executable (display compName) exe)
+              <$> genericDesc.condExecutables
+
+          testSuites :: [PackageComponent]
+          testSuites =
+            (\compName -> mkPackageComponent Component.TestSuite (display compName) release)
+              . fst
+              <$> genericDesc.condTestSuites
+
+          benchmarks :: [PackageComponent]
+          benchmarks =
+            (\compName -> mkPackageComponent Component.Benchmark (display compName) release)
+              . fst
+              <$> genericDesc.condBenchmarks
 
       let components' =
             lib
-              <> condLib
-              <> condSubLibs
-              <> executables
-              <> condExecutables
+              <> subLibs
               <> foreignLibs
-              <> condForeignLibs
-              <> testSuites
-              <> condTestSuites
-              <> benchmarks
-              <> condBenchmarks
+              <> executables
+              <> fmap (,[]) testSuites
+              <> fmap (,[]) benchmarks
       case NE.nonEmpty components' of
         Nothing -> do
           Log.logAttention "Empty dependencies" $ object ["package" .= package]
           extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc
         Just components -> pure $ ImportOutput package categories release components
 
-extractLibrary
-  :: Package
+extractCondTreeComponent
+  :: L.HasBuildInfo component
+  => Package
   -> Vector (Text, Set PackageName)
   -> Release
-  -> Maybe UnqualComponentName
-  -> List (Condition ConfVar)
-  -> Library
+  -> ComponentType
+  -> Text
+  -- ^ component name
+  -> CondTree ConfVar c component
   -> (PackageComponent, List ImportDependency)
-extractLibrary package =
-  genericComponentExtractor
-    Component.Library
-    (^. #libName % to (getLibName package.name))
-    (^. #libBuildInfo % #targetBuildDepends)
-    package
+extractCondTreeComponent
+  package
+  indexPackages
+  release
+  componentType
+  componentName
+  conditionalComp =
+    ( mkPackageComponent componentType componentName release
+    , mkImportDependencies
+        package
+        indexPackages
+        (mkComponentId componentType componentName release)
+        conditionalComp
+    )
 
 getLibName :: PackageName -> LibraryName -> Text
 getLibName pname LMainLibName = display pname
 getLibName _ (LSubLibName lname) = Text.pack $ unUnqualComponentName lname
 
-extractForeignLib
-  :: Package
-  -> Vector (Text, Set PackageName)
-  -> Release
-  -> Maybe UnqualComponentName
-  -> List (Condition ConfVar)
-  -> ForeignLib
-  -> (PackageComponent, List ImportDependency)
-extractForeignLib =
-  genericComponentExtractor
-    Component.ForeignLib
-    (^. #foreignLibName % to unUnqualComponentName % to Text.pack)
-    (^. #foreignLibBuildInfo % #targetBuildDepends)
+mkPackageComponent :: ComponentType -> Text -> Release -> PackageComponent
+mkPackageComponent componentType componentName release =
+  let releaseId = release.releaseId
+      canonicalForm = CanonicalComponent componentName componentType
+      componentId = deterministicComponentId releaseId canonicalForm
+   in PackageComponent componentId releaseId canonicalForm
 
-extractExecutable
-  :: Package
-  -> Vector (Text, Set PackageName)
-  -> Release
-  -> Maybe UnqualComponentName
-  -> List (Condition ConfVar)
-  -> Executable
-  -> (PackageComponent, List ImportDependency)
-extractExecutable =
-  genericComponentExtractor
-    Component.Executable
-    (^. #exeName % to unUnqualComponentName % to Text.pack)
-    (^. #buildInfo % #targetBuildDepends)
-
-extractTestSuite
-  :: Package
-  -> Vector (Text, Set PackageName)
-  -> Release
-  -> Maybe UnqualComponentName
-  -> List (Condition ConfVar)
-  -> TestSuite
-  -> (PackageComponent, List ImportDependency)
-extractTestSuite =
-  genericComponentExtractor
-    Component.TestSuite
-    (^. #testName % to unUnqualComponentName % to Text.pack)
-    (^. #testBuildInfo % #targetBuildDepends)
-
-extractBenchmark
-  :: Package
-  -> Vector (Text, Set PackageName)
-  -> Release
-  -> Maybe UnqualComponentName
-  -> List (Condition ConfVar)
-  -> Benchmark
-  -> (PackageComponent, List ImportDependency)
-extractBenchmark =
-  genericComponentExtractor
-    Component.Benchmark
-    (^. #benchmarkName % to unUnqualComponentName % to Text.pack)
-    (^. #benchmarkBuildInfo % #targetBuildDepends)
-
--- | Traverses the provided 'CondTree' and applies the given 'ComponentExtractor'
---  to every node, returning a list of '(PackageComponent, List ImportDependency)'
-extractCondTree
-  :: (Package -> Vector (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
-  -> Package
-  -> Vector (Text, Set PackageName)
-  -> Release
-  -> Maybe UnqualComponentName
-  -> CondTree ConfVar (List Dependency) component
-  -> List (PackageComponent, List ImportDependency)
-extractCondTree extractor package indexPackages release defaultComponentName = go []
-  where
-    go cond tree =
-      let treeComponent = extractor package indexPackages release defaultComponentName cond tree.condTreeData
-          treeSubComponents = tree.condTreeComponents >>= extractBranch
-       in treeComponent : treeSubComponents
-    extractBranch CondBranch{condBranchCondition, condBranchIfTrue, condBranchIfFalse} =
-      let condIfTrueComponents = go [condBranchCondition] condBranchIfTrue
-          condIfFalseComponents = maybe [] (go [CNot condBranchCondition]) condBranchIfFalse
-       in condIfTrueComponents <> condIfFalseComponents
-
--- | Cabal often models conditional components as a list of 'CondTree' associated with an 'UnqualComponentName'.
---  This function builds upon 'extractCondTree' to make it easier to extract fields such as 'condExecutables', 'condTestSuites' etc.
---  from a 'GenericPackageDescription'
-extractCondTrees
-  :: (Package -> Vector (Text, Set PackageName) -> Release -> Maybe UnqualComponentName -> List (Condition ConfVar) -> component -> (PackageComponent, List ImportDependency))
-  -> Package
-  -> Vector (Text, Set PackageName)
-  -> Release
-  -> List (UnqualComponentName, CondTree ConfVar (List Dependency) component)
-  -> List (PackageComponent, List ImportDependency)
-extractCondTrees extractor package indexPackages release trees =
-  trees >>= \case (name, tree) -> extractCondTree extractor package indexPackages release (Just name) tree
-
-genericComponentExtractor
-  :: forall component
-   . ComponentType
-  -> (component -> Text)
-  -- ^ Extract name from component
-  -> (component -> List Dependency)
-  -- ^ Extract dependencies
-  -> Package
-  -> Vector (Text, Set PackageName)
-  -> Release
-  -> Maybe UnqualComponentName
-  -> List (Condition ConfVar)
-  -> component
-  -> (PackageComponent, List ImportDependency)
-genericComponentExtractor
-  componentType
-  getName
-  getDeps
-  package
-  indexPackages
-  release
-  defaultComponentName
-  condition
-  rawComponent =
-    let releaseId = release.releaseId
-        componentName = maybe (getName rawComponent) display defaultComponentName
-        canonicalForm = CanonicalComponent componentName componentType
-        componentId = deterministicComponentId releaseId canonicalForm
-        metadata = ComponentMetadata (ComponentCondition <$> condition)
-        component = PackageComponent componentId releaseId canonicalForm metadata
-        dependencies = mapMaybe (buildDependency package indexPackages componentId) (getDeps rawComponent)
-     in (component, dependencies)
-
-buildDependency
+mkImportDependency
   :: Package
   -> Vector (Text, Set PackageName)
   -> ComponentId
+  -> Maybe (Condition ConfVar)
   -> Cabal.Dependency
   -> Maybe ImportDependency
-buildDependency package indexPackages packageComponentId (Cabal.Dependency depName versionRange libs) = do
+mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependency depName versionRange libs) = do
   let name = depName & unPackageName & pack & PackageName
   namespace <- chooseNamespace name indexPackages
   let packageId = deterministicPackageId namespace name
@@ -646,8 +563,32 @@ buildDependency package indexPackages packageComponentId (Cabal.Dependency depNa
           , packageId
           , requirement = display versionRange
           , components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
+          , condition = cond
           }
    in Just (ImportDependency{package = dependencyPackage, requirement})
+
+mkComponentId
+  :: ComponentType
+  -> Text
+  -> Release
+  -> ComponentId
+mkComponentId componentType componentName release =
+  let canonicalForm = CanonicalComponent componentName componentType
+      releaseId = release.releaseId
+   in deterministicComponentId releaseId canonicalForm
+
+mkImportDependencies
+  :: L.HasBuildInfo component
+  => Package
+  -> Vector (Text, Set PackageName)
+  -> ComponentId
+  -> CondTree ConfVar c component
+  -> [ImportDependency]
+mkImportDependencies package indexPackages packageComponentId comp =
+  let conditionalDeps :: [(Maybe (Condition ConfVar), [Dependency])]
+      conditionalDeps = fmap (L.view L.targetBuildDepends) <$> flattenCondTree comp
+      mkImportDependency' = mkImportDependency package indexPackages packageComponentId
+   in (\(cond, deps) -> mkImportDependency' cond `mapMaybe` deps) =<< conditionalDeps
 
 getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty
