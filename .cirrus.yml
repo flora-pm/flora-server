@@ -13,7 +13,7 @@ task:
     BOOTSTRAP_HASKELL_INSTALL_NO_STACK: 1
 
   deps_install_script: |
-      pkg install -y gmake bash libsodium curl git postgresql17-client google-perftools
+      pkg install -y gmake bash libsodium curl git postgresql17-client google-perftools pkgconf
       curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
       echo $PATH
 
