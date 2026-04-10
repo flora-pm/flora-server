@@ -23,7 +23,7 @@ cabal install postgresql-migration hlint cabal-gild ghcid ghc-tags --semaphore -
 
 (Some of the above packages could have incompatible dependencies, so consider installing them separately with `cabal install`)
 
-
+* [`gperftools`](https://pkgs.org/download/gperftools): This gives us `tcmalloc`, an alternative malloc implementation that helps against memory fragmentation in long-running servers
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
 * `yarn`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling

@@ -3,4 +3,5 @@
 sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 sudo apt -y update
-sudo apt -y install postgresql-16 g++ mcpp libffi7 llvm zlib1g-dev
+sudo apt -y upgrade
+sudo apt -y install postgresql-17 g++ mcpp libffi8 llvm zlib1g-dev libsodium-dev libgoogle-perftools-dev
