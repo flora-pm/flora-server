@@ -1,6 +1,7 @@
 module FloraWeb.Common.Tracing where
 
 import Control.Exception (AsyncException (..), Exception (..), SomeException, throw)
+import Control.Monad (when)
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 (unpack)
 import Data.Maybe (isJust)
@@ -30,38 +31,38 @@ handleExceptions
 handleExceptions logger environment mltp mRequest e@(E.SomeException exception) = do
   Log.runLogT "flora-production" logger LogAttention $ do
     let context = E.displayExceptionContext $ E.someExceptionContext e
-    Log.logAttention "Unhandled exception" $
-      Aeson.object
-        [ "exception" .= display (show exception)
-        , "backtraces" .= context
-        ]
-    case mltp.sentryDSN of
-      Nothing -> throw exception
-      Just sentryDSN ->
-        if shouldDisplayException e && isJust mRequest
-          then do
-            sentryService <-
+    when (shouldDisplayException e) $ do
+      Log.logAttention "Unhandled exception" $
+        Aeson.object
+          [ "exception" .= display (show exception)
+          , "backtraces" .= context
+          ]
+      case mltp.sentryDSN of
+        Nothing -> throw exception
+        Just sentryDSN ->
+          if isJust mRequest
+            then do
+              sentryService <-
+                liftIO $
+                  initRaven
+                    sentryDSN
+                    (\defaultRecord -> defaultRecord{srEnvironment = Just $ show environment})
+                    sendRecord
+                    silentFallback
               liftIO $
-                initRaven
-                  sentryDSN
-                  (\defaultRecord -> defaultRecord{srEnvironment = Just $ show environment})
-                  sendRecord
-                  silentFallback
-            liftIO $
-              register
-                sentryService
-                "flora-server"
-                Error
-                (formatMessage mRequest e)
-                (recordUpdate mRequest e)
-            liftIO $ defaultOnException mRequest e
-          else liftIO $ defaultOnException mRequest e
+                register
+                  sentryService
+                  "flora-server"
+                  Error
+                  (formatMessage mRequest e)
+                  (recordUpdate mRequest e)
+              liftIO $ defaultOnException mRequest e
+            else liftIO $ defaultOnException mRequest e
 
 shouldDisplayException :: SomeException -> Bool
 shouldDisplayException exception
   | Just ThreadKilled <- fromException exception = False
   | Just TimeoutThread <- fromException exception = False
-  | Just ConnectionClosedByPeer <- fromException exception = False
   | Just (_ :: InvalidRequest) <- fromException exception = False
   | Just (ioeGetErrorType -> et) <- fromException exception
   , et == ResourceVanished || et == InvalidArgument =
