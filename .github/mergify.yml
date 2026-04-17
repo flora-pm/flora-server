@@ -30,3 +30,4 @@ priority_rules:
       - label=squash+merge me
       - 'check-success=Backend_tests'
     priority: 2250
+    allow_checks_interruption: true
