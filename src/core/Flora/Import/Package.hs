@@ -479,16 +479,14 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
             (\(compName, exe) -> extractCondTreeComponent' Component.Executable (display compName) exe)
               <$> genericDesc.condExecutables
 
-          testSuites :: [PackageComponent]
+          testSuites :: [(PackageComponent, [ImportDependency])]
           testSuites =
-            (\compName -> mkPackageComponent Component.TestSuite (display compName) release)
-              . fst
+            (\(compName, testSuite) -> extractCondTreeComponent' Component.TestSuite (display compName) testSuite)
               <$> genericDesc.condTestSuites
 
-          benchmarks :: [PackageComponent]
+          benchmarks :: [(PackageComponent, [ImportDependency])]
           benchmarks =
-            (\compName -> mkPackageComponent Component.Benchmark (display compName) release)
-              . fst
+            (\(compName, benchmark) -> extractCondTreeComponent' Component.Benchmark (display compName) benchmark)
               <$> genericDesc.condBenchmarks
 
       let components' =
@@ -496,8 +494,8 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
               <> subLibs
               <> foreignLibs
               <> executables
-              <> fmap (,[]) testSuites
-              <> fmap (,[]) benchmarks
+              <> testSuites
+              <> benchmarks
       case NE.nonEmpty components' of
         Nothing -> do
           Log.logAttention "Empty dependencies" $ object ["package" .= package]
