@@ -2,7 +2,7 @@ module Flora.CabalSpec where
 
 import Data.Set qualified as Set
 import Data.Vector qualified as Vector
-import Distribution.PackageDescription hiding (PackageId, PackageName, Library, Executable)
+import Distribution.PackageDescription hiding (Executable, Library, PackageId, PackageName)
 import Distribution.System (Arch (..))
 import RequireCallStack
 import Test.Tasty
