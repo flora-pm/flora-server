@@ -108,6 +108,8 @@ import Distribution.SPDX qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Version (Version)
 import Distribution.Types.Version qualified as Version
+import Distribution.Types.Condition (Condition (..))
+import Distribution.Types.ConfVar (ConfVar (..))
 import Effectful
 import Effectful.Concurrent
 import Effectful.Error.Static (Error)
@@ -701,7 +703,8 @@ instantiateRequirement
     packageId <- generatePackageId
     requirement <- generateRequirement
     components <- generateComponents
-    let req = Requirement{..}
+    -- TODO(leana8959): what does this template do exactly
+    let req = Requirement{condition = Nothing, ..}
     Update.insertRequirement req
     pure req
 
