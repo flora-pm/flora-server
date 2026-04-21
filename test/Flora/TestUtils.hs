@@ -106,10 +106,10 @@ import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Transact ()
 import Distribution.SPDX qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
-import Distribution.Types.Version (Version)
-import Distribution.Types.Version qualified as Version
 import Distribution.Types.Condition (Condition (..))
 import Distribution.Types.ConfVar (ConfVar (..))
+import Distribution.Types.Version (Version)
+import Distribution.Types.Version qualified as Version
 import Effectful
 import Effectful.Concurrent
 import Effectful.Error.Static (Error)
