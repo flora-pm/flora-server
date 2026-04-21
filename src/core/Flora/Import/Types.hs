@@ -14,6 +14,7 @@ import Data.Text (Text)
 import GHC.Generics
 
 import Flora.Model.Package
+import Flora.Model.Release.Types
 
 data ImportError
   = InvalidPackageName Text
@@ -22,6 +23,7 @@ data ImportError
   | CabalFileNotFound FilePath
   | CabalFileCouldNotBeParsed FilePath
   | CouldNotSelectNamespace Text PackageName
+  | CouldNotFindPackageIndexForRelease ReleaseId
   deriving stock (Eq, Show)
   deriving anyclass (Exception)
 

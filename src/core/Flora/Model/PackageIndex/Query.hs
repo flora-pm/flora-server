@@ -16,6 +16,16 @@ import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
 import Flora.Model.PackageIndex.Types
 
+getPackageIndexById
+  :: DB :> es
+  => PackageIndexId
+  -> Eff es (Maybe PackageIndex)
+getPackageIndexById packageIndexId =
+  dbtToEff $
+    selectOneByField
+      [field| package_index_id |]
+      (Only packageIndexId)
+
 getPackageIndexByName :: DB :> es => Text -> Eff es (Maybe PackageIndex)
 getPackageIndexByName repository =
   dbtToEff $

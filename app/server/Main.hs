@@ -75,7 +75,7 @@ checkExpectedTables = do
           , "package_group_packages"
           , "package_groups"
           , "package_indexes"
-          , "package_publishers"
+          , "package_uploaders"
           , "packages"
           , "persistent_sessions"
           , "releases"

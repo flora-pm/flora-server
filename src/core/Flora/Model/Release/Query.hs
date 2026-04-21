@@ -18,6 +18,7 @@ module Flora.Model.Release.Query
   , getReleaseComponents
   , getHackagePackagesWithoutReleaseDeprecationInformation
   , getVersionFromManyReleaseIds
+  , getReleasePackageIndex
   )
 where
 
@@ -42,6 +43,7 @@ import Flora.Model.BlobStore.API (BlobStoreAPI, get)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
+import Flora.Model.PackageIndex.Types
 import Flora.Model.Release.Types
 import Flora.Monad
 
@@ -235,3 +237,16 @@ numberOfReleasesQuery =
 getReleaseComponents :: DB :> es => ReleaseId -> FloraM es (Vector PackageComponent)
 getReleaseComponents releaseId =
   dbtToEff $ query (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
+
+getReleasePackageIndex :: DB :> es => ReleaseId -> FloraM es (Maybe PackageIndexId)
+getReleasePackageIndex releaseId = dbtToEff $ do
+  result :: Maybe (Only PackageIndexId) <- queryOne q (Only releaseId)
+  pure $ fromOnly <$> result
+  where
+    q =
+      [sql|
+        select p1.package_index_id
+        from releases as r0
+        join package_indexes as p1 on r0.repository = p1.repository
+        where r0.release_id = ?
+      |]

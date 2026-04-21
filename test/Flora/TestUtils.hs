@@ -156,6 +156,7 @@ import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroup.Update qualified as Update
 import Flora.Model.PackageGroupPackage.Types (PackageGroupPackage (..), PackageGroupPackageId (..))
 import Flora.Model.PackageGroupPackage.Update qualified as Update
+import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Types
   ( ImportStatus (..)
   , Release (..)
@@ -532,6 +533,7 @@ data ReleaseTemplate m = ReleaseTemplate
   , repository :: m (Maybe Text)
   , revisedAt :: m (Maybe UTCTime)
   , buildType :: m BuildType
+  , uploaderId :: Maybe PackageUploaderId
   }
   deriving stock (Generic)
 
@@ -567,6 +569,7 @@ randomReleaseTemplate =
     , repository = pure Nothing
     , revisedAt = pure Nothing
     , buildType = pure Simple
+    , uploaderId = Nothing
     }
 
 instantiateRelease :: DB :> es => ReleaseTemplate (Eff es) -> FloraM es Release
@@ -598,6 +601,7 @@ instantiateRelease
     , repository = generateRepository
     , revisedAt = generateRevisedAt
     , buildType = generateBuildType
+    , uploaderId = uploaderId
     } = do
     releaseId <- generateReleaseId
     packageId <- generatePackageId
