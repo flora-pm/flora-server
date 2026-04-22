@@ -74,7 +74,7 @@ runner job = localDomain "job-runner" $
     Success val -> case val of
       FetchReadme x -> makeReadme x
       FetchTarball x -> fetchTarball x
-      FetchUploadTime x -> fetchUploadTime x
+      FetchUploadTime x -> fetchUploadInformation x
       FetchChangelog x -> fetchChangeLog x
       ImportPackage x -> persistImportOutput x
       FetchPackageDeprecationList -> fetchPackageDeprecationList
@@ -190,8 +190,8 @@ fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
         logAttention_ $ "Failed to insert tarball for " <> display package
         throw err
 
-fetchUploadTime :: UploadTimeJobPayload -> JobsRunner ()
-fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} =
+fetchUploadInformation :: UploadTimeJobPayload -> JobsRunner ()
+fetchUploadInformation payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-upload-time" $ do
     logInfo "Fetching upload time" payload
     let requestPayload = VersionedPackage packageName packageVersion
@@ -205,6 +205,7 @@ fetchUploadTime payload@UploadTimeJobPayload{packageName, packageVersion, releas
         originalPackageInfo <- liftIO $ Hackage.getPackageWithRevision requestPayload 0
         Update.updateRevisionTime releaseId packageInfo.uploadedAt
         Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
+        Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
 
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: JobsRunner ()

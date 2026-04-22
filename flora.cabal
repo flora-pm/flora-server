@@ -141,7 +141,6 @@ library
     Flora.Model.Package
     Flora.Model.Package.Guard
     Flora.Model.Package.Orphans
-    Flora.Model.Package.Publisher
     Flora.Model.Package.Query
     Flora.Model.Package.Types
     Flora.Model.Package.Update
@@ -156,6 +155,9 @@ library
     Flora.Model.PackageIndex.Query
     Flora.Model.PackageIndex.Types
     Flora.Model.PackageIndex.Update
+    Flora.Model.PackageUploader.Query
+    Flora.Model.PackageUploader.Types
+    Flora.Model.PackageUploader.Update
     Flora.Model.PersistentSession
     Flora.Model.Release
     Flora.Model.Release.Guard

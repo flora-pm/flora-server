@@ -1,7 +1,21 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Flora.Model.Release.Update where
+module Flora.Model.Release.Update
+  ( insertRelease
+  , upsertRelease
+  , refreshLatestVersions
+  , updateReadme
+  , updateUploadTime
+  , updateRevisionTime
+  , updateTarballRootHash
+  , updateChangelog
+  , updateTarballArchiveHash
+  , updateReleaseUploader
+  , setReleasesDeprecationMarker
+  , setArchiveChecksum
+  , linkPackageUploaderToImportedRelease
+  ) where
 
 import Control.Monad (void, when)
 import Crypto.Hash.SHA256 qualified as SHA
@@ -21,6 +35,8 @@ import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Distribution.Types.Version (Version)
 import Effectful
+import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (Reader)
@@ -29,11 +45,15 @@ import Effectful.Time (Time)
 import Log qualified
 
 import Flora.Environment.Env (DeploymentEnv (..), FloraEnv (..))
+import Flora.Import.Types
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Feed.Types qualified as Types
 import Flora.Model.Feed.Update qualified as Update
 import Flora.Model.Package.Types (Package (..))
+import Flora.Model.PackageUploader.Query qualified as Query
+import Flora.Model.PackageUploader.Types
+import Flora.Model.PackageUploader.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Monad
@@ -147,7 +167,45 @@ updateTarballArchiveHash releaseId (toStrict -> content) = do
         ([field| release_id |], releaseId)
         (Only . Just $ display hash)
 
-setReleasesDeprecationMarker :: DB :> es => Vector (Bool, ReleaseId) -> FloraM es ()
+linkPackageUploaderToImportedRelease
+  :: (DB :> es, Error ImportError :> es, IOE :> es)
+  => ReleaseId
+  -> Text
+  -> FloraM es ()
+linkPackageUploaderToImportedRelease releaseId username = do
+  mPackageIndexId <- Query.getReleasePackageIndex releaseId
+  case mPackageIndexId of
+    Nothing -> Error.throwError $ CouldNotFindPackageIndexForRelease releaseId
+    Just packageIndexId -> do
+      mPackageUploader <-
+        Query.getPackageUploaderByUsernameAndIndex
+          username
+          packageIndexId
+      case mPackageUploader of
+        Just packageUploader ->
+          updateReleaseUploader releaseId packageUploader.packageUploaderId
+        Nothing -> do
+          packageUploaderDAO <- mkPackageUploaderDAO username packageIndexId Nothing
+          Update.insertPackageUploader packageUploaderDAO
+          updateReleaseUploader releaseId packageUploaderDAO.packageUploaderId
+
+updateReleaseUploader
+  :: DB :> es
+  => ReleaseId
+  -> PackageUploaderId
+  -> FloraM es ()
+updateReleaseUploader releaseId packageUploaderId =
+  dbtToEff $
+    void $
+      updateFieldsBy @Release
+        [[field| uploader_id |]]
+        ([field| release_id |], releaseId)
+        (Only packageUploaderId)
+
+setReleasesDeprecationMarker
+  :: DB :> es
+  => Vector (Bool, ReleaseId)
+  -> FloraM es ()
 setReleasesDeprecationMarker releaseVersions =
   dbtToEff $ void $ executeMany q (releaseVersions & Vector.toList)
   where

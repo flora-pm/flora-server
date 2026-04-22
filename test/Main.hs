@@ -109,5 +109,5 @@ cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM index_dependencies" ()
   void $ execute "DELETE FROM package_indexes" ()
   void $ execute "DELETE FROM user_organisation" ()
-  void $ execute "DELETE FROM package_publishers" ()
+  void $ execute "DELETE FROM package_uploaders" ()
   void $ execute "DELETE FROM users" ()

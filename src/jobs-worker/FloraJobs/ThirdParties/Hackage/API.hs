@@ -110,6 +110,7 @@ instance FromJSON HackagePreferredVersions where
 data HackagePackageInfo = HackagePackageInfo
   { metadataRevision :: Word
   , uploadedAt :: UTCTime
+  , uploader :: Text
   }
   deriving stock (Eq, Show)
 

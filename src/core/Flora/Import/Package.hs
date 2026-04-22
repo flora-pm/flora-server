@@ -446,6 +446,7 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
               , deprecated = Nothing
               , revisedAt = Nothing
               , buildType = buildType
+              , uploaderId = Nothing
               }
 
       let lib = extractLibrary package indexPackages release Nothing [] <$> allLibraries packageDesc
