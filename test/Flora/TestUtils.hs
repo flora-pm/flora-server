@@ -106,6 +106,8 @@ import Database.PostgreSQL.Simple.Migration
 import Database.PostgreSQL.Transact ()
 import Distribution.SPDX qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
+import Distribution.Types.Condition (Condition (..))
+import Distribution.Types.ConfVar (ConfVar (..))
 import Distribution.Types.Version (Version)
 import Distribution.Types.Version qualified as Version
 import Effectful
@@ -639,7 +641,6 @@ data PackageComponentTemplate m = PackageComponentTemplate
   { componentId :: m ComponentId
   , releaseId :: m ReleaseId
   , canonicalForm :: m CanonicalComponent
-  , metadata :: m ComponentMetadata
   }
   deriving stock (Generic)
 
@@ -649,7 +650,6 @@ randomPackageComponentTemplate =
     { componentId = ComponentId <$> H.sample genUUID
     , releaseId = ReleaseId <$> H.sample genUUID
     , canonicalForm = pure $ CanonicalComponent "" Library
-    , metadata = pure $ ComponentMetadata []
     }
 
 instantiatePackageComponent
@@ -661,12 +661,10 @@ instantiatePackageComponent
     { componentId = generateComponentId
     , releaseId = generatereleaseId
     , canonicalForm = generatecanonicalForm
-    , metadata = generatemetadata
     } = do
     componentId <- generateComponentId
     releaseId <- generatereleaseId
     canonicalForm <- generatecanonicalForm
-    metadata <- generatemetadata
     let packageComponent = PackageComponent{..}
     Update.insertPackageComponent packageComponent
     pure packageComponent
@@ -677,6 +675,7 @@ data RequirementTemplate m = RequirementTemplate
   , packageId :: m PackageId
   , requirement :: m Text
   , components :: m (Vector Text)
+  , condition :: m (Maybe (Condition ConfVar))
   }
   deriving stock (Generic)
 
@@ -688,6 +687,7 @@ randomRequirementTemplate =
     , packageId = PackageId <$> H.sample genUUID
     , requirement = undefined
     , components = undefined
+    , condition = pure Nothing
     }
 
 instantiateRequirement
@@ -707,7 +707,8 @@ instantiateRequirement
     packageId <- generatePackageId
     requirement <- generateRequirement
     components <- generateComponents
-    let req = Requirement{..}
+    -- TODO(leana8959): what does this template do exactly
+    let req = Requirement{condition = Nothing, ..}
     Update.insertRequirement req
     pure req
 

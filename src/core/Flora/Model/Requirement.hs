@@ -16,13 +16,13 @@ import Data.Vector (Vector)
 import Database.PostgreSQL.Entity (Entity)
 import Database.PostgreSQL.Entity.Types (GenericEntity, TableName)
 import Database.PostgreSQL.Simple (ToRow)
-import Database.PostgreSQL.Simple.FromField
-  ( FromField
-  )
+import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.ToField (ToField)
+import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Deriving.Aeson
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.Condition (Condition)
+import Distribution.Types.ConfVar (ConfVar)
 import Distribution.Types.Version (Version)
 
 import Flora.Model.Component.Types
@@ -51,6 +51,8 @@ data Requirement = Requirement
   -- ^ The human-readable version range expression of this requirement
   , components :: Vector Text
   -- ^ Components that are depended on
+  , condition :: Maybe (Condition ConfVar)
+  -- ^ The union of all the conditional flags guarding the requirement (dependency) behind.
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, FromRow, NFData, ToJSON, ToRow)

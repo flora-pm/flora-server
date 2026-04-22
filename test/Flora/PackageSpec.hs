@@ -10,9 +10,6 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms qualified as Vector
-import Distribution.System (OS (Windows))
-import Distribution.Types.Condition
-import Distribution.Types.ConfVar
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Version (mkVersion)
 import Optics.Core
@@ -151,17 +148,6 @@ testTimeComponents = do
   assertEqual_ 1 $ countComponentsByType Library components
   assertEqual_ 1 $ countComponentsByType Benchmark components
   assertEqual_ 3 $ countComponentsByType TestSuite components
-
-testTimeConditions :: RequireCallStack => TestEff ()
-testTimeConditions = do
-  time <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
-  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease time.packageId
-  timeLib <- assertJust_ =<< Query.getComponent latestRelease.releaseId "time" Library
-  timeUnixTest <- assertJust_ =<< Query.getComponent latestRelease.releaseId "test-unix" TestSuite
-  let timeLibExpectedCondition = [ComponentCondition (CNot (Var (OS Windows)))]
-  let timeUnixTestExpectedCondition = [ComponentCondition (Var (OS Windows))]
-  assertEqual_ timeLibExpectedCondition timeLib.metadata.conditions
-  assertEqual_ timeUnixTestExpectedCondition timeUnixTest.metadata.conditions
 
 testSearchResultText :: RequireCallStack => TestEff ()
 testSearchResultText = do
