@@ -1,12 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Flora.Model.Requirement where
 
 import Control.DeepSeq
 import Crypto.Hash.MD5 qualified as MD5
 import Data.ByteString.Lazy (fromStrict)
-import Data.Dynamic (Typeable)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust)
 import Data.Text (Text)
@@ -18,9 +16,9 @@ import Data.Vector (Vector)
 import Database.PostgreSQL.Entity (Entity)
 import Database.PostgreSQL.Entity.Types (GenericEntity, TableName)
 import Database.PostgreSQL.Simple (ToRow)
-import Database.PostgreSQL.Simple.FromField (FromField (..), fromJSONField)
+import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.FromRow (FromRow (..))
-import Database.PostgreSQL.Simple.ToField (ToField (..), toJSONField)
+import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Deriving.Aeson
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Condition (Condition)
@@ -41,9 +39,6 @@ deterministicRequirementId componentId packageId =
   RequirementId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
   where
     concatenated = display componentId <> display packageId
-
-instance (ToJSON c, Typeable c) => ToField (Condition c) where toField = toJSONField
-instance (FromJSON c, Typeable c) => FromField (Condition c) where fromField = fromJSONField
 
 data Requirement = Requirement
   { requirementId :: RequirementId
