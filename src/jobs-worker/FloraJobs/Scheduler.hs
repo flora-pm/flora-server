@@ -10,6 +10,7 @@ module FloraJobs.Scheduler
   , scheduleReleaseDeprecationListJob
   , scheduleRefreshLatestVersions
   , scheduleRefreshIndex
+  , scheduleIncompatibleReleaseJob
   , checkIfIndexRefreshJobIsPlanned
   , jobTableName
   --   prefer using smart constructors.
@@ -85,6 +86,10 @@ scheduleRefreshIndex :: Pool PG.Connection -> Text -> IO Job
 scheduleRefreshIndex pool indexName = withResource pool $ \conn -> do
   now <- Time.getCurrentTime
   scheduleJob conn jobTableName (RefreshIndex indexName) (Time.addUTCTime Time.nominalDay now)
+
+scheduleIncompatibleReleaseJob :: Pool PG.Connection -> Namespace -> PackageName -> IO Job
+scheduleIncompatibleReleaseJob pool namespace packageName =
+  createJobWithResource pool (ComputeIncompatibleReleasesWith namespace packageName)
 
 createJobWithResource :: ToJSON p => Pool PG.Connection -> p -> IO Job
 createJobWithResource pool job =
