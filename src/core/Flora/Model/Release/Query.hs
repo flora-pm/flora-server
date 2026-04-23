@@ -9,7 +9,7 @@ module Flora.Model.Release.Query
   , getReleaseByVersion
   , getHackagePackageReleasesWithoutReadme
   , getHackagePackageReleasesWithoutChangelog
-  , getHackagePackageReleasesWithoutUploadTimestamp
+  , getHackagePackageReleasesWithoutUploadInformation
   , getHackagePackageReleasesWithoutTarball
   , getAllReleases
   , getLatestReleaseTime
@@ -124,13 +124,12 @@ getHackagePackageReleasesWithoutReadme =
         on p.package_id = r.package_id
         where r.readme_status = 'not-imported'
           and p.namespace = 'hackage'
-           or p.namespace = 'haskell'
       |]
 
-getHackagePackageReleasesWithoutUploadTimestamp
+getHackagePackageReleasesWithoutUploadInformation
   :: DB :> es
   => FloraM es (Vector (ReleaseId, Version, PackageName))
-getHackagePackageReleasesWithoutUploadTimestamp =
+getHackagePackageReleasesWithoutUploadInformation =
   dbtToEff $
     query querySpec ()
   where
@@ -141,9 +140,8 @@ getHackagePackageReleasesWithoutUploadTimestamp =
         from releases as r
         join packages as p
         on p."package_id" = r."package_id"
-        where r."uploaded_at" is null
+        where (r."uploaded_at" is null or r."uploader_id" is null)
           and p."namespace" = 'hackage'
-           or p."namespace" = 'haskell'
       |]
 
 getHackagePackageReleasesWithoutChangelog

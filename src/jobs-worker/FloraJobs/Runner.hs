@@ -74,7 +74,7 @@ runner job = localDomain "job-runner" $
     Success val -> case val of
       FetchReadme x -> makeReadme x
       FetchTarball x -> fetchTarball x
-      FetchUploadTime x -> fetchUploadInformation x
+      FetchUploadInformation x -> fetchUploadInformation x
       FetchChangelog x -> fetchChangeLog x
       ImportPackage x -> persistImportOutput x
       FetchPackageDeprecationList -> fetchPackageDeprecationList
@@ -190,8 +190,8 @@ fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
         logAttention_ $ "Failed to insert tarball for " <> display package
         throw err
 
-fetchUploadInformation :: UploadTimeJobPayload -> JobsRunner ()
-fetchUploadInformation payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} =
+fetchUploadInformation :: UploadInformationJobPayload -> JobsRunner ()
+fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-upload-time" $ do
     logInfo "Fetching upload time" payload
     let requestPayload = VersionedPackage packageName packageVersion
@@ -300,13 +300,13 @@ refreshIndex indexName = do
               releasesWithoutReadme
               (\(releaseId, version, packagename) -> scheduleReadmeJob pool releaseId packagename version)
 
-      releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
+      hackageReleasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadInformation
       liftIO $
         void $
           forkIO $
             Async.forConcurrently_
-              releasesWithoutUploadTime
-              (\(releaseId, version, packagename) -> scheduleUploadTimeJob pool releaseId packagename version)
+              hackageReleasesWithoutUploadTime
+              (\(releaseId, version, packagename) -> scheduleUploadInformationJob pool releaseId packagename version)
 
       releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
       liftIO $

@@ -5,7 +5,7 @@ module FloraJobs.Scheduler
   ( scheduleReadmeJob
   , scheduleTarballJob
   , scheduleChangelogJob
-  , scheduleUploadTimeJob
+  , scheduleUploadInformationJob
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
   , scheduleRefreshLatestVersions
@@ -63,11 +63,11 @@ scheduleChangelogJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Versio
 scheduleChangelogJob pool rid package version =
   createJobWithResource pool $ FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version
 
-scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
-scheduleUploadTimeJob pool releaseId packageName version =
+scheduleUploadInformationJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
+scheduleUploadInformationJob pool releaseId packageName version =
   createJobWithResource pool $
-    FetchUploadTime $
-      UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version)
+    FetchUploadInformation $
+      UploadInformationJobPayload packageName releaseId (MkIntAesonVersion version)
 
 schedulePackageDeprecationListJob :: Pool PG.Connection -> IO Job
 schedulePackageDeprecationListJob pool =

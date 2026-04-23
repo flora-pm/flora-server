@@ -70,13 +70,13 @@ fetchMetadataHandler (Headers session _) = do
           releasesWithoutReadme
           (\(releaseId, version, packagename) -> scheduleReadmeJob jobsPool releaseId packagename version)
 
-  releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
+  hackageReleasesWithoutUploadInformation <- Query.getHackagePackageReleasesWithoutUploadInformation
   liftIO $
     void $
       forkIO $
         Async.forConcurrently_
-          releasesWithoutUploadTime
-          (\(releaseId, version, packagename) -> scheduleUploadTimeJob jobsPool releaseId packagename version)
+          hackageReleasesWithoutUploadInformation
+          (\(releaseId, version, packagename) -> scheduleUploadInformationJob jobsPool releaseId packagename version)
 
   releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
   liftIO $
