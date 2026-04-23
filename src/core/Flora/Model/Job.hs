@@ -50,7 +50,7 @@ data TarballJobPayload = TarballJobPayload
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
 
-data UploadTimeJobPayload = UploadTimeJobPayload
+data UploadInformationJobPayload = UploadInformationJobPayload
   { packageName :: PackageName
   , releaseId :: ReleaseId
   , packageVersion :: IntAesonVersion
@@ -58,7 +58,7 @@ data UploadTimeJobPayload = UploadTimeJobPayload
   deriving stock (Generic)
   deriving
     (FromJSON, ToJSON)
-    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] UploadTimeJobPayload)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] UploadInformationJobPayload)
 
 data ChangelogJobPayload = ChangelogJobPayload
   { packageName :: PackageName
@@ -79,7 +79,7 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
 data PackageJob
   = FetchReadme ReadmeJobPayload
   | FetchTarball TarballJobPayload
-  | FetchUploadTime UploadTimeJobPayload
+  | FetchUploadInformation UploadInformationJobPayload
   | FetchChangelog ChangelogJobPayload
   | ImportPackage ImportOutput
   | FetchPackageDeprecationList

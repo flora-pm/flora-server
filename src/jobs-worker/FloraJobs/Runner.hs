@@ -65,6 +65,7 @@ runner :: RequireCallStack => ArbS.SimpleEnv JobQueues -> JobRead PackageJob -> 
 runner env job = case job.payload of
   FetchReadme x -> makeReadme x
   FetchTarball x -> fetchTarball x
+  FetchUploadInformation x -> fetchUploadInformation x
   FetchUploadTime x -> fetchUploadInformation x
   FetchChangelog x -> fetchChangeLog x
   ImportPackage x -> persistImportOutput x
@@ -147,8 +148,8 @@ fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
         logAttention_ $ "Failed to insert tarball for " <> display package
         throw err
 
-fetchUploadInformation :: RequireCallStack => UploadTimeJobPayload -> JobsRunner ()
-fetchUploadInformation payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} =
+fetchUploadInformation :: RequireCallStack => UploadInformationJobPayload -> JobsRunner ()
+fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-upload-time" $ do
     logInfo "Fetching upload time" payload
     let requestPayload = VersionedPackage packageName packageVersion
@@ -257,13 +258,13 @@ refreshIndex env indexName = do
               releasesWithoutReadme
               (\(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version)
 
-      releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
+      hackageReleasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadInformation
       liftIO $
         void $
           forkIO $
             Async.forConcurrently_
-              releasesWithoutUploadTime
-              (\(releaseId, version, packagename) -> scheduleUploadTimeJob env releaseId packagename version)
+              hackageReleasesWithoutUploadTime
+              (\(releaseId, version, packagename) -> scheduleUploadInformationJob env releaseId packagename version)
 
       releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
       liftIO $
