@@ -559,6 +559,32 @@ executable flora-server
     text,
     vector,
 
+executable flora-jobs
+  import: common-extensions
+  import: common-ghc-options
+  import: common-rts-options
+  main-is: Main.hs
+  hs-source-dirs: app/jobs
+  build-depends:
+    arbiter-core,
+    arbiter-servant,
+    arbiter-servant-ui,
+    arbiter-simple,
+    arbiter-worker,
+    base,
+    containers,
+    effectful,
+    flora,
+    flora-jobs,
+    flora-web,
+    log-base,
+    log-effectful,
+    pg-entity,
+    pg-transact-effectful,
+    postgresql-simple,
+    text,
+    vector,
+
 executable flora-cli
   import: common-extensions
   import: common-ghc-options
