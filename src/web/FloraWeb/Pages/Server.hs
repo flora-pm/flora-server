@@ -2,13 +2,13 @@
 
 module FloraWeb.Pages.Server where
 
+import Arbiter.Servant qualified as ArbS
 import Lucid
-import OddJobs.Endpoints qualified as OddJobs
-import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import RequireCallStack
 import Servant
 
+import Flora.Model.Job
 import Flora.Model.User (User)
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes
@@ -23,12 +23,12 @@ import FloraWeb.Pages.Templates.Error (web404)
 import FloraWeb.Pages.Templates.Screens.Home qualified as Home
 import FloraWeb.Types (FloraEff)
 
-server :: RequireCallStack => OddJobs.UIConfig -> OddJobs.Env -> ServerT Routes FloraEff
-server cfg env =
+server :: RequireCallStack => ArbS.ArbiterServerConfig JobQueues -> ServerT Routes FloraEff
+server arbiterConfig =
   Routes'
     { home = homeHandler
     , about = aboutHandler
-    , admin = Admin.server cfg env
+    , admin = Admin.server arbiterConfig
     , sessions = Sessions.server
     , packages = Packages.server
     , categories = Categories.server

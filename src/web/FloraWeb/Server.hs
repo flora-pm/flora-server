@@ -1,5 +1,6 @@
 module FloraWeb.Server where
 
+import Arbiter.Servant qualified as ArbS
 import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 import Control.Exception.Backtrace
@@ -14,7 +15,6 @@ import Data.Pool qualified as Pool
 import Data.Text.Display (display)
 import Effectful
 import Effectful.Concurrent
-import Effectful.Dispatch.Static
 import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
@@ -27,8 +27,6 @@ import GHC.Eventlog.Socket qualified as Socket
 import Log (Logger)
 import Log qualified
 import Monitor.Tracing.Zipkin (Zipkin (..))
-import Network.HTTP.Client qualified as HTTP
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
   ( defaultSettings
@@ -39,9 +37,6 @@ import Network.Wai.Handler.Warp
 import Network.Wai.Log qualified as WaiLog
 import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
-import OddJobs.Endpoints qualified as OddJobs
-import OddJobs.Job (startJobRunner)
-import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
@@ -69,7 +64,7 @@ import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (DeploymentEnv (..))
+import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..))
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
@@ -78,11 +73,10 @@ import Flora.Environment.Env
   )
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
+import Flora.Model.Job
 import Flora.Monad
 import Flora.Monitoring (setGitHash)
 import Flora.Tracing qualified as Tracing
-import FloraJobs.Runner
-import FloraJobs.Types (JobsRunnerEnv (..))
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
 import FloraWeb.Common.Auth
@@ -160,31 +154,18 @@ logException env logger exception =
 
 runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> FloraM es ()
 runServer appLogger floraEnv = do
-  httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-server"
-  let runnerEnv = JobsRunnerEnv httpManager
-  let oddjobsUiCfg = makeUIConfig floraEnv.config appLogger floraEnv.jobsPool
-      oddJobsCfg =
-        makeConfig
-          runnerEnv
-          floraEnv
-          appLogger
-          floraEnv.jobsPool
-
-  void $
-    forkIO $
-      unsafeEff_ $
-        Safe.withException (startJobRunner oddJobsCfg) (logException floraEnv.environment appLogger)
+  -- void $ forkIO $ unsafeEff_ $ Safe.withException (startJobRunner oddJobsCfg) (logException floraEnv.environment appLogger)
   loggingMiddleware <- Logging.runLog floraEnv.environment appLogger WaiLog.mkLogMiddleware
   let prometheusMiddleware =
         if floraEnv.mltp.prometheusEnabled
           then WaiMetrics.prometheus WaiMetrics.def
           else id
-  oddJobsEnv <- OddJobs.mkEnv oddjobsUiCfg ("/admin/odd-jobs/" <>)
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   ioref <- liftIO $ newIORef True
-  let server = mkServer appLogger webEnvStore floraEnv oddjobsUiCfg oddJobsEnv zipkin ioref
+  arbiterConfig <- liftIO $ ArbS.initArbiterServer (Proxy @JobQueues) floraEnv.config.connectionInfo "public"
+  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv zipkin ioref
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -204,34 +185,32 @@ runServer appLogger floraEnv = do
 
 mkServer
   :: RequireCallStack
-  => Logger
+  => ArbS.ArbiterServerConfig JobQueues
+  -> Logger
   -> WebEnvStore
   -> FloraEnv
-  -> OddJobs.UIConfig
-  -> OddJobs.Env
   -> Zipkin
   -> IORef Bool
   -> Application
-mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv zipkin ioref =
+mkServer arbiterConfig logger webEnvStore floraEnv zipkin ioref =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
     (naturalTransform floraEnv logger webEnvStore zipkin)
-    (floraServer cfg jobsRunnerEnv floraEnv.environment ioref)
+    (floraServer arbiterConfig floraEnv.environment ioref)
 
 floraServer
   :: RequireCallStack
-  => OddJobs.UIConfig
-  -> OddJobs.Env
+  => ArbS.ArbiterServerConfig JobQueues
   -> DeploymentEnv
   -> IORef Bool
   -> Routes (AsServerT FloraEff)
-floraServer cfg jobsRunnerEnv environment ioref =
+floraServer arbiterConfig environment ioref =
   Routes
     { assets = serveDirectoryWebApp "./static"
     , feed = Feed.server
     , openSearch = openSearchHandler
-    , pages = \_ -> Pages.server cfg jobsRunnerEnv
+    , pages = const (Pages.server arbiterConfig)
     , api = API.apiServer
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler

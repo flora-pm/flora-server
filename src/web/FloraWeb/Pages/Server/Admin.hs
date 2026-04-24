@@ -2,6 +2,9 @@
 
 module FloraWeb.Pages.Server.Admin where
 
+import Arbiter.Servant qualified as ArbS
+import Arbiter.Servant.Server qualified as ArbS
+import Arbiter.Servant.UI qualified as ArbUI
 import Control.Concurrent (forkIO)
 import Control.Concurrent.Async qualified as Async
 import Control.Monad (void, when)
@@ -12,14 +15,13 @@ import Effectful (Eff)
 import Effectful.Reader.Static (ask)
 import Log qualified
 import Lucid
-import OddJobs.Endpoints qualified as OddJobs
-import OddJobs.Types qualified as OddJobs
 import Optics.Core
 import RequireCallStack
 import Servant (HasServer (..), Headers (..))
 
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
+import Flora.Model.Job
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User
 import Flora.Monad
@@ -38,11 +40,16 @@ import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Admin qualified as Templates
 import FloraWeb.Types (RouteEffects, fetchFloraEnv)
 
-server :: RequireCallStack => OddJobs.UIConfig -> OddJobs.Env -> SessionWithCookies User -> ServerT Routes (Eff RouteEffects)
-server cfg env session =
+server
+  :: RequireCallStack
+  => ArbS.ArbiterServerConfig JobQueues
+  -> SessionWithCookies User
+  -> ServerT Routes (Eff RouteEffects)
+server arbiterUiConfig session =
   Routes'
     { index = indexHandler session
-    , oddJobs = OddJobs.server cfg env handlerToEff
+    , arbiterApi = ArbS.arbiterServerHoisted handlerToEff arbiterUiConfig
+    , arbiterUi = ArbUI.adminUIServerHoisted handlerToEff
     , fetchMetadata = fetchMetadataHandler session
     , groups = Groups.server session
     }
@@ -58,9 +65,9 @@ indexHandler (Headers session _) = do
 
 fetchMetadataHandler :: RequireCallStack => SessionWithCookies User -> FloraM RouteEffects FetchMetadataResponse
 fetchMetadataHandler (Headers session _) = do
-  FloraEnv{jobsPool} <- liftIO $ fetchFloraEnv session.webEnvStore
+  FloraEnv{workerEnv} <- liftIO $ fetchFloraEnv session.webEnvStore
 
-  liftIO $ void $ schedulePackageDeprecationListJob jobsPool
+  liftIO $ void $ schedulePackageDeprecationListJob workerEnv
 
   releasesWithoutReadme <- Query.getHackagePackageReleasesWithoutReadme
   liftIO $
@@ -68,7 +75,7 @@ fetchMetadataHandler (Headers session _) = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutReadme
-          (\(releaseId, version, packagename) -> scheduleReadmeJob jobsPool releaseId packagename version)
+          (\(releaseId, version, packagename) -> scheduleReadmeJob workerEnv releaseId packagename version)
 
   releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
   liftIO $
@@ -76,7 +83,7 @@ fetchMetadataHandler (Headers session _) = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutUploadTime
-          (\(releaseId, version, packagename) -> scheduleUploadTimeJob jobsPool releaseId packagename version)
+          (\(releaseId, version, packagename) -> scheduleUploadTimeJob workerEnv releaseId packagename version)
 
   releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
   liftIO $
@@ -84,7 +91,7 @@ fetchMetadataHandler (Headers session _) = do
       forkIO $
         Async.forConcurrently_
           releasesWithoutChangelog
-          (\(releaseId, version, packagename) -> scheduleChangelogJob jobsPool releaseId packagename version)
+          (\(releaseId, version, packagename) -> scheduleChangelogJob workerEnv releaseId packagename version)
 
   features <- ask @FeatureEnv
   Log.logAttention "features" features
@@ -96,7 +103,7 @@ fetchMetadataHandler (Headers session _) = do
           Async.forConcurrently_
             releasesWithoutTarball
             ( \(releaseId, version, packagename) ->
-                scheduleTarballJob jobsPool releaseId packagename version
+                scheduleTarballJob workerEnv releaseId packagename version
             )
 
   packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
@@ -105,7 +112,7 @@ fetchMetadataHandler (Headers session _) = do
       forkIO $ do
         Async.forConcurrently_
           packagesWithoutDeprecationInformation
-          (\a -> scheduleReleaseDeprecationListJob jobsPool a)
-        void $ scheduleRefreshLatestVersions jobsPool
+          (\a -> scheduleReleaseDeprecationListJob workerEnv a)
+        void $ scheduleRefreshLatestVersions workerEnv
 
   pure $ redirect "/admin"

@@ -17,13 +17,18 @@ import Servant.API ()
 import Servant.Client (BaseUrl (..), Client, ClientError (..), ClientM, Scheme (..), client, mkClientEnv, runClientM, (//), (/:))
 
 import Data.Time.Orphans ()
+import Flora.Environment.Jobs
 import Flora.Model.Package.Types
 import FloraJobs.ThirdParties.Hackage.API as API
-import FloraJobs.Types (JobsRunnerEnv (..))
 
-request :: (IOE :> es, Reader JobsRunnerEnv :> es) => ClientM a -> Eff es (Either ClientError a)
+request
+  :: ( IOE :> es
+     , Reader FloraJobsEnv :> es
+     )
+  => ClientM a
+  -> Eff es (Either ClientError a)
 request req = do
-  JobsRunnerEnv{httpManager} <- ask
+  FloraJobsEnv{httpManager} <- ask
   let clientEnv =
         mkClientEnv
           httpManager

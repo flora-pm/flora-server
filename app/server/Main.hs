@@ -54,7 +54,7 @@ preFlightChecks = do
         $ do
           checkExpectedTables
           checkRepositoriesAreConfigured
-          checkIfIndexRefreshJobIsPlanned env.pool
+          checkIfIndexRefreshJobIsPlanned env.workerEnv
 
 checkExpectedTables :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
 checkExpectedTables = do
@@ -65,6 +65,7 @@ checkExpectedTables = do
           , "affected_version_ranges"
           , "blob_relations"
           , "categories"
+          , "cron_schedules"
           , "downloads"
           , "index_dependencies"
           , "oddjobs"
@@ -75,6 +76,10 @@ checkExpectedTables = do
           , "package_group_packages"
           , "package_groups"
           , "package_indexes"
+          , "package_jobs"
+          , "package_jobs_dlq"
+          , "package_jobs_groups"
+          , "package_jobs_results"
           , "package_uploaders"
           , "packages"
           , "persistent_sessions"

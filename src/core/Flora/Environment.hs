@@ -1,21 +1,28 @@
 module Flora.Environment
   ( getFloraEnv
+  , getFloraJobsEnv
   )
 where
 
+import Arbiter.Simple qualified as ArbS
 import Data.ByteString (ByteString)
 import Data.Pool (Pool)
 import Data.Pool qualified as Pool
 import Data.Pool.Introspection (defaultPoolConfig)
+import Data.Proxy
 import Data.Time (NominalDiffTime)
 import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
 import Env (parse)
+import Network.HTTP.Client qualified as HTTP
+import Network.HTTP.Client.TLS
 
 import Flora.Environment.Config
 import Flora.Environment.Env
+import Flora.Environment.Jobs
+import Flora.Model.Job
 import Flora.Monitoring
 
 mkPool
@@ -46,7 +53,7 @@ configToEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FloraConfig -> Eff e
 configToEnv floraConfig = do
   let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
-  jobsPool <- mkPool floraConfig.connectionInfo connectionTimeout connections
+  workerEnv <- ArbS.createSimpleEnv (Proxy @JobQueues) floraConfig.connectionInfo "public"
   assets <- getAssets floraConfig.environment
   featureEnv <- featureConfigToEnv floraConfig.features
   metrics <- registerMetrics
@@ -54,7 +61,7 @@ configToEnv floraConfig = do
     FloraEnv
       { pool = pool
       , dbConfig = floraConfig.dbConfig
-      , jobsPool = jobsPool
+      , workerEnv
       , httpPort = floraConfig.httpPort
       , domain = floraConfig.domain
       , mltp = floraConfig.mltp
@@ -70,3 +77,16 @@ getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
   configToEnv config
+
+getFloraJobsEnv :: IOE :> es => Eff es FloraJobsEnv
+getFloraJobsEnv = do
+  jobsConfig <- liftIO $ Env.parse id parseJobsConfig
+  httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
+  let PoolConfig{connectionTimeout, connections} = jobsConfig.dbConfig
+  pool <- mkPool jobsConfig.connectionInfo connectionTimeout connections
+  pure
+    FloraJobsEnv
+      { pool
+      , connectionInfo = jobsConfig.connectionInfo
+      , httpManager
+      }

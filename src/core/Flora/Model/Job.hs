@@ -1,25 +1,25 @@
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Flora.Model.Job where
 
 import Data.Aeson
 import Data.Aeson.TH
-import Data.Text (Text)
+import Data.Text
 import Data.Text.Display
 import Data.Vector (Vector)
 import Deriving.Aeson
 import Distribution.Pretty
-import Distribution.Version (Version, mkVersion, versionNumbers)
-import OddJobs.Job (Job, LogEvent (..))
-import OddJobs.Types (FailureMode)
-import Servant (ToHttpApiData)
+import Distribution.Types.Version (Version)
+import Distribution.Version (mkVersion, versionNumbers)
+import Web.HttpApiData
 
-import Distribution.Orphans.Version ()
-import Flora.Import.Package.Types (ImportOutput)
-import Flora.Model.Package (PackageName (..))
-import Flora.Model.Release.Types (ReleaseId (..))
+import Flora.Import.Package.Types
+import Flora.Model.Package.Types
+import Flora.Model.Release.Types
+
+type JobQueues =
+  '[ '("package_jobs", PackageJob)
+   ]
 
 newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
   deriving
@@ -76,8 +76,7 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
     (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportHackageIndexPayload)
 
--- these represent the possible odd jobs we can run.
-data FloraOddJobs
+data PackageJob
   = FetchReadme ReadmeJobPayload
   | FetchTarball TarballJobPayload
   | FetchUploadTime UploadTimeJobPayload
@@ -89,22 +88,4 @@ data FloraOddJobs
   | RefreshIndex Text
   deriving stock (Generic)
 
--- TODO: Upstream these two ToJSON instances
-
-$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''FloraOddJobs)
-$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''FailureMode)
-$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''Job)
-
-instance ToJSON LogEvent where
-  toJSON = \case
-    LogJobStart job -> toJSON ("start" :: Text, job)
-    LogJobSuccess job time -> toJSON ("success" :: Text, job, time)
-    LogJobFailed job exception failuremode finishTime ->
-      toJSON ("failed" :: Text, show exception, job, failuremode, finishTime)
-    LogJobTimeout job -> toJSON ("timed-out" :: Text, job)
-    LogPoll -> toJSON ("poll" :: Text)
-    LogWebUIRequest -> toJSON ("web-ui-request" :: Text)
-    LogKillJobSuccess job -> toJSON ("kill-success" :: Text, job)
-    LogKillJobFailed job -> toJSON ("kill-failed" :: Text, job)
-    LogDeletionPoll data_ -> toJSON ("log-deletion-poll" :: Text, data_)
-    LogText other -> toJSON ("other" :: Text, other)
+$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''PackageJob)

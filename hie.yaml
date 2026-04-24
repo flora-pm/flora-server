@@ -21,6 +21,12 @@ cradle:
     - path: "./app/cli/Main.hs"
       component: "flora:exe:flora-cli"
 
+    - path: "./app/migrate/Main.hs"
+      component: "flora:exe:flora-migrate"
+
+    - path: "./app/jobs/Main.hs"
+      component: "flora:exe:flora-jobs-runner"
+
     - path: "./app/cli/DesignSystem.hs"
       component: "flora:exe:flora-cli"
 

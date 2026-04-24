@@ -1,15 +1,9 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
-
 module FloraJobs.Types where
 
-import Commonmark qualified
-import Control.Exception (Exception)
 import Data.Function ((&))
 import Data.Pool hiding (PoolConfig)
 import Data.Set (Set)
-import Data.Text.Encoding.Error (UnicodeException)
 import Database.PostgreSQL.Simple (Connection)
-import Database.PostgreSQL.Simple.Types (QualifiedIdentifier)
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent.Async
@@ -26,22 +20,21 @@ import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
-import GHC.Generics (Generic)
-import GHC.Stack (HasCallStack, callStack, prettyCallStack)
-import Network.HTTP.Client
+import GHC.Stack (prettyCallStack)
 import RequireCallStack
 
+import Distribution.Orphans.Version ()
 import Flora.Environment.Env
+import Flora.Environment.Jobs
 import Flora.Import.Types (ImportError)
 import Flora.Model.BlobStore.API
-import Flora.Model.Job ()
-import Flora.Model.Package.Types (Namespace, PackageName)
-import Flora.Monad
+import Flora.Model.Package (PackageName (..))
+import Flora.Model.Package.Types (Namespace)
 
-type JobsRunner a =
-  FloraM
+type JobsRunner =
+  Eff
     '[ DB
-     , Reader JobsRunnerEnv
+     , Reader FloraJobsEnv
      , BlobStoreAPI
      , Log
      , Time
@@ -54,12 +47,11 @@ type JobsRunner a =
      , Error ImportError
      , IOE
      ]
-    a
 
 runJobRunner
   :: RequireCallStack
   => Pool Connection
-  -> JobsRunnerEnv
+  -> FloraJobsEnv
   -> FloraEnv
   -> Logger
   -> JobsRunner a
@@ -87,30 +79,3 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
           pure $ error $ show err
       )
     & runEff
-
-data OddJobException where
-  DecodeFailed :: HasCallStack => UnicodeException -> OddJobException
-  MarkdownFailed :: HasCallStack => Commonmark.ParseError -> OddJobException
-  deriving (Exception)
-
-instance Show OddJobException where
-  show (DecodeFailed x) = renderExceptionWithCallstack x "DecodeFailed"
-  show (MarkdownFailed x) = renderExceptionWithCallstack x "MarkdownFailed"
-
-renderExceptionWithCallstack :: (HasCallStack, Show a) => a -> String -> String
-renderExceptionWithCallstack errors valueConstructor =
-  "("
-    <> valueConstructor
-    <> " $ "
-    <> show errors
-    <> "/*"
-    <> prettyCallStack callStack
-    <> " */)"
-
-jobTableName :: QualifiedIdentifier
-jobTableName = "oddjobs"
-
-data JobsRunnerEnv = JobsRunnerEnv
-  { httpManager :: Manager
-  }
-  deriving stock (Generic)

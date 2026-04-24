@@ -7,8 +7,6 @@ import Data.Text (Text)
 import Data.Text.Lazy qualified as TL
 import Data.Typeable
 
-import FloraJobs.Types (OddJobException (..))
-
 renderMarkdown :: (Monad m, Typeable m) => String -> Text -> m Text
 renderMarkdown name bodyText = do
   let extensions =
@@ -31,5 +29,5 @@ renderMarkdown name bodyText = do
           ]
   Commonmark.commonmarkWith extensions name bodyText
     >>= \case
-      Left exception -> throw (MarkdownFailed exception)
+      Left exception -> throw exception
       Right (y :: Commonmark.Html ()) -> pure $ TL.toStrict $ Commonmark.renderHtml y

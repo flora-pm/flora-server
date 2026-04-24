@@ -62,6 +62,7 @@ common common-ghc-options
     -funbox-strict-fields
     -finline-generics-aggressively
     -fexpose-all-unfoldings
+    -fplugin=Effectful.Plugin
 
 common common-rts-options
   ghc-options:
@@ -111,6 +112,7 @@ library
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
+    Flora.Environment.Jobs
     Flora.Import.Categories
     Flora.Import.Package
     Flora.Import.Package.Bulk.Archive
@@ -184,6 +186,7 @@ library
     Cabal-syntax,
     JuicyPixels,
     aeson,
+    arbiter-simple,
     attoparsec,
     base ^>=4.20,
     base16-bytestring,
@@ -206,6 +209,8 @@ library
     heptapod ^>=1.1.0.0,
     hsec-core,
     http-api-data,
+    http-client,
+    http-client-tls,
     http-media,
     iso8601-time,
     log-base,
@@ -213,7 +218,6 @@ library
     lucid2,
     monad-time-effectful,
     network,
-    odd-jobs,
     openapi3,
     optics-core,
     osv,
@@ -251,8 +255,6 @@ library
     wai,
     zlib,
 
-  ghc-options: -fplugin=Effectful.Plugin
-
 library flora-search
   import: common-extensions
   import: common-ghc-options
@@ -263,6 +265,7 @@ library flora-search
     aeson,
     base,
     effectful-core,
+    effectful-plugin,
     flora,
     flora-advisories,
     log-base,
@@ -297,6 +300,8 @@ library flora-advisories
     cvss,
     deepseq,
     effectful,
+    effectful-core,
+    effectful-plugin,
     flora,
     hsec-core,
     hsec-tools,
@@ -402,6 +407,8 @@ library flora-web
     Cabal-syntax,
     PyF,
     aeson,
+    arbiter-servant,
+    arbiter-servant-ui,
     async,
     base ^>=4.20,
     base32,
@@ -442,7 +449,6 @@ library flora-web
     monad-time-effectful,
     mtl,
     network-uri,
-    odd-jobs,
     one-time-password ==3.0.1.0,
     openapi3,
     optics-core,
@@ -483,8 +489,6 @@ library flora-web
     warp,
     xml-conduit,
 
-  ghc-options: -fplugin=Effectful.Plugin
-
 library flora-jobs
   import: common-extensions
   import: common-ghc-options
@@ -501,24 +505,28 @@ library flora-jobs
   build-depends:
     Cabal-syntax,
     aeson,
+    arbiter-core,
+    arbiter-simple,
     async,
     base,
     bytestring,
     commonmark,
     commonmark-extensions,
     containers,
+    deriving-aeson,
     effectful,
     effectful-core,
     effectful-plugin,
+    envparse,
     filepath,
     flora,
+    http-api-data,
     http-client,
     http-media,
     http-types,
     log-base,
     log-effectful,
     monad-time-effectful,
-    odd-jobs,
     pg-entity,
     pg-transact-effectful,
     postgresql-simple,
@@ -535,8 +543,6 @@ library flora-jobs
     typed-process-effectful,
     vector,
 
-  ghc-options: -fplugin=Effectful.Plugin
-
 executable flora-server
   import: common-extensions
   import: common-ghc-options
@@ -547,6 +553,8 @@ executable flora-server
     base,
     containers,
     effectful,
+    effectful-core,
+    effectful-plugin,
     flora,
     flora-jobs,
     flora-web,
@@ -557,6 +565,62 @@ executable flora-server
     postgresql-simple,
     text,
     vector,
+
+executable flora-migrate
+  import: common-extensions
+  import: common-ghc-options
+  import: common-rts-options
+  main-is: Main.hs
+  hs-source-dirs: app/migrate
+  build-depends:
+    arbiter-migrations,
+    base,
+    effectful,
+    effectful-core,
+    effectful-plugin,
+    flora,
+    flora-jobs,
+    flora-web,
+    log-base,
+    log-effectful,
+    optparse-applicative,
+    pg-entity,
+    pg-transact-effectful,
+    postgresql-migration,
+    postgresql-simple,
+    resource-pool,
+    text,
+
+executable flora-jobs-runner
+  import: common-extensions
+  import: common-ghc-options
+  import: common-rts-options
+  main-is: Main.hs
+  hs-source-dirs: app/jobs
+  build-depends:
+    arbiter-core,
+    arbiter-servant,
+    arbiter-servant-ui,
+    arbiter-simple,
+    arbiter-worker,
+    base,
+    containers,
+    effectful,
+    effectful-core,
+    effectful-plugin,
+    flora,
+    flora-jobs,
+    flora-web,
+    log-base,
+    log-effectful,
+    pg-entity,
+    pg-transact-effectful,
+    postgresql-simple,
+    require-callstack,
+    text,
+    vector,
+    wai,
+    warp,
 
 executable flora-cli
   import: common-extensions
@@ -602,8 +666,6 @@ executable flora-cli
     vector,
     zlib,
 
-  ghc-options: -fplugin=Effectful.Plugin
-
 test-suite flora-test
   import: common-extensions
   import: common-ghc-options
@@ -611,7 +673,6 @@ test-suite flora-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
-  -- cabal-gild: discover test --exclude "test/Main.hs"
   build-depends:
     Cabal-syntax,
     aeson,
@@ -655,7 +716,7 @@ test-suite flora-test
     vector-algorithms,
     zlib,
 
-  ghc-options: -fplugin=Effectful.Plugin
+  -- cabal-gild: discover test --exclude "test/Main.hs"
   other-modules:
     Flora.AdvisorySpec
     Flora.BlobSpec
@@ -663,7 +724,6 @@ test-suite flora-test
     Flora.CategorySpec
     Flora.FeedSpec
     Flora.ImportSpec
-    Flora.OddJobSpec
     Flora.PackageGroupSpec
     Flora.PackageSpec
     Flora.SearchSpec

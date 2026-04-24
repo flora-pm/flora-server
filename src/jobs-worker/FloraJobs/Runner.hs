@@ -1,51 +1,45 @@
 module FloraJobs.Runner where
 
+import Arbiter.Core
+import Arbiter.Simple qualified as ArbS
 import Control.Concurrent (forkIO)
 import Control.Concurrent.Async qualified as Async
 import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
-import Data.Aeson (Result (..), fromJSON, toJSON)
 import Data.Function
-import Data.Pool (Pool)
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Types.Version (Version)
-import Effectful (IOE, Limit (..), Persistence (..), UnliftStrategy (..), runEff, withUnliftStrategy, type (:>))
+import Effectful (IOE, type (:>))
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log hiding (LogLevel)
-import Effectful.PostgreSQL.Transact.Effect (DB, getPool)
+import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Process.Typed
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
-import Effectful.Time qualified as Time
 import Log hiding (LogLevel)
 import Network.HTTP.Types (gone410, notFound404, statusCode)
-import OddJobs.ConfigBuilder
-import OddJobs.Job (Config (..), Job (..), LogEvent (..), LogLevel (..))
-import OddJobs.Types (ConcurrencyControl (..), UIConfig (..))
 import RequireCallStack
 import Servant.Client (ClientError (..))
 import Servant.Client.Core (ResponseF (..))
 import System.FilePath
 
 import Data.Text.HTML qualified as HTML
-import Flora.Environment.Config
 import Flora.Environment.Env
+import Flora.Environment.Jobs
 import Flora.Import.Package (persistImportOutput)
 import Flora.Import.Package.Bulk.Archive qualified as Import
 import Flora.Import.Types
-import Flora.Logging qualified as Logging
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
@@ -67,56 +61,19 @@ import FloraJobs.ThirdParties.Hackage.API
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
 
-runner :: Job -> JobsRunner ()
-runner job = localDomain "job-runner" $
-  case fromJSON (jobPayload job) of
-    Error str -> logMessage LogAttention "decode error" (toJSON str)
-    Success val -> case val of
-      FetchReadme x -> makeReadme x
-      FetchTarball x -> fetchTarball x
-      FetchUploadTime x -> fetchUploadInformation x
-      FetchChangelog x -> fetchChangeLog x
-      ImportPackage x -> persistImportOutput x
-      FetchPackageDeprecationList -> fetchPackageDeprecationList
-      FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
-      RefreshLatestVersions -> Update.refreshLatestVersions
-      RefreshIndex indexName -> refreshIndex indexName
+runner :: RequireCallStack => ArbS.SimpleEnv JobQueues -> JobRead PackageJob -> JobsRunner ()
+runner env job = case job.payload of
+  FetchReadme x -> makeReadme x
+  FetchTarball x -> fetchTarball x
+  FetchUploadTime x -> fetchUploadInformation x
+  FetchChangelog x -> fetchChangeLog x
+  ImportPackage x -> persistImportOutput x
+  FetchPackageDeprecationList -> fetchPackageDeprecationList
+  FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
+  RefreshLatestVersions -> Update.refreshLatestVersions
+  RefreshIndex indexName -> refreshIndex env indexName
 
-makeConfig
-  :: RequireCallStack
-  => JobsRunnerEnv
-  -> FloraEnv
-  -> Logger
-  -> Pool PG.Connection
-  -> Config
-makeConfig runnerEnv floraEnv logger pool =
-  mkConfig
-    (\level event -> structuredLogging floraEnv.config logger level event)
-    jobTableName
-    pool
-    (MaxConcurrentJobs 100)
-    (runJobRunner pool runnerEnv floraEnv logger . runner)
-    (\x -> x{cfgDefaultMaxAttempts = 3, cfgDefaultJobTimeout = 36000})
-
-makeUIConfig :: RequireCallStack => FloraConfig -> Logger -> Pool PG.Connection -> UIConfig
-makeUIConfig cfg logger pool =
-  mkUIConfig (structuredLogging cfg logger) jobTableName pool id
-
-structuredLogging :: RequireCallStack => FloraConfig -> Logger -> LogLevel -> LogEvent -> IO ()
-structuredLogging FloraConfig{environment} logger level event =
-  runEff
-    . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-    . Time.runTime
-    . Logging.runLog environment logger
-    $ localDomain "odd-jobs"
-    $ case level of
-      LevelDebug -> logMessage Log.LogTrace "LevelDebug" (toJSON event)
-      LevelInfo -> logMessage Log.LogInfo "LevelInfo" (toJSON event)
-      LevelWarn -> logMessage Log.LogAttention "LevelWarn" (toJSON event)
-      LevelError -> logMessage Log.LogAttention "LevelError" (toJSON event)
-      (LevelOther x) -> logMessage Log.LogAttention ("LevelOther " <> Text.pack (show x)) (toJSON event)
-
-fetchChangeLog :: ChangelogJobPayload -> JobsRunner ()
+fetchChangeLog :: RequireCallStack => ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-changelog" $ do
     Log.logInfo "Fetching CHANGELOG" payload
@@ -134,7 +91,7 @@ fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseI
         changelogBody <- renderMarkdown ("CHANGELOG" <> show packageName) bodyText
         Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
 
-makeReadme :: ReadmeJobPayload -> JobsRunner ()
+makeReadme :: RequireCallStack => ReadmeJobPayload -> JobsRunner ()
 makeReadme pay@ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
   localDomain "fetch-readme" $ do
     logInfo "Fetching README" pay
@@ -157,7 +114,7 @@ fetchTarball
      , DB :> es
      , IOE :> es
      , Log :> es
-     , Reader JobsRunnerEnv :> es
+     , Reader FloraJobsEnv :> es
      )
   => TarballJobPayload
   -> FloraM es ()
@@ -190,7 +147,7 @@ fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
         logAttention_ $ "Failed to insert tarball for " <> display package
         throw err
 
-fetchUploadInformation :: UploadTimeJobPayload -> JobsRunner ()
+fetchUploadInformation :: RequireCallStack => UploadTimeJobPayload -> JobsRunner ()
 fetchUploadInformation payload@UploadTimeJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-upload-time" $ do
     logInfo "Fetching upload time" payload
@@ -208,7 +165,7 @@ fetchUploadInformation payload@UploadTimeJobPayload{packageName, packageVersion,
         Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
 
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
-fetchPackageDeprecationList :: JobsRunner ()
+fetchPackageDeprecationList :: RequireCallStack => JobsRunner ()
 fetchPackageDeprecationList = do
   result <- Hackage.request Hackage.getDeprecatedPackages
   case result of
@@ -232,7 +189,7 @@ assignNamespace :: Vector PackageName -> PackageAlternatives
 assignNamespace =
   PackageAlternatives . Vector.map (\p -> PackageAlternative (Namespace "hackage") p)
 
-fetchReleaseDeprecationList :: PackageName -> Vector ReleaseId -> JobsRunner ()
+fetchReleaseDeprecationList :: RequireCallStack => PackageName -> Vector ReleaseId -> JobsRunner ()
 fetchReleaseDeprecationList packageName releases = do
   result <- Hackage.request $ Hackage.getDeprecatedReleasesList packageName
   case result of
@@ -276,9 +233,10 @@ refreshIndex
      , Time :> es
      , TypedProcess :> es
      )
-  => Text
+  => ArbS.SimpleEnv JobQueues
+  -> Text
   -> FloraM es ()
-refreshIndex indexName = do
+refreshIndex env indexName = do
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
   packagesPath <- getCabalPackagesDirectory
   mPackageIndex <- Query.getPackageIndexByName indexName
@@ -288,7 +246,6 @@ refreshIndex indexName = do
         object ["package_index" .= indexName]
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
     Just packageIndex -> do
-      pool <- getPool
       indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
       Import.importFromArchive indexName indexDependencies packagesPath
 
@@ -298,7 +255,7 @@ refreshIndex indexName = do
           forkIO $
             Async.forConcurrently_
               releasesWithoutReadme
-              (\(releaseId, version, packagename) -> scheduleReadmeJob pool releaseId packagename version)
+              (\(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version)
 
       releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
       liftIO $
@@ -306,7 +263,7 @@ refreshIndex indexName = do
           forkIO $
             Async.forConcurrently_
               releasesWithoutUploadTime
-              (\(releaseId, version, packagename) -> scheduleUploadTimeJob pool releaseId packagename version)
+              (\(releaseId, version, packagename) -> scheduleUploadTimeJob env releaseId packagename version)
 
       releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
       liftIO $
@@ -314,7 +271,7 @@ refreshIndex indexName = do
           forkIO $
             Async.forConcurrently_
               releasesWithoutChangelog
-              (\(releaseId, version, packagename) -> scheduleChangelogJob pool releaseId packagename version)
+              (\(releaseId, version, packagename) -> scheduleChangelogJob env releaseId packagename version)
 
       packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
       liftIO $
@@ -322,10 +279,10 @@ refreshIndex indexName = do
           forkIO $ do
             Async.forConcurrently_
               packagesWithoutDeprecationInformation
-              (\a -> scheduleReleaseDeprecationListJob pool a)
-            void $ scheduleRefreshLatestVersions pool
+              (\a -> scheduleReleaseDeprecationListJob env a)
+            void $ scheduleRefreshLatestVersions env
 
-      void $ liftIO $ scheduleRefreshIndex pool indexName
+      void $ liftIO $ scheduleRefreshIndex env indexName
 
 getCabalPackagesDirectory :: FileSystem :> es => FloraM es FilePath
 getCabalPackagesDirectory = do
