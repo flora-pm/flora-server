@@ -20,8 +20,8 @@ import Servant.API
 import Servant.API.Generic
 
 import Distribution.Orphans ()
-import Flora.Model.Job (IntAesonVersion)
 import Flora.Model.Package.Types (DeprecatedPackage' (..), PackageName)
+import FloraJobs.Types
 import Servant.API.ContentTypes.GZip
 
 type HackageAPI = NamedRoutes HackageAPI'

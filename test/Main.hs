@@ -29,7 +29,6 @@ import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
-import Flora.OddJobSpec qualified as OddJobSpec
 import Flora.PackageGroupSpec qualified as PackageGroupSpec
 import Flora.PackageSpec qualified as PackageSpec
 import Flora.SearchSpec qualified as SearchSpec
@@ -70,8 +69,7 @@ main = provideCallStack $ do
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
   defaultMain $
-    testGroup "Flora Tests" $
-      OddJobSpec.spec : spec
+    testGroup "Flora Tests" spec
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =

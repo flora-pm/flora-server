@@ -14,7 +14,6 @@ module FloraJobs.Scheduler
   , jobTableName
   --   prefer using smart constructors.
   , ReadmeJobPayload (..)
-  , FloraOddJobs (..)
   , IntAesonVersion (..)
   )
 where
@@ -37,7 +36,6 @@ import Effectful.PostgreSQL.Transact.Effect
 import Log
 import OddJobs.Job (Job (..), createJob, scheduleJob)
 
-import Flora.Model.Job
 import Flora.Model.Package
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types

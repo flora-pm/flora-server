@@ -112,6 +112,7 @@ library
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
+    Flora.Environment.Jobs
     Flora.Import.Categories
     Flora.Import.Package
     Flora.Import.Package.Bulk.Archive
@@ -136,7 +137,6 @@ library
     Flora.Model.Feed.Query
     Flora.Model.Feed.Types
     Flora.Model.Feed.Update
-    Flora.Model.Job
     Flora.Model.Organisation
     Flora.Model.Package
     Flora.Model.Package.Guard
@@ -214,7 +214,6 @@ library
     lucid2,
     monad-time-effectful,
     network,
-    odd-jobs,
     openapi3,
     optics-core,
     osv,
@@ -508,11 +507,14 @@ library flora-jobs
     commonmark,
     commonmark-extensions,
     containers,
+    deriving-aeson,
     effectful,
     effectful-core,
     effectful-plugin,
+    envparse,
     filepath,
     flora,
+    http-api-data,
     http-client,
     http-media,
     http-types,
@@ -559,7 +561,31 @@ executable flora-server
     text,
     vector,
 
-executable flora-jobs
+executable flora-migrate
+  import: common-extensions
+  import: common-ghc-options
+  import: common-rts-options
+  main-is: Main.hs
+  hs-source-dirs: app/migrate
+  build-depends:
+    arbiter-migrations,
+    base,
+    effectful,
+    flora,
+    flora-jobs,
+    flora-web,
+    log-base,
+    log-effectful,
+    optparse-applicative,
+    pg-entity,
+    pg-transact-effectful,
+    postgresql-migration,
+    postgresql-simple,
+    resource-pool,
+    text,
+  ghc-options: -fplugin=Effectful.Plugin
+
+executable flora-jobs-runner
   import: common-extensions
   import: common-ghc-options
   import: common-rts-options
@@ -638,7 +664,6 @@ test-suite flora-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
-  -- cabal-gild: discover test --exclude "test/Main.hs"
   build-depends:
     Cabal-syntax,
     aeson,
@@ -683,6 +708,7 @@ test-suite flora-test
     zlib,
 
   ghc-options: -fplugin=Effectful.Plugin
+  -- cabal-gild: discover test --exclude "test/Main.hs"
   other-modules:
     Flora.AdvisorySpec
     Flora.BlobSpec
@@ -690,7 +716,6 @@ test-suite flora-test
     Flora.CategorySpec
     Flora.FeedSpec
     Flora.ImportSpec
-    Flora.OddJobSpec
     Flora.PackageGroupSpec
     Flora.PackageSpec
     Flora.SearchSpec

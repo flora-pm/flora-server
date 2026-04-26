@@ -1,10 +1,11 @@
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
   ( FloraConfig (..)
+  , FloraJobsConfig(..)
+  , TestConfig (..)
   , MLTP (..)
   , FeatureConfig (..)
   , ConnectionInfo (..)
-  , TestConfig (..)
   , PoolConfig (..)
   , DeploymentEnv (..)
   , LoggingDestination (..)
@@ -15,6 +16,7 @@ module Flora.Environment.Config
   , parseDeploymentEnv
   , getAssets
   , getAssetHash
+  , parseJobsConfig
   )
 where
 
@@ -22,7 +24,7 @@ import Control.Monad ((>=>))
 import Data.Aeson qualified as Aeson
 import Data.Base64.Types qualified as Base64
 import Data.Bifunctor (Bifunctor (second))
-import Data.ByteString (ByteString)
+import Data.ByteString (ByteString, StrictByteString)
 import Data.ByteString.Base64 qualified as Base64
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -144,6 +146,12 @@ data TestConfig = TestConfig
   }
   deriving stock (Generic)
 
+data FloraJobsConfig = FloraJobsConfig
+  { dbConfig :: PoolConfig
+  , connectionInfo :: StrictByteString
+  }
+  deriving stock (Generic)
+
 parseConnectionInfo :: Parser Error ByteString
 parseConnectionInfo =
   var str "FLORA_DB_CONNSTRING" (help "libpq-compatible connection string")
@@ -206,6 +214,11 @@ parseTestConfig =
     <*> parseConnectionInfo
     <*> parseMLTP
 
+parseJobsConfig :: Parser Error FloraJobsConfig
+parseJobsConfig =
+  FloraJobsConfig
+    <$> parsePoolConfig
+    <*>  parseConnectionInfo
 -- Env parser helpers
 
 int :: Reader Error Int

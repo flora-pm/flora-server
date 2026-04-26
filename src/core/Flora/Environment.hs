@@ -1,5 +1,6 @@
 module Flora.Environment
   ( getFloraEnv
+  , getFloraJobsEnv
   )
 where
 
@@ -16,6 +17,7 @@ import Env (parse)
 
 import Flora.Environment.Config
 import Flora.Environment.Env
+import Flora.Environment.Jobs
 import Flora.Monitoring
 
 mkPool
@@ -70,3 +72,10 @@ getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
   configToEnv config
+
+getFloraJobsEnv :: IOE :> es => Eff es FloraJobsEnv
+getFloraJobsEnv = do
+  jobsConfig <- liftIO $ Env.parse id parseJobsConfig
+  let PoolConfig{connectionTimeout, connections} = jobsConfig.dbConfig
+  pool <- mkPool jobsConfig.connectionInfo connectionTimeout connections
+  pure FloraJobsEnv{pool, connectionString = jobsConfig.connectionInfo}
