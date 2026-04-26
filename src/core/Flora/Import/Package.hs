@@ -397,7 +397,7 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
-  let buildType = Cabal.buildType genericDesc.packageDescription
+  let packageBuildType = Cabal.buildType genericDesc.packageDescription
   let packageVersion = force packageDesc.package.pkgVersion
   case chooseNamespace packageName indexPackages of
     Nothing -> do
@@ -455,7 +455,7 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
               , testedWith = getVersions . extractTestedWith . Vector.fromList $ packageDesc.testedWith
               , deprecated = Nothing
               , revisedAt = Nothing
-              , buildType = buildType
+              , buildType = packageBuildType
               , uploaderId = Nothing
               }
 

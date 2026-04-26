@@ -100,4 +100,16 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/ocharles/servant-prometheus
-  tag: 0b1c705bbbf640ac7571e5b7c0a710075a7a0e88
+  tag: 2082694e49627a2deac8be08da0e875695985a25
+
+source-repository-package
+  type: git
+  location: https://github.com/velveteer/arbiter.git
+  tag: 08a78b8abc4de2204131d499fb7c170d83dd8135
+  subdir:
+    arbiter-core
+    arbiter-worker
+    arbiter-simple
+    arbiter-migrations
+    arbiter-servant
+    arbiter-servant-ui

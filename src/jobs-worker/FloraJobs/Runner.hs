@@ -48,7 +48,6 @@ import Flora.Import.Types
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
-import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Query qualified as Query
