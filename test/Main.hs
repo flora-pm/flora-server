@@ -89,7 +89,6 @@ specs fixtures =
 cleanUp :: DB :> es => Eff es ()
 cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM blob_relations" ()
-  void $ execute "DELETE FROM oddjobs" ()
   void $ execute "DELETE FROM package_categories" ()
   void $ execute "DELETE FROM categories" ()
   void $ execute "DELETE FROM persistent_sessions" ()
@@ -109,3 +108,7 @@ cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM user_organisation" ()
   void $ execute "DELETE FROM package_uploaders" ()
   void $ execute "DELETE FROM users" ()
+  void $ execute "DELETE FROM package_jobs" ()
+  void $ execute "DELETE FROM package_jobs_dlq" ()
+  void $ execute "DELETE FROM package_jobs_groups" ()
+  void $ execute "DELETE FROM package_jobs_results" ()

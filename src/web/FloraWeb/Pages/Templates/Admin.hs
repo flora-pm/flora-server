@@ -45,9 +45,9 @@ dataReport adminReport = do
       div_ [class_ "admin-card"] $ do
         dt_
           [class_ ""]
-          "Jobs Console"
+          "Arbiter"
         dd_ [class_ ""] $
-          button_ [class_ "on-readmes"] "odd jobs ui"
+          button_ [class_ "on-readmes"] "Jobs Console"
 
     a_ [href_ "/admin/groups"] $
       div_ [class_ "admin-card"] $

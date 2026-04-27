@@ -92,7 +92,7 @@ jobs:
       run: |
         set -x
         source ./environment.ci.sh
-        make db-test-setup
+        make db--setup
         cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         make test
       env:

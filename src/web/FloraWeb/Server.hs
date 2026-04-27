@@ -150,7 +150,7 @@ logException env logger exception =
   runEff
     . runTime
     . Logging.runLog env logger
-    $ Log.logAttention "odd-jobs runner crashed " (show exception)
+    $ Log.logAttention "Jobs runner crashed " (show exception)
 
 runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> FloraM es ()
 runServer appLogger floraEnv = do

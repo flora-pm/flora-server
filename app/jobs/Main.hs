@@ -1,17 +1,13 @@
 module Main where
 
 import Arbiter.Core qualified as Arb
-import Arbiter.Servant qualified as Servant
-import Arbiter.Servant.UI qualified as ArbUI
 import Arbiter.Simple qualified as ArbS
 import Arbiter.Worker qualified as Worker
 import Data.Proxy
 import Effectful
-import Effectful.Concurrent
 import Effectful.Fail
 import Effectful.FileSystem
 import Log qualified
-import Network.Wai.Handler.Warp
 import RequireCallStack
 
 import Flora.Environment
