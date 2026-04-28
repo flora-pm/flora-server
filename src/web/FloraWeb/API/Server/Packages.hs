@@ -1,5 +1,6 @@
 module FloraWeb.API.Server.Packages where
 
+import Control.Applicative (asum)
 import Data.Function
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
@@ -59,19 +60,27 @@ getDependenciesHandler namespace packageName version transitive = do
       versionNotFound
         package.namespace
         package.name
-  mComponent <- Query.getComponent release.releaseId (display packageName) Library
-  case mComponent of
-    Nothing -> error "lol"
+
+  mMainLibrary <- Query.getComponent release.releaseId (display packageName) Library
+  mMainExecutable <- Query.getComponent release.releaseId (display packageName) Executable
+
+  let componentToUse =
+        asum
+          [ mMainLibrary
+          , mMainExecutable
+          ]
+
+  dependencies <- case componentToUse of
+    Nothing -> pure mempty
     Just component ->
       if transitive
         then do
-          transitiveDependencies <- Query.getTransitiveDependencies component.componentId
-          let packageDependencies = transitiveDependencies
-          pure $ PackageDependenciesDTO packageDependencies
+          Query.getTransitiveDependencies component.componentId
         else do
           requirements <- Query.getRequirements package.name release.releaseId
-          let dependencies = Vector.singleton $ PackageDependencies package.namespace package.name requirements
-          pure $ PackageDependenciesDTO dependencies
+          pure $ Vector.singleton $ PackageDependencies package.namespace package.name requirements
+
+  pure $ PackageDependenciesDTO dependencies
 
 getPackageHandler
   :: ( DB :> es
@@ -127,7 +136,6 @@ getVersionedPackageHandler
   -> Version
   -> (FloraM es) (PackageDTO 0)
 getVersionedPackageHandler namespace packageName version = do
-  liftIO $ print @String "LOOOOOOOOOOOOOOOOOOOOOL"
   package <- guardThatPackageExists namespace packageName packageNotFound
   release <-
     guardThatReleaseExists package.packageId version $
