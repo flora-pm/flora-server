@@ -54,7 +54,6 @@ common common-ghc-options
     -Wno-unused-do-bind
     -fshow-hole-constraints
     -Wno-unticked-promoted-constructors
-    -Werror=unused-imports
     -fdicts-strict
     -fmax-worker-args=16
     -fspec-constr-recursive=16
