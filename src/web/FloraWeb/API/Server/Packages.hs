@@ -8,7 +8,7 @@ import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Version (Version)
-import Effectful (IOE, liftIO, (:>))
+import Effectful (IOE, (:>))
 import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect (DB)
