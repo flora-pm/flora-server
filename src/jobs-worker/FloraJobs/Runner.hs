@@ -16,7 +16,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Types.Version (Version)
-import Effectful (IOE, Limit (..), Persistence (..), UnliftStrategy (..), runEff, withUnliftStrategy, type (:>))
+import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
 import Effectful.FileSystem (FileSystem)
@@ -60,10 +60,6 @@ import Flora.Monad
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
 import FloraJobs.ThirdParties.Hackage.API
-  ( HackagePackageInfo (..)
-  , HackagePreferredVersions (..)
-  , VersionedPackage (..)
-  )
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
 
@@ -81,6 +77,7 @@ runner job = localDomain "job-runner" $
       FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
       RefreshLatestVersions -> Update.refreshLatestVersions
       RefreshIndex indexName -> refreshIndex indexName
+      ComputeIncompatibleReleasesWith namespace packageName -> computeIncompatibleReleasesWith namespace packageName
 
 makeConfig
   :: RequireCallStack
@@ -326,6 +323,7 @@ refreshIndex indexName = do
             void $ scheduleRefreshLatestVersions pool
 
       void $ liftIO $ scheduleRefreshIndex pool indexName
+      void $ liftIO $ scheduleIncompatibleReleaseJob pool (Namespae "hackage") (PackageName "base")
 
 getCabalPackagesDirectory :: FileSystem :> es => FloraM es FilePath
 getCabalPackagesDirectory = do
@@ -337,3 +335,31 @@ getCabalPackagesDirectory = do
       homeDir <- FileSystem.getHomeDirectory
       let legacyPackagesDirectory = homeDir </> ".cabal/packages"
       pure legacyPackagesDirectory
+
+computeIncompatibleReleasesWith
+  :: ( Concurrent :> es
+     , DB :> es
+     , Error ImportError :> es
+     , FileSystem :> es
+     , IOE :> es
+     , Log :> es
+     , Metrics AppMetrics :> es
+     , Reader FloraEnv :> es
+     , Time :> es
+     )
+  => Namespace
+  -> PackageName
+  -> FloraM es ()
+computeIncompatibleReleasesWith namespace packageName = do
+  package <- guardThatPackageExists namespace packageName
+  latestRelease <- Query.getLatestPackageRelease package.packageId
+  dependents <- Query.getDependentsOfPackage package.packageId
+  forM_ dependents $ \(packageId, dependentVersion, dependentRequirement) -> do
+    if latestRelease.version `withinRange` dependentRequirement
+      then pure ()
+      else do
+        Log.logInfo "Incompatible release" $
+          object
+            [ "incompatible_dependent" .= display package.namespace <> "/" <> display package.packageName
+            , "package" .= display namespace <> "/" <> display packageName
+            ]
