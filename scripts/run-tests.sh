@@ -6,7 +6,7 @@ set -eao pipefail
 
 if [ -z "$1" ] ;
 then
-  cabal test
+  cabal test --ghc-options="-Werror=unused-imports"
 else
   ghcid --command='cabal v2-repl flora-test' --test 'Main.main'
 fi
