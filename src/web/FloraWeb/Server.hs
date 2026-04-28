@@ -69,13 +69,8 @@ import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (DeploymentEnv (..))
+import Flora.Environment.Config
 import Flora.Environment.Env
-  ( BlobStoreImpl (..)
-  , FeatureEnv (..)
-  , FloraEnv (..)
-  , MLTP (..)
-  )
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Monad
@@ -217,25 +212,25 @@ mkServer logger webEnvStore floraEnv cfg jobsRunnerEnv zipkin ioref =
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
     (naturalTransform floraEnv logger webEnvStore zipkin)
-    (floraServer cfg jobsRunnerEnv floraEnv.environment ioref)
+    (floraServer cfg jobsRunnerEnv floraEnv ioref)
 
 floraServer
   :: RequireCallStack
   => OddJobs.UIConfig
   -> OddJobs.Env
-  -> DeploymentEnv
+  -> FloraEnv
   -> IORef Bool
   -> Routes (AsServerT FloraEff)
-floraServer cfg jobsRunnerEnv environment ioref =
+floraServer cfg jobsRunnerEnv floraEnv ioref =
   Routes
-    { assets = serveDirectoryWebApp "./static"
+    { assets = serveDirectoryWebApp floraEnv.assets.assetsDir
     , feed = Feed.server
     , openSearch = openSearchHandler
     , pages = \_ -> Pages.server cfg jobsRunnerEnv
     , api = API.apiServer
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
-    , livereload = LiveReload.livereloadHandler environment ioref
+    , livereload = LiveReload.livereloadHandler floraEnv.environment ioref
     }
 
 naturalTransform
