@@ -68,7 +68,6 @@ checkExpectedTables = do
           , "cron_schedules"
           , "downloads"
           , "index_dependencies"
-          , "oddjobs"
           , "organisations"
           , "package_categories"
           , "package_components"
