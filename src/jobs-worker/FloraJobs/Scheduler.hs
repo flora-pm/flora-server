@@ -101,7 +101,7 @@ scheduleRefreshIndex env indexName = ArbS.runSimpleDb env $ do
   now <- liftIO Time.getCurrentTime
   let scheduledTime = Time.addUTCTime Time.nominalDay now
   let arbJob = Arb.defaultJob $ RefreshIndex indexName
-  Arb.insertJob arbJob{Arb.notVisibleUntil = Just scheduledTime}
+  Arb.insertJob arbJob{Arb.notVisibleUntil = Just scheduledTime, Arb.dedupKey = Just (Arb.IgnoreDuplicate ("index-refresh-" <> indexName))}
 
 createJobWithResource
   :: MonadUnliftIO m
@@ -122,17 +122,6 @@ checkIfIndexRefreshJobIsPlanned
 checkIfIndexRefreshJobIsPlanned env = do
   Log.logInfo_ "Checking if the index refresh job is planned…"
   indexes <- Query.listPackageIndexes
-  (result' :: Vector (Only Text)) <-
-    dbtToEff $
-      query_
-        [sql|
-                select payload ->> 'contents'
-                from "oddjobs"
-                where payload ->> 'tag' = 'RefreshIndex'
-                and status = 'queued'
-        |]
-  let result = fmap fromOnly result'
-  forM_ indexes $ \index ->
-    when (Vector.notElem index.repository result) $ do
-      Log.logInfo "Scheduling index refresh" $ object ["index" .= index.repository]
-      void $ liftIO $ scheduleRefreshIndex env index.repository
+  forM_ indexes $ \index -> do
+    Log.logInfo "Scheduling index refresh" $ object ["index" .= index.repository]
+    void $ liftIO $ scheduleRefreshIndex env index.repository
