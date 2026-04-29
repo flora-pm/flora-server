@@ -28,7 +28,7 @@ jobs:
             -i inventory.yaml \
             --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }} \
             -e "ansible_port=${{ secrets.ANSIBLE_SSH_PORT }}" \
-            playbooks/deploy-dev.yaml \
+            playbooks/deploy-dev-server.yaml \
             --diff
 
   jobs-runner:
@@ -41,7 +41,7 @@ jobs:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.10.0
         with:
-          ssh-private-key: ${{ secrets.SSH_JOBS_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.ANSIBLE_JOBS_SSH_PRIVATE_KEY }}
 
       - name: Invoke Ansible
         working-directory: deployment/
@@ -50,5 +50,5 @@ jobs:
             -i inventory.yaml \
             --extra-vars ansible_user=${{ secrets.ANSIBLE_JOBS_USER }} \
             -e "ansible_port=${{ secrets.ANSIBLE_JOBS_SSH_PORT }}" \
-            playbooks/deploy-dev.yaml \
+            playbooks/deploy-dev-job-runner.yaml \
             --diff
