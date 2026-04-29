@@ -1,0 +1,6 @@
+---
+
+- import_tasks: update-jobs-worker.yaml
+  tags:
+    - deployment
+    - dev
