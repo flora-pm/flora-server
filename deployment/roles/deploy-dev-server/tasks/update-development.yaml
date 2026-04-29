@@ -37,7 +37,6 @@
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
 
-
 - name: "Schema migrations"
   register: build
   ansible.builtin.command:
