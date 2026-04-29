@@ -41,13 +41,13 @@ dataReport adminReport = do
         form_ [action_ "/admin/metadata", method_ "POST"] $ do
           button_ [class_ ""] "Fetch Hackage releases metadata"
 
-    a_ [href_ "/admin/odd-jobs"] $
+    a_ [href_ "/admin/arbiter"] $
       div_ [class_ "admin-card"] $ do
         dt_
           [class_ ""]
-          "Odd jobs ui"
+          "Arbiter"
         dd_ [class_ ""] $
-          button_ [class_ "on-readmes"] "odd jobs ui"
+          button_ [class_ "on-readmes"] "Jobs Console"
 
     a_ [href_ "/admin/groups"] $
       div_ [class_ "admin-card"] $

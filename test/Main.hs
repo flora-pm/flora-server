@@ -29,7 +29,6 @@ import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
-import Flora.OddJobSpec qualified as OddJobSpec
 import Flora.PackageGroupSpec qualified as PackageGroupSpec
 import Flora.PackageSpec qualified as PackageSpec
 import Flora.SearchSpec qualified as SearchSpec
@@ -70,8 +69,7 @@ main = provideCallStack $ do
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
   defaultMain $
-    testGroup "Flora Tests" $
-      OddJobSpec.spec : spec
+    testGroup "Flora Tests" spec
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =
@@ -91,7 +89,6 @@ specs fixtures =
 cleanUp :: DB :> es => Eff es ()
 cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM blob_relations" ()
-  void $ execute "DELETE FROM oddjobs" ()
   void $ execute "DELETE FROM package_categories" ()
   void $ execute "DELETE FROM categories" ()
   void $ execute "DELETE FROM persistent_sessions" ()
@@ -111,3 +108,7 @@ cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM user_organisation" ()
   void $ execute "DELETE FROM package_uploaders" ()
   void $ execute "DELETE FROM users" ()
+  void $ execute "DELETE FROM package_jobs" ()
+  void $ execute "DELETE FROM package_jobs_dlq" ()
+  void $ execute "DELETE FROM package_jobs_groups" ()
+  void $ execute "DELETE FROM package_jobs_results" ()

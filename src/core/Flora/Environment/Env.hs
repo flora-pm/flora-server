@@ -8,6 +8,7 @@ module Flora.Environment.Env
   )
 where
 
+import Arbiter.Simple qualified as ArbS
 import Data.Aeson
 import Data.Pool (Pool)
 import Data.Text (Text)
@@ -17,12 +18,13 @@ import GHC.Generics
 import Prometheus qualified as P
 
 import Flora.Environment.Config
+import Flora.Model.Job
 
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
   { pool :: Pool PG.Connection
   , dbConfig :: PoolConfig
-  , jobsPool :: Pool PG.Connection
+  , workerEnv :: ArbS.SimpleEnv JobQueues
   , httpPort :: Word16
   , domain :: Text
   , mltp :: MLTP

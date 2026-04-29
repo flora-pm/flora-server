@@ -2,7 +2,7 @@ init: ## Set up git hooks properly - needs calling once when cloning the repo
 	@git config core.hooksPath .githooks
 
 start: ## Start flora-server
-	@cabal run exe:flora-server
+	@cabal run -- exe:flora-server
 
 build: ## Build the server
 	@cabal build
@@ -38,7 +38,7 @@ db-stop:
 	@pg_ctl stop -D .postgres -l ./postgres.log
 	@rm -rf .postgres
 
-db-setup: db-create db-init db-migrate ## Setup the dev database
+db-setup: db-create db-migrate ## Setup the dev database
 
 db-create: ## Create the database
 	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
@@ -46,11 +46,8 @@ db-create: ## Create the database
 db-drop: ## Drop the database
 	@dropdb -f --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
-db-init: ## Create the database schema
-	@migrate init "$(FLORA_DB_CONNSTRING)"
-
 db-migrate: ## Apply database migrations
-	@migrate migrate "$(FLORA_DB_CONNSTRING)" migrations
+	@cabal run -- flora-migrate
 
 db-reset: db-drop db-setup db-provision ## Reset the dev database
 
@@ -93,13 +90,10 @@ db-provision-packages: ## Load development data in the dev database
 db-test-create: ## Create the test database
 	./scripts/run-with-test-config.sh db-create
 
-db-test-setup: db-test-create db-test-init db-test-migrate ## Setup the dev database
+db-test-setup: db-test-create db-test-migrate ## Setup the dev database
 
 db-test-drop: ## Drop the test database
 	./scripts/run-with-test-config.sh db-drop
-
-db-test-init: ## Create the test database schema
-	./scripts/run-with-test-config.sh db-init
 
 db-test-migrate: ## Apply test database migrations
 	./scripts/run-with-test-config.sh db-migrate
@@ -158,7 +152,7 @@ docker-build: ## Build and start the container cluster
 	@docker compose build devel
 
 docker-up: ## Start the container cluster
-	@docker compose up -d --build
+	@docker compose up -d
 
 docker-stop: ## Stop the container cluster without removing the containers
 	@docker compose stop

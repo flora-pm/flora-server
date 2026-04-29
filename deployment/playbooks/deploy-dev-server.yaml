@@ -1,4 +1,4 @@
 ---
 - hosts: dev
   roles:
-      - deploy-dev
+      - deploy-dev-server

@@ -11,23 +11,20 @@ module FloraJobs.Scheduler
   , scheduleRefreshLatestVersions
   , scheduleRefreshIndex
   , checkIfIndexRefreshJobIsPlanned
-  , jobTableName
   --   prefer using smart constructors.
   , ReadmeJobPayload (..)
-  , FloraOddJobs (..)
   , IntAesonVersion (..)
   )
 where
 
+import Arbiter.Core qualified as Arb
+import Arbiter.Simple qualified as ArbS
 import Control.Monad
-import Data.Aeson (ToJSON)
-import Data.Pool
 import Data.Text (Text)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Simple.Types
 import Distribution.Types.Version
@@ -35,69 +32,94 @@ import Effectful
 import Effectful.Log (Log)
 import Effectful.PostgreSQL.Transact.Effect
 import Log
-import OddJobs.Job (Job (..), createJob, scheduleJob)
 
 import Flora.Model.Job
 import Flora.Model.Package
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.Release.Types
-import FloraJobs.Types
 
-scheduleReadmeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
-scheduleReadmeJob pool rid package version =
-  withResource
-    pool
-    ( \res ->
-        createJob
-          res
-          jobTableName
-          (FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version)
-    )
+scheduleReadmeJob
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> ReleaseId
+  -> PackageName
+  -> Version
+  -> m (Maybe (Arb.JobRead PackageJob))
+scheduleReadmeJob env rid package version =
+  createJobWithResource env (FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version)
 
-scheduleTarballJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
-scheduleTarballJob pool rid package version =
-  createJobWithResource pool $ FetchTarball $ TarballJobPayload package rid $ MkIntAesonVersion version
+scheduleTarballJob
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> ReleaseId
+  -> PackageName
+  -> Version
+  -> m (Maybe (Arb.JobRead PackageJob))
+scheduleTarballJob env rid package version =
+  createJobWithResource env $ FetchTarball $ TarballJobPayload package rid $ MkIntAesonVersion version
 
-scheduleChangelogJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
-scheduleChangelogJob pool rid package version =
-  createJobWithResource pool $ FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version
+scheduleChangelogJob
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> ReleaseId
+  -> PackageName
+  -> Version
+  -> m (Maybe (Arb.JobRead PackageJob))
+scheduleChangelogJob env rid package version =
+  createJobWithResource env $ FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version
 
-scheduleUploadTimeJob :: Pool PG.Connection -> ReleaseId -> PackageName -> Version -> IO Job
-scheduleUploadTimeJob pool releaseId packageName version =
-  createJobWithResource pool $
+scheduleUploadTimeJob
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> ReleaseId
+  -> PackageName
+  -> Version
+  -> m (Maybe (Arb.JobRead PackageJob))
+scheduleUploadTimeJob env releaseId packageName version =
+  createJobWithResource env $
     FetchUploadTime $
       UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version)
 
-schedulePackageDeprecationListJob :: Pool PG.Connection -> IO Job
-schedulePackageDeprecationListJob pool =
-  createJobWithResource pool FetchPackageDeprecationList
+schedulePackageDeprecationListJob
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> m (Maybe (Arb.JobRead PackageJob))
+schedulePackageDeprecationListJob env =
+  createJobWithResource env FetchPackageDeprecationList
 
 scheduleReleaseDeprecationListJob
-  :: Pool PG.Connection -> (PackageName, Vector ReleaseId) -> IO Job
-scheduleReleaseDeprecationListJob pool (package, releaseIds) =
-  createJobWithResource pool (FetchReleaseDeprecationList package releaseIds)
+  :: MonadUnliftIO m => ArbS.SimpleEnv JobQueues -> (PackageName, Vector ReleaseId) -> m (Maybe (Arb.JobRead PackageJob))
+scheduleReleaseDeprecationListJob env (package, releaseIds) =
+  createJobWithResource env (FetchReleaseDeprecationList package releaseIds)
 
-scheduleRefreshLatestVersions :: Pool PG.Connection -> IO Job
-scheduleRefreshLatestVersions pool = createJobWithResource pool RefreshLatestVersions
+scheduleRefreshLatestVersions :: MonadUnliftIO m => ArbS.SimpleEnv JobQueues -> m (Maybe (Arb.JobRead PackageJob))
+scheduleRefreshLatestVersions env = createJobWithResource env RefreshLatestVersions
 
-scheduleRefreshIndex :: Pool PG.Connection -> Text -> IO Job
-scheduleRefreshIndex pool indexName = withResource pool $ \conn -> do
-  now <- Time.getCurrentTime
-  scheduleJob conn jobTableName (RefreshIndex indexName) (Time.addUTCTime Time.nominalDay now)
+scheduleRefreshIndex :: ArbS.SimpleEnv JobQueues -> Text -> IO (Maybe (Arb.JobRead PackageJob))
+scheduleRefreshIndex env indexName = ArbS.runSimpleDb env $ do
+  now <- liftIO Time.getCurrentTime
+  let scheduledTime = Time.addUTCTime Time.nominalDay now
+  let arbJob = Arb.defaultJob $ RefreshIndex indexName
+  Arb.insertJob arbJob{Arb.notVisibleUntil = Just scheduledTime}
 
-createJobWithResource :: ToJSON p => Pool PG.Connection -> p -> IO Job
-createJobWithResource pool job =
-  withResource pool $ \conn -> createJob conn jobTableName job
+createJobWithResource
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> PackageJob
+  -> m (Maybe (Arb.JobRead PackageJob))
+createJobWithResource env job =
+  ArbS.runSimpleDb env $
+    Arb.insertJob (Arb.defaultJob job)
 
 checkIfIndexRefreshJobIsPlanned
   :: ( DB :> es
      , IOE :> es
      , Log :> es
      )
-  => Pool PG.Connection
+  => ArbS.SimpleEnv JobQueues
   -> Eff es ()
-checkIfIndexRefreshJobIsPlanned pool = do
+checkIfIndexRefreshJobIsPlanned env = do
   Log.logInfo_ "Checking if the index refresh job is planned…"
   indexes <- Query.listPackageIndexes
   (result' :: Vector (Only Text)) <-
@@ -113,4 +135,4 @@ checkIfIndexRefreshJobIsPlanned pool = do
   forM_ indexes $ \index ->
     when (Vector.notElem index.repository result) $ do
       Log.logInfo "Scheduling index refresh" $ object ["index" .= index.repository]
-      void $ liftIO $ scheduleRefreshIndex pool index.repository
+      void $ liftIO $ scheduleRefreshIndex env index.repository

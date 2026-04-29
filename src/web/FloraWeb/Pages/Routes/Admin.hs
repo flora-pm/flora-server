@@ -1,12 +1,14 @@
 module FloraWeb.Pages.Routes.Admin where
 
+import Arbiter.Servant qualified as Arb
+import Arbiter.Servant.UI qualified as ArbUI
 import Data.Text (Text)
 import Lucid
-import OddJobs.Endpoints qualified as OddJobs
 import Servant
 import Servant.API.ContentTypes.Lucid
 import Servant.API.Generic
 
+import Flora.Model.Job
 import Flora.Model.User
 import FloraWeb.Pages.Routes.Admin.Groups qualified as Groups
 
@@ -22,7 +24,8 @@ type FetchMetadataResponse =
 data Routes' mode = Routes'
   { index :: mode :- Get '[HTML] (Html ())
   , fetchMetadata :: mode :- FetchMetadata
-  , oddJobs :: mode :- "odd-jobs" :> OddJobs.FinalAPI -- they compose :o
+  , arbiterApi :: mode :- "arbiter" :> Arb.ArbiterAPI JobQueues
+  , arbiterUi :: mode :- "arbiter" :> ArbUI.AdminUI
   , groups :: mode :- "groups" :> Groups.Routes
   }
   deriving stock (Generic)
