@@ -89,4 +89,5 @@ getFloraJobsEnv = do
       { pool
       , connectionInfo = jobsConfig.connectionInfo
       , httpManager
+      , httpPort = jobsConfig.httpPort
       }

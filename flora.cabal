@@ -599,6 +599,8 @@ executable flora-jobs-runner
   hs-source-dirs: app/jobs
   build-depends:
     arbiter-core,
+    wai-middleware-prometheus,
+    prometheus-effectful,
     arbiter-servant,
     arbiter-servant-ui,
     arbiter-simple,
@@ -616,8 +618,11 @@ executable flora-jobs-runner
     pg-entity,
     pg-transact-effectful,
     postgresql-simple,
+    prometheus-client,
+    prometheus-metrics-ghc,
     require-callstack,
     text,
+    text-display,
     vector,
     wai,
     warp,

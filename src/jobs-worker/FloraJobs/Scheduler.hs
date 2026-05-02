@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes #-}
+
 
 -- | Represents the various jobs that can be run
 module FloraJobs.Scheduler
@@ -23,10 +23,6 @@ import Control.Monad
 import Data.Text (Text)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
-import Data.Vector qualified as Vector
-import Database.PostgreSQL.Entity.DBT
-import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Database.PostgreSQL.Simple.Types
 import Distribution.Types.Version
 import Effectful
 import Effectful.Log (Log)
