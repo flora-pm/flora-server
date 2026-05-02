@@ -10,9 +10,11 @@ services:
         - GID=${GID:-1000}
     ports:
       - "8084:8084"
+      - "8085:8085"
     volumes:
       - database-data:/flora-server/pgdata/
       - .:/flora-server:Z
+      - home-data:/home/$USER/
     links:
       - flora-database
     command: sleep infinity
@@ -49,3 +51,4 @@ services:
       - 9090:9090
 volumes:
   database-data:
+  home-data:
