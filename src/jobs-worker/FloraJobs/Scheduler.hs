@@ -1,5 +1,3 @@
-
-
 -- | Represents the various jobs that can be run
 module FloraJobs.Scheduler
   ( scheduleReadmeJob

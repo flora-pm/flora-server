@@ -3,26 +3,25 @@ module Main where
 import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Arbiter.Worker qualified as Worker
-import Data.Proxy
-import Data.Text.IO qualified as T
 import Control.Monad
-import FloraWeb.Common.Tracing
-import Effectful.Prometheus (runPrometheusMetrics)
+import Data.Proxy
 import Data.Text.Display
+import Data.Text.IO qualified as T
 import Effectful
 import Effectful.Fail
 import Effectful.FileSystem
-import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
+import Effectful.Prometheus (runPrometheusMetrics)
 import Log qualified
-import Prometheus qualified as P
-import Prometheus.Metric.GHC qualified as P
-import RequireCallStack
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
   , setOnException
   , setPort
   )
+import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
+import Prometheus qualified as P
+import Prometheus.Metric.GHC qualified as P
+import RequireCallStack
 
 import Flora.Environment
 import Flora.Environment.Env
@@ -31,6 +30,7 @@ import Flora.Logging qualified as Logging
 import Flora.Model.Job
 import FloraJobs.Runner qualified as Runner
 import FloraJobs.Types
+import FloraWeb.Common.Tracing
 
 main :: IO ()
 main = do
@@ -48,7 +48,6 @@ main = do
       config <- liftIO $ Worker.defaultWorkerConfig jobsEnv.connectionInfo 50 (processJob workerEnv jobsEnv logger floraEnv)
       liftIO $ ArbS.runSimpleDb workerEnv $ Worker.runWorkerPool config
 
-
 runServer
   :: IOE :> es
   => Log.Logger
@@ -65,8 +64,8 @@ runServer logger floraEnv jobsEnv = do
                 floraEnv.mltp
             )
             defaultSettings
-  liftIO
-    $ runSettings warpSettings WaiMetrics.metricsApp
+  liftIO $
+    runSettings warpSettings WaiMetrics.metricsApp
 
 processJob
   :: ArbS.SimpleEnv JobQueues
