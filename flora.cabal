@@ -634,6 +634,7 @@ executable flora-jobs-runner
     require-callstack,
     text,
     text-display,
+    time,
     vector,
     wai,
     wai-middleware-prometheus,

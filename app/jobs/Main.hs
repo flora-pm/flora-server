@@ -7,12 +7,12 @@ import Control.Monad
 import Data.Proxy
 import Data.Text.Display
 import Data.Text.IO qualified as T
+import Data.Time
 import Effectful
 import Effectful.Concurrent (forkIO, runConcurrent)
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Prometheus (runPrometheusMetrics)
-import Log qualified
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
@@ -22,6 +22,8 @@ import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
+import Effectful.Log qualified as Log
+import Log
 import RequireCallStack
 
 import Flora.Environment
@@ -49,7 +51,23 @@ main = do
         setGitHash
     withLogger $ \logger -> do
       void . forkIO $ runServer logger floraEnv jobsEnv
-      config <- liftIO $ Worker.defaultWorkerConfig jobsEnv.connectionInfo 50 (processJob workerEnv jobsEnv logger floraEnv)
+      defaultConfig <- liftIO $ Worker.defaultWorkerConfig jobsEnv.connectionInfo 50 (processJob workerEnv jobsEnv logger floraEnv)
+      let config =
+            defaultConfig
+              { Worker.observabilityHooks =
+                  Arb.defaultObservabilityHooks
+                    { Arb.onJobFailure = \job message startTime endTime ->
+                        liftIO $
+                          runEff $
+                            Log.runLog "flora-jobs" logger defaultLogLevel $
+                              Log.logAttention message $
+                                object
+                                  [ "duration" .= diffUTCTime endTime startTime
+                                  , "payload" .= job.payload
+                                  ]
+                    }
+              }
+
       liftIO $ ArbS.runSimpleDb workerEnv $ Worker.runWorkerPool config
 
 runServer
