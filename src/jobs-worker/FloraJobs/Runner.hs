@@ -66,7 +66,6 @@ runner env job = case job.payload of
   FetchReadme x -> makeReadme x
   FetchTarball x -> fetchTarball x
   FetchUploadInformation x -> fetchUploadInformation x
-  FetchUploadTime x -> fetchUploadInformation x
   FetchChangelog x -> fetchChangeLog x
   ImportPackage x -> persistImportOutput x
   FetchPackageDeprecationList -> fetchPackageDeprecationList
@@ -75,9 +74,8 @@ runner env job = case job.payload of
   RefreshIndex indexName -> refreshIndex env indexName
 
 fetchChangeLog :: RequireCallStack => ChangelogJobPayload -> JobsRunner ()
-fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseId} =
+fetchChangeLog ChangelogJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-changelog" $ do
-    Log.logInfo "Fetching CHANGELOG" payload
     let requestPayload = VersionedPackage packageName packageVersion
     result <- Hackage.request $ Hackage.getPackageChangelog requestPayload
     case result of
@@ -88,14 +86,12 @@ fetchChangeLog payload@ChangelogJobPayload{packageName, packageVersion, releaseI
         | otherwise -> throw e
       Left e -> throw e
       Right bodyText -> do
-        logInfo ("got a changelog for package " <> display packageName) (object ["release_id" .= releaseId])
         changelogBody <- renderMarkdown ("CHANGELOG" <> show packageName) bodyText
         Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
 
 makeReadme :: RequireCallStack => ReadmeJobPayload -> JobsRunner ()
-makeReadme pay@ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
+makeReadme ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
   localDomain "fetch-readme" $ do
-    logInfo "Fetching README" pay
     let payload = VersionedPackage mpPackage mpVersion
     gewt <- Hackage.request $ Hackage.getPackageReadme payload
     case gewt of
@@ -106,7 +102,6 @@ makeReadme pay@ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
         | otherwise -> throw e
       Left e -> throw e
       Right bodyText -> do
-        logInfo ("got a readme for package " <> display mpPackage) (object ["release_id" .= mpReleaseId])
         readmeBody <- renderMarkdown ("README" <> show mpPackage) bodyText
         Update.updateReadme mpReleaseId (Just $ HTML.fromText readmeBody) Imported
 
@@ -119,13 +114,12 @@ fetchTarball
      )
   => TarballJobPayload
   -> FloraM es ()
-fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
+fetchTarball TarballJobPayload{releaseId, package, version} = do
   localDomain "fetch-tarball" $ do
     mArchive <- Query.getReleaseTarballArchive releaseId
     content <- case mArchive of
       Just bs -> pure bs
       Nothing -> do
-        logInfo "Fetching tarball" pay
         let payload = VersionedPackage package version
         result <- Hackage.request $ Hackage.getPackageTarball payload
         case result of
@@ -141,7 +135,7 @@ fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
     mhash <- Update.insertTar package (version.unIntAesonVersion) content
     case mhash of
       Right hash ->
-        logInfo
+        logTrace
           ("Inserted tarball for " <> display package)
           (object ["release_id" .= releaseId, "root_hash" .= hash])
       Left err -> do
@@ -150,16 +144,16 @@ fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
 
 fetchUploadInformation :: RequireCallStack => UploadInformationJobPayload -> JobsRunner ()
 fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageVersion, releaseId} =
-  localDomain "fetch-upload-time" $ do
-    logInfo "Fetching upload time" payload
+  localDomain "fetch-upload-information" $ do
+    logTrace "Fetching upload information" payload
     let requestPayload = VersionedPackage packageName packageVersion
     packageInfo <- liftIO $ Hackage.getPackageInfo requestPayload
     if packageInfo.metadataRevision == 0
       then do
-        Log.logInfo_ "No revision, using the upload time"
+        Log.logTrace_ "No revision, using the upload time"
         Update.updateUploadTime releaseId packageInfo.uploadedAt
       else do
-        Log.logInfo_ "Found a revision, querying the original package info"
+        Log.logTrace_ "Found a revision, querying the original package info"
         originalPackageInfo <- liftIO $ Hackage.getPackageWithRevision requestPayload 0
         Update.updateRevisionTime releaseId packageInfo.uploadedAt
         Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
@@ -171,7 +165,6 @@ fetchPackageDeprecationList = do
   result <- Hackage.request Hackage.getDeprecatedPackages
   case result of
     Right deprecationList -> do
-      logInfo_ "Deprecation List retrieved"
       deprecationList
         & Vector.map
           ( \DeprecatedPackage'{package, inFavourOf} ->
@@ -195,8 +188,6 @@ fetchReleaseDeprecationList packageName releases = do
   result <- Hackage.request $ Hackage.getDeprecatedReleasesList packageName
   case result of
     Right deprecationList -> do
-      logInfo "Release deprecation list retrieved" $
-        object ["package" .= display packageName]
       releasesAndVersions <- Query.getVersionFromManyReleaseIds releases
       let (deprecatedVersions', preferredVersions') =
             Vector.unstablePartition
