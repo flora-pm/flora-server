@@ -24,6 +24,7 @@ allow-newer: chronos:hashable
            , servant-lucid:text
            , tasty-test-reporter:*
            , wai-middleware-heartbeat:*
+           , pandoc-types:QuickCheck
 
 package feed
   ghc-options: -Wno-tabs
@@ -50,8 +51,8 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/haskell-servant/servant
-  tag: servant-0.20.3.0
+  location: https://github.com/tchoutri/servant
+  tag: ac239c19ea06cc0f7c696c65464da2a7a1bbd76a
   subdir:
     ./servant
     ./servant-server
