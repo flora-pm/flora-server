@@ -39,8 +39,8 @@
 
 - name: "Schema migrations"
   register: build
-  ansible.builtin.command:
-    cmd: gmake db-migrate
+  ansible.builtin.shell:
+    cmd: source environment.prod.sh && gmake db-migrate
     chdir: flora-server
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
