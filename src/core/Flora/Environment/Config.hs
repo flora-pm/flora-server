@@ -17,6 +17,7 @@ module Flora.Environment.Config
   , getAssets
   , getAssetHash
   , parseJobsConfig
+  , parseJobRunnerPort
   )
 where
 
@@ -149,6 +150,7 @@ data TestConfig = TestConfig
 data FloraJobsConfig = FloraJobsConfig
   { dbConfig :: PoolConfig
   , connectionInfo :: StrictByteString
+  , httpPort :: Word16
   }
   deriving stock (Generic)
 
@@ -188,6 +190,9 @@ parseFeatures =
 parsePort :: Parser Error Word16
 parsePort = var port "FLORA_HTTP_PORT" (help "HTTP Port for Flora")
 
+parseJobRunnerPort :: Parser Error Word16
+parseJobRunnerPort = var port "FLORA_JOB_HTTP_PORT" (help "HTTP Port for the Flora job runner")
+
 parseDomain :: Parser Error Text
 parseDomain = var str "FLORA_DOMAIN" (help "URL domain for Flora")
 
@@ -219,6 +224,7 @@ parseJobsConfig =
   FloraJobsConfig
     <$> parsePoolConfig
     <*> parseConnectionInfo
+    <*> parseJobRunnerPort
 
 -- Env parser helpers
 

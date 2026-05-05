@@ -18,6 +18,8 @@ export FLORA_HTTP_PORT=8083
 export FLORA_ENVIRONMENT="development"
 export FLORA_DOMAIN="localhost"
 
+export FLORA_JOB_HTTP_PORT="8085"
+
 # Either "stdout", "json" or "json-file"
 export FLORA_LOGGING_DESTINATION="stdout"
 
