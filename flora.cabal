@@ -611,6 +611,7 @@ executable flora-jobs-runner
     flora,
     flora-jobs,
     flora-web,
+    http-types,
     log-base,
     log-effectful,
     pg-entity,

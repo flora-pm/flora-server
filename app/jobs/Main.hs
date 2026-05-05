@@ -12,6 +12,9 @@ import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Prometheus (runPrometheusMetrics)
 import Log qualified
+import Network.HTTP.Types (status200)
+import Network.HTTP.Types.Header (hContentType)
+import Network.Wai qualified as Wai
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
@@ -64,8 +67,11 @@ runServer logger floraEnv jobsEnv = do
                 floraEnv.mltp
             )
             defaultSettings
+
   liftIO $
-    runSettings warpSettings WaiMetrics.metricsApp
+    runSettings warpSettings $
+      WaiMetrics.prometheus WaiMetrics.def $
+        \_request respond -> respond $ Wai.responseLBS status200 [(hContentType, "text/html")] "Ok"
 
 processJob
   :: ArbS.SimpleEnv JobQueues
