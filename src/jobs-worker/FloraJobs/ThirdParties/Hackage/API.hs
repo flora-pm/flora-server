@@ -70,7 +70,7 @@ data HackagePackageAPI mode = HackagePackageAPI
   , getChangelog :: mode :- "changelog.txt" :> Get '[PlainerText] Text
   , getDeprecatedReleases :: mode :- "preferred.json" :> Get '[JSON] HackagePreferredVersions
   , getPackageInfo :: mode :- Get '[JSON] HackagePackageInfo
-  , getPackageWithRevision :: mode :- "revision" :> Capture "revision_number" Text :> Get '[JSON] HackagePackageInfo
+  , getPackageWithRevision :: mode :- "revision" :> Capture "revision_number" Word :> Get '[JSON] HackagePackageInfo
   , getTarball :: mode :- Capture "tarball" VersionedTarball :> Get '[GZipped] ByteString
   }
   deriving stock (Generic)

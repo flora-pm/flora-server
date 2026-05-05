@@ -11,10 +11,8 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Effectful (Eff, IOE, type (:>))
 import Effectful.Reader.Static
-import Network.HTTP.Req (GET (GET), NoReqBody (..))
-import Network.HTTP.Req qualified as Req
 import Servant.API ()
-import Servant.Client (BaseUrl (..), Client, ClientError (..), ClientM, Scheme (..), client, mkClientEnv, runClientM, (//), (/:))
+import Servant.Client
 
 import Data.Time.Orphans ()
 import Flora.Model.Package.Types
@@ -86,26 +84,18 @@ getDeprecatedReleasesList packageName =
     /: packageName
     // (.getDeprecatedReleases)
 
-getPackageInfo :: VersionedPackage -> IO HackagePackageInfo
+getPackageInfo :: VersionedPackage -> ClientM HackagePackageInfo
 getPackageInfo versionedPackage = do
-  Req.runReq Req.defaultHttpConfig $ do
-    response <-
-      Req.req
-        GET
-        (Req.https "hackage.haskell.org" Req./: "package" Req./~ versionedPackage)
-        NoReqBody
-        Req.jsonResponse
-        mempty
-    pure $ Req.responseBody response
+  hackageClient
+    // API.withPackage
+    /: versionedPackage
+    // API.getPackageInfo
 
-getPackageWithRevision :: VersionedPackage -> Word -> IO HackagePackageInfo
-getPackageWithRevision versionedPackage revision = do
-  Req.runReq Req.defaultHttpConfig $ do
-    response <-
-      Req.req
-        GET
-        (Req.https "hackage.haskell.org" Req./: "package" Req./~ versionedPackage Req./: "revision" Req./~ revision)
-        NoReqBody
-        Req.jsonResponse
-        mempty
-    pure $ Req.responseBody response
+getPackageWithRevision :: VersionedPackage -> Word -> ClientM HackagePackageInfo
+getPackageWithRevision versionedPackage revision =
+  do
+    hackageClient
+    // API.withPackage
+    /: versionedPackage
+    // API.getPackageWithRevision
+    /: revision

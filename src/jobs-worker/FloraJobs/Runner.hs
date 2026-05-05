@@ -1,6 +1,7 @@
 module FloraJobs.Runner where
 
 import Arbiter.Core
+import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Control.Concurrent (forkIO)
 import Control.Concurrent.Async qualified as Async
@@ -40,7 +41,6 @@ import Flora.Import.Package (persistImportOutput)
 import Flora.Import.Package.Bulk.Archive qualified as Import
 import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
-import Flora.Model.BlobStore.API
 import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
@@ -79,85 +79,130 @@ fetchChangeLog ChangelogJobPayload{packageName, packageVersion, releaseId} =
     let requestPayload = VersionedPackage packageName packageVersion
     result <- Hackage.request $ Hackage.getPackageChangelog requestPayload
     case result of
-      Left e@(FailureResponse _ response)
-        -- If the CHANGELOG simply doesn't exist, we skip it by marking the job as successful.
-        | response.responseStatusCode == notFound404 -> Update.updateChangelog releaseId Nothing Inexistent
-        | response.responseStatusCode == gone410 -> Update.updateChangelog releaseId Nothing Inexistent
-        | otherwise -> throw e
-      Left e -> throw e
+      Left e -> handleClientError e
       Right bodyText -> do
         changelogBody <- renderMarkdown ("CHANGELOG" <> show packageName) bodyText
         Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
+  where
+    handleClientError :: ClientError -> JobsRunner ()
+    handleClientError e@(FailureResponse _ response)
+      -- If the CHANGELOG simply doesn't exist, we skip it by marking the job as successful.
+      | response.responseStatusCode == notFound404 = Update.updateChangelog releaseId Nothing Inexistent
+      | response.responseStatusCode == gone410 = Update.updateChangelog releaseId Nothing Inexistent
+      | otherwise = Arb.throwRetryable (Text.show e)
+    handleClientError e = Arb.throwRetryable (Text.show e)
 
 makeReadme :: RequireCallStack => ReadmeJobPayload -> JobsRunner ()
 makeReadme ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
   localDomain "fetch-readme" $ do
     let payload = VersionedPackage mpPackage mpVersion
-    gewt <- Hackage.request $ Hackage.getPackageReadme payload
-    case gewt of
-      Left e@(FailureResponse _ response)
-        -- If the README simply doesn't exist, we skip it by marking the job as successful.
-        | response.responseStatusCode == notFound404 -> Update.updateReadme mpReleaseId Nothing Inexistent
-        | response.responseStatusCode == gone410 -> Update.updateReadme mpReleaseId Nothing Inexistent
-        | otherwise -> throw e
-      Left e -> throw e
+    result <- Hackage.request $ Hackage.getPackageReadme payload
+    case result of
+      Left e -> handleClientError e
       Right bodyText -> do
         readmeBody <- renderMarkdown ("README" <> show mpPackage) bodyText
         Update.updateReadme mpReleaseId (Just $ HTML.fromText readmeBody) Imported
+  where
+    handleClientError :: ClientError -> JobsRunner ()
+    handleClientError e@(FailureResponse _ response)
+      -- If the README simply doesn't exist, we skip it by marking the job as successful.
+      | response.responseStatusCode == notFound404 = Update.updateReadme mpReleaseId Nothing Inexistent
+      | response.responseStatusCode == gone410 = Update.updateReadme mpReleaseId Nothing Inexistent
+      | otherwise = do
+          Log.logAttention "Could not find tarball from hackage" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= mpPackage
+              , "package_version" .= mpVersion
+              , "release_id" .= mpReleaseId
+              ]
+          Arb.throwRetryable (Text.show e)
+    handleClientError e = Arb.throwRetryable (Text.show e)
 
 fetchTarball
-  :: ( BlobStoreAPI :> es
-     , DB :> es
-     , IOE :> es
-     , Log :> es
-     , Reader FloraJobsEnv :> es
-     )
+  :: RequireCallStack
   => TarballJobPayload
-  -> FloraM es ()
-fetchTarball TarballJobPayload{releaseId, package, version} = do
+  -> JobsRunner ()
+fetchTarball TarballJobPayload{releaseId, packageName, packageVersion} = do
   localDomain "fetch-tarball" $ do
     mArchive <- Query.getReleaseTarballArchive releaseId
     content <- case mArchive of
       Just bs -> pure bs
       Nothing -> do
-        let payload = VersionedPackage package version
+        let payload = VersionedPackage packageName packageVersion
         result <- Hackage.request $ Hackage.getPackageTarball payload
         case result of
           Right bs -> pure bs
-          Left e@(FailureResponse _ response) -> do
-            logAttention "Could not fetch tarball from hackage" $
-              object
-                [ "package" .= display payload.package
-                , "status_code" .= statusCode response.responseStatusCode
-                ]
-            throw e
-          Left e -> throw e
-    mhash <- Update.insertTar package (version.unIntAesonVersion) content
+          Left e -> handleClientError e
+    mhash <- Update.insertTar packageName packageVersion.unIntAesonVersion content
     case mhash of
       Right hash ->
         logTrace
-          ("Inserted tarball for " <> display package)
+          ("Inserted tarball for " <> display packageName)
           (object ["release_id" .= releaseId, "root_hash" .= hash])
       Left err -> do
-        logAttention_ $ "Failed to insert tarball for " <> display package
+        logAttention_ $ "Failed to insert tarball for " <> display packageName
         throw err
+  where
+    handleClientError :: ClientError -> JobsRunner a
+    handleClientError e@(FailureResponse _ response)
+      | response.responseStatusCode == notFound404 = do
+          Log.logAttention "Could not find tarball from hackage" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "package_version" .= packageVersion
+              , "release_id" .= releaseId
+              ]
+          Arb.throwPermanent "Package does not exist"
+      | otherwise = do
+          Log.logAttention "Could not fetch tarball from hackage" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "package_version" .= packageVersion
+              , "release_id" .= releaseId
+              , "status_code" .= statusCode response.responseStatusCode
+              ]
+          Arb.throwRetryable (Text.show e)
+    handleClientError e = Arb.throwRetryable (Text.show e)
 
 fetchUploadInformation :: RequireCallStack => UploadInformationJobPayload -> JobsRunner ()
 fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-upload-information" $ do
     logTrace "Fetching upload information" payload
     let requestPayload = VersionedPackage packageName packageVersion
-    packageInfo <- liftIO $ Hackage.getPackageInfo requestPayload
-    if packageInfo.metadataRevision == 0
-      then do
-        Log.logTrace_ "No revision, using the upload time"
-        Update.updateUploadTime releaseId packageInfo.uploadedAt
-      else do
-        Log.logTrace_ "Found a revision, querying the original package info"
-        originalPackageInfo <- liftIO $ Hackage.getPackageWithRevision requestPayload 0
-        Update.updateRevisionTime releaseId packageInfo.uploadedAt
-        Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
-        Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
+    result <- Hackage.request $ Hackage.getPackageInfo requestPayload
+    case result of
+      Left e -> handleClientError e
+      Right packageInfo ->
+        if packageInfo.metadataRevision == 0
+          then do
+            Log.logTrace_ "No revision, using the upload time"
+            Update.updateUploadTime releaseId packageInfo.uploadedAt
+          else do
+            Log.logTrace_ "Found a revision, querying the original package info"
+            (Hackage.request $ Hackage.getPackageWithRevision requestPayload 0) >>= \case
+              Right originalPackageInfo -> do
+                Update.updateRevisionTime releaseId packageInfo.uploadedAt
+                Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
+                Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
+              Left e -> handleClientError e
+  where
+    handleClientError :: ClientError -> JobsRunner ()
+    handleClientError e@(FailureResponse _ response)
+      | response.responseStatusCode == notFound404 = do
+          Log.logAttention "Error while getting release upload information" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "package_version" .= packageVersion
+              , "release_id" .= releaseId
+              ]
+          Arb.throwPermanent "Package does not exist"
+      | otherwise =
+          Arb.throwRetryable (Text.show e)
+    handleClientError e = Arb.throwRetryable (Text.show e)
 
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: RequireCallStack => JobsRunner ()
@@ -171,13 +216,19 @@ fetchPackageDeprecationList = do
               DeprecatedPackage package (assignNamespace inFavourOf)
           )
         & Update.deprecatePackages
-    Left e@(FailureResponse _ response) -> do
-      logAttention "Could not fetch package deprecation list from Hackage" $
-        object
-          [ "status_code" .= statusCode response.responseStatusCode
-          ]
-      throw e
-    Left e -> throw e
+    Left e -> handleClientError e
+  where
+    handleClientError :: ClientError -> JobsRunner ()
+    handleClientError e@(FailureResponse _ response)
+      | response.responseStatusCode == notFound404 = do
+          Log.logAttention "Error while getting deprecated packages" $
+            object
+              [ "error" .= Text.show e
+              ]
+          Arb.throwPermanent "Package does not exist"
+      | otherwise =
+          Arb.throwRetryable (Text.show e)
+    handleClientError e = Arb.throwRetryable (Text.show e)
 
 assignNamespace :: Vector PackageName -> PackageAlternatives
 assignNamespace =
@@ -203,14 +254,27 @@ fetchReleaseDeprecationList packageName releases = do
         Update.setReleasesDeprecationMarker deprecatedVersions
       unless (Vector.null preferredVersions) $
         Update.setReleasesDeprecationMarker preferredVersions
-    Left e@(FailureResponse _ response) -> do
-      logAttention "Could not fetch release deprecation list from Hackage" $
-        object
-          [ "package" .= display packageName
-          , "status_code" .= statusCode response.responseStatusCode
-          ]
-      throw e
-    Left e -> throw e
+    Left e -> handleClientError e
+  where
+    handleClientError :: ClientError -> JobsRunner ()
+    handleClientError e@(FailureResponse _ response)
+      | response.responseStatusCode == notFound404 = do
+          Log.logAttention "Could not find package in remote repository" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              ]
+          Arb.throwPermanent "Package does not exist"
+      | otherwise = do
+          Log.logAttention "Could not fetch release deprecation list" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "status_code" .= statusCode response.responseStatusCode
+              , "error" .= Text.show e
+              ]
+          Arb.throwRetryable (Text.show e)
+    handleClientError e = Arb.throwRetryable (Text.show e)
 
 refreshIndex
   :: ( Concurrent :> es
@@ -249,12 +313,12 @@ refreshIndex env indexName = do
               releasesWithoutReadme
               (\(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version)
 
-      hackageReleasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadInformation
+      hackageReleasesWithoutUploadInformation <- Query.getHackagePackageReleasesWithoutUploadInformation
       liftIO $
         void $
           forkIO $
             Async.forConcurrently_
-              hackageReleasesWithoutUploadTime
+              hackageReleasesWithoutUploadInformation
               (\(releaseId, version, packagename) -> scheduleUploadInformationJob env releaseId packagename version)
 
       releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
