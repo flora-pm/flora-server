@@ -200,9 +200,24 @@ fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageV
               , "release_id" .= releaseId
               ]
           Arb.throwPermanent "Package does not exist"
-      | otherwise =
+      | otherwise = do
+          Log.logAttention "Error while getting release upload information" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "package_version" .= packageVersion
+              , "release_id" .= releaseId
+              ]
           Arb.throwRetryable (Text.show e)
-    handleClientError e = Arb.throwRetryable (Text.show e)
+    handleClientError e = do
+      Log.logAttention "Error while getting release upload information" $
+        object
+          [ "namespace" .= ("hackage" :: Text)
+          , "package_name" .= packageName
+          , "package_version" .= packageVersion
+          , "release_id" .= releaseId
+          ]
+      Arb.throwRetryable (Text.show e)
 
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: RequireCallStack => JobsRunner ()
