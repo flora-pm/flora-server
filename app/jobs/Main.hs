@@ -8,13 +8,11 @@ import Data.Proxy
 import Data.Text.Display
 import Data.Text.IO qualified as T
 import Effectful
+import Effectful.Concurrent (forkIO, runConcurrent)
 import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Prometheus (runPrometheusMetrics)
 import Log qualified
-import Network.HTTP.Types (status200)
-import Network.HTTP.Types.Header (hContentType)
-import Network.Wai qualified as Wai
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
@@ -42,12 +40,13 @@ main = do
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
   workerEnv <- ArbS.createSimpleEnv (Proxy @JobQueues) jobsEnv.connectionInfo "public"
   let withLogger = Logging.makeLogger floraEnv.mltp.logger
-  runEff $ do
+  runEff . runConcurrent $ do
     when floraEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
       runPrometheusMetrics floraEnv.metrics $ do
         void $ P.register P.ghcMetrics
     withLogger $ \logger -> do
+      void . forkIO $ runServer logger floraEnv jobsEnv
       config <- liftIO $ Worker.defaultWorkerConfig jobsEnv.connectionInfo 50 (processJob workerEnv jobsEnv logger floraEnv)
       liftIO $ ArbS.runSimpleDb workerEnv $ Worker.runWorkerPool config
 
@@ -68,10 +67,7 @@ runServer logger floraEnv jobsEnv = do
             )
             defaultSettings
 
-  liftIO $
-    runSettings warpSettings $
-      WaiMetrics.prometheus WaiMetrics.def $
-        \_request respond -> respond $ Wai.responseLBS status200 [(hContentType, "text/html")] "Ok"
+  liftIO $ runSettings warpSettings WaiMetrics.metricsApp
 
 processJob
   :: ArbS.SimpleEnv JobQueues
