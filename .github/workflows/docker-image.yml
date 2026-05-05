@@ -14,17 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: "Create freeze file"
-        run: |
-          cabal freeze --enable-tests
-
-      - name: Cache
-        uses: actions/cache@v5
-        with:
-          path: ${{ steps.setup-haskell.outputs.cabal-store }}
-          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
-          restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
         with:
