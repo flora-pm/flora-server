@@ -42,8 +42,10 @@
 - name: "Schema migrations"
   register: build
   ansible.builtin.shell:
-    cmd: source environment.prod.sh && gmake db-migrate
+    cmd: . environment.prod.sh && gmake db-migrate
     chdir: flora-server
+  args:
+    executable: /bin/bash
   async: 120
   poll: 30
   environment:
