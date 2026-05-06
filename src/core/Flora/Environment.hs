@@ -1,6 +1,5 @@
 module Flora.Environment
   ( getFloraEnv
-  , getFloraJobsEnv
   )
 where
 
@@ -16,12 +15,9 @@ import Effectful
 import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
 import Env (parse)
-import Network.HTTP.Client qualified as HTTP
-import Network.HTTP.Client.TLS
 
 import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Environment.Jobs
 import Flora.Model.Job
 import Flora.Monitoring
 
@@ -77,17 +73,3 @@ getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
   configToEnv config
-
-getFloraJobsEnv :: IOE :> es => Eff es FloraJobsEnv
-getFloraJobsEnv = do
-  jobsConfig <- liftIO $ Env.parse id parseJobsConfig
-  httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
-  let PoolConfig{connectionTimeout, connections} = jobsConfig.dbConfig
-  pool <- mkPool jobsConfig.connectionInfo connectionTimeout connections
-  pure
-    FloraJobsEnv
-      { pool
-      , connectionInfo = jobsConfig.connectionInfo
-      , httpManager
-      , httpPort = jobsConfig.httpPort
-      }

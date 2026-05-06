@@ -18,8 +18,8 @@ import System.Exit (exitFailure)
 import System.IO
 
 import Flora.Environment
-import Flora.Environment.Jobs
 import Flora.Model.Job
+import FloraJobs.Environment
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do

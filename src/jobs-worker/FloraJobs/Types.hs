@@ -25,11 +25,11 @@ import RequireCallStack
 
 import Distribution.Orphans.Version ()
 import Flora.Environment.Env
-import Flora.Environment.Jobs
 import Flora.Import.Types (ImportError)
 import Flora.Model.BlobStore.API
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Package.Types (Namespace)
+import FloraJobs.Environment
 
 type JobsRunner =
   Eff

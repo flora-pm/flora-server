@@ -112,7 +112,6 @@ library
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
-    Flora.Environment.Jobs
     Flora.Import.Categories
     Flora.Import.Package
     Flora.Import.Package.Bulk.Archive
@@ -493,8 +492,16 @@ library flora-jobs
   import: common-extensions
   import: common-ghc-options
   hs-source-dirs: src/jobs-worker
+  other-modules:
+    Paths_flora
+
+  autogen-modules:
+    Paths_flora
+
   -- cabal-gild: discover src/jobs-worker
   exposed-modules:
+    FloraJobs.Environment
+    FloraJobs.Metrics
     FloraJobs.Render
     FloraJobs.Runner
     FloraJobs.Scheduler
@@ -520,8 +527,10 @@ library flora-jobs
     envparse,
     filepath,
     flora,
+    gitrev,
     http-api-data,
     http-client,
+    http-client-tls,
     http-media,
     http-types,
     log-base,
@@ -530,6 +539,7 @@ library flora-jobs
     pg-entity,
     pg-transact-effectful,
     postgresql-simple,
+    prometheus-client,
     prometheus-effectful,
     req,
     require-callstack,

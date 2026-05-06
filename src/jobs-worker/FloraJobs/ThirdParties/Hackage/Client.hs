@@ -17,8 +17,8 @@ import Servant.API ()
 import Servant.Client (BaseUrl (..), Client, ClientError (..), ClientM, Scheme (..), client, mkClientEnv, runClientM, (//), (/:))
 
 import Data.Time.Orphans ()
-import Flora.Environment.Jobs
 import Flora.Model.Package.Types
+import FloraJobs.Environment
 import FloraJobs.ThirdParties.Hackage.API as API
 
 request

@@ -36,7 +36,6 @@ import System.FilePath
 
 import Data.Text.HTML qualified as HTML
 import Flora.Environment.Env
-import Flora.Environment.Jobs
 import Flora.Import.Package (persistImportOutput)
 import Flora.Import.Package.Bulk.Archive qualified as Import
 import Flora.Import.Types
@@ -51,6 +50,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
+import FloraJobs.Environment
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
 import FloraJobs.ThirdParties.Hackage.API

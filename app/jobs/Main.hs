@@ -26,9 +26,10 @@ import RequireCallStack
 
 import Flora.Environment
 import Flora.Environment.Env
-import Flora.Environment.Jobs
 import Flora.Logging qualified as Logging
 import Flora.Model.Job
+import FloraJobs.Environment
+import FloraJobs.Metrics
 import FloraJobs.Runner qualified as Runner
 import FloraJobs.Types
 import FloraWeb.Common.Tracing
@@ -43,8 +44,9 @@ main = do
   runEff . runConcurrent $ do
     when floraEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
-      runPrometheusMetrics floraEnv.metrics $ do
+      runPrometheusMetrics jobsEnv.metrics $ do
         void $ P.register P.ghcMetrics
+        setGitHash
     withLogger $ \logger -> do
       void . forkIO $ runServer logger floraEnv jobsEnv
       config <- liftIO $ Worker.defaultWorkerConfig jobsEnv.connectionInfo 50 (processJob workerEnv jobsEnv logger floraEnv)
