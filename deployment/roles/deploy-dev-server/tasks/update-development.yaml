@@ -34,8 +34,8 @@
   ansible.builtin.command:
     cmd: cabal build --no-semaphore
     chdir: flora-server
-    async: 3600
-    poll: 30
+  async: 3600
+  poll: 30
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
 
@@ -44,8 +44,8 @@
   ansible.builtin.shell:
     cmd: source environment.prod.sh && gmake db-migrate
     chdir: flora-server
-    async: 120
-    poll: 30
+  async: 120
+  poll: 30
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
 
