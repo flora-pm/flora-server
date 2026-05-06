@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.0.31 -- 2026-05-06
+
+- Add package uploader metadata to releases [#1065](https://github.com/flora-pm/flora-server/issue/1065) [#1066](https://github.com/flora-pm/flora-server/pull/1066)
+
 ## 1.0.30 -- 2026-04-08
 
 - Add build information to Prometheus metrics [#1052](https://github.com/flora-pm/flora-server/pull/1052) [#1053](https://github.com/flora-pm/flora-server/pull/1053)
