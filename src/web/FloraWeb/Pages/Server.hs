@@ -9,6 +9,8 @@ import RequireCallStack
 import Servant
 
 import Flora.Model.Job
+import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User (User)
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes
@@ -37,11 +39,14 @@ server arbiterConfig =
     , notFound = serveNotFound
     }
 
-homeHandler :: Headers ls (Session (Maybe User)) -> FloraEff (Html ())
+homeHandler :: RequireCallStack => Headers ls (Session (Maybe User)) -> FloraEff (Html ())
 homeHandler (Headers session _) = do
   templateDefaults <- templateFromSession session defaultTemplateEnv
   let templateEnv = templateDefaults & #displayNavbarSearch .~ False
-  render templateEnv Home.show
+  latestReleases <- Query.getLatestReleases
+  latestPackages <- Query.getLatestPackages
+  render templateEnv $
+    Home.show latestReleases latestPackages
 
 aboutHandler :: SessionWithCookies (Maybe User) -> FloraEff (Html ())
 aboutHandler (Headers session _) = do

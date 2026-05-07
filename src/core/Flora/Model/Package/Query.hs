@@ -32,10 +32,12 @@ module Flora.Model.Package.Query
   , getNumberOfExecutablesByName
   , getTransitiveDependencies
   , getPackageById
+  , getLatestPackages
   ) where
 
 import Data.Aeson
 import Data.Text (Text)
+import Data.Time (UTCTime)
 import Data.Tuple.Optics
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -818,3 +820,23 @@ WITH RECURSIVE transitive_dependencies(  dependent_id, dependent_namespace, depe
   FROM transitive_dependencies AS t3
   GROUP BY (t3.dependent_id, t3.dependent_namespace, t3.dependent_name)
 |]
+
+getLatestPackages
+  :: DB :> es
+  => Eff es (Vector (Namespace, PackageName, Text, Maybe UTCTime))
+getLatestPackages = dbtToEff $ do query sqlQuery ()
+  where
+    sqlQuery =
+      [sql|
+        SELECT p0.namespace
+             , p0.name
+             , r1.synopsis
+             , r1.uploaded_at
+        FROM packages AS p0
+             INNER JOIN releases AS r1 ON r1.package_id = p0.package_id
+        WHERE r1.version = (SELECT max(version)
+                            FROM releases
+                            WHERE package_id = p0.package_id)
+        ORDER BY p0.created_at DESC
+        LIMIT 6
+      |]

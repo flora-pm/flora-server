@@ -65,6 +65,21 @@ section#main-page-buttons {
 	}
 }
 
+section#package-news {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.package-news-column {
+	lu:not(:last-child) {
+		margin-bottom: 1rem;
+
+		li {
+			list-style-type: none;
+		}
+	}
+}
+
 @media (max-width: 48rem) {
 	.main-search {
 		align-items: center;
