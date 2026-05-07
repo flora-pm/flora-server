@@ -25,6 +25,11 @@ module FloraWeb.Pages.Templates.Packages
   , showDependents
   , showPackageSecurityPage
   , packageAdvisoriesListing
+  , formatUploadTime
+  , seconds
+  , minutes
+  , hours
+  , days
   ) where
 
 import Control.Monad (when)
@@ -37,7 +42,7 @@ import Data.Maybe (fromJust, isJust)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Time (defaultTimeLocale)
+import Data.Time (UTCTime, NominalDiffTime)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -74,6 +79,7 @@ import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML, TemplateEnv (..))
 import FloraWeb.Pages.Templates.Haddock (renderHaddock)
+import Data.Fixed (Pico)
 
 data Target
   = Dependents
@@ -191,7 +197,7 @@ versionListItem namespace packageName release = do
   let uploadedAt = case release.uploadedAt of
         Nothing -> ""
         Just ts ->
-          span_ [class_ "package-list-item__synopsis"] (toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts)
+          span_ [class_ "package-list-item__synopsis"] (toHtml $ Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y" ts)
   li_ [class_ "package-list-item"] $
     a_ [href, class_ ""] $
       do
@@ -206,7 +212,7 @@ versionListItem namespace packageName release = do
           Just revisionDate ->
             span_
               [ dataText_
-                  ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
+                  ("Revised on " <> display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
               , class_ "revised-date"
               ]
               Icon.pen
@@ -354,13 +360,13 @@ displayVersions namespace packageName versions numberOfReleases =
           Nothing -> ""
           Just ts ->
             span_ [] $ do
-              toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts
+              toHtml $ Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y" ts
               case release.revisedAt of
                 Nothing -> span_ [] ""
                 Just revisionDate ->
                   span_
                     [ dataText_
-                        ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
+                        ("Revised on " <> display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
                     , class_ "revised-date"
                     ]
                     Icon.pen
@@ -582,3 +588,42 @@ packageAdvisoriesListing specifyPackage advisoryPreviews =
         div_ [class_ "advisory-list__header"] "Attributes"
       div_ [class_ "advisory-list__body"] $
         Vector.forM_ advisoryPreviews (\preview -> advisoryListRow specifyPackage preview)
+
+formatUploadTime
+  :: UTCTime
+   -> UTCTime
+   -> Text
+formatUploadTime timestamp now =
+  let diff = now `Time.diffUTCTime` timestamp
+  in toRelativeHumanTime diff
+
+toRelativeHumanTime :: NominalDiffTime -> Text
+toRelativeHumanTime diff
+  | diff < seconds 30 = "just now"
+  | diff < minutes 2 = "1 minute ago"
+  | diff < hours 1 = Text.pack $ Time.formatTime Time.defaultTimeLocale "%M minutes ago" diff
+  | diff < hours 24 = Text.pack $ Time.formatTime Time.defaultTimeLocale "%H hours ago" diff
+  | diff < days 7 = Text.pack $ Time.formatTime Time.defaultTimeLocale "%D days ago" diff
+  | diff < days 14 = Text.pack $ Time.formatTime Time.defaultTimeLocale "1 week ago" diff
+  | diff < months 1 = Text.pack $ Time.formatTime Time.defaultTimeLocale "%w weeks ago" diff
+  | diff < months 2 = Text.pack $ Time.formatTime Time.defaultTimeLocale "1 month ago" diff
+  | diff < months 12 = Text.pack $ Time.formatTime Time.defaultTimeLocale "1 month ago" diff
+  | otherwise = undefined
+
+seconds :: Pico -> NominalDiffTime
+seconds = Time.secondsToNominalDiffTime
+
+minutes :: Pico -> NominalDiffTime
+minutes n = Time.secondsToNominalDiffTime $ n * 60
+
+hours :: Pico -> NominalDiffTime
+hours n = minutes (60 * n)
+
+days :: Pico -> NominalDiffTime
+days n = hours $ 24 * n
+
+months :: Pico -> NominalDiffTime
+months n = days $ n * 30
+
+inMinutes :: NominalDiffTime -> Pico
+inMinutes n = (Time.nominalDiffTimeToSeconds n)  / 60

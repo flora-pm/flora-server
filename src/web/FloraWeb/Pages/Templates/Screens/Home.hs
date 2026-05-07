@@ -68,7 +68,7 @@ recentUploadsColumn recentPackages = div_ [class_ "package-news-column"] $ do
             a_ [] (toHtml $ formatPackage namespace name)
             span_ [] (toHtml $ display version)
           p_ [] (toHtml synopsis)
-        div_ [] $ span_ [] (toHtml $ display timestamp)
+        div_ [] $ span_ [] (toHtml @Text $ undefined timestamp)
 
 
 newPackagesColumn :: Vector (Namespace, PackageName, Text, Maybe UTCTime) -> FloraHTML
