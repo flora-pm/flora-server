@@ -360,7 +360,6 @@ library flora-web
     FloraWeb.Components.PaginationNav
     FloraWeb.Components.Pill
     FloraWeb.Components.SkipLink
-    FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
     FloraWeb.Embedded
