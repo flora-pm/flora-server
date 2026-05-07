@@ -1,0 +1,18 @@
+{
+  "display": "3rem",
+  "display-lh": "1.05",
+  "3xl": "1.875rem",
+  "3xl-lh": "1.5",
+  "2xl": "1.5rem",
+  "2xl-lh": "1.5",
+  "xl": "1.25rem",
+  "xl-lh": "1.5",
+  "lg": "1.125rem",
+  "lg-lh": "1.5",
+  "base": "1rem",
+  "base-lh": "1.5",
+  "sm": ".875rem",
+  "sm-lh": "1.5",
+  "xs": ".75rem",
+  "xs-lh": "1.5"
+}

@@ -3,8 +3,8 @@
 	padding: 1rem 2rem;
 
 	h1 {
-		font-size: 3rem;
-		line-height: 1;
+		font-size: var(--text-display);
+		line-height: var(--text-display-lh);
 		letter-spacing: -0.025rem;
 		text-align: center;
 		overflow-wrap: anywhere;
@@ -23,4 +23,9 @@
 			font-size: 2rem;
 		}
 	}
+}
+
+.page-subtitle {
+	font-size: var(--text-lg);
+	line-height: var(--text-lg-lh);
 }

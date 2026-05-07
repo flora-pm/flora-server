@@ -10,7 +10,7 @@ ul.compiler-badges {
 		margin-left: 4px;
 		margin-right: 4px;
 		margin-bottom: 7px;
-		border-radius: 50rem;
+		border-radius: var(--radius-full);
 		max-width: 100%;
 		background-color: var(--compiler-badge-background);
 		text-align: center;

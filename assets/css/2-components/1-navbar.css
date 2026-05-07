@@ -82,14 +82,13 @@
 
 	.navbar-searchInput {
 		background-color: var(--navbar-search-background-color);
-		border-radius: var(--space-md) 0 0 var(--space-md);
+		border-radius: var(--radius-md) 0 0 var(--radius-md);
 		border: none;
 		color: var(--navbar-search-color);
 		line-height: 1.5;
 		padding: 0.5rem;
 		padding-left: 0.75rem;
 		width: 100%;
-		font-size: 1rem;
 	}
 
 	.navbar-searchBtn {
@@ -99,8 +98,7 @@
 		line-height: 1.5;
 		margin-right: 0.75rem;
 		padding: 0.5rem 0.75rem;
-		border-radius: 0 var(--space-md) var(--space-md) 0;
-		font-size: 1rem;
+		border-radius: 0 var(--radius-md) var(--radius-md) 0;
 	}
 
 	.navbar-searchBtn svg {
@@ -190,7 +188,7 @@
 				right: 1rem;
 				top: 4rem;
 				border: .0625rem solid var(--navbar-border-color);
-				border-radius: var(--space-md);
+				border-radius: var(--radius-md);
 				margin: 0;
 				margin-left: auto;
 			}

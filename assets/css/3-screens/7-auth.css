@@ -22,7 +22,7 @@
 
 .login-form	.form-input {
 	border-color: rgb(107 114 128);
-	border-radius: 6px;
+	border-radius: var(--radius-md);
 	border-width: 2px;
 	color: rgb(17 24 39);
 	display: block;
@@ -53,7 +53,7 @@
 
 .login-form	div.login-button button {
 	background-color: var(--main-page-button-background);
-	border-radius: 50rem;
+	border-radius: var(--radius-full);
 	border-width: 1px;
 	color: var(--text-color);
 	font-weight: bolder;

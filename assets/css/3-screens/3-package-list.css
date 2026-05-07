@@ -1,12 +1,12 @@
 .exact-match {
 	box-shadow: 0 5px 10px 0 rgb(0 0 0 / 50%);
-	border-radius: 6px;
+	border-radius: var(--radius-md);
 }
 
 .package-count {
 	text-align: center;
-	font-size: 1.25rem;
-	line-height: 1.75rem;
+	font-size: var(--text-xl);
+	line-height: var(--text-xl-lh);
 }
 
 .search-announcement {
@@ -32,8 +32,8 @@
 
 	a {
 		display: block;
-		font-size: 1.25rem;
-		line-height: 1.75rem;
+		font-size: var(--text-xl);
+		line-height: var(--text-xl-lh);
 		margin-top: 1rem;
 		margin-bottom: 1rem;
 		padding-left: 1rem;
@@ -43,7 +43,7 @@
 
 	a:hover {
 		background-color: var(--package-list-item-background-hover-color);
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 	}
 
 	a:hover h4.package-list-item__name {
@@ -76,8 +76,8 @@
 	.package-list-item__metadata > * {
 		margin-top: 0.5rem;
 		margin-right: 10px;
-		font-size: 0.875rem;
-		line-height: 1.25rem;
+		font-size: var(--text-sm);
+		line-height: var(--text-sm-lh);
 	}
 
 	.package-list-item__component {

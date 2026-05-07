@@ -1,7 +1,7 @@
 summary.package-component {
 	cursor: pointer;
-	font-size: 1.25rem;
-	line-height: 1.25rem;
+	font-size: var(--text-xl);
+	line-height: 1;
 	margin-top: 1rem;
 	margin-bottom: 1rem;
 	padding-left: 1rem;
@@ -15,5 +15,5 @@ summary.package-component > * {
 
 summary.package-component:hover {
 	background-color: var(--package-list-item-background-hover-color);
-	border-radius: 6px;
+	border-radius: var(--radius-md);
 }

@@ -1,6 +1,6 @@
 .alert {
 	padding: 1rem;
-	border-radius: 0.5rem;
+	border-radius: var(--radius-lg);
 	align-items: center;
 	display: flex;
 	margin-bottom: 1rem;

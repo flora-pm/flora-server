@@ -7,8 +7,8 @@
 	padding-right: 2rem;
 
 	h1 {
-		font-size: 3rem;
-		line-height: 1;
+		font-size: var(--text-display);
+		line-height: var(--text-display-lh);
 		text-align: center;
 		overflow-wrap: anywhere;
 	}
@@ -41,6 +41,7 @@
 		padding-bottom: 0.5rem;
 		padding-left: 2rem;
 		padding-right: 2rem;
+		border-radius: var(--radius-md);
 	}
 
 	.category-card:hover {

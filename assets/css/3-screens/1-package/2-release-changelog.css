@@ -92,7 +92,7 @@
 		line-height: 1.45;
 		padding: 16px;
 		font-family: monospace;
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		overflow: auto;
 		font-size: 90%;
 		background-color: var(--changelog-pre-background-color);
@@ -103,7 +103,7 @@
 		margin: 0;
 		font-size: 85%;
 		background-color: var(--changelog-code-background-color);
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		padding: 0.2em 0.4em;
 	}
 }

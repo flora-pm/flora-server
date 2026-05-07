@@ -15,7 +15,7 @@
 		display: inline;
 		color: var(--link-color);
 		font-weight: bolder;
-		font-size: 1.25rem;
-		line-height: 1.75rem;
+		font-size: var(--text-lg);
+		line-height: var(--text-lg-lh);
 	}
 }

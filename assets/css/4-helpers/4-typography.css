@@ -11,23 +11,23 @@
 /* Text sizes */
 
 .text-base {
-	font-size: 1rem;
-	line-height: 1.5rem;
+	font-size: var(--text-base);
+	line-height: var(--text-base-lh);
 }
 
 .text-sm {
-	font-size: 0.875rem;
-	line-height: 1.25rem;
+	font-size: var(--text-sm);
+	line-height: var(--text-sm-lh);
 }
 
 .text-xs {
-	font-size: 0.75rem;
-	line-height: 1rem;
+	font-size: var(--text-xs);
+	line-height: var(--text-xs-lh);
 }
 
 .text-2xl {
-	font-size: 1.5rem;
-	line-height: 2rem;
+	font-size: var(--text-2xl);
+	line-height: var(--text-2xl-lh);
 }
 
 
@@ -49,6 +49,7 @@
 		line-height: 1;
 	}
 }
+
 
 
 .align-top { vertical-align: top; }

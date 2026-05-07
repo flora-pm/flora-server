@@ -86,10 +86,6 @@
 	min-width: 100%;
 }
 
-.max-w-7xl {
-	max-width: 80rem;
-}
-
 /* Overflow */
 
 .overflow-hidden {
@@ -103,7 +99,7 @@
 /* Borders */
 
 .rounded-md {
-	border-radius: var(--space-md);
+	border-radius: var(--radius-md);
 }
 
 .border-b {
@@ -116,7 +112,7 @@
 
 @media (--viewport-sm) {
 	.sm\:rounded-lg {
-		border-radius: var(--space-lg);
+		border-radius: var(--radius-lg);
 	}
 
 	.sm\:border-l {

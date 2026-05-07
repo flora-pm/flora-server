@@ -3,12 +3,12 @@
 
 .main-search {
 	background-color: var(--search-bar-background-color);
-	border-radius: 0.75rem;
+	border-radius: var(--radius-xl);
 	border-width: 2px;
 	display: flex;
-	font-size: 1.5rem;
 	justify-content: center;
-	line-height: 2rem;
+	font-size: var(--text-2xl);
+	line-height: var(--text-2xl-lh);
 	max-width: 28rem;
 	outline-offset: -2px;
 	overflow: hidden;
@@ -19,8 +19,8 @@
 		color: var(--search-bar-color);
 		display: block;
 		margin-left: 0.5rem;
-		font-size: 1.5rem;
-		line-height: 2rem;
+		font-size: var(--text-2xl);
+		line-height: var(--text-2xl-lh);
 		padding: 0.5rem;
 		flex-grow: 1;
 		min-width: 0;

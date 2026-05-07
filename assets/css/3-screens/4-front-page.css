@@ -3,10 +3,10 @@
 
 .main-title {
 	color: var(--text-color);
-	font-size: 2.25rem;
+	font-size: var(--text-display);
 	font-weight: 800;
 	letter-spacing: -0.025rem;
-	line-height: 2.5rem;
+	line-height: var(--text-display-lh);
 	margin-bottom: 5px;
 	padding-top: 4rem;
 	padding-bottom: 4rem;
@@ -36,7 +36,7 @@ section#main-page-buttons {
 
 	.button {
 		background-color: var(--main-page-button-background);
-		border-radius: 50rem;
+		border-radius: var(--radius-full);
 		border-width: 1px;
 		color: var(--text-color);
 		font-weight: bolder;

@@ -8,7 +8,7 @@
 
 	.package-build-type-custom {
 		background-color: #ffc107;
-		border-radius: 0.25rem;
+		border-radius: var(--radius-sm);
 		color: white;
 		font-size: 50%;
 		font-weight: 700;
@@ -21,7 +21,7 @@
 .package-group-pill {
 		display: inline-block;
 		background-color: var(--green-30);
-		border-radius: 0.25rem;
+		border-radius: var(--radius-sm);
 		color: white;
 		font-size: medium;
 		font-weight: 700;
@@ -36,7 +36,7 @@
 .package-install-string {
 	background-color: transparent;
 	border-color: var(--install-string-border);
-	border-radius: 6px;
+	border-radius: var(--radius-md);
 	display: block;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
 		"Liberation Mono", "Courier New", monospace;
@@ -162,7 +162,7 @@ a.dependency:is(:hover, :active),
 			margin: 0;
 			font-size: 85%;
 			background-color: var(--readme-code-background-color);
-			border-radius: 6px;
+			border-radius: var(--radius-md);
 			padding-top: 0.2em;
 			padding-right: 0.4em;
 			padding-bottom: 0.2em;
@@ -173,7 +173,7 @@ a.dependency:is(:hover, :active),
 			margin: 0;
 			font-size: 85%;
 			background-color: var(--readme-code-background-color);
-			border-radius: 6px;
+			border-radius: var(--radius-md);
 			padding-top: 0.2em;
 			padding-right: 0.4em;
 			padding-bottom: 0.2em;
@@ -206,7 +206,7 @@ span.revised-date::before {
 
 	/* basic styles */
 	background: #000;
-	border-radius: 10px;
+	border-radius: var(--radius-xl);
 	box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
 	color: #fff;
 	padding: 5px;
@@ -254,7 +254,7 @@ span.revised-date:hover::before {
 
 	/* basic styles */
 	background: #000;
-	border-radius: 10px;
+	border-radius: var(--radius-xl);
 	box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
 	color: #fff;
 	padding: 10px;

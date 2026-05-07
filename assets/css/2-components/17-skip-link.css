@@ -9,7 +9,7 @@
 	color: var(--purple-60);
 	background-color: var(--gray-100);
 	text-decoration: underline;
-	border-radius: .1875rem;
+	border-radius: var(--radius-sm);
 	outline-offset: .1rem;
 }
 

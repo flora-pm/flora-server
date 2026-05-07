@@ -12,7 +12,7 @@ p.error-zone {
 	color: var(--error-code);
 
 	> * {
-		font-size: 3rem;
+		font-size: var(--text-xl);
 		font-weight: 800;
 		line-height: 1;
 		letter-spacing: -0.025rem;
@@ -21,7 +21,7 @@ p.error-zone {
 
 .error-code {
 	color: var(--error-code);
-	font-size: 3rem;
+	font-size: var(--text-xl);
 	line-height: 1;
 	font-weight: 800;
 	border-color: rgb(229 231 235 / 100%);
@@ -32,7 +32,7 @@ p.error-zone {
 
 .error-message {
 	color: var(--error-code);
-	font-size: 3rem;
+	font-size: var(--text-xl);
 	font-weight: 800;
 	letter-spacing: -0.025rem;
 	line-height: 1;
