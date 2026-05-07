@@ -137,7 +137,7 @@ fetchTarball pay@TarballJobPayload{releaseId, package, version} = do
                 ]
             throw e
           Left e -> throw e
-    mhash <- Update.insertTar package (unIntAesonVersion version) content
+    mhash <- Update.insertTar package (version.unIntAesonVersion) content
     case mhash of
       Right hash ->
         logInfo

@@ -17,7 +17,7 @@ newtype Sha256Sum = Sha256Sum {bytestring :: ByteString}
   deriving newtype (NFData, Ord)
 
 instance ToField Sha256Sum where
-  toField = toField . decodeUtf8Lenient . B16.encode . bytestring
+  toField s = toField . decodeUtf8Lenient . B16.encode $ s.bytestring
 
 instance FromField Sha256Sum where
   fromField f mbs =
@@ -25,7 +25,7 @@ instance FromField Sha256Sum where
       <$> fromField @Text f mbs
 
 instance Display Sha256Sum where
-  displayBuilder = fromText . decodeUtf8Lenient . B16.encode . bytestring
+  displayBuilder s = fromText . decodeUtf8Lenient . B16.encode $ s.bytestring
 
 instance ToJSON Sha256Sum where
   toJSON = String . display

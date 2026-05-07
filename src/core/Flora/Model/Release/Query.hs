@@ -78,7 +78,7 @@ getReleaseTarballRootHash :: DB :> es => ReleaseId -> FloraM es (Maybe Sha256Sum
 getReleaseTarballRootHash releaseId = dbtToEff $ do
   mRelease <- selectOneByField @Release [field| release_id |] (Only releaseId)
   case mRelease of
-    Just release -> pure $ tarballRootHash release
+    Just release -> pure release.tarballRootHash
     Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
 
 getReleaseTarballArchive :: (BlobStoreAPI :> es, DB :> es) => ReleaseId -> FloraM es (Maybe LazyByteString)

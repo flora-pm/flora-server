@@ -89,7 +89,7 @@ packageWithExecutableListItem PackageInfoWithExecutables{namespace, name, synops
 
 requirementListItem :: ComponentDependencies -> FloraHTML
 requirementListItem allComponentDeps =
-  traverse_ (uncurry componentTitle) . sortOn (componentType . fst) $ Map.toList allComponentDeps
+  traverse_ (uncurry componentTitle) . sortOn ((.componentType) . fst) $ Map.toList allComponentDeps
   where
     open = if Map.size allComponentDeps == 1 then [open_ ""] else mempty
     componentTitle component componentDeps = do

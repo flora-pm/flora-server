@@ -46,7 +46,7 @@ setGitHash
   :: Metrics AppMetrics :> es
   => Eff es ()
 setGitHash =
-  setLabelledGauge buildInformation ($(gitHash), T.pack (showVersion version)) 1.0
+  setLabelledGauge (.buildInformation) ($(gitHash), T.pack (showVersion version)) 1.0
 
 increaseCounterBy
   :: Metrics AppMetrics :> es
@@ -61,7 +61,7 @@ increasePackageImportCounter
   => Text
   -> Eff es ()
 increasePackageImportCounter repository = do
-  increaseLabelledCounter packageImportCounter repository
+  increaseLabelledCounter (.packageImportCounter) repository
 
 increasePackageImportCounterBy
   :: Metrics AppMetrics :> es

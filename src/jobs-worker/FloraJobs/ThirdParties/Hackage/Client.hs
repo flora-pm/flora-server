@@ -39,52 +39,52 @@ hackageClient :: Client ClientM HackageAPI
 hackageClient = client (Proxy @HackageAPI)
 
 listHackageUsers :: ClientM [HackageUserObject]
-listHackageUsers = hackageClient // API.listUsers
+listHackageUsers = hackageClient // (.listUsers)
 
 getHackageUser :: Text -> ClientM HackageUserDetailsObject
-getHackageUser username = hackageClient // API.withUser /: username // API.getUser
+getHackageUser username = hackageClient // (.withUser) /: username // (.getUser)
 
 getPackageTarball :: VersionedPackage -> ClientM ByteString
 getPackageTarball versionedPackage =
   hackageClient
-    // API.withPackage
+    // (.withPackage)
     /: versionedPackage
-    // API.getTarball
+    // (.getTarball)
     /: VersionedTarball versionedPackage
 
 getPackageReadme :: VersionedPackage -> ClientM Text
 getPackageReadme versionedPackage =
   hackageClient
-    // API.withPackage
+    // (.withPackage)
     /: versionedPackage
-    // API.getReadme
+    // (.getReadme)
 
 getPackageUploadTime :: VersionedPackage -> ClientM UTCTime
 getPackageUploadTime packageName =
   hackageClient
-    // API.withPackage
+    // (.withPackage)
     /: packageName
-    // API.getUploadTime
+    // (.getUploadTime)
 
 getPackageChangelog :: VersionedPackage -> ClientM Text
 getPackageChangelog versionedPackage =
   hackageClient
-    // API.withPackage
+    // (.withPackage)
     /: versionedPackage
-    // API.getChangelog
+    // (.getChangelog)
 
 getDeprecatedPackages :: ClientM (Vector DeprecatedPackage')
 getDeprecatedPackages =
   hackageClient
-    // API.packages
-    // getDeprecated
+    // (.packages)
+    // (.getDeprecated)
 
 getDeprecatedReleasesList :: PackageName -> ClientM HackagePreferredVersions
 getDeprecatedReleasesList packageName =
   hackageClient
-    // API.withPackageNameOnly
+    // (.withPackageNameOnly)
     /: packageName
-    // getDeprecatedReleases
+    // (.getDeprecatedReleases)
 
 getPackageInfo :: VersionedPackage -> IO HackagePackageInfo
 getPackageInfo versionedPackage = do

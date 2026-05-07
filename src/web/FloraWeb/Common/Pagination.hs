@@ -26,9 +26,9 @@ fromPage :: Positive Word -> (Word, Word)
 fromPage pageNumber =
   let
     limit = positiveVal @30
-    offset = 30 * unPositive pageNumber - 30
+    offset = 30 * pageNumber.unPositive - 30
    in
-    (offset, unPositive limit)
+    (offset, limit.unPositive)
 
 data PaginationParameters (settings :: PageSize)
 
@@ -133,7 +133,7 @@ instance
       defaultPageSizeDesc :: Text
       defaultPageSizeDesc = case settingDefPageSize @settings of
         Nothing -> "By default, no limit will be applied."
-        Just s -> "Defaults to " <> Text.pack (show $ unPositive s) <> "."
+        Just s -> "Defaults to " <> Text.pack (show $ s.unPositive) <> "."
 
 instance
   ( a ~ O.Operation

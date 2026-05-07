@@ -25,7 +25,7 @@ paginationNav totalResults currentPage searchAction = do
   let (totalPages :: Word) = (totalResults `div` 30) + 1
   nav_ [class_ "pagination-area"] $
     ul_ [class_ "pagination-footer inline-flex"] $ do
-      when (unPositive currentPage > 1) $
+      when (currentPage.unPositive > 1) $
         li_ [class_ "pagination-footer__item"] $ do
           link
             defaultLinkOptions
@@ -33,7 +33,7 @@ paginationNav totalResults currentPage searchAction = do
               , classes = "pagination-footer__page pagination-footer__previous"
               , childNode = "Previous"
               }
-      when (unPositive currentPage < totalPages) $
+      when (currentPage.unPositive < totalPages) $
         li_ [class_ "pagination-footer__item"] $
           link
             defaultLinkOptions
