@@ -28,6 +28,7 @@ common common-extensions
     DuplicateRecordFields
     GADTs
     LambdaCase
+    NoFieldSelectors
     NoStarIsType
     NumericUnderscores
     OverloadedLabels

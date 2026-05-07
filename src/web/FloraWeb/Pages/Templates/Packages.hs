@@ -327,7 +327,7 @@ displaySecurity namespace packageName = a_ [href_ ("/" <> Links.renderLink (Link
 
 displayReadme :: Release -> FloraHTML
 displayReadme release =
-  case readme release of
+  case release.readme of
     Nothing -> renderHaddock release.description
     Just readme -> toHtmlRaw readme
 

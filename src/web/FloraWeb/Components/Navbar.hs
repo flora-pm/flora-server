@@ -39,7 +39,7 @@ navbar = do
     }
   |]
 
-  ActiveElements{aboutNav, packagesNav} <- asks activeElements
+  ActiveElements{aboutNav, packagesNav} <- asks (.activeElements)
   nav_
     [ class_ "top-navbar"
     , xData_ xData
@@ -106,15 +106,15 @@ navBarLink' = navBarLink ""
 
 userMenu :: FloraHTML
 userMenu = do
-  ActiveElements{adminDashboard} <- asks activeElements
+  ActiveElements{adminDashboard} <- asks (.activeElements)
   TemplateEnv{mUser} <- ask
   getUsernameOrLogin mUser
   adminLink adminDashboard mUser
 
 navbarSearch :: FloraHTML
 navbarSearch = do
-  flag <- asks displayNavbarSearch
-  mContent <- asks navbarSearchContent
+  flag <- asks (.displayNavbarSearch)
+  mContent <- asks (.navbarSearchContent)
   if flag
     then do
       let contentValue =

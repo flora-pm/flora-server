@@ -13,8 +13,8 @@ import Distribution.Orphans ()
 import Flora.Model.Package (Namespace (..), PackageName (..))
 import FloraWeb.Pages.Routes qualified as Pages
 import FloraWeb.Pages.Routes qualified as Web
-import FloraWeb.Pages.Routes.Packages qualified as Web
-import FloraWeb.Pages.Routes.Search qualified as Search
+import FloraWeb.Pages.Routes.Packages
+import FloraWeb.Pages.Routes.Search
 
 links :: Pages.Routes' (Links.AsLink Link)
 links = Links.allFieldLinks
@@ -26,24 +26,24 @@ renderLink l =
 namespaceLink :: Namespace -> Positive Word -> Link
 namespaceLink namespace pageNumber =
   links
-    // Web.packages
-    // Web.showNamespace
+    // (.packages)
+    // (.showNamespace)
     /: namespace
     /: Just pageNumber
 
 packageLink :: Namespace -> PackageName -> Link
 packageLink namespace packageName =
   links
-    // Web.packages
-    // Web.showPackage
+    // (.packages)
+    // (.showPackage)
     /: namespace
     /: packageName
 
 packageVersionLink :: Namespace -> PackageName -> Version -> Link
 packageVersionLink namespace packageName version =
   links
-    // Web.packages
-    // Web.showVersion
+    // (.packages)
+    // (.showVersion)
     /: namespace
     /: packageName
     /: version
@@ -51,8 +51,8 @@ packageVersionLink namespace packageName version =
 packageVersionChangelog :: Namespace -> PackageName -> Version -> Link
 packageVersionChangelog namespace packageName version =
   links
-    // Web.packages
-    // Web.showVersionChangelog
+    // (.packages)
+    // (.showVersionChangelog)
     /: namespace
     /: packageName
     /: version
@@ -60,31 +60,31 @@ packageVersionChangelog namespace packageName version =
 packageChangelog :: Namespace -> PackageName -> Link
 packageChangelog namespace packageName =
   links
-    // Web.packages
-    // Web.showChangelog
+    // (.packages)
+    // (.showChangelog)
     /: namespace
     /: packageName
 
 packageIndexLink :: Positive Word -> Link
 packageIndexLink pageNumber =
   links
-    // Web.packages
-    // Web.index
+    // (.packages)
+    // (.index)
     /: Just pageNumber
 
 packageSearchLink :: Text -> Positive Word -> Link
 packageSearchLink search pageNumber =
   links
-    // Web.search
-    // Search.displaySearch
+    // (.search)
+    // (.displaySearch)
     /: Just search
     /: Just pageNumber
 
 packageDependencies :: Namespace -> PackageName -> Version -> Link
 packageDependencies namespace packageName version =
   links
-    // Web.packages
-    // Web.showVersionDependencies
+    // (.packages)
+    // (.showVersionDependencies)
     /: namespace
     /: packageName
     /: version
@@ -97,8 +97,8 @@ packageDependents
   -> Link
 packageDependents namespace packageName pageNumber search =
   links
-    // Web.packages
-    // Web.showDependents
+    // (.packages)
+    // (.showDependents)
     /: namespace
     /: packageName
     /: Just pageNumber
@@ -107,8 +107,8 @@ packageDependents namespace packageName pageNumber search =
 packageVersions :: Namespace -> PackageName -> Link
 packageVersions namespace packageName =
   links
-    // Web.packages
-    // Web.listVersions
+    // (.packages)
+    // (.listVersions)
     /: namespace
     /: packageName
 
@@ -118,8 +118,8 @@ packageWithExecutable
   -> Link
 packageWithExecutable pageNumber search =
   links
-    // Web.search
-    // Search.displaySearch
+    // (.search)
+    // (.displaySearch)
     /: Just search
     /: Just pageNumber
 
@@ -129,16 +129,16 @@ searchInAdvisories
   -> Link
 searchInAdvisories pageNumber search =
   links
-    // Web.search
-    // Search.displaySearch
+    // (.search)
+    // (.displaySearch)
     /: Just search
     /: Just pageNumber
 
 packageSecurity :: Namespace -> PackageName -> Link
 packageSecurity namespace packageName =
   links
-    // Web.packages
-    // Web.showPackageSecurity
+    // (.packages)
+    // (.showPackageSecurity)
     /: namespace
     /: packageName
 

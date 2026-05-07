@@ -32,4 +32,4 @@ setGitHash
   :: Metrics JobsRunnerMetrics :> es
   => Eff es ()
 setGitHash =
-  setLabelledGauge buildInformation ($(gitHash), T.pack (showVersion version)) 1.0
+  setLabelledGauge (.buildInformation) ($(gitHash), T.pack (showVersion version)) 1.0

@@ -17,7 +17,6 @@ import Log.Backend.StandardOutput qualified as Log
 import System.Exit (exitFailure)
 import System.IO
 
-import Flora.Environment
 import Flora.Model.Job
 import FloraJobs.Environment
 
