@@ -12,7 +12,9 @@ import Effectful
 import Effectful.Concurrent (forkIO, runConcurrent)
 import Effectful.Fail
 import Effectful.FileSystem
+import Effectful.Log qualified as Log
 import Effectful.Prometheus (runPrometheusMetrics)
+import Log
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
@@ -22,8 +24,6 @@ import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
-import Effectful.Log qualified as Log
-import Log
 import RequireCallStack
 
 import Flora.Environment
