@@ -3,6 +3,7 @@
 module FloraWeb.Pages.Server where
 
 import Arbiter.Servant qualified as ArbS
+import Effectful.Time qualified as Time
 import Lucid
 import Optics.Core
 import RequireCallStack
@@ -45,8 +46,9 @@ homeHandler (Headers session _) = do
   let templateEnv = templateDefaults & #displayNavbarSearch .~ False
   latestReleases <- Query.getLatestReleases
   latestPackages <- Query.getLatestPackages
+  now <- Time.currentTime
   render templateEnv $
-    Home.show latestReleases latestPackages
+    Home.show now latestReleases latestPackages
 
 aboutHandler :: SessionWithCookies (Maybe User) -> FloraEff (Html ())
 aboutHandler (Headers session _) = do

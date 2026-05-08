@@ -12,7 +12,6 @@ import Data.Positive
 import Distribution.Orphans ()
 import Flora.Model.Package (Namespace (..), PackageName (..))
 import FloraWeb.Pages.Routes qualified as Pages
-import FloraWeb.Pages.Routes qualified as Web
 import FloraWeb.Pages.Routes.Packages
 import FloraWeb.Pages.Routes.Search
 

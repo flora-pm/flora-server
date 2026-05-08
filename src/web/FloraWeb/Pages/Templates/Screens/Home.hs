@@ -4,11 +4,13 @@ module FloraWeb.Pages.Templates.Screens.Home where
 
 import CMarkGFM
 import Control.Monad
+import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Text (Text)
+import Data.Text.Display (display)
 import Data.Time (UTCTime)
+import Data.Time qualified as Time
 import Data.Vector (Vector)
-import Data.Vector qualified as Vector
 import Distribution.Types.Version (Version)
 import Lucid
 import PyF
@@ -16,19 +18,21 @@ import PyF
 import Flora.Environment.Env
 import Flora.Model.Package
 import FloraWeb.Components.MainSearchBar (mainSearchBar)
+import FloraWeb.Components.Utils (dataText_)
+import FloraWeb.Pages.Templates.Packages (formatUploadTime)
 import FloraWeb.Pages.Templates.Types
-import Data.Text.Display (display)
 
 show
-  :: Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
+  :: UTCTime
+  -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
   -> FloraHTML
-show recentUploads latestPackages = do
+show now recentUploads latestPackages = do
   banner
   div_ [class_ "container container--small"] $ do
     mainSearchBar
     buttons
-    packageNewsSection latestPackages recentUploads
+    packageNewsSection now latestPackages recentUploads
 
 banner :: FloraHTML
 banner = do
@@ -49,37 +53,51 @@ buttons =
         "Start with Cabal"
 
 packageNewsSection
-  :: Vector (Namespace, PackageName, Text, Maybe UTCTime)
+  :: UTCTime
+  -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
   -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> FloraHTML
-packageNewsSection newPackages recentUploads = do
+packageNewsSection now newPackages recentUploads = do
   section_ [id_ "package-news"] $ do
-    newPackagesColumn newPackages
-    recentUploadsColumn recentUploads
+    newPackagesColumn now newPackages
+    recentUploadsColumn now recentUploads
 
-recentUploadsColumn :: Vector (Namespace, PackageName, Text, Version, Maybe UTCTime) -> FloraHTML
-recentUploadsColumn recentPackages = div_ [class_ "package-news-column"] $ do
+recentUploadsColumn
+  :: UTCTime
+  -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
+  -> FloraHTML
+recentUploadsColumn now recentPackages = div_ [class_ "package-news-column"] $ do
   h2_ "Recently Updated"
   ul_ [] $ do
-    forM_ recentPackages $ \(namespace, name, synopsis, version, timestamp) -> do
+    forM_ recentPackages $ \(namespace, name, synopsis, version, mTimestamp) -> do
       li_ [] $ do
         div_ [] $ do
           div_ [] $ do
             a_ [] (toHtml $ formatPackage namespace name)
             span_ [] (toHtml $ display version)
           p_ [] (toHtml synopsis)
-        div_ [] $ span_ [] (toHtml @Text $ undefined timestamp)
+        whenJust mTimestamp $ \timestamp ->
+          div_ [] $
+            span_
+              [ dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp))
+              , class_ "upload-date"
+              ]
+              (toHtml $ formatUploadTime timestamp now)
 
-
-newPackagesColumn :: Vector (Namespace, PackageName, Text, Maybe UTCTime) -> FloraHTML
-newPackagesColumn newPackages = div_ [class_ "package-news-column"] $ do
+newPackagesColumn
+  :: UTCTime
+  -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
+  -> FloraHTML
+newPackagesColumn now newPackages = div_ [class_ "package-news-column"] $ do
   h2_ "New packages"
   ul_ [] $ do
-    forM_ newPackages $ \(namespace, name, synopsis, timestamp) -> do
-      li_ [] $
+    forM_ newPackages $ \(namespace, name, synopsis, mTimestamp) -> do
+      li_ [] $ do
         div_ [] $ do
           a_ [] (toHtml $ formatPackage namespace name)
           p_ [] (toHtml synopsis)
+        whenJust mTimestamp $ \timestamp ->
+          div_ [] $ span_ [dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp)), class_ "upload-date"] (toHtml $ formatUploadTime timestamp now)
 
 about :: FloraHTML
 about = do
