@@ -19,6 +19,7 @@ module Flora.Model.Release.Query
   , getHackagePackagesWithoutReleaseDeprecationInformation
   , getVersionFromManyReleaseIds
   , getReleasePackageIndex
+  , getLatestReleases
   )
 where
 
@@ -249,4 +250,17 @@ getReleasePackageIndex releaseId = dbtToEff $ do
         from releases as r0
         join package_indexes as p1 on r0.repository = p1.repository
         where r0.release_id = ?
+      |]
+
+getLatestReleases
+  :: DB :> es
+  => FloraM es (Vector (Namespace, PackageName, Text, Version, Maybe UTCTime))
+getLatestReleases = dbtToEff $ do query sqlQuery ()
+  where
+    sqlQuery =
+      [sql|
+      SELECT l0.namespace, l0.name, l0.synopsis, l0.version, l0.uploaded_at
+      FROM latest_versions as l0
+      ORDER BY l0.uploaded_at DESC
+      LIMIT 6
       |]

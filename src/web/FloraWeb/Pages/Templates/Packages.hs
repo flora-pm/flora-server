@@ -25,11 +25,17 @@ module FloraWeb.Pages.Templates.Packages
   , showDependents
   , showPackageSecurityPage
   , packageAdvisoriesListing
+  , formatUploadTime
+  , seconds
+  , minutes
+  , hours
+  , days
   ) where
 
 import Control.Monad (when)
 import Control.Monad.Extra (whenJust)
 import Control.Monad.Reader (ask)
+import Data.Fixed (Pico, div')
 import Data.Foldable (fold, forM_)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
@@ -37,7 +43,7 @@ import Data.Maybe (fromJust, isJust)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Time (defaultTimeLocale)
+import Data.Time (NominalDiffTime, UTCTime)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -191,7 +197,7 @@ versionListItem namespace packageName release = do
   let uploadedAt = case release.uploadedAt of
         Nothing -> ""
         Just ts ->
-          span_ [class_ "package-list-item__synopsis"] (toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts)
+          span_ [class_ "package-list-item__synopsis"] (toHtml $ Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y" ts)
   li_ [class_ "package-list-item"] $
     a_ [href, class_ ""] $
       do
@@ -206,7 +212,7 @@ versionListItem namespace packageName release = do
           Just revisionDate ->
             span_
               [ dataText_
-                  ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
+                  ("Revised on " <> display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
               , class_ "revised-date"
               ]
               Icon.pen
@@ -354,13 +360,13 @@ displayVersions namespace packageName versions numberOfReleases =
           Nothing -> ""
           Just ts ->
             span_ [] $ do
-              toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts
+              toHtml $ Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y" ts
               case release.revisedAt of
                 Nothing -> span_ [] ""
                 Just revisionDate ->
                   span_
                     [ dataText_
-                        ("Revised on " <> display (Time.formatTime defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
+                        ("Revised on " <> display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
                     , class_ "revised-date"
                     ]
                     Icon.pen
@@ -582,3 +588,43 @@ packageAdvisoriesListing specifyPackage advisoryPreviews =
         div_ [class_ "advisory-list__header"] "Attributes"
       div_ [class_ "advisory-list__body"] $
         Vector.forM_ advisoryPreviews (\preview -> advisoryListRow specifyPackage preview)
+
+formatUploadTime
+  :: UTCTime
+  -> UTCTime
+  -> Text
+formatUploadTime timestamp now =
+  let diff = now `Time.diffUTCTime` timestamp
+   in Text.pack (toRelativeHumanTime diff)
+
+toRelativeHumanTime :: NominalDiffTime -> String
+toRelativeHumanTime diff
+  | diff < seconds 30 = "just now"
+  | diff < minutes 2 = "1 minute ago"
+  | diff < hours 1 = Time.formatTime Time.defaultTimeLocale "%M minutes ago" diff
+  | diff < hours 24 = Time.formatTime Time.defaultTimeLocale "%H hours ago" diff
+  | diff < days 7 = Time.formatTime Time.defaultTimeLocale "%D days ago" diff
+  | diff < days 14 = Time.formatTime Time.defaultTimeLocale "1 week ago" diff
+  | diff < months 1 = Time.formatTime Time.defaultTimeLocale "%w weeks ago" diff
+  | diff < months 2 = Time.formatTime Time.defaultTimeLocale "1 month ago" diff
+  | diff < months 12 = show @Int (diff `div'` (months 1)) <> " months ago"
+  | diff < years 2 = "about 1 year ago"
+  | otherwise = show @Int (diff `div'` (years 1)) <> " years ago"
+
+seconds :: Pico -> NominalDiffTime
+seconds = Time.secondsToNominalDiffTime
+
+minutes :: Pico -> NominalDiffTime
+minutes n = 60 * seconds n
+
+hours :: Pico -> NominalDiffTime
+hours n = 60 * minutes n
+
+days :: Pico -> NominalDiffTime
+days n = 24 * hours n
+
+months :: Pico -> NominalDiffTime
+months n = 30 * days n
+
+years :: Pico -> NominalDiffTime
+years n = 12 * months n

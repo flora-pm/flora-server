@@ -3,21 +3,36 @@
 module FloraWeb.Pages.Templates.Screens.Home where
 
 import CMarkGFM
+import Control.Monad
+import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Text (Text)
+import Data.Text.Display (display)
+import Data.Time (UTCTime)
+import Data.Time qualified as Time
+import Data.Vector (Vector)
+import Distribution.Types.Version (Version)
 import Lucid
 import PyF
 
 import Flora.Environment.Env
+import Flora.Model.Package
 import FloraWeb.Components.MainSearchBar (mainSearchBar)
+import FloraWeb.Components.Utils (dataText_)
+import FloraWeb.Pages.Templates.Packages (formatUploadTime)
 import FloraWeb.Pages.Templates.Types
 
-show :: FloraHTML
-show = do
+show
+  :: UTCTime
+  -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
+  -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
+  -> FloraHTML
+show now recentUploads latestPackages = do
   banner
   div_ [class_ "container container--small"] $ do
     mainSearchBar
     buttons
+    packageNewsSection now latestPackages recentUploads
 
 banner :: FloraHTML
 banner = do
@@ -36,6 +51,53 @@ buttons =
       h2_
         [class_ "category-card__name"]
         "Start with Cabal"
+
+packageNewsSection
+  :: UTCTime
+  -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
+  -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
+  -> FloraHTML
+packageNewsSection now newPackages recentUploads = do
+  section_ [id_ "package-news"] $ do
+    newPackagesColumn now newPackages
+    recentUploadsColumn now recentUploads
+
+recentUploadsColumn
+  :: UTCTime
+  -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
+  -> FloraHTML
+recentUploadsColumn now recentPackages = div_ [class_ "package-news-column"] $ do
+  h2_ "Recently Updated"
+  ul_ [] $ do
+    forM_ recentPackages $ \(namespace, name, synopsis, version, mTimestamp) -> do
+      li_ [] $ do
+        div_ [] $ do
+          div_ [] $ do
+            a_ [] (toHtml $ formatPackage namespace name)
+            span_ [] (toHtml $ display version)
+          p_ [] (toHtml synopsis)
+        whenJust mTimestamp $ \timestamp ->
+          div_ [] $
+            span_
+              [ dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp))
+              , class_ "upload-date"
+              ]
+              (toHtml $ formatUploadTime timestamp now)
+
+newPackagesColumn
+  :: UTCTime
+  -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
+  -> FloraHTML
+newPackagesColumn now newPackages = div_ [class_ "package-news-column"] $ do
+  h2_ "New packages"
+  ul_ [] $ do
+    forM_ newPackages $ \(namespace, name, synopsis, mTimestamp) -> do
+      li_ [] $ do
+        div_ [] $ do
+          a_ [] (toHtml $ formatPackage namespace name)
+          p_ [] (toHtml synopsis)
+        whenJust mTimestamp $ \timestamp ->
+          div_ [] $ span_ [dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp)), class_ "upload-date"] (toHtml $ formatUploadTime timestamp now)
 
 about :: FloraHTML
 about = do
@@ -63,9 +125,8 @@ aboutText = do
 
 Flora.pm is a package index for the [Haskell](https://haskell.org) ecosystem. It indexes packages from [Hackage](https://hackage.haskell.org)
 and provides new features and improvements:
-
-* Curated category model, with elimination of duplicates
-* Package namespaces, so that packages with the same name can live without conflict
+recentUploadsategory model, with elimination of duplicates
+recentUploadsamespaces, so that packages with the same name can live without conflict
 * Beautiful package pages
 * Responsive interface for mobile devices
 * Dark mode

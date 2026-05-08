@@ -25,14 +25,12 @@
 }
 
 section#main-page-buttons {
-	border-top: 1px solid var(--text-color);
-	border-color: var(--navbar-background-color);
 	display: flex;
 	flex-wrap: wrap;
 	gap: 16px;
 	justify-content: center;
-	padding-top: 3rem;
 	margin-top: 3rem;
+	margin-bottom: 1.5rem;
 
 	.button {
 		background-color: var(--main-page-button-background);
@@ -63,6 +61,71 @@ section#main-page-buttons {
 		/* offset-x | offset-y | blur-radius | spread-radius | color */
 		box-shadow: 0 0 4px 2px var(--main-page-button-focus-border-color);
 	}
+}
+
+section#package-news {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.package-news-column {
+	h2 {
+		border-bottom: 1px solid #354561;
+		padding-bottom: 0.3em;
+		margin-bottom: 16px;
+		font-size: 1.5em;
+
+		a {
+			display: inline-block;
+		}
+	}
+
+	ul:not(:last-child) {
+		margin-bottom: 1rem;
+
+		li {
+			list-style-type: none;
+		}
+	}
+}
+
+
+span.upload-date::before {
+	content: attr(data-text); /* here's the magic */
+	position: absolute;
+	font-size: 0.85em;
+
+	/* vertically center */
+	top: 50%;
+	transform: translateY(-50%);
+
+	/* move to right */
+	left: 100%;
+
+	/* basic styles */
+	background: #000;
+	border-radius: 10px;
+	box-shadow: 0 1px 8px rgb(0 0 0 / 50%);
+	color: #fff;
+	padding: 5px;
+	text-align: center;
+	display: none; /* hide by default */
+}
+
+span.upload-date:hover::before {
+	display: block;
+	width: 200px;
+}
+
+.upload-date {
+	svg {
+		display: inline;
+		width: 1rem;
+		height: 1rem;
+	}
+
+	position: relative; /* making the .tooltip span a container for the tooltip text */
+	border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
 }
 
 @media (max-width: 48rem) {
