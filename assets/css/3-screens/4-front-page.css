@@ -25,14 +25,12 @@
 }
 
 section#main-page-buttons {
-	border-top: 1px solid var(--text-color);
-	border-color: var(--navbar-background-color);
 	display: flex;
 	flex-wrap: wrap;
 	gap: 16px;
 	justify-content: center;
-	padding-top: 3rem;
 	margin-top: 3rem;
+	margin-bottom: 1.5rem;
 
 	.button {
 		background-color: var(--main-page-button-background);
@@ -71,7 +69,18 @@ section#package-news {
 }
 
 .package-news-column {
-	lu:not(:last-child) {
+	h2 {
+		border-bottom: 1px solid #354561;
+		padding-bottom: 0.3em;
+		margin-bottom: 16px;
+		font-size: 1.5em;
+
+		a {
+			display: inline-block;
+		}
+	}
+
+	ul:not(:last-child) {
 		margin-bottom: 1rem;
 
 		li {
@@ -118,6 +127,7 @@ span.upload-date:hover::before {
 	position: relative; /* making the .tooltip span a container for the tooltip text */
 	border-bottom: 1px dashed #000; /* little indicater to indicate it's hoverable */
 }
+
 @media (max-width: 48rem) {
 	.main-search {
 		align-items: center;
