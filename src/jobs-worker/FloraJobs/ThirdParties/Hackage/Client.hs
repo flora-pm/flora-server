@@ -17,7 +17,7 @@ import Servant.Client
 import Data.Time.Orphans ()
 import Flora.Model.Package.Types
 import FloraJobs.Environment
-import FloraJobs.ThirdParties.Hackage.API as API
+import FloraJobs.ThirdParties.Hackage.API
 
 request
   :: ( IOE :> es
@@ -87,15 +87,15 @@ getDeprecatedReleasesList packageName =
 getPackageInfo :: VersionedPackage -> ClientM HackagePackageInfo
 getPackageInfo versionedPackage = do
   hackageClient
-    // API.withPackage
+    // (.withPackage)
     /: versionedPackage
-    // API.getPackageInfo
+    // (.getPackageInfo)
 
 getPackageWithRevision :: VersionedPackage -> Word -> ClientM HackagePackageInfo
 getPackageWithRevision versionedPackage revision =
   do
     hackageClient
-    // API.withPackage
+    // (.withPackage)
     /: versionedPackage
-    // API.getPackageWithRevision
+    // (.getPackageWithRevision)
     /: revision

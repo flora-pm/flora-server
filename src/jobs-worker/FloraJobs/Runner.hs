@@ -50,7 +50,6 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
-import FloraJobs.Environment
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
 import FloraJobs.ThirdParties.Hackage.API
