@@ -160,7 +160,6 @@ getHackagePackageReleasesWithoutChangelog =
         on p.package_id = r.package_id
         where r.changelog_status = 'not-imported'
           and p.namespace = 'hackage'
-           or p.namespace = 'haskell'
       |]
 
 getHackagePackageReleasesWithoutTarball
@@ -191,7 +190,6 @@ getHackagePackagesWithoutReleaseDeprecationInformation =
         join packages as p1 on r0.package_id = p1.package_id
         where r0.deprecated is null
           and p1.namespace = 'hackage'
-           or p1.namespace = 'haskell'
         group by p1.name;
         |]
 
