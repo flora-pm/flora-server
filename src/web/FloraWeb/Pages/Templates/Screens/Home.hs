@@ -73,7 +73,7 @@ recentUploadsColumn now recentPackages = div_ [class_ "package-news-column"] $ d
       li_ [] $ do
         div_ [] $ do
           div_ [] $ do
-            a_ [] (toHtml $ formatPackage namespace name)
+            a_ [href_ ("/packages/" <> display namespace <> "/" <> display name <> "/" <> display version)] (toHtml $ formatPackage namespace name)
             span_ [] (toHtml $ display version)
           p_ [] (toHtml synopsis)
         whenJust mTimestamp $ \timestamp ->
@@ -94,7 +94,7 @@ newPackagesColumn now newPackages = div_ [class_ "package-news-column"] $ do
     forM_ newPackages $ \(namespace, name, synopsis, mTimestamp) -> do
       li_ [] $ do
         div_ [] $ do
-          a_ [] (toHtml $ formatPackage namespace name)
+          a_ [href_ ("/packages/" <> display namespace <> "/" <> display name)] (toHtml $ formatPackage namespace name)
           p_ [] (toHtml synopsis)
         whenJust mTimestamp $ \timestamp ->
           div_ [] $ span_ [dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp)), class_ "upload-date"] (toHtml $ formatUploadTime timestamp now)
