@@ -13,25 +13,11 @@ import Lucid
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
+import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Types (Release (..))
 import FloraWeb.Components.Icons (chevronRightOutline)
 import FloraWeb.Components.Pill qualified as Pill
 import FloraWeb.Pages.Templates.Packages
-  ( displayCategories
-  , displayDependencies
-  , displayDependents
-  , displayInstructions
-  , displayLicense
-  , displayLinks
-  , displayMaintainer
-  , displayNamespace
-  , displayPackageDeprecation
-  , displayPackageFlags
-  , displayReadme
-  , displayReleaseDeprecation
-  , displayTestedWith
-  , displayVersions
-  )
 import FloraWeb.Pages.Templates.Types (FloraHTML)
 import Lucid.Orphans ()
 
@@ -47,6 +33,8 @@ showPackage
   -> Word
   -> Vector Category
   -> Vector PackageGroupName
+  -> Vector Text
+  -> Maybe PackageUploader
   -> FloraHTML
 showPackage
   latestRelease
@@ -59,7 +47,9 @@ showPackage
   dependencies
   numberOfDependencies
   categories
-  groups =
+  groups
+  activeUploaders
+  mUploader =
     div_ [class_ "container"] $ do
       presentationHeader latestRelease namespace name latestRelease.synopsis groups
       packageBody
@@ -73,6 +63,8 @@ showPackage
         dependents
         numberOfDependents
         categories
+        (Vector.length activeUploaders)
+        mUploader
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> Vector PackageGroupName -> FloraHTML
 presentationHeader release namespace name synopsis groups =
@@ -101,6 +93,8 @@ packageBody
   -> Vector Package
   -> Word
   -> Vector Category
+  -> Int
+  -> Maybe PackageUploader
   -> FloraHTML
 packageBody
   Package{namespace, name = packageName, deprecationInfo}
@@ -112,12 +106,14 @@ packageBody
   numberOfDependencies
   dependents
   numberOfDependents
-  categories =
+  categories
+  lotteryFactor
+  mUploader =
     div_ [class_ "package-body"] $ do
       div_ [class_ "package-left-column"] $ ul_ [class_ "package-left-rows"] $ do
         displayCategories categories
         displayLicense license
-        displayMaintainer maintainer
+        displayMaintainer namespace packageName lotteryFactor mUploader maintainer
         displayLinks namespace packageName packageIndexURL latestRelease
         displayVersions namespace packageName packageReleases numberOfReleases
       div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows"] $ do

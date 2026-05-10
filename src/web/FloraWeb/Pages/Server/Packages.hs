@@ -4,7 +4,7 @@ module FloraWeb.Pages.Server.Packages
   )
 where
 
-import Control.Monad (unless)
+import Control.Monad
 import Data.ByteString.Lazy (ByteString)
 import Data.Foldable
 import Data.Function
@@ -43,6 +43,7 @@ import Flora.Model.Package.Query qualified as Query
 import Flora.Model.PackageGroupPackage.Query qualified as Query
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
+import Flora.Model.PackageUploader.Query qualified as Query
 import Flora.Model.Release.Guard
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
@@ -202,6 +203,8 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
         Query.getNumberOfPackageDependents packageNamespace packageName Nothing
     numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
     groups <- Query.getPackageGroupsForPackage package.packageId
+    activeUploaders <- Query.getActiveUploaders package.packageId
+    mUploader <- join <$> (traverse Query.getPackageUploaderById release.uploaderId)
 
     let templateEnv =
           templateEnv'
@@ -245,6 +248,8 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
           numberOfDependencies
           categories
           groups
+          activeUploaders
+          mUploader
 
 showDependentsHandler
   :: ( DB :> es

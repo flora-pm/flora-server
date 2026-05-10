@@ -20,7 +20,6 @@ module Flora.Model.Release.Query
   , getVersionFromManyReleaseIds
   , getReleasePackageIndex
   , getLatestReleases
-  , getRecentlyActiveUploaders
   )
 where
 
@@ -258,21 +257,4 @@ getLatestReleases = dbtToEff $ do query sqlQuery ()
       FROM latest_versions as l0
       ORDER BY l0.uploaded_at DESC
       LIMIT 6
-      |]
-
-getRecentlyActiveUploaders
-  :: DB :> es
-  => FloraM es (Vector Text)
-getRecentlyActiveUploaders = dbtToEff $ do
-  result <- query sqlQuery ()
-  pure $ fromOnly <$> result
-  where
-    sqlQuery =
-      [sql|
-      SELECT p0.username
-      FROM package_uploaders AS p0
-           INNER JOIN releases AS r1 ON p0.package_uploader_id = r1.uploader_id
-      WHERE r1.uploaded_at >= (CURRENT_DATE - INTERVAL '2 years')
-        AND r1.uploaded_at < CURRENT_DATE
-      GROUP BY p0.username
       |]
