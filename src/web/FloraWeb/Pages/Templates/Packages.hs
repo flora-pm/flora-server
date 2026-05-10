@@ -14,6 +14,8 @@ module FloraWeb.Pages.Templates.Packages
   , displayReleaseVersion
   , displayTestedWith
   , displayVersions
+  , displayLotteryFactor
+  , displayUploader
   , listVersions
   , packageListing
   , packageWithExecutableListing
@@ -63,7 +65,9 @@ import Data.Positive
 import Distribution.Orphans ()
 import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.Category.Types
+import Flora.Model.Package
 import Flora.Model.Package.Types
+import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
@@ -460,11 +464,36 @@ displayTestedWith compilersVersions'
             compilersVersions
             (li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display)
 
-displayMaintainer :: Text -> FloraHTML
-displayMaintainer maintainerInfo =
+displayMaintainer
+  :: Namespace
+  -> PackageName
+  -> Int
+  -> Maybe PackageUploader
+  -> Text
+  -> FloraHTML
+displayMaintainer namespace packageName count mUploader maintainerInfo =
   li_ [class_ ""] $ do
     h3_ [class_ "package-body-section"] "Maintainer"
-    p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
+    div_ [] $ do
+      p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
+      p_ [] $ displayLotteryFactor namespace packageName count
+      whenJust mUploader $ \uploader -> p_ [] $ displayUploader uploader.username
+
+displayLotteryFactor
+  :: Namespace
+  -> PackageName
+  -> Int
+  -> FloraHTML
+displayLotteryFactor namespace packageName count =
+  span_
+    [ dataText_ ("The number of people with uploader permission on " <> formatPackage namespace packageName <> " who have released something to " <> display namespace <> " in the last 2 years (i.e. the number of people likely able to release critical fixes in a timely manner)")
+    , class_ "revised-date"
+    ]
+    $ toHtml ("Lottery factor: " <> display count)
+
+displayUploader :: Text -> FloraHTML
+displayUploader uploader =
+  span_ [] $ toHtml ("Uploader: " <> uploader)
 
 displayDependents
   :: (Namespace, PackageName)
@@ -607,9 +636,9 @@ toRelativeHumanTime diff
   | diff < days 14 = Time.formatTime Time.defaultTimeLocale "1 week ago" diff
   | diff < months 1 = Time.formatTime Time.defaultTimeLocale "%w weeks ago" diff
   | diff < months 2 = Time.formatTime Time.defaultTimeLocale "1 month ago" diff
-  | diff < months 12 = show @Int (diff `div'` (months 1)) <> " months ago"
+  | diff < months 12 = show @Int (diff `div'` months 1) <> " months ago"
   | diff < years 2 = "about 1 year ago"
-  | otherwise = show @Int (diff `div'` (years 1)) <> " years ago"
+  | otherwise = show @Int (diff `div'` years 1) <> " years ago"
 
 seconds :: Pico -> NominalDiffTime
 seconds = Time.secondsToNominalDiffTime

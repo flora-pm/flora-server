@@ -36,6 +36,7 @@ data PackageUploader = PackageUploader
   , userId :: Maybe UserId
   }
   deriving stock (Eq, Generic, Show)
+  deriving anyclass (NFData)
 
 data PackageUploaderDAO = PackageUploaderDAO
   { packageUploaderId :: PackageUploaderId

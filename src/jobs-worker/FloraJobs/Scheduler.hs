@@ -3,7 +3,7 @@ module FloraJobs.Scheduler
   ( scheduleReadmeJob
   , scheduleTarballJob
   , scheduleChangelogJob
-  , scheduleUploadTimeJob
+  , scheduleUploadInformationJob
   , schedulePackageDeprecationListJob
   , scheduleReleaseDeprecationListJob
   , scheduleRefreshLatestVersions
@@ -63,17 +63,17 @@ scheduleChangelogJob
 scheduleChangelogJob env rid package version =
   createJobWithResource env $ FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version
 
-scheduleUploadTimeJob
+scheduleUploadInformationJob
   :: MonadUnliftIO m
   => ArbS.SimpleEnv JobQueues
   -> ReleaseId
   -> PackageName
   -> Version
   -> m (Maybe (Arb.JobRead PackageJob))
-scheduleUploadTimeJob env releaseId packageName version =
+scheduleUploadInformationJob env releaseId packageName version =
   createJobWithResource env $
-    FetchUploadTime $
-      UploadTimeJobPayload packageName releaseId (MkIntAesonVersion version)
+    FetchUploadInformation $
+      UploadInformationJobPayload packageName releaseId (MkIntAesonVersion version)
 
 schedulePackageDeprecationListJob
   :: MonadUnliftIO m

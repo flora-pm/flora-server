@@ -33,6 +33,8 @@ module Flora.Model.Package.Query
   , getTransitiveDependencies
   , getPackageById
   , getLatestPackages
+  , getActiveUploaders
+  , getUploaders
   ) where
 
 import Data.Aeson
@@ -78,6 +80,7 @@ import Flora.Model.Requirement
   , DependencyInfo
   , toComponentDependencies
   )
+import Flora.Monad
 
 getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
 getAllPackages = do
@@ -839,4 +842,45 @@ getLatestPackages = dbtToEff $ do query sqlQuery ()
                             WHERE package_id = p0.package_id)
         ORDER BY p0.created_at DESC
         LIMIT 6
+      |]
+
+getActiveUploaders
+  :: DB :> es
+  => PackageId
+  -> FloraM es (Vector Text)
+getActiveUploaders packageId = dbtToEff $ do
+  result <- query sqlQuery (Only packageId)
+  pure $ fromOnly <$> result
+  where
+    sqlQuery =
+      [sql|
+        SELECT p1.username
+        FROM releases AS r0
+             INNER JOIN package_uploaders AS p1 ON p1.package_uploader_id = r0.uploader_id
+             INNER JOIN packages AS p2 ON p2.package_id = r0.package_id
+        WHERE p2.package_id = ?
+          AND p1.username IN (SELECT p0.username
+                              FROM package_uploaders AS p0
+                                   INNER JOIN releases AS r1 ON p0.package_uploader_id = r1.uploader_id
+                              WHERE r1.uploaded_at >= (CURRENT_DATE - CAST('2 years' AS interval))
+                              GROUP BY p0.username)
+        GROUP BY p1.package_uploader_id
+      |]
+
+getUploaders
+  :: DB :> es
+  => PackageId
+  -> FloraM es (Vector Text)
+getUploaders packageId = dbtToEff $ do
+  result <- query sqlQuery (Only packageId)
+  pure $ fromOnly <$> result
+  where
+    sqlQuery =
+      [sql|
+        SELECT p1.username
+        FROM releases AS r0
+             INNER JOIN package_uploaders AS p1 ON p1.package_uploader_id = r0.uploader_id
+             INNER JOIN packages AS p2 ON p2.package_id = r0.package_id
+        WHERE p2.package_id = ?
+        GROUP BY p1.package_uploader_id
       |]

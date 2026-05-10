@@ -9,7 +9,7 @@ module Flora.Model.Release.Query
   , getReleaseByVersion
   , getHackagePackageReleasesWithoutReadme
   , getHackagePackageReleasesWithoutChangelog
-  , getHackagePackageReleasesWithoutUploadTimestamp
+  , getHackagePackageReleasesWithoutUploadInformation
   , getHackagePackageReleasesWithoutTarball
   , getAllReleases
   , getLatestReleaseTime
@@ -112,9 +112,7 @@ getVersionFromManyReleaseIds releaseIds = do
 getHackagePackageReleasesWithoutReadme
   :: DB :> es
   => FloraM es (Vector (ReleaseId, Version, PackageName))
-getHackagePackageReleasesWithoutReadme =
-  dbtToEff $
-    query querySpec ()
+getHackagePackageReleasesWithoutReadme = dbtToEff $ query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -125,13 +123,12 @@ getHackagePackageReleasesWithoutReadme =
         on p.package_id = r.package_id
         where r.readme_status = 'not-imported'
           and p.namespace = 'hackage'
-           or p.namespace = 'haskell'
       |]
 
-getHackagePackageReleasesWithoutUploadTimestamp
+getHackagePackageReleasesWithoutUploadInformation
   :: DB :> es
   => FloraM es (Vector (ReleaseId, Version, PackageName))
-getHackagePackageReleasesWithoutUploadTimestamp =
+getHackagePackageReleasesWithoutUploadInformation =
   dbtToEff $
     query querySpec ()
   where
@@ -142,9 +139,8 @@ getHackagePackageReleasesWithoutUploadTimestamp =
         from releases as r
         join packages as p
         on p."package_id" = r."package_id"
-        where r."uploaded_at" is null
+        where (r."uploaded_at" is null or r."uploader_id" is null)
           and p."namespace" = 'hackage'
-           or p."namespace" = 'haskell'
       |]
 
 getHackagePackageReleasesWithoutChangelog
@@ -163,7 +159,6 @@ getHackagePackageReleasesWithoutChangelog =
         on p.package_id = r.package_id
         where r.changelog_status = 'not-imported'
           and p.namespace = 'hackage'
-           or p.namespace = 'haskell'
       |]
 
 getHackagePackageReleasesWithoutTarball
@@ -194,7 +189,6 @@ getHackagePackagesWithoutReleaseDeprecationInformation =
         join packages as p1 on r0.package_id = p1.package_id
         where r0.deprecated is null
           and p1.namespace = 'hackage'
-           or p1.namespace = 'haskell'
         group by p1.name;
         |]
 

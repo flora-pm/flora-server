@@ -24,6 +24,7 @@ import Data.Text qualified as T
 import Data.Text.Display (display)
 import Distribution.Version (Version)
 import Log ((.=))
+import Optics.Core
 import System.FilePath (dropTrailingPathSeparator, joinPath, splitPath, (</>))
 
 import Flora.Model.BlobIndex.Types (TarError (..))
@@ -165,7 +166,7 @@ hashTree (TarRoot _ pname version tree) =
         . foldl' SHA.update SHA.init
         . concatMap
           ( \(fp, entry) ->
-              [ (ann entry).bytestring
+              [ ann entry ^. #bytestring
               , BSU.fromString fp
               ]
           )
