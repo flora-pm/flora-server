@@ -165,7 +165,7 @@ hashTree (TarRoot _ pname version tree) =
         . foldl' SHA.update SHA.init
         . concatMap
           ( \(fp, entry) ->
-              [ (ann entry).bytestring
+              [ ann entry.bytestring
               , BSU.fromString fp
               ]
           )

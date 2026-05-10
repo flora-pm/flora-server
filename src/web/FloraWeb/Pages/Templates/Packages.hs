@@ -607,9 +607,9 @@ toRelativeHumanTime diff
   | diff < days 14 = Time.formatTime Time.defaultTimeLocale "1 week ago" diff
   | diff < months 1 = Time.formatTime Time.defaultTimeLocale "%w weeks ago" diff
   | diff < months 2 = Time.formatTime Time.defaultTimeLocale "1 month ago" diff
-  | diff < months 12 = show @Int (diff `div'` (months 1)) <> " months ago"
+  | diff < months 12 = show @Int (diff `div'` months 1) <> " months ago"
   | diff < years 2 = "about 1 year ago"
-  | otherwise = show @Int (diff `div'` (years 1)) <> " years ago"
+  | otherwise = show @Int (diff `div'` years 1) <> " years ago"
 
 seconds :: Pico -> NominalDiffTime
 seconds = Time.secondsToNominalDiffTime
