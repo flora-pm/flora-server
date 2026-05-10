@@ -177,11 +177,10 @@ fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageV
       Right packageInfo ->
         if packageInfo.metadataRevision == 0
           then do
-            Log.logTrace_ "No revision, using the upload time"
             Update.updateUploadTime releaseId packageInfo.uploadedAt
+            Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
           else do
-            Log.logTrace_ "Found a revision, querying the original package info"
-            (Hackage.request $ Hackage.getPackageWithRevision requestPayload 0) >>= \case
+            Hackage.request (Hackage.getPackageWithRevision requestPayload 0) >>= \case
               Right originalPackageInfo -> do
                 Update.updateRevisionTime releaseId packageInfo.uploadedAt
                 Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
