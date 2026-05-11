@@ -108,12 +108,13 @@ makeReadme ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
       | response.responseStatusCode == notFound404 = Update.updateReadme mpReleaseId Nothing Inexistent
       | response.responseStatusCode == gone410 = Update.updateReadme mpReleaseId Nothing Inexistent
       | otherwise = do
-          Log.logAttention "Could not find tarball from hackage" $
+          Log.logAttention "Could not get README hackage" $
             object
               [ "namespace" .= ("hackage" :: Text)
               , "package_name" .= mpPackage
               , "package_version" .= mpVersion
               , "release_id" .= mpReleaseId
+              , "error" .= Text.show e
               ]
           Arb.throwRetryable (Text.show e)
     handleClientError e = Arb.throwRetryable (Text.show e)
