@@ -15,6 +15,7 @@ import Effectful.FileSystem
 import Effectful.Log qualified as Log
 import Effectful.Prometheus (runPrometheusMetrics)
 import Log
+import Log.Backend.StandardOutput qualified as Log
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
@@ -27,6 +28,7 @@ import Prometheus.Metric.GHC qualified as P
 import RequireCallStack
 
 import Flora.Environment
+import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Logging qualified as Logging
 import Flora.Model.Job
@@ -35,6 +37,7 @@ import FloraJobs.Metrics
 import FloraJobs.Runner qualified as Runner
 import FloraJobs.Types
 import FloraWeb.Common.Tracing
+import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
 main :: IO ()
 main = do
@@ -42,7 +45,7 @@ main = do
   floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
   workerEnv <- ArbS.createSimpleEnv (Proxy @JobQueues) jobsEnv.connectionInfo "public"
-  let withLogger = Logging.makeLogger floraEnv.mltp.logger
+  let withLogger = makeLogger floraEnv.mltp.logger
   runEff . runConcurrent $ do
     when floraEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
@@ -59,7 +62,7 @@ main = do
                     { Arb.onJobFailure = \job message startTime endTime ->
                         liftIO $
                           runEff $
-                            Log.runLog "flora-jobs" logger defaultLogLevel $
+                            Log.runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
                               Log.logAttention message $
                                 object
                                   [ "duration" .= diffUTCTime endTime startTime
@@ -69,6 +72,11 @@ main = do
               }
 
       liftIO $ ArbS.runSimpleDb workerEnv $ Worker.runWorkerPool config
+  where
+    makeLogger :: IOE :> es => LoggingDestination -> (Logger -> Eff es a) -> Eff es a
+    makeLogger StdOut = Log.withStdOutLogger
+    makeLogger Json = Log.withJsonStdOutLogger
+    makeLogger JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = "logs/flora-jobs.json"}
 
 runServer
   :: IOE :> es

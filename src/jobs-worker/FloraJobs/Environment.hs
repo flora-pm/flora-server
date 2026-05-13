@@ -23,6 +23,7 @@ data FloraJobsEnv = FloraJobsEnv
   , httpManager :: HTTP.Manager
   , httpPort :: Word16
   , metrics :: JobsRunnerMetrics
+  , mltp :: MLTP
   }
   deriving stock (Generic)
 
@@ -47,4 +48,5 @@ getFloraJobsEnv = do
       , httpManager
       , httpPort = jobsConfig.httpPort
       , metrics
+      , mltp = jobsConfig.mltp
       }

@@ -18,14 +18,14 @@ import Effectful.Concurrent
 import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
+import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
 import Effectful.Trace qualified as Trace
 import GHC.Eventlog.Socket qualified as Socket
-import Log (Logger)
-import Log qualified
+import Log
 import Monitor.Tracing.Zipkin (Zipkin (..))
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
@@ -146,17 +146,24 @@ logException
   -> Logger
   -> Safe.SomeException
   -> IO ()
-logException env logger exception =
+logException floraEnv logger exception =
   runEff
     . runTime
-    . Logging.runLog env logger
+    . Log.runLog
+      ("flora-server-" <> display floraEnv)
+      logger
+      defaultLogLevel
     $ Log.logAttention "Jobs runner crashed " (show exception)
 
 runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> FloraM es ()
 runServer appLogger floraEnv = do
   zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-server"
-  -- void $ forkIO $ unsafeEff_ $ Safe.withException (startJobRunner oddJobsCfg) (logException floraEnv.environment appLogger)
-  loggingMiddleware <- Logging.runLog floraEnv.environment appLogger WaiLog.mkLogMiddleware
+  loggingMiddleware <-
+    Log.runLog
+      ("flora-server-" <> display floraEnv.environment)
+      appLogger
+      defaultLogLevel
+      WaiLog.mkLogMiddleware
   let prometheusMiddleware =
         if floraEnv.mltp.prometheusEnabled
           then WaiMetrics.prometheus WaiMetrics.def
@@ -253,7 +260,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
                     ]
                 pure . Left $ err
             )
-          & Logging.runLog floraEnv.environment logger
+          & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
           & runReader floraEnv

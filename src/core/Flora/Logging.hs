@@ -1,6 +1,5 @@
 module Flora.Logging
   ( makeLogger
-  , runLog
   , timeAction
   )
 where
@@ -19,23 +18,10 @@ import Log.Backend.StandardOutput qualified as Log
 import Flora.Environment.Config
 import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
--- | Wrapper around 'Log.runLogT' with necessary metadata
-runLog
-  :: forall (es :: [Effect]) (a :: Type)
-   . IOE :> es
-  => DeploymentEnv
-  -> Logger
-  -> Eff (Log : es) a
-  -> Eff es a
-runLog env logger logAction =
-  Log.runLog ("flora-" <> suffix) logger Log.defaultLogLevel logAction
-  where
-    suffix = display env
-
 makeLogger :: IOE :> es => LoggingDestination -> (Logger -> Eff es a) -> Eff es a
 makeLogger StdOut = Log.withStdOutLogger
 makeLogger Json = Log.withJsonStdOutLogger
-makeLogger JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = "logs/flora.json"}
+makeLogger JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = "logs/flora-server.json"}
 
 timeAction
   :: forall (es :: [Effect]) (a :: Type)

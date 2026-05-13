@@ -13,15 +13,17 @@ import Data.Function ((&))
 import Data.Kind (Type)
 import Data.List qualified as List
 import Data.Text (Text)
+import Data.Text.Display
 import Data.Text.Encoding qualified as Text
 import Data.UUID qualified as UUID
 import Data.UUID.V4 qualified as UUID
 import Effectful
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
+import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.PostgreSQL.Transact.Effect qualified as DB
-import Log (Logger)
+import Log
 import Network.HTTP.Types (hCookie)
 import Network.Wai
 import Servant qualified
@@ -31,7 +33,6 @@ import Servant.Server.Experimental.Auth (AuthHandler, mkAuthHandler)
 import Web.Cookie
 
 import Flora.Environment.Env
-import Flora.Logging qualified as Logging
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Query
@@ -47,7 +48,7 @@ optionalAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
         handler floraEnv request
-          & Logging.runLog floraEnv.environment logger
+          & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
           & DB.runDB floraEnv.pool
           & effToHandler
     )
@@ -57,7 +58,7 @@ strictAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
         requireUserHandler floraEnv request
-          & Logging.runLog floraEnv.environment logger
+          & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
           & DB.runDB floraEnv.pool
           & effToHandler
     )
@@ -67,7 +68,7 @@ adminAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
         requireAdminHandler floraEnv request
-          & Logging.runLog floraEnv.environment logger
+          & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
           & DB.runDB floraEnv.pool
           & effToHandler
     )
