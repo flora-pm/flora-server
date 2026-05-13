@@ -132,6 +132,7 @@ import GHC.Stack
 import Hedgehog (MonadGen (..))
 import Hedgehog.Gen qualified as H
 import Hedgehog.Range qualified as Range
+import Log.Backend.StandardOutput qualified as Log
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import RequireCallStack
@@ -217,9 +218,8 @@ importAllPackages = do
     "test/fixtures/Cabal"
 
 runTestEff :: (HasCallStack, RequireCallStack) => TestEff a -> FloraEnv -> IO a
-runTestEff comp env = runEff $ do
-  let withLogger = Logging.makeLogger env.mltp.logger
-  withLogger $ \logger ->
+runTestEff comp env = runEff $
+  Log.withStdOutLogger $ \logger ->
     comp
       & Trace.runNoTrace
       & runFileSystem

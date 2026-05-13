@@ -151,6 +151,7 @@ data FloraJobsConfig = FloraJobsConfig
   { dbConfig :: PoolConfig
   , connectionInfo :: StrictByteString
   , httpPort :: Word16
+  , mltp :: MLTP
   }
   deriving stock (Generic)
 
@@ -167,13 +168,24 @@ parsePoolConfig =
       "FLORA_DB_POOL_CONNECTIONS"
       (help "Number of connections across all sub-pools")
 
-parseMLTP :: Parser Error MLTP
-parseMLTP =
+parseServerMLTP :: Parser Error MLTP
+parseServerMLTP =
   MLTP
     <$> var (pure . Just <=< nonempty) "FLORA_SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
     <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Is Prometheus metrics export enabled (default false)")
     <*> var loggingDestination "FLORA_LOGGING_DESTINATION" (help "Where do the logs go")
     <*> switch "FLORA_ZIPKIN_ENABLED" (help "Is Zipkin trace collection enabled? (default false)")
+    <*> var (pure . Just <=< nonempty) "FLORA_ZIPKIN_AGENT_HOST" (help "The hostname of the Zipkin collection agent" <> def Nothing)
+    <*> var (pure . Just <=< auto) "FLORA_ZIPKIN_AGENT_PORT" (help "The port of the Zipkin collection agent" <> def Nothing)
+    <*> var (pure . Just <=< filepath) "FLORA_EVENTLOG_SOCKET" (help "The path of the GC eventlog socket" <> def Nothing)
+
+parseJobsMLTP :: Parser Error MLTP
+parseJobsMLTP =
+  MLTP
+    <$> var (pure . Just <=< nonempty) "FLORA_SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
+    <*> switch "FLORA_JOBS_PROMETHEUS_ENABLED" (help "Is Prometheus metrics export enabled (default false)")
+    <*> var loggingDestination "FLORA_JOBS_LOGGING_DESTINATION" (help "Where do the logs go")
+    <*> switch "FLORA_JOBS_ZIPKIN_ENABLED" (help "Is Zipkin trace collection enabled? (default false)")
     <*> var (pure . Just <=< nonempty) "FLORA_ZIPKIN_AGENT_HOST" (help "The hostname of the Zipkin collection agent" <> def Nothing)
     <*> var (pure . Just <=< auto) "FLORA_ZIPKIN_AGENT_PORT" (help "The port of the Zipkin collection agent" <> def Nothing)
     <*> var (pure . Just <=< filepath) "FLORA_EVENTLOG_SOCKET" (help "The path of the GC eventlog socket" <> def Nothing)
@@ -207,7 +219,7 @@ parseConfig =
     <*> parseConnectionInfo
     <*> parseDomain
     <*> parsePort
-    <*> parseMLTP
+    <*> parseServerMLTP
     <*> parseFeatures
     <*> parseDeploymentEnv
 
@@ -217,7 +229,7 @@ parseTestConfig =
     <$> parsePort
     <*> parsePoolConfig
     <*> parseConnectionInfo
-    <*> parseMLTP
+    <*> parseServerMLTP
 
 parseJobsConfig :: Parser Error FloraJobsConfig
 parseJobsConfig =
@@ -225,6 +237,7 @@ parseJobsConfig =
     <$> parsePoolConfig
     <*> parseConnectionInfo
     <*> parseJobRunnerPort
+    <*> parseJobsMLTP
 
 -- Env parser helpers
 

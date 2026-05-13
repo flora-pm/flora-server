@@ -68,7 +68,6 @@
               pkgs.cabal-install
               pkgs.haskell.compiler.ghc9103
               pkgs.haskellPackages.fourmolu
-              pkgs.haskellPackages.postgresql-migration
               pkgs.pkg-config
               pkgs.postgresql
               pkgs.yarn

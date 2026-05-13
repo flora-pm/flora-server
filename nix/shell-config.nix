@@ -2,7 +2,6 @@
   packages = p: [ p.flora ];
   nativeBuildInputs = [
     hsPkgs.haskell-language-server
-    hsPkgs.postgresql-migration
     pkgs.cabal-install
     pkgs.ghcid
     pkgs.postgresql_14
