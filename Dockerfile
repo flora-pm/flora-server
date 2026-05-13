@@ -1,13 +1,12 @@
 ARG APPLY_REFACT_VERSION=0.15.0.0
 ARG BASE_IMAGE_VERSION=22.04
-ARG CABAL_VERSION=3.16.0.0
-ARG FOURMOLU_VERSION=0.18.0.0
+ARG CABAL_VERSION=3.16.1.0
+ARG FOURMOLU_VERSION=0.19.0.1
 ARG GHCID_VERSION=0.8.9
 ARG GHC_TAGS_VERSION=1.9
 ARG GHC_VERSION=9.10.3
 ARG HLINT_VERSION=3.10
-ARG HLS_VERSION=2.12.0.0
-ARG POSTGRESQL_MIGRATION_VERSION=0.2.1.8
+ARG HLS_VERSION=2.14.0.0
 ARG CABAL_GILD_VERSION=1.6.0.2
 
 # This stage installs libraries required to install GHC and other tools
@@ -57,7 +56,6 @@ ARG GHCID_VERSION
 ARG GHC_TAGS_VERSION
 ARG GHC_VERSION
 ARG HLINT_VERSION
-ARG POSTGRESQL_MIGRATION_VERSION
 ARG CABAL_GILD_VERSION
 
 ENV PATH="/opt/ghcup/.ghcup/bin:$PATH"
@@ -75,7 +73,6 @@ RUN ghcup gc -t -p -s -c
 RUN ghcup install ghc $GHC_VERSION
 RUN ghcup set ghc $GHC_VERSION
 
-RUN cabal install --install-method=copy --installdir=out/ --semaphore -j postgresql-migration-$POSTGRESQL_MIGRATION_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j fourmolu-$FOURMOLU_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$HLINT_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j cabal-gild-$CABAL_GILD_VERSION

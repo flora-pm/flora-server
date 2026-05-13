@@ -9,7 +9,6 @@ The compiler version used is described in the `cabal.project` file.
 
 The following Haskell command-line tools will have to be installed:
 
-* `postgresql-migration`: To perform schema migrations
 * `fourmolu`: To style the code base. Version is 0.17.0.0
 * `hlint` v3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-gild` and `nixfmt`: To style the cabal and nix files
@@ -18,7 +17,7 @@ The following Haskell command-line tools will have to be installed:
 
 Outside of the flora root directory run:
 ```
-cabal install postgresql-migration hlint cabal-gild ghcid ghc-tags --semaphore -j
+cabal install hlint cabal-gild ghcid ghc-tags --semaphore -j
 ```
 
 (Some of the above packages could have incompatible dependencies, so consider installing them separately with `cabal install`)
