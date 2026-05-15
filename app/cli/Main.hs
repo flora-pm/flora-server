@@ -52,7 +52,7 @@ import Flora.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
-import Flora.Model.Package (Namespace, PackageName)
+import Flora.Model.Package (Namespace (..), PackageName)
 import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
@@ -278,7 +278,7 @@ runOptions (Options (CreateUser opts)) = do
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
 runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
-runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
+runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball (Namespace "hackage") pname version path
 runOptions (Options (IndexDependency indexName dependencyName priority)) = do
   index <- guardThatPackageIndexExists indexName (\_ -> error $ Text.unpack indexName <> " does not exist in database!")
   dependency <- guardThatPackageIndexExists dependencyName (\_ -> error $ Text.unpack indexName <> " does not exist in database!")
@@ -328,13 +328,14 @@ importPackageTarball
      , Log :> es
      , RequireCallStack
      )
-  => PackageName
+  => Namespace
+  -> PackageName
   -> Version
   -> FilePath
   -> FloraM es ()
-importPackageTarball pname version path = do
+importPackageTarball namespace pname version path = do
   contents <- liftIO $ GZip.decompress <$> BS.readFile path
-  res <- Update.insertTar pname version contents
+  res <- Update.insertTar namespace pname version contents
   case res of
     Right hash -> Log.logInfo_ $ "Insert tarball with root hash: " <> display hash
     Left err -> Log.logAttention_ $ display err

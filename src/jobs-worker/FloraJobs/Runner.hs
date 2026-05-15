@@ -124,7 +124,7 @@ fetchTarball
   :: RequireCallStack
   => TarballJobPayload
   -> JobsRunner ()
-fetchTarball TarballJobPayload{releaseId, packageName, packageVersion} = do
+fetchTarball TarballJobPayload{releaseId, namespace, packageName, packageVersion} = do
   localDomain "fetch-tarball" $ do
     mArchive <- Query.getReleaseTarballArchive releaseId
     content <- case mArchive of
@@ -135,7 +135,7 @@ fetchTarball TarballJobPayload{releaseId, packageName, packageVersion} = do
         case result of
           Right bs -> pure bs
           Left e -> handleClientError e
-    mhash <- Update.insertTar packageName packageVersion.unIntAesonVersion content
+    mhash <- Update.insertTar namespace packageName packageVersion.unIntAesonVersion content
     case mhash of
       Right hash ->
         logTrace

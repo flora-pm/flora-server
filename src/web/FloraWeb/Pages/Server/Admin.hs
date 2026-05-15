@@ -22,6 +22,7 @@ import Servant (HasServer (..), Headers (..))
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Job
+import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User
 import Flora.Monad
@@ -103,7 +104,7 @@ fetchMetadataHandler (Headers session _) = do
           Async.forConcurrently_
             releasesWithoutTarball
             ( \(releaseId, version, packagename) ->
-                scheduleTarballJob workerEnv releaseId packagename version
+                scheduleTarballJob workerEnv releaseId (Namespace "hackage") packagename version
             )
 
   packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation

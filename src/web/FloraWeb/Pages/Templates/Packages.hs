@@ -66,7 +66,6 @@ import Distribution.Orphans ()
 import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.Category.Types
 import Flora.Model.Package
-import Flora.Model.Package.Types
 import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement

@@ -47,11 +47,12 @@ scheduleTarballJob
   :: MonadUnliftIO m
   => ArbS.SimpleEnv JobQueues
   -> ReleaseId
+  -> Namespace
   -> PackageName
   -> Version
   -> m (Maybe (Arb.JobRead PackageJob))
-scheduleTarballJob env rid package version =
-  createJobWithResource env $ FetchTarball $ TarballJobPayload package rid $ MkIntAesonVersion version
+scheduleTarballJob env rid namespace package version =
+  createJobWithResource env $ FetchTarball $ TarballJobPayload namespace package rid $ MkIntAesonVersion version
 
 scheduleChangelogJob
   :: MonadUnliftIO m

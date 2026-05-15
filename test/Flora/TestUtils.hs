@@ -145,11 +145,9 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
-import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Import.Types (ImportError)
-import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
 import Flora.Model.Component.Types
@@ -205,16 +203,16 @@ getFixtures = do
 importAllPackages :: (HasCallStack, RequireCallStack) => TestEff ()
 importAllPackages = do
   importFromArchive
-    "hackage"
+    "local-hackage"
     Vector.empty
     "test/fixtures/Cabal"
   importFromArchive
     "cardano"
-    (Vector.fromList ["hackage"])
+    (Vector.fromList ["local-hackage"])
     "test/fixtures/Cabal"
   importFromArchive
     "mlabs"
-    (Vector.fromList ["cardano", "hackage"])
+    (Vector.fromList ["cardano", "local-hackage"])
     "test/fixtures/Cabal"
 
 runTestEff :: (HasCallStack, RequireCallStack) => TestEff a -> FloraEnv -> IO a

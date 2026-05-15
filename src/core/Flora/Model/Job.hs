@@ -43,7 +43,8 @@ data ReadmeJobPayload = ReadmeJobPayload
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReadmeJobPayload)
 
 data TarballJobPayload = TarballJobPayload
-  { packageName :: PackageName
+  { namespace :: Namespace
+  , packageName :: PackageName
   , releaseId :: ReleaseId
   , packageVersion :: IntAesonVersion
   }

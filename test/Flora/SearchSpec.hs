@@ -31,30 +31,30 @@ spec =
 
 testParsingDependsSearchModifier :: RequireCallStack => TestEff ()
 testParsingDependsSearchModifier = do
-  let result = parseSearchQuery "depends:@hackage/base"
+  let result = parseSearchQuery "depends:@local-hackage/base"
   assertEqual_
-    (Just $ DependentsOf (Namespace "@hackage") (PackageName "base") Nothing)
+    (Just $ DependentsOf (Namespace "@local-hackage") (PackageName "base") Nothing)
     result
 
 testParsingNamespacePackageModifier :: RequireCallStack => TestEff ()
 testParsingNamespacePackageModifier = do
-  let result = parseSearchQuery "in:@hackage base"
+  let result = parseSearchQuery "in:@local-hackage base"
   assertEqual_
-    (Just $ SearchInNamespace (Namespace "@hackage") (PackageName "base"))
+    (Just $ SearchInNamespace (Namespace "@local-hackage") (PackageName "base"))
     result
 
 testParsingNamespaceModifier :: RequireCallStack => TestEff ()
 testParsingNamespaceModifier = do
-  let result = parseSearchQuery "in:@hackage"
+  let result = parseSearchQuery "in:@local-hackage"
   assertEqual_
-    (Just $ ListAllPackagesInNamespace (Namespace "@hackage"))
+    (Just $ ListAllPackagesInNamespace (Namespace "@local-hackage"))
     result
 
 testParsingQueryContainingModifier :: RequireCallStack => TestEff ()
 testParsingQueryContainingModifier = do
-  let result = parseSearchQuery "bah blah blah depends:@hackage/base"
+  let result = parseSearchQuery "bah blah blah depends:@local-hackage/base"
   assertEqual_
-    (Just (SearchPackages "bah blah blah depends:@hackage/base"))
+    (Just (SearchPackages "bah blah blah depends:@local-hackage/base"))
     result
 
 testParsingExecutableSearch :: RequireCallStack => TestEff ()

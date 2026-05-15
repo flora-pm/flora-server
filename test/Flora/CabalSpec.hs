@@ -63,7 +63,7 @@ testFlattenCondTree = do
 
 testImportSimplePackage :: RequireCallStack => TestEff ()
 testImportSimplePackage = do
-  packageA <- assertJust "Search for package a" =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "a")
+  packageA <- assertJust "Search for package a" =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "a")
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
   componentsA <- Query.getReleaseComponents (releaseA.releaseId)
   assertEqual_
@@ -76,7 +76,7 @@ testImportSimplePackage = do
 
 testImportMultiplePublicLibraries :: RequireCallStack => TestEff ()
 testImportMultiplePublicLibraries = do
-  packageA <- assertJust "Search for package b" =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "b")
+  packageA <- assertJust "Search for package b" =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "b")
   releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
   componentsA <- Query.getReleaseComponents (releaseA.releaseId)
   assertEqual_
