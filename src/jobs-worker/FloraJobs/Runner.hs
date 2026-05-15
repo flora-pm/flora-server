@@ -28,6 +28,7 @@ import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
+import Effectful.Trace (Trace)
 import Log hiding (LogLevel)
 import Network.HTTP.Types (gone410, notFound404, statusCode)
 import RequireCallStack
@@ -330,6 +331,7 @@ refreshIndex
      , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
+     , Trace :> es
      , TypedProcess :> es
      )
   => ArbS.SimpleEnv JobQueues

@@ -300,6 +300,7 @@ importIndex
      , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
+     , Trace :> es
      )
   => FilePath
   -> Text

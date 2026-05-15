@@ -551,6 +551,8 @@ library flora-jobs
     text,
     text-display,
     time,
+    tracing,
+    tracing-effectful,
     typed-process-effectful,
     vector,
 

@@ -93,6 +93,9 @@ import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
+import Flora.Model.PackageIndex.Types
+import Flora.Model.PackageUploader.Types
+import Flora.Model.PackageUploader.Update qualified as Update
 import Flora.Model.Release (deterministicReleaseId)
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
@@ -381,19 +384,21 @@ persistHashes (namespace, packageName, version, target) = do
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
-  :: ( Error ImportError :> es
+  :: ( DB :> es
+     , Error ImportError :> es
      , IOE :> es
      , Log :> es
      , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
-  => Text
+  => PackageIndex
   -> Vector (Text, Set PackageName)
   -> UTCTime
+  -> Maybe Text
   -> GenericPackageDescription
   -> FloraM es ImportOutput
-extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc = do
+extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -404,10 +409,10 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
       Log.logAttention "Could not select namespace" $
         object
           [ "package_name" .= display packageName
-          , "index" .= repositoryName
+          , "index" .= packageIndex.repository
           , "index_packages" .= indexPackages
           ]
-      Error.throwError $ CouldNotSelectNamespace repositoryName packageName
+      Error.throwError $ CouldNotSelectNamespace packageIndex.repository packageName
     Just namespace -> do
       let packageId = deterministicPackageId namespace packageName
       let releaseId = deterministicReleaseId packageId packageVersion
@@ -416,6 +421,7 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
       let rawCategoryField = packageDesc ^. #category % to fromShortText % to Text.pack
       let categoryList = fmap (Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
       let categories = Maybe.mapMaybe normaliseCategory categoryList
+      mPackageUploaderId <- determinePackageUploaderId mUsername packageIndex.packageIndexId
       let package =
             Package
               { packageId
@@ -440,7 +446,7 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
               , readmeStatus = NotImported
               , changelog = Nothing
               , changelogStatus = NotImported
-              , repository = Just repositoryName
+              , repository = Just packageIndex.repository
               , tarballRootHash = Nothing
               , tarballArchiveHash = Nothing
               , license = Cabal.license packageDesc
@@ -456,7 +462,7 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
               , deprecated = Nothing
               , revisedAt = Nothing
               , buildType = packageBuildType
-              , uploaderId = Nothing
+              , uploaderId = mPackageUploaderId
               }
 
       let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List ImportDependency)
@@ -500,8 +506,12 @@ extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc 
       case NE.nonEmpty components' of
         Nothing -> do
           Log.logAttention "Empty dependencies" $ object ["package" .= package]
-          extractPackageDataFromCabal repositoryName indexPackages uploadTime genericDesc
+          extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername genericDesc
         Just components -> pure $ ImportOutput package categories release components
+
+determinePackageUploaderId :: (DB :> es, IOE :> es) => Maybe Text -> PackageIndexId -> Eff es (Maybe PackageUploaderId)
+determinePackageUploaderId Nothing _ = pure Nothing
+determinePackageUploaderId (Just username) packageIndexId = Just <$> Update.getOrInsertPackageUploader username packageIndexId
 
 extractCondTreeComponent
   :: L.HasBuildInfo component

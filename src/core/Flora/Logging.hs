@@ -5,11 +5,8 @@ module Flora.Logging
 where
 
 import Data.Kind (Type)
-import Data.Text.Display (display)
 import Data.Time.Clock as Time (NominalDiffTime, diffUTCTime)
 import Effectful
-import Effectful.Log (Log)
-import Effectful.Log qualified as Log
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Log (Logger)

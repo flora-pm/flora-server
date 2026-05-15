@@ -30,6 +30,7 @@ import Flora.Import.Types
 import Flora.Model.Package hiding (PackageName)
 import Flora.Model.Package qualified as Flora
 import Flora.Model.Package.Update qualified as Update
+import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Update qualified as Update
@@ -49,27 +50,27 @@ importFromStream
      , State (Set (Namespace, Flora.PackageName, Version)) :> es
      , Time :> es
      )
-  => Text
+  => PackageIndex
   -> Vector (Text, Set Flora.PackageName)
-  -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
+  -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
   -> FloraM es ()
-importFromStream repositoryName indexPackages stream = do
+importFromStream packageIndex indexPackages stream = do
   let cfg = Streamly.inspect True . Streamly.minRate 1024 . Streamly.eager True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
-          Streamly.parMapM cfg (processFile repositoryName indexPackages) stream
+          Streamly.parMapM cfg (processFile packageIndex indexPackages) stream
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
       ( do
           Update.refreshLatestVersions
           Update.refreshDependents
-          timestamp <- Query.getLatestReleaseTime (Just repositoryName)
-          Update.updatePackageIndexByName repositoryName timestamp
+          timestamp <- Query.getLatestReleaseTime (Just packageIndex.repository)
+          Update.updatePackageIndexByName packageIndex.repository timestamp
       )
   displayStats processedPackageCount
-  increasePackageImportCounterBy processedPackageCount repositoryName
+  increasePackageImportCounterBy processedPackageCount packageIndex.repository
   where
     displayCount :: SFold.Fold (Eff es) a Int
     displayCount =
@@ -98,14 +99,14 @@ processFile
      , State (Set (Namespace, Flora.PackageName, Version)) :> es
      , Time :> es
      )
-  => Text
+  => PackageIndex
   -> Vector (Text, Set Flora.PackageName)
-  -> (ImportFileType, UTCTime, StrictByteString)
+  -> (ImportFileType, UTCTime, Maybe Text, StrictByteString)
   -> FloraM es ()
-processFile repositoryName indexPackages importSubject =
+processFile packageIndex indexPackages importSubject =
   case importSubject of
-    (CabalFile path, timestamp, content) -> do
+    (CabalFile path, timestamp, mUsername, content) -> do
       loadContent path content
-        >>= ( extractPackageDataFromCabal repositoryName indexPackages timestamp
+        >>= ( extractPackageDataFromCabal packageIndex indexPackages timestamp mUsername
                 >=> \importedPackage -> persistImportOutput importedPackage
             )
