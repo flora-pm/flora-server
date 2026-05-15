@@ -21,7 +21,10 @@ import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
+import Effectful.Trace (Trace)
+import Effectful.Trace qualified as Trace
 import GHC.Stack (prettyCallStack)
+import Monitor.Tracing.Zipkin (Zipkin (..))
 import RequireCallStack
 
 import Distribution.Orphans.Version ()
@@ -30,6 +33,7 @@ import Flora.Import.Types (ImportError)
 import Flora.Model.BlobStore.API
 import Flora.Model.Package (PackageName (..))
 import Flora.Model.Package.Types (Namespace)
+import Flora.Tracing qualified as Tracing
 import FloraJobs.Environment
 
 type JobsRunner =
@@ -42,6 +46,7 @@ type JobsRunner =
      , TypedProcess
      , FileSystem
      , State (Set (Namespace, PackageName, Version))
+     , Trace
      , Reader FloraEnv
      , Concurrent
      , Metrics AppMetrics
@@ -57,7 +62,13 @@ runJobRunner
   -> Logger
   -> JobsRunner a
   -> IO a
-runJobRunner pool runnerEnv floraEnv logger jobRunner =
+runJobRunner pool runnerEnv floraEnv logger jobRunner = do
+  runTrace <-
+    if floraEnv.environment == Production
+      then do
+        zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-jobs"
+        pure $ Trace.runTrace zipkin.zipkinTracer
+      else pure Trace.runNoTrace
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & runDB pool
@@ -71,6 +82,7 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
     & runTypedProcess
     & runFileSystem
     & State.evalState mempty
+    & runTrace
     & Reader.runReader floraEnv
     & runConcurrent
     & runPrometheusMetrics floraEnv.metrics
