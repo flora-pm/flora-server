@@ -155,6 +155,15 @@ fetchTarball TarballJobPayload{releaseId, packageName, packageVersion} = do
               , "release_id" .= releaseId
               ]
           Arb.throwPermanent "Package does not exist"
+      | response.responseStatusCode == gone410 = do
+          Log.logAttention "Could not find tarball from hackage" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "package_version" .= packageVersion
+              , "release_id" .= releaseId
+              ]
+          Arb.throwPermanent "Package does not exist"
       | otherwise = do
           Log.logAttention "Could not fetch tarball from hackage" $
             object
@@ -199,6 +208,15 @@ fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageV
               , "release_id" .= releaseId
               ]
           Arb.throwPermanent "Package does not exist"
+      | response.responseStatusCode == gone410 = do
+          Log.logAttention "Error while getting release upload information" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "package_version" .= packageVersion
+              , "release_id" .= releaseId
+              ]
+          Arb.throwPermanent "Package is gone"
       | otherwise = do
           Log.logAttention "Error while getting release upload information" $
             object
@@ -277,8 +295,19 @@ fetchReleaseDeprecationList packageName releases = do
             object
               [ "namespace" .= ("hackage" :: Text)
               , "package_name" .= packageName
+              , "status_code" .= statusCode response.responseStatusCode
+              , "error" .= Text.show e
               ]
           Arb.throwPermanent "Package does not exist"
+      | response.responseStatusCode == gone410 = do
+          Log.logAttention "Could not find package in remote repository" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "status_code" .= statusCode response.responseStatusCode
+              , "error" .= Text.show e
+              ]
+          Arb.throwPermanent "Package is gone"
       | otherwise = do
           Log.logAttention "Could not fetch release deprecation list" $
             object
