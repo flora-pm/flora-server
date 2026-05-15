@@ -3,6 +3,7 @@ module FloraJobs.Types where
 import Data.Function ((&))
 import Data.Pool hiding (PoolConfig)
 import Data.Set (Set)
+import Data.Text.Display (display)
 import Database.PostgreSQL.Simple (Connection)
 import Distribution.Types.Version (Version)
 import Effectful
@@ -65,7 +66,7 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner =
           Just (BlobStoreFS fp) -> runBlobStoreFS fp
           _ -> runBlobStorePure
       )
-    & LogEff.runLog "flora-jobs" logger defaultLogLevel
+    & LogEff.runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel
     & runTime
     & runTypedProcess
     & runFileSystem
