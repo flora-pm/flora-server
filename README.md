@@ -8,9 +8,7 @@
 <h1 align="center"><small>A package index for the Haskell ecosystem</small> </h1>
 
 <p align="center">
-<a href="https://github.com/flora-pm/flora-server/actions">
-  <img src="https://img.shields.io/github/actions/workflow/status/flora-pm/flora-server/backend.yml?branch=development&style=flat-square&logo=github" alt="CI badge" />
-</a>
+
 <a href="https://haskell.org">
   <img src="https://img.shields.io/badge/Made%20in-Haskell-%235e5086?logo=haskell&style=flat-square" alt="made with Haskell"/>
 </a>
