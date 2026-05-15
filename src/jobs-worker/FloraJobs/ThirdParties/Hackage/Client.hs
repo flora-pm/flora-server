@@ -99,3 +99,11 @@ getPackageWithRevision versionedPackage revision =
     /: versionedPackage
     // (.getPackageWithRevision)
     /: revision
+
+getPackageMaintainers
+  :: PackageName -> ClientM HackagePackageMaintainers
+getPackageMaintainers packageName =
+  hackageClient
+    // (.withPackageNameOnly)
+    /: packageName
+    // (.getMaintainers)
