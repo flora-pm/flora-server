@@ -46,7 +46,7 @@ testImportTarball = provideCallStack $ do
   content <- readTarball "b-0.1.0.0.tar.gz"
   let pname = PackageName "b"
       version = mkVersion [0, 1, 0, 0]
-  res <- Update.insertTar pname version content
+  res <- Update.insertTar (Namespace "local-hackage") pname version content
   case res of
     Left err -> assertFailure (show err)
     Right hash -> do
@@ -62,7 +62,7 @@ testImportTarball = provideCallStack $ do
           checkAll Tar.entryContent (sortByPath tarEntries) tarEntries'
 
           -- check that we also archived the initial tarball along with the release
-          package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") pname
+          package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") pname
           release <- assertJust_ =<< Query.getReleaseByVersion package.packageId version
           archivedContent <- assertJust_ =<< Query.getReleaseTarballArchive release.releaseId
           assertEqual_ content archivedContent
@@ -83,7 +83,7 @@ testBadTarball = do
   content <- readTarball "bad-tar-0.1.0.0.tar.gz"
   let pname = PackageName "bad-tar"
       version = mkVersion [0, 1, 0, 0]
-  res <- Update.insertTar pname version content
+  res <- Update.insertTar (Namespace "local-hackage") pname version content
   case res of
     Right _ -> assertFailure "Imported bad tarball"
     Left (BlobStoreTarError _ _ (TarUnsupportedEntry entry)) ->
@@ -95,7 +95,7 @@ testMalformedTarball = do
   content <- readTarball "malformed-tar-0.1.0.0.tar.gz"
   let pname = PackageName "malformed-tar"
       version = mkVersion [0, 1, 0, 0]
-  res <- Update.insertTar pname version content
+  res <- Update.insertTar (Namespace "local-hackage") pname version content
   case res of
     Right _ -> assertFailure "Imported malformed tarball"
     Left (BlobStoreTarError _ _ (TarUnexpectedLayout path)) -> assertEqual_ path "b-0.1.0.0"

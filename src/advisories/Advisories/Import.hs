@@ -114,11 +114,11 @@ processAffectedPackage
   -> Eff es ()
 processAffectedPackage advisoryId affected = do
   affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
-  let packageName =
+  let (namespace, packageName) =
         case affected.affectedComponentIdentifier of
-          Repository _ ((RepositoryName "hackage")) affectedPackageName -> PackageName (Text.pack . unPackageName $ affectedPackageName)
-          GHC _ -> PackageName "ghc"
-  let namespace = Namespace "hackage"
+          Repository _ (RepositoryName repositoryName) affectedPackageName ->
+            (Namespace repositoryName, PackageName (Text.pack . unPackageName $ affectedPackageName))
+          GHC _ -> (Namespace "hackage", PackageName "ghc")
   package <- guardThatPackageExists namespace packageName $ \_ _ -> do
     Log.logAttention "Affected package does not not exist" $
       object

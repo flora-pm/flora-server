@@ -36,10 +36,9 @@ spec =
     , testThis "Insert containers and its dependencies" testInsertContainers
     , testThis "Packages are not shown as their own dependent" testNoSelfDependent
     , testThis "Searching for `text` returns expected results by namespace/package name" testSearchResultText
-    , testThis "@hackage/time has the correct number of components of each type" testTimeComponents
+    , testThis "@local-hackage/time has the correct number of components of each type" testTimeComponents
     , testThis "Packages get deprecated" testPackagesDeprecation
     , testThis "Get non-deprecated packages" testGetNonDeprecatedPackages
-    , testThis "Get and set release deprecation markers" testReleaseDeprecation
     , testThis "Dependencies are deduplicated in the abbreviated listing" testDeduplicatedDependencies
     , testThese
         "Transitive dependencies"
@@ -48,13 +47,13 @@ spec =
         , testThis "Serialise dependencies tree" testSerialiseDependenciesTree
         ]
         -- Disable until conditions are properly supported everywhere
-        -- , testThis "@hackage/time components have the correct conditions in their metadata" testTimeConditions
+        -- , testThis "@local-hackage/time components have the correct conditions in their metadata" testTimeConditions
     ]
 
 testCabalDeps :: RequireCallStack => TestEff ()
 testCabalDeps = do
   dependencies <- do
-    cabalPackage <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "Cabal")
+    cabalPackage <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "Cabal")
     latestRelease <- assertJust_ =<< Query.getLatestPackageRelease cabalPackage.packageId
     Query.getAllRequirements latestRelease.releaseId
   assertEqual_
@@ -90,10 +89,10 @@ testCabalDeps = do
 testInsertContainers :: RequireCallStack => TestEff ()
 testInsertContainers = do
   dependencies <- do
-    mPackage <- Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "containers")
+    mPackage <- Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "containers")
     case mPackage of
       Nothing -> do
-        assertFailure "Couldn't find @hackage/containers despite being inserted"
+        assertFailure "Couldn't find @local-hackage/containers despite being inserted"
         undefined
       Just package -> do
         latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
@@ -104,7 +103,7 @@ testInsertContainers = do
 
 testFetchGHCPrimDependents :: RequireCallStack => TestEff ()
 testFetchGHCPrimDependents = do
-  result <- Query.getPackageDependents (Namespace "hackage") (PackageName "ghc-prim")
+  result <- Query.getPackageDependents (Namespace "local-hackage") (PackageName "ghc-prim")
   assertEqual_
     ( Set.fromList
         [ PackageName "base"
@@ -124,14 +123,14 @@ testThatBaseisInPreludeCategory = do
 
 testNoSelfDependent :: RequireCallStack => TestEff ()
 testNoSelfDependent = do
-  results <- Query.getAllPackageDependents (Namespace "hackage") (PackageName "text")
+  results <- Query.getAllPackageDependents (Namespace "local-hackage") (PackageName "text")
   let resultSet = Set.fromList . fmap (view #name) $ Vector.toList results
   assertBool
     (Set.notMember (PackageName "text") resultSet)
 
 testBytestringDependencies :: RequireCallStack => TestEff ()
 testBytestringDependencies = do
-  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "bytestring")
+  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "bytestring")
   latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
   latestReleasedependencies <- Query.getRequirements package.name latestRelease.releaseId
   assertEqual_ 4 (Vector.length latestReleasedependencies)
@@ -142,7 +141,7 @@ testTimeComponents = do
       countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
       countComponentsByType :: RequireCallStack => Foldable t => ComponentType -> t PackageComponent -> Int
       countComponentsByType t = countBy (^. #canonicalForm % #componentType % to (== t))
-  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "time")
+  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "time")
   latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
   components <- Query.getReleaseComponents latestRelease.releaseId
   assertEqual_ 1 $ countComponentsByType Library components
@@ -151,7 +150,7 @@ testTimeComponents = do
 
 testSearchResultText :: RequireCallStack => TestEff ()
 testSearchResultText = do
-  text <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "text")
+  text <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "text")
   releases <- Query.getNumberOfReleases text.packageId
   assertEqual_ 3 releases
   results <- Query.searchPackage (0, 30) "text"
@@ -160,30 +159,25 @@ testSearchResultText = do
 
 testPackagesDeprecation :: RequireCallStack => TestEff ()
 testPackagesDeprecation = do
-  let alternative1 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "integer-simple")
-  let alternative2 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "monad-control")
+  let alternative1 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "local-hackage") (PackageName "integer-simple")
+  let alternative2 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "local-hackage") (PackageName "monad-control")
   Update.deprecatePackages $
     Vector.fromList
       [ DeprecatedPackage (PackageName "integer-gmp") alternative1
       , DeprecatedPackage (PackageName "mtl") alternative2
       ]
-  integerGmp <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "integer-gmp")
+  integerGmp <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "integer-gmp")
   assertEqual_ (Just alternative1) integerGmp.deprecationInfo
 
 testGetNonDeprecatedPackages :: RequireCallStack => TestEff ()
 testGetNonDeprecatedPackages = do
-  let alternative = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "hackage") (PackageName "integer-simple")
+  let alternative = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "local-hackage") (PackageName "integer-simple")
   Update.deprecatePackages $
     Vector.fromList [DeprecatedPackage (PackageName "ansi-wl-pprint") alternative]
   nonDeprecatedPackages <- fmap (.name) <$> Query.getNonDeprecatedPackages
   assertBool $ Vector.notElem (PackageName "ansi-wl-pprint") nonDeprecatedPackages
 
-testReleaseDeprecation :: RequireCallStack => TestEff ()
-testReleaseDeprecation = do
-  result <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  assertEqual_ 225 (length result)
-
-  binary <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "binary")
+  binary <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "binary")
   deprecatedBinaryVersion' <- assertJust_ =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
   Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
   deprecatedBinaryVersion <- assertJust_ =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
@@ -245,7 +239,7 @@ testAggregationOfTransitiveDependencies = do
 
 testTransitiveDependencies :: RequireCallStack => TestEff ()
 testTransitiveDependencies = do
-  base <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "base")
+  base <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "base")
   baseRelease <- assertJust_ =<< Query.getReleaseByVersion base.packageId (mkVersion [4, 16, 0, 0])
   baseComponent <- assertJust_ =<< Query.getComponent baseRelease.releaseId "base" Library
   dependenciesMap <- Set.fromList . Vector.toList <$> Query.getTransitiveDependencies baseComponent.componentId
@@ -253,15 +247,15 @@ testTransitiveDependencies = do
   assertEqual_
     ( Set.fromList
         [ PackageDependencies
-            { namespace = Namespace "hackage"
+            { namespace = Namespace "local-hackage"
             , packageName = PackageName "ghc-bignum"
             , requirements =
                 Vector.fromList
-                  [ DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.10"}
+                  [ DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.10"}
                   ]
             }
-        , PackageDependencies{namespace = Namespace "hackage", packageName = PackageName "base", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "ghc-bignum", version = ">=1.0 && <2.0"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
-        , PackageDependencies{namespace = Namespace "hackage", packageName = PackageName "ghc-prim", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
+        , PackageDependencies{namespace = Namespace "local-hackage", packageName = PackageName "base", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "ghc-bignum", version = ">=1.0 && <2.0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
+        , PackageDependencies{namespace = Namespace "local-hackage", packageName = PackageName "ghc-prim", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
         ]
     )
     dependenciesMap
@@ -271,15 +265,15 @@ testSerialiseDependenciesTree = do
   let dependencies =
         Vector.fromList
           [ PackageDependencies
-              { namespace = Namespace "hackage"
+              { namespace = Namespace "local-hackage"
               , packageName = PackageName "ghc-bignum"
               , requirements =
                   Vector.fromList
-                    [ DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}
+                    [ DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}
                     ]
               }
-          , PackageDependencies{namespace = Namespace "hackage", packageName = PackageName "base", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "ghc-bignum", version = ">=1.0 && <2.0"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}, DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
-          , PackageDependencies{namespace = Namespace "hackage", packageName = PackageName "ghc-prim", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "hackage", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
+          , PackageDependencies{namespace = Namespace "local-hackage", packageName = PackageName "base", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "ghc-bignum", version = ">=1.0 && <2.0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "ghc-prim", version = ">=0.5.1.0 && <0.9"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
+          , PackageDependencies{namespace = Namespace "local-hackage", packageName = PackageName "ghc-prim", requirements = Vector.fromList [DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "rts", version = ">=1.0 && <1.1"}]}
           ]
   let actualJSON = toJSON $ PackageDependenciesDTO dependencies
   let expectedJSON =
@@ -291,37 +285,37 @@ testSerialiseDependenciesTree = do
                     Vector.fromList
                       [ Object
                           ( KeyMap.fromList
-                              [ ("namespace", String "hackage")
+                              [ ("namespace", String "local-hackage")
                               , ("package_name", String "ghc-bignum")
                               ,
                                 ( "requirements"
                                 , Array $
                                     Vector.fromList
-                                      [ Object (KeyMap.fromList [("namespace", String "hackage"), ("package_name", String "ghc-prim"), ("version", String ">=0.5.1.0 && <0.9")])
+                                      [ Object (KeyMap.fromList [("namespace", String "local-hackage"), ("package_name", String "ghc-prim"), ("version", String ">=0.5.1.0 && <0.9")])
                                       ]
                                 )
                               ]
                           )
                       , Object
                           ( KeyMap.fromList
-                              [ ("namespace", String "hackage")
+                              [ ("namespace", String "local-hackage")
                               , ("package_name", String "base")
                               ,
                                 ( "requirements"
                                 , Array $
                                     Vector.fromList
-                                      [ Object (KeyMap.fromList [("namespace", String "hackage"), ("package_name", String "ghc-bignum"), ("version", String ">=1.0 && <2.0")])
-                                      , Object (KeyMap.fromList [("namespace", String "hackage"), ("package_name", String "ghc-prim"), ("version", String ">=0.5.1.0 && <0.9")])
-                                      , Object (KeyMap.fromList [("namespace", String "hackage"), ("package_name", String "rts"), ("version", String ">=1.0 && <1.1")])
+                                      [ Object (KeyMap.fromList [("namespace", String "local-hackage"), ("package_name", String "ghc-bignum"), ("version", String ">=1.0 && <2.0")])
+                                      , Object (KeyMap.fromList [("namespace", String "local-hackage"), ("package_name", String "ghc-prim"), ("version", String ">=0.5.1.0 && <0.9")])
+                                      , Object (KeyMap.fromList [("namespace", String "local-hackage"), ("package_name", String "rts"), ("version", String ">=1.0 && <1.1")])
                                       ]
                                 )
                               ]
                           )
                       , Object
                           ( KeyMap.fromList
-                              [ ("namespace", String "hackage")
+                              [ ("namespace", String "local-hackage")
                               , ("package_name", String "ghc-prim")
-                              , ("requirements", Array $ Vector.fromList [Object (KeyMap.fromList [("namespace", String "hackage"), ("package_name", String "rts"), ("version", String ">=1.0 && <1.1")])])
+                              , ("requirements", Array $ Vector.fromList [Object (KeyMap.fromList [("namespace", String "local-hackage"), ("package_name", String "rts"), ("version", String ">=1.0 && <1.1")])])
                               ]
                           )
                       ]

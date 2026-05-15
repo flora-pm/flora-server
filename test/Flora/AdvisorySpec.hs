@@ -22,7 +22,7 @@ testFetchingAllBiscuitHaskellAdvisories = do
   package <-
     assertJust_
       =<< Query.getPackageByNamespaceAndName
-        (Namespace "hackage")
+        (Namespace "local-hackage")
         (PackageName "biscuit-haskell")
   advisories <- Query.getAdvisoriesByPackageId package.packageId
   assertEqual_ 2 (Vector.length advisories)
@@ -32,7 +32,7 @@ testFetchingAllBaseAdvisories = do
   package <-
     assertJust_
       =<< Query.getPackageByNamespaceAndName
-        (Namespace "hackage")
+        (Namespace "local-hackage")
         (PackageName "base")
   advisories <- Query.getAdvisoriesByPackageId package.packageId
   assertEqual_ 1 (Vector.length advisories)
@@ -42,7 +42,7 @@ testFetchingAdvisoryPreviewByPackageId = do
   package <-
     assertJust_
       =<< Query.getPackageByNamespaceAndName
-        (Namespace "hackage")
+        (Namespace "local-hackage")
         (PackageName "base")
   advisories <- Query.getAdvisoryPreviewsByPackageId package.packageId
   assertEqual_ 2 (Vector.length advisories)

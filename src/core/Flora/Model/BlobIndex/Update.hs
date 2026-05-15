@@ -30,22 +30,23 @@ import Flora.Monad
 
 insertTar
   :: (BlobStoreAPI :> es, DB :> es, Log :> es)
-  => PackageName
+  => Namespace
+  -> PackageName
   -> Version
   -> LazyByteString
   -> FloraM es (Either BlobStoreInsertError Sha256Sum)
-insertTar pname version contents = do
-  mpackage <- Query.getPackageByNamespaceAndName (Namespace "hackage") pname
+insertTar namespace packageName version contents = do
+  mpackage <- Query.getPackageByNamespaceAndName namespace packageName
   case mpackage of
-    Nothing -> pure . Left $ NoPackage pname
+    Nothing -> pure . Left $ NoPackage packageName
     Just package -> do
       mrelease <- Query.getReleaseByVersion package.packageId version
       case mrelease of
-        Nothing -> pure . Left $ NoRelease pname version
+        Nothing -> pure . Left $ NoRelease packageName version
         Just release -> do
           Update.updateTarballArchiveHash release.releaseId contents
-          case hashTree <$> tarballToTree pname version contents of
-            Left err -> pure . Left $ BlobStoreTarError pname version err
+          case hashTree <$> tarballToTree packageName version contents of
+            Left err -> pure . Left $ BlobStoreTarError packageName version err
             Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree release.releaseId t
 
 insertTree

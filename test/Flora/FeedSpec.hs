@@ -17,7 +17,7 @@ testFeedEntryPresenceForPackageImports :: RequireCallStack => TestEff ()
 testFeedEntryPresenceForPackageImports = do
   entries <-
     Query.getEntriesByPackage
-      [(Namespace "hackage", PackageName "base")]
+      [(Namespace "local-hackage", PackageName "base")]
       0
       10
   assertEqual_
