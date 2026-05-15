@@ -24,8 +24,8 @@
 
 </a>
 
-<a href="https://twitter.com/flora_haskell">
-  <img alt="Static Badge" src="https://img.shields.io/badge/Twitter-%40flora_haskell-blue?style=flat-square&logo=x">
+<a href="https://bsky.app/profile/did:plc:b5sa2ces7koso7jidtyuijzc">
+  <img alt="Static Badge" src="https://img.shields.io/badge/Bluesky-%40flora.pm-blue?style=flat-square&logo=bluesky">
 </a>
 
 </p>
