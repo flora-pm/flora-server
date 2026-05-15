@@ -5,7 +5,7 @@ homepage: https://github.com/flora-pm/flora-server/#readme
 bug-reports: https://github.com/flora-pm/flora-server/issues
 author: Théophile Choutri
 maintainer: Théophile Choutri
-license: BSD-3-Clause
+license: AGPL-3.0-only
 build-type: Simple
 extra-source-files: LICENSE
 extra-doc-files:
