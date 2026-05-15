@@ -96,7 +96,7 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
         fromMaybe
           (posixSecondsToUTCTime 0)
           packageIndex.timestamp
-  case Tar.foldlEntries (buildContentStream time) Streamly.nil entries of
+  case Tar.foldlEntries (buildContentStream packageIndex time) Streamly.nil entries of
     Right stream ->
       importFromStream
         packageIndex
@@ -107,14 +107,21 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
         "Failed to get files from index: " <> Text.pack (show err)
   where
     buildContentStream
-      :: UTCTime
+      :: PackageIndex
+      -> UTCTime
       -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
       -> Tar.GenEntry LazyByteString Tar.TarPath linkTarget
       -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
-    buildContentStream time acc entry =
+    buildContentStream packageIndex time acc entry =
       let entryPath = Tar.entryPath entry
           entryTime = posixSecondsToUTCTime . fromIntegral $ Tar.entryTime entry
-          mUsername = if null entry.entryOwnership.ownerName then Nothing else Just (Text.pack entry.entryOwnership.ownerName)
+          mUsername =
+            if packageIndex.repository == "hackage"
+              then
+                if null entry.entryOwnership.ownerName
+                  then Nothing
+                  else Just (Text.pack entry.entryOwnership.ownerName)
+              else Nothing
        in Tar.entryContent entry & \case
             Tar.NormalFile bs _
               | ".cabal" `isSuffixOf` entryPath && entryTime > time ->
