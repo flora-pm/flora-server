@@ -16,9 +16,9 @@ guardThatPackageIndexExists
   -- ^ Action to run if the package does not exist
   -> Eff es PackageIndex
 guardThatPackageIndexExists indexName action =
-  Tracing.childSpan "guardThatPackageIndexExists " $ do
+  Tracing.childSpan "guardThatPackageIndexExists" $ do
     result <-
-      Tracing.childSpan "Query.getPackageIndexByName " $
+      Tracing.childSpan "Query.getPackageIndexByName" $
         Query.getPackageIndexByName indexName
     case result of
       Nothing -> action indexName

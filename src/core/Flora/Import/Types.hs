@@ -24,6 +24,7 @@ data ImportError
   | CabalFileCouldNotBeParsed FilePath
   | CouldNotSelectNamespace Text PackageName
   | CouldNotFindPackageIndexForRelease ReleaseId
+  | CouldNotFindPackageIndex Text
   deriving stock (Eq, Show)
   deriving anyclass (Exception)
 

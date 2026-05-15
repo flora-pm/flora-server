@@ -31,6 +31,7 @@ import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.PostgreSQL.Transact.Effect (DB)
@@ -38,6 +39,7 @@ import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
+import Effectful.Trace
 import Optics.Core
 import RequireCallStack
 import Streamly.Data.Stream (Stream)
@@ -46,10 +48,10 @@ import System.FilePath
 
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Stream
-import Flora.Import.Types (ImportError, ImportFileType (..))
+import Flora.Import.Types (ImportError (..), ImportFileType (..))
 import Flora.Model.Package.Types (Namespace)
 import Flora.Model.Package.Types qualified as Flora
-import Flora.Model.PackageIndex.Query qualified as Query
+import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Types
 import Flora.Monad
 
@@ -64,6 +66,7 @@ importFromArchive
      , RequireCallStack
      , State (Set (Namespace, Flora.PackageName, Version)) :> es
      , Time :> es
+     , Trace :> es
      )
   => Text
   -> Vector Text
@@ -83,23 +86,20 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
       pure (dep, indexPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
-  Log.logInfo "importing packages" $
-    object
-      [ "repository" .= repositoryName
-      , "packages" .= indexPackages
-      ]
-  mPackageIndex <- Query.getPackageIndexByName repositoryName
-  time <- case mPackageIndex of
-    Nothing -> pure $ posixSecondsToUTCTime 0
-    Just packageIndex ->
-      pure $
+  packageIndex <- guardThatPackageIndexExists repositoryName $ \_ -> do
+    Log.logAttention "Could not find package index" $
+      object
+        [ "package_index_name" .= repositoryName
+        ]
+    Error.throwError (CouldNotFindPackageIndex repositoryName)
+  let time =
         fromMaybe
           (posixSecondsToUTCTime 0)
           packageIndex.timestamp
   case Tar.foldlEntries (buildContentStream time) Streamly.nil entries of
     Right stream ->
       importFromStream
-        repositoryName
+        packageIndex
         indexPackages
         stream
     Left (err, _) ->
@@ -108,16 +108,17 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
   where
     buildContentStream
       :: UTCTime
-      -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
+      -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
       -> Tar.GenEntry LazyByteString Tar.TarPath linkTarget
-      -> Stream (Eff es) (ImportFileType, UTCTime, StrictByteString)
+      -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
     buildContentStream time acc entry =
       let entryPath = Tar.entryPath entry
           entryTime = posixSecondsToUTCTime . fromIntegral $ Tar.entryTime entry
+          mUsername = if null entry.entryOwnership.ownerName then Nothing else Just (Text.pack entry.entryOwnership.ownerName)
        in Tar.entryContent entry & \case
             Tar.NormalFile bs _
               | ".cabal" `isSuffixOf` entryPath && entryTime > time ->
-                  (CabalFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
+                  (CabalFile entryPath, entryTime, mUsername, BL.toStrict bs) `Streamly.cons` acc
             -- \| ".json" `isSuffixOf` entryPath && entryTime > time ->
             --     (JSONFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
             _ -> acc
