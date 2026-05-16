@@ -9,6 +9,7 @@ module FloraJobs.Scheduler
   , scheduleRefreshLatestVersions
   , scheduleRefreshIndex
   , checkIfIndexRefreshJobIsPlanned
+  , schedulePackageMaintainersListJob
   --   prefer using smart constructors.
   , ReadmeJobPayload (..)
   , IntAesonVersion (..)
@@ -84,9 +85,20 @@ schedulePackageDeprecationListJob env =
   createJobWithResource env FetchPackageDeprecationList
 
 scheduleReleaseDeprecationListJob
-  :: MonadUnliftIO m => ArbS.SimpleEnv JobQueues -> (PackageName, Vector ReleaseId) -> m (Maybe (Arb.JobRead PackageJob))
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> (PackageName, Vector ReleaseId)
+  -> m (Maybe (Arb.JobRead PackageJob))
 scheduleReleaseDeprecationListJob env (package, releaseIds) =
   createJobWithResource env (FetchReleaseDeprecationList package releaseIds)
+
+schedulePackageMaintainersListJob
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> PackageName
+  -> m (Maybe (Arb.JobRead PackageJob))
+schedulePackageMaintainersListJob env package =
+  createJobWithResource env (FetchPackageMaintainers package)
 
 scheduleRefreshLatestVersions :: MonadUnliftIO m => ArbS.SimpleEnv JobQueues -> m (Maybe (Arb.JobRead PackageJob))
 scheduleRefreshLatestVersions env = createJobWithResource env RefreshLatestVersions

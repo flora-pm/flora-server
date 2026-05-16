@@ -30,7 +30,6 @@ import RequireCallStack
 import Flora.Environment
 import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Logging qualified as Logging
 import Flora.Model.Job
 import FloraJobs.Environment
 import FloraJobs.Metrics

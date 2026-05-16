@@ -1,4 +1,6 @@
-module FloraJobs.Runner where
+module FloraJobs.Runner
+  ( runner
+  ) where
 
 import Arbiter.Core
 import Arbiter.Core qualified as Arb
@@ -43,10 +45,16 @@ import Flora.Import.Package.Bulk.Archive qualified as Import
 import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.Job
+import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
+import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
+import Flora.Model.PackageMaintainer.Types
+import Flora.Model.PackageMaintainer.Update qualified as Update
+import Flora.Model.PackageUploader.Guard
+import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
@@ -54,10 +62,6 @@ import Flora.Monad
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
 import FloraJobs.ThirdParties.Hackage.API
-  ( HackagePackageInfo (..)
-  , HackagePreferredVersions (..)
-  , VersionedPackage (..)
-  )
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
 
@@ -72,6 +76,7 @@ runner env job = case job.payload of
   FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
   RefreshLatestVersions -> Update.refreshLatestVersions
   RefreshIndex indexName -> refreshIndex env indexName
+  FetchPackageMaintainers packageName -> fetchPackageMaintainers packageName
 
 fetchChangeLog :: RequireCallStack => ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -273,7 +278,7 @@ fetchReleaseDeprecationList packageName releases = do
   case result of
     Right deprecationList -> do
       releasesAndVersions <- Query.getVersionFromManyReleaseIds releases
-      let (deprecatedVersions', preferredVersions') =
+      let (deprecatedVersions', _) =
             Vector.unstablePartition
               ( \(_, v) ->
                   Vector.elem v deprecationList.deprecatedVersions
@@ -281,12 +286,8 @@ fetchReleaseDeprecationList packageName releases = do
               releasesAndVersions
       let deprecatedVersions =
             fmap (\(releaseId, _) -> (True, releaseId)) deprecatedVersions'
-      let preferredVersions =
-            fmap (\(releaseId, _) -> (False, releaseId)) preferredVersions'
       unless (Vector.null deprecatedVersions) $
         Update.setReleasesDeprecationMarker deprecatedVersions
-      unless (Vector.null preferredVersions) $
-        Update.setReleasesDeprecationMarker preferredVersions
     Left e -> handleClientError e
   where
     handleClientError :: ClientError -> JobsRunner ()
@@ -395,3 +396,55 @@ getCabalPackagesDirectory = do
       homeDir <- FileSystem.getHomeDirectory
       let legacyPackagesDirectory = homeDir </> ".cabal/packages"
       pure legacyPackagesDirectory
+
+fetchPackageMaintainers
+  :: RequireCallStack
+  => PackageName
+  -> JobsRunner ()
+fetchPackageMaintainers packageName = do
+  localDomain "fetch-package-maintainers" $ do
+    packageIndex <- guardThatPackageIndexExists "hackage" undefined
+    Hackage.request (Hackage.getPackageMaintainers packageName) >>= \case
+      Left e -> handleClientError e
+      Right (HackagePackageMaintainers maintainers) -> do
+        package <-
+          guardThatPackageExists
+            (Namespace packageIndex.repository)
+            packageName
+            undefined
+        packageUploaders <- forM (Vector.toList maintainers) $ \(HackagePackageMaintainer username) ->
+          guardThatPackageUploaderExists
+            username
+            packageIndex.packageIndexId
+            undefined
+        packageMaintainerDAOs <- forM packageUploaders $ \packageUploader ->
+          mkPackageMaintainer
+            packageUploader.packageUploaderId
+            package.packageId
+        Update.insertPackageMaintainers packageMaintainerDAOs
+  where
+    handleClientError :: ClientError -> JobsRunner a
+    handleClientError e@(FailureResponse _ response)
+      | response.responseStatusCode == notFound404 = do
+          Log.logAttention "Could not find package on hackage" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              ]
+          Arb.throwPermanent "Package does not exist"
+      | response.responseStatusCode == gone410 = do
+          Log.logAttention "Could not find package on hackage" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              ]
+          Arb.throwPermanent "Package does not exist"
+      | otherwise = do
+          Log.logAttention "Could not fetch package on hackage" $
+            object
+              [ "namespace" .= ("hackage" :: Text)
+              , "package_name" .= packageName
+              , "status_code" .= statusCode response.responseStatusCode
+              ]
+          Arb.throwRetryable (Text.show e)
+    handleClientError e = Arb.throwRetryable (Text.show e)

@@ -1,9 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module FloraJobs.ThirdParties.Hackage.API where
 
 import Data.Aeson
-import Data.Aeson.TH
 import Data.Bifunctor qualified as Bifunctor
 import Data.ByteString.Lazy as ByteString
 import Data.List.NonEmpty
@@ -14,10 +11,10 @@ import Data.Time (UTCTime)
 import Data.Typeable
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Deriving.Aeson
 import Distribution.Types.Version (Version)
 import Network.HTTP.Media ((//), (/:))
 import Servant.API
-import Servant.API.Generic
 
 import Distribution.Orphans ()
 import Flora.Model.Job
@@ -72,6 +69,7 @@ data HackagePackageAPI mode = HackagePackageAPI
   , getPackageInfo :: mode :- Get '[JSON] HackagePackageInfo
   , getPackageWithRevision :: mode :- "revision" :> Capture "revision_number" Word :> Get '[JSON] HackagePackageInfo
   , getTarball :: mode :- Capture "tarball" VersionedTarball :> Get '[GZipped] ByteString
+  , getMaintainers :: mode :- "maintainers" :> Get '[JSON] HackagePackageMaintainers
   }
   deriving stock (Generic)
 
@@ -104,7 +102,7 @@ data HackagePreferredVersions = HackagePreferredVersions
 instance FromJSON HackagePreferredVersions where
   parseJSON = withObject "Hackage preferred versions" $ \o -> do
     deprecatedVersions <- o .:? "deprecated-version" .!= Vector.empty
-    normalVersions <- o .: "normal-version"
+    normalVersions <- o .:? "normal-version" .!= Vector.empty
     pure $ HackagePreferredVersions deprecatedVersions normalVersions
 
 data HackagePackageInfo = HackagePackageInfo
@@ -112,6 +110,23 @@ data HackagePackageInfo = HackagePackageInfo
   , uploadedAt :: UTCTime
   , uploader :: Text
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (FromJSON, ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] HackagePackageInfo)
 
-$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''HackagePackageInfo)
+data HackagePackageMaintainers = HackagePackageMaintainers
+  { members :: Vector HackagePackageMaintainer
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (FromJSON, ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] HackagePackageMaintainers)
+
+data HackagePackageMaintainer = HackagePackageMaintainer
+  { username :: Text
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (FromJSON, ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] HackagePackageMaintainer)
