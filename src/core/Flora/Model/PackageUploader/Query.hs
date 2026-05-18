@@ -4,7 +4,6 @@
 module Flora.Model.PackageUploader.Query
   ( getPackageUploaderById
   , getPackageUploaderByUsernameAndIndex
-  , getRecentlyActiveUploaders
   , getPackageUploaders
   ) where
 
@@ -75,23 +74,6 @@ getPackageUploaderByUsernameAndIndex username packageIndexId = do
         [ [field| username |]
         , [field| package_index_id |]
         ]
-
-getRecentlyActiveUploaders
-  :: DB :> es
-  => FloraM es (Vector Text)
-getRecentlyActiveUploaders = dbtToEff $ do
-  result <- query sqlQuery ()
-  pure $ fromOnly <$> result
-  where
-    sqlQuery =
-      [sql|
-      SELECT p0.username
-      FROM package_uploaders AS p0
-           INNER JOIN releases AS r1 ON p0.package_uploader_id = r1.uploader_id
-      WHERE r1.uploaded_at >= (CURRENT_DATE - INTERVAL '2 years')
-        AND r1.uploaded_at < CURRENT_DATE
-      GROUP BY p0.username
-      |]
 
 getPackageUploaders
   :: DB :> es

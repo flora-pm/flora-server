@@ -3,7 +3,7 @@
 
 module Flora.Model.PackageMaintainer.Query
   ( getPackageMaintainerById
-  , getRecentlyActiveMaintainers
+  , getActiveMaintainers
   , getPackageMaintainers
   , getPackageMaintainerByUsernameAndIndex
   ) where
@@ -45,38 +45,6 @@ getPackageMaintainerByUsernameAndIndex username packageIndexId = do
         , [field| package_index_id |]
         ]
 
-getRecentlyActiveMaintainers
-  :: DB :> es
-  => FloraM es (Vector Text)
-getRecentlyActiveMaintainers = dbtToEff $ do
-  result <- query sqlQuery ()
-  pure $ fromOnly <$> result
-  where
-    sqlQuery =
-      [sql|
-      SELECT p0.username
-      FROM package_maintainers AS p0
-           INNER JOIN releases AS r1 ON p0.package_uploader_id = r1.uploader_id
-      WHERE r1.uploaded_at >= (CURRENT_DATE - INTERVAL '2 years')
-        AND r1.uploaded_at < CURRENT_DATE
-      GROUP BY p0.username
-      |]
-
--- getPackageMaintainers
---   :: DB :> es
---   => PackageId
---   -> FloraM es (Vector PackageMaintainer)
--- getPackageMaintainers packageId = dbtToEff $ do
---   query sqlQuery (Only packageId)
---   where
---     sqlQuery =
---       [sql|
---         SELECT p0.*
---         FROM package_maintainers AS p0
---              INNER JOIN releases AS r1 ON p0.package_uploader_id = r1.uploader_id
---         WHERE r1.package_id = ?
---       |]
-
 getPackageMaintainers
   :: DB :> es
   => PackageId
@@ -86,3 +54,26 @@ getPackageMaintainers packageId =
     selectManyByField @PackageMaintainer
       [field| package_id |]
       (Only packageId)
+
+getActiveMaintainers
+  :: DB :> es
+  => PackageId
+  -> FloraM es (Vector Text)
+getActiveMaintainers packageId = dbtToEff $ do
+  result <- query sqlQuery (Only packageId)
+  pure $ fromOnly <$> result
+  where
+    sqlQuery =
+      [sql|
+        SELECT p1.username
+          FROM package_maintainers as p0
+          INNER JOIN package_uploaders as p1 ON p0.package_uploader_id = p1.package_uploader_id
+        WHERE p0.package_id = ?
+          AND p1.username IN (SELECT p1.username
+                              FROM package_maintainers AS p0
+                                   INNER JOIN package_uploaders as p1 ON p0.package_uploader_id = p1.package_uploader_id
+                                   INNER JOIN releases AS r2 ON p0.package_uploader_id = r2.uploader_id
+                              WHERE r2.uploaded_at >= (CURRENT_DATE - CAST('2 years' AS interval))
+                              GROUP BY p1.username)
+        GROUP BY p1.package_uploader_id
+      |]
