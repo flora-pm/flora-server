@@ -4,4 +4,7 @@ CREATE TABLE IF NOT EXISTS package_maintainers (
   , package_id uuid REFERENCES packages NOT NULL
   , created_at timestamptz NOT NULL
   , updated_at timestamptz NOT NULL
-)
+);
+
+CREATE INDEX package_maintainers_package_uploader_id_fkey
+  ON package_maintainers (package_uploader_id)
