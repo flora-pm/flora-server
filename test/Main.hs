@@ -82,6 +82,7 @@ cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM package_group_packages" ()
   void $ execute "DELETE FROM package_groups" ()
   void $ execute "DELETE FROM package_feeds" ()
+  void $ execute "DELETE FROM package_maintainers" ()
   void $ execute "DELETE FROM packages" ()
   void $ execute "DELETE FROM index_dependencies" ()
   void $ execute "DELETE FROM user_organisation" ()

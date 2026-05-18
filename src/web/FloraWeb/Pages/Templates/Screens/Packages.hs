@@ -48,7 +48,7 @@ showPackage
   numberOfDependencies
   categories
   groups
-  activeUploaders
+  activeMaintainers
   mUploader =
     div_ [class_ "container"] $ do
       presentationHeader latestRelease namespace name latestRelease.synopsis groups
@@ -63,7 +63,7 @@ showPackage
         dependents
         numberOfDependents
         categories
-        (Vector.length activeUploaders)
+        (Vector.length activeMaintainers)
         mUploader
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> Vector PackageGroupName -> FloraHTML

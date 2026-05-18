@@ -33,8 +33,8 @@ module Flora.Model.Package.Query
   , getTransitiveDependencies
   , getPackageById
   , getLatestPackages
-  , getActiveUploaders
   , getUploaders
+  , getPackagesWithoutMaintainersInformation
   ) where
 
 import Data.Aeson
@@ -844,29 +844,6 @@ getLatestPackages = dbtToEff $ do query sqlQuery ()
         LIMIT 6
       |]
 
-getActiveUploaders
-  :: DB :> es
-  => PackageId
-  -> FloraM es (Vector Text)
-getActiveUploaders packageId = dbtToEff $ do
-  result <- query sqlQuery (Only packageId)
-  pure $ fromOnly <$> result
-  where
-    sqlQuery =
-      [sql|
-        SELECT p1.username
-        FROM releases AS r0
-             INNER JOIN package_uploaders AS p1 ON p1.package_uploader_id = r0.uploader_id
-             INNER JOIN packages AS p2 ON p2.package_id = r0.package_id
-        WHERE p2.package_id = ?
-          AND p1.username IN (SELECT p0.username
-                              FROM package_uploaders AS p0
-                                   INNER JOIN releases AS r1 ON p0.package_uploader_id = r1.uploader_id
-                              WHERE r1.uploaded_at >= (CURRENT_DATE - CAST('2 years' AS interval))
-                              GROUP BY p0.username)
-        GROUP BY p1.package_uploader_id
-      |]
-
 getUploaders
   :: DB :> es
   => PackageId
@@ -883,4 +860,21 @@ getUploaders packageId = dbtToEff $ do
              INNER JOIN packages AS p2 ON p2.package_id = r0.package_id
         WHERE p2.package_id = ?
         GROUP BY p1.package_uploader_id
+      |]
+
+getPackagesWithoutMaintainersInformation
+  :: DB :> es
+  => FloraM es (Vector (Namespace, PackageName))
+getPackagesWithoutMaintainersInformation = dbtToEff $ do
+  query sqlQuery ()
+  where
+    sqlQuery =
+      [sql|
+        SELECT l0.namespace
+             , l0.name
+        FROM latest_versions AS l0
+             LEFT JOIN package_maintainers AS p1 ON p1.package_id = l0.package_id
+        WHERE l0.uploaded_at >= (CURRENT_DATE - CAST(' 2 years' AS interval))
+          AND p1.package_uploader_id IS NULL
+          AND l0.namespace = 'hackage'
       |]

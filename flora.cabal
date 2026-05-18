@@ -156,6 +156,10 @@ library
     Flora.Model.PackageIndex.Query
     Flora.Model.PackageIndex.Types
     Flora.Model.PackageIndex.Update
+    Flora.Model.PackageMaintainer.Query
+    Flora.Model.PackageMaintainer.Types
+    Flora.Model.PackageMaintainer.Update
+    Flora.Model.PackageUploader.Guard
     Flora.Model.PackageUploader.Query
     Flora.Model.PackageUploader.Types
     Flora.Model.PackageUploader.Update
@@ -209,8 +213,6 @@ library
     heptapod ^>=1.1.0.0,
     hsec-core,
     http-api-data,
-    http-client,
-    http-client-tls,
     http-media,
     iso8601-time,
     log-base,
@@ -299,7 +301,6 @@ library flora-advisories
     base,
     cvss,
     deepseq,
-    effectful,
     effectful-core,
     effectful-plugin,
     flora,
@@ -529,7 +530,6 @@ library flora-jobs
     filepath,
     flora,
     gitrev,
-    http-api-data,
     http-client,
     http-client-tls,
     http-media,
@@ -537,12 +537,10 @@ library flora-jobs
     log-base,
     log-effectful,
     monad-time-effectful,
-    pg-entity,
     pg-transact-effectful,
     postgresql-simple,
     prometheus-client,
     prometheus-effectful,
-    req,
     require-callstack,
     resource-pool,
     servant,
@@ -588,7 +586,6 @@ executable flora-migrate
   build-depends:
     arbiter-migrations,
     base,
-    effectful,
     effectful-core,
     effectful-plugin,
     flora,
@@ -596,11 +593,8 @@ executable flora-migrate
     flora-web,
     log-base,
     log-effectful,
-    optparse-applicative,
-    pg-entity,
     pg-transact-effectful,
     postgresql-migration,
-    postgresql-simple,
     resource-pool,
     text,
 
@@ -612,24 +606,17 @@ executable flora-jobs-runner
   hs-source-dirs: app/jobs
   build-depends:
     arbiter-core,
-    arbiter-servant,
-    arbiter-servant-ui,
     arbiter-simple,
     arbiter-worker,
     base,
-    containers,
     effectful,
     effectful-core,
     effectful-plugin,
     flora,
     flora-jobs,
     flora-web,
-    http-types,
     log-base,
     log-effectful,
-    pg-entity,
-    pg-transact-effectful,
-    postgresql-simple,
     prometheus-client,
     prometheus-effectful,
     prometheus-metrics-ghc,
@@ -637,8 +624,6 @@ executable flora-jobs-runner
     text,
     text-display,
     time,
-    vector,
-    wai,
     wai-middleware-prometheus,
     warp,
 

@@ -87,6 +87,8 @@ data PackageJob
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
   | RefreshIndex Text
+  | FetchPackageMaintainers PackageName
+  | FetchPackageUploaders
   deriving stock (Generic)
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''PackageJob)

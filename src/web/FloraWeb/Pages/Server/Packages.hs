@@ -43,6 +43,7 @@ import Flora.Model.Package.Query qualified as Query
 import Flora.Model.PackageGroupPackage.Query qualified as Query
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
+import Flora.Model.PackageMaintainer.Query qualified as Query
 import Flora.Model.PackageUploader.Query qualified as Query
 import Flora.Model.Release.Guard
 import Flora.Model.Release.Query qualified as Query
@@ -203,7 +204,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
         Query.getNumberOfPackageDependents packageNamespace packageName Nothing
     numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
     groups <- Query.getPackageGroupsForPackage package.packageId
-    activeUploaders <- Query.getActiveUploaders package.packageId
+    activeMaintainers <- Query.getActiveMaintainers package.packageId
     mUploader <- join <$> (traverse Query.getPackageUploaderById release.uploaderId)
 
     let templateEnv =
@@ -248,7 +249,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
           numberOfDependencies
           categories
           groups
-          activeUploaders
+          activeMaintainers
           mUploader
 
 showDependentsHandler

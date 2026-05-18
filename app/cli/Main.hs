@@ -280,8 +280,8 @@ runOptions (Options (ImportIndex path repository)) = importIndex path repository
 runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball (Namespace "hackage") pname version path
 runOptions (Options (IndexDependency indexName dependencyName priority)) = do
-  index <- guardThatPackageIndexExists indexName (\_ -> error $ Text.unpack indexName <> " does not exist in database!")
-  dependency <- guardThatPackageIndexExists dependencyName (\_ -> error $ Text.unpack indexName <> " does not exist in database!")
+  index <- guardThatPackageIndexExists indexName (error $ Text.unpack indexName <> " does not exist in database!")
+  dependency <- guardThatPackageIndexExists dependencyName (error $ Text.unpack indexName <> " does not exist in database!")
   Update.addDependency
     index.packageIndexId
     dependency.packageIndexId

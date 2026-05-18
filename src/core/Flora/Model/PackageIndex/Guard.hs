@@ -12,7 +12,7 @@ import Flora.Model.PackageIndex.Types
 guardThatPackageIndexExists
   :: (DB :> es, Trace :> es)
   => Text
-  -> (Text -> Eff es PackageIndex)
+  -> Eff es PackageIndex
   -- ^ Action to run if the package does not exist
   -> Eff es PackageIndex
 guardThatPackageIndexExists indexName action =
@@ -21,5 +21,5 @@ guardThatPackageIndexExists indexName action =
       Tracing.childSpan "Query.getPackageIndexByName" $
         Query.getPackageIndexByName indexName
     case result of
-      Nothing -> action indexName
+      Nothing -> action
       Just packageIndex -> pure packageIndex

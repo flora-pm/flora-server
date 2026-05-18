@@ -123,6 +123,7 @@ getHackagePackageReleasesWithoutReadme = dbtToEff $ query querySpec ()
         on p.package_id = r.package_id
         where r.readme_status = 'not-imported'
           and p.namespace = 'hackage'
+          and p.deprecation_info is null
       |]
 
 getHackagePackageReleasesWithoutUploadInformation
@@ -141,6 +142,7 @@ getHackagePackageReleasesWithoutUploadInformation =
         on p."package_id" = r."package_id"
         where (r."uploaded_at" is null or r."uploader_id" is null)
           and p."namespace" = 'hackage'
+          and p.deprecation_info is null
       |]
 
 getHackagePackageReleasesWithoutChangelog
@@ -159,6 +161,7 @@ getHackagePackageReleasesWithoutChangelog =
         on p.package_id = r.package_id
         where r.changelog_status = 'not-imported'
           and p.namespace = 'hackage'
+          and p.deprecation_info is null
       |]
 
 getHackagePackageReleasesWithoutTarball
@@ -174,6 +177,7 @@ getHackagePackageReleasesWithoutTarball =
         join packages as p
         on p.package_id = r.package_id
         where r.tarball_root_hash is null
+          and p.deprecation_info is null
       |]
 
 getHackagePackagesWithoutReleaseDeprecationInformation
@@ -189,6 +193,7 @@ getHackagePackagesWithoutReleaseDeprecationInformation =
         join packages as p1 on r0.package_id = p1.package_id
         where r0.deprecated is null
           and p1.namespace = 'hackage'
+          and p1.deprecation_info is null
         group by p1.name;
         |]
 
