@@ -86,7 +86,7 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
       pure (dep, indexPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
-  packageIndex <- guardThatPackageIndexExists repositoryName $ \_ -> do
+  packageIndex <- guardThatPackageIndexExists repositoryName $ do
     Log.logAttention "Could not find package index" $
       object
         [ "package_index_name" .= repositoryName

@@ -35,6 +35,7 @@ module Flora.Model.Package.Query
   , getLatestPackages
   , getActiveUploaders
   , getUploaders
+  , getPackagesWithoutMaintainersInformation
   ) where
 
 import Data.Aeson
@@ -883,4 +884,21 @@ getUploaders packageId = dbtToEff $ do
              INNER JOIN packages AS p2 ON p2.package_id = r0.package_id
         WHERE p2.package_id = ?
         GROUP BY p1.package_uploader_id
+      |]
+
+getPackagesWithoutMaintainersInformation
+  :: DB :> es
+  => FloraM es (Vector (Namespace, PackageName))
+getPackagesWithoutMaintainersInformation = dbtToEff $ do
+  query sqlQuery ()
+  where
+    sqlQuery =
+      [sql|
+        SELECT l0.namespace
+             , l0.name
+        FROM latest_versions AS l0
+             LEFT JOIN package_maintainers AS p1 ON p1.package_id = l0.package_id
+        WHERE l0.uploaded_at >= (CURRENT_DATE - CAST(' 2 years' AS interval))
+          AND p1.package_uploader_id IS NULL
+          AND l0.namespace = 'hackage'
       |]

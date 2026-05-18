@@ -21,6 +21,7 @@ import Distribution.Types.Version (Version)
 import Effectful (IOE, type (:>))
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log hiding (LogLevel)
@@ -46,6 +47,7 @@ import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.Job
 import Flora.Model.Package.Guard (guardThatPackageExists)
+import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Guard
@@ -55,6 +57,7 @@ import Flora.Model.PackageMaintainer.Types
 import Flora.Model.PackageMaintainer.Update qualified as Update
 import Flora.Model.PackageUploader.Guard
 import Flora.Model.PackageUploader.Types
+import Flora.Model.PackageUploader.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
@@ -77,6 +80,7 @@ runner env job = case job.payload of
   RefreshLatestVersions -> Update.refreshLatestVersions
   RefreshIndex indexName -> refreshIndex env indexName
   FetchPackageMaintainers packageName -> fetchPackageMaintainers packageName
+  FetchPackageUploaders -> fetchPackageUploaders
 
 fetchChangeLog :: RequireCallStack => ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -384,6 +388,14 @@ refreshIndex env indexName = do
               (\a -> scheduleReleaseDeprecationListJob env a)
             void $ scheduleRefreshLatestVersions env
 
+      packagesWithoutMaintainerInformation <- Query.getPackagesWithoutMaintainersInformation
+      liftIO $
+        void $
+          forkIO $
+            Async.forConcurrently_
+              packagesWithoutMaintainerInformation
+              (\(_namespace, packageName) -> schedulePackageMaintainersListJob env packageName)
+
       void $ liftIO $ scheduleRefreshIndex env indexName
 
 getCabalPackagesDirectory :: FileSystem :> es => FloraM es FilePath
@@ -403,20 +415,21 @@ fetchPackageMaintainers
   -> JobsRunner ()
 fetchPackageMaintainers packageName = do
   localDomain "fetch-package-maintainers" $ do
-    packageIndex <- guardThatPackageIndexExists "hackage" undefined
+    packageIndex <- guardThatPackageIndexExists "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
     Hackage.request (Hackage.getPackageMaintainers packageName) >>= \case
       Left e -> handleClientError e
       Right (HackagePackageMaintainers maintainers) -> do
+        let namespace = (Namespace packageIndex.repository)
         package <-
           guardThatPackageExists
-            (Namespace packageIndex.repository)
+            namespace
             packageName
-            undefined
+            (\_ _ -> Error.throwError (CouldNotFindPackage namespace packageName))
         packageUploaders <- forM (Vector.toList maintainers) $ \(HackagePackageMaintainer username) ->
           guardThatPackageUploaderExists
             username
             packageIndex.packageIndexId
-            undefined
+            (Error.throwError (CouldNotFindPackageUploader username namespace))
         packageMaintainerDAOs <- forM packageUploaders $ \packageUploader ->
           mkPackageMaintainer
             packageUploader.packageUploaderId
@@ -447,4 +460,18 @@ fetchPackageMaintainers packageName = do
               , "status_code" .= statusCode response.responseStatusCode
               ]
           Arb.throwRetryable (Text.show e)
+    handleClientError e = Arb.throwRetryable (Text.show e)
+
+fetchPackageUploaders :: RequireCallStack => JobsRunner ()
+fetchPackageUploaders = do
+  localDomain "fetch-package-uploaders" $ do
+    packageIndex <- guardThatPackageIndexExists "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
+    Hackage.request Hackage.listHackageUsers >>= \case
+      Left e -> handleClientError e
+      Right users -> do
+        forM_ users $ \user -> do
+          dao <- mkPackageUploaderDAO user.username packageIndex.packageIndexId Nothing
+          Update.insertMaybeExistingPackageUploader dao
+  where
+    handleClientError :: ClientError -> JobsRunner a
     handleClientError e = Arb.throwRetryable (Text.show e)

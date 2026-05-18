@@ -25,6 +25,8 @@ data ImportError
   | CouldNotSelectNamespace Text PackageName
   | CouldNotFindPackageIndexForRelease ReleaseId
   | CouldNotFindPackageIndex Text
+  | CouldNotFindPackageUploader Text Namespace
+  | CouldNotFindPackage Namespace PackageName
   deriving stock (Eq, Show)
   deriving anyclass (Exception)
 

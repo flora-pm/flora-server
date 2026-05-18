@@ -10,6 +10,7 @@ module FloraJobs.Scheduler
   , scheduleRefreshIndex
   , checkIfIndexRefreshJobIsPlanned
   , schedulePackageMaintainersListJob
+  , schedulePackageUploadersJob
   --   prefer using smart constructors.
   , ReadmeJobPayload (..)
   , IntAesonVersion (..)
@@ -99,6 +100,13 @@ schedulePackageMaintainersListJob
   -> m (Maybe (Arb.JobRead PackageJob))
 schedulePackageMaintainersListJob env package =
   createJobWithResource env (FetchPackageMaintainers package)
+
+schedulePackageUploadersJob
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> m (Maybe (Arb.JobRead PackageJob))
+schedulePackageUploadersJob env =
+  createJobWithResource env FetchPackageUploaders
 
 scheduleRefreshLatestVersions :: MonadUnliftIO m => ArbS.SimpleEnv JobQueues -> m (Maybe (Arb.JobRead PackageJob))
 scheduleRefreshLatestVersions env = createJobWithResource env RefreshLatestVersions

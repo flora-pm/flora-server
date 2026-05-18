@@ -22,6 +22,7 @@ import Servant (HasServer (..), Headers (..))
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Job
+import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User
@@ -68,6 +69,7 @@ fetchMetadataHandler :: RequireCallStack => SessionWithCookies User -> FloraM Ro
 fetchMetadataHandler (Headers session _) = do
   FloraEnv{workerEnv} <- liftIO $ fetchFloraEnv session.webEnvStore
 
+  liftIO $ void $ schedulePackageUploadersJob workerEnv
   liftIO $ void $ schedulePackageDeprecationListJob workerEnv
 
   releasesWithoutReadme <- Query.getHackagePackageReleasesWithoutReadme
@@ -115,5 +117,13 @@ fetchMetadataHandler (Headers session _) = do
           packagesWithoutDeprecationInformation
           (\a -> scheduleReleaseDeprecationListJob workerEnv a)
         void $ scheduleRefreshLatestVersions workerEnv
+
+  packagesWithoutMaintainerInformation <- Query.getPackagesWithoutMaintainersInformation
+  liftIO $
+    void $
+      forkIO $
+        Async.forConcurrently_
+          packagesWithoutMaintainerInformation
+          (\(_namespace, packageName) -> schedulePackageMaintainersListJob workerEnv packageName)
 
   pure $ redirect "/admin"

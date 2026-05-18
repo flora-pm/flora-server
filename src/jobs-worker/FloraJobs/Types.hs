@@ -10,6 +10,7 @@ import Effectful
 import Effectful.Concurrent.Async
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
+import Effectful.Exception
 import Effectful.FileSystem
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
@@ -89,6 +90,6 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner = do
     & Error.runErrorWith
       ( \callstack err -> do
           liftIO $ putStrLn $ prettyCallStack callstack
-          pure $ error $ show err
+          throwIO $ userError (show err)
       )
     & runEff
