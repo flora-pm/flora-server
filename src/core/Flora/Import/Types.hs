@@ -13,7 +13,7 @@ import Data.Aeson.KeyMap
 import Data.Text (Text)
 import GHC.Generics
 
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
 data ImportError

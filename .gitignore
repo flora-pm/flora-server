@@ -14,7 +14,6 @@ Session.vim
 _data/
 _database/
 cabal.project.local
-cbits/*.cpp
 dist-newstyle
 environment.local.sh
 environment.test.local.sh
@@ -39,4 +38,3 @@ _build/cabal-store
 storage/
 cabal.project.release.freeze
 prlog
-supervisor/supervisord.pid

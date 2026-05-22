@@ -419,7 +419,7 @@ fetchPackageMaintainers packageName = do
     Hackage.request (Hackage.getPackageMaintainers packageName) >>= \case
       Left e -> handleClientError e
       Right (HackagePackageMaintainers maintainers) -> do
-        let namespace = (Namespace packageIndex.repository)
+        let namespace = Namespace packageIndex.repository
         package <-
           guardThatPackageExists
             namespace

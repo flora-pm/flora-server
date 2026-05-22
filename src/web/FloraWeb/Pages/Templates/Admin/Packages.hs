@@ -10,7 +10,7 @@ import Optics.Core
 
 import Data.Text.Display.Orphans ()
 import Flora.Model.Admin.Report
-import Flora.Model.Package (Package (..))
+import Flora.Model.Package.Types (Package (..))
 import Flora.Model.User
 import FloraWeb.Components.Utils (text)
 import FloraWeb.Pages.Templates.Types

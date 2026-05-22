@@ -30,7 +30,7 @@ import Effectful.PostgreSQL.Transact.Effect
 import Log
 
 import Flora.Model.Job
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.Release.Types

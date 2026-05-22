@@ -52,7 +52,7 @@ import Flora.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
-import Flora.Model.Package (Namespace (..), PackageName)
+import Flora.Model.Package.Types (Namespace (..), PackageName)
 import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types

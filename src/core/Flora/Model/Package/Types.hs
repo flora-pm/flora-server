@@ -390,3 +390,6 @@ data PackageDependencies = PackageDependencies
 instance ToSchema PackageDependencies where
   declareNamedSchema proxy =
     genericDeclareNamedSchema openApiSchemaOptions proxy
+
+formatPackage :: Namespace -> PackageName -> Text
+formatPackage namespace packageName = display namespace <> "/" <> display packageName

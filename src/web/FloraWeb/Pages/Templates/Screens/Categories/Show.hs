@@ -5,7 +5,7 @@ import Data.Vector qualified as V
 import Lucid
 
 import Flora.Model.Category.Types (Category (..))
-import Flora.Model.Package (PackageInfo)
+import Flora.Model.Package.Types (PackageInfo)
 import FloraWeb.Components.Icons qualified as Icon
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Pages.Templates (FloraHTML)

@@ -3,7 +3,7 @@ module Flora.FeedSpec where
 import RequireCallStack
 
 import Flora.Model.Feed.Query qualified as Query
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.TestUtils
 
 spec :: RequireCallStack => TestEff TestTree

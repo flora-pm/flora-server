@@ -10,7 +10,7 @@ import Log qualified
 import Monitor.Tracing qualified as Tracing
 import Optics.Core
 
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query as Query
 import Flora.Model.PackageIndex.Types (PackageIndex)
 import Flora.Model.User (User)

@@ -31,7 +31,7 @@ import Flora.Environment
 import Flora.Environment.Env
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Search
 import FloraWeb.Components.AdvisoryListItem qualified as Component
 import FloraWeb.Components.Alert qualified as Component

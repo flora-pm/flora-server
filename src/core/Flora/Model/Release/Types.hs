@@ -44,7 +44,7 @@ import Distribution.Orphans.BuildType ()
 import Distribution.Orphans.CompilerFlavor ()
 import Distribution.Orphans.PackageFlag ()
 import Flora.Model.BlobStore.Types
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.PackageUploader.Types
 
 newtype ReleaseId = ReleaseId {getReleaseId :: UUID}

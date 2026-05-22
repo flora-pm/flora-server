@@ -16,7 +16,7 @@ import Lucid
 import PyF
 
 import Flora.Environment.Env
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import FloraWeb.Components.MainSearchBar (mainSearchBar)
 import FloraWeb.Components.Utils (dataText_)
 import FloraWeb.Pages.Templates.Packages (formatUploadTime)

@@ -5,8 +5,8 @@ import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Trace
 import Monitor.Tracing qualified as Tracing
 
-import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Package.Types
 
 guardThatPackageExists
   :: (DB :> es, Trace :> es)

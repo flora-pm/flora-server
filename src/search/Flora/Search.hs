@@ -23,14 +23,14 @@ import Monitor.Tracing qualified as Tracing
 import Advisories.Model.Affected.Query qualified as Query
 import Advisories.Model.Affected.Types (PackageAdvisoryPreview)
 import Flora.Logging
-import Flora.Model.Package
+import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Package.Types
   ( Namespace (..)
   , PackageInfo (..)
   , PackageInfoWithExecutables (..)
   , PackageName (..)
   , formatPackage
   )
-import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types qualified as Package
 import Flora.Model.Requirement
 

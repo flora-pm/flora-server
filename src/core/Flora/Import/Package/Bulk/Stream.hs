@@ -27,8 +27,8 @@ import UnliftIO (finally)
 import Flora.Environment.Env
 import Flora.Import.Package
 import Flora.Import.Types
-import Flora.Model.Package hiding (PackageName)
-import Flora.Model.Package qualified as Flora
+import Flora.Model.Package.Types hiding (PackageName)
+import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update

@@ -18,9 +18,8 @@ import System.FilePath ((</>))
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobIndex.Types
 import Flora.Model.BlobIndex.Update qualified as Update
-import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
-import Flora.Model.Package.Types ()
+import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.TestUtils

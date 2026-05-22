@@ -32,8 +32,7 @@ import Distribution.Orphans.Version ()
 import Flora.Environment.Env
 import Flora.Import.Types (ImportError)
 import Flora.Model.BlobStore.API
-import Flora.Model.Package (PackageName (..))
-import Flora.Model.Package.Types (Namespace)
+import Flora.Model.Package.Types (Namespace, PackageName (..))
 import Flora.Tracing qualified as Tracing
 import FloraJobs.Environment
 

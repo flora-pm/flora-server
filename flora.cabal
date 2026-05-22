@@ -139,7 +139,6 @@ library
     Flora.Model.Feed.Update
     Flora.Model.Job
     Flora.Model.Organisation
-    Flora.Model.Package
     Flora.Model.Package.Guard
     Flora.Model.Package.Orphans
     Flora.Model.Package.Query

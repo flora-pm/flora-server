@@ -23,7 +23,7 @@ import Log qualified
 import Flora.Model.BlobIndex.Internal
 import Flora.Model.BlobIndex.Types (BlobRelation (..), BlobStoreQueryError (..))
 import Flora.Model.BlobStore.API (BlobStoreAPI, get)
-import Flora.Model.Package (PackageName)
+import Flora.Model.Package.Types (PackageName)
 
 -- | Query a package name, version and hash and construct a uncompressed tarball
 -- from the database

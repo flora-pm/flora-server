@@ -4,7 +4,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Lucid
 
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import FloraWeb.Components.PackageGroup
 import FloraWeb.Pages.Templates

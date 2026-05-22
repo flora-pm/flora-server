@@ -18,8 +18,8 @@ import Test.Tasty
 
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Component.Types
-import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types

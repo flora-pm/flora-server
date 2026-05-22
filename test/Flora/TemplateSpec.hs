@@ -3,7 +3,7 @@ module Flora.TemplateSpec where
 import Distribution.Version qualified as Version
 import RequireCallStack
 
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.TestUtils
 import FloraWeb.Links qualified as Links
 

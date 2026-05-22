@@ -73,7 +73,7 @@ import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Component.Types
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
   ( ComponentDependencies

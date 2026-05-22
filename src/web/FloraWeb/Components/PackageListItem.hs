@@ -20,7 +20,7 @@ import Distribution.Types.Version (Version)
 import Lucid
 
 import Flora.Model.Component.Types (CanonicalComponent (..))
-import Flora.Model.Package (ElemRating (..), Namespace, PackageInfoWithExecutables (..), PackageName (..))
+import Flora.Model.Package.Types (ElemRating (..), Namespace, PackageInfoWithExecutables (..), PackageName (..))
 import Flora.Model.Requirement
   ( ComponentDependencies
   , DependencyInfo (..)

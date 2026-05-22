@@ -7,7 +7,7 @@ import Data.Vector qualified as Vector
 import Lucid
 import Web.HttpApiData
 
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import FloraWeb.Components.Button
 import FloraWeb.Components.Icons qualified as Icon

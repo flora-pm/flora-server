@@ -8,7 +8,7 @@ import Data.UUID (fromByteString, toByteString)
 import Distribution.Types.Version
 import Distribution.Utils.Structured (structuredEncode)
 
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
 -- | Generates a release id deterministically by hashing the package id and a version
