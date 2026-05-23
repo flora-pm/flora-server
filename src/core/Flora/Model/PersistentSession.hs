@@ -1,6 +1,9 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Flora.Model.PersistentSession where
 
 import Control.DeepSeq
+import Control.Monad
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text
@@ -9,20 +12,25 @@ import Data.Time
 import Data.UUID
 import Data.UUID.V4 qualified as UUID
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT ()
 import Database.PostgreSQL.Entity.Types
-import Database.PostgreSQL.Simple
 import Database.PostgreSQL.Simple.FromField
+import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField
-import Database.PostgreSQL.Transact ()
+import Database.PostgreSQL.Simple.ToRow
+import Database.PostgreSQL.Simple.Types
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Env.Generic
 import Web.HttpApiData
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.User (UserId)
 
 newtype PersistentSessionId = PersistentSessionId {getPersistentSessionId :: UUID}
@@ -62,23 +70,24 @@ newPersistentSession userId persistentSessionId = do
   pure $ PersistentSession{userId, persistentSessionId, createdAt, sessionData}
 
 persistSession
-  :: (DB :> es, Time :> es)
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Reader FloraEnv :> es, Time :> es)
   => PersistentSessionId
   -> UserId
   -> Eff es PersistentSessionId
 persistSession persistentSessionId userId = do
+  FloraEnv{pool} <- Reader.ask
   persistentSession <- newPersistentSession userId persistentSessionId
-  insertSession persistentSession
+  withReadWritePool pool $ insertSession persistentSession
   pure persistentSession.persistentSessionId
 
-insertSession :: DB :> es => PersistentSession -> Eff es ()
-insertSession = dbtToEff . insert @PersistentSession
+insertSession :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => PersistentSession -> Eff es ()
+insertSession = void . labeled @ReadWrite @WithConnection . execute (_insert @PersistentSession)
 
-deleteSession :: DB :> es => PersistentSessionId -> Eff es ()
-deleteSession sessionId = dbtToEff $ delete @PersistentSession (Only sessionId)
+deleteSession :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => PersistentSessionId -> Eff es ()
+deleteSession sessionId = void . labeled @ReadWrite @WithConnection $ execute (_delete @PersistentSession) (Only sessionId)
 
-getPersistentSession :: DB :> es => PersistentSessionId -> Eff es (Maybe PersistentSession)
-getPersistentSession sessionId = dbtToEff $ selectById @PersistentSession (Only sessionId)
+getPersistentSession :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PersistentSessionId -> Eff es (Maybe PersistentSession)
+getPersistentSession sessionId = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @PersistentSession [primaryKey @PersistentSession]) (Only sessionId)
 
 lookup :: Text -> SessionData -> Maybe Text
 lookup key (SessionData sdMap) = Map.lookup key sdMap

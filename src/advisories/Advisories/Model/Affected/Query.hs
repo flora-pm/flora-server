@@ -1,52 +1,54 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Advisories.Model.Affected.Query where
 
 import Data.Text (Text)
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (query, queryOne)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 import Security.Advisories.Core.HsecId
 
 import Advisories.HsecId.Orphans ()
 import Advisories.Model.Advisory.Types
 import Advisories.Model.Affected.Types
+import Flora.Database
 import Flora.Model.Package.Types
 
 getAffectedPackageById
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => AffectedPackageId
   -> Eff es (Maybe AffectedPackageDAO)
-getAffectedPackageById affectedPackageId = dbtToEff $ selectById (Only affectedPackageId)
+getAffectedPackageById affectedPackageId = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @AffectedPackageDAO [primaryKey @AffectedPackageDAO]) (Only affectedPackageId)
 
 getAffectedPackagesByAdvisoryId
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => AdvisoryId
   -> Eff es (Vector AffectedPackageDAO)
 getAffectedPackagesByAdvisoryId advisoryId =
-  dbtToEff $ selectManyByField @AffectedPackageDAO [field| advisory_id |] (Only advisoryId)
+  labeled @ReadOnly @WithConnection $ Vector.fromList <$> query (_selectWhere @AffectedPackageDAO [[field| advisory_id |]]) (Only advisoryId)
 
 getAffectedPackagesByHsecId
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => HsecId
   -> Eff es (Vector AffectedPackageDAO)
 getAffectedPackagesByHsecId hsecId =
-  dbtToEff $
-    joinSelectOneByField @AffectedPackageDAO @AdvisoryDAO
-      [field| advisory_id |]
-      [field| hsec_id |]
-      hsecId
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query (_joinSelectOneByField @AffectedPackageDAO @AdvisoryDAO [field| advisory_id |] [field| hsec_id |]) (Only hsecId)
 
-getAdvisoryPreviewsByPackageId :: DB :> es => PackageId -> Eff es (Vector PackageAdvisoryPreview)
+getAdvisoryPreviewsByPackageId :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageId -> Eff es (Vector PackageAdvisoryPreview)
 getAdvisoryPreviewsByPackageId packageId =
-  dbtToEff $
-    query
-      [sql|
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        [sql|
 SELECT s0.hsec_id
      , p3.namespace
      , p3.name
@@ -65,14 +67,15 @@ FROM security_advisories AS s0
 WHERE a1.package_id = ?
 GROUP BY s0.hsec_id, p3.namespace, p3.name, s0.summary, fixed, s0.published, a1.cvss
   |]
-      (Only packageId)
+        (Only packageId)
 
-searchInAdvisories :: DB :> es => (Word, Word) -> Text -> Eff es (Vector PackageAdvisoryPreview)
+searchInAdvisories :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => (Word, Word) -> Text -> Eff es (Vector PackageAdvisoryPreview)
 searchInAdvisories (offset, limit) searchTerm =
-  dbtToEff $
-    query
-      searchAdvisoriesQuery
-      (searchTerm, searchTerm, offset, limit)
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        searchAdvisoriesQuery
+        (searchTerm, searchTerm, offset, limit)
 
 searchAdvisoriesQuery :: Query
 searchAdvisoriesQuery =
@@ -111,9 +114,9 @@ SELECT r0.hsec_id
 FROM results as r0
   |]
 
-countAdvisorySearchResults :: DB :> es => Text -> Eff es Word
+countAdvisorySearchResults :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Text -> Eff es Word
 countAdvisorySearchResults searchTerm =
-  dbtToEff $ do
+  labeled @ReadOnly @WithConnection $ do
     (result :: Maybe (Only Int)) <-
       queryOne
         countAdvisorySearchResultsQuery

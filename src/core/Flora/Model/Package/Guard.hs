@@ -1,15 +1,17 @@
 module Flora.Model.Package.Guard where
 
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Labeled
+import Effectful.PostgreSQL
 import Effectful.Trace
 import Monitor.Tracing qualified as Tracing
 
+import Flora.Database
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 
 guardThatPackageExists
-  :: (DB :> es, Trace :> es)
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Trace :> es)
   => Namespace
   -> PackageName
   -> (Namespace -> PackageName -> Eff es Package)

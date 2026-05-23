@@ -66,8 +66,9 @@ import Effectful.Concurrent (Concurrent)
 import Effectful.Concurrent.Async qualified as Concurrent
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
+import Effectful.Labeled
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.PostgreSQL
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
@@ -81,6 +82,7 @@ import RequireCallStack
 import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
+import Flora.Database
 import Flora.Environment.Config (PoolConfig (..))
 import Flora.Environment.Env (FloraEnv (..))
 import Flora.Import.Package.Types
@@ -280,7 +282,6 @@ parseString parser name bs = do
 persistImportOutput
   :: forall es
    . ( Concurrent :> es
-     , DB :> es
      , IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
@@ -291,6 +292,7 @@ persistImportOutput
   => ImportOutput
   -> FloraM es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
+  FloraEnv{pool} <- Reader.ask
   persistPackage package.packageId
   if Set.member (package.namespace, package.name, release.version) packageCache
     then do
@@ -301,28 +303,31 @@ persistImportOutput (ImportOutput package categories release components) = State
           , "version" .= release.version
           ]
       pure packageCache
-    else do
-      Update.upsertRelease package release
+    else withReadWritePool pool $ do
+      withReadOnlyPool pool $ Update.upsertRelease package release
       env <- Reader.ask
       let componentsList = NE.toList $ fmap fst components
       let dependencies = foldMap snd components
       let dependencyPackages = fmap (.package) dependencies
       Update.upsertPackageComponents componentsList
-      Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencyPackages Update.upsertPackage
+      Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencyPackages (\p -> withReadWritePool pool $ Update.upsertPackage p)
       Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencies persistImportDependency
       unless (null dependencies) sanityCheck
       pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
     persistPackage :: RequireCallStack => PackageId -> FloraM es ()
     persistPackage packageId = do
-      Update.upsertPackage package
-      categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
-      forM_
-        categoriesByName
-        (\c -> Update.addToCategoryByName packageId c.name)
+      FloraEnv{pool} <- Reader.ask
+      withReadWritePool pool $ Update.upsertPackage package
+      categoriesByName <- catMaybes <$> withReadOnlyPool pool (traverse Query.getCategoryByName categories)
+      withReadWritePool pool $
+        forM_
+          categoriesByName
+          (\c -> Update.addToCategoryByName packageId c.name)
 
-    persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
+    -- persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
     persistImportDependency dep = do
+      FloraEnv{pool} <- Reader.ask
       Log.logInfo "Inserting requirement" $
         object
           [ "dependent_namespace" .= display package.namespace
@@ -332,11 +337,12 @@ persistImportOutput (ImportOutput package categories release components) = State
           , "dependency_name" .= display dep.package.name
           , "dependency_id" .= display dep.package.packageId
           ]
-      Update.upsertRequirement dep.requirement
+      withReadWritePool pool $ Update.upsertRequirement dep.requirement
 
-    sanityCheck :: RequireCallStack => FloraM es ()
+    -- sanityCheck :: RequireCallStack => FloraM es ()
     sanityCheck = do
-      dependencies <- Query.getAllRequirements release.releaseId
+      FloraEnv{pool} <- Reader.ask
+      dependencies <- withReadOnlyPool pool $ Query.getAllRequirements release.releaseId
       when (Map.null dependencies) $ do
         Log.logAttention "No dependencies found after inserting release!" $
           object
@@ -347,7 +353,9 @@ persistImportOutput (ImportOutput package categories release components) = State
             ]
 
 persistHashes
-  :: ( DB :> es
+  :: ( IOE :> es
+     , Labeled ReadOnly WithConnection :> es
+     , Labeled ReadWrite WithConnection :> es
      , Log :> es
      , State (Map (Namespace, PackageName, Version) Text) :> es
      )
@@ -384,10 +392,10 @@ persistHashes (namespace, packageName, version, target) = do
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
 -- so it should be possible to extract and insert a single package many times in a row.
 extractPackageDataFromCabal
-  :: ( DB :> es
-     , Error ImportError :> es
+  :: ( Error ImportError :> es
      , IOE :> es
      , Log :> es
+     , Reader FloraEnv :> es
      , RequireCallStack
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
@@ -399,6 +407,7 @@ extractPackageDataFromCabal
   -> GenericPackageDescription
   -> FloraM es ImportOutput
 extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername genericDesc = do
+  FloraEnv{pool} <- Reader.ask
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -421,7 +430,7 @@ extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername gene
       let rawCategoryField = packageDesc ^. #category % to fromShortText % to Text.pack
       let categoryList = fmap (Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
       let categories = Maybe.mapMaybe normaliseCategory categoryList
-      mPackageUploaderId <- determinePackageUploaderId mUsername packageIndex.packageIndexId
+      mPackageUploaderId <- withReadOnlyPool pool $ withReadWritePool pool $ determinePackageUploaderId mUsername packageIndex.packageIndexId
       let package =
             Package
               { packageId
@@ -509,7 +518,7 @@ extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername gene
           extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername genericDesc
         Just components -> pure $ ImportOutput package categories release components
 
-determinePackageUploaderId :: (DB :> es, IOE :> es) => Maybe Text -> PackageIndexId -> Eff es (Maybe PackageUploaderId)
+determinePackageUploaderId :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Labeled ReadWrite WithConnection :> es) => Maybe Text -> PackageIndexId -> Eff es (Maybe PackageUploaderId)
 determinePackageUploaderId Nothing _ = pure Nothing
 determinePackageUploaderId (Just username) packageIndexId = Just <$> Update.getOrInsertPackageUploader username packageIndexId
 

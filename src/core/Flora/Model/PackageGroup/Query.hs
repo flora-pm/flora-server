@@ -8,20 +8,23 @@ module Flora.Model.PackageGroup.Query
   ) where
 
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (..))
-import Effectful (Eff, type (:>))
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
+import Flora.Database
 import Flora.Model.PackageGroup.Types
 
-getPackageGroupById :: DB :> es => PackageGroupId -> Eff es (Maybe PackageGroup)
-getPackageGroupById groupId = dbtToEff $ selectOneByField [field| package_group_id |] (Only groupId)
+getPackageGroupById :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageGroupId -> Eff es (Maybe PackageGroup)
+getPackageGroupById groupId = labeled @_ @WithConnection $ queryOne (_selectWhere @PackageGroup [[field| package_group_id |]]) (Only groupId)
 
-getPackageGroupByPackageGroupName :: DB :> es => PackageGroupName -> Eff es (Maybe PackageGroup)
-getPackageGroupByPackageGroupName groupName = dbtToEff $ selectOneByField [field| group_name |] (Only groupName)
+getPackageGroupByPackageGroupName :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageGroupName -> Eff es (Maybe PackageGroup)
+getPackageGroupByPackageGroupName groupName = labeled @_ @WithConnection $ queryOne (_selectWhere @PackageGroup [[field| group_name |]]) (Only groupName)
 
-listPackageGroups :: DB :> es => Eff es (Vector PackageGroup)
+listPackageGroups :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Eff es (Vector PackageGroup)
 listPackageGroups =
-  dbtToEff $ selectOrderBy @PackageGroup [([field| group_name |], ASC)]
+  labeled @_ @WithConnection $ Vector.fromList <$> query_ (_select @PackageGroup <> _orderByMany [([field| group_name |], ASC)])

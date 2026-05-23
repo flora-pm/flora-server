@@ -6,11 +6,14 @@ import Control.Monad.IO.Class
 import Data.Maybe
 import Data.Text (Text)
 import Data.Text.Display
+import Effectful.Reader.Static qualified as Reader
 import Log qualified
 import Optics.Core
 import Sel.Hashing.Password qualified as Sel
 import Servant
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
@@ -55,7 +58,8 @@ createSessionHandler
   -> LoginForm
   -> FloraEff CreateSessionResult
 createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
-  mUser <- Query.getUserByEmail email
+  FloraEnv{pool} <- Reader.ask
+  mUser <- withReadOnlyPool pool $ Query.getUserByEmail email
   case mUser of
     Nothing -> do
       Log.logInfo_ "[+] Couldn't find user"
@@ -73,7 +77,7 @@ createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
               if user.totpEnabled
                 then guardThatUserHasProvidedTOTP session totp $ \userCode -> checkTOTPIsValid session userCode user
                 else do
-                  sessionId <- persistSession session.sessionId user.userId
+                  sessionId <- withReadWritePool pool $ persistSession session.sessionId user.userId
                   let sessionCookie = craftSessionCookie sessionId True
                   pure $ AuthenticationSuccess ("/", sessionCookie)
             else do
@@ -99,11 +103,12 @@ checkTOTPIsValid
   -> User
   -> FloraEff CreateSessionResult
 checkTOTPIsValid session userCode user = do
+  FloraEnv{pool} <- Reader.ask
   validated <- liftIO $ TwoFactor.validateTOTP (fromJust user.totpKey) userCode
   if validated
     then do
       Log.logInfo_ "[+] User connected!"
-      sessionId <- persistSession session.sessionId user.userId
+      sessionId <- withReadWritePool pool $ persistSession session.sessionId user.userId
       let sessionCookie = craftSessionCookie sessionId True
       pure $ AuthenticationSuccess ("/", sessionCookie)
     else do
@@ -117,6 +122,7 @@ checkTOTPIsValid session userCode user = do
 
 deleteSessionHandler :: PersistentSessionId -> FloraEff DeleteSessionResponse
 deleteSessionHandler sessionId = do
+  FloraEnv{pool} <- Reader.ask
   Log.logInfo_ $ "[+] Logging-off session " <> display sessionId
-  deleteSession sessionId
+  withReadWritePool pool $ deleteSession sessionId
   pure $ redirectWithCookie "/" emptySessionCookie

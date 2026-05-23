@@ -1,10 +1,13 @@
 module Advisories.Model.Advisory.Update where
 
-import Database.PostgreSQL.Entity (insert)
+import Control.Monad
+import Database.PostgreSQL.Entity
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
 import Advisories.Model.Advisory.Types
+import Flora.Database
 
-insertAdvisory :: DB :> es => AdvisoryDAO -> Eff es ()
-insertAdvisory = dbtToEff . insert @AdvisoryDAO
+insertAdvisory :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => AdvisoryDAO -> Eff es ()
+insertAdvisory = labeled @ReadWrite @WithConnection . void . execute (_insert @AdvisoryDAO)

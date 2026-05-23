@@ -6,6 +6,7 @@ module Main where
 
 import Control.Monad (forM_, unless)
 import Data.Function ((&))
+import Data.List (List)
 import Data.List qualified as List
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -13,19 +14,21 @@ import Data.Text qualified as Text
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
+import Effectful.Labeled
 import Effectful.Log (Log, runLog)
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff, runDB)
+import Effectful.PostgreSQL
+import Effectful.Reader.Static qualified as Reader
 import Log qualified
 import System.Exit
 import System.IO
 
+import Flora.Database
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
@@ -45,18 +48,18 @@ preFlightChecks = do
   runEff $ do
     let withLogger = Logging.makeLogger env.mltp.logger
     withLogger $ \appLogger ->
-      runDB env.pool
+      Reader.runReader env
         . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
         $ runLog
           "flora-server"
           appLogger
           Log.LogTrace
         $ do
-          checkExpectedTables
-          checkRepositoriesAreConfigured
+          withReadOnlyPool env.pool $ checkExpectedTables
+          withReadOnlyPool env.pool $ checkRepositoriesAreConfigured
           checkIfIndexRefreshJobIsPlanned env.workerEnv
 
-checkExpectedTables :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
+checkExpectedTables :: (IOE :> es, IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es) => Eff es ()
 checkExpectedTables = do
   -- Update the list in alphabetical order when adding or removing a table!
   let expectedTables =
@@ -90,8 +93,8 @@ checkExpectedTables = do
           , "users"
           ]
   actualTables <-
-    dbtToEff $
-      Set.fromAscList . Vector.toList . Vector.map fromOnly
+    labeled @ReadOnly @WithConnection $
+      Set.fromAscList . List.map fromOnly
         <$> query_
           [sql|
       SELECT table_name
@@ -131,14 +134,14 @@ checkExpectedTables = do
     forM_ messages Log.logAttention_
     liftIO exitFailure
 
-checkRepositoriesAreConfigured :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
+checkRepositoriesAreConfigured :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es) => Eff es ()
 checkRepositoriesAreConfigured = do
   let expectedRepositories = Set.fromList ["hackage", "cardano", "horizon", "mlabs"]
-  (result :: (Vector (Only Text))) <-
-    dbtToEff $
+  (result :: (List (Only Text))) <-
+    labeled @ReadOnly @WithConnection $
       query_
         (_selectWithFields @PackageIndex [[field| repository |]])
-  let actualRepositories = Set.fromList $ Vector.toList $ Vector.map fromOnly result
+  let actualRepositories = Set.fromList $ List.map fromOnly result
   let missingExpectedIndexes = Set.difference expectedRepositories actualRepositories
   let unexpectedIndexes = Set.difference actualRepositories expectedRepositories
   let (messages :: Vector Text) =

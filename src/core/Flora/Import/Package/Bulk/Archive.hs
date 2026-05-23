@@ -34,9 +34,9 @@ import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import Effectful.Trace
@@ -46,6 +46,7 @@ import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude qualified as Streamly
 import System.FilePath
 
+import Flora.Database
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Stream
 import Flora.Import.Types (ImportError (..), ImportFileType (..))
@@ -57,7 +58,6 @@ import Flora.Monad
 
 importFromArchive
   :: ( Concurrent :> es
-     , DB :> es
      , Error ImportError :> es
      , IOE :> es
      , Log :> es
@@ -73,6 +73,7 @@ importFromArchive
   -> FilePath
   -> FloraM es ()
 importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
+  FloraEnv{pool} <- Reader.ask
   let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repositoryName <> "/01-index.tar.gz"
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile indexArchivePath)
   indexPackages <- do
@@ -86,7 +87,7 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
       pure (dep, indexPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
-  packageIndex <- guardThatPackageIndexExists repositoryName $ do
+  packageIndex <- withReadOnlyPool pool $ guardThatPackageIndexExists repositoryName $ do
     Log.logAttention "Could not find package index" $
       object
         [ "package_index_name" .= repositoryName

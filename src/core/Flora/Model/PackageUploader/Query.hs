@@ -9,15 +9,16 @@ module Flora.Model.PackageUploader.Query
 
 import Data.Text
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (query)
-import Database.PostgreSQL.Entity.DBT qualified as DBT
 import Database.PostgreSQL.Entity.Internal.QQ (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
+import Flora.Database
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
@@ -25,11 +26,11 @@ import Flora.Model.PackageUploader.Types
 import Flora.Monad
 
 getPackageUploaderById
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageUploaderId
   -> Eff es (Maybe PackageUploader)
 getPackageUploaderById packageUploaderId = do
-  mDao <- dbtToEff $ selectById @PackageUploaderDAO (Only packageUploaderId)
+  mDao :: Maybe PackageUploaderDAO <- labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @PackageUploaderDAO [primaryKey @PackageUploaderDAO]) (Only packageUploaderId)
   case mDao of
     Nothing -> pure Nothing
     Just dao -> do
@@ -47,12 +48,12 @@ getPackageUploaderById packageUploaderId = do
                 }
 
 getPackageUploaderByUsernameAndIndex
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => Text
   -> PackageIndexId
   -> Eff es (Maybe PackageUploader)
 getPackageUploaderByUsernameAndIndex username packageIndexId = do
-  mDao :: Maybe PackageUploaderDAO <- dbtToEff $ DBT.queryOne q (username, packageIndexId)
+  mDao :: Maybe PackageUploaderDAO <- labeled @ReadOnly @WithConnection $ queryOne q (username, packageIndexId)
   case mDao of
     Nothing -> pure Nothing
     Just dao -> do
@@ -76,11 +77,13 @@ getPackageUploaderByUsernameAndIndex username packageIndexId = do
         ]
 
 getPackageUploaders
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageId
   -> FloraM es (Vector PackageUploaderDAO)
-getPackageUploaders packageId = dbtToEff $ do
-  query sqlQuery (Only packageId)
+getPackageUploaders packageId =
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query sqlQuery (Only packageId)
   where
     sqlQuery =
       [sql|

@@ -102,8 +102,8 @@ import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Word
+import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.Migration
-import Database.PostgreSQL.Transact ()
 import Distribution.SPDX qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Condition (Condition (..))
@@ -118,9 +118,9 @@ import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Prometheus
 import Effectful.Reader.Static
+import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time
@@ -145,6 +145,7 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
+import Flora.Database
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Import.Types (ImportError)
@@ -179,7 +180,6 @@ type TestEff a =
      , Fail
      , BlobStoreAPI
      , Reader FloraEnv
-     , DB
      , Log
      , Time
      , State (Set (Namespace, PackageName, Version))
@@ -195,9 +195,10 @@ data Fixtures = Fixtures
   }
   deriving stock (Eq, Generic, Show)
 
-getFixtures :: (DB :> es, Fail :> es) => FloraM es Fixtures
+getFixtures :: (Fail :> es, IOE :> es, Reader FloraEnv :> es) => FloraM es Fixtures
 getFixtures = do
-  Just hackageUser <- Query.getUserByUsername "hackage-user"
+  FloraEnv{pool} <- Reader.ask
+  Just hackageUser <- withReadOnlyPool pool $ Query.getUserByUsername "hackage-user"
   pure Fixtures{hackageUser}
 
 importAllPackages :: (HasCallStack, RequireCallStack) => TestEff ()
@@ -224,7 +225,6 @@ runTestEff comp env = runEff $
       & runFailIO
       & runBlobStorePure
       & runReader env
-      & runDB env.pool
       & Log.runLog "flora-test" logger LogAttention
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime
@@ -345,9 +345,8 @@ getEnv mgrSettings = do
 managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
 
-testMigrations :: (DB :> es, IOE :> es) => FloraM es ()
-testMigrations = do
-  pool <- getPool
+testMigrations :: IOE :> es => Pool PG.Connection -> FloraM es ()
+testMigrations pool = do
   liftIO $ withResource pool $ \conn ->
     void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
 
@@ -427,7 +426,7 @@ randomUserTemplate =
     , updatedAt = liftIO $ H.sample genUTCTime
     }
 
-instantiateUser :: DB :> es => UserTemplate (Eff es) -> FloraM es User
+instantiateUser :: (IOE :> es, Reader FloraEnv :> es) => UserTemplate (Eff es) -> FloraM es User
 instantiateUser
   UserTemplate
     { userId = generateUserId
@@ -438,6 +437,7 @@ instantiateUser
     , userFlags = generateUserFlags
     , createdAt = generateCreatedAt
     } = do
+    FloraEnv{pool} <- Reader.ask
     userId <- generateUserId
     username <- generateUsername
     email <- generateEmail
@@ -449,7 +449,7 @@ instantiateUser
     let totpKey = Nothing
     let totpEnabled = False
     let user = User{..}
-    Update.insertUser user
+    withReadWritePool pool $ Update.insertUser user
     pure user
 
 data PackageTemplate m = PackageTemplate
@@ -475,7 +475,7 @@ randomPackageTemplate =
     , deprecationInfo = pure Nothing
     }
 
-instantiatePackage :: DB :> es => PackageTemplate (Eff es) -> FloraM es Package
+instantiatePackage :: (IOE :> es, Reader FloraEnv :> es) => PackageTemplate (Eff es) -> FloraM es Package
 instantiatePackage
   PackageTemplate
     { packageId = generatePackageId
@@ -485,6 +485,7 @@ instantiatePackage
     , status = generatePackageStatus
     , deprecationInfo = generatePackageDeprecationInfo
     } = do
+    FloraEnv{pool} <- Reader.ask
     packageId <- generatePackageId
     namespace <- generatePackageNamespace
     name <- generatePackageName
@@ -493,7 +494,7 @@ instantiatePackage
     status <- generatePackageStatus
     deprecationInfo <- generatePackageDeprecationInfo
     let package = Package{..}
-    Update.upsertPackage package
+    withReadWritePool pool $ Update.upsertPackage package
     pure package
 
 genPackageName :: MonadGen m => m PackageName
@@ -572,7 +573,7 @@ randomReleaseTemplate =
     , uploaderId = Nothing
     }
 
-instantiateRelease :: DB :> es => ReleaseTemplate (Eff es) -> FloraM es Release
+instantiateRelease :: (IOE :> es, Reader FloraEnv :> es) => ReleaseTemplate (Eff es) -> FloraM es Release
 instantiateRelease
   ReleaseTemplate
     { releaseId = generateReleaseId
@@ -603,6 +604,7 @@ instantiateRelease
     , buildType = generateBuildType
     , uploaderId = uploaderId
     } = do
+    FloraEnv{pool} <- Reader.ask
     releaseId <- generateReleaseId
     packageId <- generatePackageId
     version <- generateVersion
@@ -631,8 +633,8 @@ instantiateRelease
     revisedAt <- generateRevisedAt
     buildType <- generateBuildType
     let release = Release{..}
-    Update.insertRelease release
-    Update.refreshLatestVersions
+    withReadWritePool pool $ Update.insertRelease release
+    withReadWritePool pool Update.refreshLatestVersions
     pure release
 
 data PackageComponentTemplate m = PackageComponentTemplate
@@ -651,7 +653,7 @@ randomPackageComponentTemplate =
     }
 
 instantiatePackageComponent
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => PackageComponentTemplate (Eff es)
   -> FloraM es PackageComponent
 instantiatePackageComponent
@@ -660,11 +662,12 @@ instantiatePackageComponent
     , releaseId = generatereleaseId
     , canonicalForm = generatecanonicalForm
     } = do
+    FloraEnv{pool} <- Reader.ask
     componentId <- generateComponentId
     releaseId <- generatereleaseId
     canonicalForm <- generatecanonicalForm
     let packageComponent = PackageComponent{..}
-    Update.insertPackageComponent packageComponent
+    withReadWritePool pool $ Update.insertPackageComponent packageComponent
     pure packageComponent
 
 data RequirementTemplate m = RequirementTemplate
@@ -689,7 +692,7 @@ randomRequirementTemplate =
     }
 
 instantiateRequirement
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => RequirementTemplate (Eff es)
   -> FloraM es Requirement
 instantiateRequirement
@@ -700,6 +703,7 @@ instantiateRequirement
     , requirement = generateRequirement
     , components = generateComponents
     } = do
+    FloraEnv{pool} <- Reader.ask
     requirementId <- generateRequirementId
     packageComponentId <- generateComponentId
     packageId <- generatePackageId
@@ -707,7 +711,7 @@ instantiateRequirement
     components <- generateComponents
     -- TODO(leana8959): what does this template do exactly
     let req = Requirement{condition = Nothing, ..}
-    Update.insertRequirement req
+    withReadWritePool pool $ Update.insertRequirement req
     pure req
 
 data PackageGroupTemplate m = PackageGroupTemplate
@@ -724,7 +728,7 @@ randomPackageGroupTemplate =
     }
 
 instantiatePackageGroup
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => PackageGroupTemplate (Eff es)
   -> FloraM es PackageGroup
 instantiatePackageGroup
@@ -732,10 +736,12 @@ instantiatePackageGroup
     { packageGroupId = generatePackageGroupId
     , groupName = generateGroupName
     } = do
+    FloraEnv{pool} <- Reader.ask
     packageGroupId <- generatePackageGroupId
     groupName <- generateGroupName
     let pg = PackageGroup{..}
-    Update.insertPackageGroup pg
+    withReadWritePool pool $
+      Update.insertPackageGroup pg
     pure pg
 
 data PackageGroupPackageTemplate m = PackageGroupPackageTemplate
@@ -754,7 +760,7 @@ randomPackageGroupPackageTemplate =
     }
 
 instantiatePackageGroupPackage
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => PackageGroupPackageTemplate (Eff es)
   -> FloraM es PackageGroupPackage
 instantiatePackageGroupPackage
@@ -763,9 +769,10 @@ instantiatePackageGroupPackage
     , packageId = generatePackageId
     , packageGroupId = generatePackageGroupId
     } = do
+    FloraEnv{pool} <- Reader.ask
     packageGroupPackageId <- generatePackageGroupPackageId
     packageId <- generatePackageId
     packageGroupId <- generatePackageGroupId
     let pgp = PackageGroupPackage{..}
-    Update.addPackageToPackageGroup pgp
+    withReadWritePool pool $ Update.addPackageToPackageGroup pgp
     pure pgp

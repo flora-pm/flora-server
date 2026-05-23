@@ -14,7 +14,8 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Effectful
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Effectful.Trace
 import Log qualified
@@ -22,6 +23,8 @@ import Monitor.Tracing qualified as Tracing
 
 import Advisories.Model.Affected.Query qualified as Query
 import Advisories.Model.Affected.Types (PackageAdvisoryPreview)
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Logging
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
@@ -68,25 +71,28 @@ instance Display SearchAction where
     "Search in Advisories: " <> displayBuilder searchTerm
 
 searchPackageByName
-  :: (DB :> es, Log :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
   => (Word, Word)
   -> Text
   -> Eff es (Word, Vector PackageInfo)
 searchPackageByName (offset, limit) queryString = do
-  results <- Query.searchPackage (offset, limit) queryString
-  count <- Query.countPackagesByName queryString
+  FloraEnv{pool} <- Reader.ask
+  results <- withReadOnlyPool pool $ Query.searchPackage (offset, limit) queryString
+  count <- withReadOnlyPool pool $ Query.countPackagesByName queryString
   pure (count, results)
 
 searchPackageByNamespaceAndName
-  :: (DB :> es, Log :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
   => (Word, Word)
   -> Namespace
   -> Text
   -> Eff es (Word, Vector PackageInfo)
 searchPackageByNamespaceAndName (offset, limit) namespace queryString = do
+  FloraEnv{pool} <- Reader.ask
   (results, duration) <-
     timeAction $
-      Query.searchPackageByNamespace (offset, limit) namespace queryString
+      withReadOnlyPool pool $
+        Query.searchPackageByNamespace (offset, limit) namespace queryString
   Log.logInfo "search-results" $
     object
       [ "search_string" .= queryString
@@ -102,36 +108,38 @@ searchPackageByNamespaceAndName (offset, limit) namespace queryString = do
             )
             (Vector.toList results)
       ]
-  count <- Query.countPackagesByName queryString
+  count <- withReadOnlyPool pool $ Query.countPackagesByName queryString
   pure (count, results)
 
 searchDependents
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => (Word, Word)
   -> Namespace
   -> PackageName
   -> Maybe Text
   -> Eff es (Word, Vector PackageInfo)
 searchDependents pagination namespace packageName mSearchString = do
+  FloraEnv{pool} <- Reader.ask
   results <-
-    Query.getAllPackageDependentsWithLatestVersion
-      namespace
-      packageName
-      pagination
-      mSearchString
-  totalDependents <- Query.getNumberOfPackageDependents namespace packageName mSearchString
+    withReadOnlyPool pool $
+      Query.getAllPackageDependentsWithLatestVersion
+        namespace
+        packageName
+        pagination
+        mSearchString
+  totalDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents namespace packageName mSearchString
   pure (totalDependents, fmap dependencyInfoToPackageInfo results)
 
 searchExecutable
-  :: (DB :> es, Log :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
   => (Word, Word)
   -> Text
   -> Eff es (Word, Vector PackageInfoWithExecutables)
 searchExecutable (offset, limit) queryString = do
+  FloraEnv{pool} <- Reader.ask
   (results, duration) <-
-    timeAction $
-      Query.searchExecutable (offset, limit) queryString
-  count <- Query.getNumberOfExecutablesByName queryString
+    timeAction $ withReadOnlyPool pool $ Query.searchExecutable (offset, limit) queryString
+  count <- withReadOnlyPool pool $ Query.getNumberOfExecutablesByName queryString
   Log.logInfo "search-results" $
     object
       [ "search_string" .= queryString
@@ -150,17 +158,20 @@ searchExecutable (offset, limit) queryString = do
   pure (count, results)
 
 searchInAdvisories
-  :: (DB :> es, Trace :> es)
+  :: (IOE :> es, Reader FloraEnv :> es, Trace :> es)
   => (Word, Word)
   -> Text
   -> Eff es (Word, Vector PackageAdvisoryPreview)
 searchInAdvisories (offset, limit) queryString = do
+  FloraEnv{pool} <- Reader.ask
   results <-
     Tracing.childSpan "Query.searchInAdvisories" $
-      Query.searchInAdvisories (offset, limit) queryString
+      withReadOnlyPool pool $
+        Query.searchInAdvisories (offset, limit) queryString
   count <-
     Tracing.childSpan "Query.countAdvisorySearchResults" $
-      Query.countAdvisorySearchResults queryString
+      withReadOnlyPool pool $
+        Query.countAdvisorySearchResults queryString
   pure (count, results)
 
 dependencyInfoToPackageInfo :: DependencyInfo -> PackageInfo
@@ -177,23 +188,25 @@ dependencyInfoToPackageInfo dep =
     dep.revisedAt
 
 listAllPackagesInNamespace
-  :: (DB :> es, Log :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
   => (Word, Word)
   -> Namespace
   -> Eff es (Word, Vector PackageInfo)
 listAllPackagesInNamespace pagination namespace = do
-  results <- Query.listAllPackagesInNamespace pagination namespace
-  count <- Query.countPackagesInNamespace namespace
+  FloraEnv{pool} <- Reader.ask
+  results <- withReadOnlyPool pool $ Query.listAllPackagesInNamespace pagination namespace
+  count <- withReadOnlyPool pool $ Query.countPackagesInNamespace namespace
   pure (count, results)
 
 listAllPackages
   :: forall (es :: [Effect])
-   . DB :> es
+   . (IOE :> es, Reader FloraEnv :> es)
   => (Word, Word)
   -> Eff es (Word, Vector PackageInfo)
 listAllPackages (offset, limit) = do
-  results <- Query.listAllPackages (offset, limit)
-  count <- Query.countPackages
+  FloraEnv{pool} <- Reader.ask
+  results <- withReadOnlyPool pool $ Query.listAllPackages (offset, limit)
+  count <- withReadOnlyPool pool Query.countPackages
   pure (count, results)
 
 -- | Search modifiers:

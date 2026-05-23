@@ -38,37 +38,25 @@ module Flora.Model.Package.Query
   ) where
 
 import Data.Aeson
+import Data.Functor
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Tuple.Optics
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-  ( joinSelectOneByField
-  , selectById
-  , selectManyByField
-  , selectWhereNull
-  , _select
-  , _selectWhere
-  )
-import Database.PostgreSQL.Entity.DBT
-  ( query
-  , queryOne
-  , queryOne_
-  , query_
-  )
-import Database.PostgreSQL.Entity.Types (Field, field)
+import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Simple.Types
-import Effectful (Eff, type (:>))
+import Effectful (Eff, IOE, type (:>))
+import Effectful.Labeled
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
-import Effectful.Time (Time)
+import Effectful.PostgreSQL
 import Log qualified
 import Optics.Core ((&), (^.))
 
 import Database.PostgreSQL.Simple.Orphans ()
-import Flora.Logging (timeAction)
+import Flora.Database
 import Flora.Model.Category (Category, CategoryId)
 import Flora.Model.Category.Types (PackageCategory)
 import Flora.Model.Component.Query qualified as Query
@@ -82,72 +70,69 @@ import Flora.Model.Requirement
   )
 import Flora.Monad
 
-getAllPackages :: (DB :> es, Log :> es, Time :> es) => Eff es (Vector Package)
-getAllPackages = do
-  (result, duration) <- timeAction $ dbtToEff $ query_ (_select @Package)
-  Log.logInfo "Retrieving all packages" $
-    object
-      ["duration" .= duration]
-  pure result
+getAllPackages :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Eff es (Vector Package)
+getAllPackages = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query_ (_select @Package)
 
-getPackageById :: DB :> es => PackageId -> Eff es (Maybe Package)
-getPackageById packageId = dbtToEff $ selectById @Package (Only packageId)
+getPackageById :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageId -> Eff es (Maybe Package)
+getPackageById packageId = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @Package [primaryKey @Package]) (Only packageId)
 
-getPackagesByNamespace :: DB :> es => Namespace -> Eff es (Vector Package)
-getPackagesByNamespace namespace = dbtToEff $ selectManyByField @Package [field| namespace |] (Only namespace)
+getPackagesByNamespace :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Namespace -> Eff es (Vector Package)
+getPackagesByNamespace namespace = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query (_selectWhere @Package [[field| namespace |]]) (Only namespace)
 
-getPackageByNamespaceAndName :: DB :> es => Namespace -> PackageName -> Eff es (Maybe Package)
-getPackageByNamespaceAndName namespace name = do
-  dbtToEff $
+getPackageByNamespaceAndName :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Namespace -> PackageName -> Eff es (Maybe Package)
+getPackageByNamespaceAndName namespace name =
+  labeled @ReadOnly @WithConnection $
     queryOne
       (_selectWhere @Package [[field| namespace |], [field| name |]])
       (namespace, name)
 
-getNonDeprecatedPackages :: DB :> es => Eff es (Vector Package)
-getNonDeprecatedPackages = dbtToEff $ selectWhereNull @Package [[field| deprecation_info |]]
+getNonDeprecatedPackages :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Eff es (Vector Package)
+getNonDeprecatedPackages = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query_ (_selectWhereNull @Package [[field| deprecation_info |]])
 
 getAllPackageDependents
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => Namespace
   -> PackageName
   -> Eff es (Vector Package)
 getAllPackageDependents namespace packageName =
-  dbtToEff $ query packageDependentsQuery (namespace, packageName)
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList <$> query packageDependentsQuery (namespace, packageName)
 
 getPackageDependentsByName
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => Namespace
   -> PackageName
   -> Text
   -> Eff es (Vector Package)
 getPackageDependentsByName namespace packageName searchString =
-  dbtToEff $
-    query
-      searchPackageDependentsQuery
-      (namespace, packageName, searchString)
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        searchPackageDependentsQuery
+        (namespace, packageName, searchString)
 
 -- | This function gets the first 6 dependents of a package
-getPackageDependents :: DB :> es => Namespace -> PackageName -> Eff es (Vector Package)
-getPackageDependents namespace packageName = dbtToEff $ query q (namespace, packageName)
+getPackageDependents :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Namespace -> PackageName -> Eff es (Vector Package)
+getPackageDependents namespace packageName = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query q (namespace, packageName)
   where
     q = packageDependentsQuery <> " LIMIT 6"
 
 getNumberOfPackageDependents
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => Namespace
   -> PackageName
   -> Maybe Text
   -> Eff es Word
-getNumberOfPackageDependents namespace packageName mbSearchString = do
+getNumberOfPackageDependents namespace packageName mbSearchString = labeled @ReadOnly @WithConnection $ do
   case mbSearchString of
     Nothing ->
-      dbtToEff $ do
+      do
         (result :: Maybe (Only Int)) <- queryOne numberOfPackageDependentsQuery (namespace, packageName)
         case result of
           Just (Only n) -> pure $ fromIntegral n
           Nothing -> pure 0
     Just searchString ->
-      dbtToEff $ do
+      do
         (result :: Maybe (Only Int)) <- queryOne searchNumberOfPackageDependentsQuery (namespace, packageName, searchString)
         case result of
           Just (Only n) -> pure $ fromIntegral n
@@ -199,20 +184,20 @@ searchPackageDependentsQuery =
   packageDependentsQuery <> " AND ? <% p.name"
 
 getAllPackageDependentsWithLatestVersion
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => Namespace
   -> PackageName
   -> (Word, Word)
   -> Maybe Text
   -> Eff es (Vector DependencyInfo)
-getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) mSearchString =
+getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) mSearchString = labeled @ReadOnly @WithConnection $
   case mSearchString of
     Nothing ->
-      dbtToEff $ query q (namespace, packageName, offset, limit)
+      Vector.fromList <$> query q (namespace, packageName, offset, limit)
       where
         q = packageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
     Just searchString ->
-      dbtToEff $ query q (namespace, packageName, searchString, offset, limit)
+      Vector.fromList <$> query q (namespace, packageName, searchString, offset, limit)
       where
         q = searchPackageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
 
@@ -286,12 +271,12 @@ FROM dependents AS d
 WHERE rank = 1
     |]
 
-getComponentById :: DB :> es => ComponentId -> Eff es (Maybe PackageComponent)
-getComponentById componentId = dbtToEff $ selectById @PackageComponent (Only componentId)
+getComponentById :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => ComponentId -> Eff es (Maybe PackageComponent)
+getComponentById componentId = queryOne (_selectWhere @PackageComponent [primaryKey @PackageComponent]) (Only componentId)
 
-getComponent :: DB :> es => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
+getComponent :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => ReleaseId -> Text -> ComponentType -> Eff es (Maybe PackageComponent)
 getComponent releaseId name componentType =
-  dbtToEff $
+  labeled @ReadOnly @WithConnection $
     queryOne (_selectWhere @PackageComponent queryFields) (releaseId, name, componentType)
   where
     queryFields :: Vector Field
@@ -302,37 +287,39 @@ getComponent releaseId name componentType =
       ]
 
 unsafeGetComponent
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => ReleaseId
   -> Eff es (Maybe PackageComponent)
 unsafeGetComponent releaseId =
-  dbtToEff $
+  labeled @ReadOnly @WithConnection $
     queryOne (_selectWhere @PackageComponent queryFields) (Only releaseId)
   where
     queryFields :: Vector Field
     queryFields = [[field| release_id |]]
 
 getAllRequirements
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => ReleaseId
   -> Eff es ComponentDependencies
-getAllRequirements releaseId = dbtToEff $ toComponentDependencies <$> query getAllRequirementsQuery (Only releaseId)
+getAllRequirements releaseId =
+  labeled @ReadOnly @WithConnection $
+    query getAllRequirementsQuery (Only releaseId) <&> toComponentDependencies . Vector.fromList
 
 -- | This function has a bit of logic where if there exists a component with the same name as the package,
 -- this component's dependencies are chosen.
 -- Otherwise, requirements without discrimination by component are fetched.
 getRequirements
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageName
   -> ReleaseId
   -> Eff es (Vector DependencyVersionRequirement)
-getRequirements (PackageName packageName) releaseId = do
+getRequirements (PackageName packageName) releaseId = labeled @ReadOnly @WithConnection $ do
   components <- Query.getComponentsByReleaseId releaseId
   results <- case Vector.find (\CanonicalComponent{componentName} -> componentName == packageName) components of
     Just (CanonicalComponent{componentType}) ->
-      dbtToEff $ query (getRequirementsQuery True <> " LIMIT 6") (componentType, releaseId)
+      Vector.fromList <$> query (getRequirementsQuery True <> " LIMIT 6") (componentType, releaseId)
     Nothing ->
-      dbtToEff $ query (getRequirementsQuery False <> " LIMIT 6") (Only releaseId)
+      Vector.fromList <$> query (getRequirementsQuery False <> " LIMIT 6") (Only releaseId)
   pure $ Vector.map (\(namespace, name, requirement) -> DependencyVersionRequirement namespace name requirement) results
 
 -- | This query finds all the dependencies of a release,
@@ -422,13 +409,12 @@ getRequirementsQuery singleComponentType =
       ORDER BY dependency.namespace DESC
       |]
 
-getNumberOfPackageRequirements :: DB :> es => ReleaseId -> Eff es Word
-getNumberOfPackageRequirements releaseId =
-  dbtToEff $ do
-    (result :: Maybe (Only Int)) <- queryOne numberOfPackageRequirementsQuery (Only releaseId)
-    case result of
-      Just (Only n) -> pure $ fromIntegral n
-      Nothing -> pure 0
+getNumberOfPackageRequirements :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => ReleaseId -> Eff es Word
+getNumberOfPackageRequirements releaseId = labeled @ReadOnly @WithConnection $ do
+  (result :: Maybe (Only Int)) <- queryOne numberOfPackageRequirementsQuery (Only releaseId)
+  case result of
+    Just (Only n) -> pure $ fromIntegral n
+    Nothing -> pure 0
 
 numberOfPackageRequirementsQuery :: Query
 numberOfPackageRequirementsQuery =
@@ -444,22 +430,24 @@ WHERE rel.release_id = ?
 |]
 
 getPackageCategories
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageId
   -> Eff es (Vector Category)
 getPackageCategories packageId =
-  dbtToEff $
-    joinSelectOneByField @Category
-      @PackageCategory
-      [field| category_id |]
-      [field| package_id |]
-      packageId
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        ( _joinSelectOneByField @Category @PackageCategory
+            [field| category_id |]
+            [field| package_id |]
+        )
+        (Only packageId)
 
 getPackagesFromCategoryWithLatestVersion
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => CategoryId
   -> Eff es (Vector PackageInfo)
-getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query q (Only categoryId)
+getPackagesFromCategoryWithLatestVersion categoryId = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query q (Only categoryId)
   where
     q =
       [sql|
@@ -479,14 +467,15 @@ getPackagesFromCategoryWithLatestVersion categoryId = dbtToEff $ query q (Only c
       |]
 
 searchPackage
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Text
   -> Eff es (Vector PackageInfo)
 searchPackage (offset, limit) searchString =
-  dbtToEff $
-    query
-      [sql|
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        [sql|
         SELECT  lv."package_id"
               , lv."namespace"
               , lv."name"
@@ -512,18 +501,19 @@ searchPackage (offset, limit) searchString =
         LIMIT ?
         ;
         |]
-      (searchString, searchString, offset, limit)
+        (searchString, searchString, offset, limit)
 
 searchPackageByNamespace
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Namespace
   -> Text
   -> Eff es (Vector PackageInfo)
 searchPackageByNamespace (offset, limit) namespace searchString =
-  dbtToEff $
-    query
-      [sql|
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        [sql|
         SELECT  lv."package_id"
               , lv."namespace"
               , lv."name"
@@ -551,17 +541,18 @@ searchPackageByNamespace (offset, limit) namespace searchString =
         OFFSET ?
         ;
         |]
-      (searchString, searchString, namespace, limit, offset)
+        (searchString, searchString, namespace, limit, offset)
 
 searchExecutable
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Text
   -> Eff es (Vector PackageInfoWithExecutables)
 searchExecutable (offset, limit) searchString =
-  dbtToEff $
-    query
-      [sql|
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        [sql|
 WITH results AS (SELECT DISTINCT l2.namespace
                       , l2.name
                       , l2.synopsis
@@ -591,11 +582,11 @@ WITH results AS (SELECT DISTINCT l2.namespace
 LIMIT ?
 OFFSET ?
         |]
-      (searchString, searchString, limit, offset)
+        (searchString, searchString, limit, offset)
 
-getNumberOfExecutablesByName :: DB :> es => Text -> Eff es Word
+getNumberOfExecutablesByName :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Text -> Eff es Word
 getNumberOfExecutablesByName queryString = do
-  dbtToEff $ do
+  do
     (result :: Maybe (Only Int)) <-
       queryOne
         [sql|
@@ -623,14 +614,14 @@ WITH results AS (SELECT l2.name
 
 -- | Returns a summary of packages
 listAllPackages
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Eff es (Vector PackageInfo)
 listAllPackages (offset, limit) =
-  dbtToEff $
-    let
-     in query
-          [sql|
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        [sql|
     SELECT  lv."package_id"
           , lv."namespace"
           , lv."name"
@@ -657,17 +648,18 @@ listAllPackages (offset, limit) =
     LIMIT ?
     ;
     |]
-          (offset, limit)
+        (offset, limit)
 
 listAllPackagesInNamespace
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Namespace
   -> Eff es (Vector PackageInfo)
 listAllPackagesInNamespace (offset, limit) namespace =
-  dbtToEff $
-    query
-      [sql|
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList
+      <$> query
+        [sql|
     SELECT  lv."package_id"
           , lv."namespace"
           , lv."name"
@@ -693,25 +685,24 @@ listAllPackagesInNamespace (offset, limit) namespace =
     LIMIT ?
     ;
     |]
-      (namespace, offset, limit)
+        (namespace, offset, limit)
 
-countPackages :: DB :> es => Eff es Word
-countPackages =
-  dbtToEff $ do
-    (result :: Maybe (Only Int)) <-
-      queryOne_
-        [sql|
+countPackages :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Eff es Word
+countPackages = labeled @ReadOnly @WithConnection $ do
+  (result :: Maybe (Only Int)) <-
+    queryOne_
+      [sql|
     SELECT DISTINCT COUNT(*)
     FROM packages
     WHERE status = 'fully-imported'
     |]
-    case result of
-      Just (Only n) -> pure $ fromIntegral n
-      Nothing -> pure 0
+  case result of
+    Just (Only n) -> pure $ fromIntegral n
+    Nothing -> pure 0
 
-countPackagesByName :: DB :> es => Text -> Eff es Word
+countPackagesByName :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Text -> Eff es Word
 countPackagesByName searchString =
-  dbtToEff $ do
+  do
     (result :: Maybe (Only Int)) <-
       queryOne
         [sql|
@@ -724,9 +715,9 @@ countPackagesByName searchString =
       Just (Only n) -> pure $ fromIntegral n
       Nothing -> pure 0
 
-countPackagesInNamespace :: DB :> es => Namespace -> Eff es Word
+countPackagesInNamespace :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Namespace -> Eff es Word
 countPackagesInNamespace namespace =
-  dbtToEff $ do
+  do
     (result :: Maybe (Only Int)) <-
       queryOne
         [sql|
@@ -740,16 +731,13 @@ countPackagesInNamespace namespace =
       Nothing -> pure 0
 
 getTransitiveDependencies
-  :: (DB :> es, Log :> es)
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es)
   => ComponentId
   -> Eff es (Vector PackageDependencies)
 getTransitiveDependencies componentId = do
   results :: Vector (ComponentId, Namespace, PackageName, PGArray (PGArray Text)) <-
-    dbtToEff $
-      query
-        sqlQuery
-        (Only componentId)
-
+    labeled @ReadOnly @WithConnection $
+      Vector.fromList <$> query sqlQuery (Only componentId)
   let dependencies =
         results
           & Vector.map
@@ -759,7 +747,6 @@ getTransitiveDependencies componentId = do
                   packageName
                   (Vector.fromList $ fromPGArray $ fmap arrayToDependencyVersionRequirement dependenciesArray)
             )
-
   case Vector.find (\c -> c ^. _1 == componentId) results of
     Just _ -> pure dependencies
     Nothing -> do
@@ -825,9 +812,9 @@ WITH RECURSIVE transitive_dependencies(  dependent_id, dependent_namespace, depe
 |]
 
 getLatestPackages
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => Eff es (Vector (Namespace, PackageName, Text, Maybe UTCTime))
-getLatestPackages = dbtToEff $ do query sqlQuery ()
+getLatestPackages = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query sqlQuery ()
   where
     sqlQuery =
       [sql|
@@ -845,12 +832,14 @@ getLatestPackages = dbtToEff $ do query sqlQuery ()
       |]
 
 getUploaders
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageId
   -> FloraM es (Vector Text)
-getUploaders packageId = dbtToEff $ do
-  result <- query sqlQuery (Only packageId)
-  pure $ fromOnly <$> result
+getUploaders packageId =
+  labeled @ReadOnly @WithConnection $
+    Vector.fromList <$> do
+      result <- query sqlQuery (Only packageId)
+      pure $ fromOnly <$> result
   where
     sqlQuery =
       [sql|
@@ -863,10 +852,9 @@ getUploaders packageId = dbtToEff $ do
       |]
 
 getPackagesWithoutMaintainersInformation
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => FloraM es (Vector (Namespace, PackageName))
-getPackagesWithoutMaintainersInformation = dbtToEff $ do
-  query sqlQuery ()
+getPackagesWithoutMaintainersInformation = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query sqlQuery ()
   where
     sqlQuery =
       [sql|

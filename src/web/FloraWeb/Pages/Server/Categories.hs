@@ -3,14 +3,15 @@ module FloraWeb.Pages.Server.Categories where
 import Data.Text (Text)
 import Effectful (Eff, IOE, (:>))
 import Effectful.Error.Static (Error)
-import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Lucid (Html)
 import Network.HTTP.Types (notFound404)
 import RequireCallStack
 import Servant (Headers (..), ServerError, ServerT)
 
-import Flora.Environment.Env (FeatureEnv)
+import Flora.Database
+import Flora.Environment.Env (FeatureEnv, FloraEnv (..))
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Query qualified as Query
@@ -30,12 +31,13 @@ server sessionWithCookies =
     }
 
 indexHandler
-  :: (DB :> es, IOE :> es, Reader FeatureEnv :> es)
+  :: (IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es)
   => SessionWithCookies (Maybe User)
   -> Eff es (Html ())
 indexHandler (Headers session _) = do
+  FloraEnv{pool} <- Reader.ask
   templateEnv' <- templateFromSession session defaultTemplateEnv
-  categories <- Query.getAllCategories
+  categories <- withReadOnlyPool pool Query.getAllCategories
   let templateEnv =
         templateEnv'
           { title = "Categories — Flora.pm"
@@ -44,23 +46,23 @@ indexHandler (Headers session _) = do
   render templateEnv $ Template.index categories
 
 showHandler
-  :: ( DB :> es
-     , Error ServerError :> es
+  :: ( Error ServerError :> es
      , IOE :> es
      , Reader FeatureEnv :> es
+     , Reader FloraEnv :> es
      , RequireCallStack
      )
   => SessionWithCookies (Maybe User)
   -> Text
   -> Eff es (Html ())
 showHandler (Headers session _) categorySlug = do
+  FloraEnv{pool} <- Reader.ask
   templateEnv' <- templateFromSession session defaultTemplateEnv
-
-  result <- Query.getCategoryBySlug categorySlug
+  result <- withReadOnlyPool pool $ Query.getCategoryBySlug categorySlug
   case result of
     Nothing -> renderError templateEnv' notFound404
     Just cat -> do
-      packagesInfo <- Query.getPackagesFromCategoryWithLatestVersion cat.categoryId
+      packagesInfo <- withReadOnlyPool pool $ Query.getPackagesFromCategoryWithLatestVersion cat.categoryId
       let templateEnv =
             templateEnv'
               { title = "Categories › " <> cat.name <> " — Flora.pm"

@@ -9,7 +9,7 @@ import Database.PostgreSQL.Simple.Migration
 import Effectful
 import Effectful.Exception qualified as E
 import Effectful.Log (Log, runLog)
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.PostgreSQL
 import Effectful.Reader.Static
 import Effectful.Reader.Static qualified as Reader
 import Log
@@ -28,7 +28,6 @@ main = Log.withStdOutLogger $ \logger -> do
     & Reader.runReader env
     & (`E.catches` exceptionHandlers)
     & runLog "flora-migrate" logger LogTrace
-    & runDB env.pool
     & runEff
   where
     exceptionHandlers =
@@ -36,7 +35,7 @@ main = Log.withStdOutLogger $ \logger -> do
           logAttention "Unhandled exception" $ object ["exception" .= show ex]
       ]
 
-runAllMigrations :: (DB :> es, IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
+runAllMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
 runAllMigrations = do
   floraMigrations
   arbiterMigrations
@@ -52,7 +51,7 @@ arbiterMigrations = do
       Log.logAttention_ $ "Arbiter migrations failed: " <> T.pack err
       liftIO exitFailure
 
-floraMigrations :: (DB :> es, IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
+floraMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
 floraMigrations = do
   FloraJobsEnv{pool} <- Reader.ask
   result <- liftIO $ withResource pool $ \conn -> do

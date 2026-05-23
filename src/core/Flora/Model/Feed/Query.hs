@@ -4,17 +4,19 @@ module Flora.Model.Feed.Query where
 
 import Data.List (List)
 import Data.Vector (Vector)
-import Database.PostgreSQL.Entity.DBT
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (In (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
+import Flora.Database
 import Flora.Model.Feed.Types
 import Flora.Model.Package.Types
 
 getEntriesByPackage
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => List (Namespace, PackageName)
   -> Word
   -- ^ Offset
@@ -22,7 +24,7 @@ getEntriesByPackage
   -- ^ Limit
   -> Eff es (Vector FeedEntry)
 getEntriesByPackage packages offset limit = do
-  dbtToEff $ query querySpec (In packages, offset, limit)
+  labeled @ReadOnly @WithConnection $ Vector.fromList <$> query querySpec (In packages, offset, limit)
   where
     querySpec =
       [sql|

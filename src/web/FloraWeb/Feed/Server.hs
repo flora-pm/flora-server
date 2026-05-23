@@ -5,7 +5,6 @@ import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Effectful
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
@@ -16,6 +15,7 @@ import Optics.Core (view)
 import Servant (Headers (..), ServerT)
 import Text.Atom.Feed qualified as Atom
 
+import Flora.Database
 import Flora.Environment.Env
 import Flora.Model.Feed.Query qualified as Query
 import Flora.Model.Feed.Types
@@ -48,7 +48,7 @@ homeFeedHandler (Headers session _) = do
   render templateEnv Feed.showFeedsBuilderPage
 
 showPackageFeedHandler
-  :: ( DB :> es
+  :: ( IOE :> es
      , Reader FloraEnv :> es
      , Time :> es
      )
@@ -56,7 +56,7 @@ showPackageFeedHandler
   -> Eff es Atom.Feed
 showPackageFeedHandler packageFilter = do
   env <- Reader.ask @FloraEnv
-  entries <- Query.getEntriesByPackage (fmap (view #selectedPackages) packageFilter) 0 100
+  entries <- withReadOnlyPool env.pool $ Query.getEntriesByPackage (fmap (view #selectedPackages) packageFilter) 0 100
   lastUpdatedAt <-
     case Vector.uncons entries of
       Nothing -> Time.currentTime
@@ -72,10 +72,10 @@ showPackageFeedHandler packageFilter = do
       entries
 
 searchPackageHandler
-  :: ( DB :> es
-     , IOE :> es
+  :: ( IOE :> es
      , Log :> es
      , Reader FeatureEnv :> es
+     , Reader FloraEnv :> es
      , Time :> es
      )
   => SessionWithCookies (Maybe User)

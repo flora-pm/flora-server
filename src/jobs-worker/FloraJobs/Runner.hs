@@ -25,10 +25,10 @@ import Effectful.Error.Static qualified as Error
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log hiding (LogLevel)
-import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Process.Typed
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import Effectful.Trace (Trace)
@@ -40,6 +40,7 @@ import Servant.Client.Core (ResponseF (..))
 import System.FilePath
 
 import Data.Text.HTML qualified as HTML
+import Flora.Database
 import Flora.Environment.Env
 import Flora.Import.Package (persistImportOutput)
 import Flora.Import.Package.Bulk.Archive qualified as Import
@@ -62,6 +63,7 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
+import FloraJobs.Environment
 import FloraJobs.Render (renderMarkdown)
 import FloraJobs.Scheduler
 import FloraJobs.ThirdParties.Hackage.API
@@ -77,7 +79,9 @@ runner env job = case job.payload of
   ImportPackage x -> persistImportOutput x
   FetchPackageDeprecationList -> fetchPackageDeprecationList
   FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
-  RefreshLatestVersions -> Update.refreshLatestVersions
+  RefreshLatestVersions -> do
+    FloraJobsEnv{pool} <- Reader.ask
+    withReadWritePool pool Update.refreshLatestVersions
   RefreshIndex indexName -> refreshIndex env indexName
   FetchPackageMaintainers packageName -> fetchPackageMaintainers packageName
   FetchPackageUploaders -> fetchPackageUploaders
@@ -85,38 +89,48 @@ runner env job = case job.payload of
 fetchChangeLog :: RequireCallStack => ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog ChangelogJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-changelog" $ do
+    FloraJobsEnv{pool} <- Reader.ask
     let requestPayload = VersionedPackage packageName packageVersion
     result <- Hackage.request $ Hackage.getPackageChangelog requestPayload
     case result of
       Left e -> handleClientError e
       Right bodyText -> do
         changelogBody <- renderMarkdown ("CHANGELOG" <> show packageName) bodyText
-        Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
+        withReadWritePool pool $ Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
   where
     handleClientError :: ClientError -> JobsRunner ()
     handleClientError e@(FailureResponse _ response)
       -- If the CHANGELOG simply doesn't exist, we skip it by marking the job as successful.
-      | response.responseStatusCode == notFound404 = Update.updateChangelog releaseId Nothing Inexistent
-      | response.responseStatusCode == gone410 = Update.updateChangelog releaseId Nothing Inexistent
+      | response.responseStatusCode == notFound404 = do
+          FloraJobsEnv{pool} <- Reader.ask
+          withReadWritePool pool $ Update.updateChangelog releaseId Nothing Inexistent
+      | response.responseStatusCode == gone410 = do
+          FloraJobsEnv{pool} <- Reader.ask
+          withReadWritePool pool $ Update.updateChangelog releaseId Nothing Inexistent
       | otherwise = Arb.throwRetryable (Text.show e)
     handleClientError e = Arb.throwRetryable (Text.show e)
 
 makeReadme :: RequireCallStack => ReadmeJobPayload -> JobsRunner ()
 makeReadme ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
   localDomain "fetch-readme" $ do
+    FloraJobsEnv{pool} <- Reader.ask
     let payload = VersionedPackage mpPackage mpVersion
     result <- Hackage.request $ Hackage.getPackageReadme payload
     case result of
       Left e -> handleClientError e
       Right bodyText -> do
         readmeBody <- renderMarkdown ("README" <> show mpPackage) bodyText
-        Update.updateReadme mpReleaseId (Just $ HTML.fromText readmeBody) Imported
+        withReadWritePool pool $ Update.updateReadme mpReleaseId (Just $ HTML.fromText readmeBody) Imported
   where
     handleClientError :: ClientError -> JobsRunner ()
     handleClientError e@(FailureResponse _ response)
       -- If the README simply doesn't exist, we skip it by marking the job as successful.
-      | response.responseStatusCode == notFound404 = Update.updateReadme mpReleaseId Nothing Inexistent
-      | response.responseStatusCode == gone410 = Update.updateReadme mpReleaseId Nothing Inexistent
+      | response.responseStatusCode == notFound404 = do
+          FloraJobsEnv{pool} <- Reader.ask
+          withReadWritePool pool $ Update.updateReadme mpReleaseId Nothing Inexistent
+      | response.responseStatusCode == gone410 = do
+          FloraJobsEnv{pool} <- Reader.ask
+          withReadWritePool pool $ Update.updateReadme mpReleaseId Nothing Inexistent
       | otherwise = do
           Log.logAttention "Could not get README hackage" $
             object
@@ -135,7 +149,8 @@ fetchTarball
   -> JobsRunner ()
 fetchTarball TarballJobPayload{releaseId, namespace, packageName, packageVersion} = do
   localDomain "fetch-tarball" $ do
-    mArchive <- Query.getReleaseTarballArchive releaseId
+    FloraJobsEnv{pool} <- Reader.ask
+    mArchive <- withReadOnlyPool pool $ Query.getReleaseTarballArchive releaseId
     content <- case mArchive of
       Just bs -> pure bs
       Nothing -> do
@@ -144,7 +159,7 @@ fetchTarball TarballJobPayload{releaseId, namespace, packageName, packageVersion
         case result of
           Right bs -> pure bs
           Left e -> handleClientError e
-    mhash <- Update.insertTar namespace packageName packageVersion.unIntAesonVersion content
+    mhash <- withReadWritePool pool $ Update.insertTar namespace packageName packageVersion.unIntAesonVersion content
     case mhash of
       Right hash ->
         logTrace
@@ -189,6 +204,7 @@ fetchTarball TarballJobPayload{releaseId, namespace, packageName, packageVersion
 fetchUploadInformation :: RequireCallStack => UploadInformationJobPayload -> JobsRunner ()
 fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageVersion, releaseId} =
   localDomain "fetch-upload-information" $ do
+    FloraJobsEnv{pool} <- Reader.ask
     logTrace "Fetching upload information" payload
     let requestPayload = VersionedPackage packageName packageVersion
     result <- Hackage.request $ Hackage.getPackageInfo requestPayload
@@ -197,14 +213,14 @@ fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageV
       Right packageInfo ->
         if packageInfo.metadataRevision == 0
           then do
-            Update.updateUploadTime releaseId packageInfo.uploadedAt
-            Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
+            withReadWritePool pool $ Update.updateUploadTime releaseId packageInfo.uploadedAt
+            withReadWritePool pool $ withReadOnlyPool pool $ Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
           else do
             Hackage.request (Hackage.getPackageWithRevision requestPayload 0) >>= \case
               Right originalPackageInfo -> do
-                Update.updateRevisionTime releaseId packageInfo.uploadedAt
-                Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
-                Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
+                withReadWritePool pool $ Update.updateRevisionTime releaseId packageInfo.uploadedAt
+                withReadWritePool pool $ Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
+                withReadWritePool pool $ withReadOnlyPool pool $ Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
               Left e -> handleClientError e
   where
     handleClientError :: ClientError -> JobsRunner ()
@@ -249,6 +265,7 @@ fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageV
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: RequireCallStack => JobsRunner ()
 fetchPackageDeprecationList = do
+  FloraJobsEnv{pool} <- Reader.ask
   result <- Hackage.request Hackage.getDeprecatedPackages
   case result of
     Right deprecationList -> do
@@ -257,7 +274,7 @@ fetchPackageDeprecationList = do
           ( \DeprecatedPackage'{package, inFavourOf} ->
               DeprecatedPackage package (assignNamespace inFavourOf)
           )
-        & Update.deprecatePackages
+        & withReadWritePool pool . Update.deprecatePackages
     Left e -> handleClientError e
   where
     handleClientError :: ClientError -> JobsRunner ()
@@ -278,10 +295,11 @@ assignNamespace =
 
 fetchReleaseDeprecationList :: RequireCallStack => PackageName -> Vector ReleaseId -> JobsRunner ()
 fetchReleaseDeprecationList packageName releases = do
+  FloraJobsEnv{pool} <- Reader.ask
   result <- Hackage.request $ Hackage.getDeprecatedReleasesList packageName
   case result of
     Right deprecationList -> do
-      releasesAndVersions <- Query.getVersionFromManyReleaseIds releases
+      releasesAndVersions <- withReadOnlyPool pool $ Query.getVersionFromManyReleaseIds releases
       let (deprecatedVersions', _) =
             Vector.unstablePartition
               ( \(_, v) ->
@@ -291,7 +309,8 @@ fetchReleaseDeprecationList packageName releases = do
       let deprecatedVersions =
             fmap (\(releaseId, _) -> (True, releaseId)) deprecatedVersions'
       unless (Vector.null deprecatedVersions) $
-        Update.setReleasesDeprecationMarker deprecatedVersions
+        withReadWritePool pool $
+          Update.setReleasesDeprecationMarker deprecatedVersions
     Left e -> handleClientError e
   where
     handleClientError :: ClientError -> JobsRunner ()
@@ -327,7 +346,6 @@ fetchReleaseDeprecationList packageName releases = do
 
 refreshIndex
   :: ( Concurrent :> es
-     , DB :> es
      , Error ImportError :> es
      , FileSystem :> es
      , IOE :> es
@@ -343,19 +361,20 @@ refreshIndex
   -> Text
   -> FloraM es ()
 refreshIndex env indexName = do
+  FloraEnv{pool} <- Reader.ask
   runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
   packagesPath <- getCabalPackagesDirectory
-  mPackageIndex <- Query.getPackageIndexByName indexName
+  mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName indexName
   case mPackageIndex of
     Nothing -> do
       Log.logAttention "Package index not found" $
         object ["package_index" .= indexName]
       error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
     Just packageIndex -> do
-      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
+      indexDependencies <- withReadOnlyPool pool $ Query.getIndexDependencies packageIndex.packageIndexId
       Import.importFromArchive indexName indexDependencies packagesPath
 
-      releasesWithoutReadme <- Query.getHackagePackageReleasesWithoutReadme
+      releasesWithoutReadme <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutReadme
       liftIO $
         void $
           forkIO $
@@ -363,7 +382,7 @@ refreshIndex env indexName = do
               releasesWithoutReadme
               (\(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version)
 
-      hackageReleasesWithoutUploadInformation <- Query.getHackagePackageReleasesWithoutUploadInformation
+      hackageReleasesWithoutUploadInformation <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutUploadInformation
       liftIO $
         void $
           forkIO $
@@ -371,7 +390,7 @@ refreshIndex env indexName = do
               hackageReleasesWithoutUploadInformation
               (\(releaseId, version, packagename) -> scheduleUploadInformationJob env releaseId packagename version)
 
-      releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
+      releasesWithoutChangelog <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutChangelog
       liftIO $
         void $
           forkIO $
@@ -379,7 +398,7 @@ refreshIndex env indexName = do
               releasesWithoutChangelog
               (\(releaseId, version, packagename) -> scheduleChangelogJob env releaseId packagename version)
 
-      packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
+      packagesWithoutDeprecationInformation <- withReadOnlyPool pool Query.getHackagePackagesWithoutReleaseDeprecationInformation
       liftIO $
         void $
           forkIO $ do
@@ -388,7 +407,7 @@ refreshIndex env indexName = do
               (\a -> scheduleReleaseDeprecationListJob env a)
             void $ scheduleRefreshLatestVersions env
 
-      packagesWithoutMaintainerInformation <- Query.getPackagesWithoutMaintainersInformation
+      packagesWithoutMaintainerInformation <- withReadOnlyPool pool Query.getPackagesWithoutMaintainersInformation
       liftIO $
         void $
           forkIO $
@@ -415,26 +434,29 @@ fetchPackageMaintainers
   -> JobsRunner ()
 fetchPackageMaintainers packageName = do
   localDomain "fetch-package-maintainers" $ do
-    packageIndex <- guardThatPackageIndexExists "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
+    FloraJobsEnv{pool} <- Reader.ask
+    packageIndex <- withReadOnlyPool pool $ guardThatPackageIndexExists "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
     Hackage.request (Hackage.getPackageMaintainers packageName) >>= \case
       Left e -> handleClientError e
       Right (HackagePackageMaintainers maintainers) -> do
         let namespace = Namespace packageIndex.repository
         package <-
-          guardThatPackageExists
-            namespace
-            packageName
-            (\_ _ -> Error.throwError (CouldNotFindPackage namespace packageName))
+          withReadOnlyPool pool $
+            guardThatPackageExists
+              namespace
+              packageName
+              (\_ _ -> Error.throwError (CouldNotFindPackage namespace packageName))
         packageUploaders <- forM (Vector.toList maintainers) $ \(HackagePackageMaintainer username) ->
-          guardThatPackageUploaderExists
-            username
-            packageIndex.packageIndexId
-            (Error.throwError (CouldNotFindPackageUploader username namespace))
+          withReadOnlyPool pool $
+            guardThatPackageUploaderExists
+              username
+              packageIndex.packageIndexId
+              (Error.throwError (CouldNotFindPackageUploader username namespace))
         packageMaintainerDAOs <- forM packageUploaders $ \packageUploader ->
           mkPackageMaintainer
             packageUploader.packageUploaderId
             package.packageId
-        Update.insertPackageMaintainers packageMaintainerDAOs
+        withReadWritePool pool $ Update.insertPackageMaintainers packageMaintainerDAOs
   where
     handleClientError :: ClientError -> JobsRunner a
     handleClientError e@(FailureResponse _ response)
@@ -465,13 +487,14 @@ fetchPackageMaintainers packageName = do
 fetchPackageUploaders :: RequireCallStack => JobsRunner ()
 fetchPackageUploaders = do
   localDomain "fetch-package-uploaders" $ do
-    packageIndex <- guardThatPackageIndexExists "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
+    FloraJobsEnv{pool} <- Reader.ask
+    packageIndex <- withReadOnlyPool pool $ guardThatPackageIndexExists "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
     Hackage.request Hackage.listHackageUsers >>= \case
       Left e -> handleClientError e
       Right users -> do
         forM_ users $ \user -> do
           dao <- mkPackageUploaderDAO user.username packageIndex.packageIndexId Nothing
-          Update.insertMaybeExistingPackageUploader dao
+          withReadWritePool pool $ Update.insertMaybeExistingPackageUploader dao
   where
     handleClientError :: ClientError -> JobsRunner a
     handleClientError e = Arb.throwRetryable (Text.show e)

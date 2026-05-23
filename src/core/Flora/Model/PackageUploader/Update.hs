@@ -9,28 +9,30 @@ module Flora.Model.PackageUploader.Update
 import Control.Monad
 import Data.Text (Text)
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
+import Flora.Database
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageUploader.Query qualified as Query
 import Flora.Model.PackageUploader.Types
 
 insertPackageUploader
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
   => PackageUploaderDAO
   -> Eff es ()
 insertPackageUploader packageUploader =
-  dbtToEff $
-    insert @PackageUploaderDAO packageUploader
+  labeled @ReadWrite @WithConnection $
+    void $
+      execute (_insert @PackageUploaderDAO) packageUploader
 
 insertMaybeExistingPackageUploader
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
   => PackageUploaderDAO
   -> Eff es ()
-insertMaybeExistingPackageUploader packageUploaderDAO = dbtToEff $ do
+insertMaybeExistingPackageUploader packageUploaderDAO = labeled @ReadWrite @WithConnection $ do
   void $ execute sqlQuery packageUploaderDAO
   where
     sqlQuery =
@@ -41,7 +43,7 @@ insertMaybeExistingPackageUploader packageUploaderDAO = dbtToEff $ do
       |]
 
 getOrInsertPackageUploader
-  :: (DB :> es, IOE :> es)
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Labeled ReadWrite WithConnection :> es)
   => Text
   -> PackageIndexId
   -> Eff es PackageUploaderId

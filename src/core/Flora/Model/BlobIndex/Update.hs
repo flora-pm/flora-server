@@ -1,23 +1,25 @@
 module Flora.Model.BlobIndex.Update where
 
 import Control.Monad (void, when)
-import Control.Monad.IO.Class (MonadIO)
 import Data.ByteString.Lazy (LazyByteString)
 import Data.Int (Int64)
 import Data.Map qualified as M
 import Data.String (fromString)
 import Data.Text.Display (display)
 import Database.PostgreSQL.Entity (Entity, _insert)
-import Database.PostgreSQL.Entity.DBT (execute)
 import Database.PostgreSQL.Simple (ToRow)
 import Database.PostgreSQL.Simple.Types (Query)
-import Database.PostgreSQL.Transact (DBT)
 import Distribution.Version (Version)
-import Effectful (type (:>))
+import Effectful
+import Effectful.Labeled
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.PostgreSQL
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Log qualified
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.BlobIndex.Internal
 import Flora.Model.BlobIndex.Types
 import Flora.Model.BlobStore.API
@@ -29,18 +31,19 @@ import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
 
 insertTar
-  :: (BlobStoreAPI :> es, DB :> es, Log :> es)
+  :: (BlobStoreAPI :> es, IOE :> es, Labeled ReadWrite WithConnection :> es, Log :> es, Reader FloraEnv :> es)
   => Namespace
   -> PackageName
   -> Version
   -> LazyByteString
   -> FloraM es (Either BlobStoreInsertError Sha256Sum)
 insertTar namespace packageName version contents = do
-  mpackage <- Query.getPackageByNamespaceAndName namespace packageName
+  FloraEnv{pool} <- Reader.ask
+  mpackage <- withReadOnlyPool pool $ Query.getPackageByNamespaceAndName namespace packageName
   case mpackage of
     Nothing -> pure . Left $ NoPackage packageName
     Just package -> do
-      mrelease <- Query.getReleaseByVersion package.packageId version
+      mrelease <- withReadOnlyPool pool $ Query.getReleaseByVersion package.packageId version
       case mrelease of
         Nothing -> pure . Left $ NoRelease packageName version
         Just release -> do
@@ -50,13 +53,14 @@ insertTar namespace packageName version contents = do
             Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree release.releaseId t
 
 insertTree
-  :: (BlobStoreAPI :> es, DB :> es, Log :> es)
+  :: (BlobStoreAPI :> es, IOE :> es, Labeled ReadWrite WithConnection :> es, Log :> es, Reader FloraEnv :> es)
   => ReleaseId
   -> TarRoot Sha256Sum
   -> FloraM es ()
 insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
+  FloraEnv{pool} <- Reader.ask
   Log.logTrace "Trying to insert directory tree" t
-  mTarballHash <- Query.getReleaseTarballRootHash releaseId
+  mTarballHash <- withReadOnlyPool pool $ Query.getReleaseTarballRootHash releaseId
   case mTarballHash of
     Just tarballHash -> Log.logInfo_ $ "Hash already inserted with hash: " <> display tarballHash
     Nothing -> do
@@ -67,13 +71,13 @@ insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
     _onConflictDoNothing :: Query
     _onConflictDoNothing = fromString "on conflict do nothing"
 
-    insertDoNothing :: forall e m. (Entity e, MonadIO m, ToRow e) => e -> DBT m Int64
-    insertDoNothing = execute (_insert @e <> _onConflictDoNothing)
+    insertDoNothing :: forall e es. (Entity e, IOE :> es, Labeled ReadWrite WithConnection :> es, ToRow e) => e -> Eff es Int64
+    insertDoNothing params = labeled @ReadWrite @WithConnection $ execute (_insert @e <> _onConflictDoNothing) params
 
     insertBlobs parentHash dir (TarDirectory childHash nodes) = do
-      res <- dbtToEff . insertDoNothing $! BlobRelation parentHash childHash dir True
+      res <- insertDoNothing $! BlobRelation parentHash childHash dir True
       when (res > 0) $! void $ M.traverseWithKey (insertBlobs childHash) nodes
-      void . dbtToEff . insertDoNothing $! BlobRelation parentHash childHash dir True
+      void . insertDoNothing $! BlobRelation parentHash childHash dir True
     insertBlobs parentHash dir (TarFile childHash content) = do
       put childHash content
-      void . dbtToEff . insertDoNothing $! BlobRelation parentHash childHash dir False
+      void . insertDoNothing $! BlobRelation parentHash childHash dir False

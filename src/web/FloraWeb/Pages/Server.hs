@@ -3,12 +3,15 @@
 module FloraWeb.Pages.Server where
 
 import Arbiter.Servant qualified as ArbS
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time qualified as Time
 import Lucid
 import Optics.Core
 import RequireCallStack
 import Servant
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
@@ -42,10 +45,11 @@ server arbiterConfig =
 
 homeHandler :: RequireCallStack => Headers ls (Session (Maybe User)) -> FloraEff (Html ())
 homeHandler (Headers session _) = do
+  FloraEnv{pool} <- Reader.ask
   templateDefaults <- templateFromSession session defaultTemplateEnv
   let templateEnv = templateDefaults & #displayNavbarSearch .~ False
-  latestReleases <- Query.getLatestReleases
-  latestPackages <- Query.getLatestPackages
+  latestReleases <- withReadOnlyPool pool Query.getLatestReleases
+  latestPackages <- withReadOnlyPool pool Query.getLatestPackages
   now <- Time.currentTime
   render templateEnv $
     Home.show now latestReleases latestPackages

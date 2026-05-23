@@ -1,19 +1,22 @@
 module Advisories.Model.Affected.Update where
 
-import Database.PostgreSQL.Entity (insert)
+import Control.Monad
+import Database.PostgreSQL.Entity
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
 import Advisories.Model.Affected.Types
+import Flora.Database
 
 insertAffectedPackage
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
   => AffectedPackageDAO
   -> Eff es ()
-insertAffectedPackage = dbtToEff . insert @AffectedPackageDAO
+insertAffectedPackage = labeled @ReadWrite @WithConnection . void . execute (_insert @AffectedPackageDAO)
 
 insertAffectedVersionRange
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
   => AffectedVersionRangeDAO
   -> Eff es ()
-insertAffectedVersionRange = dbtToEff . insert @AffectedVersionRangeDAO
+insertAffectedVersionRange = labeled @ReadWrite @WithConnection . void . execute (_insert @AffectedVersionRangeDAO)

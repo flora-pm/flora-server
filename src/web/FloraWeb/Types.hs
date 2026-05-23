@@ -21,7 +21,6 @@ import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
@@ -40,7 +39,6 @@ type FloraEff = Eff RouteEffects
 
 type RouteEffects =
   '[ Trace
-   , DB
    , Time
    , Reader FeatureEnv
    , BlobStoreAPI

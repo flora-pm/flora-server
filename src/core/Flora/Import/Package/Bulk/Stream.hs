@@ -13,9 +13,9 @@ import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import RequireCallStack
@@ -24,6 +24,7 @@ import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude qualified as Streamly
 import UnliftIO (finally)
 
+import Flora.Database
 import Flora.Environment.Env
 import Flora.Import.Package
 import Flora.Import.Types
@@ -40,7 +41,6 @@ import Flora.Monitoring (increasePackageImportCounterBy)
 importFromStream
   :: forall es
    . ( Concurrent :> es
-     , DB :> es
      , Error ImportError :> es
      , IOE :> es
      , Log :> es
@@ -55,6 +55,7 @@ importFromStream
   -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
   -> FloraM es ()
 importFromStream packageIndex indexPackages stream = do
+  FloraEnv{pool} <- Reader.ask
   let cfg = Streamly.inspect True . Streamly.minRate 1024 . Streamly.eager True
   processedPackageCount <-
     finally
@@ -64,10 +65,11 @@ importFromStream packageIndex indexPackages stream = do
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
       ( do
-          Update.refreshLatestVersions
-          Update.refreshDependents
-          timestamp <- Query.getLatestReleaseTime (Just packageIndex.repository)
-          Update.updatePackageIndexByName packageIndex.repository timestamp
+          timestamp <- withReadOnlyPool pool $ Query.getLatestReleaseTime (Just packageIndex.repository)
+          withReadWritePool pool $ do
+            Update.refreshLatestVersions
+            Update.refreshDependents
+            Update.updatePackageIndexByName packageIndex.repository timestamp
       )
   displayStats processedPackageCount
   increasePackageImportCounterBy processedPackageCount packageIndex.repository
@@ -90,7 +92,6 @@ displayStats currentCount = do
 
 processFile
   :: ( Concurrent :> es
-     , DB :> es
      , Error ImportError :> es
      , IOE :> es
      , Log :> es

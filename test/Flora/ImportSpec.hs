@@ -8,10 +8,12 @@ import Data.Maybe (catMaybes)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Vector qualified as Vector
+import Effectful.Reader.Static qualified as Reader
 import Log.Backend.StandardOutput (withStdOutLogger)
-import Optics.Core
 import RequireCallStack
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Import.Package (chooseNamespace)
 import Flora.Import.Package.Bulk.Archive
 import Flora.Model.Package.Query qualified as Query
@@ -47,9 +49,10 @@ defaultDescription = "test-description"
 testImportIndex :: RequireCallStack => TestEff ()
 testImportIndex = withStdOutLogger $
   \_ -> do
-    mIndex <- Query.getPackageIndexByName defaultRepo
+    FloraEnv{pool} <- Reader.ask
+    mIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName defaultRepo
     case mIndex of
-      Nothing -> Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
+      Nothing -> withReadWritePool pool $ Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
       Just _ -> pure ()
     importFromArchive
       "test-namespace"
@@ -57,11 +60,11 @@ testImportIndex = withStdOutLogger $
       "test/fixtures"
 
     -- check the packages have been imported
-    tars <- traverse (Query.getPackageByNamespaceAndName (Namespace defaultRepo) . PackageName) ["tar-a", "tar-b"]
-    releases <- fmap mconcat . traverse (\x -> Query.getReleases (x ^. #packageId)) $ catMaybes tars
+    tars <- traverse (\p -> withReadOnlyPool pool $ Query.getPackageByNamespaceAndName (Namespace defaultRepo) (PackageName p)) ["tar-a", "tar-b"]
+    releases <- mconcat <$> traverse (\x -> withReadOnlyPool pool (Query.getReleases x.packageId)) (catMaybes tars)
     assertEqual_ 2 (length tars)
     assertEqual_ 2 (length releases)
-    traverse_ (\x -> assertEqual_ (x ^. #repository) (Just defaultRepo)) releases
+    traverse_ (\x -> assertEqual_ x.repository (Just defaultRepo)) releases
 
 testNamespaceChooser :: RequireCallStack => TestEff ()
 testNamespaceChooser = do
@@ -80,9 +83,10 @@ testPackageListFromArchive = do
 
 testNthLevelDependencies :: RequireCallStack => TestEff ()
 testNthLevelDependencies = do
-  plutarch <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch")
-  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease plutarch.packageId
-  dependencies <- Set.fromList . Vector.toList <$> Query.getRequirements plutarch.name latestRelease.releaseId
+  FloraEnv{pool} <- Reader.ask
+  plutarch <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "mlabs") (PackageName "plutarch"))
+  latestRelease <- assertJust_ =<< withReadOnlyPool pool (Query.getLatestPackageRelease plutarch.packageId)
+  dependencies <- Set.fromList . Vector.toList <$> withReadOnlyPool pool (Query.getRequirements plutarch.name latestRelease.releaseId)
   assertEqual_
     ( Set.fromList
         [DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "aeson", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "base", version = ">=4.9 && <5"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "bytestring", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "constraints", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "containers", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "cryptonite", version = ">=0"}]

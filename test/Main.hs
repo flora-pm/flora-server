@@ -1,11 +1,11 @@
 module Main where
 
 import Control.Monad.Extra
-import Database.PostgreSQL.Entity.DBT (execute)
 import Effectful
 import Effectful.Fail
 import Effectful.FileSystem
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
 import System.IO
@@ -14,7 +14,9 @@ import Test.Tasty
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
+import Flora.Database
 import Flora.Environment
+import Flora.Environment.Env
 import Flora.FeedSpec qualified as FeedSpec
 import Flora.Import.Categories (importCategories)
 import Flora.ImportSpec qualified as ImportSpec
@@ -35,15 +37,15 @@ main = provideCallStack $ do
   fixtures <-
     runTestEff
       ( do
-          cleanUp
-          testMigrations
+          withReadWritePool env.pool cleanUp
+          testMigrations env.pool
           importCategories
-          Update.createPackageIndex "local-hackage" "" "" Nothing
-          Update.createPackageIndex "cardano" "" "" Nothing
-          Update.createPackageIndex "mlabs" "" "" Nothing
+          withReadWritePool env.pool $ Update.createPackageIndex "local-hackage" "" "" Nothing
+          withReadWritePool env.pool $ Update.createPackageIndex "cardano" "" "" Nothing
+          withReadWritePool env.pool $ Update.createPackageIndex "mlabs" "" "" Nothing
           password <- liftIO $ Sel.hashText "foobar2000"
           templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
-          Update.insertUser templateUser
+          withReadWritePool env.pool $ Update.insertUser templateUser
           importAllPackages
           getFixtures
       )
@@ -66,8 +68,8 @@ specs fixtures =
   , UserSpec.spec fixtures
   ]
 
-cleanUp :: DB :> es => Eff es ()
-cleanUp = dbtToEff $ do
+cleanUp :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Eff es ()
+cleanUp = labeled @ReadWrite @WithConnection $ do
   void $ execute "DELETE FROM blob_relations" ()
   void $ execute "DELETE FROM package_categories" ()
   void $ execute "DELETE FROM categories" ()

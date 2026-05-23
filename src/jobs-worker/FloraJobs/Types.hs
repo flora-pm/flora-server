@@ -1,10 +1,8 @@
 module FloraJobs.Types where
 
 import Data.Function ((&))
-import Data.Pool hiding (PoolConfig)
 import Data.Set (Set)
 import Data.Text.Display (display)
-import Database.PostgreSQL.Simple (Connection)
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent.Async
@@ -14,7 +12,6 @@ import Effectful.Exception
 import Effectful.FileSystem
 import Effectful.Log hiding (LogLevel)
 import Effectful.Log qualified as LogEff hiding (LogLevel)
-import Effectful.PostgreSQL.Transact.Effect (DB, runDB)
 import Effectful.Process.Typed
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
@@ -38,8 +35,7 @@ import FloraJobs.Environment
 
 type JobsRunner =
   Eff
-    '[ DB
-     , Reader FloraJobsEnv
+    '[ Reader FloraJobsEnv
      , BlobStoreAPI
      , Log
      , Time
@@ -56,13 +52,12 @@ type JobsRunner =
 
 runJobRunner
   :: RequireCallStack
-  => Pool Connection
-  -> FloraJobsEnv
+  => FloraJobsEnv
   -> FloraEnv
   -> Logger
   -> JobsRunner a
   -> IO a
-runJobRunner pool runnerEnv floraEnv logger jobRunner = do
+runJobRunner runnerEnv floraEnv logger jobRunner = do
   runTrace <-
     if floraEnv.environment == Production
       then do
@@ -71,7 +66,6 @@ runJobRunner pool runnerEnv floraEnv logger jobRunner = do
       else pure Trace.runNoTrace
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-    & runDB pool
     & Reader.runReader runnerEnv
     & ( case floraEnv.features.blobStoreImpl of
           Just (BlobStoreFS fp) -> runBlobStoreFS fp

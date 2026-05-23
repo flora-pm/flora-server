@@ -19,7 +19,7 @@ import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log (Log, runLog)
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.PostgreSQL
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
@@ -45,6 +45,7 @@ import Advisories.Import (importAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
 import DesignSystem (generateComponents)
+import Flora.Database
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
@@ -122,7 +123,6 @@ main = Log.withStdOutLogger $ \logger -> do
         )
       & runTime
       & runFailIO
-      & runDB env.pool
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
       & runErrorWith @(NonEmpty AdvisoryImportError)
@@ -225,7 +225,6 @@ parseImportPackageTarball =
 runOptions
   :: ( BlobStoreAPI :> es
      , Concurrent :> es
-     , DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
      , Error ImportError :> es
      , Fail :> es
@@ -256,10 +255,11 @@ runOptions (Options (Provision (TestPackages repository))) = do
     then importIndex indexArchiveBasePath repository
     else error $ "Could not find " <> indexArchivePath
 runOptions (Options (CreateUser opts)) = do
+  FloraEnv{pool} <- Reader.ask
   let username = opts ^. #username
       email = opts ^. #email
       canLogin = opts ^. #canLogin
-  mUser <- Query.getUserByEmail email
+  mUser <- withReadOnlyPool pool $ Query.getUserByEmail email
   case mUser of
     Just _ -> pure ()
     Nothing -> do
@@ -270,29 +270,29 @@ runOptions (Options (CreateUser opts)) = do
             >>= \admin ->
               if canLogin
                 then pure ()
-                else lockAccount admin.userId
+                else withReadWritePool pool $ lockAccount admin.userId
         else do
           templateUser <- mkUser UserCreationForm{username, email, password}
           let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
-          insertUser user
+          withReadWritePool pool $ insertUser user
 runOptions (Options GenDesignSystemComponents) = generateComponents
 runOptions (Options (ImportIndex path repository)) = importIndex path repository
-runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
+runOptions (Options (ProvisionRepository name url description)) = do
+  FloraEnv{pool} <- Reader.ask
+  withReadWritePool pool $ Update.upsertPackageIndex name url description Nothing
 runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball (Namespace "hackage") pname version path
 runOptions (Options (IndexDependency indexName dependencyName priority)) = do
-  index <- guardThatPackageIndexExists indexName (error $ Text.unpack indexName <> " does not exist in database!")
-  dependency <- guardThatPackageIndexExists dependencyName (error $ Text.unpack indexName <> " does not exist in database!")
-  Update.addDependency
-    index.packageIndexId
-    dependency.packageIndexId
-    priority
-
-provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> FloraM es ()
-provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
+  FloraEnv{pool} <- Reader.ask
+  index <- withReadOnlyPool pool $ guardThatPackageIndexExists indexName (error $ Text.unpack indexName <> " does not exist in database!")
+  dependency <- withReadOnlyPool pool $ guardThatPackageIndexExists dependencyName (error $ Text.unpack indexName <> " does not exist in database!")
+  withReadWritePool pool $
+    Update.addDependency
+      index.packageIndexId
+      dependency.packageIndexId
+      priority
 
 importIndex
   :: ( Concurrent :> es
-     , DB :> es
      , Error ImportError :> es
      , IOE :> es
      , Log :> es
@@ -306,11 +306,12 @@ importIndex
   -> Text
   -> FloraM es ()
 importIndex indexArchivebasePath repository = do
-  mPackageIndex <- Query.getPackageIndexByName repository
+  FloraEnv{pool} <- Reader.ask
+  mPackageIndex <- withReadOnlyPool pool $ withReadWritePool pool $ Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex -> do
-      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
+      indexDependencies <- withReadOnlyPool pool $ Query.getIndexDependencies packageIndex.packageIndexId
       forM_
         indexDependencies
         (\name -> importIndex indexArchivebasePath name)
@@ -323,9 +324,9 @@ importIndex indexArchivebasePath repository = do
 
 importPackageTarball
   :: ( BlobStoreAPI :> es
-     , DB :> es
      , IOE :> es
      , Log :> es
+     , Reader FloraEnv :> es
      , RequireCallStack
      )
   => Namespace
@@ -334,8 +335,9 @@ importPackageTarball
   -> FilePath
   -> FloraM es ()
 importPackageTarball namespace pname version path = do
+  FloraEnv{pool} <- Reader.ask
   contents <- liftIO $ GZip.decompress <$> BS.readFile path
-  res <- Update.insertTar namespace pname version contents
+  res <- withReadWritePool pool $ Update.insertTar namespace pname version contents
   case res of
     Right hash -> Log.logInfo_ $ "Insert tarball with root hash: " <> display hash
     Left err -> Log.logAttention_ $ display err
