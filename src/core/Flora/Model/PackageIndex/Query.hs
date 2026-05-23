@@ -7,43 +7,41 @@ import Data.Text (Text)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
+import Flora.Database
 import Flora.Model.PackageIndex.Types
 
 getPackageIndexById
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageIndexId
   -> Eff es (Maybe PackageIndex)
 getPackageIndexById packageIndexId =
-  dbtToEff $
-    selectOneByField
-      [field| package_index_id |]
-      (Only packageIndexId)
+  labeled @ReadOnly @WithConnection $
+    queryOne (_selectWhere @PackageIndex [[field| package_index_id |]]) (Only packageIndexId)
 
-getPackageIndexByName :: DB :> es => Text -> Eff es (Maybe PackageIndex)
+getPackageIndexByName :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Text -> Eff es (Maybe PackageIndex)
 getPackageIndexByName repository =
-  dbtToEff $
-    selectOneByField [field| repository |] (Only repository)
+  labeled @ReadOnly @WithConnection $
+    queryOne (_selectWhere @PackageIndex [[field| repository |]]) (Only repository)
 
-listPackageIndexes :: DB :> es => Eff es (Vector PackageIndex)
+listPackageIndexes :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Eff es (Vector PackageIndex)
 listPackageIndexes =
-  dbtToEff $
-    selectOrderBy @PackageIndex $
-      Vector.fromList [([field| repository |], ASC)]
+  labeled @ReadOnly @WithConnection $ Vector.fromList <$> query_ (_select @PackageIndex <> _orderByMany [([field| repository |], ASC)])
 
 -- | Returns an ordered list of index dependencies, which must be
 -- traversed **in order** to determine the provenance of a dependency.
-getIndexDependencies :: DB :> es => PackageIndexId -> Eff es (Vector Text)
+getIndexDependencies :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageIndexId -> Eff es (Vector Text)
 getIndexDependencies packageIndexId = do
   result' <-
-    dbtToEff $
-      query q (Only packageIndexId)
+    labeled @ReadOnly @WithConnection $
+      Vector.fromList
+        <$> query q (Only packageIndexId)
   pure $ fromOnly <$> result'
   where
     q =

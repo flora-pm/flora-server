@@ -2,17 +2,19 @@ module Flora.Model.Release.Guard where
 
 import Distribution.Types.Version (Version)
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Labeled
+import Effectful.PostgreSQL
 import Effectful.Trace
 import Monitor.Tracing qualified as Tracing
 
+import Flora.Database
 import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Monad
 
 guardThatReleaseExists
-  :: (DB :> es, Trace :> es)
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Trace :> es)
   => PackageId
   -> Version
   -> (Version -> FloraM es Release)

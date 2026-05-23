@@ -4,12 +4,15 @@ module FloraWeb.Common.Guards where
 
 import Data.Text (Text)
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Trace (Trace)
 import Log qualified
 import Monitor.Tracing qualified as Tracing
 import Optics.Core
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query as Query
 import Flora.Model.PackageIndex.Types (PackageIndex)
@@ -21,16 +24,18 @@ import FloraWeb.Session (Session)
 import FloraWeb.Types (FloraEff)
 
 guardThatPackageIndexExists
-  :: (DB :> es, Trace :> es)
+  :: (IOE :> es, Reader FloraEnv :> es, Trace :> es)
   => Namespace
   -> (Namespace -> Eff es PackageIndex)
   -- ^ Action to run if the package index does not exist
   -> Eff es PackageIndex
 guardThatPackageIndexExists namespace action =
   Tracing.childSpan "guardThatPackageIndexExists " $ do
+    FloraEnv{pool} <- Reader.ask
     result <-
       Tracing.childSpan "Query.getPackageIndexByName" $
-        Query.getPackageIndexByName (extractNamespaceText namespace)
+        withReadOnlyPool pool $
+          Query.getPackageIndexByName (extractNamespaceText namespace)
     case result of
       Just packageIndex -> pure packageIndex
       Nothing -> action namespace

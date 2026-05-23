@@ -12,10 +12,13 @@ import Data.Vector qualified as Vector
 import Data.Vector.Algorithms qualified as Vector
 import Distribution.Types.Version qualified as Cabal
 import Distribution.Version (mkVersion)
+import Effectful.Reader.Static qualified as Reader
 import Optics.Core
 import RequireCallStack
 import Test.Tasty
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Component.Types
 import Flora.Model.Package.Query qualified as Query
@@ -52,10 +55,11 @@ spec =
 
 testCabalDeps :: RequireCallStack => TestEff ()
 testCabalDeps = do
+  FloraEnv{pool} <- Reader.ask
   dependencies <- do
-    cabalPackage <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "Cabal")
-    latestRelease <- assertJust_ =<< Query.getLatestPackageRelease cabalPackage.packageId
-    Query.getAllRequirements latestRelease.releaseId
+    cabalPackage <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "Cabal"))
+    latestRelease <- assertJust_ =<< withReadOnlyPool pool (Query.getLatestPackageRelease cabalPackage.packageId)
+    withReadOnlyPool pool $ Query.getAllRequirements latestRelease.releaseId
   assertEqual_
     ( Set.fromList
         [ PackageName "Win32"
@@ -88,22 +92,24 @@ testCabalDeps = do
 
 testInsertContainers :: RequireCallStack => TestEff ()
 testInsertContainers = do
+  FloraEnv{pool} <- Reader.ask
   dependencies <- do
-    mPackage <- Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "containers")
+    mPackage <- withReadOnlyPool pool $ Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "containers")
     case mPackage of
       Nothing -> do
         assertFailure "Couldn't find @local-hackage/containers despite being inserted"
         undefined
       Just package -> do
-        latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
-        Query.getRequirements package.name latestRelease.releaseId
+        latestRelease <- assertJust_ =<< withReadOnlyPool pool (Query.getLatestPackageRelease package.packageId)
+        withReadOnlyPool pool $ Query.getRequirements package.name latestRelease.releaseId
   assertEqual_
     (Set.fromList [PackageName "base", PackageName "deepseq", PackageName "array"])
     (Set.fromList $ view #packageName <$> Vector.toList dependencies)
 
 testFetchGHCPrimDependents :: RequireCallStack => TestEff ()
 testFetchGHCPrimDependents = do
-  result <- Query.getPackageDependents (Namespace "local-hackage") (PackageName "ghc-prim")
+  FloraEnv{pool} <- Reader.ask
+  result <- withReadOnlyPool pool $ Query.getPackageDependents (Namespace "local-hackage") (PackageName "ghc-prim")
   assertEqual_
     ( Set.fromList
         [ PackageName "base"
@@ -118,76 +124,86 @@ testFetchGHCPrimDependents = do
 
 testThatBaseisInPreludeCategory :: RequireCallStack => TestEff ()
 testThatBaseisInPreludeCategory = do
-  result <- Query.getPackagesFromCategorySlug "prelude"
+  FloraEnv{pool} <- Reader.ask
+  result <- withReadOnlyPool pool $ Query.getPackagesFromCategorySlug "prelude"
   assertBool $ Set.member (PackageName "base") (Set.fromList $ Vector.toList $ fmap (view #name) result)
 
 testNoSelfDependent :: RequireCallStack => TestEff ()
 testNoSelfDependent = do
-  results <- Query.getAllPackageDependents (Namespace "local-hackage") (PackageName "text")
+  FloraEnv{pool} <- Reader.ask
+  results <- withReadOnlyPool pool $ Query.getAllPackageDependents (Namespace "local-hackage") (PackageName "text")
   let resultSet = Set.fromList . fmap (view #name) $ Vector.toList results
   assertBool
     (Set.notMember (PackageName "text") resultSet)
 
 testBytestringDependencies :: RequireCallStack => TestEff ()
 testBytestringDependencies = do
-  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "bytestring")
-  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
-  latestReleasedependencies <- Query.getRequirements package.name latestRelease.releaseId
+  FloraEnv{pool} <- Reader.ask
+  package <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "bytestring"))
+  latestRelease <- assertJust_ =<< withReadOnlyPool pool (Query.getLatestPackageRelease package.packageId)
+  latestReleasedependencies <- withReadOnlyPool pool $ Query.getRequirements package.name latestRelease.releaseId
   assertEqual_ 4 (Vector.length latestReleasedependencies)
 
 testTimeComponents :: RequireCallStack => TestEff ()
 testTimeComponents = do
+  FloraEnv{pool} <- Reader.ask
   let countBy :: RequireCallStack => Foldable t => (a -> Bool) -> t a -> Int
       countBy f = getSum . foldMap (\item -> if f item then Sum 1 else Sum 0)
       countComponentsByType :: RequireCallStack => Foldable t => ComponentType -> t PackageComponent -> Int
       countComponentsByType t = countBy (^. #canonicalForm % #componentType % to (== t))
-  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "time")
-  latestRelease <- assertJust_ =<< Query.getLatestPackageRelease package.packageId
-  components <- Query.getReleaseComponents latestRelease.releaseId
+  package <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "time"))
+  latestRelease <- assertJust_ =<< withReadOnlyPool pool (Query.getLatestPackageRelease package.packageId)
+  components <- withReadOnlyPool pool (Query.getReleaseComponents latestRelease.releaseId)
   assertEqual_ 1 $ countComponentsByType Library components
   assertEqual_ 1 $ countComponentsByType Benchmark components
   assertEqual_ 3 $ countComponentsByType TestSuite components
 
 testSearchResultText :: RequireCallStack => TestEff ()
 testSearchResultText = do
-  text <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "text")
-  releases <- Query.getNumberOfReleases text.packageId
+  FloraEnv{pool} <- Reader.ask
+  text <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "text"))
+  releases <- withReadOnlyPool pool $ Query.getNumberOfReleases text.packageId
   assertEqual_ 3 releases
-  results <- Query.searchPackage (0, 30) "text"
+  results <- withReadOnlyPool pool $ Query.searchPackage (0, 30) "text"
   assertEqual_ 2 (Vector.length results)
   assertEqual_ (Cabal.mkVersion [2, 1, 2]) ((.version) $ Vector.head results)
 
 testPackagesDeprecation :: RequireCallStack => TestEff ()
 testPackagesDeprecation = do
+  FloraEnv{pool} <- Reader.ask
   let alternative1 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "local-hackage") (PackageName "integer-simple")
   let alternative2 = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "local-hackage") (PackageName "monad-control")
-  Update.deprecatePackages $
-    Vector.fromList
-      [ DeprecatedPackage (PackageName "integer-gmp") alternative1
-      , DeprecatedPackage (PackageName "mtl") alternative2
-      ]
-  integerGmp <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "integer-gmp")
+  withReadWritePool pool $
+    Update.deprecatePackages $
+      Vector.fromList
+        [ DeprecatedPackage (PackageName "integer-gmp") alternative1
+        , DeprecatedPackage (PackageName "mtl") alternative2
+        ]
+  integerGmp <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "integer-gmp"))
   assertEqual_ (Just alternative1) integerGmp.deprecationInfo
 
 testGetNonDeprecatedPackages :: RequireCallStack => TestEff ()
 testGetNonDeprecatedPackages = do
+  FloraEnv{pool} <- Reader.ask
   let alternative = PackageAlternatives $ Vector.singleton $ PackageAlternative (Namespace "local-hackage") (PackageName "integer-simple")
-  Update.deprecatePackages $
-    Vector.fromList [DeprecatedPackage (PackageName "ansi-wl-pprint") alternative]
-  nonDeprecatedPackages <- fmap (.name) <$> Query.getNonDeprecatedPackages
+  withReadWritePool pool $
+    Update.deprecatePackages $
+      Vector.fromList [DeprecatedPackage (PackageName "ansi-wl-pprint") alternative]
+  nonDeprecatedPackages <- fmap (.name) <$> withReadOnlyPool pool Query.getNonDeprecatedPackages
   assertBool $ Vector.notElem (PackageName "ansi-wl-pprint") nonDeprecatedPackages
 
-  binary <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "binary")
-  deprecatedBinaryVersion' <- assertJust_ =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
-  Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
-  deprecatedBinaryVersion <- assertJust_ =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
+  binary <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "binary"))
+  deprecatedBinaryVersion' <- assertJust_ =<< withReadOnlyPool pool (Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0]))
+  withReadWritePool pool $ Update.setReleasesDeprecationMarker (Vector.singleton (True, deprecatedBinaryVersion'.releaseId))
+  deprecatedBinaryVersion <- assertJust_ =<< withReadOnlyPool pool (Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0]))
   assertEqual_ deprecatedBinaryVersion.deprecated (Just True)
 
 testDeduplicatedDependencies :: RequireCallStack => TestEff ()
 testDeduplicatedDependencies = do
-  package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-network")
-  release <- assertJust_ =<< Query.getReleaseByVersion package.packageId (mkVersion [0, 10, 2, 2])
-  requirements <- Query.getRequirements package.name release.releaseId
+  FloraEnv{pool} <- Reader.ask
+  package <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "ouroboros-network"))
+  release <- assertJust_ =<< withReadOnlyPool pool (Query.getReleaseByVersion package.packageId (mkVersion [0, 10, 2, 2]))
+  requirements <- withReadOnlyPool pool $ Query.getRequirements package.name release.releaseId
   let uniqueRequirements = Vector.nubBy (\DependencyVersionRequirement{packageName = name1} DependencyVersionRequirement{packageName = name2} -> compare name1 name2) requirements
   assertEqual_
     uniqueRequirements
@@ -239,10 +255,11 @@ testAggregationOfTransitiveDependencies = do
 
 testTransitiveDependencies :: RequireCallStack => TestEff ()
 testTransitiveDependencies = do
-  base <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "base")
-  baseRelease <- assertJust_ =<< Query.getReleaseByVersion base.packageId (mkVersion [4, 16, 0, 0])
-  baseComponent <- assertJust_ =<< Query.getComponent baseRelease.releaseId "base" Library
-  dependenciesMap <- Set.fromList . Vector.toList <$> Query.getTransitiveDependencies baseComponent.componentId
+  FloraEnv{pool} <- Reader.ask
+  base <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "base"))
+  baseRelease <- assertJust_ =<< withReadOnlyPool pool (Query.getReleaseByVersion base.packageId (mkVersion [4, 16, 0, 0]))
+  baseComponent <- assertJust_ =<< withReadOnlyPool pool (Query.getComponent baseRelease.releaseId "base" Library)
+  dependenciesMap <- Set.fromList . Vector.toList <$> withReadOnlyPool pool (Query.getTransitiveDependencies baseComponent.componentId)
 
   assertEqual_
     ( Set.fromList

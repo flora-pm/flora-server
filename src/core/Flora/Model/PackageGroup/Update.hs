@@ -4,17 +4,19 @@ module Flora.Model.PackageGroup.Update
   ) where
 
 import Control.Monad (void)
-import Database.PostgreSQL.Entity (delete, insert)
-import Database.PostgreSQL.Simple
+import Database.PostgreSQL.Entity
+import Database.PostgreSQL.Simple.Types
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
+import Flora.Database
 import Flora.Model.PackageGroup.Types
 
-insertPackageGroup :: DB :> es => PackageGroup -> Eff es ()
+insertPackageGroup :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => PackageGroup -> Eff es ()
 insertPackageGroup packageGroup = do
-  void $ dbtToEff $ insert @PackageGroup packageGroup
+  void $ labeled @ReadWrite @WithConnection $ execute (_insert @PackageGroup) packageGroup
 
-deletePackageGroup :: DB :> es => PackageGroupId -> Eff es ()
+deletePackageGroup :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => PackageGroupId -> Eff es ()
 deletePackageGroup packageGroupId = do
-  void $ dbtToEff $ delete @PackageGroup (Only packageGroupId)
+  void $ labeled @ReadWrite @WithConnection $ execute (_delete @PackageGroup) (Only packageGroupId)

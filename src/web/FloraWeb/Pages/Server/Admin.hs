@@ -19,6 +19,7 @@ import Optics.Core
 import RequireCallStack
 import Servant (HasServer (..), Headers (..))
 
+import Flora.Database
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Job
@@ -67,12 +68,12 @@ indexHandler (Headers session _) = do
 
 fetchMetadataHandler :: RequireCallStack => SessionWithCookies User -> FloraM RouteEffects FetchMetadataResponse
 fetchMetadataHandler (Headers session _) = do
-  FloraEnv{workerEnv} <- liftIO $ fetchFloraEnv session.webEnvStore
+  FloraEnv{workerEnv, pool} <- liftIO $ fetchFloraEnv session.webEnvStore
 
   liftIO $ void $ schedulePackageUploadersJob workerEnv
   liftIO $ void $ schedulePackageDeprecationListJob workerEnv
 
-  releasesWithoutReadme <- Query.getHackagePackageReleasesWithoutReadme
+  releasesWithoutReadme <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutReadme
   liftIO $
     void $
       forkIO $
@@ -80,7 +81,7 @@ fetchMetadataHandler (Headers session _) = do
           releasesWithoutReadme
           (\(releaseId, version, packagename) -> scheduleReadmeJob workerEnv releaseId packagename version)
 
-  hackageReleasesWithoutUploadInformation <- Query.getHackagePackageReleasesWithoutUploadInformation
+  hackageReleasesWithoutUploadInformation <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutUploadInformation
   liftIO $
     void $
       forkIO $
@@ -88,7 +89,7 @@ fetchMetadataHandler (Headers session _) = do
           hackageReleasesWithoutUploadInformation
           (\(releaseId, version, packagename) -> scheduleUploadInformationJob workerEnv releaseId packagename version)
 
-  releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
+  releasesWithoutChangelog <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutChangelog
   liftIO $
     void $
       forkIO $
@@ -99,9 +100,9 @@ fetchMetadataHandler (Headers session _) = do
   features <- ask @FeatureEnv
   Log.logAttention "features" features
   when (isJust features.blobStoreImpl) $ do
-    releasesWithoutTarball <- Query.getHackagePackageReleasesWithoutTarball
-    liftIO $!
-      void $!
+    releasesWithoutTarball <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutTarball
+    liftIO $
+      void $
         forkIO $!
           Async.forConcurrently_
             releasesWithoutTarball
@@ -109,7 +110,7 @@ fetchMetadataHandler (Headers session _) = do
                 scheduleTarballJob workerEnv releaseId (Namespace "hackage") packagename version
             )
 
-  packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
+  packagesWithoutDeprecationInformation <- withReadOnlyPool pool Query.getHackagePackagesWithoutReleaseDeprecationInformation
   liftIO $
     void $
       forkIO $ do
@@ -118,7 +119,7 @@ fetchMetadataHandler (Headers session _) = do
           (\a -> scheduleReleaseDeprecationListJob workerEnv a)
         void $ scheduleRefreshLatestVersions workerEnv
 
-  packagesWithoutMaintainerInformation <- Query.getPackagesWithoutMaintainersInformation
+  packagesWithoutMaintainerInformation <- withReadOnlyPool pool Query.getPackagesWithoutMaintainersInformation
   liftIO $
     void $
       forkIO $

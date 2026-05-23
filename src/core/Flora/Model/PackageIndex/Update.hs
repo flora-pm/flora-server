@@ -11,43 +11,49 @@ module Flora.Model.PackageIndex.Update
 import Control.Monad (void)
 import Data.Text (Text)
 import Data.Time (UTCTime)
-import Database.PostgreSQL.Entity (insert, updateFieldsBy, _insert)
-import Database.PostgreSQL.Entity.DBT (execute)
+import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ
+import Database.PostgreSQL.Simple.ToRow
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 import Heptapod qualified
 
 import Data.Positive
+import Flora.Database
 import Flora.Model.PackageIndex.Types
   ( PackageIndex (..)
   , PackageIndexId
   , mkPackageIndex
   )
 
-updatePackageIndexByName :: DB :> es => Text -> Maybe UTCTime -> Eff es ()
+updatePackageIndexByName :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Text -> Maybe UTCTime -> Eff es ()
 updatePackageIndexByName repositoryName newTimestamp = do
   void $
-    dbtToEff $
-      updateFieldsBy @PackageIndex
-        [[field| timestamp |]]
-        ([field| repository |], repositoryName)
-        (Only newTimestamp)
+    labeled @ReadWrite @WithConnection $
+      execute
+        ( _updateFieldsBy @PackageIndex
+            [[field| timestamp |]]
+            [field| repository |]
+        )
+        ( toRow (Only newTimestamp)
+            ++ toRow (Only repositoryName)
+        )
 
-createPackageIndex :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
+createPackageIndex :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
 createPackageIndex repositoryName url description timestamp = do
   packageIndex <- mkPackageIndex repositoryName url description timestamp
-  void $ dbtToEff $ insert @PackageIndex packageIndex
+  void $ labeled @_ @WithConnection $ execute (_insert @PackageIndex) packageIndex
 
-upsertPackageIndex :: (DB :> es, IOE :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
+upsertPackageIndex :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
 upsertPackageIndex repositoryName url description timestamp = do
   packageIndex <- mkPackageIndex repositoryName url description timestamp
-  dbtToEff $ void $ execute (_insert @PackageIndex <> " ON CONFLICT DO NOTHING") packageIndex
+  labeled @ReadWrite @WithConnection $ void $ execute (_insert @PackageIndex <> " ON CONFLICT DO NOTHING") packageIndex
 
 addDependency
-  :: (DB :> es, IOE :> es)
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
   => PackageIndexId
   -- ^ Index
   -> PackageIndexId
@@ -58,7 +64,7 @@ addDependency
 addDependency indexId dependencyId priority = do
   indexDependencyId <- liftIO Heptapod.generate
   void $
-    dbtToEff $
+    labeled @ReadWrite @WithConnection $
       execute q (indexDependencyId, indexId, dependencyId, priority)
   where
     q =

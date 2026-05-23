@@ -26,9 +26,12 @@ import Data.Vector (Vector)
 import Distribution.Types.Version
 import Effectful
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Log
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -128,15 +131,16 @@ createJobWithResource env job =
     Arb.insertJob (Arb.defaultJob job)
 
 checkIfIndexRefreshJobIsPlanned
-  :: ( DB :> es
-     , IOE :> es
+  :: ( IOE :> es
      , Log :> es
+     , Reader FloraEnv :> es
      )
   => ArbS.SimpleEnv JobQueues
   -> Eff es ()
 checkIfIndexRefreshJobIsPlanned env = do
+  FloraEnv{pool} <- Reader.ask
   Log.logInfo_ "Checking if the index refresh job is planned…"
-  indexes <- Query.listPackageIndexes
+  indexes <- withReadOnlyPool pool Query.listPackageIndexes
   forM_ indexes $ \index -> do
     Log.logInfo "Scheduling index refresh" $ object ["index" .= index.repository]
     void $ liftIO $ scheduleRefreshIndex env index.repository

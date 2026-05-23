@@ -4,9 +4,12 @@ import Data.Set qualified as Set
 import Data.Vector qualified as Vector
 import Distribution.PackageDescription hiding (Executable, Library, PackageId, PackageName)
 import Distribution.System (Arch (..))
+import Effectful.Reader.Static qualified as Reader
 import RequireCallStack
 import Test.Tasty
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Import.Package
 import Flora.Model.Component.Types
 import Flora.Model.Package.Query qualified as Query
@@ -63,9 +66,10 @@ testFlattenCondTree = do
 
 testImportSimplePackage :: RequireCallStack => TestEff ()
 testImportSimplePackage = do
-  packageA <- assertJust "Search for package a" =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "a")
-  releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
-  componentsA <- Query.getReleaseComponents (releaseA.releaseId)
+  FloraEnv{pool} <- Reader.ask
+  packageA <- assertJust "Search for package a" =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "a"))
+  releaseA <- Vector.head <$> withReadOnlyPool pool (Query.getReleases (packageA.packageId))
+  componentsA <- withReadOnlyPool pool $ Query.getReleaseComponents (releaseA.releaseId)
   assertEqual_
     (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
     ( Set.fromList
@@ -76,9 +80,10 @@ testImportSimplePackage = do
 
 testImportMultiplePublicLibraries :: RequireCallStack => TestEff ()
 testImportMultiplePublicLibraries = do
-  packageA <- assertJust "Search for package b" =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "b")
-  releaseA <- Vector.head <$> Query.getReleases (packageA.packageId)
-  componentsA <- Query.getReleaseComponents (releaseA.releaseId)
+  FloraEnv{pool} <- Reader.ask
+  packageA <- assertJust "Search for package b" =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "b"))
+  releaseA <- Vector.head <$> withReadOnlyPool pool (Query.getReleases (packageA.packageId))
+  componentsA <- withReadOnlyPool pool $ Query.getReleaseComponents (releaseA.releaseId)
   assertEqual_
     (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
     ( Set.fromList

@@ -106,7 +106,6 @@ processJob workerEnv jobsRunnerEnv logger floraEnv _conn job =
   provideCallStack $
     liftIO $
       runJobRunner
-        floraEnv.pool
         jobsRunnerEnv
         floraEnv
         logger

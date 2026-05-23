@@ -10,34 +10,35 @@ module Flora.Model.PackageMaintainer.Query
 
 import Data.Text
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (query)
-import Database.PostgreSQL.Entity.DBT qualified as DBT
 import Database.PostgreSQL.Entity.Internal.QQ (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
+import Flora.Database
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageMaintainer.Types
 import Flora.Monad
 
 getPackageMaintainerById
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageMaintainerId
   -> Eff es (Maybe PackageMaintainer)
 getPackageMaintainerById packageMaintainerId = do
-  dbtToEff $ selectById @PackageMaintainer (Only packageMaintainerId)
+  labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @PackageMaintainer [primaryKey @PackageMaintainer]) (Only packageMaintainerId)
 
 getPackageMaintainerByUsernameAndIndex
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => Text
   -> PackageIndexId
   -> Eff es (Maybe PackageMaintainer)
 getPackageMaintainerByUsernameAndIndex username packageIndexId = do
-  dbtToEff $ DBT.queryOne q (username, packageIndexId)
+  labeled @ReadOnly @WithConnection $ queryOne q (username, packageIndexId)
   where
     q =
       _selectWhere @PackageMaintainer
@@ -46,21 +47,18 @@ getPackageMaintainerByUsernameAndIndex username packageIndexId = do
         ]
 
 getPackageMaintainers
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageId
   -> Eff es (Vector PackageMaintainer)
 getPackageMaintainers packageId =
-  dbtToEff $
-    selectManyByField @PackageMaintainer
-      [field| package_id |]
-      (Only packageId)
+  labeled @ReadOnly @WithConnection $ Vector.fromList <$> query (_selectWhere @PackageMaintainer [[field| package_id |]]) (Only packageId)
 
 getActiveMaintainers
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => PackageId
   -> FloraM es (Vector Text)
-getActiveMaintainers packageId = dbtToEff $ do
-  result <- query sqlQuery (Only packageId)
+getActiveMaintainers packageId = labeled @ReadOnly @WithConnection $ do
+  result <- Vector.fromList <$> query sqlQuery (Only packageId)
   pure $ fromOnly <$> result
   where
     sqlQuery =

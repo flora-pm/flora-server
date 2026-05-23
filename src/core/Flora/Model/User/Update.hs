@@ -12,29 +12,34 @@ module Flora.Model.User.Update
   ) where
 
 import Control.Monad
-import Database.PostgreSQL.Entity (delete, insert)
-import Database.PostgreSQL.Entity.DBT (execute)
+import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful (Eff, IOE, type (:>))
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Sel.HMAC.SHA256 qualified as HMAC
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.User
 
-addAdmin :: (DB :> es, IOE :> es, Time :> es) => AdminCreationForm -> Eff es User
+addAdmin :: (IOE :> es, Reader FloraEnv :> es, Time :> es) => AdminCreationForm -> Eff es User
 addAdmin form = do
+  FloraEnv{pool} <- Reader.ask
   adminUser <- mkAdmin form
-  insertUser adminUser
-  unlockAccount adminUser.userId
+  withReadWritePool pool $ insertUser adminUser
+  withReadWritePool pool $ unlockAccount adminUser.userId
   pure adminUser
 
-lockAccount :: (DB :> es, Time :> es) => UserId -> Eff es ()
+lockAccount :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es) => UserId -> Eff es ()
 lockAccount userId = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute q (ts, userId)
+  labeled @ReadWrite @WithConnection $ void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -44,10 +49,10 @@ lockAccount userId = do
         where u.user_id = ?;
       |]
 
-unlockAccount :: (DB :> es, Time :> es) => UserId -> Eff es ()
+unlockAccount :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es) => UserId -> Eff es ()
 unlockAccount userId = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute q (ts, userId)
+  labeled @ReadWrite @WithConnection $ void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -57,20 +62,20 @@ unlockAccount userId = do
         where u.user_id = ?
       |]
 
-insertUser :: DB :> es => User -> Eff es ()
-insertUser user = dbtToEff $ insert @User user
+insertUser :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => User -> Eff es ()
+insertUser user = labeled @ReadWrite @WithConnection $ void $ execute (_insert @User) user
 
-deleteUser :: DB :> es => UserId -> Eff es ()
-deleteUser userId = dbtToEff $ delete @User (Only userId)
+deleteUser :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => UserId -> Eff es ()
+deleteUser userId = labeled @ReadWrite @WithConnection $ void $ execute (_delete @User) (Only userId)
 
 setupTOTP
-  :: (DB :> es, Time :> es)
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es)
   => UserId
   -> HMAC.AuthenticationKey
   -> Eff es ()
 setupTOTP userId key = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute q (key, ts, userId)
+  labeled @ReadWrite @WithConnection $ void $ execute q (key, ts, userId)
   where
     q =
       [sql|
@@ -81,12 +86,12 @@ setupTOTP userId key = do
       |]
 
 confirmTOTP
-  :: (DB :> es, Time :> es)
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es)
   => UserId
   -> Eff es ()
 confirmTOTP userId = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute q (ts, userId)
+  labeled @ReadWrite @WithConnection $ void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -97,12 +102,12 @@ confirmTOTP userId = do
       |]
 
 unSetTOTP
-  :: (DB :> es, Time :> es)
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es)
   => UserId
   -> Eff es ()
 unSetTOTP userId = do
   ts <- Time.currentTime
-  dbtToEff $ void $ execute q (ts, userId)
+  labeled @ReadWrite @WithConnection $ void $ execute q (ts, userId)
   where
     q =
       [sql|

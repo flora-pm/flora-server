@@ -2,17 +2,21 @@ module Flora.Model.PackageMaintainer.Update
   ( insertPackageMaintainers
   ) where
 
+import Control.Monad
 import Data.List (List)
-import Database.PostgreSQL.Entity (insertMany)
+import Database.PostgreSQL.Entity
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
+import Effectful.Labeled
+import Effectful.PostgreSQL
 
+import Flora.Database
 import Flora.Model.PackageMaintainer.Types
 
 insertPackageMaintainers
-  :: DB :> es
+  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
   => List PackageMaintainer
   -> Eff es ()
 insertPackageMaintainers packageMaintainers =
-  dbtToEff $
-    insertMany @PackageMaintainer packageMaintainers
+  labeled @ReadWrite @WithConnection $
+    void $
+      executeMany (_insert @PackageMaintainer) packageMaintainers

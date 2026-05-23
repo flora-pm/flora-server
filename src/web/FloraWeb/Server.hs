@@ -19,7 +19,6 @@ import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWit
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
 import Effectful.Log qualified as Log
-import Effectful.PostgreSQL.Transact.Effect (runDB)
 import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
@@ -242,7 +241,6 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
       Right
         <$> app
           & runTrace
-          & runDB floraEnv.pool
           & runTime
           & runReader floraEnv.features
           & ( case floraEnv.features.blobStoreImpl of
