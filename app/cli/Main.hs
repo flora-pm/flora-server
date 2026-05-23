@@ -19,7 +19,6 @@ import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log (Log, runLog)
-import Effectful.PostgreSQL
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader

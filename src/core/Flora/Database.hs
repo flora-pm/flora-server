@@ -7,6 +7,7 @@ module Flora.Database
   , queryOne
   , queryOne_
   , upsert
+  , withTransaction
   ) where
 
 import Control.Monad

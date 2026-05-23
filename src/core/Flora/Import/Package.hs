@@ -293,41 +293,42 @@ persistImportOutput
   -> FloraM es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
   FloraEnv{pool} <- Reader.ask
-  persistPackage package.packageId
-  if Set.member (package.namespace, package.name, release.version) packageCache
-    then do
-      Log.logInfo "Release already present" $
-        object
-          [ "namespace" .= package.namespace
-          , "package" .= package.name
-          , "version" .= release.version
-          ]
-      pure packageCache
-    else withReadWritePool pool $ do
-      withReadOnlyPool pool $ Update.upsertRelease package release
-      env <- Reader.ask
-      let componentsList = NE.toList $ fmap fst components
-      let dependencies = foldMap snd components
-      let dependencyPackages = fmap (.package) dependencies
-      Update.upsertPackageComponents componentsList
-      Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencyPackages (\p -> withReadWritePool pool $ Update.upsertPackage p)
-      Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencies persistImportDependency
-      unless (null dependencies) sanityCheck
-      pure $ Set.insert (package.namespace, package.name, release.version) packageCache
+  withReadWritePool pool . withReadOnlyPool pool $ do
+    Update.upsertPackage package
+    categoriesByName <- catMaybes <$> traverse (withReadOnlyPool pool . Query.getCategoryByName) categories
+    forM_
+      categoriesByName
+      (\c -> Update.addToCategoryByName package.packageId c.name)
+    if Set.member (package.namespace, package.name, release.version) packageCache
+      then do
+        Log.logInfo "Release already present" $
+          object
+            [ "namespace" .= package.namespace
+            , "package" .= package.name
+            , "version" .= release.version
+            ]
+        pure packageCache
+      else do
+        Update.upsertRelease package release
+        env <- Reader.ask
+        let componentsList = NE.toList $ fmap fst components
+        let dependencies = foldMap snd components
+        let dependencyPackages = fmap (.package) dependencies
+        Update.upsertPackageComponents componentsList
+        Concurrent.pooledForConcurrentlyN_
+          env.dbConfig.connections
+          dependencyPackages
+          ( \p -> do
+              Log.logInfo "Upserting package" $
+                object
+                  ["package_name" .= p.name]
+              Update.upsertPackage p
+          )
+        Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencies persistImportDependency
+        unless (null dependencies) sanityCheck
+        pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    persistPackage :: RequireCallStack => PackageId -> FloraM es ()
-    persistPackage packageId = do
-      FloraEnv{pool} <- Reader.ask
-      withReadWritePool pool $ Update.upsertPackage package
-      categoriesByName <- catMaybes <$> withReadOnlyPool pool (traverse Query.getCategoryByName categories)
-      withReadWritePool pool $
-        forM_
-          categoriesByName
-          (\c -> Update.addToCategoryByName packageId c.name)
-
-    -- persistImportDependency :: RequireCallStack => ImportDependency -> FloraM es ()
     persistImportDependency dep = do
-      FloraEnv{pool} <- Reader.ask
       Log.logInfo "Inserting requirement" $
         object
           [ "dependent_namespace" .= display package.namespace
@@ -337,9 +338,8 @@ persistImportOutput (ImportOutput package categories release components) = State
           , "dependency_name" .= display dep.package.name
           , "dependency_id" .= display dep.package.packageId
           ]
-      withReadWritePool pool $ Update.upsertRequirement dep.requirement
+      Update.upsertRequirement dep.requirement
 
-    -- sanityCheck :: RequireCallStack => FloraM es ()
     sanityCheck = do
       FloraEnv{pool} <- Reader.ask
       dependencies <- withReadOnlyPool pool $ Query.getAllRequirements release.releaseId
