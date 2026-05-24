@@ -176,6 +176,7 @@ runServer appLogger floraEnv = do
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
             ( handleExceptions
+                "flora-server"
                 appLogger
                 floraEnv.environment
                 floraEnv.mltp

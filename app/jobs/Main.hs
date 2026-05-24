@@ -88,6 +88,7 @@ runServer logger floraEnv jobsEnv = do
         setPort (fromIntegral jobsEnv.httpPort) $
           setOnException
             ( handleExceptions
+                "flora-jobs"
                 logger
                 floraEnv.environment
                 floraEnv.mltp

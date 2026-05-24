@@ -5,6 +5,7 @@ import Control.Monad (when)
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 (unpack)
 import Data.Maybe (isJust)
+import Data.Text (Text)
 import Data.Text.Display (display)
 import Effectful
 import Effectful.Exception qualified as E
@@ -22,14 +23,15 @@ import System.TimeManager (TimeoutThread (..))
 import Flora.Environment.Config
 
 handleExceptions
-  :: Logger
+  :: Text
+  -> Logger
   -> DeploymentEnv
   -> MLTP
   -> Maybe Request
   -> E.SomeException
   -> IO ()
-handleExceptions logger environment mltp mRequest e@(E.SomeException exception) = do
-  Log.runLogT "flora-production" logger LogAttention $ do
+handleExceptions componentName logger environment mltp mRequest e@(E.SomeException exception) = do
+  Log.runLogT (componentName <> "-" <> display environment) logger LogAttention $ do
     let context = E.displayExceptionContext $ E.someExceptionContext e
     when (shouldDisplayException e) $ do
       Log.logAttention "Unhandled exception" $
