@@ -17,8 +17,8 @@
 -- altering its id.
 module Flora.Import.Package
   ( versionList
-  , loadContent
   , persistImportOutput
+  , parseString
   , extractPackageDataFromCabal
   , chooseNamespace
   , loadJSONContent
@@ -30,7 +30,6 @@ import Control.Applicative ((<|>))
 import Control.DeepSeq (force)
 import Control.Exception ()
 import Control.Monad
-import Data.Aeson (object, (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -45,7 +44,6 @@ import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.Encoding qualified as Text
-import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Compat.Lens qualified as L
@@ -54,7 +52,6 @@ import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
 import Distribution.PackageDescription hiding (PackageId, PackageName)
 import Distribution.PackageDescription qualified as Cabal
-import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Parsec qualified as Parsec
 import Distribution.Types.BuildInfo.Lens qualified as L
 import Distribution.Types.PackageDescription ()
@@ -76,7 +73,7 @@ import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import GHC.List (List)
-import Log qualified
+import Log
 import Optics.Core
 import RequireCallStack
 import System.Exit (exitFailure)
@@ -195,9 +192,6 @@ versionList =
     , Version.mkVersion [7, 10, 3]
     ]
 
-loadContent :: (Error ImportError :> es, Log :> es) => FilePath -> BS.ByteString -> FloraM es GenericPackageDescription
-loadContent = parseString parseGenericPackageDescription
-
 loadJSONContent
   :: (IOE :> es, Log :> es, State (Map (Namespace, PackageName, Version) Text) :> es)
   => FilePath
@@ -292,41 +286,44 @@ persistImportOutput
   => ImportOutput
   -> FloraM es ()
 persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
-  FloraEnv{pool} <- Reader.ask
-  withReadWritePool pool . withReadOnlyPool pool $ do
-    Update.upsertPackage package
-    categoriesByName <- catMaybes <$> traverse (withReadOnlyPool pool . Query.getCategoryByName) categories
-    forM_
-      categoriesByName
-      (\c -> Update.addToCategoryByName package.packageId c.name)
-    if Set.member (package.namespace, package.name, release.version) packageCache
-      then do
-        Log.logInfo "Release already present" $
-          object
-            [ "namespace" .= package.namespace
-            , "package" .= package.name
-            , "version" .= release.version
-            ]
-        pure packageCache
-      else do
-        Update.upsertRelease package release
-        env <- Reader.ask
-        let componentsList = NE.toList $ fmap fst components
-        let dependencies = foldMap snd components
-        let dependencyPackages = fmap (.package) dependencies
-        Update.upsertPackageComponents componentsList
-        Concurrent.pooledForConcurrentlyN_
-          env.dbConfig.connections
-          dependencyPackages
-          ( \p -> do
-              Log.logInfo "Upserting package" $
-                object
-                  ["package_name" .= p.name]
-              Update.upsertPackage p
-          )
-        Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencies persistImportDependency
-        unless (null dependencies) sanityCheck
-        pure $ Set.insert (package.namespace, package.name, release.version) packageCache
+  Log.localData
+    [ "package_name" .= package.name
+    , "version" .= release.version
+    ]
+    $ do
+      env <- Reader.ask
+      withReadWritePool env.pool . withReadOnlyPool env.pool $ do
+        Update.upsertPackage package
+        categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
+        forM_
+          categoriesByName
+          (\c -> Update.addToCategoryByName package.packageId c.name)
+        if Set.member (package.namespace, package.name, release.version) packageCache
+          then do
+            Log.logInfo "Release already present" $
+              object
+                [ "namespace" .= package.namespace
+                , "package" .= package.name
+                , "version" .= release.version
+                ]
+            pure packageCache
+          else do
+            Update.upsertRelease package release
+            let componentsList = NE.toList $ fmap fst components
+            let dependencies = foldMap snd components
+            let dependencyPackages = fmap (.package) dependencies
+            Update.upsertPackageComponents componentsList
+            Log.logInfo_ "Inserting dependencies"
+            Concurrent.pooledForConcurrentlyN_
+              env.dbConfig.connections
+              dependencyPackages
+              ( \p -> do
+                  Log.logInfo_ "Upserting package"
+                  Update.upsertPackage p
+              )
+            Concurrent.pooledForConcurrentlyN_ env.dbConfig.connections dependencies persistImportDependency
+            unless (null dependencies) sanityCheck
+            pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
     persistImportDependency dep = do
       Log.logInfo "Inserting requirement" $

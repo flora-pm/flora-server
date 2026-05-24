@@ -225,7 +225,7 @@ runTestEff comp env = runEff $
       & runFailIO
       & runBlobStorePure
       & runReader env
-      & Log.runLog "flora-test" logger LogAttention
+      & Log.runLog "flora-test" logger LogInfo
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime
       & State.evalState mempty

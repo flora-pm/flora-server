@@ -6,8 +6,8 @@ import Control.Monad
 import Data.ByteString (StrictByteString)
 import Data.Set (Set)
 import Data.Text (Text)
-import Data.Time (UTCTime)
 import Data.Vector (Vector)
+import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
@@ -18,6 +18,7 @@ import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
+import Log
 import RequireCallStack
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
@@ -26,6 +27,7 @@ import UnliftIO (finally)
 
 import Flora.Database
 import Flora.Environment.Env
+import Flora.Environment.Config
 import Flora.Import.Package
 import Flora.Import.Types
 import Flora.Model.Package.Types hiding (PackageName)
@@ -55,18 +57,19 @@ importFromStream
   -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
   -> FloraM es ()
 importFromStream packageIndex indexPackages stream = do
-  FloraEnv{pool} <- Reader.ask
-  let cfg = Streamly.inspect True . Streamly.minRate 1024 . Streamly.eager True
+  env <- Reader.ask
+  let cfg = Streamly.maxBuffer (env.dbConfig.connections `div` 2) . Streamly.inspect True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
           Streamly.parMapM cfg (processFile packageIndex indexPackages) stream
+
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
       ( do
-          timestamp <- withReadOnlyPool pool $ Query.getLatestReleaseTime (Just packageIndex.repository)
-          withReadWritePool pool $ do
+          timestamp <- withReadOnlyPool env.pool $ Query.getLatestReleaseTime (Just packageIndex.repository)
+          withReadWritePool env.pool $ do
             Update.refreshLatestVersions
             Update.refreshDependents
             Update.updatePackageIndexByName packageIndex.repository timestamp
@@ -79,7 +82,7 @@ importFromStream packageIndex indexPackages stream = do
       flip SFold.foldlM' (pure 0) $
         \previousCount _ -> do
           let currentCount = previousCount + 1
-              batchAmount = 400
+              batchAmount = 100
           when (currentCount `mod` batchAmount == 0) $ displayStats currentCount
           pure currentCount
 
@@ -106,8 +109,9 @@ processFile
   -> FloraM es ()
 processFile packageIndex indexPackages importSubject =
   case importSubject of
-    (CabalFile path, timestamp, mUsername, content) -> do
-      loadContent path content
-        >>= ( extractPackageDataFromCabal packageIndex indexPackages timestamp mUsername
-                >=> \importedPackage -> persistImportOutput importedPackage
-            )
+    (CabalFile path, timestamp, mUsername, content) -> Log.localData  ["filepath" .= path] $ do
+      Log.logInfo_ "Importing cabal file"
+      genericPackageDescription <- parseString parseGenericPackageDescription path content
+      Log.logInfo_ "Parsed package description"
+      importOutput <- extractPackageDataFromCabal packageIndex indexPackages timestamp mUsername genericPackageDescription
+      persistImportOutput importOutput
