@@ -25,6 +25,7 @@ import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL
 import Effectful.Reader.Static qualified as Reader
 import Log qualified
+import RequireCallStack
 import System.Exit
 import System.IO
 
@@ -33,6 +34,7 @@ import Flora.Environment (getFloraEnv)
 import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.PackageIndex.Types
+import Flora.Monad
 import FloraJobs.Scheduler (checkIfIndexRefreshJobIsPlanned)
 import FloraWeb.Server
 
@@ -54,12 +56,13 @@ preFlightChecks = do
           "flora-server"
           appLogger
           Log.LogTrace
+        $ provideCallStack
         $ do
           withReadOnlyPool env.pool $ checkExpectedTables
           withReadOnlyPool env.pool $ checkRepositoriesAreConfigured
           checkIfIndexRefreshJobIsPlanned env.workerEnv
 
-checkExpectedTables :: (IOE :> es, IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es) => Eff es ()
+checkExpectedTables :: (IOE :> es, IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es) => FloraM es ()
 checkExpectedTables = do
   -- Update the list in alphabetical order when adding or removing a table!
   let expectedTables =

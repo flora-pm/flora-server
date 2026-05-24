@@ -13,6 +13,7 @@ import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Lucid
 import Optics.Core
+import RequireCallStack
 import Sel.HMAC.SHA256 qualified as HMAC
 import Servant (HasServer (..), Headers (..))
 
@@ -20,6 +21,7 @@ import Flora.Database
 import Flora.Environment.Env
 import Flora.Model.User
 import Flora.Model.User.Update qualified as Update
+import Flora.Monad
 import Flora.QRCode qualified as QRCode
 import FloraWeb.Common.Auth.TwoFactor qualified as TwoFactor
 import FloraWeb.Common.Utils (redirect)
@@ -30,7 +32,7 @@ import FloraWeb.Pages.Templates.Types
 import FloraWeb.Session
 import FloraWeb.Types (FloraEff)
 
-server :: ServerT Routes FloraEff
+server :: RequireCallStack => ServerT Routes FloraEff
 server =
   Routes'
     { index = userSettingsHandler
@@ -40,7 +42,7 @@ server =
     , deleteTwoFactorSetup = deleteTwoFactorSetupHandler
     }
 
-userSettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> Eff es (Html ())
+userSettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> FloraM es (Html ())
 userSettingsHandler (Headers session _) = do
   let user = session.user
   templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -51,7 +53,7 @@ userSettingsHandler (Headers session _) = do
   render templateEnv $
     Settings.dashboard session.sessionId user
 
-userSecuritySettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> Eff es (Html ())
+userSecuritySettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> FloraM es (Html ())
 userSecuritySettingsHandler (Headers session _) = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   let templateEnv =
@@ -68,7 +70,7 @@ getTwoFactorSettingsHandler
      , Time :> es
      )
   => SessionWithCookies User
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 getTwoFactorSettingsHandler (Headers session _) = do
   let user = session.user
   FloraEnv{domain, pool} <- getEnv session
@@ -111,7 +113,7 @@ postTwoFactorSetupHandler
      )
   => SessionWithCookies User
   -> TwoFactorConfirmationForm
-  -> Eff es TwoFactorSetupResult
+  -> FloraM es TwoFactorSetupResult
 postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = userCode} = do
   FloraEnv{pool} <- Reader.ask
   let user = session.user
@@ -142,7 +144,7 @@ postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = u
                 (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
           pure $ TwoFactorSetupFailure body
 
-deleteTwoFactorSetupHandler :: (IOE :> es, Reader FloraEnv :> es, Time :> es) => SessionWithCookies User -> Eff es DeleteTwoFactorSetupResponse
+deleteTwoFactorSetupHandler :: (IOE :> es, Reader FloraEnv :> es, Time :> es) => SessionWithCookies User -> FloraM es DeleteTwoFactorSetupResponse
 deleteTwoFactorSetupHandler (Headers session _) = do
   FloraEnv{pool} <- Reader.ask
   let user = session.user

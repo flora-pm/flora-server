@@ -10,13 +10,14 @@ import Flora.Database
 import Flora.Environment.Env
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
+import Flora.Monad
 
 guardThatPackageGroupExists
   :: (IOE :> es, Reader FloraEnv :> es, Trace :> es)
   => PackageGroupId
   -> (PackageGroupId -> Eff es PackageGroup)
   -- ^ Action to run if the package group does not exist
-  -> Eff es PackageGroup
+  -> FloraM es PackageGroup
 guardThatPackageGroupExists packageGroupId action =
   Tracing.childSpan "guardThatPackageGroupExists" $ do
     FloraEnv{pool} <- Reader.ask

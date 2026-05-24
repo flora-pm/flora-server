@@ -9,7 +9,6 @@ import Database.PostgreSQL.Simple.Migration
 import Effectful
 import Effectful.Exception qualified as E
 import Effectful.Log (Log, runLog)
-import Effectful.PostgreSQL
 import Effectful.Reader.Static
 import Effectful.Reader.Static qualified as Reader
 import Log

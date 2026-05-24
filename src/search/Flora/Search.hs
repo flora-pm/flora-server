@@ -36,6 +36,7 @@ import Flora.Model.Package.Types
   )
 import Flora.Model.Package.Types qualified as Package
 import Flora.Model.Requirement
+import Flora.Monad
 
 data SearchAction
   = ListAllPackages
@@ -74,7 +75,7 @@ searchPackageByName
   :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
   => (Word, Word)
   -> Text
-  -> Eff es (Word, Vector PackageInfo)
+  -> FloraM es (Word, Vector PackageInfo)
 searchPackageByName (offset, limit) queryString = do
   FloraEnv{pool} <- Reader.ask
   results <- withReadOnlyPool pool $ Query.searchPackage (offset, limit) queryString
@@ -86,7 +87,7 @@ searchPackageByNamespaceAndName
   => (Word, Word)
   -> Namespace
   -> Text
-  -> Eff es (Word, Vector PackageInfo)
+  -> FloraM es (Word, Vector PackageInfo)
 searchPackageByNamespaceAndName (offset, limit) namespace queryString = do
   FloraEnv{pool} <- Reader.ask
   (results, duration) <-
@@ -117,7 +118,7 @@ searchDependents
   -> Namespace
   -> PackageName
   -> Maybe Text
-  -> Eff es (Word, Vector PackageInfo)
+  -> FloraM es (Word, Vector PackageInfo)
 searchDependents pagination namespace packageName mSearchString = do
   FloraEnv{pool} <- Reader.ask
   results <-
@@ -134,7 +135,7 @@ searchExecutable
   :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
   => (Word, Word)
   -> Text
-  -> Eff es (Word, Vector PackageInfoWithExecutables)
+  -> FloraM es (Word, Vector PackageInfoWithExecutables)
 searchExecutable (offset, limit) queryString = do
   FloraEnv{pool} <- Reader.ask
   (results, duration) <-
@@ -161,7 +162,7 @@ searchInAdvisories
   :: (IOE :> es, Reader FloraEnv :> es, Trace :> es)
   => (Word, Word)
   -> Text
-  -> Eff es (Word, Vector PackageAdvisoryPreview)
+  -> FloraM es (Word, Vector PackageAdvisoryPreview)
 searchInAdvisories (offset, limit) queryString = do
   FloraEnv{pool} <- Reader.ask
   results <-
@@ -191,7 +192,7 @@ listAllPackagesInNamespace
   :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
   => (Word, Word)
   -> Namespace
-  -> Eff es (Word, Vector PackageInfo)
+  -> FloraM es (Word, Vector PackageInfo)
 listAllPackagesInNamespace pagination namespace = do
   FloraEnv{pool} <- Reader.ask
   results <- withReadOnlyPool pool $ Query.listAllPackagesInNamespace pagination namespace
@@ -202,7 +203,7 @@ listAllPackages
   :: forall (es :: [Effect])
    . (IOE :> es, Reader FloraEnv :> es)
   => (Word, Word)
-  -> Eff es (Word, Vector PackageInfo)
+  -> FloraM es (Word, Vector PackageInfo)
 listAllPackages (offset, limit) = do
   FloraEnv{pool} <- Reader.ask
   results <- withReadOnlyPool pool $ Query.listAllPackages (offset, limit)

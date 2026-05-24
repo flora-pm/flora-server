@@ -3,7 +3,6 @@ module Flora.Import.Categories where
 import Control.Monad.IO.Class
 import Data.Text (Text)
 import Effectful
-import Effectful.Log
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Log
@@ -12,9 +11,10 @@ import Flora.Database
 import Flora.Environment.Env
 import Flora.Model.Category.Types (Category, mkCategory, mkCategoryId)
 import Flora.Model.Category.Update (insertCategory)
+import Flora.Monad
 import Flora.Normalise
 
-importCategories :: (IOE :> es, Log :> es, Reader FloraEnv :> es) => Eff es ()
+importCategories :: (IOE :> es, Reader FloraEnv :> es) => FloraM es ()
 importCategories = do
   FloraEnv{pool} <- Reader.ask
   Log.logInfo_ "Sourcing categories"

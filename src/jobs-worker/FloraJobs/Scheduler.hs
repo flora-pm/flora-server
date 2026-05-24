@@ -37,6 +37,7 @@ import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.Release.Types
+import Flora.Monad
 
 scheduleReadmeJob
   :: MonadUnliftIO m
@@ -136,7 +137,7 @@ checkIfIndexRefreshJobIsPlanned
      , Reader FloraEnv :> es
      )
   => ArbS.SimpleEnv JobQueues
-  -> Eff es ()
+  -> FloraM es ()
 checkIfIndexRefreshJobIsPlanned env = do
   FloraEnv{pool} <- Reader.ask
   Log.logInfo_ "Checking if the index refresh job is planned…"

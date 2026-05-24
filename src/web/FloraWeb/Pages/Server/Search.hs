@@ -2,12 +2,19 @@ module FloraWeb.Pages.Server.Search where
 
 import Data.Text (Text)
 import Data.Vector qualified as Vector
+import Effectful
+import Effectful.Reader.Static (Reader)
+import Effectful.Time
+import Effectful.Trace
 import Lucid (Html)
+import RequireCallStack
 import Servant (Headers (..), ServerT)
 
 import Data.Positive
+import Flora.Environment.Env
 import Flora.Model.Package.Types
 import Flora.Model.User (User)
+import Flora.Monad
 import Flora.Search (SearchAction (..))
 import Flora.Search qualified as Search
 import FloraWeb.Common.Pagination
@@ -17,13 +24,21 @@ import FloraWeb.Pages.Templates.Screens.Search qualified as Search
 import FloraWeb.Session
 import FloraWeb.Types (FloraEff)
 
-server :: SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
+server :: RequireCallStack => SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
 server s =
   Routes'
     { displaySearch = searchHandler s
     }
 
-searchHandler :: SessionWithCookies (Maybe User) -> Maybe Text -> Maybe (Positive Word) -> FloraEff (Html ())
+searchHandler
+  :: ( IOE :> es
+     , Reader FeatureEnv :> es
+     , Reader FloraEnv :> es
+     , RequireCallStack
+     , Time :> es
+     , Trace :> es
+     )
+  => SessionWithCookies (Maybe User) -> Maybe Text -> Maybe (Positive Word) -> FloraM es (Html ())
 searchHandler s Nothing pageParam = searchHandler s (Just "") pageParam
 searchHandler (Headers session _) (Just searchString) pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1

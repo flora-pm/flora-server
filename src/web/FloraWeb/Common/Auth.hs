@@ -26,6 +26,7 @@ import Effectful.Log qualified as Log
 import Log
 import Network.HTTP.Types (hCookie)
 import Network.Wai
+import RequireCallStack
 import Servant qualified
 import Servant.API (Header, Headers)
 import Servant.Server
@@ -37,6 +38,7 @@ import Flora.Environment.Env
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Query
+import Flora.Monad
 import FloraWeb.Common.Auth.Types
 import FloraWeb.Session
 import FloraWeb.Types
@@ -44,7 +46,7 @@ import FloraWeb.Types
 type OptionalAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
 type StrictAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session User))
 
-optionalAuthHandler :: Logger -> FloraEnv -> OptionalAuthContext
+optionalAuthHandler :: RequireCallStack => Logger -> FloraEnv -> OptionalAuthContext
 optionalAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
@@ -53,7 +55,7 @@ optionalAuthHandler logger floraEnv =
           & effToHandler
     )
 
-strictAuthHandler :: Logger -> FloraEnv -> StrictAuthContext
+strictAuthHandler :: RequireCallStack => Logger -> FloraEnv -> StrictAuthContext
 strictAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
@@ -62,7 +64,7 @@ strictAuthHandler logger floraEnv =
           & effToHandler
     )
 
-adminAuthHandler :: Logger -> FloraEnv -> StrictAuthContext
+adminAuthHandler :: RequireCallStack => Logger -> FloraEnv -> StrictAuthContext
 adminAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
@@ -75,7 +77,7 @@ requireUserHandler
   :: (Error ServerError :> es, IOE :> es)
   => FloraEnv
   -> Request
-  -> Eff es (Headers '[Header "Set-Cookie" SetCookie] (Session User))
+  -> FloraM es (Headers '[Header "Set-Cookie" SetCookie] (Session User))
 requireUserHandler floraEnv req = do
   let cookies = getCookies req
   mbPersistentSessionId <- handlerToEff $ getSessionId cookies
@@ -94,7 +96,7 @@ handler
   :: (Error ServerError :> es, IOE :> es)
   => FloraEnv
   -> Request
-  -> Eff es (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
+  -> FloraM es (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
 handler floraEnv req = do
   let cookies = getCookies req
   let theme = getTheme cookies
@@ -116,7 +118,7 @@ requireAdminHandler
   :: (Error ServerError :> es, IOE :> es)
   => FloraEnv
   -> Request
-  -> Eff es (Headers '[Header "Set-Cookie" SetCookie] (Session User))
+  -> FloraM es (Headers '[Header "Set-Cookie" SetCookie] (Session User))
 requireAdminHandler floraEnv req = do
   let cookies = getCookies req
   mbPersistentSessionId <- handlerToEff $ getSessionId cookies
@@ -166,7 +168,7 @@ getInTheFuckingSessionShinji
   :: IOE :> es
   => Pool PG.Connection
   -> Maybe PersistentSessionId
-  -> Eff es (Maybe PersistentSession)
+  -> FloraM es (Maybe PersistentSession)
 getInTheFuckingSessionShinji _ Nothing = pure Nothing
 getInTheFuckingSessionShinji pool (Just persistentSessionId) = do
   result <- withReadOnlyPool pool $ getPersistentSession persistentSessionId
@@ -178,7 +180,7 @@ fetchUser
   :: (Error ServerError :> es, IOE :> es)
   => Pool PG.Connection
   -> Maybe PersistentSession
-  -> Eff es (Maybe (User, PersistentSession))
+  -> FloraM es (Maybe (User, PersistentSession))
 fetchUser _ Nothing = pure Nothing
 fetchUser pool (Just userSession) = do
   user <- lookupUser pool userSession.userId
@@ -188,7 +190,7 @@ lookupUser
   :: (Error ServerError :> es, IOE :> es)
   => Pool PG.Connection
   -> UserId
-  -> Eff es User
+  -> FloraM es User
 lookupUser pool uid = do
   result <- withReadOnlyPool pool $ getUserById uid
   case result of
@@ -199,7 +201,7 @@ handlerToEff
   :: forall (es :: [Effect]) (a :: Type)
    . Error ServerError :> es
   => Handler a
-  -> Eff es a
+  -> FloraM es a
 handlerToEff handler' = do
   v <- unsafeEff_ $ Servant.runHandler handler'
   either throwError pure v

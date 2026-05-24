@@ -2,12 +2,15 @@ module FloraWeb.Pages.Server.Admin.Groups where
 
 import Data.Text.Display (display)
 import Effectful
+import Effectful.Error.Static (Error)
+import Effectful.Log
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
+import Effectful.Trace
 import Lucid
 import Optics.Core
 import RequireCallStack
-import Servant (HasServer (..), Headers (..))
+import Servant (HasServer (..), Headers (..), ServerError)
 
 import Flora.Database
 import Flora.Environment.Env
@@ -21,6 +24,7 @@ import Flora.Model.PackageGroupPackage.Query qualified as Query
 import Flora.Model.PackageGroupPackage.Types
 import Flora.Model.PackageGroupPackage.Update qualified as Update
 import Flora.Model.User
+import Flora.Monad
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes.Admin.Groups
 import FloraWeb.Pages.Templates
@@ -41,8 +45,10 @@ server session =
 
 indexHandler
   :: ( IOE :> es
+     , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
+     , RequireCallStack
      )
   => SessionWithCookies User
   -> Eff es (Html ())
@@ -54,9 +60,10 @@ indexHandler (Headers session _) = do
     Templates.index groups
 
 addGroupHandler
-  :: SessionWithCookies User
+  :: (IOE :> es, Reader FloraEnv :> es)
+  => SessionWithCookies User
   -> GroupCreationForm
-  -> FloraEff CreateGroupResult
+  -> FloraM es CreateGroupResult
 addGroupHandler (Headers _session _) GroupCreationForm{name} = do
   FloraEnv{pool} <- Reader.ask
   packageGroup <- mkPackageGroup name
@@ -64,9 +71,10 @@ addGroupHandler (Headers _session _) GroupCreationForm{name} = do
   pure $ GroupCreationSuccess "/admin/groups"
 
 deleteGroupHandler
-  :: SessionWithCookies User
+  :: (IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es)
+  => SessionWithCookies User
   -> PackageGroupId
-  -> FloraEff DeleteGroupResult
+  -> FloraM es DeleteGroupResult
 deleteGroupHandler (Headers sessionWithUser _) packageGroupId = do
   FloraEnv{pool} <- Reader.ask
   mGroup <- withReadOnlyPool pool $ Query.getPackageGroupById packageGroupId
@@ -90,11 +98,11 @@ deleteGroupHandler (Headers sessionWithUser _) packageGroupId = do
       pure $ GroupDeletionSuccess body
 
 addPackageToGroupHandler
-  :: RequireCallStack
+  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Trace :> es)
   => SessionWithCookies User
   -> PackageGroupId
   -> AddPackageToGroupForm
-  -> FloraEff AddPackageToGroupResult
+  -> FloraM es AddPackageToGroupResult
 addPackageToGroupHandler (Headers sessionWithUser _) packageGroupId (AddPackageToGroupForm namespace packageName) = do
   FloraEnv{pool} <- Reader.ask
   group <- guardThatPackageGroupExists packageGroupId $ const (web404 sessionWithUser)
@@ -114,10 +122,10 @@ addPackageToGroupHandler (Headers sessionWithUser _) packageGroupId (AddPackageT
       pure $ PackageAddedToGroupSuccess ("/admin/groups/" <> display packageGroupId)
 
 showGroupHandler
-  :: RequireCallStack
+  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Trace :> es)
   => SessionWithCookies User
   -> PackageGroupId
-  -> FloraEff (Html ())
+  -> FloraM es (Html ())
 showGroupHandler (Headers session _) packageGroupId = do
   FloraEnv{pool} <- Reader.ask
   group <- guardThatPackageGroupExists packageGroupId $ const (web404 session)
@@ -127,11 +135,11 @@ showGroupHandler (Headers session _) packageGroupId = do
     Templates.showGroup group packages
 
 removePackageFromGroupHandler
-  :: RequireCallStack
+  :: (IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack)
   => SessionWithCookies User
   -> PackageGroupId
   -> PackageId
-  -> FloraEff RemovePackageFromGroupResult
+  -> FloraM es RemovePackageFromGroupResult
 removePackageFromGroupHandler (Headers sessionWithUser _) groupId packageId = do
   FloraEnv{pool} <- Reader.ask
   mGroup <- withReadOnlyPool pool $ Query.getPackageGroupById groupId

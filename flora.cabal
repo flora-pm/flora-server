@@ -573,6 +573,7 @@ executable flora-server
     log-effectful,
     pg-entity,
     postgresql-simple,
+    require-callstack,
     text,
     vector,
 

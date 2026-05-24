@@ -73,7 +73,6 @@ import Flora.Environment.Env
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
-import Flora.Monad
 import Flora.Monitoring (setGitHash)
 import Flora.Tracing qualified as Tracing
 import FloraWeb.API.Routes qualified as API
@@ -154,7 +153,7 @@ logException floraEnv logger exception =
       defaultLogLevel
     $ Log.logAttention "Jobs runner crashed " (show exception)
 
-runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> FloraM es ()
+runServer :: (Concurrent :> es, IOE :> es, RequireCallStack) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
   zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-server"
   loggingMiddleware <-

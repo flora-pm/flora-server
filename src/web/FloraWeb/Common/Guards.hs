@@ -17,18 +17,18 @@ import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query as Query
 import Flora.Model.PackageIndex.Types (PackageIndex)
 import Flora.Model.User (User)
+import Flora.Monad
 import FloraWeb.Pages.Routes.Sessions
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Screens.Sessions qualified as Sessions
 import FloraWeb.Session (Session)
-import FloraWeb.Types (FloraEff)
 
 guardThatPackageIndexExists
   :: (IOE :> es, Reader FloraEnv :> es, Trace :> es)
   => Namespace
-  -> (Namespace -> Eff es PackageIndex)
+  -> (Namespace -> FloraM es PackageIndex)
   -- ^ Action to run if the package index does not exist
-  -> Eff es PackageIndex
+  -> FloraM es PackageIndex
 guardThatPackageIndexExists namespace action =
   Tracing.childSpan "guardThatPackageIndexExists " $ do
     FloraEnv{pool} <- Reader.ask
@@ -41,10 +41,11 @@ guardThatPackageIndexExists namespace action =
       Nothing -> action namespace
 
 guardThatUserHasProvidedTOTP
-  :: Session (Maybe User)
+  :: (IOE :> es, Reader FeatureEnv :> es)
+  => Session (Maybe User)
   -> Maybe Text
-  -> (Text -> FloraEff CreateSessionResult)
-  -> FloraEff CreateSessionResult
+  -> (Text -> FloraM es CreateSessionResult)
+  -> FloraM es CreateSessionResult
 guardThatUserHasProvidedTOTP session mTOTP totpAction = do
   case mTOTP of
     Just totp -> totpAction totp

@@ -12,6 +12,7 @@ import Effectful.Time qualified as Time
 import Log qualified
 import Lucid
 import Optics.Core (view)
+import RequireCallStack
 import Servant (Headers (..), ServerT)
 import Text.Atom.Feed qualified as Atom
 
@@ -21,15 +22,16 @@ import Flora.Model.Feed.Query qualified as Query
 import Flora.Model.Feed.Types
 import Flora.Model.Package.Types
 import Flora.Model.User
+import Flora.Monad
 import Flora.Search (searchPackageByName)
 import FloraWeb.Atom (makeFeed)
 import FloraWeb.Common.Auth
 import FloraWeb.Feed.Routes
 import FloraWeb.Feed.Templates qualified as Feed
 import FloraWeb.Pages.Templates
-import FloraWeb.Types (FloraEff)
+import FloraWeb.Types
 
-server :: ServerT Routes FloraEff
+server :: RequireCallStack => ServerT Routes FloraEff
 server =
   Routes'
     { feed = showPackageFeedHandler
@@ -42,7 +44,7 @@ homeFeedHandler
      , Reader FeatureEnv :> es
      )
   => SessionWithCookies (Maybe User)
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 homeFeedHandler (Headers session _) = do
   templateEnv <- templateFromSession session defaultTemplateEnv
   render templateEnv Feed.showFeedsBuilderPage
@@ -53,7 +55,7 @@ showPackageFeedHandler
      , Time :> es
      )
   => [PackageFilter]
-  -> Eff es Atom.Feed
+  -> FloraM es Atom.Feed
 showPackageFeedHandler packageFilter = do
   env <- Reader.ask @FloraEnv
   entries <- withReadOnlyPool env.pool $ Query.getEntriesByPackage (fmap (view #selectedPackages) packageFilter) 0 100
@@ -80,7 +82,7 @@ searchPackageHandler
      )
   => SessionWithCookies (Maybe User)
   -> PackageFeedSearchForm
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 searchPackageHandler (Headers session _) PackageFeedSearchForm{search = packageName} = do
   templateEnv <- templateFromSession session defaultTemplateEnv
   results <-

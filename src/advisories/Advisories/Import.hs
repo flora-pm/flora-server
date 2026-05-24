@@ -31,6 +31,7 @@ import Flora.Database
 import Flora.Environment.Env (FloraEnv (..))
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types
+import Flora.Monad
 import OSV.Reference.Orphans
 
 -- | List deduplicated parsed Advisories
@@ -42,7 +43,7 @@ importAdvisories
      , Trace :> es
      )
   => FilePath
-  -> Eff es ()
+  -> FloraM es ()
 importAdvisories root = Tracing.rootSpan alwaysSampled "import-advisories" $ do
   result <- Tracing.childSpan "listAdvisories" $ listAdvisories root
   case result of
@@ -62,7 +63,7 @@ importAdvisory
      , Trace :> es
      )
   => Advisory
-  -> Eff es ()
+  -> FloraM es ()
 importAdvisory advisory = do
   FloraEnv{pool} <- Reader.ask
   advisoryId <- AdvisoryId <$> liftIO UUID.nextRandom
@@ -102,7 +103,7 @@ processAffectedPackages
      )
   => AdvisoryId
   -> Vector Affected
-  -> Eff es ()
+  -> FloraM es ()
 processAffectedPackages advisoryId affectedPackages = do
   forM_ affectedPackages (processAffectedPackage advisoryId)
 
@@ -115,7 +116,7 @@ processAffectedPackage
      )
   => AdvisoryId
   -> Affected
-  -> Eff es ()
+  -> FloraM es ()
 processAffectedPackage advisoryId affected = do
   FloraEnv{pool} <- Reader.ask
   affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
@@ -154,7 +155,7 @@ processAffectedVersionRanges
      )
   => AffectedPackageId
   -> [AffectedVersionRange]
-  -> Eff es ()
+  -> FloraM es ()
 processAffectedVersionRanges affectedPackageId affectedVersions = do
   FloraEnv{pool} <- Reader.ask
   traverse_

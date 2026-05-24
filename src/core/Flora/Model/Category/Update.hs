@@ -18,6 +18,7 @@ import Flora.Environment.Env
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
+import Flora.Monad
 
 insertCategory :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Category -> Eff es ()
 insertCategory category = do
@@ -40,7 +41,7 @@ addToCategory packageId categoryId = labeled @_ @WithConnection $ (void . execut
         on conflict do nothing
       |]
 
-addToCategoryByName :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Reader FloraEnv :> es) => PackageId -> Text -> Eff es ()
+addToCategoryByName :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Reader FloraEnv :> es) => PackageId -> Text -> FloraM es ()
 addToCategoryByName packageId categoryName = do
   FloraEnv{pool} <- Reader.ask
   mCategory <- withReadOnlyPool pool $ Query.getCategoryByName categoryName

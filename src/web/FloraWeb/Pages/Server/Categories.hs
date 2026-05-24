@@ -1,7 +1,7 @@
 module FloraWeb.Pages.Server.Categories where
 
 import Data.Text (Text)
-import Effectful (Eff, IOE, (:>))
+import Effectful (IOE, (:>))
 import Effectful.Error.Static (Error)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
@@ -16,6 +16,7 @@ import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.User (User)
+import Flora.Monad
 import FloraWeb.Common.Auth.Types (SessionWithCookies)
 import FloraWeb.Pages.Routes.Categories (Routes, Routes' (..))
 import FloraWeb.Pages.Templates (TemplateEnv (..), defaultTemplateEnv, render, templateFromSession)
@@ -33,7 +34,7 @@ server sessionWithCookies =
 indexHandler
   :: (IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es)
   => SessionWithCookies (Maybe User)
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 indexHandler (Headers session _) = do
   FloraEnv{pool} <- Reader.ask
   templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -54,7 +55,7 @@ showHandler
      )
   => SessionWithCookies (Maybe User)
   -> Text
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 showHandler (Headers session _) categorySlug = do
   FloraEnv{pool} <- Reader.ask
   templateEnv' <- templateFromSession session defaultTemplateEnv

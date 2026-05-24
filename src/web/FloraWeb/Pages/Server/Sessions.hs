@@ -6,17 +6,22 @@ import Control.Monad.IO.Class
 import Data.Maybe
 import Data.Text (Text)
 import Data.Text.Display
+import Effectful
+import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
+import Effectful.Time
 import Log qualified
 import Optics.Core
+import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
-import Servant
+import Servant (Headers (..), ServerT)
 
 import Flora.Database
 import Flora.Environment.Env
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
+import Flora.Monad
 import FloraWeb.Common.Auth
 import FloraWeb.Common.Auth.TwoFactor qualified as TwoFactor
 import FloraWeb.Common.Guards (guardThatUserHasProvidedTOTP)
@@ -27,7 +32,7 @@ import FloraWeb.Pages.Templates.Screens.Sessions as Sessions
 import FloraWeb.Session
 import FloraWeb.Types (FloraEff)
 
-server :: SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
+server :: RequireCallStack => SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
 server s =
   Routes'
     { new = newSessionHandler s
@@ -54,9 +59,10 @@ newSessionHandler (Headers session _) = do
       pure $ AlreadyAuthenticated "/"
 
 createSessionHandler
-  :: SessionWithCookies (Maybe User)
+  :: (IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, Time :> es)
+  => SessionWithCookies (Maybe User)
   -> LoginForm
-  -> FloraEff CreateSessionResult
+  -> FloraM es CreateSessionResult
 createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
   FloraEnv{pool} <- Reader.ask
   mUser <- withReadOnlyPool pool $ Query.getUserByEmail email
@@ -98,10 +104,11 @@ createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
           pure $ AuthenticationFailure body
 
 checkTOTPIsValid
-  :: Session (Maybe User)
+  :: (IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, Time :> es)
+  => Session (Maybe User)
   -> Text
   -> User
-  -> FloraEff CreateSessionResult
+  -> FloraM es CreateSessionResult
 checkTOTPIsValid session userCode user = do
   FloraEnv{pool} <- Reader.ask
   validated <- liftIO $ TwoFactor.validateTOTP (fromJust user.totpKey) userCode
@@ -120,7 +127,7 @@ checkTOTPIsValid session userCode user = do
       body <- render templateEnv Sessions.newSession
       pure $ AuthenticationFailure body
 
-deleteSessionHandler :: PersistentSessionId -> FloraEff DeleteSessionResponse
+deleteSessionHandler :: (IOE :> es, Reader FloraEnv :> es) => PersistentSessionId -> FloraM es DeleteSessionResponse
 deleteSessionHandler sessionId = do
   FloraEnv{pool} <- Reader.ask
   Log.logInfo_ $ "[+] Logging-off session " <> display sessionId

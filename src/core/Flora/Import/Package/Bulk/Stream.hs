@@ -26,8 +26,8 @@ import Streamly.Data.Stream.Prelude qualified as Streamly
 import UnliftIO (finally)
 
 import Flora.Database
-import Flora.Environment.Env
 import Flora.Environment.Config
+import Flora.Environment.Env
 import Flora.Import.Package
 import Flora.Import.Types
 import Flora.Model.Package.Types hiding (PackageName)
@@ -63,7 +63,6 @@ importFromStream packageIndex indexPackages stream = do
     finally
       ( Streamly.fold displayCount $
           Streamly.parMapM cfg (processFile packageIndex indexPackages) stream
-
       )
       -- We want to refresh db and update latest timestamp even if we fell
       -- over at some point
@@ -109,7 +108,7 @@ processFile
   -> FloraM es ()
 processFile packageIndex indexPackages importSubject =
   case importSubject of
-    (CabalFile path, timestamp, mUsername, content) -> Log.localData  ["filepath" .= path] $ do
+    (CabalFile path, timestamp, mUsername, content) -> Log.localData ["filepath" .= path] $ do
       Log.logInfo_ "Importing cabal file"
       genericPackageDescription <- parseString parseGenericPackageDescription path content
       Log.logInfo_ "Parsed package description"
