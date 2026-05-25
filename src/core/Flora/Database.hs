@@ -15,6 +15,7 @@ import Data.Maybe
 import Data.Pool (Pool)
 import Data.Pool.Introspection (Resource (..))
 import Data.Pool.Introspection qualified as Pool
+import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity hiding (upsert)
@@ -30,36 +31,49 @@ import Log qualified
 
 import Flora.Monad
 
-type data AccessMode
+data AccessMode
   = ReadOnly
   | ReadWrite
+  deriving stock (Eq, Ord, Show)
+
+instance Display AccessMode where
+  displayBuilder ReadOnly = "read_only"
+  displayBuilder ReadWrite = "read_write"
 
 withPool
   :: forall a es
    . (IOE :> es, Log :> es)
-  => Pool PG.Connection
+  => AccessMode
+  -> Pool PG.Connection
   -> Eff (WithConnection ': es) a
   -> FloraM es a
-withPool pool action = do
-  runWithConnectionPool pool $
+withPool accessMode pool action = do
+  runWithConnectionPool accessMode pool $
     DB.withTransaction action
 
 runWithConnectionPool
   :: (HasCallStack, IOE :> es, Log :> es)
-  => Pool.Pool PG.Connection
+  => AccessMode
+  -> Pool PG.Connection
   -> Eff (WithConnection : es) a
   -> Eff es a
-runWithConnectionPool pool = interpret $ \env -> \case
+runWithConnectionPool accessMode pool = interpret $ \env -> \case
   WithConnection f -> do
     loggerEnv <- getLoggerEnv
     localSeqUnlift env $ \unlift -> do
-      unliftedWithResource loggerEnv.leLogger pool $ unlift . f
+      unliftedWithResource accessMode loggerEnv pool $ unlift . f
 
-unliftedWithResource :: MonadUnliftIO m => Logger -> Pool Connection -> (Connection -> m b) -> m b
-unliftedWithResource logger pool action = withRunInIO $ \io ->
+unliftedWithResource
+  :: MonadUnliftIO m
+  => AccessMode
+  -> LoggerEnv
+  -> Pool Connection
+  -> (Connection -> m b)
+  -> m b
+unliftedWithResource accessMode loggerEnv pool action = withRunInIO $ \io ->
   liftIO $ Pool.withResource pool $ \resource -> do
     runEff $
-      Log.runLogT "" logger LogInfo $
+      Log.runLogT loggerEnv.leComponent loggerEnv.leLogger LogInfo $
         Log.logInfo "Database connection acquired" $
           object
             [ "stripe" .= resource.stripeNumber
@@ -67,6 +81,7 @@ unliftedWithResource logger pool action = withRunInIO $ \io ->
             , "available" .= resource.availableResources
             , "time" .= resource.acquisitionTime
             , "acquisition" .= show (resource.acquisition)
+            , "access_mode" .= display accessMode
             ]
     io $ action resource.resource
 
@@ -77,7 +92,7 @@ withReadWritePool
   -> Eff (Labeled ReadWrite WithConnection ': es) a
   -> FloraM es a
 withReadWritePool pool action = do
-  runLabeled (withPool pool) action
+  runLabeled (withPool ReadWrite pool) action
 
 withReadOnlyPool
   :: forall a es
@@ -86,8 +101,7 @@ withReadOnlyPool
   -> Eff (Labeled ReadOnly WithConnection ': es) a
   -> FloraM es a
 withReadOnlyPool pool action = do
-  Log.logInfo_ "Acquiring read-only pool connection"
-  runLabeled (withPool pool) action
+  runLabeled (withPool ReadOnly pool) action
 
 queryOne
   :: ( HasCallStack
