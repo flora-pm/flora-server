@@ -93,10 +93,9 @@ listPackagesHandler
   -> FloraM es (Html ())
 listPackagesHandler (Headers session _) pageParam = do
   Tracing.rootSpan alwaysSampled "list-all-packages" $ do
-    FloraEnv{pool} <- Reader.ask
     let pageNumber = pageParam ?: PositiveUnsafe 1
     templateEnv' <- templateFromSession session defaultTemplateEnv
-    (count', results) <- withReadOnlyPool pool $ Search.listAllPackages (fromPage pageNumber)
+    (count', results) <- Search.listAllPackages (fromPage pageNumber)
     let templateEnv =
           templateEnv'
             { title = "Packages — Flora.pm"
@@ -122,7 +121,7 @@ showNamespaceHandler (Headers session _) packageNamespace pageParam =
     FloraEnv{pool} <- Reader.ask
     let pageNumber = pageParam ?: PositiveUnsafe 1
     templateDefaults <- templateFromSession session defaultTemplateEnv
-    (count', results) <- withReadOnlyPool pool $ Search.listAllPackagesInNamespace (fromPage pageNumber) packageNamespace
+    (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) packageNamespace
     mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName (extractNamespaceText packageNamespace)
     case mPackageIndex of
       Nothing -> renderError templateDefaults notFound404

@@ -127,10 +127,9 @@ getPackagesByPrefixHandler maybePackageName maybeOffset maybeLimit =
   case maybePackageName of
     Nothing -> pure Vector.empty
     Just packageName -> do
-      FloraEnv{pool} <- Reader.ask
       let offset = fromMaybe 0 maybeOffset
       let limit = fromMaybe 10 maybeLimit
-      (_, packagesInfo) <- withReadOnlyPool pool $ searchPackageByName (offset, limit) packageName
+      (_, packagesInfo) <- searchPackageByName (offset, limit) packageName
       pure
         (Vector.map (\p -> p.name) packagesInfo)
 
