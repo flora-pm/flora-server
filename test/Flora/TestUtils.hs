@@ -124,8 +124,8 @@ import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time
-import Effectful.Trace (Trace)
-import Effectful.Trace qualified as Trace
+import Effectful.Tracing (Tracer)
+import Effectful.Tracing qualified as Trace
 import GHC.Generics
 import GHC.IO (mkUserError)
 import GHC.Stack
@@ -175,7 +175,7 @@ import Flora.Monad
 
 type TestEff a =
   Eff
-    '[ Trace
+    '[ Tracer
      , FileSystem
      , Fail
      , BlobStoreAPI
@@ -220,7 +220,7 @@ runTestEff :: (HasCallStack, RequireCallStack) => TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $
   Log.withStdOutLogger $ \logger ->
     comp
-      & Trace.runNoTrace
+      & Trace.runTracerNoOp
       & runFileSystem
       & runFailIO
       & runBlobStorePure

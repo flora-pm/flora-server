@@ -39,7 +39,7 @@ import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
-import Effectful.Trace
+import Effectful.Tracing (Tracer)
 import Optics.Core
 import RequireCallStack
 import Streamly.Data.Stream (Stream)
@@ -66,7 +66,7 @@ importFromArchive
      , RequireCallStack
      , State (Set (Namespace, Flora.PackageName, Version)) :> es
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => Text
   -> Vector Text

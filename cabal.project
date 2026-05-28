@@ -18,6 +18,7 @@ allow-newer: chronos:hashable
            , feed:*
            , insert-ordered-containers:hashable
            , prometheus-effectful:bytestring
+           , prometheus-effectful:effectful
            , prometheus-proc:*
            , qrcode-core:*
            , qrcode-juicypixels:*
@@ -37,13 +38,8 @@ package warp
 package zlib
   flags: -pkg-config
 
-source-repository-package
-  type: git
-  location: https://github.com/scrive/tracing
-  tag: 9c2baa154dbd0ef2c145ee65660261977323c2d8
-  subdir:
-    .
-    ./tracing-effectful
+package effectful-tracing
+  flags: +otel +servant +postgresql-simple
 
 source-repository-package
   type: git

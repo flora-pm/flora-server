@@ -14,7 +14,7 @@ import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
-import Effectful.Trace
+import Effectful.Tracing (Tracer)
 import RequireCallStack
 import Servant hiding ((:>))
 
@@ -90,7 +90,7 @@ getPackageHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => Namespace
   -> PackageName
@@ -138,7 +138,7 @@ getVersionedPackageHandler
      , IOE :> es
      , IOE :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => Namespace
   -> PackageName

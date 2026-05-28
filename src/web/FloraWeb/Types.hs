@@ -24,7 +24,7 @@ import Effectful.Log (Log)
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
-import Effectful.Trace
+import Effectful.Tracing (Tracer)
 import GHC.Clock (getMonotonicTime)
 import GHC.Generics
 import Servant (FromHttpApiData (..), Handler, ServerError)
@@ -38,7 +38,7 @@ newtype WebEnvStore = WebEnvStore (MVar WebEnv)
 type FloraEff = Eff RouteEffects
 
 type RouteEffects =
-  '[ Trace
+  '[ Tracer
    , Time
    , Reader FeatureEnv
    , BlobStoreAPI

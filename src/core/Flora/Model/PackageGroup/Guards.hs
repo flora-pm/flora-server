@@ -3,8 +3,8 @@ module Flora.Model.PackageGroup.Guards where
 import Effectful
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.Trace
-import Monitor.Tracing qualified as Tracing
+import Effectful.Tracing (Tracer)
+import Effectful.Tracing qualified as Trace
 
 import Flora.Database
 import Flora.Environment.Env
@@ -13,16 +13,16 @@ import Flora.Model.PackageGroup.Types
 import Flora.Monad
 
 guardThatPackageGroupExists
-  :: (IOE :> es, Reader FloraEnv :> es, Trace :> es)
+  :: (IOE :> es, Reader FloraEnv :> es, Tracer :> es)
   => PackageGroupId
   -> (PackageGroupId -> Eff es PackageGroup)
   -- ^ Action to run if the package group does not exist
   -> FloraM es PackageGroup
 guardThatPackageGroupExists packageGroupId action =
-  Tracing.childSpan "guardThatPackageGroupExists" $ do
+  Trace.withSpan "guardThatPackageGroupExists" $ do
     FloraEnv{pool} <- Reader.ask
     result <-
-      Tracing.childSpan "Query.getPackageGroupById" $
+      Trace.withSpan "Query.getPackageGroupById" $
         withReadOnlyPool pool $
           Query.getPackageGroupById packageGroupId
     case result of

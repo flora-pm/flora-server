@@ -6,7 +6,7 @@ import Effectful.Error.Static (Error)
 import Effectful.Log
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.Trace
+import Effectful.Tracing (Tracer)
 import Lucid
 import Optics.Core
 import RequireCallStack
@@ -98,7 +98,7 @@ deleteGroupHandler (Headers sessionWithUser _) packageGroupId = do
       pure $ GroupDeletionSuccess body
 
 addPackageToGroupHandler
-  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Trace :> es)
+  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Tracer :> es)
   => SessionWithCookies User
   -> PackageGroupId
   -> AddPackageToGroupForm
@@ -122,7 +122,7 @@ addPackageToGroupHandler (Headers sessionWithUser _) packageGroupId (AddPackageT
       pure $ PackageAddedToGroupSuccess ("/admin/groups/" <> display packageGroupId)
 
 showGroupHandler
-  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Trace :> es)
+  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Tracer :> es)
   => SessionWithCookies User
   -> PackageGroupId
   -> FloraM es (Html ())
