@@ -90,7 +90,7 @@ getPackageHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => Namespace
   -> PackageName
@@ -139,7 +139,7 @@ getVersionedPackageHandler
      , IOE :> es
      , IOE :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => Namespace
   -> PackageName

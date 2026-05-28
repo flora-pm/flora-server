@@ -22,7 +22,7 @@ import Effectful.Time (Time, runTime)
 import Effectful.Trace (Trace)
 import Effectful.Trace qualified as Trace
 import GHC.Stack (prettyCallStack)
-import Monitor.Tracing.Zipkin (Zipkin (..))
+import Effectful.Tracing.Zipkin (Zipkin (..))
 import RequireCallStack
 
 import Distribution.Orphans.Version ()

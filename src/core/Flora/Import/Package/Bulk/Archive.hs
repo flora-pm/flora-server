@@ -66,7 +66,7 @@ importFromArchive
      , RequireCallStack
      , State (Set (Namespace, Flora.PackageName, Version)) :> es
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => Text
   -> Vector Text

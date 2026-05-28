@@ -354,7 +354,7 @@ refreshIndex
      , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      , TypedProcess :> es
      )
   => ArbS.SimpleEnv JobQueues

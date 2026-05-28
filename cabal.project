@@ -12,12 +12,13 @@ test-show-details: direct
 jobs: $ncpus
 
 package *
-  ghc-options: +RTS -I0 -RTS
+  ghc-options: +RTS -I0 -RTS -fwrite-ide-info
 
 allow-newer: chronos:hashable
            , feed:*
            , insert-ordered-containers:hashable
            , prometheus-effectful:bytestring
+          , prometheus-effectful:effectful
            , prometheus-proc:*
            , qrcode-core:*
            , qrcode-juicypixels:*

@@ -1,8 +1,8 @@
 module Flora.Tracing where
 
 import Data.Text (Text)
-import Monitor.Tracing.Zipkin (Zipkin)
-import Monitor.Tracing.Zipkin qualified as ZPK
+import Effectful.Tracing.Zipkin (Zipkin)
+import Effectful.Tracing.Zipkin qualified as ZPK
 import Network.Socket (HostName)
 
 newZipkin

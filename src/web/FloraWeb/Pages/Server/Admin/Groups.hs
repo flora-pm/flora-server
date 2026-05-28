@@ -98,7 +98,7 @@ deleteGroupHandler (Headers sessionWithUser _) packageGroupId = do
       pure $ GroupDeletionSuccess body
 
 addPackageToGroupHandler
-  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Trace :> es)
+  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Tracer :> es)
   => SessionWithCookies User
   -> PackageGroupId
   -> AddPackageToGroupForm
@@ -122,7 +122,7 @@ addPackageToGroupHandler (Headers sessionWithUser _) packageGroupId (AddPackageT
       pure $ PackageAddedToGroupSuccess ("/admin/groups/" <> display packageGroupId)
 
 showGroupHandler
-  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Trace :> es)
+  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack, Tracer :> es)
   => SessionWithCookies User
   -> PackageGroupId
   -> FloraM es (Html ())

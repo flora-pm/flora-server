@@ -36,7 +36,7 @@ searchHandler
      , Reader FloraEnv :> es
      , RequireCallStack
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User) -> Maybe Text -> Maybe (Positive Word) -> FloraM es (Html ())
 searchHandler s Nothing pageParam = searchHandler s (Just "") pageParam

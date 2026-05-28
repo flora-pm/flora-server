@@ -25,7 +25,7 @@ import Effectful.Time (runTime)
 import Effectful.Trace qualified as Trace
 import GHC.Eventlog.Socket qualified as Socket
 import Log
-import Monitor.Tracing.Zipkin (Zipkin (..))
+import Effectful.Tracing.Zipkin (Zipkin (..))
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
   ( defaultSettings

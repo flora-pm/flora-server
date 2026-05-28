@@ -5,7 +5,7 @@ import Effectful
 import Effectful.Labeled
 import Effectful.PostgreSQL
 import Effectful.Trace
-import Monitor.Tracing qualified as Tracing
+import Effectful.Tracing qualified as Tracing
 
 import Flora.Database
 import Flora.Model.Package.Types
@@ -14,7 +14,7 @@ import Flora.Model.Release.Types
 import Flora.Monad
 
 guardThatReleaseExists
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Trace :> es)
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Tracer :> es)
   => PackageId
   -> Version
   -> (Version -> FloraM es Release)
@@ -22,7 +22,7 @@ guardThatReleaseExists
   -> FloraM es Release
 guardThatReleaseExists packageId version action = do
   result <-
-    Tracing.childSpan "Query.getReleaseByVersion" $
+    Tracing.withSpan "Query.getReleaseByVersion" $
       Query.getReleaseByVersion packageId version
   case result of
     Just release -> pure release
