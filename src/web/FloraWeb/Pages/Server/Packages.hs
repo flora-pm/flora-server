@@ -20,11 +20,11 @@ import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
-import Effectful.Trace
+import Effectful.Tracing (Tracer)
+import Effectful.Tracing qualified as Trace
 import Log (object, (.=))
 import Log qualified
 import Lucid
-import Monitor.Tracing qualified as Tracing
 import Network.HTTP.Types (notFound404)
 import RequireCallStack
 import Servant (Headers (..), ServerError, ServerT)
@@ -86,13 +86,14 @@ listPackagesHandler
   :: ( IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Maybe (Positive Word)
   -> FloraM es (Html ())
 listPackagesHandler (Headers session _) pageParam = do
-  Tracing.rootSpan alwaysSampled "list-all-packages" $ do
+  Trace.withLinkedRoot [] $ Trace.withSpan "list-all-packages" $ do
+    FloraEnv{pool} <- Reader.ask
     let pageNumber = pageParam ?: PositiveUnsafe 1
     templateEnv' <- templateFromSession session defaultTemplateEnv
     (count', results) <- Search.listAllPackages (fromPage pageNumber)
@@ -110,14 +111,14 @@ showNamespaceHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> Maybe (Positive Word)
   -> FloraM es (Html ())
 showNamespaceHandler (Headers session _) packageNamespace pageParam =
-  Tracing.rootSpan alwaysSampled "show-namespace" $ do
+  Trace.withLinkedRoot [] $ Trace.withSpan "show-namespace" $ do
     FloraEnv{pool} <- Reader.ask
     let pageNumber = pageParam ?: PositiveUnsafe 1
     templateDefaults <- templateFromSession session defaultTemplateEnv
@@ -141,7 +142,7 @@ showPackageHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -156,7 +157,7 @@ showVersionHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -172,7 +173,7 @@ showPackageVersion
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -180,13 +181,13 @@ showPackageVersion
   -> Maybe Version
   -> FloraM es (Html ())
 showPackageVersion (Headers session _) packageNamespace packageName mversion =
-  Tracing.rootSpan alwaysSampled "show-package-with-version" $ do
+  Trace.withLinkedRoot [] $ Trace.withSpan "show-package-with-version" $ do
     FloraEnv{pool} <- Reader.ask
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
     packageIndex <- guardThatPackageIndexExists packageNamespace $ const (web404 session)
     releases <-
-      Tracing.childSpan "Query.getReleases" $
+      Trace.withSpan "Query.getReleases" $
         withReadOnlyPool pool $
           Query.getReleases package.packageId
     let latestRelease =
@@ -197,16 +198,16 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
     release <- withReadOnlyPool pool $ guardThatReleaseExists package.packageId version $ const (web404 session)
     numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
     dependents <-
-      Tracing.childSpan "Query.getPackageDependents" $
+      Trace.withSpan "Query.getPackageDependents" $
         withReadOnlyPool pool $
           Query.getPackageDependents packageNamespace packageName
     releaseDependencies <-
-      Tracing.childSpan "Query.getRequirements" $
+      Trace.withSpan "Query.getRequirements" $
         withReadOnlyPool pool $
           Query.getRequirements package.name release.releaseId
     categories <- withReadOnlyPool pool $ Query.getPackageCategories package.packageId
     numberOfDependents <-
-      Tracing.childSpan "Query.getNumberOfPackageDependents" $
+      Trace.withSpan "Query.getNumberOfPackageDependents" $
         withReadOnlyPool pool $
           Query.getNumberOfPackageDependents packageNamespace packageName Nothing
     numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
@@ -242,7 +243,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
 
     let packageIndexURL = packageIndex.url
 
-    Tracing.childSpan "render showPackage" $
+    Trace.withSpan "render showPackage" $
       render templateEnv $
         Packages.showPackage
           release
@@ -266,7 +267,7 @@ showDependentsHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -290,7 +291,7 @@ showVersionDependentsHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -304,7 +305,7 @@ showVersionDependentsHandler s packageNamespace packageName version Nothing mSea
 showVersionDependentsHandler s packageNamespace packageName version pageNumber (Just "") =
   showVersionDependentsHandler s packageNamespace packageName version pageNumber Nothing
 showVersionDependentsHandler (Headers session _) packageNamespace packageName version (Just pageNumber) mSearch = do
-  Tracing.rootSpan alwaysSampled "show-package-version-dependents" $ do
+  Trace.withLinkedRoot [] $ Trace.withSpan "show-package-version-dependents" $ do
     FloraEnv{pool} <- Reader.ask
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
@@ -316,7 +317,7 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
             , navbarSearchContent = Just $ "depends:" <> display packageNamespace <> "/" <> display packageName <> " "
             }
     results <-
-      Tracing.childSpan "Query.getPackageDependents" $
+      Trace.withSpan "Query.getPackageDependents" $
         withReadOnlyPool pool $
           Query.getAllPackageDependentsWithLatestVersion
             packageNamespace
@@ -325,7 +326,7 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
             mSearch
 
     totalDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents packageNamespace packageName mSearch
-    Tracing.childSpan "render showDependents" $
+    Trace.withSpan "render showDependents" $
       render templateEnv $
         Package.showDependents
           packageNamespace
@@ -340,7 +341,7 @@ showDependenciesHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -360,7 +361,7 @@ showVersionDependenciesHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -368,7 +369,7 @@ showVersionDependenciesHandler
   -> Version
   -> FloraM es (Html ())
 showVersionDependenciesHandler (Headers session _) packageNamespace packageName version = do
-  Tracing.rootSpan alwaysSampled "show-version-dependencies" $ do
+  Trace.withLinkedRoot [] $ Trace.withSpan "show-version-dependencies" $ do
     FloraEnv{pool} <- Reader.ask
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
@@ -379,11 +380,11 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
             , description = "Dependencies of " <> display packageNamespace <> display packageName
             }
     releaseDependencies <-
-      Tracing.childSpan "Query.getAllRequirements" $
+      Trace.withSpan "Query.getAllRequirements" $
         withReadOnlyPool pool $
           Query.getAllRequirements release.releaseId
 
-    Tracing.childSpan "render showDependencies" $
+    Trace.withSpan "render showDependencies" $
       render templateEnv $
         Package.showDependencies packageNamespace packageName release releaseDependencies
 
@@ -392,18 +393,18 @@ showChangelogHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> FloraM es (Html ())
 showChangelogHandler s@(Headers session _) packageNamespace packageName = do
-  Tracing.rootSpan alwaysSampled "show-changelog" $ do
+  Trace.withLinkedRoot [] $ Trace.withSpan "show-changelog" $ do
     FloraEnv{pool} <- Reader.ask
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
     maybeLatestRelease <-
-      Tracing.childSpan "Query.getLatestPackageRelease" $
+      Trace.withSpan "Query.getLatestPackageRelease" $
         withReadOnlyPool pool $
           Query.getLatestPackageRelease package.packageId
     case maybeLatestRelease of
@@ -416,7 +417,7 @@ showVersionChangelogHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -424,7 +425,7 @@ showVersionChangelogHandler
   -> Version
   -> FloraM es (Html ())
 showVersionChangelogHandler (Headers session _) packageNamespace packageName version = do
-  Tracing.rootSpan alwaysSampled "show-version-changelog" $ do
+  Trace.withLinkedRoot [] $ Trace.withSpan "show-version-changelog" $ do
     FloraEnv{pool} <- Reader.ask
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
@@ -442,7 +443,7 @@ listVersionsHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -470,7 +471,7 @@ getTarballHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -496,19 +497,19 @@ showPackageSecurityHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> FloraM es (Html ())
 showPackageSecurityHandler (Headers session _) packageNamespace packageName =
-  Tracing.rootSpan alwaysSampled "show-package-security" $ do
+  Trace.withLinkedRoot [] $ Trace.withSpan "show-package-security" $ do
     FloraEnv{pool} <- Reader.ask
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
     advisoryPreviews <-
-      Tracing.childSpan "Query.getAdvisoryPreviewsByPackageId" $
+      Trace.withSpan "Query.getAdvisoryPreviewsByPackageId" $
         withReadOnlyPool pool $
           Query.getAdvisoryPreviewsByPackageId package.packageId
     let templateEnv =

@@ -25,12 +25,11 @@ import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
-import Effectful.Trace (Trace)
-import Effectful.Trace qualified as Trace
+import Effectful.Tracing (Tracer)
+import Effectful.Tracing qualified as Trace
 import GHC.Generics (Generic)
 import Log
 import Log.Backend.StandardOutput qualified as Log
-import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
 import Options.Applicative
 import RequireCallStack
@@ -107,9 +106,9 @@ main = Log.withStdOutLogger $ \logger -> do
   runTrace <-
     if env.environment == Production
       then do
-        zipkin <- liftIO $ Tracing.newZipkin env.mltp.zipkinHost "flora-cli"
-        pure $ Trace.runTrace zipkin.zipkinTracer
-      else pure Trace.runNoTrace
+        traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
+        pure $ Tracing.runTraceRunner traceRunner
+      else pure Trace.runTracerNoOp
   provideCallStack $
     runOptions cliArgs
       & Reader.runReader env
@@ -234,7 +233,7 @@ runOptions
      , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => Options
   -> FloraM es ()
@@ -299,7 +298,7 @@ importIndex
      , Reader FloraEnv :> es
      , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
-     , Trace :> es
+     , Tracer :> es
      )
   => FilePath
   -> Text

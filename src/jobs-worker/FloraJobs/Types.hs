@@ -19,10 +19,9 @@ import Effectful.Reader.Static qualified as Reader
 import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
-import Effectful.Trace (Trace)
-import Effectful.Trace qualified as Trace
+import Effectful.Tracing (Tracer)
+import Effectful.Tracing qualified as Trace
 import GHC.Stack (prettyCallStack)
-import Monitor.Tracing.Zipkin (Zipkin (..))
 import RequireCallStack
 
 import Distribution.Orphans.Version ()
@@ -42,7 +41,7 @@ type JobsRunner =
      , TypedProcess
      , FileSystem
      , State (Set (Namespace, PackageName, Version))
-     , Trace
+     , Tracer
      , Reader FloraEnv
      , Concurrent
      , Metrics AppMetrics
@@ -61,9 +60,9 @@ runJobRunner runnerEnv floraEnv logger jobRunner = do
   runTrace <-
     if floraEnv.environment == Production
       then do
-        zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-jobs"
-        pure $ Trace.runTrace zipkin.zipkinTracer
-      else pure Trace.runNoTrace
+        traceRunner <- liftIO $ Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
+        pure $ Tracing.runTraceRunner traceRunner
+      else pure Trace.runTracerNoOp
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & Reader.runReader runnerEnv

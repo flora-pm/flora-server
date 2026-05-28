@@ -22,10 +22,9 @@ import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
-import Effectful.Trace qualified as Trace
+import Effectful.Tracing qualified as Trace
 import GHC.Eventlog.Socket qualified as Socket
 import Log
-import Monitor.Tracing.Zipkin (Zipkin (..))
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
   ( defaultSettings
@@ -125,7 +124,7 @@ runFlora = do
                 when (System.os == "linux") $ void $ P.register P.procMetrics
                 setGitHash
 
-            liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
+            liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to OpenTelemetry endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             let withLogger = Logging.makeLogger env.mltp.logger
             withLogger
@@ -155,7 +154,7 @@ logException floraEnv logger exception =
 
 runServer :: (Concurrent :> es, IOE :> es, RequireCallStack) => Logger -> FloraEnv -> Eff es ()
 runServer appLogger floraEnv = do
-  zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-server"
+  traceRunner <- liftIO $ Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-server"
   loggingMiddleware <-
     Log.runLog
       ("flora-server-" <> display floraEnv.environment)
@@ -170,7 +169,7 @@ runServer appLogger floraEnv = do
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   ioref <- liftIO $ newIORef True
   arbiterConfig <- liftIO $ ArbS.initArbiterServer (Proxy @JobQueues) floraEnv.config.connectionInfo "public"
-  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv zipkin ioref
+  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv traceRunner ioref
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -195,14 +194,14 @@ mkServer
   -> Logger
   -> WebEnvStore
   -> FloraEnv
-  -> Zipkin
+  -> Tracing.TraceRunner
   -> IORef Bool
   -> Application
-mkServer arbiterConfig logger webEnvStore floraEnv zipkin ioref =
+mkServer arbiterConfig logger webEnvStore floraEnv traceRunner ioref =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
-    (naturalTransform floraEnv logger webEnvStore zipkin)
+    (naturalTransform floraEnv logger webEnvStore traceRunner)
     (floraServer arbiterConfig floraEnv.environment ioref)
 
 floraServer
@@ -228,14 +227,14 @@ naturalTransform
   => FloraEnv
   -> Logger
   -> WebEnvStore
-  -> Zipkin
+  -> Tracing.TraceRunner
   -> FloraEff a
   -> Handler a
-naturalTransform floraEnv logger _webEnvStore zipkin app = do
+naturalTransform floraEnv logger _webEnvStore traceRunner app = do
   let runTrace =
         if floraEnv.environment == Production
-          then Trace.runTrace zipkin.zipkinTracer
-          else Trace.runNoTrace
+          then Tracing.runTraceRunner traceRunner
+          else Trace.runTracerNoOp
   result <-
     liftIO $
       Right
