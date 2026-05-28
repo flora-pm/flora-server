@@ -39,7 +39,7 @@ package zlib
   flags: -pkg-config
 
 package effectful-tracing
-  flags: +otel
+  flags: +otel +servant +postgresql-simple
 
 source-repository-package
   type: git
