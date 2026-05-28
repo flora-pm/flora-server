@@ -24,8 +24,9 @@ import Network.Socket (HostName)
 import OpenTelemetry.Exporter.OTLP.Span qualified as OTLP
 import OpenTelemetry.Processor.Batch.Span qualified as Batch
 
-newtype TraceRunner = TraceRunner
-  (forall es a. IOE :> es => Eff (Tracer : es) a -> Eff es a)
+newtype TraceRunner
+  = TraceRunner
+      (forall es a. IOE :> es => Eff (Tracer : es) a -> Eff es a)
 
 newTraceRunner
   :: Maybe HostName
