@@ -18,11 +18,13 @@ import Effectful.Concurrent
 import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
+import Effectful.Log
 import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
-import Effectful.Tracing qualified as Trace
+import Effectful.Tracing.Effect
+import Effectful.Tracing.Instrumentation.Servant (traceServantMiddleware)
 import GHC.Eventlog.Socket qualified as Socket
 import Log
 import Network.HTTP.Types (notFound404)
@@ -73,6 +75,7 @@ import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
 import Flora.Monitoring (setGitHash)
+import Flora.Tracing
 import Flora.Tracing qualified as Tracing
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
@@ -126,10 +129,11 @@ runFlora = do
 
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to OpenTelemetry endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
+            traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-server"
             let withLogger = Logging.makeLogger env.mltp.logger
             withLogger
               ( \appLogger ->
-                  provideCallStack $ runServer appLogger env
+                  provideCallStack $ Tracing.runTraceRunner traceRunner $ runServer appLogger env traceRunner
               )
       )
 
@@ -152,9 +156,17 @@ logException floraEnv logger exception =
       defaultLogLevel
     $ Log.logAttention "Jobs runner crashed " (show exception)
 
-runServer :: (Concurrent :> es, IOE :> es, RequireCallStack) => Logger -> FloraEnv -> Eff es ()
-runServer appLogger floraEnv = do
-  traceRunner <- liftIO $ Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-server"
+runServer
+  :: ( Concurrent :> es
+     , IOE :> es
+     , RequireCallStack
+     , Tracer :> es
+     )
+  => Logger
+  -> FloraEnv
+  -> TraceRunner
+  -> Eff es ()
+runServer appLogger floraEnv traceRunner = do
   loggingMiddleware <-
     Log.runLog
       ("flora-server-" <> display floraEnv.environment)
@@ -169,7 +181,7 @@ runServer appLogger floraEnv = do
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   ioref <- liftIO $ newIORef True
   arbiterConfig <- liftIO $ ArbS.initArbiterServer (Proxy @JobQueues) floraEnv.config.connectionInfo "public"
-  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv traceRunner ioref
+  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv ioref traceRunner
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -180,13 +192,14 @@ runServer appLogger floraEnv = do
                 floraEnv.mltp
             )
             defaultSettings
-  liftIO
-    $ runSettings warpSettings
-    $ heartbeatMiddleware
-      . loggingMiddleware
-      . const
-    $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
-    $ prometheusMiddleware server
+  withEffToIO (ConcUnlift Persistent Unlimited) $ \runInIO ->
+    runSettings warpSettings
+      $ heartbeatMiddleware
+        . loggingMiddleware
+        . const
+      $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
+      $ traceServantMiddleware runInIO
+      $ prometheusMiddleware server
 
 mkServer
   :: RequireCallStack
@@ -194,10 +207,10 @@ mkServer
   -> Logger
   -> WebEnvStore
   -> FloraEnv
-  -> Tracing.TraceRunner
   -> IORef Bool
+  -> TraceRunner
   -> Application
-mkServer arbiterConfig logger webEnvStore floraEnv traceRunner ioref =
+mkServer arbiterConfig logger webEnvStore floraEnv ioref traceRunner =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
@@ -227,19 +240,15 @@ naturalTransform
   => FloraEnv
   -> Logger
   -> WebEnvStore
-  -> Tracing.TraceRunner
+  -> TraceRunner
   -> FloraEff a
   -> Handler a
 naturalTransform floraEnv logger _webEnvStore traceRunner app = do
-  let runTrace =
-        if floraEnv.environment == Production
-          then Tracing.runTraceRunner traceRunner
-          else Trace.runTracerNoOp
   result <-
     liftIO $
       Right
         <$> app
-          & runTrace
+          & Tracing.runTraceRunner traceRunner
           & runTime
           & runReader floraEnv.features
           & ( case floraEnv.features.blobStoreImpl of

@@ -93,7 +93,6 @@ listPackagesHandler
   -> FloraM es (Html ())
 listPackagesHandler (Headers session _) pageParam = do
   Trace.withLinkedRoot [] $ Trace.withSpan "list-all-packages" $ do
-    FloraEnv{pool} <- Reader.ask
     let pageNumber = pageParam ?: PositiveUnsafe 1
     templateEnv' <- templateFromSession session defaultTemplateEnv
     (count', results) <- Search.listAllPackages (fromPage pageNumber)
