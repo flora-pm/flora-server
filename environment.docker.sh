@@ -14,3 +14,4 @@ export FLORA_JOB_HTTP_PORT="8085"
 export FLORA_ZIPKIN_ENABLED="true" # Set this variable to true to enable Zipkin traces export
 export FLORA_ZIPKIN_AGENT_HOST="jaeger" # Set this variable to true to set the hostname of the agent to which the traces are shipped
 export FLORA_ZIPKIN_AGENT_PORT="4318" # Set this variable to true to set the port of the agent to which the traces are shipped
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://jaeger:4318"
