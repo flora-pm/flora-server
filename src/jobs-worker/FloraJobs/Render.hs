@@ -8,13 +8,18 @@ import Data.Default
 import Data.Function
 import Data.Text (Text)
 import Data.Typeable
+import Effectful
+import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Text.Pandoc.Builder
 import Text.Pandoc.Builder qualified as Builder
 import Text.Pandoc.Class (runPure)
 import Text.Pandoc.Walk
 import Text.Pandoc.Writers.HTML qualified as HTML
 
-renderMarkdown :: (Monad m, Typeable m) => String -> Text -> m Text
+import Flora.Import.Types
+
+renderMarkdown :: (Error ImportError :> es, Typeable es) => String -> Text -> Eff es Text
 renderMarkdown name bodyText = do
   let extensions =
         mconcat
@@ -49,7 +54,7 @@ renderMarkdown name bodyText = do
                 & runPure
          in case result of
               Right m -> pure m
-              Left _e -> undefined
+              Left e -> Error.throwError (MarkdownRenderingError e)
 
 shiftHeadingLevel :: Block -> Block
 shiftHeadingLevel (Header n attrs content) = Header (n + 2) attrs content

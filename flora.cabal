@@ -230,6 +230,7 @@ library
     openapi3,
     optics-core,
     osv,
+    pandoc,
     pandoc-types,
     pcre2,
     pg-entity,
