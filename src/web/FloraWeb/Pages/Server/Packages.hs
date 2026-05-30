@@ -211,7 +211,10 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
           Query.getNumberOfPackageDependents packageNamespace packageName Nothing
     numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
     groups <- withReadOnlyPool pool $ Query.getPackageGroupsForPackage package.packageId
-    activeMaintainers <- withReadOnlyPool pool $ Query.getActiveMaintainers package.packageId
+    activeMaintainers <-
+      if package.namespace == Namespace "hackage"
+        then withReadOnlyPool pool $ Just <$> Query.getActiveMaintainers package.packageId
+        else pure Nothing
     mUploader <- join <$> (traverse (\u -> withReadOnlyPool pool $ Query.getPackageUploaderById u) release.uploaderId)
 
     let templateEnv =

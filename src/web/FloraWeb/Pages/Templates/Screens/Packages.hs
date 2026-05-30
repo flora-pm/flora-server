@@ -33,7 +33,7 @@ showPackage
   -> Word
   -> Vector Category
   -> Vector PackageGroupName
-  -> Vector Text
+  -> Maybe (Vector Text)
   -> Maybe PackageUploader
   -> FloraHTML
 showPackage
@@ -63,7 +63,7 @@ showPackage
         dependents
         numberOfDependents
         categories
-        (Vector.length activeMaintainers)
+        (fmap Vector.length activeMaintainers)
         mUploader
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> Vector PackageGroupName -> FloraHTML
@@ -93,7 +93,7 @@ packageBody
   -> Vector Package
   -> Word
   -> Vector Category
-  -> Int
+  -> Maybe Int
   -> Maybe PackageUploader
   -> FloraHTML
 packageBody
@@ -107,13 +107,13 @@ packageBody
   dependents
   numberOfDependents
   categories
-  lotteryFactor
+  mLotteryFactor
   mUploader =
     div_ [class_ "package-body"] $ do
       div_ [class_ "package-left-column"] $ ul_ [class_ "package-left-rows"] $ do
         displayCategories categories
         displayLicense license
-        displayMaintainer namespace packageName lotteryFactor mUploader maintainer
+        displayMaintainer namespace packageName mLotteryFactor mUploader maintainer
         displayLinks namespace packageName packageIndexURL latestRelease
         displayVersions namespace packageName packageReleases numberOfReleases
       div_ [class_ "package-right-column"] $ ul_ [class_ "package-right-rows"] $ do
