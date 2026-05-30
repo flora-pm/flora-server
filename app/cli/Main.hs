@@ -103,12 +103,9 @@ main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv & runFileSystem & runFailIO & runEff
-  runTrace <-
-    if env.environment == Production
-      then do
+  runTrace <- do
         traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
         pure $ Tracing.runTraceRunner traceRunner
-      else pure Trace.runTracerNoOp
   provideCallStack $
     runOptions cliArgs
       & Reader.runReader env

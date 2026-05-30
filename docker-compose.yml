@@ -49,7 +49,8 @@ services:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
     ports:
       - 9090:9090
-
+    profiles:
+      - local
   jaeger:
     image: jaegertracing/jaeger:2.18.0
     environment:
@@ -58,7 +59,8 @@ services:
     ports:
       - "16686:16686"   # Jaeger UI
       - "4318:4318"     # OTLP HTTP
-
+    profiles:
+      - local
 volumes:
   database-data:
   home-data:

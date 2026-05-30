@@ -57,12 +57,9 @@ runJobRunner
   -> JobsRunner a
   -> IO a
 runJobRunner runnerEnv floraEnv logger jobRunner = do
-  runTrace <-
-    if floraEnv.environment == Production
-      then do
+  runTrace <- do
         traceRunner <- liftIO $ Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
         pure $ Tracing.runTraceRunner traceRunner
-      else pure Trace.runTracerNoOp
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & Reader.runReader runnerEnv
