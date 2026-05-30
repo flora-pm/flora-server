@@ -20,7 +20,6 @@ import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
 import Effectful.Tracing (Tracer)
-import Effectful.Tracing qualified as Trace
 import GHC.Stack (prettyCallStack)
 import RequireCallStack
 
@@ -58,8 +57,8 @@ runJobRunner
   -> IO a
 runJobRunner runnerEnv floraEnv logger jobRunner = do
   runTrace <- do
-        traceRunner <- liftIO $ Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
-        pure $ Tracing.runTraceRunner traceRunner
+    traceRunner <- liftIO $ Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
+    pure $ Tracing.runTraceRunner traceRunner
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & Reader.runReader runnerEnv

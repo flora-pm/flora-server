@@ -26,7 +26,6 @@ import Effectful.State.Static.Shared (State)
 import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
 import Effectful.Tracing (Tracer)
-import Effectful.Tracing qualified as Trace
 import GHC.Generics (Generic)
 import Log
 import Log.Backend.StandardOutput qualified as Log
@@ -104,8 +103,8 @@ main = Log.withStdOutLogger $ \logger -> do
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv & runFileSystem & runFailIO & runEff
   runTrace <- do
-        traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
-        pure $ Tracing.runTraceRunner traceRunner
+    traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
+    pure $ Tracing.runTraceRunner traceRunner
   provideCallStack $
     runOptions cliArgs
       & Reader.runReader env

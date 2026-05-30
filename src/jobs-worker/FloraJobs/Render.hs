@@ -2,12 +2,24 @@ module FloraJobs.Render where
 
 import Commonmark qualified
 import Commonmark.Extensions qualified as Commonmark
+import Commonmark.Pandoc
 import Control.Exception
+import Data.Default
+import Data.Function
 import Data.Text (Text)
-import Data.Text.Lazy qualified as TL
 import Data.Typeable
+import Effectful
+import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
+import Text.Pandoc.Builder
+import Text.Pandoc.Builder qualified as Builder
+import Text.Pandoc.Class (runPure)
+import Text.Pandoc.Walk
+import Text.Pandoc.Writers.HTML qualified as HTML
 
-renderMarkdown :: (Monad m, Typeable m) => String -> Text -> m Text
+import Flora.Import.Types
+
+renderMarkdown :: (Error ImportError :> es, Typeable es) => String -> Text -> Eff es Text
 renderMarkdown name bodyText = do
   let extensions =
         mconcat
@@ -27,7 +39,23 @@ renderMarkdown name bodyText = do
             -- https://github.com/jgm/commonmark-hs/issues/95
             Commonmark.pipeTableSpec
           ]
+
   Commonmark.commonmarkWith extensions name bodyText
     >>= \case
       Left exception -> throw exception
-      Right (y :: Commonmark.Html ()) -> pure $ TL.toStrict $ Commonmark.renderHtml y
+      Right (y :: Cm () Blocks) ->
+        let result =
+              y
+                & unCm
+                & walk shiftHeadingLevel
+                & Builder.toList
+                & Pandoc nullMeta
+                & HTML.writeHtml5String def
+                & runPure
+         in case result of
+              Right m -> pure m
+              Left e -> Error.throwError (MarkdownRenderingError e)
+
+shiftHeadingLevel :: Block -> Block
+shiftHeadingLevel (Header n attrs content) = Header (n + 2) attrs content
+shiftHeadingLevel x = x

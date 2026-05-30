@@ -12,6 +12,7 @@ import Data.Aeson
 import Data.Aeson.KeyMap
 import Data.Text (Text)
 import GHC.Generics
+import Text.Pandoc.Error
 
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
@@ -27,7 +28,8 @@ data ImportError
   | CouldNotFindPackageIndex Text
   | CouldNotFindPackageUploader Text Namespace
   | CouldNotFindPackage Namespace PackageName
-  deriving stock (Eq, Show)
+  | MarkdownRenderingError PandocError
+  deriving stock (Show)
   deriving anyclass (Exception)
 
 data ReleaseJSONFile = ReleaseJSONFile
