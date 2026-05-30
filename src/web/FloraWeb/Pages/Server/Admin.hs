@@ -70,7 +70,7 @@ fetchMetadataHandler :: RequireCallStack => SessionWithCookies User -> FloraM Ro
 fetchMetadataHandler (Headers session _) = do
   FloraEnv{workerEnv, pool} <- liftIO $ fetchFloraEnv session.webEnvStore
 
-  liftIO $ void $ schedulePackageUploadersJob workerEnv
+  liftIO $ schedulePackageUploadersJob workerEnv
   liftIO $ void $ schedulePackageDeprecationListJob workerEnv
 
   releasesWithoutReadme <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutReadme
