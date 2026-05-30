@@ -466,16 +466,17 @@ displayTestedWith compilersVersions'
 displayMaintainer
   :: Namespace
   -> PackageName
-  -> Int
+  -> Maybe Int
   -> Maybe PackageUploader
   -> Text
   -> FloraHTML
-displayMaintainer namespace packageName count mUploader maintainerInfo =
+displayMaintainer namespace packageName mLotteryFactor mUploader maintainerInfo =
   li_ [class_ ""] $ do
     h3_ [class_ "package-body-section"] "Maintainer"
     div_ [] $ do
       p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
-      p_ [] $ displayLotteryFactor namespace packageName count
+      whenJust mLotteryFactor $ \lotteryFactor ->
+        p_ [] $ displayLotteryFactor namespace packageName lotteryFactor
       whenJust mUploader $ \uploader -> p_ [] $ displayUploader uploader.username
 
 displayLotteryFactor
@@ -483,12 +484,12 @@ displayLotteryFactor
   -> PackageName
   -> Int
   -> FloraHTML
-displayLotteryFactor namespace packageName count =
+displayLotteryFactor namespace packageName lotteryFactor =
   span_
     [ dataText_ ("The number of people with uploader permission on " <> formatPackage namespace packageName <> " who have released something to " <> display namespace <> " in the last 2 years (i.e. the number of people likely able to release critical fixes in a timely manner)")
     , class_ "revised-date"
     ]
-    $ toHtml ("Lottery factor: " <> display count)
+    $ toHtml ("Lottery factor: " <> display lotteryFactor)
 
 displayUploader :: Text -> FloraHTML
 displayUploader uploader =
