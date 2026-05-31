@@ -7,6 +7,9 @@ import Lucid.Base (makeAttributes)
 
 import FloraWeb.Pages.Templates.Types (FloraHTML)
 
+ariaCurrent_ :: Text -> Attributes
+ariaCurrent_ = makeAttributes "aria-current"
+
 text :: Text -> FloraHTML
 text = toHtml
 

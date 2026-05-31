@@ -71,7 +71,10 @@ navBarLink
   -> FloraHTML
 navBarLink additionalClasses href label isActive' =
   a_
-    [href_ href, class_ ("btn btn--invisible btn--uppercase" <> additionalClasses <> " " <> isActive isActive')]
+    [ href_ href
+    , class_ ("btn btn--invisible btn--uppercase" <> additionalClasses <> " " <> isActive isActive')
+    , isAriaCurrentPage isActive'
+    ]
     (text label)
 
 navBarLink' :: Text -> Text -> Bool -> FloraHTML
@@ -129,3 +132,7 @@ getUsernameOrLogin _ = navBarLink' "/settings/" "Profile" False
 isActive :: Bool -> Text
 isActive True = " active"
 isActive False = ""
+
+isAriaCurrentPage :: Bool -> Attributes
+isAriaCurrentPage True = ariaCurrent_ "page"
+isAriaCurrentPage False = mempty
