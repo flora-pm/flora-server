@@ -13,6 +13,9 @@ text = toHtml
 property_ :: Text -> Attributes
 property_ = makeAttributes "property"
 
+autocorrect_ :: Text -> Attributes
+autocorrect_ = makeAttributes "autocorrect"
+
 autocapitalize_ :: Text -> Attributes
 autocapitalize_ = makeAttributes "autocapitalize"
 
