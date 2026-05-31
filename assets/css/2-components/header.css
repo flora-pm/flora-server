@@ -63,5 +63,8 @@
 
 .header-nav {
 	grid-area: nav;
+	justify-content: center;
+	--cluster-column-gap: var(--space-gutter-tiny);
+	--cluster-row-gap: var(--space-gutter-tiny);
 }
 

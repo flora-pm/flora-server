@@ -6,4 +6,6 @@ import FloraWeb.Pages.Templates.Types
 
 skipLink :: FloraHTML
 skipLink =
-  a_ [class_ "skipLink", href_ "#main"] "Skip to main"
+  div_ [class_ "skipLink"] $ do
+    a_ [class_ "btn", href_ "#main"] "Skip to main"
+

@@ -43,6 +43,12 @@ defaultLinkOptions =
 ariaLabel_ :: Text -> Attributes
 ariaLabel_ = makeAttributes "aria-label"
 
+ariaLabelledby_ :: Text -> Attributes
+ariaLabelledby_ = makeAttributes "aria-labelledby"
+
+ariaHidden :: Text -> Attributes
+ariaHidden = makeAttributes "aria-hidden"
+
 -- Prefer these ones as they are integrated with AlpineJS
 ariaControls_ :: Text -> Attributes
 ariaControls_ = makeAttributes ":aria-controls"

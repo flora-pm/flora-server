@@ -17,6 +17,7 @@ import Lucid
 import Flora.Environment.Config
 import FloraWeb.Components.Alert qualified as Alert
 import FloraWeb.Components.Header (header)
+import FloraWeb.Components.Footer (footer)
 import FloraWeb.Pages.Templates.Types as Types
 
 render :: Monad m => TemplateEnv -> FloraHTML -> m (Html ())
@@ -38,8 +39,9 @@ rendered target = do
     Alert.info (display msg)
   whenJust flashError $ \msg -> do
     Alert.exception (display msg)
-  main_ [class_ "container-fluid", id_ "main"] target
+  main_ [id_ "main"] target
   prismLink
+  footer
 
 prismLink :: FloraHTML
 prismLink = do

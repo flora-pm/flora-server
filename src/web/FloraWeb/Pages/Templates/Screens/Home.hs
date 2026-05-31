@@ -102,15 +102,18 @@ newPackagesColumn now newPackages = div_ [class_ "package-news-column"] $ do
 about :: FloraHTML
 about = do
   TemplateEnv{environment} <- ask
-  div_ [class_ "container about-page"] $ do
-    div_ [class_ "divider about-page__banner"] $ do
-      p_ [class_ "about-page__title"] "Flora.pm"
-      p_ [class_ "about-page__subtitle"] "An index for the Haskell ecosystem"
-    case environment of
-      Development ->
-        p_ [class_ ""] "⚠ You are using a development instance of Flora ⚠"
-      _ -> ""
-    aboutText
+  header_ [class_ "pageHead pageHead--decorative"] $ do
+    div_ [class_ "wrapper"] $ do
+      div_ [class_ "flow"] $ do
+        h1_ [class_ "pageHead-title"] "About Flora"
+        p_ [class_ "pageHead-subtitle"] "An index for the Haskell ecosystem"
+  section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
+    div_ [class_ "wrapper wrapper--medium wrapper--nogutter prose"] $ do
+      case environment of
+        Development ->
+          p_ [class_ "alert alert--warning"] "You are using a development instance of Flora"
+        _ -> ""
+      aboutText
 
 aboutText :: FloraHTML
 aboutText = do
@@ -119,22 +122,19 @@ aboutText = do
     text :: Text
     text =
       [str|
-<h3 class=""> What is Flora? </h3>
-
-<div class="bullets">
+## What is Flora?
 
 Flora.pm is a package index for the [Haskell](https://haskell.org) ecosystem. It indexes packages from [Hackage](https://hackage.haskell.org)
 and provides new features and improvements:
-recentUploadsategory model, with elimination of duplicates
-recentUploadsamespaces, so that packages with the same name can live without conflict
+* Curated category model, with elimination of duplicates
+* Package namespaces, so that packages with the same name can live without conflict
 * Beautiful package pages
 * Responsive interface for mobile devices
 * Dark mode
-</div>
 
 Flora is the work of volunteers, and the source can be read on [GitHub](https://github.com/flora-pm/flora-server).
 
-<h3> Moderation and Code of Conduct </h3>
+## Moderation and Code of Conduct
 
 The Flora project is governed by a [Code of Conduct](https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md).
 If you feel like a resource on the service or a participant in the project has an inappropriate behaviour in relation to the code of conduct,
