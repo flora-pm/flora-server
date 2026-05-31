@@ -13,6 +13,9 @@ text = toHtml
 property_ :: Text -> Attributes
 property_ = makeAttributes "property"
 
+autocapitalize_ :: Text -> Attributes
+autocapitalize_ = makeAttributes "autocapitalize"
+
 data LinkOptions = LinkOptions
   { href :: Text
   , classes :: Text
