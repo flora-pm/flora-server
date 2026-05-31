@@ -1,13 +1,12 @@
 .entityCard {
-	--entityCard-radius: var(--radius-sm);
-	--entityCard-inset-block: var(--space-2);
-	--entityCard-inset-inline: min(var(--wrapper-padding, 0), var(--space-2));
-
+	--entity-card-radius: var(--radius-sm);
+	--entity-card-inset-block: var(--space-2);
+	--entity-card-inset-inline: min(var(--wrapper-padding, 0), var(--space-2));
 	flex-grow: 1;
 	display: block;
-	padding: var(--entityCard-inset-block) var(--entityCard-inset-inline);
-	border-radius: var(--entityCard-radius);
-	margin-inline: calc(var(--entityCard-inset-block) * -1);
+	padding: var(--entity-card-inset-block) var(--entity-card-inset-inline);
+	border-radius: var(--entity-card-radius);
+	margin-inline: calc(var(--entity-card-inset-block) * -1);
 }
 
 .entityCard:is(

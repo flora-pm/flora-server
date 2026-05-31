@@ -28,6 +28,7 @@ a:not([class]) {
 a:where(:not([class])):is(:hover, :active) {
 	color: var(--color-text-raise);
 }
+
 a:focus-visible {
 	border-radius: var(--radius-xs);
 }
@@ -41,6 +42,7 @@ code {
 	outline-color: transparent;
 	outline-offset: calc(-1 * var(--outline-width));
 }
+
 *:focus-visible {
 	outline-style: solid;
 	outline-width: var(--outline-width);
@@ -80,6 +82,7 @@ details pre {
 		flex-wrap: wrap;
 	}
 	summary::marker { content: "" }
+
 	summary::after {
 		content: "";
 		position: absolute;
@@ -88,10 +91,11 @@ details pre {
 		width: 0;
 		height: 0;
 		border-style: solid;
-		border-width: calc(1.732 * .3em) .3em 0 .3em;
-		border-color: currentColor transparent transparent transparent;
+		border-width: calc(1.732 * .3em) .3em 0;
+		border-color: currentcolor transparent transparent;
 		transform: rotate(0deg);
 	}
+
 	.details--nobody summary::after {
 		margin-right: var(--space-2);
 	}

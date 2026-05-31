@@ -23,10 +23,12 @@
 			"logo nav nav"
 			"search search search";
 	}
+
 	.header-container--nosearch {
 		grid-template-areas: "logo nav nav";
 	}
 }
+
 @media (max-width: 23.75rem) {
 	.header-container {
 		grid-template-columns: auto 1fr;
@@ -35,6 +37,7 @@
 			"nav nav"
 			"search search";
 	}
+
 	.header-container--nosearch {
 		grid-template-areas:
 			"logo null"

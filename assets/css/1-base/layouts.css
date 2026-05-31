@@ -36,6 +36,7 @@ Flows
 .flow--small > * + * {
 	margin-top: var(--space-gutter-small);
 }
+
 .flow--tiny > * + * {
 	margin-top: var(--space-gutter-tiny);
 }
@@ -78,12 +79,10 @@ Simple horizontal distribution utilities
 
 .cluster {
 	display:flex;
-	flex-direction:var(--cluster-direction,row);
-	flex-wrap:var(--cluster-wrap,wrap);
+	flex-flow:var(--cluster-direction,row) var(--cluster-wrap,wrap);
 	justify-content:var(--cluster-horizontal-alignment,flex-start);
 	align-items:var(--cluster-vertical-alignment,center);
-	column-gap:var(--cluster-column-gap,var(--space-gutter));
-	row-gap:var(--cluster-row-gap,var(--space-gutter))
+	gap:var(--cluster-row-gap,var(--space-gutter)) var(--cluster-column-gap,var(--space-gutter))
 }
 
 .cluster--large { --cluster-column-gap: var(--space-gutter-large); --cluster-row-gap: var(--space-gutter-large); }
@@ -95,12 +94,10 @@ Simple horizontal distribution utilities
 
 .repel {
 	display:flex;
-	flex-direction:var(--repel-direction,row);
+	flex-flow:var(--repel-direction,row) var(--repel-wrap,wrap);
 	justify-content:var(--repel-horizontal-alignment,space-between);
 	align-items:var(--repel-vertical-alignment,center);
-	flex-wrap:var(--repel-wrap,wrap);
-	column-gap:var(--repel-column-gap,var(--space-gutter));
-	row-gap:var(--repel-row-gap,var(--space-gutter))
+	gap:var(--repel-row-gap,var(--space-gutter)) var(--repel-column-gap,var(--space-gutter))
 }
 .repel--nowrap { --repel-wrap: wrap; }
 .repel--stretch { --repel-vertical-alignment: stretch; }

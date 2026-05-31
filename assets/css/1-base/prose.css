@@ -11,6 +11,7 @@
 .prose :is(h2,h3,h4,h5,h6) {
 	--prose-flow-space: calc(1.5 * var(--space-gutter-large));
 	line-height: var(--leading-thin);
+
 	/* font-weight: var(--fontweight-heading); */
 	color: var(--color-text-raise);
 }
@@ -44,9 +45,10 @@
 	border-radius: var(--radius-xs);
 	overflow-x: auto;
 }
+
 @media (forced-colors: active) {
 	.prose :is(pre) {
-		border: 1px solid currentColor
+		border: 1px solid currentcolor
 	}
 }
 

@@ -46,10 +46,6 @@ tr:last-child td:last-child {
 	border-bottom-right-radius: var(--radius-xs);
 }
 
-.table--striped tbody tr:nth-child(even) {
-	background-color: var(--color--background-x-light);
-}
-
 .table-outer-wrapper {
 	display: flex;
 }

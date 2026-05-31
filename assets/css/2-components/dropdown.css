@@ -53,7 +53,7 @@
 
 .dropdown hr {
 	border-style: solid;
-	border-width: 1px 0 0 0;
+	border-width: 1px 0 0;
 	border-color: var(--color-stroke-default);
 }
 
@@ -70,7 +70,7 @@ Content
 	display: flex;
 	align-items: center;
 	gap: var(--dropdown-gap);
-	color: currentColor;
+	color: currentcolor;
 	border: none;
 	background: transparent;
 	text-decoration: none;

@@ -33,16 +33,18 @@ a.tab:is(:hover,:active) {
 	.tab {
 		border-color: Canvas;
 	}
+
 	a.tab {
 		text-decoration: underline;
 	}
+
 	a.tab:is(:hover,:active) {
 	color: LinkText;
 }
 }
 
 .tab:where([aria-current="page"]) {
-	border-color: currentColor;
+	border-color: currentcolor;
 	color: var(--color-text-raise);
 }
 

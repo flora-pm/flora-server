@@ -9,9 +9,11 @@
 .inset-region {
 	padding-block: var(--space-region);
 }
+
 .inset-large {
 	padding-block: var(--space-gutter-large);
 }
+
 .inset-x {
 	padding-inline: var(--space-gutter);
 }

@@ -41,7 +41,7 @@
 }
 
 .btn--square,
-.btn:where(:has(svg:only-child)) {
+.btn:has(svg:only-child) {
 	padding-inline: var(--btn-inset-block);
 }
 
