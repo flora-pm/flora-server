@@ -1,0 +1,30 @@
+input,
+select,
+textarea {
+	background: var(--input-bg);
+	border: var(--input-border-width) solid var(--input-border-color);
+	border-radius: var(--input-radius);
+	color: var(--color-text-default);
+	font-size: var(--text-base);
+	line-height: var(--input-leading);
+}
+
+input:not(:where([type="radio"], [type="checkbox"], [type="range"])),
+select,
+textarea {
+	padding-block: var(--input-inset-block);
+	padding-inline: var(--input-inset-inline);
+	color: var(--color-text-raise);
+}
+
+.input--big {
+	padding-block: calc(var(--input-inset-block) * 1.5);
+	padding-inline: calc(var(--input-inset-inline) * 1.5);
+	font-size: var(--text-large);
+}
+
+input::placeholder,
+select::placeholder,
+textarea::placeholder {
+	color: var(--color-text-tertiary)
+}

@@ -1,0 +1,35 @@
+.tooltip {
+	--tooltip-inset: var(--space-2);
+	--tooltip-border-width: var(--space-1);
+	--tooltip-radius: var(--radius-xs);
+	--tooltip-width: 30ch;
+	position: absolute;
+	inset: auto;
+	margin: var(--space-1);
+	max-width: min(90vw, var(--tooltip-width, 50ch));
+	width: max-content;
+	position-anchor: auto;
+	position-area: top center;
+	position-try-fallbacks: top, bottom, right, left;
+	padding: var(--tooltip-inset);
+	border: 1px solid var(--color-stroke-default);
+	border-radius: var(--tooltip-radius);
+	background: var(--color-surface-default);
+	box-shadow: var(--shadow-default);
+	font-size: var(--text-small);
+	color: var(--color-text-default);
+	interest-delay: 0.1s;
+
+	/* Entry animation */
+	transition:
+		opacity 0.25s,
+		translate 0.1s;
+	transition-behavior: allow-discrete;
+
+}
+
+.tooltip hr {
+	border-style: solid;
+	border-width: 1px 0 0 0;
+	border-color: var(--color-stroke-default);
+}

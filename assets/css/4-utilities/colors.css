@@ -1,0 +1,6 @@
+
+.color-raise { color: var(--color-text-raise); }
+.color-default { color: var(--color-text-default); }
+.color-secondary { color: var(--color-text-secondary); }
+.color-tertiary { color: var(--color-text-tertiary); }
+.color-quaternary { color: var(--color-text-quaternary); }

@@ -8,7 +8,7 @@ const postcssNesting = require("postcss-nesting");
 const postcssCustomMedia = require('postcss-custom-media');
 const autoprefixer = require("autoprefixer");
 const postcssCopy = require("postcss-copy")({
-  dest: "../assets/fonts",
+  dest: "../static",
 });
 const postcssDesignTokenUtils = require("postcss-design-token-utils");
 const designTokensConfig = require("./style-tokens/tokens.js");
@@ -81,7 +81,8 @@ const config = {
   metafile: true,
   loader:
     { '.woff2': 'file',
-	  '.ttf': 'file'
+	  '.ttf': 'file',
+	  '.svg': 'file',
 	},
 }
 

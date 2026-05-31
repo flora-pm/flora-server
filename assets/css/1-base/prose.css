@@ -1,0 +1,94 @@
+
+.prose {
+	--prose-flow-space: var(--space-gutter);
+	overflow-wrap:break-word
+}
+
+.prose > * + * {
+	margin-block-start: var(--prose-flow-space, 1em);
+}
+
+.prose :is(h2,h3,h4,h5,h6) {
+	--prose-flow-space: calc(1.5 * var(--space-gutter-large));
+	line-height: var(--leading-thin);
+	/* font-weight: var(--fontweight-heading); */
+	color: var(--color-text-raise);
+}
+
+/* .prose :is(h2+*,h3+*,h4+*,h5+*,h6+*) {
+	--prose-flow-space: var(--space-gutter-large);
+} */
+
+.prose h1 { font-size: var(--text-heading-1); }
+.prose h2 { font-size: var(--text-heading-2); }
+.prose h3 { font-size: var(--text-heading-3); }
+.prose h4 { font-size: var(--text-heading-4); }
+.prose h5 { font-size: var(--text-large); }
+
+
+.prose :is(audio, canvas, embed, iframe, img, object, svg, video) {
+	display: revert;
+}
+
+.prose :is(ul, ol) {
+	list-style: revert;
+	padding-left: revert;
+}
+
+.prose li::marker {
+	color: var(--color-text-quaternary);
+}
+
+.prose pre {
+	padding: var(--space-gutter);
+	border-radius: var(--radius-xs);
+	overflow-x: auto;
+}
+@media (forced-colors: active) {
+	.prose :is(pre) {
+		border: 1px solid currentColor
+	}
+}
+
+.prose code {
+	padding: .15em .3em;
+	border-radius: var(--radius-xs);
+	color: inherit; /* override prism.js for now */
+}
+
+.prose :is(pre, code) {
+	font-size: 80%;
+	word-break: break-all;
+	background: var(--color-surface-secondary);
+	hyphens: none;
+	tab-size: 4;
+}
+
+.prose pre > code {
+	font-size: 100%;
+	padding: 0;
+	text-shadow: unset;
+}
+
+.prose > * a {
+	text-decoration-color: var(--color-underline-default);
+}
+
+/* floating images in markdown */
+.prose img[align="left"],
+.prose img[align="right"] {
+	margin-block-end: 1em;
+}
+
+.prose img[align="left"] {
+	margin-inline-end: 1em;
+}
+
+.prose img[align="right"] {
+	margin-inline-start: 1em;
+}
+
+.prose img[align="left"]:first-child,
+.prose img[align="right"]:first-child {
+	margin-block-start: 0;
+}
