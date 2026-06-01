@@ -46,7 +46,7 @@ showResults
   -> FloraHTML
 showResults searchString count currentPage exactMatches results = do
   div_ [class_ "container"] $ do
-    presentationHeader (toHtml searchString) "" count
+    presentationHeader ("Search for: " <> (toHtml searchString)) "" count
     packageListing (Just exactMatches) results
     when (count > 30) $
       paginationNav count currentPage (SearchPackages searchString)

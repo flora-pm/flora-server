@@ -1,10 +1,11 @@
 module FloraWeb.Components.PackageListHeader where
 
+import Control.Monad (when)
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Lucid
 
-import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Pages.Templates.Types
 
 presentationHeader
@@ -16,14 +17,10 @@ presentationHeader
   -- ^ Number of packages
   -> FloraHTML
 presentationHeader title subtitle numberOfPackages = do
-  div_ [class_ "divider"] $ do
-    div_ [class_ "page-title"] $ do
-      h1_ [class_ ""] $ do
-        span_ [class_ "headline"] title
-    div_ [class_ "synopsis lg:text-xl text-center"] $
-      p_ [class_ ""] (toHtml subtitle)
-    p_ [class_ "package-count"] $ toHtml $ display numberOfPackages <> " results"
-    p_ [class_ "search-announcement"] $ do
-      Icons.feed
-      toHtml ("Check out " :: Text)
-      a_ [href_ "/documentation/package-feeds"] "Package Feeds"
+  header_ [class_ "pageHead"] $ do
+    div_ [class_ "wrapper aside"] $ do
+      div_ [class_ "flow"] $ do
+        h1_ [class_ "pageHead-title text-break"] title
+        when (not (Text.null subtitle)) $
+          p_ [class_ "pageHead-subtitle text-break"] (toHtml subtitle)
+      p_ [class_ "title-3 self-center"] $ toHtml $ display numberOfPackages <> " results"
