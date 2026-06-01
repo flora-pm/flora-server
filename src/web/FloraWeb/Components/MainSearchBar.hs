@@ -23,4 +23,3 @@ mainSearchBar =
         , spellcheck_ "off"
         ]
       button_ [class_ "btn btn--big", type_ "submit", ariaLabel_ "Search"] Icons.lookingGlass
-

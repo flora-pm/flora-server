@@ -2,8 +2,8 @@ module FloraWeb.Components.Footer where
 
 import Lucid
 
-import FloraWeb.Pages.Templates.Types (FloraHTML)
 import FloraWeb.Components.Utils
+import FloraWeb.Pages.Templates.Types (FloraHTML)
 
 footer :: FloraHTML
 footer =
@@ -44,12 +44,3 @@ footer =
         span_ [class_ "color-quaternary", ariaHidden "true"] "::"
         " Design & Frontend by "
         a_ [href_ "https://guerilla.studio"] "Guérilla.Studio"
-
-
-
-
-
-
-
-
-

@@ -16,8 +16,8 @@ import Lucid
 
 import Flora.Environment.Config
 import FloraWeb.Components.Alert qualified as Alert
-import FloraWeb.Components.Header (header)
 import FloraWeb.Components.Footer (footer)
+import FloraWeb.Components.Header (header)
 import FloraWeb.Pages.Templates.Types as Types
 
 render :: Monad m => TemplateEnv -> FloraHTML -> m (Html ())

@@ -19,5 +19,6 @@ index categories = do
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Categories"
     ul_ [class_ "grid grid-3 grid--large", role_ "list"] $ do
-      V.forM_ categories $ \cat -> li_ [class_ "flex"] $
-        categoryCard cat
+      V.forM_ categories $ \cat ->
+        li_ [class_ "flex"] $
+          categoryCard cat

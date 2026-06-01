@@ -17,9 +17,9 @@ import PyF
 
 import Flora.Environment.Env
 import Flora.Model.Package.Types
+import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.MainSearchBar (mainSearchBar)
 import FloraWeb.Components.Utils (dataText_)
-import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Pages.Templates.Packages (formatUploadTime)
 import FloraWeb.Pages.Templates.Types
 
@@ -53,7 +53,6 @@ banner packageCount = do
     a_ [class_ "btn btn--big"] $ do
       "Explore Packages"
       Icons.arrowRight
-
 
 packageNewsSection
   :: UTCTime
@@ -108,7 +107,6 @@ newPackagesColumn now newPackages = section_ [class_ "flow"] $ do
           p_ [] (toHtml synopsis)
         whenJust mTimestamp $ \timestamp ->
           div_ [] $ span_ [dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp)), class_ "upload-date"] (toHtml $ formatUploadTime timestamp now)
-
 
 about :: FloraHTML
 about = do

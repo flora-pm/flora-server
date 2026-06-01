@@ -37,13 +37,14 @@ navbar = do
   --       }
   --     }
   --   }
-  -- |]
+  -- \|]
 
   ActiveElements{aboutNav, packagesNav} <- asks (.activeElements)
   header_
-    [ class_ "header" ] $ do
+    [class_ "header"]
+    $ do
       div_ [class_ "header-container wrapper"] $ do
-        a_ [ class_ "header-logo", href_ "/", ariaLabel_ "Homepage" ] $ do
+        a_ [class_ "header-logo", href_ "/", ariaLabel_ "Homepage"] $ do
           brand
         navbarSearch
         nav_ [class_ "header-nav cluster", ariaLabel_ "Main"] $ do
@@ -54,10 +55,10 @@ brand :: FloraHTML
 brand = do
   "Flora"
   toHtmlRaw ("&nbsp;" :: Text)
-  span_ [ class_ "color-tertiary" ] ":: "
-  span_ [ class_ "color-quaternary" ] "["
+  span_ [class_ "color-tertiary"] ":: "
+  span_ [class_ "color-quaternary"] "["
   "Package"
-  span_ [ class_ "color-quaternary" ] "]"
+  span_ [class_ "color-quaternary"] "]"
 
 navBarLink
   :: Text
