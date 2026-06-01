@@ -7,6 +7,7 @@ textarea {
 	color: var(--color-text-default);
 	font-size: var(--text-base);
 	line-height: var(--input-leading);
+	box-sizing: border-box;
 }
 
 input:not(:where([type="radio"], [type="checkbox"], [type="range"])),
@@ -27,4 +28,8 @@ input::placeholder,
 select::placeholder,
 textarea::placeholder {
 	color: var(--color-text-tertiary)
+}
+
+.label {
+	display: block;
 }
