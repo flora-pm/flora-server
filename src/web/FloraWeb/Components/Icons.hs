@@ -12,6 +12,10 @@ module FloraWeb.Components.Icons
   , lightbulb
   , cross
   , feed
+  , arrowRight
+  , externalLink
+  , tag
+  , cloudUpload
   ) where
 
 import Data.Text (Text)
@@ -51,8 +55,11 @@ lookingGlass :: FloraHTML
 lookingGlass =
   toHtmlRaw @Text
     [str|
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor">
-  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"> </path>
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="m21 21l-4.34-4.34"></path>
+    <circle cx="11" cy="11" r="8"></circle>
+  </g>
 </svg>
 |]
 
@@ -130,5 +137,47 @@ feed =
 		<circle style="fill:#FFFFFF;" cx="109.833" cy="346.26" r="46.088"/>
 	</g>
 </g>
+</svg>
+    |]
+
+arrowRight :: FloraHTML
+arrowRight =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-7-7l7 7l-7 7"></path>
+</svg>
+    |]
+
+externalLink :: FloraHTML
+externalLink =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3h6v6m-11 5L21 3m-3 10v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+</svg>
+    |]
+
+tag :: FloraHTML
+tag =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path>
+    <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle>
+  </g>
+</svg>
+    |]
+
+cloudUpload :: FloraHTML
+cloudUpload =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M12 13v8m-8-6.101A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+    <path d="m8 17l4-4l4 4"></path>
+  </g>
 </svg>
     |]

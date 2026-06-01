@@ -19,6 +19,7 @@ import Flora.Environment.Env
 import Flora.Model.Package.Types
 import FloraWeb.Components.MainSearchBar (mainSearchBar)
 import FloraWeb.Components.Utils (dataText_)
+import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Pages.Templates.Packages (formatUploadTime)
 import FloraWeb.Pages.Templates.Types
 
@@ -28,29 +29,31 @@ show
   -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
   -> FloraHTML
 show now recentUploads latestPackages = do
-  banner
-  div_ [class_ "container container--small"] $ do
-    mainSearchBar
-    buttons
+  -- TODO: show real number
+  banner 2
+  div_ [class_ "wrapper flow flow--large inset-region"] $ do
     packageNewsSection now latestPackages recentUploads
 
-banner :: FloraHTML
-banner = do
-  div_ [class_ "relative"] $
-    h1_ [class_ "main-title"] $
-      span_ [class_ "main-title"] "Search Haskell packages on Flora"
+banner :: Int -> FloraHTML
+banner packageCount = do
+  header_ [class_ "pageHead pageHead--expanded pageHead--decorative"] $
+    div_ [class_ "wrapper text-center flow flow--large"] $ do
+      h1_ [class_ "pageHead-title"] "Search Haskell packages on Flora"
+      p_ [class_ "pageHead-subtitle"] $ do
+        "Flora gathers, indexes & curates "
+        toHtml (display packageCount)
+        " packages"
+      mainSearchBar
+      p_ [class_ "inline-block alert alert--small"] $ do
+        "New to the Haskell ecosystem? "
+        a_ [href_ "https://www.haskell.org/get-started/", target_ "_blank"] $ do
+          "Get started"
+          span_ [class_ "icon icon--small"] Icons.externalLink
+  div_ [class_ "wrapper text-center overlapHalf"] $
+    a_ [class_ "btn btn--big"] $ do
+      "Explore Packages"
+      Icons.arrowRight
 
-buttons :: FloraHTML
-buttons =
-  section_ [id_ "main-page-buttons"] $ do
-    a_ [class_ "button", href_ "https://www.haskell.org/ghcup/"] $ do
-      h2_
-        [class_ "category-card__name"]
-        "Install Haskell"
-    a_ [class_ "button", href_ "https://cabal.readthedocs.io/en/stable/getting-started.html"] $ do
-      h2_
-        [class_ "category-card__name"]
-        "Start with Cabal"
 
 packageNewsSection
   :: UTCTime
@@ -58,7 +61,7 @@ packageNewsSection
   -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> FloraHTML
 packageNewsSection now newPackages recentUploads = do
-  section_ [id_ "package-news"] $ do
+  div_ [class_ "grid grid-2 grid--large"] $ do
     newPackagesColumn now newPackages
     recentUploadsColumn now recentUploads
 
@@ -66,38 +69,46 @@ recentUploadsColumn
   :: UTCTime
   -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> FloraHTML
-recentUploadsColumn now recentPackages = div_ [class_ "package-news-column"] $ do
-  h2_ "Recently Updated"
-  ul_ [] $ do
+recentUploadsColumn now recentPackages = section_ [class_ "flow"] $ do
+  h2_ [class_ "title-section"] "Recently Updated"
+  ol_ [class_ "flow", role_ "list", reversed_ ""] $ do
     forM_ recentPackages $ \(namespace, name, synopsis, version, mTimestamp) -> do
       li_ [] $ do
-        div_ [] $ do
+        a_ [class_ "entityCard", href_ ("/packages/" <> display namespace <> "/" <> display name <> "/" <> display version)] $ do
           div_ [] $ do
-            a_ [href_ ("/packages/" <> display namespace <> "/" <> display name <> "/" <> display version)] (toHtml $ formatPackage namespace name)
-            span_ [] (toHtml $ display version)
-          p_ [] (toHtml synopsis)
-        whenJust mTimestamp $ \timestamp ->
-          div_ [] $
-            span_
-              [ dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp))
-              , class_ "upload-date"
-              ]
-              (toHtml $ formatUploadTime timestamp now)
+            span_ [] $ do
+              span_ [class_ "entityCard-prefix"] ("@" <> toHtml namespace <> (toHtmlRaw ("&ThinSpace;" :: Text)) <> "/" <> (toHtmlRaw ("&ThinSpace;" :: Text)))
+              span_ [class_ "entityCard-title"] (toHtml name)
+              " "
+            span_ [class_ "entityCard-synopsis"] (toHtml synopsis) -- TODO: Display span only if synopsis is present
+          ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
+            li_ $ do
+              span_ [class_ "color-tertiary"] Icons.tag
+              span_ [class_ "sr-only"] "Version: "
+              (toHtml $ display version)
+            whenJust mTimestamp $ \timestamp ->
+              li_ $ do
+                span_ [class_ "color-tertiary"] Icons.cloudUpload
+                span_ [class_ "sr-only"] "Last uploaded: "
+                time_ [datetime_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp))] $
+                  (toHtml $ formatUploadTime timestamp now)
 
 newPackagesColumn
   :: UTCTime
   -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
   -> FloraHTML
-newPackagesColumn now newPackages = div_ [class_ "package-news-column"] $ do
-  h2_ "New packages"
-  ul_ [] $ do
+newPackagesColumn now newPackages = section_ [class_ "flow"] $ do
+  h2_ [class_ "title-section"] "New packages"
+  ol_ [class_ "flow", role_ "list", reversed_ ""] $ do
     forM_ newPackages $ \(namespace, name, synopsis, mTimestamp) -> do
+      -- TODO: Display the same card as Recently Updated packages
       li_ [] $ do
         div_ [] $ do
           a_ [href_ ("/packages/" <> display namespace <> "/" <> display name)] (toHtml $ formatPackage namespace name)
           p_ [] (toHtml synopsis)
         whenJust mTimestamp $ \timestamp ->
           div_ [] $ span_ [dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp)), class_ "upload-date"] (toHtml $ formatUploadTime timestamp now)
+
 
 about :: FloraHTML
 about = do
