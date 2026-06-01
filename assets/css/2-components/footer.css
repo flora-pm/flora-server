@@ -1,5 +1,4 @@
 .footer {
-	min-height: calc(min(var(--size-wrapper), 90vw) / 3.14);
 	margin-top: var(--space-region);
 	border-top: 1px solid var(--color-stroke-default);
 }
