@@ -37,11 +37,11 @@ footer =
         "A project "
         a_ [href_ "https://notbyai.fyi/"] "made by humans"
         " "
-        span_ [class_ "quaternary", ariaHidden "true"] "::"
+        span_ [class_ "color-quaternary", ariaHidden "true"] "::"
         " "
         a_ [href_ "https://github.com/flora-pm/flora-server"] "Sources"
         " distributed under AGPL license "
-        span_ [class_ "quaternary", ariaHidden "true"] "::"
+        span_ [class_ "color-quaternary", ariaHidden "true"] "::"
         " Design & Frontend by "
         a_ [href_ "https://guerilla.studio"] "Guérilla.Studio"
 
