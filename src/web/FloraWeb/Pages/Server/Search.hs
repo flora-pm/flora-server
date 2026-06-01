@@ -5,6 +5,7 @@ import Data.Vector qualified as Vector
 import Effectful
 import Effectful.Reader.Static (Reader)
 import Effectful.Time
+import Effectful.Time qualified as Time
 import Effectful.Tracing (Tracer)
 import Lucid (Html)
 import RequireCallStack
@@ -42,6 +43,7 @@ searchHandler
 searchHandler s Nothing pageParam = searchHandler s (Just "") pageParam
 searchHandler (Headers session _) (Just searchString) pageParam = do
   let pageNumber = pageParam ?: PositiveUnsafe 1
+  now <- Time.currentTime
   templateDefaults <- templateFromSession session defaultTemplateEnv
   let templateEnv =
         templateDefaults
@@ -54,32 +56,32 @@ searchHandler (Headers session _) (Just searchString) pageParam = do
       (count, results) <- Search.listAllPackagesInNamespace pagination namespace
       let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
       render templateEnv $
-        Search.showResults searchString count pageNumber matchVector packagesInfo
+        Search.showResults now searchString count pageNumber matchVector packagesInfo
     Just ListAllPackages -> do
       (count, results) <- Search.listAllPackages pagination
       let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
       render templateEnv $
-        Search.showResults searchString count pageNumber matchVector packagesInfo
+        Search.showResults now searchString count pageNumber matchVector packagesInfo
     Just (SearchInNamespace namespace (PackageName packageName)) -> do
       (count, results) <- Search.searchPackageByNamespaceAndName pagination namespace packageName
       let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
       render templateEnv $
-        Search.showResults searchString count pageNumber matchVector packagesInfo
+        Search.showResults now searchString count pageNumber matchVector packagesInfo
     Just (DependentsOf namespace packageName mSearchString) -> do
       (count, results) <- Search.searchDependents pagination namespace packageName mSearchString
       let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
       render templateEnv $
-        Search.showResults searchString count pageNumber matchVector packagesInfo
+        Search.showResults now searchString count pageNumber matchVector packagesInfo
     Just (SearchPackages _) -> do
       (count, results) <- Search.searchPackageByName pagination searchString
       let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
       render templateEnv $
-        Search.showResults searchString count pageNumber matchVector packagesInfo
+        Search.showResults now searchString count pageNumber matchVector packagesInfo
     Nothing -> do
       (count, results) <- Search.searchPackageByName pagination searchString
       let (matchVector, packagesInfo) = Vector.partition (\p -> p.name == PackageName searchString) results
       render templateEnv $
-        Search.showResults searchString count pageNumber matchVector packagesInfo
+        Search.showResults now searchString count pageNumber matchVector packagesInfo
     Just (SearchExecutable executableName) -> do
       (count, results) <- Search.searchExecutable pagination executableName
       render templateEnv $

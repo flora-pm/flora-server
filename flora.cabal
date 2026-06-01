@@ -354,6 +354,7 @@ library flora-web
     FloraWeb.Components.Icons
     FloraWeb.Components.MainSearchBar
     FloraWeb.Components.Navbar
+    FloraWeb.Components.PackageCard
     FloraWeb.Components.PackageGroup
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem

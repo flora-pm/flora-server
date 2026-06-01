@@ -4,11 +4,12 @@ import Control.Monad (when)
 import Data.Text (Text)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Lucid (class_, li_, nav_, ul_)
+import Lucid (a_, class_, href_, li_, nav_, ul_)
 import Servant.API (toUrlPiece)
 
 import Data.Positive
 import Flora.Search (SearchAction (..))
+import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML)
@@ -23,24 +24,45 @@ paginationNav
   -> FloraHTML
 paginationNav totalResults currentPage searchAction = do
   let (totalPages :: Word) = (totalResults `div` 30) + 1
-  nav_ [class_ "pagination-area"] $
-    ul_ [class_ "pagination-footer inline-flex"] $ do
-      when (currentPage.unPositive > 1) $
-        li_ [class_ "pagination-footer__item"] $ do
-          link
-            defaultLinkOptions
-              { href = mkURL searchAction (currentPage - 1)
-              , classes = "pagination-footer__page pagination-footer__previous"
-              , childNode = "Previous"
-              }
-      when (currentPage.unPositive < totalPages) $
-        li_ [class_ "pagination-footer__item"] $
-          link
-            defaultLinkOptions
-              { href = mkURL searchAction (currentPage + 1)
-              , classes = "pagination-footer__page pagination-footer__next"
-              , childNode = "Next"
-              }
+  let disablePreviousButton = currentPage == 1
+  let disableNextButton = currentPage.unPositive == totalPages
+  nav_ [class_ "pagination", ariaLabel_ "Pagination"] $ do
+    when (currentPage.unPositive < totalPages) $
+      a_
+        [ class_ "pagination-more btn btn--big"
+        , href_ ((mkURL searchAction (currentPage + 1)) <> "#content")
+        ]
+        "Load More"
+    a_
+      [ class_ ("pagination-secondary btn" <> (if disablePreviousButton then " btn--disabled" else ""))
+      , href_ ((mkURL searchAction (currentPage - 1)) <> "#content")
+      , ariaLabel_ "Previous page"
+      ]
+      Icons.arrowLeft
+    a_
+      [ class_ ("pagination-secondary btn" <> (if disableNextButton then " btn--disabled" else ""))
+      , href_ ((mkURL searchAction (currentPage + 1)) <> "#content")
+      , ariaLabel_ "Next page"
+      ]
+      Icons.arrowRight
+
+-- ul_ [class_ "pagination-footer inline-flex"] $ do
+--   when (currentPage.unPositive > 1) $
+--     li_ [class_ "pagination-footer__item"] $ do
+--       link
+--         defaultLinkOptions
+--           { href = mkURL searchAction (currentPage - 1)
+--           , classes = "pagination-footer__page pagination-footer__previous"
+--           , childNode = "Previous"
+--           }
+--   when (currentPage.unPositive < totalPages) $
+--     li_ [class_ "pagination-footer__item"] $
+--       link
+--         defaultLinkOptions
+--           { href = mkURL searchAction (currentPage + 1)
+--           , classes = "pagination-footer__page pagination-footer__next"
+--           , childNode = "Next"
+--           }
 
 mkURL :: SearchAction -> Positive Word -> Text
 mkURL ListAllPackages pageNumber =

@@ -12,10 +12,12 @@ module FloraWeb.Components.Icons
   , lightbulb
   , cross
   , feed
+  , arrowLeft
   , arrowRight
   , externalLink
   , tag
   , cloudUpload
+  , scale
   ) where
 
 import Data.Text (Text)
@@ -140,6 +142,15 @@ feed =
 </svg>
     |]
 
+arrowLeft :: FloraHTML
+arrowLeft =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 19l-7-7l7-7m7 7H5"></path>
+</svg>
+    |]
+
 arrowRight :: FloraHTML
 arrowRight =
   toHtmlRaw @Text
@@ -178,6 +189,17 @@ cloudUpload =
   <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
     <path d="M12 13v8m-8-6.101A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
     <path d="m8 17l4-4l4 4"></path>
+  </g>
+</svg>
+    |]
+
+scale :: FloraHTML
+scale =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M12 3v18m7-13l3 8a5 5 0 0 1-6 0zV7"></path><path d="M3 7h1a17 17 0 0 0 8-2a17 17 0 0 0 8 2h1M5 8l3 8a5 5 0 0 1-6 0zV7m2 14h10"></path>
   </g>
 </svg>
     |]

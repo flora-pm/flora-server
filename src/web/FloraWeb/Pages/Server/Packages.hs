@@ -19,7 +19,7 @@ import Effectful.Error.Static (Error, throwError)
 import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.Time (Time)
+import Effectful.Time qualified as Time
 import Effectful.Tracing (Tracer)
 import Effectful.Tracing qualified as Trace
 import Log (object, (.=))
@@ -86,6 +86,7 @@ listPackagesHandler
   :: ( IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
+     , Time.Time :> es
      , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
@@ -95,13 +96,14 @@ listPackagesHandler (Headers session _) pageParam = do
   Trace.withLinkedRoot [] $ Trace.withSpan "list-all-packages" $ do
     let pageNumber = pageParam ?: PositiveUnsafe 1
     templateEnv' <- templateFromSession session defaultTemplateEnv
+    now <- Time.currentTime
     (count', results) <- Search.listAllPackages (fromPage pageNumber)
     let templateEnv =
           templateEnv'
             { title = "Packages — Flora.pm"
             , description = "List of packages"
             }
-    render templateEnv $ Search.showAllPackages count' pageNumber results
+    render templateEnv $ Search.showAllPackages now count' pageNumber results
 
 showNamespaceHandler
   :: ( Error ServerError :> es
@@ -109,7 +111,7 @@ showNamespaceHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Time :> es
+     , Time.Time :> es
      , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
@@ -123,6 +125,7 @@ showNamespaceHandler (Headers session _) packageNamespace pageParam =
     templateDefaults <- templateFromSession session defaultTemplateEnv
     (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) packageNamespace
     mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName (extractNamespaceText packageNamespace)
+    now <- Time.currentTime
     case mPackageIndex of
       Nothing -> renderError templateDefaults notFound404
       Just packageIndex -> do
@@ -133,7 +136,7 @@ showNamespaceHandler (Headers session _) packageNamespace pageParam =
                 , description = packageIndex.description
                 }
         render templateEnv $
-          Search.showAllPackagesInNamespace packageNamespace packageIndex.description count' pageNumber results
+          Search.showAllPackagesInNamespace now packageNamespace packageIndex.description count' pageNumber results
 
 showPackageHandler
   :: ( Error ServerError :> es
@@ -268,7 +271,7 @@ showDependentsHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Time :> es
+     , Time.Time :> es
      , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
@@ -292,7 +295,7 @@ showVersionDependentsHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Time :> es
+     , Time.Time :> es
      , Tracer :> es
      )
   => SessionWithCookies (Maybe User)

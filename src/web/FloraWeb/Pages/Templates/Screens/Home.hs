@@ -7,6 +7,7 @@ import Control.Monad
 import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Data.Time (UTCTime)
 import Data.Time qualified as Time
@@ -19,6 +20,7 @@ import Flora.Environment.Env
 import Flora.Model.Package.Types
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.MainSearchBar (mainSearchBar)
+import FloraWeb.Components.PackageCard (PackageCardProps (..), packageCard)
 import FloraWeb.Components.Utils (dataText_)
 import FloraWeb.Pages.Templates.Packages (formatUploadTime)
 import FloraWeb.Pages.Templates.Types
@@ -50,7 +52,7 @@ banner packageCount = do
           "Get started"
           span_ [class_ "icon icon--small"] Icons.externalLink
   div_ [class_ "wrapper text-center overlapHalf"] $
-    a_ [class_ "btn btn--big"] $ do
+    a_ [class_ "btn btn--big", href_ "/categories"] $ do
       "Explore Packages"
       Icons.arrowRight
 
@@ -73,24 +75,19 @@ recentUploadsColumn now recentPackages = section_ [class_ "flow"] $ do
   ol_ [class_ "flow", role_ "list", reversed_ ""] $ do
     forM_ recentPackages $ \(namespace, name, synopsis, version, mTimestamp) -> do
       li_ [] $ do
-        a_ [class_ "entityCard", href_ ("/packages/" <> display namespace <> "/" <> display name <> "/" <> display version)] $ do
-          div_ [] $ do
-            span_ [] $ do
-              span_ [class_ "entityCard-prefix"] ("@" <> toHtml namespace <> (toHtmlRaw ("&ThinSpace;" :: Text)) <> "/" <> (toHtmlRaw ("&ThinSpace;" :: Text)))
-              span_ [class_ "entityCard-title"] (toHtml name)
-              " "
-            span_ [class_ "entityCard-synopsis"] (toHtml synopsis) -- TODO: Display span only if synopsis is present
-          ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
-            li_ $ do
-              span_ [class_ "color-tertiary"] Icons.tag
-              span_ [class_ "sr-only"] "Version: "
-              (toHtml $ display version)
-            whenJust mTimestamp $ \timestamp ->
-              li_ $ do
-                span_ [class_ "color-tertiary"] Icons.cloudUpload
-                span_ [class_ "sr-only"] "Last uploaded: "
-                time_ [datetime_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp))] $
-                  (toHtml $ formatUploadTime timestamp now)
+        let link = ("/packages/" <> display namespace <> "/" <> display name <> "/" <> display version)
+        packageCard
+          now
+          PackageCardProps
+            { link = link
+            , namespace = namespace
+            , name = name
+            , synopsis = synopsis
+            , mVersion = Just version
+            , mLastUploadedAt = mTimestamp
+            , mLicense = Nothing
+            , exactMatch = False
+            }
 
 newPackagesColumn
   :: UTCTime
@@ -100,14 +97,20 @@ newPackagesColumn now newPackages = section_ [class_ "flow"] $ do
   h2_ [class_ "title-section"] "New packages"
   ol_ [class_ "flow", role_ "list", reversed_ ""] $ do
     forM_ newPackages $ \(namespace, name, synopsis, mTimestamp) -> do
-      -- TODO: Display the same card as Recently Updated packages
       li_ [] $ do
-        div_ [] $ do
-          a_ [href_ ("/packages/" <> display namespace <> "/" <> display name)] (toHtml $ formatPackage namespace name)
-          p_ [] (toHtml synopsis)
-        whenJust mTimestamp $ \timestamp ->
-          div_ [] $ span_ [dataText_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp)), class_ "upload-date"] (toHtml $ formatUploadTime timestamp now)
-
+        let link = ("/packages/" <> display namespace <> "/" <> display name)
+        packageCard
+          now
+          PackageCardProps
+            { link = link
+            , namespace = namespace
+            , name = name
+            , synopsis = synopsis
+            , mVersion = Nothing -- TODO: Display version here
+            , mLastUploadedAt = mTimestamp
+            , mLicense = Nothing
+            , exactMatch = False
+            }
 about :: FloraHTML
 about = do
   TemplateEnv{environment} <- ask
@@ -116,7 +119,7 @@ about = do
       div_ [class_ "flow"] $ do
         h1_ [class_ "pageHead-title"] "About Flora"
         p_ [class_ "pageHead-subtitle"] "An index for the Haskell ecosystem"
-  section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
+  section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
     div_ [class_ "wrapper wrapper--medium wrapper--nogutter prose"] $ do
       case environment of
         Development ->

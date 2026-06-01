@@ -72,6 +72,10 @@ import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.AdvisoryListItem
 import FloraWeb.Components.Icons qualified as Icon
+import FloraWeb.Components.PackageCard
+  ( PackageCardProps (..)
+  , packageCard
+  )
 import FloraWeb.Components.PackageListItem
   ( packageListItem
   , packageWithExecutableListItem
@@ -227,20 +231,47 @@ versionListItem namespace packageName release = do
 
 -- | Render a list of package information
 packageListing
-  :: Maybe (Vector PackageInfo)
+  :: UTCTime
+  -> Maybe (Vector PackageInfo)
   -- ^ Priority items that are highlighted,
   -- like exact matches for a search
   -> Vector PackageInfo
   -> FloraHTML
-packageListing mExactMatchItems packages =
-  ul_ [class_ "package-list"] $ do
+packageListing now mExactMatchItems packages =
+  ul_ [class_ "flow flow--small", role_ "list"] $ do
     whenJust mExactMatchItems $ \exactMatchItems ->
-      forM_ exactMatchItems $ \em ->
-        div_ [class_ "exact-match"] $
-          packageListItem (em.namespace, em.name, em.synopsis, em.version, em.license, em.uploadedAt, em.revisedAt)
-    Vector.forM_
-      packages
-      (\PackageInfo{namespace, name, synopsis, version, license, uploadedAt, revisedAt} -> packageListItem (namespace, name, synopsis, version, license, uploadedAt, revisedAt))
+      forM_ exactMatchItems $ \em -> do
+        let link = ("/packages/" <> display em.namespace <> "/" <> display em.name)
+        let mLastUploadedAt = if isJust em.revisedAt then em.revisedAt else em.uploadedAt
+        li_ $
+          packageCard
+            now
+            PackageCardProps
+              { link = link
+              , namespace = em.namespace
+              , name = em.name
+              , synopsis = em.synopsis
+              , mVersion = Just em.version
+              , mLastUploadedAt = mLastUploadedAt
+              , mLicense = Just em.license
+              , exactMatch = True
+              }
+    Vector.forM_ packages $ \p -> do
+      let link = ("/packages/" <> display p.namespace <> "/" <> display p.name)
+      let mLastUploadedAt = if isJust p.revisedAt then p.revisedAt else p.uploadedAt
+      li_ $
+        packageCard
+          now
+          PackageCardProps
+            { link = link
+            , namespace = p.namespace
+            , name = p.name
+            , synopsis = p.synopsis
+            , mVersion = Just p.version
+            , mLastUploadedAt = mLastUploadedAt
+            , mLicense = Just p.license
+            , exactMatch = False
+            }
 
 packageWithExecutableListing
   :: Vector PackageInfoWithExecutables
