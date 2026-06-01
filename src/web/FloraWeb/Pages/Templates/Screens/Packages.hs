@@ -4,6 +4,7 @@ import Control.Monad
 import Data.Function ((&))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
@@ -15,8 +16,8 @@ import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Types (Release (..))
-import FloraWeb.Components.Icons (chevronRightOutline)
-import FloraWeb.Components.Pill qualified as Pill
+import FloraWeb.Components.Icons qualified as Icons
+import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Packages
 import FloraWeb.Pages.Templates.Types (FloraHTML)
 import Lucid.Orphans ()
@@ -68,19 +69,68 @@ showPackage
 
 presentationHeader :: Release -> Namespace -> PackageName -> Text -> Vector PackageGroupName -> FloraHTML
 presentationHeader release namespace name synopsis groups =
-  div_ [class_ "divider"] $ do
-    div_ [class_ "page-title"] $ do
-      h1_ [class_ "package-title"] $ do
-        span_ [class_ "headline"] $ do
-          displayNamespace namespace
-          chevronRightOutline
-          toHtml name
-        let versionClass = "version" <> if Just True == release.deprecated then " release-deprecated" else ""
-        span_ [class_ versionClass] $ toHtml release.version
-        unless (null groups) $
-          Pill.groupPill (Vector.head groups)
-    div_ [class_ "synopsis"] $
-      p_ [class_ ""] (toHtml synopsis)
+  header_ [class_ "pageHead"] $ do
+    div_ [class_ "wrapper flow flow--large"] $ do
+      div_ [class_ "aside gap--large"] $ do
+        div_ [class_ "flow"] $ do
+          h1_ [class_ "pageHead-title tracking-tight"] $ do
+            span_ [class_ "prefix"] $ do
+              -- TODO: Fix link
+              a_ [href_ (display namespace)] (toHtml $ display namespace)
+              (toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text))
+            toHtml name
+          p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
+        div_ [class_ "flow flow--small self-center"] $ do
+          div_ [class_ "cluster cluster--small items-end"] $ do
+            -- TODO: Display only on latest release page (not when no version specified)
+            -- span_ [class_ "badge badge--big badge--green"] $ do
+            --   Icons.check
+            --   "Latest"
+            -- TODO: Display on deprecated releases
+            -- span_ [class_ "badge badge--big badge--danger"] $ do
+            --   Icons.trash
+            --   "Deprecated"
+            span_ [class_ "title-2 text-right leading-thin"] $ toHtml release.version
+      div_ [class_ "pageHead-tip"] $ do
+        nav_ [class_ "tabs", id_ "subsections", ariaLabel_ "Package sections"] $ do
+          a_ [class_ "tab", href_ "/", ariaCurrent_ "page"] $ do
+            Icons.bookOpenText
+            "About"
+          a_ [class_ "tab", href_ "/"] $ do
+            Icons.history
+            "49 Versions"
+          a_ [class_ "tab", href_ "/"] $ do
+            Icons.logs
+            "Changelog"
+          a_ [class_ "tab", href_ "/"] $ do
+            Icons.folderTree
+            "1 Dependency"
+          a_ [class_ "tab", href_ "/"] $ do
+            Icons.packageSearch
+            "5 Dependents"
+        div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
+          button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
+            Icons.bookOpenText
+            div_ [class_ "flex-grow"] $ do
+              div_ [class_ "prefix"] $ "Current section"
+              div_ $ "About"
+            Icons.chevronUpDown
+          nav_ [class_ "dropdown dropdown--full", id_ "subsectionsMobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
+            a_ [class_ "dropdown-item dropdown-item--current", href_ "/", ariaCurrent_ "page"] $ do
+              Icons.bookOpenText
+              "About"
+            a_ [class_ "dropdown-item", href_ "/"] $ do
+              Icons.history
+              "49 Versions"
+            a_ [class_ "dropdown-item", href_ "/"] $ do
+              Icons.logs
+              "Changelog"
+            a_ [class_ "dropdown-item", href_ "/"] $ do
+              Icons.folderTree
+              "1 Dependency"
+            a_ [class_ "dropdown-item", href_ "/"] $ do
+              Icons.packageSearch
+              "5 Dependents"
 
 packageBody
   :: Package

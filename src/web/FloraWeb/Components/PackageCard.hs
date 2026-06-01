@@ -42,7 +42,8 @@ packageCard now PackageCardProps{link, namespace, name, synopsis, mVersion, mLas
           " "
         when (not (Text.null synopsis)) $
           span_ [class_ "entityCard-synopsis"] (toHtml synopsis)
-        when exactMatch $
+        when exactMatch $ do
+          " "
           span_ [class_ "badge badge--brand"] "Exact match"
       ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
         whenJust mVersion $ \version ->
