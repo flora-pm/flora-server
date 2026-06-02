@@ -174,9 +174,10 @@ packageBody
     h2_ [class_ "sr-only"] "About"
     div_ [class_ "package-about aside aside--reverse aside--start"] $ do
       div_ [class_ "package-details"] $ do
+        -- TODO: Split into its own function
         section_ [class_ "flow flow--small"] $ do
           h3_ [class_ "title-section"] "Metadata"
-          ul_ [class_ "flow flow--tiny"] $ do
+          ul_ [class_ "flow flow--tiny", role_ "list"] $ do
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "sr-only"] "Last updated"
               span_ [class_ "color-quaternary"] Icons.cloudUpload
@@ -185,6 +186,7 @@ packageBody
               span_ [class_ "sr-only"] "License"
               span_ [class_ "color-quaternary"] Icons.scale
               toHtml license
+            -- TODO: Display only when there are categories listed
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "sr-only"] "Categories"
               span_ [class_ "color-quaternary"] Icons.folder
@@ -192,26 +194,36 @@ packageBody
                 displayCategories categories
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "color-quaternary"] Icons.users
-              span_ [class_ "text-break"] $ do
+              p_ [class_ "text-break"] $ do
                 "Maintained by: "
                 (toHtml maintainer)
             whenJust mLotteryFactor $ \lotteryFactor ->
               li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
                 span_ [class_ "color-quaternary"] Icons.shieldUser
                 displayLotteryFactor namespace packageName lotteryFactor
-        -- displayMaintainer namespace packageName mLotteryFactor mUploader maintainer
-        displayLinks namespace packageName packageIndexURL latestRelease
-        displayVersions namespace packageName packageReleases numberOfReleases
-        case deprecationInfo of
-          Just inFavourOf -> displayPackageDeprecation inFavourOf
-          Nothing ->
-            if fromMaybe False deprecated
-              then displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
-              else displayInstructions namespace packageName latestRelease
-        displayTestedWith latestRelease.testedWith
-        displayDependencies (namespace, packageName, version) numberOfDependencies dependencies
-        displayDependents (namespace, packageName) numberOfDependents dependents
-        displayPackageFlags flags
+        -- TODO: Split into its own function
+        section_ [class_ "flow flow--small"] $ do
+          h3_ [class_ "title-section"] "Links"
+          displayLinks namespace packageName packageIndexURL latestRelease
+        -- TODO: Split into its own function
+        section_ [class_ "flow flow--small"] $ do
+          h3_ [class_ "title-section"] "Installation"
+          case deprecationInfo of
+            Just inFavourOf -> displayPackageDeprecation inFavourOf
+            Nothing ->
+              if fromMaybe False deprecated
+                then displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
+                else displayInstructions namespace packageName latestRelease
+        -- TODO: Split into its own function
+        -- TODO: Display when there are tested compilers listed
+        section_ [class_ "flow flow--small"] $ do
+          h3_ [class_ "title-section"] "Tested Compilers"
+          displayTestedWith latestRelease.testedWith
+        -- TODO: Make a "Build Targets" section
+        -- TODO: Display only when there are package flags
+        section_ [class_ "flow flow--small"] $ do
+          h3_ [class_ "title-section"] "Package Flags"
+          displayPackageFlags flags
       section_ [class_ "flow"] $ do
         h3_ [class_ "title-section"] "Readme"
         div_ [class_ "prose"] $ displayReadme latestRelease
@@ -290,3 +302,41 @@ displayLotteryFactor namespace packageName lotteryFactor = do
 --       whenJust mLotteryFactor $ \lotteryFactor ->
 --         p_ [] $ displayLotteryFactor namespace packageName lotteryFactor
 --       whenJust mUploader $ \uploader -> p_ [] $ displayUploader uploader.username
+
+getHomepage :: Release -> Text
+getHomepage release =
+  case release.homepage of
+    Just page -> page
+    Nothing ->
+      if Vector.null release.sourceRepos
+        then "⚠  No homepage provided"
+        else Vector.head release.sourceRepos
+
+displaySourceRepos :: Vector Text -> FloraHTML
+displaySourceRepos x
+  | Vector.null x = toHtml @Text "No source repository"
+  | otherwise = a_ [href_ (Vector.head x)] "Source repository"
+
+displayLinks :: Namespace -> PackageName -> Text -> Release -> FloraHTML
+displayLinks namespace packageName packageIndexURL release = do
+  ul_ [class_ "flow flow--tiny", role_ "list"] $ do
+    when (release.homepage /= Just "") $
+      li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch"] $ do
+        span_ [class_ "color-quaternary"] Icons.house
+        a_ [href_ (getHomepage release)] "Homepage"
+    li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch"] $ do
+      span_ [class_ "color-quaternary"] Icons.bookText
+      a_ [href_ (packageIndexURL <> "/package/" <> display packageName <> "-" <> display release.version)] "Documentation"
+    li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch"] $ do
+      span_ [class_ "color-quaternary"] Icons.code
+      displaySourceRepos release.sourceRepos
+
+displayTestedWith :: Vector Version -> FloraHTML
+displayTestedWith compilersVersions'
+  | Vector.null compilersVersions' = mempty
+  | otherwise = do
+      let compilersVersions = Vector.reverse $ Vector.modify MVector.sort compilersVersions'
+      ol_ [class_ "cluster cluster--small", role_ "list"] $
+        Vector.forM_
+          compilersVersions
+          (li_ [class_ "badge tabular-nums"] . toHtml @Text . display)

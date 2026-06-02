@@ -30,6 +30,9 @@ module FloraWeb.Components.Icons
   , users
   , shieldUser
   , info
+  , house
+  , bookText
+  , code
   ) where
 
 import Data.Text (Text)
@@ -340,5 +343,35 @@ info =
     <circle cx="12" cy="12" r="10"></circle>
     <path d="M12 16v-4m0-4h.01"></path>
   </g>
+</svg>
+    |]
+
+house :: FloraHTML
+house =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
+    <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+  </g>
+</svg>
+    |]
+
+bookText :: FloraHTML
+bookText =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20M8 11h8M8 7h6"></path>
+</svg>
+    |]
+
+code :: FloraHTML
+code =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16 18l6-6l-6-6M8 6l-6 6l6 6"></path>
 </svg>
     |]

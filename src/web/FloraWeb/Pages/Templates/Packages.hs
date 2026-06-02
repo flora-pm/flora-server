@@ -3,16 +3,13 @@ module FloraWeb.Pages.Templates.Packages
   , displayDependents
   , displayInstructions
   , displayLicense
-  , displayLinks
   , displayNamespace
   , displayPackageDeprecation
   , displayPackageFlags
   , displayReadme
   , displayReleaseDeprecation
   , displayReleaseVersion
-  , displayTestedWith
   , displayVersions
-  , displayUploader
   , listVersions
   , packageListing
   , packageWithExecutableListing
@@ -330,25 +327,6 @@ displayLicense license =
     div_ [class_ "license"] $ h3_ [class_ "package-body-section"] "License"
     p_ [class_ "package-body-section__license"] $ toHtml license
 
-displayLinks :: Namespace -> PackageName -> Text -> Release -> FloraHTML
-displayLinks namespace packageName packageIndexURL release = do
-  li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section links"] "Links"
-    ul_ [class_ "links"] $ do
-      when (release.homepage /= Just "") $
-        li_ [class_ "package-link"] $
-          a_ [href_ (getHomepage release)] "Homepage"
-      li_ [class_ "package-link"] $ a_ [href_ (packageIndexURL <> "/package/" <> display packageName <> "-" <> display release.version)] "Documentation"
-
-      li_ [class_ "package-link"] $ displaySourceRepos release.sourceRepos
-      li_ [class_ "package-link"] $ displayChangelog namespace packageName release.version release.changelog
-      li_ [class_ "package-link"] $ displaySecurity namespace packageName
-
-displaySourceRepos :: Vector Text -> FloraHTML
-displaySourceRepos x
-  | Vector.null x = toHtml @Text "No source repository"
-  | otherwise = a_ [href_ (Vector.head x)] "Source repository"
-
 displayChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 displayChangelog _ _ _ Nothing = toHtml @Text ""
 displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> Links.renderLink (Links.packageVersionChangelog namespace packageName version))] "Changelog"
@@ -421,27 +399,24 @@ showAll target mVersion namespace packageName = do
   a_ [class_ "dependency", href_ resource] "Show all…"
 
 displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
-displayInstructions namespace packageName latestRelease =
-  li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section", id_ "package-install-section"] $ do
-      p_ [] "Installation"
-      when (latestRelease.buildType == Custom) customBuildType
-    div_ [class_ "items-top"] $ div_ [class_ ""] $ do
-      label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
-      input_
-        [ class_ "package-install-string"
-        , type_ "text"
-        , onfocus_ "this.select();"
-        , value_ (formatInstallString packageName latestRelease)
-        , readonly_ "readonly"
-        ]
-      TemplateEnv{features} <- ask
-      when (isJust features.blobStoreImpl) $ do
-        label_ [for_ "tarball", class_ "font-light"] "Download"
-        let v = display latestRelease.version
-            tarballName = display packageName <> "-" <> v <> ".tar.gz"
-            tarballLink = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> v <> "/" <> tarballName
-        div_ $ a_ [href_ tarballLink, download_ ""] $ toHtml tarballName
+displayInstructions namespace packageName latestRelease = do
+  when (latestRelease.buildType == Custom) customBuildType
+  div_ [class_ "items-top"] $ div_ [class_ ""] $ do
+    label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
+    input_
+      [ class_ "package-install-string"
+      , type_ "text"
+      , onfocus_ "this.select();"
+      , value_ (formatInstallString packageName latestRelease)
+      , readonly_ "readonly"
+      ]
+    TemplateEnv{features} <- ask
+    when (isJust features.blobStoreImpl) $ do
+      label_ [for_ "tarball", class_ "font-light"] "Download"
+      let v = display latestRelease.version
+          tarballName = display packageName <> "-" <> v <> ".tar.gz"
+          tarballLink = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> v <> "/" <> tarballName
+      div_ $ a_ [href_ tarballLink, download_ ""] $ toHtml tarballName
 
 displayPackageDeprecation :: PackageAlternatives -> FloraHTML
 displayPackageDeprecation (PackageAlternatives inFavourOf) =
@@ -472,22 +447,6 @@ displayReleaseDeprecation mLatestViableRelease =
         a_
           [href_ $ Links.versionResource namespace package version]
           (text $ display namespace <> "/" <> display package <> "-" <> display version)
-
-displayTestedWith :: Vector Version -> FloraHTML
-displayTestedWith compilersVersions'
-  | Vector.null compilersVersions' = mempty
-  | otherwise = do
-      let compilersVersions = Vector.reverse $ Vector.modify MVector.sort compilersVersions'
-      li_ [class_ ""] $ do
-        h3_ [class_ "package-body-section"] "Tested Compilers"
-        ul_ [class_ "compiler-badges"] $
-          Vector.forM_
-            compilersVersions
-            (li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display)
-
-displayUploader :: Text -> FloraHTML
-displayUploader uploader =
-  span_ [] $ toHtml ("Uploader: " <> uploader)
 
 displayDependents
   :: (Namespace, PackageName)
@@ -520,27 +479,13 @@ renderDependency DependencyVersionRequirement{namespace, packageName, version} =
       then ""
       else toHtml version
 
-getHomepage :: Release -> Text
-getHomepage release =
-  case release.homepage of
-    Just page -> page
-    Nothing ->
-      if Vector.null release.sourceRepos
-        then "⚠  No homepage provided"
-        else Vector.head release.sourceRepos
-
 displayPackageFlags :: ReleaseFlags -> FloraHTML
 displayPackageFlags (ReleaseFlags packageFlags) =
   if Vector.null packageFlags
     then mempty
     else do
-      h3_ [class_ "package-body-section package-flags-section"] "Package Flags"
-      span_
-        [ dataText_ "Use the -f option with cabal commands to enable flags"
-        , class_ "instruction-tooltip"
-        ]
-        Icon.usageInstructionTooltip
-      ul_ [class_ "package-flags"] $
+      p_ [class_ "text-small color-tertiary leading-short"] $ "Use the -f option with cabal commands to enable flags"
+      ul_ [class_ "flow flow--small", role_ "list"] $
         Vector.forM_ packageFlags displayPackageFlag
 
 displayPackageFlag :: PackageFlag -> FloraHTML
