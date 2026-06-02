@@ -4,7 +4,7 @@ import Control.Monad (when)
 import Data.Text (Text)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Lucid (a_, class_, href_, li_, nav_, ul_)
+import Lucid (a_, class_, href_, nav_)
 import Servant.API (toUrlPiece)
 
 import Data.Positive
@@ -30,18 +30,18 @@ paginationNav totalResults currentPage searchAction = do
     when (currentPage.unPositive < totalPages) $
       a_
         [ class_ "pagination-more btn btn--big"
-        , href_ ((mkURL searchAction (currentPage + 1)) <> "#content")
+        , href_ (mkURL searchAction (currentPage + 1) <> "#content")
         ]
         "Load More"
     a_
       [ class_ ("pagination-secondary btn" <> (if disablePreviousButton then " btn--disabled" else ""))
-      , href_ ((mkURL searchAction (currentPage - 1)) <> "#content")
+      , href_ (mkURL searchAction (currentPage - 1) <> "#content")
       , ariaLabel_ "Previous page"
       ]
       Icons.arrowLeft
     a_
       [ class_ ("pagination-secondary btn" <> (if disableNextButton then " btn--disabled" else ""))
-      , href_ ((mkURL searchAction (currentPage + 1)) <> "#content")
+      , href_ (mkURL searchAction (currentPage + 1) <> "#content")
       , ariaLabel_ "Next page"
       ]
       Icons.arrowRight

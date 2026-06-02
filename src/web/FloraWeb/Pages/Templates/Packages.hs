@@ -241,7 +241,7 @@ packageListing now mExactMatchItems packages =
   ul_ [class_ "flow flow--small", role_ "list"] $ do
     whenJust mExactMatchItems $ \exactMatchItems ->
       forM_ exactMatchItems $ \em -> do
-        let link = ("/packages/" <> display em.namespace <> "/" <> display em.name)
+        let link = "/packages/" <> display em.namespace <> "/" <> display em.name
         let mLastUploadedAt = if isJust em.revisedAt then em.revisedAt else em.uploadedAt
         li_ $
           packageCard
@@ -257,7 +257,7 @@ packageListing now mExactMatchItems packages =
               , exactMatch = True
               }
     Vector.forM_ packages $ \p -> do
-      let link = ("/packages/" <> display p.namespace <> "/" <> display p.name)
+      let link = "/packages/" <> display p.namespace <> "/" <> display p.name
       let mLastUploadedAt = if isJust p.revisedAt then p.revisedAt else p.uploadedAt
       li_ $
         packageCard

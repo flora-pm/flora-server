@@ -1,6 +1,5 @@
 module FloraWeb.Pages.Templates.Screens.Packages where
 
-import Control.Monad
 import Data.Function ((&))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
@@ -77,7 +76,7 @@ presentationHeader release namespace name synopsis groups =
             span_ [class_ "prefix"] $ do
               -- TODO: Fix link
               a_ [href_ (display namespace)] (toHtml $ display namespace)
-              (toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text))
+              toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text)
             toHtml name
           p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
         div_ [class_ "flow flow--small self-center"] $ do
@@ -112,8 +111,8 @@ presentationHeader release namespace name synopsis groups =
           button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
             Icons.bookOpenText
             div_ [class_ "flex-grow"] $ do
-              div_ [class_ "prefix"] $ "Current section"
-              div_ $ "About"
+              div_ [class_ "prefix"] "Current section"
+              div_ "About"
             Icons.chevronUpDown
           nav_ [class_ "dropdown dropdown--full", id_ "subsectionsMobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
             a_ [class_ "dropdown-item dropdown-item--current", href_ "/", ariaCurrent_ "page"] $ do

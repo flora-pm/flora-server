@@ -50,9 +50,10 @@ homeHandler (Headers session _) = do
   let templateEnv = templateDefaults & #displayNavbarSearch .~ False
   latestReleases <- withReadOnlyPool pool Query.getLatestReleases
   latestPackages <- withReadOnlyPool pool Query.getLatestPackages
+  packageCount <- withReadOnlyPool pool Query.countPackages
   now <- Time.currentTime
   render templateEnv $
-    Home.show now latestReleases latestPackages
+    Home.show packageCount now latestReleases latestPackages
 
 aboutHandler :: SessionWithCookies (Maybe User) -> FloraEff (Html ())
 aboutHandler (Headers session _) = do

@@ -37,10 +37,10 @@ packageCard now PackageCardProps{link, namespace, name, synopsis, mVersion, mLas
     $ do
       div_ [] $ do
         span_ [] $ do
-          span_ [class_ "entityCard-prefix"] ("@" <> toHtml namespace <> (toHtmlRaw ("&ThinSpace;" :: Text)) <> "/" <> (toHtmlRaw ("&ThinSpace;" :: Text)))
+          span_ [class_ "entityCard-prefix"] ("@" <> toHtml namespace <> toHtmlRaw ("&ThinSpace;" :: Text) <> "/" <> toHtmlRaw ("&ThinSpace;" :: Text))
           span_ [class_ "entityCard-title"] (toHtml name)
           " "
-        when (not (Text.null synopsis)) $
+        unless (Text.null synopsis) $
           span_ [class_ "entityCard-synopsis"] (toHtml synopsis)
         when exactMatch $ do
           " "
@@ -55,8 +55,7 @@ packageCard now PackageCardProps{link, namespace, name, synopsis, mVersion, mLas
           li_ $ do
             span_ [class_ "color-tertiary"] Icons.cloudUpload
             span_ [class_ "sr-only"] "Last uploaded: "
-            time_ [datetime_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp))] $
-              (toHtml $ formatUploadTime timestamp now)
+            time_ [datetime_ (display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp))] (toHtml $ formatUploadTime timestamp now)
         whenJust mLicense $ \license ->
           li_ $ do
             span_ [class_ "color-tertiary"] Icons.scale

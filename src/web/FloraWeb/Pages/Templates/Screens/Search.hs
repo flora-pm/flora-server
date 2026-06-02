@@ -18,7 +18,7 @@ import FloraWeb.Pages.Templates.Packages (packageAdvisoriesListing, packageListi
 
 showAllPackages :: UTCTime -> Word -> Positive Word -> Vector PackageInfo -> FloraHTML
 showAllPackages now count currentPage packagesInfo = do
-  let pageCountLabel = if currentPage > 1 then ("Page " <> pack (show (currentPage.unPositive))) else ""
+  let pageCountLabel = if currentPage > 1 then "Page " <> pack (show (currentPage.unPositive)) else ""
   presentationHeader "Packages" pageCountLabel count
   section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
     p_ [class_ "text-small"] "Displaying 1-50 of 143 total results" -- TODO: Display real numbers
@@ -50,7 +50,7 @@ showResults
   -- ^ Results
   -> FloraHTML
 showResults now searchString count currentPage exactMatches results = do
-  presentationHeader ("Search for: " <> (toHtml searchString)) "" count
+  presentationHeader ("Search for: " <> toHtml searchString) "" count
   section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
     packageListing now (Just exactMatches) results
     when (count > 30) $

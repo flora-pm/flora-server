@@ -13,7 +13,7 @@ import FloraWeb.Pages.Templates.Packages (packageListing)
 
 showCategory :: UTCTime -> Category -> Vector PackageInfo -> FloraHTML
 showCategory now Category{name, synopsis} packagesInfo = do
-  let title = (toHtml name)
+  let title = toHtml name
   presentationHeader title synopsis (fromIntegral $ V.length packagesInfo)
   section_ [class_ "wrapper inset-large flow flow--large"] $ do
     packageListing now Nothing packagesInfo

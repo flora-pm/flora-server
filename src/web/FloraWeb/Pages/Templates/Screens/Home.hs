@@ -4,13 +4,10 @@ module FloraWeb.Pages.Templates.Screens.Home where
 
 import CMarkGFM
 import Control.Monad
-import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Text (Text)
-import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Data.Time (UTCTime)
-import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Distribution.Types.Version (Version)
 import Lucid
@@ -21,22 +18,21 @@ import Flora.Model.Package.Types
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.MainSearchBar (mainSearchBar)
 import FloraWeb.Components.PackageCard (PackageCardProps (..), packageCard)
-import FloraWeb.Components.Utils (dataText_)
-import FloraWeb.Pages.Templates.Packages (formatUploadTime)
 import FloraWeb.Pages.Templates.Types
 
 show
-  :: UTCTime
+  :: Word
+  -> UTCTime
   -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
   -> FloraHTML
-show now recentUploads latestPackages = do
+show packageCount now recentUploads latestPackages = do
   -- TODO: show real number
-  banner 2
+  banner packageCount
   div_ [class_ "wrapper flow flow--large inset-region"] $ do
     packageNewsSection now latestPackages recentUploads
 
-banner :: Int -> FloraHTML
+banner :: Word -> FloraHTML
 banner packageCount = do
   header_ [class_ "pageHead pageHead--expanded pageHead--decorative"] $
     div_ [class_ "wrapper text-center flow flow--large"] $ do
@@ -75,7 +71,7 @@ recentUploadsColumn now recentPackages = section_ [class_ "flow"] $ do
   ol_ [class_ "flow", role_ "list", reversed_ ""] $ do
     forM_ recentPackages $ \(namespace, name, synopsis, version, mTimestamp) -> do
       li_ [] $ do
-        let link = ("/packages/" <> display namespace <> "/" <> display name <> "/" <> display version)
+        let link = "/packages/" <> display namespace <> "/" <> display name <> "/" <> display version
         packageCard
           now
           PackageCardProps
@@ -98,7 +94,7 @@ newPackagesColumn now newPackages = section_ [class_ "flow"] $ do
   ol_ [class_ "flow", role_ "list", reversed_ ""] $ do
     forM_ newPackages $ \(namespace, name, synopsis, mTimestamp) -> do
       li_ [] $ do
-        let link = ("/packages/" <> display namespace <> "/" <> display name)
+        let link = "/packages/" <> display namespace <> "/" <> display name
         packageCard
           now
           PackageCardProps

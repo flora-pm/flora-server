@@ -1,6 +1,6 @@
 module FloraWeb.Components.PackageListHeader where
 
-import Control.Monad (when)
+import Control.Monad
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
@@ -21,6 +21,6 @@ presentationHeader title subtitle numberOfPackages = do
     div_ [class_ "wrapper aside"] $ do
       div_ [class_ "flow"] $ do
         h1_ [class_ "pageHead-title text-break"] title
-        when (not (Text.null subtitle)) $
+        unless (Text.null subtitle) $
           p_ [class_ "pageHead-subtitle text-break"] (toHtml subtitle)
       p_ [class_ "title-3 self-center"] $ toHtml $ display numberOfPackages <> " results"
