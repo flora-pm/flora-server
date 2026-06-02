@@ -1,6 +1,5 @@
 module FloraWeb.Pages.Templates.Screens.Packages where
 
-import Control.Monad
 import Data.Function ((&))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)

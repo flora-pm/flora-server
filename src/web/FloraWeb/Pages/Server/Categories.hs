@@ -41,12 +41,13 @@ indexHandler (Headers session _) = do
   FloraEnv{pool} <- Reader.ask
   templateEnv' <- templateFromSession session defaultTemplateEnv
   categories <- withReadOnlyPool pool Query.getAllCategories
+  packageCount <- withReadOnlyPool pool Query.countPackages
   let templateEnv =
         templateEnv'
           { title = "Categories — Flora.pm"
           , description = "Categories of packages in the Haskell ecosystem"
           }
-  render templateEnv $ Template.index categories
+  render templateEnv $ Template.index packageCount categories
 
 showHandler
   :: ( Error ServerError :> es
