@@ -1,7 +1,6 @@
 module FloraWeb.Pages.Server.Categories where
 
 import Data.Text (Text)
-import Data.Time (UTCTime)
 import Effectful (IOE, (:>))
 import Effectful.Error.Static (Error)
 import Effectful.Reader.Static (Reader)

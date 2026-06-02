@@ -50,7 +50,15 @@ showPackage
   groups
   activeMaintainers
   mUploader = do
-    presentationHeader latestRelease namespace name latestRelease.synopsis groups
+    presentationHeader
+      numberOfReleases
+      latestRelease
+      numberOfDependencies
+      numberOfDependents
+      namespace
+      name
+      latestRelease.synopsis
+      groups
     div_ [class_ "wrapper inset-large"] $ do
       packageBody
         package
@@ -66,8 +74,8 @@ showPackage
         (fmap Vector.length activeMaintainers)
         mUploader
 
-presentationHeader :: Release -> Namespace -> PackageName -> Text -> Vector PackageGroupName -> FloraHTML
-presentationHeader release namespace name synopsis groups =
+presentationHeader :: Word -> Release -> Word -> Word -> Namespace -> PackageName -> Text -> Vector PackageGroupName -> FloraHTML
+presentationHeader numberOfReleases release numberOfDependencies numberOfDependents namespace name synopsis groups =
   header_ [class_ "pageHead"] $ do
     div_ [class_ "wrapper flow flow--large"] $ do
       div_ [class_ "aside gap--large"] $ do
@@ -99,16 +107,17 @@ presentationHeader release namespace name synopsis groups =
             "About"
           a_ [class_ "tab", href_ "/"] $ do
             Icons.history
-            "49 Versions" -- TODO: Display real number
+            (toHtml $ display numberOfReleases <> " Versions")
           a_ [class_ "tab", href_ "/"] $ do
             Icons.logs
             "Changelog"
           a_ [class_ "tab", href_ "/"] $ do
             Icons.folderTree
-            "1 Dependency" -- TODO: Display real number + dependency/dependencies
+            (toHtml $ display numberOfDependencies <> " Dependencies")
           a_ [class_ "tab", href_ "/"] $ do
             Icons.packageSearch
-            "5 Dependents" -- TODO: Display real number + dependent/dependent
+            (toHtml $ display numberOfDependents <> " Dependents")
+
         div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
           -- TODO: Display current section in aria-label attribute
           button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
@@ -123,16 +132,16 @@ presentationHeader release namespace name synopsis groups =
               "About"
             a_ [class_ "dropdown-item", href_ "/"] $ do
               Icons.history
-              "49 Versions" -- TODO: Display real number
+              (toHtml $ display numberOfReleases <> " Versions")
             a_ [class_ "dropdown-item", href_ "/"] $ do
               Icons.logs
               "Changelog"
             a_ [class_ "dropdown-item", href_ "/"] $ do
               Icons.folderTree
-              "1 Dependency" -- TODO: Display real number + dependency/dependencies
+              (toHtml $ display numberOfDependencies <> " Dependencies")
             a_ [class_ "dropdown-item", href_ "/"] $ do
               Icons.packageSearch
-              "5 Dependents" -- TODO: Display real number + dependent/dependent
+              (toHtml $ display numberOfDependents <> " Dependents")
 
 packageBody
   :: Package
