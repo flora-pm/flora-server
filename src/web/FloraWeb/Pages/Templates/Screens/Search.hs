@@ -1,7 +1,7 @@
 module FloraWeb.Pages.Templates.Screens.Search where
 
 import Control.Monad (when)
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Time (UTCTime)
 import Data.Vector (Vector)
@@ -18,10 +18,13 @@ import FloraWeb.Pages.Templates.Packages (packageAdvisoriesListing, packageListi
 
 showAllPackages :: UTCTime -> Word -> Positive Word -> Vector PackageInfo -> FloraHTML
 showAllPackages now count currentPage packagesInfo = do
-  let pageCountLabel = if currentPage > 1 then "Page " <> pack (show (currentPage.unPositive)) else ""
+  let pageCountLabel = if currentPage > 1 then "Page " <> (display (currentPage.unPositive)) else ""
+  -- let (limit, offset) = fromPage currentPage
+  let startIndex = ((currentPage.unPositive - 1) * 30) + 1
+  let endIndex = currentPage.unPositive * 30
   presentationHeader "Packages" pageCountLabel count
   section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
-    p_ [class_ "text-small"] "Displaying 1-50 of 143 total results" -- TODO: Display real numbers
+    p_ [class_ "text-small"] (toHtml $ "Displaying " <> display startIndex <> "-" <> display endIndex <> " of " <> display count <> " total results")
     packageListing now Nothing packagesInfo
     paginationNav count currentPage ListAllPackages
 
