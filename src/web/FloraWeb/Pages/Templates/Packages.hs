@@ -1,11 +1,9 @@
 module FloraWeb.Pages.Templates.Packages
-  ( displayCategories
-  , displayDependencies
+  ( displayDependencies
   , displayDependents
   , displayInstructions
   , displayLicense
   , displayLinks
-  , displayMaintainer
   , displayNamespace
   , displayPackageDeprecation
   , displayPackageFlags
@@ -14,7 +12,6 @@ module FloraWeb.Pages.Templates.Packages
   , displayReleaseVersion
   , displayTestedWith
   , displayVersions
-  , displayLotteryFactor
   , displayUploader
   , listVersions
   , packageListing
@@ -333,12 +330,6 @@ displayLicense license =
     div_ [class_ "license"] $ h3_ [class_ "package-body-section"] "License"
     p_ [class_ "package-body-section__license"] $ toHtml license
 
-displayCategories :: Vector Category -> FloraHTML
-displayCategories categories =
-  li_ [class_ ""] $ do
-    div_ [class_ "license "] $ h3_ [class_ "package-body-section"] "Categories"
-    ul_ [class_ "categories"] $ foldMap renderCategory categories
-
 displayLinks :: Namespace -> PackageName -> Text -> Release -> FloraHTML
 displayLinks namespace packageName packageIndexURL release = do
   li_ [class_ ""] $ do
@@ -494,34 +485,6 @@ displayTestedWith compilersVersions'
             compilersVersions
             (li_ [] . a_ [class_ "compiler-badge"] . toHtml @Text . display)
 
-displayMaintainer
-  :: Namespace
-  -> PackageName
-  -> Maybe Int
-  -> Maybe PackageUploader
-  -> Text
-  -> FloraHTML
-displayMaintainer namespace packageName mLotteryFactor mUploader maintainerInfo =
-  li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section"] "Maintainer"
-    div_ [] $ do
-      p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
-      whenJust mLotteryFactor $ \lotteryFactor ->
-        p_ [] $ displayLotteryFactor namespace packageName lotteryFactor
-      whenJust mUploader $ \uploader -> p_ [] $ displayUploader uploader.username
-
-displayLotteryFactor
-  :: Namespace
-  -> PackageName
-  -> Int
-  -> FloraHTML
-displayLotteryFactor namespace packageName lotteryFactor =
-  span_
-    [ dataText_ ("The number of people with uploader permission on " <> formatPackage namespace packageName <> " who have released something to " <> display namespace <> " in the last 2 years (i.e. the number of people likely able to release critical fixes in a timely manner)")
-    , class_ "revised-date"
-    ]
-    $ toHtml ("Lottery factor: " <> display lotteryFactor)
-
 displayUploader :: Text -> FloraHTML
 displayUploader uploader =
   span_ [] $ toHtml ("Uploader: " <> uploader)
@@ -556,11 +519,6 @@ renderDependency DependencyVersionRequirement{namespace, packageName, version} =
     if version == ">=0"
       then ""
       else toHtml version
-
-renderCategory :: Category -> FloraHTML
-renderCategory Category{name, slug} = do
-  let resource = "/categories/" <> slug
-  li_ [class_ "category"] $ a_ [href_ resource] (toHtml name)
 
 getHomepage :: Release -> Text
 getHomepage release =

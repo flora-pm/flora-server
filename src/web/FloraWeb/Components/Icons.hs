@@ -26,6 +26,10 @@ module FloraWeb.Components.Icons
   , logs
   , folderTree
   , packageSearch
+  , folder
+  , users
+  , shieldUser
+  , info
   ) where
 
 import Data.Text (Text)
@@ -289,6 +293,52 @@ packageSearch =
     <path d="M12 22V12m8.27 6.27L22 20m-1-9.502V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l.98-.559"></path>
     <path d="M3.29 7L12 12l8.71-5M7.5 4.27l8.997 5.148"></path>
     <circle cx="18.5" cy="16.5" r="2.5"></circle>
+  </g>
+</svg>
+    |]
+
+folder :: FloraHTML
+folder =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+</svg>
+    |]
+
+users :: FloraHTML
+users =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3.128a4 4 0 0 1 0 7.744M22 21v-2a4 4 0 0 0-3-3.87"></path>
+    <circle cx="9" cy="7" r="4"></circle>
+  </g>
+</svg>
+    |]
+
+shieldUser :: FloraHTML
+shieldUser =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+    <path d="M6.376 18.91a6 6 0 0 1 11.249.003"></path>
+    <circle cx="12" cy="11" r="4"></circle>
+  </g>
+</svg>
+    |]
+
+info :: FloraHTML
+info =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <circle cx="12" cy="12" r="10"></circle>
+    <path d="M12 16v-4m0-4h.01"></path>
   </g>
 </svg>
     |]

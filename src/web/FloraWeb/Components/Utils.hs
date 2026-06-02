@@ -157,3 +157,8 @@ popovertargetaction_
   :: Text
   -> Attributes
 popovertargetaction_ = makeAttributes "popovertargetaction"
+
+interestfor_
+  :: Text
+  -> Attributes
+interestfor_ = makeAttributes "interestfor"
