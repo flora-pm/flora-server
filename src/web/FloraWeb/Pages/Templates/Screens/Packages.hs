@@ -6,6 +6,8 @@ import Data.Function ((&))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text.Display
+import Data.Time (NominalDiffTime, UTCTime)
+import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
@@ -181,7 +183,12 @@ packageBody
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "sr-only"] "Last updated"
               span_ [class_ "color-quaternary"] Icons.cloudUpload
-              time_ [datetime_ "todo", title_ "todo"] "todo last uploaded" -- TODO: Display last upload (like on packageCard)
+              span_ $ do
+                time_ [datetime_ "todo", title_ "todo"] "todo last updated" -- TODO: Display last revision or upload (like on packageCard)
+                whenJust mUploader $ \uploader -> do
+                  -- TODO: is just me or uploader is never shown? (on dev dataset at least)
+                  "by"
+                  (toHtml uploader.username)
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "sr-only"] "License"
               span_ [class_ "color-quaternary"] Icons.scale
@@ -226,6 +233,7 @@ packageBody
           displayPackageFlags flags
       section_ [class_ "flow"] $ do
         h3_ [class_ "title-section"] "Readme"
+        -- TODO: Display a fallback message when there is no readme (in dev, the "renderHaddock release.description" is not showing anything (on /@mlabs / plutarch-ledger-api for example))
         div_ [class_ "prose"] $ displayReadme latestRelease
 
 getLatestViableRelease

@@ -401,15 +401,16 @@ showAll target mVersion namespace packageName = do
 displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
 displayInstructions namespace packageName latestRelease = do
   when (latestRelease.buildType == Custom) customBuildType
-  div_ [class_ "items-top"] $ div_ [class_ ""] $ do
-    label_ [for_ "install-string", class_ "font-light"] "In your cabal file:"
+  div_ [class_ "flow flow--tiny"] $ do
     input_
-      [ class_ "package-install-string"
+      [ class_ "block min-w0 w100"
+      , id_ "package-install-string"
       , type_ "text"
       , onfocus_ "this.select();"
       , value_ (formatInstallString packageName latestRelease)
       , readonly_ "readonly"
       ]
+    label_ [for_ "package-install-string", class_ "block text-small"] "Add this line in your cabal file"
     TemplateEnv{features} <- ask
     when (isJust features.blobStoreImpl) $ do
       label_ [for_ "tarball", class_ "font-light"] "Download"
@@ -491,21 +492,21 @@ displayPackageFlags (ReleaseFlags packageFlags) =
 displayPackageFlag :: PackageFlag -> FloraHTML
 displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = case flagDescription of
   "" ->
-    div_ [] $ do
+    div_ [class_ "text-small"] $ do
       -- Import for the ".package-flags > *" CSS rule to fire
-      pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
-      toHtmlRaw @Text "&nbsp;"
+      span_ [class_ "color-raise text-break"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+      " "
       defaultMarker flagDefault
-  _ -> details_ [] $ do
+  _ -> details_ [class_ "text-small"] $ do
     summary_ [] $ do
-      pre_ [class_ "package-flag-name"] (toHtml $ Text.pack (Flag.unFlagName flagName))
-      toHtmlRaw @Text "&nbsp;"
+      span_ [class_ "color-raise text-break"] (toHtml $ Text.pack (Flag.unFlagName flagName))
+      " "
       defaultMarker flagDefault
-    div_ [class_ "package-flag-description"] $ renderHaddock $ Text.pack flagDescription
+    div_ [class_ "prose text-break"] $ renderHaddock $ Text.pack flagDescription
 
 defaultMarker :: Bool -> FloraHTML
-defaultMarker True = em_ "(on by default)"
-defaultMarker False = em_ "(off by default)"
+defaultMarker True = em_ [class_ "text-small"] "(on by default)"
+defaultMarker False = em_ [class_ "text-small"] "(off by default)"
 
 intercalateVec :: a -> Vector a -> Vector a
 intercalateVec sep vector =

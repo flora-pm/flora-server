@@ -34,6 +34,7 @@
 .prose :is(ul, ol) {
 	list-style: revert;
 	padding-left: revert;
+	padding-inline-start: 3ch;
 }
 
 .prose li::marker {

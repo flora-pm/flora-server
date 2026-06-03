@@ -46,6 +46,9 @@
 .font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
 
+.italic { font-style: italic; }
+.not-italic { font-style: normal; }
+
 .uppercase { text-transform: uppercase; }
 
 .tracking-tight { letter-spacing: var(--kerning-tight);}

@@ -80,6 +80,7 @@ details pre {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
+		padding-inline-end: 2ch;
 	}
 	summary::marker { content: "" }
 
