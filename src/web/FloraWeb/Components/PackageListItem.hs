@@ -137,26 +137,3 @@ displayVersionRange versionRange =
   if versionRange == ">=0"
     then ""
     else versionRange
-
--- -- TODO: Replace by packageCard
--- a_ [href, class_ "entityCard"] $ do
---   h4_ [class_ "package-list-item__name"] $ do
---     strong_ [class_ ""] . toHtml $
---       display namespace <> "/" <> display packageName
---   case components of
---     [name]
---       | name == display packageName -> pure ()
---       | otherwise -> ":" >> component_ name
---     -- The empty case should never happen but displaying pkg:{} will indicate
---     -- something has gone wrong.
---     _ -> do
---       ":{"
---       sequence_ . intersperse (toHtml @Text ", ") $
---         component_ <$> Vector.toList components
---       "}"
---   p_ [class_ "package-list-item__synopsis"] $ toHtml latestSynopsis
---   div_ [class_ "package-list-item__metadata"] $ do
---     span_ [class_ "package-list-item__license"] $ do
---       Icon.license
---       toHtml latestLicense
---     displayVersionRange requirement
