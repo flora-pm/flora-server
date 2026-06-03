@@ -323,36 +323,11 @@ displayNamespace namespace =
     ]
     (toHtml $ display namespace)
 
-linkToPackageWithVersion :: Namespace -> PackageName -> Version -> FloraHTML
-linkToPackageWithVersion namespace packageName version =
-  a_
-    [ class_ "breadcrumb-segment"
-    , href_
-        ("/" <> Links.renderLink (Links.packageVersionLink namespace packageName version))
-    ]
-    (toHtml $ display packageName)
-
-linkToPackage :: Namespace -> PackageName -> FloraHTML
-linkToPackage namespace packageName =
-  a_
-    [ class_ "breadcrumb-segment"
-    , href_
-        ("/" <> Links.renderLink (Links.packageLink namespace packageName))
-    ]
-    (toHtml $ display packageName)
-
 displayLicense :: SPDX.License -> FloraHTML
 displayLicense license =
   li_ [class_ ""] $ do
     div_ [class_ "license"] $ h3_ [class_ "package-body-section"] "License"
     p_ [class_ "package-body-section__license"] $ toHtml license
-
-displayChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
-displayChangelog _ _ _ Nothing = toHtml @Text ""
-displayChangelog namespace packageName version (Just _) = a_ [href_ ("/" <> Links.renderLink (Links.packageVersionChangelog namespace packageName version))] "Changelog"
-
-displaySecurity :: Namespace -> PackageName -> FloraHTML
-displaySecurity namespace packageName = a_ [href_ ("/" <> Links.renderLink (Links.packageSecurity namespace packageName))] "Security"
 
 displayReadme :: Release -> FloraHTML
 displayReadme release =
@@ -652,8 +627,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
         div_ [class_ "flow"] $ do
           h1_ [class_ "pageHead-title tracking-tight"] $ do
             span_ [class_ "prefix"] $ do
-              -- TODO: Fix link
-              a_ [href_ (display namespace)] (toHtml $ display namespace)
+              a_ [href_ (Links.namespacePage namespace (PositiveUnsafe 1))] (toHtml $ display namespace)
               (toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text))
             toHtml name
           p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)

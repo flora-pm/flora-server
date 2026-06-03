@@ -1,6 +1,7 @@
 module FloraWeb.Components.PaginationNav where
 
 import Control.Monad (when)
+import Data.Function
 import Data.Text (Text)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -68,8 +69,9 @@ mkURL :: SearchAction -> Positive Word -> Text
 mkURL ListAllPackages pageNumber =
   "/" <> toUrlPiece (Links.packageIndexLink pageNumber)
 mkURL (ListAllPackagesInNamespace namespace) pageNumber =
-  Links.renderLink $
-    Links.namespaceLink namespace pageNumber
+  Links.namespaceLink namespace pageNumber
+    & Links.renderLink
+    & \l -> "/" <> l
 mkURL (SearchPackages searchTerm) pageNumber =
   "/" <> toUrlPiece (Links.packageSearchLink searchTerm pageNumber)
 mkURL (DependentsOf namespace packageName mbSearchString) pageNumber =
