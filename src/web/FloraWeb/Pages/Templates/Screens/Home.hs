@@ -27,7 +27,6 @@ show
   -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
   -> FloraHTML
 show packageCount now recentUploads latestPackages = do
-  -- TODO: show real number
   banner packageCount
   div_ [class_ "wrapper flow flow--large inset-region"] $ do
     packageNewsSection now latestPackages recentUploads

@@ -42,7 +42,7 @@ newSession = do
           , type_ "checkbox"
           ]
         label_ [for_ "use_totp"] "Use two-factor authentication"
-      -- TODO: Show only when use_totp input is checked (with AlpineJS)
+      -- TODO: [non-urgent] Show only when use_totp input is checked (with AlpineJS)
       div_ [class_ "flow flow--small"] $ do
         label_ [class_ "label", for_ "totp"] "Two-factor code"
         input_

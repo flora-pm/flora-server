@@ -109,7 +109,7 @@ packageBody
     h2_ [class_ "sr-only"] "About"
     div_ [class_ "package-about aside aside--reverse aside--start"] $ do
       div_ [class_ "package-details"] $ do
-        -- TODO: Split into its own function
+        -- TODO: [non-urgent] Split into its own function
         section_ [class_ "flow flow--small"] $ do
           h3_ [class_ "title-section"] "Metadata"
           ul_ [class_ "flow flow--tiny", role_ "list"] $ do
@@ -141,11 +141,11 @@ packageBody
               li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
                 span_ [class_ "color-quaternary"] Icons.shieldUser
                 displayLotteryFactor namespace packageName lotteryFactor
-        -- TODO: Split into its own function
+        -- TODO: [non-urgent] Split into its own function
         section_ [class_ "flow flow--small"] $ do
           h3_ [class_ "title-section"] "Links"
           displayLinks namespace packageName packageIndexURL latestRelease
-        -- TODO: Split into its own function
+        -- TODO: [non-urgent] Split into its own function
         section_ [class_ "flow flow--small"] $ do
           h3_ [class_ "title-section"] "Installation"
           case deprecationInfo of
@@ -154,19 +154,19 @@ packageBody
               if fromMaybe False deprecated
                 then displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
                 else displayInstructions namespace packageName latestRelease
-        -- TODO: Split into its own function
+        -- TODO: [non-urgent] Split into its own function
         -- TODO: Display when there are tested compilers listed
         section_ [class_ "flow flow--small"] $ do
           h3_ [class_ "title-section"] "Tested Compilers"
           displayTestedWith latestRelease.testedWith
-        -- TODO: Make a "Build Targets" section
+        -- TODO: [non-urgent] Make a "Build Targets" section
         -- TODO: Display only when there are package flags
         section_ [class_ "flow flow--small"] $ do
           h3_ [class_ "title-section"] "Package Flags"
           displayPackageFlags flags
       section_ [class_ "flow"] $ do
         h3_ [class_ "title-section"] "Readme"
-        -- TODO: Display a fallback message when there is no readme (in dev, the "renderHaddock release.description" is not showing anything (on /@mlabs / plutarch-ledger-api for example))
+        -- TODO: [non-urgent] Display a fallback message when there is no readme (in dev, the "renderHaddock release.description" is not showing anything (on /@mlabs / plutarch-ledger-api for example))
         div_ [class_ "prose"] $ displayReadme latestRelease
 
 getLatestViableRelease
