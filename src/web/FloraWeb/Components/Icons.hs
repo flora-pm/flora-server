@@ -2,7 +2,6 @@
 
 module FloraWeb.Components.Icons
   ( usageInstructionTooltip
-  , chevronRightOutline
   , chevronUpDown
   , pen
   , lookingGlass
@@ -49,15 +48,6 @@ usageInstructionTooltip =
     [str|
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20" fill="currentColor" class="tooltip">
   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-</svg>
-|]
-
-chevronRightOutline :: FloraHTML
-chevronRightOutline =
-  toHtmlRaw @Text
-    [str|
-<svg xmlns="http://www.w3.org/2000/svg" class="breadcrumb" fill="none" viewBox="0 0 24 24" width="24" height="24" stroke-width="1.5" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke="currentColor" />
 </svg>
 |]
 

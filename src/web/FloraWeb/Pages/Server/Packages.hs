@@ -330,14 +330,19 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
             (fromPage pageNumber)
             mSearch
 
-    totalDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents packageNamespace packageName mSearch
+    numberOfDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents packageNamespace packageName mSearch
+    numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
+    numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
+
     Trace.withSpan "render showDependents" $
       render templateEnv $
         Package.showDependents
+          numberOfReleases
+          release
+          numberOfDependencies
+          numberOfDependents
           packageNamespace
           packageName
-          release
-          totalDependents
           results
           pageNumber
 
@@ -460,13 +465,33 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   now <- Time.currentTime
   package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-  let templateEnv =
-        templateEnv'
-          { title = display packageNamespace <> "/" <> display packageName
-          , description = "Releases of " <> display packageNamespace <> display packageName
-          }
-  releases <- withReadOnlyPool pool $ Query.getAllReleases package.packageId
-  render templateEnv $ Package.listVersions now packageNamespace packageName releases
+  maybeLatestRelease <- withReadOnlyPool pool $ Query.getLatestPackageRelease package.packageId
+  case maybeLatestRelease of
+    Nothing -> throwError err404
+    Just latestRelease -> do
+      let templateEnv =
+            templateEnv'
+              { title = display packageNamespace <> "/" <> display packageName
+              , description = "Releases of " <> display packageNamespace <> display packageName
+              }
+      numberOfDependents <-
+        Trace.withSpan "Query.getNumberOfPackageDependents" $
+          withReadOnlyPool pool $
+            Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+      numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements latestRelease.releaseId
+
+      releases <- withReadOnlyPool pool $ Query.getAllReleases package.packageId
+
+      render templateEnv $
+        Package.listVersions
+          latestRelease
+          now
+          numberOfDependencies
+          numberOfDependents
+          packageNamespace
+          packageName
+          latestRelease.synopsis
+          releases
 
 constructTarballPath :: PackageName -> Version -> Text
 constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
@@ -515,17 +540,29 @@ showPackageSecurityHandler (Headers session _) packageNamespace packageName =
     FloraEnv{pool} <- Reader.ask
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
-    advisoryPreviews <-
-      Trace.withSpan "Query.getAdvisoryPreviewsByPackageId" $
-        withReadOnlyPool pool $
-          Query.getAdvisoryPreviewsByPackageId package.packageId
-    let templateEnv =
-          templateEnv'
-            { title = display packageNamespace <> "/" <> display packageName
-            , description = "Releases of " <> display packageNamespace <> display packageName
-            }
-    render templateEnv $
-      Package.showPackageSecurityPage
-        packageNamespace
-        packageName
-        (Vector.reverse $ Vector.modify (MVector.sortBy (\v1 v2 -> compare v1.hsecId v2.hsecId)) advisoryPreviews)
+    maybeLatestRelease <- withReadOnlyPool pool $ Query.getLatestPackageRelease package.packageId
+    case maybeLatestRelease of
+      Nothing -> throwError err404
+      Just latestRelease -> do
+        advisoryPreviews <-
+          Trace.withSpan "Query.getAdvisoryPreviewsByPackageId" $
+            withReadOnlyPool pool $
+              Query.getAdvisoryPreviewsByPackageId package.packageId
+        let templateEnv =
+              templateEnv'
+                { title = display packageNamespace <> "/" <> display packageName
+                , description = "Releases of " <> display packageNamespace <> display packageName
+                }
+        numberOfDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+        numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements latestRelease.releaseId
+        numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
+        render templateEnv $
+          Package.showPackageSecurityPage
+            latestRelease
+            numberOfDependencies
+            numberOfDependents
+            packageNamespace
+            packageName
+            latestRelease.synopsis
+            numberOfReleases
+            (Vector.reverse $ Vector.modify (MVector.sortBy (\v1 v2 -> compare v1.hsecId v2.hsecId)) advisoryPreviews)

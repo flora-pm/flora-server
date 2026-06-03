@@ -1,5 +1,6 @@
 module FloraWeb.Pages.Templates.Packages
-  ( displayDependencies
+  ( presentationHeader
+  , displayDependencies
   , displayDependents
   , displayInstructions
   , displayLicense
@@ -13,9 +14,6 @@ module FloraWeb.Pages.Templates.Packages
   , listVersions
   , packageListing
   , packageWithExecutableListing
-  , presentationHeaderForSubpage
-  , presentationHeaderForVersions
-  , presentationHeaderForAdvisories
   , showChangelog
   , showDependencies
   , showDependents
@@ -43,7 +41,6 @@ import Data.Time (NominalDiffTime, UTCTime)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.Pretty (pretty)
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
@@ -51,6 +48,7 @@ import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
 import Distribution.Types.Version (Version, mkVersion, versionNumbers)
 import Lucid
+import Servant (toUrlPiece)
 import Text.PrettyPrint (Doc, hcat, render)
 import Text.PrettyPrint qualified as PP
 
@@ -58,14 +56,13 @@ import Advisories.Model.Affected.Types
 import Data.Positive
 import Distribution.Orphans ()
 import Flora.Environment.Env (FeatureEnv (..))
-import Flora.Model.Category.Types
 import Flora.Model.Package.Types
-import Flora.Model.PackageUploader.Types
+import Flora.Model.PackageGroup.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
 import Flora.Search (SearchAction (..))
 import FloraWeb.Components.AdvisoryListItem
-import FloraWeb.Components.Icons qualified as Icon
+import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.PackageCard
   ( PackageCardProps (..)
   , packageCard
@@ -95,70 +92,27 @@ instance Display Target where
   displayBuilder Versions = "versions"
   displayBuilder Security = "security"
 
-presentationHeaderForSubpage
-  :: Namespace
-  -> PackageName
-  -> Release
-  -> Target
-  -> Word
-  -> FloraHTML
-presentationHeaderForSubpage namespace packageName release target numberOfPackages = div_ [class_ "divider"] $ do
-  div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
-    span_ [class_ "headline"] $ do
-      displayNamespace namespace
-      Icon.chevronRightOutline
-      linkToPackageWithVersion namespace packageName release.version
-      Icon.chevronRightOutline
-      toHtml (display target)
-  p_ [class_ "synopsis"] $
-    span_ [class_ "version"] $
-      toHtml $
-        display numberOfPackages
-          <> " results"
-
-presentationHeaderForVersions
-  :: Namespace
-  -> PackageName
-  -> Word
-  -> FloraHTML
-presentationHeaderForVersions namespace packageName numberOfReleases = div_ [class_ "divider"] $ do
-  div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
-    span_ [class_ "headline"] $ do
-      displayNamespace namespace
-      Icon.chevronRightOutline
-      linkToPackage namespace packageName
-      Icon.chevronRightOutline
-      toHtml (display Versions)
-  p_ [class_ "synopsis"] $
-    span_ [class_ "version"] $
-      toHtml $
-        display numberOfReleases
-          <> " results"
-
-presentationHeaderForAdvisories
-  :: Namespace
-  -> PackageName
-  -> FloraHTML
-presentationHeaderForAdvisories namespace packageName = div_ [class_ "divider"] $ do
-  div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
-    span_ [class_ "headline"] $ do
-      displayNamespace namespace
-      Icon.chevronRightOutline
-      linkToPackage namespace packageName
-      Icon.chevronRightOutline
-      toHtml (display Security)
-
 showDependents
-  :: Namespace
-  -> PackageName
+  :: Word
   -> Release
   -> Word
+  -> Word
+  -> Namespace
+  -> PackageName
   -> Vector DependencyInfo
   -> Positive Word
   -> FloraHTML
-showDependents namespace packageName release count packagesInfo currentPage = do
+showDependents numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName packagesInfo currentPage = do
   -- TODO: Need to be replaced by standardized presentationHeader
-  presentationHeaderForSubpage namespace packageName release Dependents count
+  presentationHeader
+    numberOfReleases
+    latestRelease
+    numberOfDependencies
+    numberOfDependents
+    namespace
+    packageName
+    latestRelease.synopsis
+    mempty
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependents"
     ul_ [class_ "flow", role_ "list"] $ do
@@ -175,8 +129,8 @@ showDependents namespace packageName release count packagesInfo currentPage = do
               , Nothing
               )
         )
-    when (count > 30) $
-      paginationNav count currentPage (DependentsOf namespace packageName Nothing)
+    when (numberOfDependents > 30) $
+      paginationNav numberOfDependents currentPage (DependentsOf namespace packageName Nothing)
 
 showDependencies :: Namespace -> PackageName -> Release -> ComponentDependencies -> FloraHTML
 showDependencies namespace packageName release componentsInfo = do
@@ -187,10 +141,27 @@ showDependencies namespace packageName release componentsInfo = do
     ul_ [class_ "flow", role_ "list"] $ do
       requirementListItem componentsInfo
 
-listVersions :: UTCTime -> Namespace -> PackageName -> Vector Release -> FloraHTML
-listVersions now namespace packageName releases = do
-  -- TODO: Need to be replaced by standardized presentationHeader
-  presentationHeaderForVersions namespace packageName (fromIntegral $ Vector.length releases)
+listVersions
+  :: Release
+  -> UTCTime
+  -> Word
+  -> Word
+  -> Namespace
+  -> PackageName
+  -> Text
+  -> Vector Release
+  -> FloraHTML
+listVersions latestRelease now numberOfDependencies numberOfDependents namespace packageName synopsis releases = do
+  presentationHeader
+    (fromIntegral $ Vector.length releases)
+    latestRelease
+    numberOfDependencies
+    numberOfDependents
+    namespace
+    packageName
+    synopsis
+    mempty
+
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Version history"
     ul_ [class_ "flow", role_ "list"] $ do
@@ -205,7 +176,7 @@ versionListItem now namespace packageName release = do
         Just ts -> do
           let timeLabelFull = display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" ts)
           li_ [title_ ("Uploaded: " <> timeLabelFull)] $ do
-            span_ [class_ "color-tertiary"] Icon.cloudUpload
+            span_ [class_ "color-tertiary"] Icons.cloudUpload
             span_ [class_ "sr-only"] "Uploaded: "
             time_ [datetime_ timeLabelFull, title_ ("Uploaded: " <> timeLabelFull)] (toHtml $ formatUploadTime ts now)
   let link = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> display release.version
@@ -216,7 +187,7 @@ versionListItem now namespace packageName release = do
         whenJust release.deprecated $ \d -> do
           span_ [class_ "badge badge--danger"] $ do
             span_ [class_ "sr-only"] "Version "
-            Icon.trash
+            Icons.trash
             "Deprecated"
       -- TODO: Display on latest non-deprecated release
       -- span_ [class_ "badge badge--green"] $ do
@@ -228,11 +199,11 @@ versionListItem now namespace packageName release = do
           Just revisionDate -> do
             let timeLabelFull = display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate)
             li_ [title_ ("Revised: " <> timeLabelFull)] $ do
-              span_ [class_ "color-tertiary"] Icon.pen
+              span_ [class_ "color-tertiary"] Icons.pen
               span_ [class_ "sr-only"] "Revised: "
               time_ [datetime_ timeLabelFull, title_ ("Revised: " <> timeLabelFull)] (toHtml $ formatUploadTime revisionDate now)
         li_ $ do
-          span_ [class_ "color-tertiary"] Icon.scale
+          span_ [class_ "color-tertiary"] Icons.scale
           span_ [class_ "sr-only"] "License: "
           toHtml release.license
 
@@ -379,7 +350,7 @@ displayVersions namespace packageName versions numberOfReleases =
                         ("Revised on " <> display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
                     , class_ "revised-date"
                     ]
-                    Icon.pen
+                    Icons.pen
 
 displayDependencies
   :: (Namespace, PackageName, Version)
@@ -426,7 +397,7 @@ displayInstructions namespace packageName latestRelease = do
             tarballName = display packageName <> "-" <> v <> ".tar.gz"
             tarballLink = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> v <> "/" <> tarballName
         a_ [class_ "btn btn--tiny", href_ tarballLink, download_ "", title_ ("Download archive " <> tarballName)] $ do
-          Icon.download
+          Icons.download
           "Download Archive"
 
 displayPackageDeprecation :: PackageAlternatives -> FloraHTML
@@ -539,12 +510,25 @@ formatInstallString packageName Release{version} =
         else pretty $ mkVersion $ List.take 2 $ versionNumbers version
 
 showPackageSecurityPage
-  :: Namespace
+  :: Release
+  -> Word
+  -> Word
+  -> Namespace
   -> PackageName
+  -> Text
+  -> Word
   -> Vector PackageAdvisoryPreview
   -> FloraHTML
-showPackageSecurityPage namespace packageName advisoryPreviews = do
-  presentationHeaderForAdvisories namespace packageName
+showPackageSecurityPage latestRelease numberOfDependencies numberOfDependents namespace packageName synopsis numberOfReleases advisoryPreviews = do
+  presentationHeader
+    numberOfReleases
+    latestRelease
+    numberOfDependencies
+    numberOfDependents
+    namespace
+    packageName
+    synopsis
+    mempty
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Security Advisories"
     packageAdvisoriesListing False advisoryPreviews
@@ -603,3 +587,89 @@ months n = 30 * days n
 
 years :: Pico -> NominalDiffTime
 years n = 12 * months n
+
+presentationHeader
+  :: Word
+  -- ^ Number of releases for the package
+  -> Release
+  -- ^ Release
+  -> Word
+  -- ^ Number of dependencies
+  -> Word
+  -- ^ Number of dependents
+  -> Namespace
+  -> PackageName
+  -> Text
+  -- ^  Synopsis
+  -> Vector PackageGroupName
+  -> FloraHTML
+presentationHeader numberOfReleases release numberOfDependencies numberOfDependents namespace name synopsis groups =
+  header_ [class_ "pageHead"] $ do
+    div_ [class_ "wrapper flow flow--large"] $ do
+      div_ [class_ "aside gap--large"] $ do
+        div_ [class_ "flow"] $ do
+          h1_ [class_ "pageHead-title tracking-tight"] $ do
+            span_ [class_ "prefix"] $ do
+              -- TODO: Fix link
+              a_ [href_ (display namespace)] (toHtml $ display namespace)
+              (toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text))
+            toHtml name
+          p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
+        div_ [class_ "flow flow--small self-center"] $ do
+          div_ [class_ "cluster cluster--small items-end"] $ do
+            -- TODO: Display only on latest release page (not when no version specified)
+            -- span_ [class_ "badge badge--big badge--green"] $ do
+            --   Icons.check
+            --   "Latest"
+            -- TODO: Display on deprecated releases
+            -- span_ [class_ "badge badge--big badge--danger"] $ do
+            --   Icons.trash
+            --   "Deprecated"
+            span_ [class_ "title-2 text-right leading-thin"] $ toHtml release.version
+      div_ [class_ "pageHead-tip"] $ do
+        -- TODO: Split tabs in a separate function
+        -- TODO: Display actual link, labels, and current attribute/class
+        nav_ [class_ "tabs", id_ "subsections", ariaLabel_ "Package sections"] $ do
+          a_ [class_ "tab", href_ "/", ariaCurrent_ "page"] $ do
+            Icons.bookOpenText
+            "About"
+
+          a_ [class_ "tab", href_ (Links.versionsPage namespace name)] $ do
+            Icons.history
+            (toHtml $ display numberOfReleases <> " Versions") -- TODO: display 'Version' when only one
+          a_ [class_ "tab", href_ ("/" <> (toUrlPiece $ Links.packageVersionChangelog namespace name release.version))] $ do
+            Icons.logs
+            "Changelog"
+
+          a_ [class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] $ do
+            Icons.folderTree
+            (toHtml $ display numberOfDependencies <> " Dependencies") -- TODO: Display 'Dependency' when only one
+          a_ [class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] $ do
+            Icons.packageSearch
+            (toHtml $ display numberOfDependents <> " Dependents") -- TODO: Display 'Dependent' when only one
+        div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
+          -- TODO: Display current section in aria-label attribute
+          button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
+            Icons.bookOpenText
+            div_ [class_ "flex-grow"] $ do
+              div_ [class_ "prefix"] $ "Current section"
+              div_ $ "About" -- TODO: Display current section label
+            Icons.chevronUpDown
+          nav_ [class_ "dropdown dropdown--full", id_ "subsectionsMobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
+            a_ [class_ "dropdown-item dropdown-item--current", href_ "/", ariaCurrent_ "page"] $ do
+              Icons.bookOpenText
+              "About"
+
+            a_ [class_ "dropdown-item", href_ (Links.versionsPage namespace name)] $ do
+              Icons.history
+              (toHtml $ display numberOfReleases <> " Versions") -- TODO: display 'Version' when only one
+            a_ [class_ "dropdown-item", href_ (toUrlPiece $ Links.packageVersionChangelog namespace name release.version)] $ do
+              Icons.logs
+              "Changelog"
+
+            a_ [class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] $ do
+              Icons.folderTree
+              (toHtml $ display numberOfDependencies <> " Dependencies") -- TODO: Display 'Dependency' when only one
+            a_ [class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] $ do
+              Icons.packageSearch
+              (toHtml $ display numberOfDependents <> " Dependents") -- TODO: Display 'Dependent' when only one

@@ -1,6 +1,5 @@
 module FloraWeb.Pages.Templates.Admin where
 
-import Data.Text (Text)
 import Data.Text.Display
 import Lucid
 

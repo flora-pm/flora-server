@@ -10,7 +10,6 @@ import Web.HttpApiData
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import FloraWeb.Components.Button
-import FloraWeb.Components.Icons qualified as Icon
 import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates
@@ -53,7 +52,7 @@ packageGroupHeader packageGroup packages = div_ [class_ "divider"] $ do
   div_ [class_ "page-title"] $ h1_ [class_ ""] $ do
     span_ [class_ "headline"] $ do
       linkToGroups
-      Icon.chevronRightOutline
+      "/"
       toHtml packageGroup.groupName
   p_ [class_ "synopsis"] $
     span_ [class_ "version"] $
