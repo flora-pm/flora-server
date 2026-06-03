@@ -659,7 +659,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
         -- TODO: Split tabs in a separate function
         -- TODO: Display actual link, labels, and current attribute/class
         nav_ [class_ "tabs", id_ "subsections", ariaLabel_ "Package sections"] $ do
-          a_ [class_ "tab", href_ "/", ariaCurrent_ "page"] $ do
+          a_ [class_ "tab", href_ (Links.versionResource namespace name release.version), ariaCurrent_ "page"] $ do
             Icons.bookOpenText
             "About"
 
