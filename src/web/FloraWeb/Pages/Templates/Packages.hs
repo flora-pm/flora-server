@@ -510,7 +510,7 @@ displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = case 
   _ -> details_ [class_ "text-small"] $ do
     summary_ [] $ do
       span_ [class_ "color-raise text-break"] (toHtml $ Text.pack (Flag.unFlagName flagName))
-      " "
+      span_ $ toHtmlRaw ("&nbsp;" :: Text)
       defaultMarker flagDefault
     div_ [class_ "prose text-break"] $ renderHaddock $ Text.pack flagDescription
 
