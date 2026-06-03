@@ -188,7 +188,7 @@ listVersions now namespace packageName releases = do
   -- TODO: Need to be replaced by standardized presentationHeader
   presentationHeaderForVersions namespace packageName (fromIntegral $ Vector.length releases)
   section_ [class_ "wrapper inset-large flow"] $ do
-    h2_ [class_ "title-section"] "Dependencies"
+    h2_ [class_ "title-2"] "Version history"
     ul_ [class_ "flow", role_ "list"] $ do
       Vector.forM_
         releases
@@ -289,16 +289,14 @@ requirementListing requirements =
   ul_ [class_ "component-list"] $ requirementListItem requirements
 
 showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
-showChangelog namespace packageName version mChangelog = div_ [class_ "container"] $ div_ [class_ "divider"] $ do
-  div_ [class_ "page-title"] $
-    h1_ [class_ ""] $ do
-      span_ [class_ "headline"] $ toHtml ("Changelog of " <> display namespace <> "/" <> display packageName)
-      toHtmlRaw @Text "&nbsp;"
-      span_ [class_ "version"] $ toHtml $ display version
-  section_ [class_ "release-changelog"] $ do
-    case mChangelog of
-      Nothing -> toHtml @Text "This release does not have a Changelog"
-      Just changelogText -> toHtmlRaw changelogText
+showChangelog namespace packageName version mChangelog = do
+  -- TODO: Add standardized presentationHeader here
+  section_ [class_ "wrapper inset-large flow"] $ do
+    h2_ [class_ "title-2"] "Changelog"
+    div_ [class_ "prose"] $ do
+      case mChangelog of
+        Nothing -> toHtml @Text "This release does not have a Changelog"
+        Just changelogText -> toHtmlRaw changelogText
 
 displayReleaseVersion :: Version -> FloraHTML
 displayReleaseVersion = toHtml
