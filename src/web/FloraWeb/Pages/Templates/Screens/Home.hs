@@ -24,7 +24,7 @@ show
   :: Word
   -> UTCTime
   -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
-  -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
+  -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> FloraHTML
 show packageCount now recentUploads latestPackages = do
   banner packageCount
@@ -53,7 +53,7 @@ banner packageCount = do
 
 packageNewsSection
   :: UTCTime
-  -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
+  -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> FloraHTML
 packageNewsSection now newPackages recentUploads = do
@@ -86,12 +86,12 @@ recentUploadsColumn now recentPackages = section_ [class_ "flow"] $ do
 
 newPackagesColumn
   :: UTCTime
-  -> Vector (Namespace, PackageName, Text, Maybe UTCTime)
+  -> Vector (Namespace, PackageName, Text, Version, Maybe UTCTime)
   -> FloraHTML
 newPackagesColumn now newPackages = section_ [class_ "flow"] $ do
   h2_ [class_ "title-section"] "New packages"
   ol_ [class_ "flow", role_ "list", reversed_ ""] $ do
-    forM_ newPackages $ \(namespace, name, synopsis, mTimestamp) -> do
+    forM_ newPackages $ \(namespace, name, synopsis, version, mTimestamp) -> do
       li_ [] $ do
         let link = "/packages/" <> display namespace <> "/" <> display name
         packageCard
@@ -101,7 +101,7 @@ newPackagesColumn now newPackages = section_ [class_ "flow"] $ do
             , namespace = namespace
             , name = name
             , synopsis = synopsis
-            , mVersion = Nothing -- TODO: Display version here
+            , mVersion = Just (display version)
             , mLastUploadedAt = mTimestamp
             , mLicense = Nothing
             , exactMatch = False

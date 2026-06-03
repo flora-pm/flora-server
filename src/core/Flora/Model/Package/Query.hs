@@ -48,6 +48,7 @@ import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Simple.Types
+import Distribution.Version (Version)
 import Effectful (Eff, IOE, type (:>))
 import Effectful.Labeled
 import Effectful.Log (Log)
@@ -813,7 +814,7 @@ WITH RECURSIVE transitive_dependencies(  dependent_id, dependent_namespace, depe
 
 getLatestPackages
   :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
-  => Eff es (Vector (Namespace, PackageName, Text, Maybe UTCTime))
+  => Eff es (Vector (Namespace, PackageName, Text, Version, Maybe UTCTime))
 getLatestPackages = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query sqlQuery ()
   where
     sqlQuery =
@@ -821,6 +822,7 @@ getLatestPackages = labeled @ReadOnly @WithConnection $ Vector.fromList <$> quer
         SELECT p0.namespace
              , p0.name
              , r1.synopsis
+             , r1.version
              , r1.uploaded_at
         FROM packages AS p0
              INNER JOIN releases AS r1 ON r1.package_id = p0.package_id
