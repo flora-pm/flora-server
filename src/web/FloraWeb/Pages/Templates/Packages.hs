@@ -156,10 +156,12 @@ showDependents
   -> Vector DependencyInfo
   -> Positive Word
   -> FloraHTML
-showDependents namespace packageName release count packagesInfo currentPage =
-  div_ [class_ "container"] $ do
-    presentationHeaderForSubpage namespace packageName release Dependents count
-    ul_ [class_ "package-list"] $ do
+showDependents namespace packageName release count packagesInfo currentPage = do
+  -- TODO: Need to be replaced by standardized presentationHeader
+  presentationHeaderForSubpage namespace packageName release Dependents count
+  section_ [class_ "wrapper inset-large flow"] $ do
+    h2_ [class_ "title-2"] "Dependents"
+    ul_ [class_ "flow", role_ "list"] $ do
       Vector.forM_
         packagesInfo
         ( \dep ->
@@ -179,9 +181,11 @@ showDependents namespace packageName release count packagesInfo currentPage =
 showDependencies :: Namespace -> PackageName -> Release -> ComponentDependencies -> FloraHTML
 showDependencies namespace packageName release componentsInfo = do
   let dependenciesCount = fromIntegral $ Map.foldr (\v acc -> Vector.length v + acc) 0 componentsInfo
-  div_ [class_ "container"] $ do
-    presentationHeaderForSubpage namespace packageName release Dependencies dependenciesCount
-    div_ [class_ ""] $ requirementListing componentsInfo
+  -- TODO: Add standardized presentationHeader here before the section
+  section_ [class_ "wrapper inset-large flow"] $ do
+    h2_ [class_ "title-2"] "Dependencies"
+    ul_ [class_ "flow", role_ "list"] $ do
+      requirementListItem componentsInfo
 
 listVersions :: UTCTime -> Namespace -> PackageName -> Vector Release -> FloraHTML
 listVersions now namespace packageName releases = do
@@ -214,9 +218,9 @@ versionListItem now namespace packageName release = do
             span_ [class_ "sr-only"] "Version "
             Icon.trash
             "Deprecated"
-        -- TODO: Display on latest non-deprecated release
-        -- span_ [class_ "badge badge--green"] $ do
-        --   "Latest Release"
+      -- TODO: Display on latest non-deprecated release
+      -- span_ [class_ "badge badge--green"] $ do
+      --   "Latest Release"
       ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
         uploadedAt
         case release.revisedAt of
@@ -231,7 +235,6 @@ versionListItem now namespace packageName release = do
           span_ [class_ "color-tertiary"] Icon.scale
           span_ [class_ "sr-only"] "License: "
           toHtml release.license
-
 
 -- | Render a list of package information
 packageListing
@@ -284,13 +287,9 @@ packageWithExecutableListing packages =
   ul_ [class_ "package-list"] $ do
     Vector.forM_ packages packageWithExecutableListItem
 
-requirementListing :: ComponentDependencies -> FloraHTML
-requirementListing requirements =
-  ul_ [class_ "component-list"] $ requirementListItem requirements
-
 showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 showChangelog namespace packageName version mChangelog = do
-  -- TODO: Add standardized presentationHeader here
+  -- TODO: Add standardized presentationHeader here before the section
   section_ [class_ "wrapper inset-large flow"] $ do
     h2_ [class_ "title-2"] "Changelog"
     div_ [class_ "prose"] $ do

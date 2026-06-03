@@ -91,20 +91,26 @@ requirementListItem :: ComponentDependencies -> FloraHTML
 requirementListItem allComponentDeps =
   traverse_ (uncurry componentTitle) . sortOn ((.componentType) . fst) $ Map.toList allComponentDeps
   where
-    open = if Map.size allComponentDeps == 1 then [open_ ""] else mempty
+    -- TODO: Also always open first component
+    open = if Map.size allComponentDeps == 1 then (open_ "") else mempty
     componentTitle component componentDeps = do
-      details_ open $ do
-        summary_ [class_ "package-component"] . h3_ [] $ do
-          strong_ [] . toHtml $ display component
-          toHtml $ " (" <> display (Vector.length componentDeps) <> " dependencies)"
-        traverse_ componentListItems componentDeps
+      details_ [class_ "details--nobody", open] $ do
+        summary_ [class_ "package-component"] $
+          h3_ [class_ "inline-block text-large color-raise"] $ do
+            toHtml $ display component
+            span_ [class_ "text-small color-secondary"] $
+              toHtml $
+                " (" <> display (Vector.length componentDeps) <> " dependencies)"
+        ul_ [class_ "flow", role_ "list"] $
+          traverse_ componentListItems componentDeps
 
 componentListItems :: DependencyInfo -> FloraHTML
 componentListItems DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense, components} = do
   let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
       component_ = p_ [class_ "package-list-item__component"] . toHtml
-  li_ [class_ "package-list-item"] $
-    a_ [href, class_ ""] $ do
+  li_ $
+    -- TODO: Replace by packageCard
+    a_ [href, class_ "entityCard"] $ do
       h4_ [class_ "package-list-item__name"] $ do
         strong_ [class_ ""] . toHtml $
           display namespace <> "/" <> display packageName
