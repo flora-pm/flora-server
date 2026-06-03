@@ -6,9 +6,10 @@ module FloraWeb.Pages.Templates.Screens.Packages
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Data.Function ((&))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import Data.Text (Text)
 import Data.Text.Display
+import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
@@ -32,9 +33,7 @@ showPackage
   -> Word
   -> Package
   -> Text
-  -> Vector Package
   -> Word
-  -> Vector DependencyVersionRequirement
   -> Word
   -> Vector Category
   -> Vector PackageGroupName
@@ -47,9 +46,7 @@ showPackage
   numberOfReleases
   package@Package{namespace, name}
   packageIndexURL
-  dependents
   numberOfDependents
-  dependencies
   numberOfDependencies
   categories
   groups
@@ -70,11 +67,6 @@ showPackage
         packageIndexURL
         latestRelease
         packageReleases
-        numberOfReleases
-        dependencies
-        numberOfDependencies
-        dependents
-        numberOfDependents
         categories
         (fmap Vector.length activeMaintainers)
         mUploader
@@ -84,11 +76,6 @@ packageBody
   -> Text
   -> Release
   -> Vector Release
-  -> Word
-  -> Vector DependencyVersionRequirement
-  -> Word
-  -> Vector Package
-  -> Word
   -> Vector Category
   -> Maybe Int
   -> Maybe PackageUploader
@@ -96,13 +83,8 @@ packageBody
 packageBody
   Package{namespace, name = packageName, deprecationInfo}
   packageIndexURL
-  latestRelease@Release{flags, deprecated, license, maintainer, version}
+  latestRelease@Release{flags, deprecated, license, maintainer, revisedAt, uploadedAt}
   packageReleases
-  numberOfReleases
-  dependencies
-  numberOfDependencies
-  dependents
-  numberOfDependents
   categories
   mLotteryFactor
   mUploader = do
@@ -116,12 +98,14 @@ packageBody
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "sr-only"] "Last updated"
               span_ [class_ "color-quaternary"] Icons.cloudUpload
-              span_ $ do
-                time_ [datetime_ "todo", title_ "todo"] "todo last updated" -- TODO: Display last revision or upload (like on packageCard)
-                whenJust mUploader $ \uploader -> do
-                  -- TODO: is just me or uploader is never shown? (on dev dataset at least)
-                  "by"
-                  (toHtml uploader.username)
+              let mLastUploadedAt = if isJust revisedAt then revisedAt else uploadedAt
+              whenJust mLastUploadedAt $ \timestamp -> do
+                span_ $ do
+                  let timeLabelFull = display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp)
+                  let formattedTime = (display (Time.formatTime Time.defaultTimeLocale "%_d %b %Y" timestamp))
+                  time_ [datetime_ formattedTime, title_ ("Uploaded: " <> timeLabelFull)] (toHtml $ formattedTime)
+                  whenJust mUploader $ \uploader -> do
+                    ", by " <> (toHtml uploader.username)
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "sr-only"] "License"
               span_ [class_ "color-quaternary"] Icons.scale

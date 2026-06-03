@@ -199,14 +199,6 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
         version = fromMaybe latestRelease.version mversion
     release <- withReadOnlyPool pool $ guardThatReleaseExists package.packageId version $ const (web404 session)
     numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
-    dependents <-
-      Trace.withSpan "Query.getPackageDependents" $
-        withReadOnlyPool pool $
-          Query.getPackageDependents packageNamespace packageName
-    releaseDependencies <-
-      Trace.withSpan "Query.getRequirements" $
-        withReadOnlyPool pool $
-          Query.getRequirements package.name release.releaseId
     categories <- withReadOnlyPool pool $ Query.getPackageCategories package.packageId
     numberOfDependents <-
       Trace.withSpan "Query.getNumberOfPackageDependents" $
@@ -256,9 +248,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
           numberOfReleases
           package
           packageIndexURL
-          dependents
           numberOfDependents
-          releaseDependencies
           numberOfDependencies
           categories
           groups
