@@ -13,7 +13,9 @@ import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.Version
 import Lucid
+import Servant (toUrlPiece)
 
+import Data.Positive
 import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
@@ -21,6 +23,7 @@ import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Types (Release (..))
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
+import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates.Packages
 import FloraWeb.Pages.Templates.Types (FloraHTML)
 import Lucid.Orphans ()
@@ -109,16 +112,18 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
           a_ [class_ "tab", href_ "/", ariaCurrent_ "page"] $ do
             Icons.bookOpenText
             "About"
-          a_ [class_ "tab", href_ "/"] $ do
+
+          a_ [class_ "tab", href_ (Links.versionsPage namespace name)] $ do
             Icons.history
             (toHtml $ display numberOfReleases <> " Versions") -- TODO: display 'Version' when only one
-          a_ [class_ "tab", href_ "/"] $ do
+          a_ [class_ "tab", href_ ("/" <> (toUrlPiece $ Links.packageVersionChangelog namespace name release.version))] $ do
             Icons.logs
             "Changelog"
-          a_ [class_ "tab", href_ "/"] $ do
+
+          a_ [class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] $ do
             Icons.folderTree
             (toHtml $ display numberOfDependencies <> " Dependencies") -- TODO: Display 'Dependency' when only one
-          a_ [class_ "tab", href_ "/"] $ do
+          a_ [class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] $ do
             Icons.packageSearch
             (toHtml $ display numberOfDependents <> " Dependents") -- TODO: Display 'Dependent' when only one
         div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
@@ -133,16 +138,18 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             a_ [class_ "dropdown-item dropdown-item--current", href_ "/", ariaCurrent_ "page"] $ do
               Icons.bookOpenText
               "About"
-            a_ [class_ "dropdown-item", href_ "/"] $ do
+
+            a_ [class_ "dropdown-item", href_ (Links.versionsPage namespace name)] $ do
               Icons.history
               (toHtml $ display numberOfReleases <> " Versions") -- TODO: display 'Version' when only one
-            a_ [class_ "dropdown-item", href_ "/"] $ do
+            a_ [class_ "dropdown-item", href_ (toUrlPiece $ Links.packageVersionChangelog namespace name release.version)] $ do
               Icons.logs
               "Changelog"
-            a_ [class_ "dropdown-item", href_ "/"] $ do
+
+            a_ [class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] $ do
               Icons.folderTree
               (toHtml $ display numberOfDependencies <> " Dependencies") -- TODO: Display 'Dependency' when only one
-            a_ [class_ "dropdown-item", href_ "/"] $ do
+            a_ [class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] $ do
               Icons.packageSearch
               (toHtml $ display numberOfDependents <> " Dependents") -- TODO: Display 'Dependent' when only one
 
