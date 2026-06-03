@@ -628,14 +628,15 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
           p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
         div_ [class_ "flow flow--small self-center"] $ do
           div_ [class_ "cluster cluster--small items-end"] $ do
-            -- TODO: Display only on latest release page (not when no version specified)
+            -- TODO: Display for latest non-deprecated release
             -- span_ [class_ "badge badge--big badge--green"] $ do
             --   Icons.check
             --   "Latest"
-            -- TODO: Display on deprecated releases
-            -- span_ [class_ "badge badge--big badge--danger"] $ do
-            --   Icons.trash
-            --   "Deprecated"
+            -- TODO: Display deprecated badge also for deprecated package
+            when (release.deprecated == Just True) $
+              span_ [class_ "badge badge--big badge--danger"] $ do
+                Icons.trash
+                "Deprecated"
             span_ [class_ "title-2 text-right leading-thin"] $ toHtml release.version
       div_ [class_ "pageHead-tip"] $ do
         -- TODO: Split tabs in a separate function
@@ -644,20 +645,19 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
           a_ [class_ "tab", href_ (Links.versionResource namespace name release.version), ariaCurrent_ "page"] $ do
             Icons.bookOpenText
             "About"
-
           a_ [class_ "tab", href_ (Links.versionsPage namespace name)] $ do
             Icons.history
-            (toHtml $ display numberOfReleases <> " Versions") -- TODO: display 'Version' when only one
+            (toHtml $ display numberOfReleases <> if numberOfReleases > 1 then " Versions" else " Version")
           a_ [class_ "tab", href_ ("/" <> (toUrlPiece $ Links.packageVersionChangelog namespace name release.version))] $ do
             Icons.logs
             "Changelog"
-
           a_ [class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] $ do
             Icons.folderTree
-            (toHtml $ display numberOfDependencies <> " Dependencies") -- TODO: Display 'Dependency' when only one
+            (toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency")
           a_ [class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] $ do
             Icons.packageSearch
-            (toHtml $ display numberOfDependents <> " Dependents") -- TODO: Display 'Dependent' when only one
+            (toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent")
+
         div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
           -- TODO: Display current section in aria-label attribute
           button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
@@ -670,17 +670,15 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             a_ [class_ "dropdown-item dropdown-item--current", href_ "/", ariaCurrent_ "page"] $ do
               Icons.bookOpenText
               "About"
-
             a_ [class_ "dropdown-item", href_ (Links.versionsPage namespace name)] $ do
               Icons.history
-              (toHtml $ display numberOfReleases <> " Versions") -- TODO: display 'Version' when only one
+              (toHtml $ display numberOfReleases <> if numberOfReleases > 1 then " Versions" else " Version")
             a_ [class_ "dropdown-item", href_ (toUrlPiece $ Links.packageVersionChangelog namespace name release.version)] $ do
               Icons.logs
               "Changelog"
-
             a_ [class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] $ do
               Icons.folderTree
-              (toHtml $ display numberOfDependencies <> " Dependencies") -- TODO: Display 'Dependency' when only one
+              (toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency")
             a_ [class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] $ do
               Icons.packageSearch
-              (toHtml $ display numberOfDependents <> " Dependents") -- TODO: Display 'Dependent' when only one
+              (toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent")
