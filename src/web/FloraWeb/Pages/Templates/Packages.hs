@@ -544,8 +544,9 @@ showPackageSecurityPage
   -> Vector PackageAdvisoryPreview
   -> FloraHTML
 showPackageSecurityPage namespace packageName advisoryPreviews = do
-  div_ [class_ "container"] $ do
-    presentationHeaderForAdvisories namespace packageName
+  presentationHeaderForAdvisories namespace packageName
+  section_ [class_ "wrapper inset-large flow"] $ do
+    h2_ [class_ "title-2"] "Security Advisories"
     packageAdvisoriesListing False advisoryPreviews
 
 packageAdvisoriesListing :: Bool -> Vector PackageAdvisoryPreview -> FloraHTML
