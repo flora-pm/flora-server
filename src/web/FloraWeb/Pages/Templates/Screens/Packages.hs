@@ -110,12 +110,12 @@ packageBody
               span_ [class_ "sr-only"] "License"
               span_ [class_ "color-quaternary"] Icons.scale
               toHtml license
-            -- TODO: Display only when there are categories listed
-            li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
-              span_ [class_ "sr-only"] "Categories"
-              span_ [class_ "color-quaternary"] Icons.folder
-              span_ $
-                displayCategories categories
+            when (not (Vector.null categories)) $
+              li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
+                span_ [class_ "sr-only"] "Categories"
+                span_ [class_ "color-quaternary"] Icons.folder
+                span_ $
+                  displayCategories categories
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "color-quaternary"] Icons.users
               p_ [class_ "text-break"] $ do
