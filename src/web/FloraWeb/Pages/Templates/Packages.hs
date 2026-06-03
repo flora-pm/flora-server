@@ -159,7 +159,7 @@ showDependents
 showDependents namespace packageName release count packagesInfo currentPage = do
   -- TODO: Need to be replaced by standardized presentationHeader
   presentationHeaderForSubpage namespace packageName release Dependents count
-  section_ [class_ "wrapper inset-large flow"] $ do
+  section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependents"
     ul_ [class_ "flow", role_ "list"] $ do
       Vector.forM_
@@ -182,7 +182,7 @@ showDependencies :: Namespace -> PackageName -> Release -> ComponentDependencies
 showDependencies namespace packageName release componentsInfo = do
   let dependenciesCount = fromIntegral $ Map.foldr (\v acc -> Vector.length v + acc) 0 componentsInfo
   -- TODO: Add standardized presentationHeader here before the section
-  section_ [class_ "wrapper inset-large flow"] $ do
+  section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependencies"
     ul_ [class_ "flow", role_ "list"] $ do
       requirementListItem componentsInfo
@@ -191,7 +191,7 @@ listVersions :: UTCTime -> Namespace -> PackageName -> Vector Release -> FloraHT
 listVersions now namespace packageName releases = do
   -- TODO: Need to be replaced by standardized presentationHeader
   presentationHeaderForVersions namespace packageName (fromIntegral $ Vector.length releases)
-  section_ [class_ "wrapper inset-large flow"] $ do
+  section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Version history"
     ul_ [class_ "flow", role_ "list"] $ do
       Vector.forM_
@@ -290,7 +290,7 @@ packageWithExecutableListing packages =
 showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
 showChangelog namespace packageName version mChangelog = do
   -- TODO: Add standardized presentationHeader here before the section
-  section_ [class_ "wrapper inset-large flow"] $ do
+  section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Changelog"
     div_ [class_ "prose"] $ do
       case mChangelog of
@@ -545,7 +545,7 @@ showPackageSecurityPage
   -> FloraHTML
 showPackageSecurityPage namespace packageName advisoryPreviews = do
   presentationHeaderForAdvisories namespace packageName
-  section_ [class_ "wrapper inset-large flow"] $ do
+  section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Security Advisories"
     packageAdvisoriesListing False advisoryPreviews
 
