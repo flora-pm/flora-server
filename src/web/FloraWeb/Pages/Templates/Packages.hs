@@ -183,45 +183,55 @@ showDependencies namespace packageName release componentsInfo = do
     presentationHeaderForSubpage namespace packageName release Dependencies dependenciesCount
     div_ [class_ ""] $ requirementListing componentsInfo
 
-listVersions :: Namespace -> PackageName -> Vector Release -> FloraHTML
-listVersions namespace packageName releases =
-  div_ [class_ "container"] $ do
-    presentationHeaderForVersions namespace packageName (fromIntegral $ Vector.length releases)
-    ul_ [class_ "package-list"] $
+listVersions :: UTCTime -> Namespace -> PackageName -> Vector Release -> FloraHTML
+listVersions now namespace packageName releases = do
+  -- TODO: Need to be replaced by standardized presentationHeader
+  presentationHeaderForVersions namespace packageName (fromIntegral $ Vector.length releases)
+  section_ [class_ "wrapper inset-large flow"] $ do
+    h2_ [class_ "title-section"] "Dependencies"
+    ul_ [class_ "flow", role_ "list"] $ do
       Vector.forM_
         releases
-        (versionListItem namespace packageName)
+        (versionListItem now namespace packageName)
 
-versionListItem :: Namespace -> PackageName -> Release -> FloraHTML
-versionListItem namespace packageName release = do
-  let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName <> "/" <> display release.version)
+versionListItem :: UTCTime -> Namespace -> PackageName -> Release -> FloraHTML
+versionListItem now namespace packageName release = do
   let uploadedAt = case release.uploadedAt of
         Nothing -> ""
-        Just ts ->
-          span_ [class_ "package-list-item__synopsis"] (toHtml $ Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y" ts)
-  li_ [class_ "package-list-item"] $
-    a_ [href, class_ ""] $
-      do
-        h4_ [class_ "package-list-item__name"]
-          $ strong_ [class_ (if Just True == release.deprecated then " release-deprecated" else "")]
-            . toHtml
-          $ "v"
-            <> toHtml release.version
+        Just ts -> do
+          let timeLabelFull = display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" ts)
+          li_ [title_ ("Uploaded: " <> timeLabelFull)] $ do
+            span_ [class_ "color-tertiary"] Icon.cloudUpload
+            span_ [class_ "sr-only"] "Uploaded: "
+            time_ [datetime_ timeLabelFull, title_ ("Uploaded: " <> timeLabelFull)] (toHtml $ formatUploadTime ts now)
+  let link = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> display release.version
+  li_ $ do
+    a_ [href_ link, class_ "entityCard"] $ do
+      div_ [class_ "cluster cluster--tiny"] $ do
+        span_ [class_ "entityCard-title"] (toHtml release.version)
+        whenJust release.deprecated $ \d -> do
+          span_ [class_ "badge badge--danger"] $ do
+            span_ [class_ "sr-only"] "Version "
+            Icon.trash
+            "Deprecated"
+        -- TODO: Display on latest non-deprecated release
+        -- span_ [class_ "badge badge--green"] $ do
+        --   "Latest Release"
+      ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
         uploadedAt
         case release.revisedAt of
           Nothing -> span_ [] ""
-          Just revisionDate ->
-            span_
-              [ dataText_
-                  ("Revised on " <> display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
-              , class_ "revised-date"
-              ]
-              Icon.pen
-        div_ [class_ "package-list-item__metadata"] $
-          span_ [class_ "package-list-item__license"] $
-            do
-              Icon.license
-              toHtml release.license
+          Just revisionDate -> do
+            let timeLabelFull = display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate)
+            li_ [title_ ("Revised: " <> timeLabelFull)] $ do
+              span_ [class_ "color-tertiary"] Icon.pen
+              span_ [class_ "sr-only"] "Revised: "
+              time_ [datetime_ timeLabelFull, title_ ("Revised: " <> timeLabelFull)] (toHtml $ formatUploadTime revisionDate now)
+        li_ $ do
+          span_ [class_ "color-tertiary"] Icon.scale
+          span_ [class_ "sr-only"] "License: "
+          toHtml release.license
+
 
 -- | Render a list of package information
 packageListing

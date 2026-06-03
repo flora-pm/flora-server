@@ -448,6 +448,7 @@ listVersionsHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
+     , Time.Time :> es
      , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
@@ -457,6 +458,7 @@ listVersionsHandler
 listVersionsHandler (Headers session _) packageNamespace packageName = do
   FloraEnv{pool} <- Reader.ask
   templateEnv' <- templateFromSession session defaultTemplateEnv
+  now <- Time.currentTime
   package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
   let templateEnv =
         templateEnv'
@@ -464,7 +466,7 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
           , description = "Releases of " <> display packageNamespace <> display packageName
           }
   releases <- withReadOnlyPool pool $ Query.getAllReleases package.packageId
-  render templateEnv $ Package.listVersions packageNamespace packageName releases
+  render templateEnv $ Package.listVersions now packageNamespace packageName releases
 
 constructTarballPath :: PackageName -> Version -> Text
 constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
