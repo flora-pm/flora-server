@@ -401,23 +401,26 @@ showAll target mVersion namespace packageName = do
 displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
 displayInstructions namespace packageName latestRelease = do
   when (latestRelease.buildType == Custom) customBuildType
-  div_ [class_ "flow flow--tiny"] $ do
-    input_
-      [ class_ "block min-w0 w100"
-      , id_ "package-install-string"
-      , type_ "text"
-      , onfocus_ "this.select();"
-      , value_ (formatInstallString packageName latestRelease)
-      , readonly_ "readonly"
-      ]
-    label_ [for_ "package-install-string", class_ "block text-small"] "Add this line in your cabal file"
+  div_ [class_ "flow flow--small"] $ do
+    div_ [class_ "flow flow--tiny"] $ do
+      input_
+        [ class_ "block min-w0 w100"
+        , id_ "package-install-string"
+        , type_ "text"
+        , onfocus_ "this.select();"
+        , value_ (formatInstallString packageName latestRelease)
+        , readonly_ "readonly"
+        ]
+      label_ [for_ "package-install-string", class_ "block text-small"] "Add this line in your cabal file"
     TemplateEnv{features} <- ask
     when (isJust features.blobStoreImpl) $ do
-      label_ [for_ "tarball", class_ "font-light"] "Download"
-      let v = display latestRelease.version
-          tarballName = display packageName <> "-" <> v <> ".tar.gz"
-          tarballLink = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> v <> "/" <> tarballName
-      div_ $ a_ [href_ tarballLink, download_ ""] $ toHtml tarballName
+      p_ $ do
+        let v = display latestRelease.version
+            tarballName = display packageName <> "-" <> v <> ".tar.gz"
+            tarballLink = "/packages/" <> display namespace <> "/" <> display packageName <> "/" <> v <> "/" <> tarballName
+        a_ [class_ "btn btn--tiny", href_ tarballLink, download_ "", title_ ("Download archive " <> tarballName)] $ do
+          Icon.download
+          "Download Archive"
 
 displayPackageDeprecation :: PackageAlternatives -> FloraHTML
 displayPackageDeprecation (PackageAlternatives inFavourOf) =
