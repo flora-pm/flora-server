@@ -32,7 +32,6 @@ import Control.Monad.Reader (ask)
 import Data.Fixed (Pico, div')
 import Data.Foldable (fold, forM_)
 import Data.List qualified as List
-import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust, isJust)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -103,7 +102,6 @@ showDependents
   -> Positive Word
   -> FloraHTML
 showDependents numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName packagesInfo currentPage = do
-  -- TODO: Need to be replaced by standardized presentationHeader
   presentationHeader
     numberOfReleases
     latestRelease
@@ -132,10 +130,25 @@ showDependents numberOfReleases latestRelease numberOfDependencies numberOfDepen
     when (numberOfDependents > 30) $
       paginationNav numberOfDependents currentPage (DependentsOf namespace packageName Nothing)
 
-showDependencies :: Namespace -> PackageName -> Release -> ComponentDependencies -> FloraHTML
-showDependencies namespace packageName release componentsInfo = do
-  let dependenciesCount = fromIntegral $ Map.foldr (\v acc -> Vector.length v + acc) 0 componentsInfo
-  -- TODO: Add standardized presentationHeader here before the section
+showDependencies
+  :: Word
+  -> Release
+  -> Word
+  -> Word
+  -> Namespace
+  -> PackageName
+  -> ComponentDependencies
+  -> FloraHTML
+showDependencies numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName componentsInfo = do
+  presentationHeader
+    numberOfReleases
+    latestRelease
+    numberOfDependencies
+    numberOfDependents
+    namespace
+    packageName
+    latestRelease.synopsis
+    mempty
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependencies"
     ul_ [class_ "flow", role_ "list"] $ do
@@ -258,9 +271,25 @@ packageWithExecutableListing packages =
   ul_ [class_ "package-list"] $ do
     Vector.forM_ packages packageWithExecutableListItem
 
-showChangelog :: Namespace -> PackageName -> Version -> Maybe TextHtml -> FloraHTML
-showChangelog namespace packageName version mChangelog = do
-  -- TODO: Add standardized presentationHeader here before the section
+showChangelog
+  :: Word
+  -> Release
+  -> Word
+  -> Word
+  -> Namespace
+  -> PackageName
+  -> Maybe TextHtml
+  -> FloraHTML
+showChangelog numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName mChangelog = do
+  presentationHeader
+    numberOfReleases
+    latestRelease
+    numberOfDependencies
+    numberOfDependents
+    namespace
+    packageName
+    latestRelease.synopsis
+    mempty
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Changelog"
     div_ [class_ "prose"] $ do

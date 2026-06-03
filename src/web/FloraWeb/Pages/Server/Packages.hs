@@ -384,6 +384,9 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
     release <- withReadOnlyPool pool $ guardThatReleaseExists package.packageId version $ const (web404 session)
+    numberOfDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+    numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
+    numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
     let templateEnv =
           templateEnv'
             { title = display packageNamespace <> " › " <> display packageName <> " › dependencies — Flora.pm"
@@ -396,7 +399,14 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
 
     Trace.withSpan "render showDependencies" $
       render templateEnv $
-        Package.showDependencies packageNamespace packageName release releaseDependencies
+        Package.showDependencies
+          numberOfReleases
+          release
+          numberOfDependencies
+          numberOfDependents
+          packageNamespace
+          packageName
+          releaseDependencies
 
 showChangelogHandler
   :: ( Error ServerError :> es
@@ -440,13 +450,24 @@ showVersionChangelogHandler (Headers session _) packageNamespace packageName ver
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
     release <- withReadOnlyPool pool $ guardThatReleaseExists package.packageId version $ const (web404 session)
+    numberOfDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+    numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
+    numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
     let templateEnv =
           templateEnv'
             { title = display packageNamespace <> "/" <> display packageName
             , description = "Changelog of " <> display packageNamespace <> "/" <> display packageName
             }
 
-    render templateEnv $ Package.showChangelog packageNamespace packageName version release.changelog
+    render templateEnv $
+      Package.showChangelog
+        numberOfReleases
+        release
+        numberOfDependencies
+        numberOfDependents
+        packageNamespace
+        packageName
+        release.changelog
 
 listVersionsHandler
   :: ( Error ServerError :> es
