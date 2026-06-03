@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module FloraWeb.Components.PackageListItem
   ( packageListItem
   , packageWithExecutableListItem
@@ -8,14 +6,15 @@ module FloraWeb.Components.PackageListItem
 where
 
 import Data.Foldable (traverse_)
-import Data.List (sortOn)
+import Data.Function ((&))
 import Data.Map qualified as Map
-import Data.Maybe
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Time (UTCTime, defaultTimeLocale)
 import Data.Time qualified as Time
+import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
 import Lucid
@@ -92,12 +91,20 @@ packageWithExecutableListItem PackageInfoWithExecutables{namespace, name, synops
 
 requirementListItem :: UTCTime -> ComponentDependencies -> FloraHTML
 requirementListItem now allComponentDeps =
-  traverse_ (uncurry componentTitle) . sortOn ((.componentType) . fst) $ Map.toList allComponentDeps
+  allComponentDeps
+    & Map.toList
+    & Vector.fromList
+    & Vector.modify (MVector.sortBy (\r1 r2 -> compare (fst r1).componentType (fst r2).componentType))
+    & \sortedComponents -> case Vector.uncons sortedComponents of
+      Nothing -> pure ()
+      Just (firstComponent, rest) -> do
+        uncurry (componentTitle True) firstComponent
+        Vector.forM_ rest (uncurry (componentTitle False))
   where
-    -- TODO: Also always open first component
-    open = if Map.size allComponentDeps == 1 then (open_ "") else mempty
-    componentTitle component componentDeps = do
-      details_ [class_ "details--nobody", open] $ do
+    componentTitle :: Bool -> CanonicalComponent -> (Vector DependencyInfo) -> FloraHTML
+    componentTitle isOpen component componentDeps = do
+      let open = if isOpen then [open_ ""] else mempty
+      details_ ([class_ "details--nobody"] <> open) $ do
         summary_ [class_ "package-component"] $
           h3_ [class_ "inline-block text-large color-raise"] $ do
             toHtml $ display component
@@ -108,10 +115,9 @@ requirementListItem now allComponentDeps =
           traverse_ (componentListItems now) componentDeps
 
 componentListItems :: UTCTime -> DependencyInfo -> FloraHTML
-componentListItems now DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense, uploadedAt, revisedAt} = do
+componentListItems now DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do
   -- let component_ = p_ [class_ "package-list-item__component"] . toHtml
   let link = Links.packageResource namespace packageName
-  let mLastUploadedAt = if isJust revisedAt then revisedAt else uploadedAt
   li_ [] $ do
     packageCard
       now
@@ -120,11 +126,17 @@ componentListItems now DependencyInfo{namespace, name = packageName, latestSynop
         , namespace = namespace
         , name = packageName
         , synopsis = latestSynopsis
-        , mVersion = Just requirement
-        , mLastUploadedAt = mLastUploadedAt
+        , mVersion = Just (displayVersionRange requirement)
+        , mLastUploadedAt = Nothing
         , mLicense = Just latestLicense
         , exactMatch = False
         }
+
+displayVersionRange :: Text -> Text
+displayVersionRange versionRange =
+  if versionRange == ">=0"
+    then ""
+    else versionRange
 
 -- -- TODO: Replace by packageCard
 -- a_ [href, class_ "entityCard"] $ do
@@ -148,9 +160,3 @@ componentListItems now DependencyInfo{namespace, name = packageName, latestSynop
 --       Icon.license
 --       toHtml latestLicense
 --     displayVersionRange requirement
-
-displayVersionRange :: Text -> FloraHTML
-displayVersionRange versionRange =
-  if versionRange == ">=0"
-    then ""
-    else span_ [class_ "package-list-item__version-range"] $ toHtml versionRange
