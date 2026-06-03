@@ -419,33 +419,28 @@ displayInstructions namespace packageName latestRelease = do
 
 displayPackageDeprecation :: PackageAlternatives -> FloraHTML
 displayPackageDeprecation (PackageAlternatives inFavourOf) =
-  li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section release-deprecated"] "Deprecated"
-    div_ [class_ "items-top"] $
-      div_ [class_ ""] $
-        if Vector.null inFavourOf
-          then label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated"
-          else do
-            label_ [for_ "install-string", class_ "font-light"] "This package has been deprecated in favour of"
-            ul_ [class_ "package-alternatives"] $
-              Vector.forM_ inFavourOf $
-                \PackageAlternative{namespace, package} ->
-                  li_ [] $
-                    a_
-                      [href_ $ Links.packageResource namespace package]
-                      (text $ display namespace <> "/" <> display package)
+  div_ [class_ "alert alert--danger"] $ do
+    if Vector.null inFavourOf
+      then p_ [] "This package has been deprecated"
+      else do
+        p_ [] "This package has been deprecated in favour of"
+        ul_ [] $
+          Vector.forM_ inFavourOf $
+            \PackageAlternative{namespace, package} ->
+              li_ [] $
+                a_
+                  [href_ $ Links.packageResource namespace package]
+                  (text $ display namespace <> "/" <> display package)
 
 displayReleaseDeprecation :: Maybe (Namespace, PackageName, Version) -> FloraHTML
 displayReleaseDeprecation mLatestViableRelease =
-  li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section release-deprecated"] "Deprecated"
-    div_ [class_ "items-top"] $ case mLatestViableRelease of
-      Nothing -> label_ [for_ "install-string", class_ "font-light"] "This release has been deprecated"
-      Just (namespace, package, version) -> do
-        label_ [for_ "install-string", class_ "font-light"] (text "This release has been deprecated in favour of: ")
-        a_
-          [href_ $ Links.versionResource namespace package version]
-          (text $ display namespace <> "/" <> display package <> "-" <> display version)
+  div_ [class_ "alert alert--danger"] $ case mLatestViableRelease of
+    Nothing -> p_ [] "This release has been deprecated"
+    Just (namespace, package, version) -> do
+      p_ [] (text "This release has been deprecated in favour of: ")
+      a_
+        [href_ $ Links.versionResource namespace package version]
+        (text $ display namespace <> "/" <> display package <> "-" <> display version)
 
 displayDependents
   :: (Namespace, PackageName)
