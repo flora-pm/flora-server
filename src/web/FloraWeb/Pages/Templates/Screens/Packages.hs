@@ -20,7 +20,7 @@ import Flora.Model.Category.Types (Category (..))
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageUploader.Types
-import Flora.Model.Release.Types (Release (..))
+import Flora.Model.Release.Types (Release (..), ReleaseFlags (..))
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Packages
@@ -139,15 +139,16 @@ packageBody
                 then displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
                 else displayInstructions namespace packageName latestRelease
         -- TODO: [non-urgent] Split into its own function
-        -- TODO: Display when there are tested compilers listed
-        section_ [class_ "flow flow--small"] $ do
-          h3_ [class_ "title-section"] "Tested Compilers"
-          displayTestedWith latestRelease.testedWith
+        when (not (Vector.null latestRelease.testedWith)) $
+          section_ [class_ "flow flow--small"] $ do
+            h3_ [class_ "title-section"] "Tested Compilers"
+            displayTestedWith latestRelease.testedWith
         -- TODO: [non-urgent] Make a "Build Targets" section
-        -- TODO: Display only when there are package flags
-        section_ [class_ "flow flow--small"] $ do
-          h3_ [class_ "title-section"] "Package Flags"
-          displayPackageFlags flags
+        case flags of
+          ReleaseFlags f -> when (not (Vector.null f)) $
+            section_ [class_ "flow flow--small"] $ do
+              h3_ [class_ "title-section"] "Package Flags"
+              displayPackageFlags flags
       section_ [class_ "flow"] $ do
         h3_ [class_ "title-section"] "Readme"
         -- TODO: [non-urgent] Display a fallback message when there is no readme (in dev, the "renderHaddock release.description" is not showing anything (on /@mlabs / plutarch-ledger-api for example))
@@ -171,7 +172,7 @@ renderCategory :: Category -> FloraHTML
 renderCategory Category{name, slug} = do
   let resource = "/categories/" <> slug
   a_ [href_ resource] (toHtml name)
-  "," -- TODO: Not display comma after last category
+  ", " -- TODO: Not display comma after last category
 
 displayCategories :: Vector Category -> FloraHTML
 displayCategories categories = foldMap renderCategory categories
