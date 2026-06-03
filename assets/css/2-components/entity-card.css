@@ -32,6 +32,13 @@
 	font-weight: 500;
 }
 
+a.entityCard:where(:hover, :active, :focus) :is(
+	.entityCard-title,
+	.entityCard-prefix
+	) {
+	text-decoration: underline;
+}
+
 .entityCard-synopsis {
 	color: var(--color-text-secondary);
 }

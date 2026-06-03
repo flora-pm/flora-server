@@ -29,8 +29,13 @@
 	letter-spacing: .035em;
 }
 
-.btn:is(:hover,:active) {
+.btn:where(:not(.btn--disabled)):is(:hover,:active) {
 	--btn-bg: var(--color-surface-brand-interact);
+}
+
+a.btn:where(:not(.btn--disabled)):is(:hover,:active) {
+	--btn-bg: var(--color-surface-brand-interact);
+	text-decoration: underline;
 }
 
 .btn :is(svg, .icon) {
