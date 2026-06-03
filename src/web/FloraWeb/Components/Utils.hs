@@ -28,12 +28,6 @@ data LinkOptions = LinkOptions
   , childNode :: FloraHTML
   }
 
-link :: LinkOptions -> FloraHTML
-link LinkOptions{href, classes, childNode} =
-  a_
-    [class_ classes, role_ "link", href_ href]
-    childNode
-
 defaultLinkOptions :: LinkOptions
 defaultLinkOptions =
   LinkOptions

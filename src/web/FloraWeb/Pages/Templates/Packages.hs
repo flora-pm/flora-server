@@ -67,8 +67,7 @@ import FloraWeb.Components.PackageCard
   , packageCard
   )
 import FloraWeb.Components.PackageListItem
-  ( packageListItem
-  , packageWithExecutableListItem
+  ( packageWithExecutableListItem
   , requirementListItem
   )
 import FloraWeb.Components.PaginationNav (paginationNav)
@@ -92,7 +91,8 @@ instance Display Target where
   displayBuilder Security = "security"
 
 showDependents
-  :: Word
+  :: UTCTime
+  -> Word
   -> Release
   -> Word
   -> Word
@@ -101,7 +101,7 @@ showDependents
   -> Vector DependencyInfo
   -> Positive Word
   -> FloraHTML
-showDependents numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName packagesInfo currentPage = do
+showDependents now numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName packagesInfo currentPage = do
   presentationHeader
     numberOfReleases
     latestRelease
@@ -116,22 +116,29 @@ showDependents numberOfReleases latestRelease numberOfDependencies numberOfDepen
     ul_ [class_ "flow", role_ "list"] $ do
       Vector.forM_
         packagesInfo
-        ( \dep ->
-            packageListItem
-              ( dep.namespace
-              , dep.name
-              , dep.latestSynopsis
-              , dep.latestVersion
-              , dep.latestLicense
-              , Nothing
-              , Nothing
-              )
+        ( \dep -> do
+            let link = Links.packageResource dep.namespace dep.name
+            let mLastUploadedAt = if isJust dep.revisedAt then dep.revisedAt else dep.uploadedAt
+            li_ [] $
+              packageCard
+                now
+                PackageCardProps
+                  { link = link
+                  , namespace = dep.namespace
+                  , name = dep.name
+                  , synopsis = dep.latestSynopsis
+                  , mVersion = Just (display dep.latestVersion)
+                  , mLastUploadedAt = mLastUploadedAt
+                  , mLicense = Just dep.latestLicense
+                  , exactMatch = False
+                  }
         )
     when (numberOfDependents > 30) $
       paginationNav numberOfDependents currentPage (DependentsOf namespace packageName Nothing)
 
 showDependencies
-  :: Word
+  :: UTCTime
+  -> Word
   -> Release
   -> Word
   -> Word
@@ -139,7 +146,7 @@ showDependencies
   -> PackageName
   -> ComponentDependencies
   -> FloraHTML
-showDependencies numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName componentsInfo = do
+showDependencies now numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName componentsInfo = do
   presentationHeader
     numberOfReleases
     latestRelease
@@ -152,7 +159,13 @@ showDependencies numberOfReleases latestRelease numberOfDependencies numberOfDep
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependencies"
     ul_ [class_ "flow", role_ "list"] $ do
-      requirementListItem componentsInfo
+      requirementListItem now componentsInfo
+
+-- Vector.forM_
+--   componentsInfo
+--   ( \dep -> do
+
+--   )
 
 listVersions
   :: Release
@@ -242,7 +255,7 @@ packageListing now mExactMatchItems packages =
               , namespace = em.namespace
               , name = em.name
               , synopsis = em.synopsis
-              , mVersion = Just em.version
+              , mVersion = Just (display em.version)
               , mLastUploadedAt = mLastUploadedAt
               , mLicense = Just em.license
               , exactMatch = True
@@ -258,7 +271,7 @@ packageListing now mExactMatchItems packages =
             , namespace = p.namespace
             , name = p.name
             , synopsis = p.synopsis
-            , mVersion = Just p.version
+            , mVersion = Just (display p.version)
             , mLastUploadedAt = mLastUploadedAt
             , mLicense = Just p.license
             , exactMatch = False

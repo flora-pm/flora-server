@@ -9,7 +9,6 @@ import Data.Text.Display (display)
 import Data.Time (NominalDiffTime, UTCTime)
 import Data.Time qualified as Time
 import Distribution.SPDX.License qualified as SPDX
-import Distribution.Types.Version (Version)
 import Lucid
 
 import Flora.Model.Package.Types (Namespace, PackageName)
@@ -22,7 +21,7 @@ data PackageCardProps = PackageCardProps
   , namespace :: Namespace
   , name :: PackageName
   , synopsis :: Text
-  , mVersion :: Maybe Version
+  , mVersion :: Maybe Text
   , mLastUploadedAt :: Maybe UTCTime
   , mLicense :: Maybe SPDX.License
   , exactMatch :: Bool

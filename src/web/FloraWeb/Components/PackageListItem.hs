@@ -8,8 +8,9 @@ module FloraWeb.Components.PackageListItem
 where
 
 import Data.Foldable (traverse_)
-import Data.List (intersperse, sortOn)
+import Data.List (sortOn)
 import Data.Map qualified as Map
+import Data.Maybe
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Time (UTCTime, defaultTimeLocale)
@@ -26,7 +27,9 @@ import Flora.Model.Requirement
   , DependencyInfo (..)
   )
 import FloraWeb.Components.Icons qualified as Icon
+import FloraWeb.Components.PackageCard (PackageCardProps (..), packageCard)
 import FloraWeb.Components.Utils
+import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid.Orphans ()
 
@@ -87,8 +90,8 @@ packageWithExecutableListItem PackageInfoWithExecutables{namespace, name, synops
             Icon.terminal
             toHtml element
 
-requirementListItem :: ComponentDependencies -> FloraHTML
-requirementListItem allComponentDeps =
+requirementListItem :: UTCTime -> ComponentDependencies -> FloraHTML
+requirementListItem now allComponentDeps =
   traverse_ (uncurry componentTitle) . sortOn ((.componentType) . fst) $ Map.toList allComponentDeps
   where
     -- TODO: Also always open first component
@@ -102,35 +105,49 @@ requirementListItem allComponentDeps =
               toHtml $
                 " (" <> display (Vector.length componentDeps) <> " dependencies)"
         ul_ [class_ "flow", role_ "list"] $
-          traverse_ componentListItems componentDeps
+          traverse_ (componentListItems now) componentDeps
 
-componentListItems :: DependencyInfo -> FloraHTML
-componentListItems DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense, components} = do
-  let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
-      component_ = p_ [class_ "package-list-item__component"] . toHtml
-  li_ $
-    -- TODO: Replace by packageCard
-    a_ [href, class_ "entityCard"] $ do
-      h4_ [class_ "package-list-item__name"] $ do
-        strong_ [class_ ""] . toHtml $
-          display namespace <> "/" <> display packageName
-      case components of
-        [name]
-          | name == display packageName -> pure ()
-          | otherwise -> ":" >> component_ name
-        -- The empty case should never happen but displaying pkg:{} will indicate
-        -- something has gone wrong.
-        _ -> do
-          ":{"
-          sequence_ . intersperse (toHtml @Text ", ") $
-            component_ <$> Vector.toList components
-          "}"
-      p_ [class_ "package-list-item__synopsis"] $ toHtml latestSynopsis
-      div_ [class_ "package-list-item__metadata"] $ do
-        span_ [class_ "package-list-item__license"] $ do
-          Icon.license
-          toHtml latestLicense
-        displayVersionRange requirement
+componentListItems :: UTCTime -> DependencyInfo -> FloraHTML
+componentListItems now DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense, uploadedAt, revisedAt} = do
+  -- let component_ = p_ [class_ "package-list-item__component"] . toHtml
+  let link = Links.packageResource namespace packageName
+  let mLastUploadedAt = if isJust revisedAt then revisedAt else uploadedAt
+  li_ [] $ do
+    packageCard
+      now
+      PackageCardProps
+        { link = link
+        , namespace = namespace
+        , name = packageName
+        , synopsis = latestSynopsis
+        , mVersion = Just requirement
+        , mLastUploadedAt = mLastUploadedAt
+        , mLicense = Just latestLicense
+        , exactMatch = False
+        }
+
+-- -- TODO: Replace by packageCard
+-- a_ [href, class_ "entityCard"] $ do
+--   h4_ [class_ "package-list-item__name"] $ do
+--     strong_ [class_ ""] . toHtml $
+--       display namespace <> "/" <> display packageName
+--   case components of
+--     [name]
+--       | name == display packageName -> pure ()
+--       | otherwise -> ":" >> component_ name
+--     -- The empty case should never happen but displaying pkg:{} will indicate
+--     -- something has gone wrong.
+--     _ -> do
+--       ":{"
+--       sequence_ . intersperse (toHtml @Text ", ") $
+--         component_ <$> Vector.toList components
+--       "}"
+--   p_ [class_ "package-list-item__synopsis"] $ toHtml latestSynopsis
+--   div_ [class_ "package-list-item__metadata"] $ do
+--     span_ [class_ "package-list-item__license"] $ do
+--       Icon.license
+--       toHtml latestLicense
+--     displayVersionRange requirement
 
 displayVersionRange :: Text -> FloraHTML
 displayVersionRange versionRange =

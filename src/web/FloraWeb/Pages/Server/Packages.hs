@@ -333,10 +333,12 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
     numberOfDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents packageNamespace packageName mSearch
     numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
     numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
+    now <- Time.currentTime
 
     Trace.withSpan "render showDependents" $
       render templateEnv $
         Package.showDependents
+          now
           numberOfReleases
           release
           numberOfDependencies
@@ -351,6 +353,7 @@ showDependenciesHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
+     , Time.Time :> es
      , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
@@ -371,6 +374,7 @@ showVersionDependenciesHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
+     , Time.Time :> es
      , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
@@ -397,9 +401,11 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
         withReadOnlyPool pool $
           Query.getAllRequirements release.releaseId
 
+    now <- Time.currentTime
     Trace.withSpan "render showDependencies" $
       render templateEnv $
         Package.showDependencies
+          now
           numberOfReleases
           release
           numberOfDependencies
