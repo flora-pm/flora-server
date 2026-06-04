@@ -19,8 +19,9 @@ footer =
               a_ [href_ "/documentation/"] "Documentation"
             li_ $
               a_ [href_ "/packages/"] "All Packages"
-            li_ $
-              a_ [href_ "/feed/"] "Package Feeds"
+            --  TODO: [non-urgent] Add Package Feeds link back when page's design is ready
+            -- li_ $
+            --   a_ [href_ "/feed/"] "Package Feeds"
             li_ $
               a_ [href_ "/sessions/new"] "Login"
         nav_ [class_ "flow", ariaLabelledby_ "nav-contact"] $ do
