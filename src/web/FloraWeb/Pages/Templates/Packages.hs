@@ -613,7 +613,7 @@ currentSectionLabel sectionId = case sectionId of
   "dependencies" -> "Dependencies"
   "dependents" -> "Dependents"
   "security" -> "Security"
-  otherwise -> ""
+  _ -> ""
 
 presentationHeader
   :: Word
