@@ -95,3 +95,8 @@
 .prose img[align="right"]:first-child {
 	margin-block-start: 0;
 }
+
+/* Avoid overflow on wide tables */
+.prose table :is(th,td) {
+	word-break: break-word;
+}
