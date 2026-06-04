@@ -84,7 +84,7 @@ Content
 	color: var(--color-text-quaternary);
 }
 
-:where(a.dropdown-item, button.dropdown-item):is(:hover, :active, :focus-visible, .dropdown-item--current) {
+:where(a.dropdown-item, button.dropdown-item):is(:hover, :active, :focus-visible, .dropdown-item--current, [aria-current="page"]) {
 	background-color: var(--color-surface-brand-interact);
 	--outline-offset: calc(-1 * var(--outline-width));
 }

@@ -61,6 +61,7 @@ showPackage
       name
       latestRelease.synopsis
       groups
+      "about"
     div_ [class_ "wrapper inset-large"] $ do
       packageBody
         package

@@ -111,6 +111,7 @@ showDependents now numberOfReleases latestRelease numberOfDependencies numberOfD
     packageName
     latestRelease.synopsis
     mempty
+    "dependents"
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependents"
     ul_ [class_ "flow", role_ "list"] $ do
@@ -156,6 +157,7 @@ showDependencies now numberOfReleases latestRelease numberOfDependencies numberO
     packageName
     latestRelease.synopsis
     mempty
+    "dependencies"
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependencies"
     ul_ [class_ "flow", role_ "list"] $ do
@@ -187,6 +189,7 @@ listVersions latestRelease now numberOfDependencies numberOfDependents namespace
     packageName
     synopsis
     mempty
+    "versions"
 
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Version history"
@@ -303,6 +306,7 @@ showChangelog numberOfReleases latestRelease numberOfDependencies numberOfDepend
     packageName
     latestRelease.synopsis
     mempty
+    "changelog"
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Changelog"
     div_ [class_ "prose"] $ do
@@ -541,6 +545,7 @@ showPackageSecurityPage latestRelease numberOfDependencies numberOfDependents na
     packageName
     synopsis
     mempty
+    "security"
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Security Advisories"
     packageAdvisoriesListing False advisoryPreviews
@@ -600,6 +605,15 @@ months n = 30 * days n
 years :: Pico -> NominalDiffTime
 years n = 12 * months n
 
+currentSectionLabel :: String -> String
+currentSectionLabel sectionId = case sectionId of
+  "about" -> "About"
+  "versions" -> "Versions"
+  "changelog" -> "Changelog"
+  "dependencies" -> "Dependencies"
+  "dependents" -> "Dependents"
+  otherwise -> ""
+
 presentationHeader
   :: Word
   -- ^ Number of releases for the package
@@ -614,8 +628,9 @@ presentationHeader
   -> Text
   -- ^  Synopsis
   -> Vector PackageGroupName
+  -> String
   -> FloraHTML
-presentationHeader numberOfReleases release numberOfDependencies numberOfDependents namespace name synopsis groups =
+presentationHeader numberOfReleases release numberOfDependencies numberOfDependents namespace name synopsis groups sectionId =
   header_ [class_ "pageHead"] $ do
     div_ [class_ "wrapper flow flow--large"] $ do
       div_ [class_ "aside gap--large"] $ do
@@ -640,45 +655,42 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             span_ [class_ "title-2 text-right leading-thin"] $ toHtml release.version
       div_ [class_ "pageHead-tip"] $ do
         -- TODO: Split tabs in a separate function
-        -- TODO: Display actual link, labels, and current attribute/class
         nav_ [class_ "tabs", id_ "subsections", ariaLabel_ "Package sections"] $ do
-          a_ [class_ "tab", href_ (Links.versionResource namespace name release.version), ariaCurrent_ "page"] $ do
+          a_ ([class_ "tab", href_ (Links.versionResource namespace name release.version)] <> (if sectionId == "about" then [ariaCurrent_ "page"] else [])) $ do
             Icons.bookOpenText
             "About"
-          a_ [class_ "tab", href_ (Links.versionsPage namespace name)] $ do
+          a_ ([class_ "tab", href_ (Links.versionsPage namespace name)] <> (if sectionId == "versions" then [ariaCurrent_ "page"] else [])) $ do
             Icons.history
             (toHtml $ display numberOfReleases <> if numberOfReleases > 1 then " Versions" else " Version")
-          a_ [class_ "tab", href_ ("/" <> (toUrlPiece $ Links.packageVersionChangelog namespace name release.version))] $ do
+          a_ ([class_ "tab", href_ ("/" <> (toUrlPiece $ Links.packageVersionChangelog namespace name release.version))] <> (if sectionId == "changelog" then [ariaCurrent_ "page"] else [])) $ do
             Icons.logs
             "Changelog"
-          a_ [class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] $ do
+          a_ ([class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] <> (if sectionId == "dependencies" then [ariaCurrent_ "page"] else [])) $ do
             Icons.folderTree
             (toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency")
-          a_ [class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] $ do
+          a_ ([class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> (if sectionId == "dependents" then [ariaCurrent_ "page"] else [])) $ do
             Icons.packageSearch
             (toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent")
-
         div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
-          -- TODO: Display current section in aria-label attribute
           button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
             Icons.bookOpenText
             div_ [class_ "flex-grow"] $ do
               div_ [class_ "prefix"] $ "Current section"
-              div_ $ "About" -- TODO: Display current section label
+              div_ [] $ toHtml $ currentSectionLabel sectionId
             Icons.chevronUpDown
           nav_ [class_ "dropdown dropdown--full", id_ "subsectionsMobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
-            a_ [class_ "dropdown-item dropdown-item--current", href_ "/", ariaCurrent_ "page"] $ do
+            a_ ([class_ "dropdown-item", href_ (Links.versionResource namespace name release.version)] <> (if sectionId == "about" then [ariaCurrent_ "page"] else [])) $ do
               Icons.bookOpenText
               "About"
-            a_ [class_ "dropdown-item", href_ (Links.versionsPage namespace name)] $ do
+            a_ ([class_ "dropdown-item", href_ (Links.versionsPage namespace name)] <> (if sectionId == "versions" then [ariaCurrent_ "page"] else [])) $ do
               Icons.history
               (toHtml $ display numberOfReleases <> if numberOfReleases > 1 then " Versions" else " Version")
-            a_ [class_ "dropdown-item", href_ (toUrlPiece $ Links.packageVersionChangelog namespace name release.version)] $ do
+            a_ ([class_ "dropdown-item", href_ ("/" <> (toUrlPiece $ Links.packageVersionChangelog namespace name release.version))] <> (if sectionId == "changelog" then [ariaCurrent_ "page"] else [])) $ do
               Icons.logs
               "Changelog"
-            a_ [class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] $ do
+            a_ ([class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] <> (if sectionId == "dependencies" then [ariaCurrent_ "page"] else [])) $ do
               Icons.folderTree
               (toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency")
-            a_ [class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] $ do
+            a_ ([class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> (if sectionId == "dependents" then [ariaCurrent_ "page"] else [])) $ do
               Icons.packageSearch
               (toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent")
