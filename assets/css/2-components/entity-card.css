@@ -2,10 +2,14 @@
 	--entity-card-radius: var(--radius-sm);
 	--entity-card-inset-block: var(--space-2);
 	--entity-card-inset-inline: min(var(--wrapper-padding, 0), var(--space-2));
+	--entity-card-border-width: 1px;
+
+	/* ↓ cf https://ishadeed.com/article/conditional-border-radius/ */
+	--entity-card-conditional-radius: max(0px, min(var(--entity-card-radius, 0rem), calc((100vw - var(--entity-card-radius, 0rem) - 100%) * 9999)));
 	flex-grow: 1;
 	display: block;
 	padding: var(--entity-card-inset-block) var(--entity-card-inset-inline);
-	border-radius: var(--entity-card-radius);
+	border-radius: var(--entity-card-conditional-radius);
 	margin-inline: calc(var(--entity-card-inset-block) * -1);
 }
 
