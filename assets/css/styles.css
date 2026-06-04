@@ -40,4 +40,5 @@
 @import "4-utilities/sizing.css" layer(utilities);
 
 /* External vendors */
-@import "5-vendors/prism.css" layer(dependencies);
+
+/* @import "5-vendors/prism.css" layer(dependencies); */

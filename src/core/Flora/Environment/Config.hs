@@ -93,7 +93,6 @@ data LoggingDestination
 data Assets = Assets
   { jsBundle :: AssetBundle
   , cssBundle :: AssetBundle
-  , prism :: AssetBundle
   }
   deriving stock (Generic, Show)
 
@@ -282,12 +281,10 @@ getAssets environment =
       Assets
         <$> getAsset "app.js"
         <*> getAsset "styles.css"
-        <*> getAsset "prism.js"
     _ -> do
       Assets
         <$> getStaticAsset "app.js"
         <*> getStaticAsset "styles.css"
-        <*> getStaticAsset "prism.js"
 
 getStaticAsset :: Text -> Eff es AssetBundle
 getStaticAsset key =

@@ -40,15 +40,4 @@ rendered target = do
   whenJust flashError $ \msg -> do
     Alert.exception (display msg)
   main_ [id_ "main"] target
-  prismLink
   footer
-
-prismLink :: FloraHTML
-prismLink = do
-  TemplateEnv{assets, environment} <- ask
-  let prismURL = "/static/" <> assets.prism.name
-  case environment of
-    Production ->
-      script_ [src_ prismURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.prism.hash)] ("" :: Text)
-    _ ->
-      script_ [src_ prismURL, type_ "module", defer_ ""] ("" :: Text)
