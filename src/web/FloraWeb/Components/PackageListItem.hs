@@ -101,7 +101,7 @@ requirementListItem now allComponentDeps =
         uncurry (componentTitle True) firstComponent
         Vector.forM_ rest (uncurry (componentTitle False))
   where
-    componentTitle :: Bool -> CanonicalComponent -> (Vector DependencyInfo) -> FloraHTML
+    componentTitle :: Bool -> CanonicalComponent -> Vector DependencyInfo -> FloraHTML
     componentTitle isOpen component componentDeps = do
       let open = if isOpen then [open_ ""] else mempty
       details_ ([class_ "details--nobody"] <> open) $ do

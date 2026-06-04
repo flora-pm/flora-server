@@ -103,15 +103,15 @@ packageBody
               whenJust mLastUploadedAt $ \timestamp -> do
                 span_ $ do
                   let timeLabelFull = display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" timestamp)
-                  let formattedTime = (display (Time.formatTime Time.defaultTimeLocale "%_d %b %Y" timestamp))
-                  time_ [datetime_ formattedTime, title_ ("Uploaded: " <> timeLabelFull)] (toHtml $ formattedTime)
+                  let formattedTime = display (Time.formatTime Time.defaultTimeLocale "%_d %b %Y" timestamp)
+                  time_ [datetime_ formattedTime, title_ ("Uploaded: " <> timeLabelFull)] (toHtml formattedTime)
                   whenJust mUploader $ \uploader -> do
                     ", by " <> (toHtml uploader.username)
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "sr-only"] "License"
               span_ [class_ "color-quaternary"] Icons.scale
               toHtml license
-            when (not (Vector.null categories)) $
+            unless (Vector.null categories) $
               li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
                 span_ [class_ "sr-only"] "Categories"
                 span_ [class_ "color-quaternary"] Icons.folder
@@ -121,7 +121,7 @@ packageBody
               span_ [class_ "color-quaternary"] Icons.users
               p_ [class_ "text-break"] $ do
                 "Maintained by: "
-                (toHtml maintainer)
+                toHtml maintainer
             whenJust mLotteryFactor $ \lotteryFactor ->
               li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
                 span_ [class_ "color-quaternary"] Icons.shieldUser
@@ -140,13 +140,13 @@ packageBody
                 then displayReleaseDeprecation (getLatestViableRelease namespace packageName packageReleases)
                 else displayInstructions namespace packageName latestRelease
         -- TODO: [non-urgent] Split into its own function
-        when (not (Vector.null latestRelease.testedWith)) $
+        unless (Vector.null latestRelease.testedWith) $
           section_ [class_ "flow flow--small"] $ do
             h3_ [class_ "title-section"] "Tested Compilers"
             displayTestedWith latestRelease.testedWith
         -- TODO: [non-urgent] Make a "Build Targets" section
         case flags of
-          ReleaseFlags f -> when (not (Vector.null f)) $
+          ReleaseFlags f -> unless (Vector.null f) $
             section_ [class_ "flow flow--small"] $ do
               h3_ [class_ "title-section"] "Package Flags"
               displayPackageFlags flags

@@ -18,7 +18,7 @@ import FloraWeb.Pages.Templates.Packages (packageAdvisoriesListing, packageListi
 
 showAllPackages :: UTCTime -> Word -> Positive Word -> Vector PackageInfo -> FloraHTML
 showAllPackages now count currentPage packagesInfo = do
-  let pageCountLabel = if currentPage > 1 then "Page " <> (display (currentPage.unPositive)) else ""
+  let pageCountLabel = if currentPage > 1 then "Page " <> display (currentPage.unPositive) else ""
   -- let (limit, offset) = fromPage currentPage
   let startIndex = ((currentPage.unPositive - 1) * 30) + 1
   let endIndex = currentPage.unPositive * 30

@@ -482,7 +482,7 @@ displayPackageFlags (ReleaseFlags packageFlags) =
   if Vector.null packageFlags
     then mempty
     else do
-      p_ [class_ "text-small color-tertiary leading-short"] $ "Use the -f option with cabal commands to enable flags"
+      p_ [class_ "text-small color-tertiary leading-short"] "Use the -f option with cabal commands to enable flags"
       ul_ [class_ "flow flow--small", role_ "list"] $
         Vector.forM_ packageFlags displayPackageFlag
 
@@ -639,7 +639,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
           h1_ [class_ "pageHead-title tracking-tight"] $ do
             span_ [class_ "prefix"] $ do
               a_ [href_ (Links.namespacePage namespace (PositiveUnsafe 1))] (toHtml $ display namespace)
-              (toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text))
+              toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text)
             toHtml name
           p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
         div_ [class_ "flow flow--small self-center"] $ do
@@ -657,47 +657,47 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
       div_ [class_ "pageHead-tip"] $ do
         -- TODO: [non-urgent] Split tabs in a separate function
         nav_ [class_ "tabs", id_ "subsections", ariaLabel_ "Package sections"] $ do
-          a_ ([class_ "tab", href_ (Links.versionResource namespace name release.version)] <> (if sectionId == "about" then [ariaCurrent_ "page"] else [])) $ do
+          a_ ([class_ "tab", href_ (Links.versionResource namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "about"])) $ do
             Icons.bookOpenText
             "About"
-          a_ ([class_ "tab", href_ (Links.versionsPage namespace name)] <> (if sectionId == "versions" then [ariaCurrent_ "page"] else [])) $ do
+          a_ ([class_ "tab", href_ (Links.versionsPage namespace name)] <> ([ariaCurrent_ "page" | sectionId == "versions"])) $ do
             Icons.history
-            (toHtml $ display numberOfReleases <> if numberOfReleases > 1 then " Versions" else " Version")
-          a_ ([class_ "tab", href_ ("/" <> (toUrlPiece $ Links.packageVersionChangelog namespace name release.version))] <> (if sectionId == "changelog" then [ariaCurrent_ "page"] else [])) $ do
+            toHtml $ display numberOfReleases <> if numberOfReleases > 1 then " Versions" else " Version"
+          a_ ([class_ "tab", href_ ("/" <> toUrlPiece (Links.packageVersionChangelog namespace name release.version))] <> ([ariaCurrent_ "page" | sectionId == "changelog"])) $ do
             Icons.logs
             "Changelog"
-          a_ ([class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] <> (if sectionId == "dependencies" then [ariaCurrent_ "page"] else [])) $ do
+          a_ ([class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "dependencies"])) $ do
             Icons.folderTree
-            (toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency")
-          a_ ([class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> (if sectionId == "dependents" then [ariaCurrent_ "page"] else [])) $ do
+            toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency"
+          a_ ([class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> ([ariaCurrent_ "page" | sectionId == "dependents"])) $ do
             Icons.packageSearch
-            (toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent")
-          a_ ([class_ "tab", href_ ("/" <> (toUrlPiece $ Links.packageSecurity namespace name))] <> (if sectionId == "security" then [ariaCurrent_ "page"] else [])) $ do
+            toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent"
+          a_ ([class_ "tab", href_ ("/" <> toUrlPiece (Links.packageSecurity namespace name))] <> ([ariaCurrent_ "page" | sectionId == "security"])) $ do
             Icons.shieldAlert
             "Security"
         div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
           button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
             Icons.bookOpenText
             div_ [class_ "flex-grow"] $ do
-              div_ [class_ "prefix"] $ "Current section"
+              div_ [class_ "prefix"] "Current section"
               div_ [] $ toHtml $ currentSectionLabel sectionId
             Icons.chevronUpDown
           nav_ [class_ "dropdown dropdown--full", id_ "subsectionsMobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
-            a_ ([class_ "dropdown-item", href_ (Links.versionResource namespace name release.version)] <> (if sectionId == "about" then [ariaCurrent_ "page"] else [])) $ do
+            a_ ([class_ "dropdown-item", href_ (Links.versionResource namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "about"])) $ do
               Icons.bookOpenText
               "About"
-            a_ ([class_ "dropdown-item", href_ (Links.versionsPage namespace name)] <> (if sectionId == "versions" then [ariaCurrent_ "page"] else [])) $ do
+            a_ ([class_ "dropdown-item", href_ (Links.versionsPage namespace name)] <> ([ariaCurrent_ "page" | sectionId == "versions"])) $ do
               Icons.history
-              (toHtml $ display numberOfReleases <> if numberOfReleases > 1 then " Versions" else " Version")
-            a_ ([class_ "dropdown-item", href_ ("/" <> (toUrlPiece $ Links.packageVersionChangelog namespace name release.version))] <> (if sectionId == "changelog" then [ariaCurrent_ "page"] else [])) $ do
+              toHtml $ display numberOfReleases <> if numberOfReleases > 1 then " Versions" else " Version"
+            a_ ([class_ "dropdown-item", href_ ("/" <> toUrlPiece (Links.packageVersionChangelog namespace name release.version))] <> ([ariaCurrent_ "page" | sectionId == "changelog"])) $ do
               Icons.logs
               "Changelog"
-            a_ ([class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] <> (if sectionId == "dependencies" then [ariaCurrent_ "page"] else [])) $ do
+            a_ ([class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "dependencies"])) $ do
               Icons.folderTree
-              (toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency")
-            a_ ([class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> (if sectionId == "dependents" then [ariaCurrent_ "page"] else [])) $ do
+              toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency"
+            a_ ([class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> ([ariaCurrent_ "page" | sectionId == "dependents"])) $ do
               Icons.packageSearch
-              (toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent")
-            a_ ([class_ "dropdown-item", href_ ("/" <> (toUrlPiece $ Links.packageSecurity namespace name))] <> (if sectionId == "security" then [ariaCurrent_ "page"] else [])) $ do
+              toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent"
+            a_ ([class_ "dropdown-item", href_ ("/" <> toUrlPiece (Links.packageSecurity namespace name))] <> ([ariaCurrent_ "page" | sectionId == "security"])) $ do
               Icons.packageSearch
               "Security"
