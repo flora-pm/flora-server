@@ -213,11 +213,12 @@ versionListItem now namespace packageName release = do
     a_ [href_ link, class_ "entityCard"] $ do
       div_ [class_ "cluster cluster--tiny"] $ do
         span_ [class_ "entityCard-title"] (toHtml release.version)
-        whenJust release.deprecated $ \d -> do
-          span_ [class_ "badge badge--danger"] $ do
-            span_ [class_ "sr-only"] "Version "
-            Icons.trash
-            "Deprecated"
+        whenJust release.deprecated $ \isDeprecated -> do
+          when isDeprecated $
+            span_ [class_ "badge badge--danger"] $ do
+              span_ [class_ "sr-only"] "Version "
+              Icons.trash
+              "Deprecated"
       -- TODO: [non-urgent] Display on latest non-deprecated release
       -- span_ [class_ "badge badge--green"] $ do
       --   "Latest Release"
