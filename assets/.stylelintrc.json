@@ -35,6 +35,14 @@
       }
     ],
     "declaration-empty-line-before": "never",
-    "declaration-block-single-line-max-declarations": 3
+    "declaration-block-single-line-max-declarations": 3,
+    "number-max-precision": [
+      4,
+      {
+        "insideFunctions": {
+          "/^(oklch|oklab|lch|lab)$/": 6
+        }
+      }
+    ]
   }
 }
