@@ -612,6 +612,7 @@ currentSectionLabel sectionId = case sectionId of
   "changelog" -> "Changelog"
   "dependencies" -> "Dependencies"
   "dependents" -> "Dependents"
+  "security" -> "Security"
   otherwise -> ""
 
 presentationHeader
@@ -671,6 +672,9 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
           a_ ([class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> (if sectionId == "dependents" then [ariaCurrent_ "page"] else [])) $ do
             Icons.packageSearch
             (toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent")
+          a_ ([class_ "tab", href_ ("/" <> (toUrlPiece $ Links.packageSecurity namespace name))] <> (if sectionId == "security" then [ariaCurrent_ "page"] else [])) $ do
+            Icons.shieldAlert
+            "Security"
         div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
           button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
             Icons.bookOpenText
@@ -694,3 +698,6 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             a_ ([class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> (if sectionId == "dependents" then [ariaCurrent_ "page"] else [])) $ do
               Icons.packageSearch
               (toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent")
+            a_ ([class_ "dropdown-item", href_ ("/" <> (toUrlPiece $ Links.packageSecurity namespace name))] <> (if sectionId == "security" then [ariaCurrent_ "page"] else [])) $ do
+              Icons.packageSearch
+              "Security"
