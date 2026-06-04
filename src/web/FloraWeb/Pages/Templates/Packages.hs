@@ -218,7 +218,7 @@ versionListItem now namespace packageName release = do
             span_ [class_ "sr-only"] "Version "
             Icons.trash
             "Deprecated"
-      -- TODO: Display on latest non-deprecated release
+      -- TODO: [non-urgent] Display on latest non-deprecated release
       -- span_ [class_ "badge badge--green"] $ do
       --   "Latest Release"
       ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
@@ -644,7 +644,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
           p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
         div_ [class_ "flow flow--small self-center"] $ do
           div_ [class_ "cluster cluster--small items-end"] $ do
-            -- TODO: Display for latest non-deprecated release
+            -- TODO: [non-urgent] Display for latest non-deprecated release
             -- span_ [class_ "badge badge--big badge--green"] $ do
             --   Icons.check
             --   "Latest"
@@ -655,7 +655,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
                 "Deprecated"
             span_ [class_ "title-2 text-right leading-thin"] $ toHtml release.version
       div_ [class_ "pageHead-tip"] $ do
-        -- TODO: Split tabs in a separate function
+        -- TODO: [non-urgent] Split tabs in a separate function
         nav_ [class_ "tabs", id_ "subsections", ariaLabel_ "Package sections"] $ do
           a_ ([class_ "tab", href_ (Links.versionResource namespace name release.version)] <> (if sectionId == "about" then [ariaCurrent_ "page"] else [])) $ do
             Icons.bookOpenText
