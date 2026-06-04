@@ -24,7 +24,8 @@
 			"search search search";
 	}
 
-	.header-container--nosearch {
+	.header-container--nosearch,
+	.header-container:where(:not(:has(.header-search))) {
 		grid-template-areas: "logo nav nav";
 	}
 }
@@ -33,15 +34,20 @@
 	.header-container {
 		grid-template-columns: auto 1fr;
 		grid-template-areas:
-			"logo null"
+			"logo logo"
 			"nav nav"
 			"search search";
 	}
 
-	.header-container--nosearch {
+	.header-container--nosearch,
+	.header-container:where(:not(:has(.header-search))) {
 		grid-template-areas:
-			"logo null"
+			"logo logo"
 			"nav nav";
+	}
+
+	.header-logo {
+		justify-self: center;
 	}
 }
 
