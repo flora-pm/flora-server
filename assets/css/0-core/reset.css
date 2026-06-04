@@ -213,8 +213,8 @@ Correct the cursor style of increment and decrement buttons in Safari.
 */
 [type="search"] {
 	/* stylelint-disable-next-line property-no-vendor-prefix */
-	-webkit-appearance: textfield;
-	appearance: textfield;
+	-webkit-appearance: none;
+	appearance: none;
 	outline-offset: -2px;
 }
 
