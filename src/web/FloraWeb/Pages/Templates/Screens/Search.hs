@@ -3,6 +3,7 @@ module FloraWeb.Pages.Templates.Screens.Search where
 import Control.Monad (when)
 import Data.Text (Text)
 import Data.Text.Display (display)
+import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Lucid
 
@@ -15,28 +16,35 @@ import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Packages (packageAdvisoriesListing, packageListing, packageWithExecutableListing)
 
-showAllPackages :: Word -> Positive Word -> Vector PackageInfo -> FloraHTML
-showAllPackages count currentPage packagesInfo = do
-  div_ [class_ "container"] $ do
-    presentationHeader "Packages" "" count
-    div_ [class_ ""] $ packageListing Nothing packagesInfo
+showAllPackages :: UTCTime -> Word -> Positive Word -> Vector PackageInfo -> FloraHTML
+showAllPackages now count currentPage packagesInfo = do
+  let pageCountLabel = if currentPage > 1 then "Page " <> display (currentPage.unPositive) else ""
+  -- let (limit, offset) = fromPage currentPage
+  let startIndex = ((currentPage.unPositive - 1) * 30) + 1
+  let endIndex = currentPage.unPositive * 30
+  presentationHeader "Packages" pageCountLabel count
+  section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
+    p_ [class_ "text-small"] (toHtml $ "Displaying " <> display startIndex <> "-" <> display endIndex <> " of " <> display count <> " total results")
+    packageListing now Nothing packagesInfo
     paginationNav count currentPage ListAllPackages
 
 showAllPackagesInNamespace
-  :: Namespace
+  :: UTCTime
+  -> Namespace
   -> Text
   -> Word
   -> Positive Word
   -> Vector PackageInfo
   -> FloraHTML
-showAllPackagesInNamespace namespace description count currentPage packagesInfo = do
-  div_ [class_ "container"] $ do
-    presentationHeader (toHtml $ display namespace) description count
-    div_ [class_ ""] $ packageListing Nothing packagesInfo
+showAllPackagesInNamespace now namespace description count currentPage packagesInfo = do
+  presentationHeader (toHtml $ display namespace) description count
+  section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
+    packageListing now Nothing packagesInfo
     paginationNav count currentPage (ListAllPackagesInNamespace namespace)
 
 showResults
-  :: Text
+  :: UTCTime
+  -> Text
   -> Word
   -> Positive Word
   -> Vector PackageInfo
@@ -44,10 +52,10 @@ showResults
   -> Vector PackageInfo
   -- ^ Results
   -> FloraHTML
-showResults searchString count currentPage exactMatches results = do
-  div_ [class_ "container"] $ do
-    presentationHeader (toHtml searchString) "" count
-    packageListing (Just exactMatches) results
+showResults now searchString count currentPage exactMatches results = do
+  presentationHeader ("Search for: " <> toHtml searchString) "" count
+  section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
+    packageListing now (Just exactMatches) results
     when (count > 30) $
       paginationNav count currentPage (SearchPackages searchString)
 
@@ -59,8 +67,8 @@ showExecutableResults
   -- ^ Results
   -> FloraHTML
 showExecutableResults executableName count currentPage results = do
-  div_ [class_ "container"] $ do
-    presentationHeader (toHtml executableName) "" count
+  presentationHeader (toHtml executableName) "" count
+  section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
     packageWithExecutableListing results
     when (count > 30) $
       paginationNav count currentPage (SearchExecutable executableName)
@@ -73,8 +81,8 @@ showAdvisorySearchResults
   -- ^ Results
   -> FloraHTML
 showAdvisorySearchResults searchTerm count currentPage results = do
-  div_ [class_ "container"] $ do
-    presentationHeader (toHtml searchTerm) "" count
+  presentationHeader (toHtml searchTerm) "" count
+  section_ [class_ "wrapper inset-large flow flow--large", id_ "content"] $ do
     packageAdvisoriesListing True results
     when (count > 30) $
       paginationNav count currentPage (SearchInAdvisories searchTerm)

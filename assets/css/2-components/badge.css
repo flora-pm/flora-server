@@ -1,0 +1,56 @@
+.badge {
+	--badge-inset-block: .2em;
+	--badge-inset-inline: .3em;
+	--badge-bg: transparent;
+	--badge-border-color: var(--color-stroke-default);
+	--badge-color: var(--color-text-secondary);
+	--badge-radius: var(--radius-xs);
+	display: inline-flex;
+	gap: .25ch;
+	align-items: center;
+	padding: var(--badge-inset-block) var(--badge-inset-inline);
+	line-height: var(--leading-thin);
+	background: var(--badge-bg);
+	border: 1px solid var(--badge-border-color);
+	border-radius: var(--badge-radius);
+	color: var(--badge-color);
+	font-size: .85em;
+}
+
+.badge--big {
+	font-size: 1em;
+}
+
+.badge--brand {
+	--badge-bg: var(--color-surface-brand);
+	--badge-color: var(--color-text-brand);
+	--badge-border-color: oklch(from var(--color-surface-brand) calc(l - 0.15) calc(c + 0.025) h);
+}
+
+.badge--green {
+	--badge-bg: var(--color-surface-valid);
+	--badge-color: var(--color-text-valid);
+	--badge-border-color: oklch(from var(--color-surface-valid) calc(l - 0.15) calc(c + 0.025) h);
+}
+
+.badge--info {
+	--badge-bg: var(--color-surface-informational);
+	--badge-color: var(--color-text-informational);
+	--badge-border-color: oklch(from var(--color-surface-informational) calc(l - 0.15) calc(c + 0.025) h);
+}
+
+.badge--warning {
+	--badge-bg: var(--color-surface-warning);
+	--badge-color: var(--color-text-warning);
+	--badge-border-color: oklch(from var(--color-surface-warning) calc(l - 0.15) calc(c + 0.025) h);
+}
+
+.badge--danger {
+	--badge-bg: var(--color-surface-danger);
+	--badge-color: var(--color-text-danger);
+	--badge-border-color: oklch(from var(--color-surface-danger) calc(l - 0.15) calc(c + 0.025) h);
+}
+
+.badge .icon {
+	margin-block-start: revert;
+}

@@ -1,0 +1,129 @@
+/* stylelint-disable selector-class-pattern */
+/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+
+/* @view-transition {
+	navigation: auto;
+} */
+
+
+body {
+	font-family: var(--font-base);
+	font-size: var(--text-base);
+	line-height: var(--leading);
+	background: var(--color-surface-default);
+	color: var(--color-text-default);
+	font-feature-settings: "ss01" 1,"ss02" 1, "ss03" 1,"cv09" 1,"cv10" 1;
+}
+
+a {
+	text-decoration: none;
+	color: var(--link-color);
+}
+
+a:not([class]) {
+	text-decoration: underline;
+	text-decoration-color: var(--color-underline-default, currentColor);
+}
+
+a:where(:not([class])):is(:hover, :active) {
+	color: var(--color-text-raise);
+}
+
+a:focus-visible {
+	border-radius: var(--radius-xs);
+}
+
+code {
+	font-variant-numeric: slashed-zero;
+}
+
+/* Smooth focus ring */
+* {
+	outline-color: transparent;
+	outline-offset: calc(-1 * var(--outline-width));
+}
+
+*:focus-visible {
+	outline-style: solid;
+	outline-width: var(--outline-width);
+	outline-color: var(--outline-color);
+	outline-offset: var(--outline-offset);
+	transition: outline-offset 0.15s ease, outline-color 0.15s ease;
+}
+
+/* details summary */
+
+details,
+.details--nobody summary {
+	padding: var(--space-1) var(--space-2);
+	border: 1px solid var(--color-stroke-default);
+	border-radius: var(--radius-xs);
+}
+
+details.details--nobody {
+	border-color: transparent;
+	padding: 0;
+}
+
+details[open] summary {
+	margin-block-end:var(--space-1);
+}
+
+details pre {
+	overflow-wrap: break-word;
+	white-space: normal;
+}
+
+@media (forced-colors:none) {
+	summary {
+		position: relative;
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		padding-inline-end: 2ch;
+	}
+	summary::marker { content: "" }
+
+	summary::after {
+		content: "";
+		position: absolute;
+		right: .2em;
+		top: calc(50% - .25em);
+		width: 0;
+		height: 0;
+		border-style: solid;
+		border-width: calc(1.732 * .3em) .3em 0;
+		border-color: currentcolor transparent transparent;
+		transform: rotate(0deg);
+	}
+
+	.details--nobody summary::after {
+		margin-right: var(--space-2);
+	}
+
+	details[open] summary::after {
+		transform: rotate(180deg);
+	}
+}
+
+
+/* Browser supports interpolate-size */
+@supports (interpolate-size: allow-keywords) {
+	:root {
+		interpolate-size: allow-keywords;
+	}
+
+	details::details-content {
+		transition: height .1s ease, content-visibility .1s ease allow-discrete;
+		height: 0;
+		overflow: clip;
+	}
+
+	details[open]::details-content {
+		height: auto;
+	}
+
+	summary::after {
+		transition: .1s transform ease;
+	}
+}

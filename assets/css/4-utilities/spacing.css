@@ -1,0 +1,23 @@
+.gap {
+	gap: var(--gap-size, var(--space-gutter));
+}
+
+.gap--tiny { --gap-size: var(--space-gutter-tiny); }
+.gap--small { --gap-size: var(--space-gutter-small); }
+.gap--large { --gap-size: var(--space-gutter-large); }
+
+.inset-region {
+	padding-block: var(--space-region);
+}
+
+.inset-large {
+	padding-block: var(--space-gutter-large);
+}
+
+.inset-x {
+	padding-inline: var(--space-gutter);
+}
+
+.ms-auto {
+	margin-inline-start: auto;
+}

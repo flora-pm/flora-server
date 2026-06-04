@@ -1,0 +1,94 @@
+.btn {
+	--btn-inset-block: var(--input-inset-block);
+	--btn-inset-inline: var(--input-inset-inline);
+	--btn-border-width: var(--input-border-width);
+	--btn-border-color: var(--color-stroke-default);
+	--btn-radius: var(--input-radius);
+	--btn-bg: var(--color-surface-brand);
+	--btn-color: var(--color-text-brand);
+	--btn-leading: var(--input-leading);
+	--btn-gap: .5ch;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--btn-gap);
+	padding: var(--btn-inset-block) var(--btn-inset-inline);
+	border: var(--btn-border-width) solid var(--btn-border-color);
+	border-radius: var(--btn-radius);
+	background: var(--btn-bg);
+	color: var(--btn-color);
+	line-height: var(--btn-leading);
+	font-size: var(--text-base);
+	text-align: center;
+}
+
+.btn--uppercase {
+	text-transform: uppercase;
+	font-size: .85em;
+	line-height: 1.53;
+	letter-spacing: .035em;
+}
+
+.btn:where(:not(.btn--disabled)):is(:hover,:active) {
+	--btn-bg: var(--color-surface-brand-interact);
+}
+
+a.btn:where(:not(.btn--disabled)):is(:hover,:active) {
+	--btn-bg: var(--color-surface-brand-interact);
+	text-decoration: underline;
+}
+
+.btn :is(svg, .icon) {
+	height: calc(1em * var(--btn-leading));
+	height: 1lh;
+	width: auto;
+	margin-block-start: initial;
+}
+
+.btn--square,
+.btn:has(svg:only-child) {
+	padding-inline: var(--btn-inset-block);
+}
+
+/* Styles */
+
+.btn--secondary {
+	--btn-bg: var(--color-surface-default);
+}
+
+.btn--invisible {
+	--btn-bg: transparent;
+	--btn-border-color: transparent;
+}
+
+.btn--invisible:is(:hover,:active) {
+	--btn-bg: var(--color-surface-brand-interact);
+	--btn-border-color: var(--color-stroke-default);
+}
+
+/* For display purpose, avoid disabling button semantically
+ cf. https://adrianroselli.com/2024/02/dont-disable-form-controls.html
+*/
+.btn--disabled,
+.btn--disabled:is(:hover,:active) {
+	--btn-bg: var(--color-surface-tertiary);
+	--btn-border-color: var(--color-surface-secondary);
+	--btn-color: var(--color-text-tertiary);
+	cursor: not-allowed;
+}
+
+/* Sizes */
+
+.btn--tiny {
+	--btn-inset-block: var(--space-1);
+	--btn-inset-inline: var(--space-1);
+	--btn-leading: 1.16;
+	font-size: var(--text-tiny);
+	font-weight: 500;
+}
+
+.btn--big {
+	font-size: var(--text-large);
+	--btn-inset-block: var(--space-3);
+	--btn-inset-inline: var(--space-3);
+}

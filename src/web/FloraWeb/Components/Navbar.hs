@@ -1,11 +1,8 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 module FloraWeb.Components.Navbar where
 
 import Control.Monad.Reader (ask, asks)
 import Data.Text (Text)
 import Lucid
-import PyF (str)
 
 import Flora.Model.User (User (..), UserFlags (..))
 import FloraWeb.Components.Icons qualified as Icons
@@ -14,77 +11,51 @@ import FloraWeb.Pages.Templates.Types
 
 navbar :: FloraHTML
 navbar = do
-  let xData =
-        [str|
-    {
-      updateTheme() {
-        const customTheme = document.documentElement.getAttribute('data-theme');
-        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const applyTheme = (theme) => {
-          document.documentElement.setAttribute('data-theme', theme);
-          (async () => { await cookieStore.set('theme', theme) })();
-        };
-        switch (customTheme) {
-          case 'light':
-            applyTheme('dark');
-            break;
-          case 'dark':
-            applyTheme('light');
-            break;
-          default:
-            isSystemDark ? applyTheme('light') : applyTheme('dark');
-            break;
-        }
-      }
-    }
-  |]
+  -- let xData =
+  --       [str|
+  --   {
+  --     updateTheme() {
+  --       const customTheme = document.documentElement.getAttribute('data-theme');
+  --       const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  --       const applyTheme = (theme) => {
+  --         document.documentElement.setAttribute('data-theme', theme);
+  --         (async () => { await cookieStore.set('theme', theme) })();
+  --       };
+  --       switch (customTheme) {
+  --         case 'light':
+  --           applyTheme('dark');
+  --           break;
+  --         case 'dark':
+  --           applyTheme('light');
+  --           break;
+  --         default:
+  --           isSystemDark ? applyTheme('light') : applyTheme('dark');
+  --           break;
+  --       }
+  --     }
+  --   }
+  -- \|]
 
   ActiveElements{aboutNav, packagesNav} <- asks (.activeElements)
-  nav_
-    [ class_ "top-navbar"
-    , xData_ xData
-    ]
+  header_
+    [class_ "header"]
     $ do
-      div_ [class_ "navbar-content"] $ do
-        div_ [class_ "navbar-left"] $ do
+      div_ [class_ "header-container wrapper"] $ do
+        a_ [class_ "header-logo", href_ "/", ariaLabel_ "Homepage"] $ do
           brand
-          navbarDropdown aboutNav packagesNav
-          navbarSearch
-        div_ [class_ "navbar-right"] $ do
-          navBarLink "navbar-menu-button" "/" "Search on Flora" False
+        navbarSearch
+        nav_ [class_ "header-nav cluster", ariaLabel_ "Main"] $ do
           navBarLink' "/about" "About" aboutNav
-          navBarLink' "/categories" "Categories" packagesNav
-          navBarLink' "/packages" "Packages" packagesNav
-          userMenu
-          themeToggle
+          navBarLink' "/categories" "Browse" packagesNav
 
 brand :: FloraHTML
 brand = do
-  div_ [class_ "brand"] $
-    link defaultLinkOptions{href = "/", classes = "", childNode = text "Flora :: [Package]"}
-
-navbarDropdown :: Bool -> Bool -> FloraHTML
-navbarDropdown aboutNav packagesNav = do
-  div_
-    [ class_ "navbar-dropdown"
-    ]
-    $ do
-      button_
-        [ class_ "navbar-dropdown__button"
-        , type_ "button"
-        , popovertarget_ "navbar_dropdown_menu"
-        ]
-        $ text "Menu"
-      div_
-        [ class_ "navbar-dropdown__menu"
-        , id_ "navbar_dropdown_menu"
-        , popover_ ""
-        ]
-        $ do
-          navBarLink' "/about" "About" aboutNav
-          navBarLink' "/categories" "Categories" packagesNav
-          navBarLink' "/packages" "Packages" packagesNav
-          themeToggle
+  "Flora"
+  toHtmlRaw ("&nbsp;" :: Text)
+  span_ [class_ "color-tertiary"] ":: "
+  span_ [class_ "color-quaternary"] "["
+  "Package"
+  span_ [class_ "color-quaternary"] "]"
 
 navBarLink
   :: Text
@@ -98,7 +69,10 @@ navBarLink
   -> FloraHTML
 navBarLink additionalClasses href label isActive' =
   a_
-    [href_ href, class_ ("navbar-link " <> additionalClasses <> " " <> isActive isActive')]
+    [ href_ href
+    , class_ ("btn btn--invisible btn--uppercase" <> additionalClasses <> " " <> isActive isActive')
+    , isAriaCurrentPage isActive'
+    ]
     (text label)
 
 navBarLink' :: Text -> Text -> Bool -> FloraHTML
@@ -121,52 +95,33 @@ navbarSearch = do
             case mContent of
               Nothing -> []
               Just content -> [value_ content]
-      form_ [class_ "navbar-search", action_ "/search", method_ "GET"] $ do
+      form_ [class_ "header-search", action_ "/search", method_ "GET", role_ "search"] $ do
         label_ [for_ "search", class_ "sr-only"] "Search a package"
-        input_ $
-          [ class_ "navbar-searchInput"
-          , id_ "search"
-          , type_ "search"
-          , name_ "q"
-          , placeholder_ "Search a package"
-          ]
-            ++ contentValue
-        button_
-          [ class_ "navbar-searchBtn"
-          , type_ "submit"
-          , label_ "Search"
-          ]
-          Icons.lookingGlass
+        div_ [class_ "cluster cluster--nowrap cluster--stretch cluster--tiny flex-grow"] $ do
+          input_ $
+            [ class_ "flex-grow min-w0"
+            , id_ "search"
+            , type_ "search"
+            , name_ "q"
+            , placeholder_ "Search a package"
+            , autocomplete_ "off"
+            , autocorrect_ "off"
+            , autocapitalize_ "off"
+            , spellcheck_ "off"
+            ]
+              ++ contentValue
+          button_
+            [ class_ "btn"
+            , type_ "submit"
+            , label_ "Search"
+            ]
+            Icons.lookingGlass
     else pure mempty
 
 adminLink :: Bool -> Maybe User -> FloraHTML
 adminLink active (Just user)
   | user.userFlags.isAdmin = navBarLink' "/admin" "Admin Dashboard" active
 adminLink _ _ = ""
-
-themeToggle :: FloraHTML
-themeToggle = do
-  let sunIcon = do
-        img_ [src_ "/static/icons/sun.svg", class_ "h-6 w-6 invert", alt_ ""]
-
-  let moonIcon = do
-        img_ [src_ "/static/icons/moon.svg", class_ "h-6 w-6", alt_ ""]
-
-  let buttonBaseClasses = "navbar-themeBtn p-2 m-4 md:m-0 rounded-md items-center"
-
-  button_
-    [ xOn_ "click" "updateTheme()"
-    , class_ $ "theme-button--light " <> buttonBaseClasses
-    , ariaLabel_ "Switch to light theme"
-    ]
-    sunIcon
-
-  button_
-    [ xOn_ "click" "updateTheme()"
-    , class_ $ "theme-button--dark " <> buttonBaseClasses
-    , ariaLabel_ "Switch to dark theme"
-    ]
-    moonIcon
 
 getUsernameOrLogin :: Maybe User -> FloraHTML
 getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login" False
@@ -175,3 +130,7 @@ getUsernameOrLogin _ = navBarLink' "/settings/" "Profile" False
 isActive :: Bool -> Text
 isActive True = " active"
 isActive False = ""
+
+isAriaCurrentPage :: Bool -> Attributes
+isAriaCurrentPage True = ariaCurrent_ "page"
+isAriaCurrentPage False = mempty

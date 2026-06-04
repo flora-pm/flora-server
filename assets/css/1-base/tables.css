@@ -1,0 +1,58 @@
+table {
+	border-collapse: separate;
+	border-spacing: 0;
+	width: 100%;
+}
+
+:where(thead, tbody) :where(th, td) {
+	border-inline-end: 1px solid var(--color-stroke-default);
+	border-bottom: 1px solid var(--color-stroke-default);
+	padding-block: var(--space-gutter-small);
+	padding-inline: var(--space-gutter-small);
+}
+
+:where(tfoot) td, caption {
+	font-weight: 700;
+	padding-block: var(--space-gutter-small);
+	padding-inline: var(--space-gutter-small);
+	text-align: start;
+}
+
+:where(thead, tbody) :where(th, td):first-child {
+	border-inline-start: 1px solid var(--color-stroke-default);
+}
+
+th {
+	background-color: var(--color-surface-default);
+	border-top: 1px solid var(--color-stroke-default);
+	font-size: var(--text-small);
+	font-weight: 700;
+	text-align: start;
+}
+
+tr:first-child th:first-child {
+	border-top-left-radius: var(--radius-xs);
+}
+
+tr:first-child th:last-child {
+	border-top-right-radius: var(--radius-xs);
+}
+
+tr:last-child td:first-child {
+	border-bottom-left-radius: var(--radius-xs);
+}
+
+tr:last-child td:last-child {
+	border-bottom-right-radius: var(--radius-xs);
+}
+
+.table-outer-wrapper {
+	display: flex;
+}
+
+.table-inner-wrapper {
+	overflow-x: auto;
+	flex: 1 1 0%;
+	margin-block-end: var(--space-gutter);
+	width: 1rem;
+}

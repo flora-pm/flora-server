@@ -1,0 +1,147 @@
+/* Commons layout patterns
+-------------------------------------------------- */
+
+/*
+Content wrapper
+*/
+
+.wrapper {
+	--wrapper-padding: var(--size-gutter-wrapper, var(--space-4, 1rem));
+	padding-inline: var(--wrapper-padding);
+	margin-inline: auto;
+	max-width: var(--wrapper-max, var(--size-wrapper));
+}
+
+@media (max-width: 25rem) {
+	.wrapper { --wrapper-padding: var(--space-2) };
+}
+
+.wrapper--medium { --wrapper-max: var(--size-wrapper-medium) }
+.wrapper--small { --wrapper-max: var(--size-wrapper-small); }
+.wrapper--nogutter { --wrapper-padding: 0; }
+
+/*
+Flows
+~ cf https://every-layout.dev/layouts/stack/
+*/
+
+.flow > * + * {
+	margin-top: var(--space-gutter);
+}
+
+.flow--large > * + * {
+	margin-top: var(--space-gutter-large);
+}
+
+.flow--small > * + * {
+	margin-top: var(--space-gutter-small);
+}
+
+.flow--tiny > * + * {
+	margin-top: var(--space-gutter-tiny);
+}
+
+/*
+A content+aside container
+~ cf https://every-layout.dev/layouts/sidebar/
+*/
+
+.aside {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--aside-gutter, var(--gap-size, var(--space-gutter)));
+}
+
+.aside--reverse {
+	flex-direction: row-reverse;
+}
+
+.aside:not(.aside--reverse) > :first-child,
+.aside--reverse > :last-child,
+.aside.aside--start > :last-child {
+	flex-basis: 0;
+	flex-grow: 999;
+	min-inline-size: min(55%, 50vw);
+}
+
+.aside:not(.aside--reverse) > :last-child,
+.aside--reverse > :first-child,
+.aside.aside--start > :first-child {
+	flex-basis: var(--aside-width, fit-content);
+	flex-grow: 1;
+	min-inline-size: initial;
+	max-width: 95vw;
+}
+
+/*
+Simple horizontal distribution utilities
+*/
+
+.cluster {
+	display:flex;
+	flex-flow:var(--cluster-direction,row) var(--cluster-wrap,wrap);
+	justify-content:var(--cluster-horizontal-alignment,flex-start);
+	align-items:var(--cluster-vertical-alignment,center);
+	gap:var(--cluster-row-gap,var(--space-gutter)) var(--cluster-column-gap,var(--space-gutter))
+}
+
+.cluster--large { --cluster-column-gap: var(--space-gutter-large); --cluster-row-gap: var(--space-gutter-large); }
+.cluster--small { --cluster-column-gap: var(--space-gutter-small); --cluster-row-gap: var(--space-gutter-small); }
+.cluster--tiny { --cluster-column-gap: var(--space-gutter-tiny); --cluster-row-gap: var(--space-gutter-tiny); }
+.cluster--nowrap { --cluster-wrap: nowrap; }
+.cluster--nogap { --cluster-column-gap: 0; --cluster-row-gap: 0; }
+.cluster--stretch { --cluster-vertical-alignment: stretch; }
+
+.repel {
+	display:flex;
+	flex-flow:var(--repel-direction,row) var(--repel-wrap,wrap);
+	justify-content:var(--repel-horizontal-alignment,space-between);
+	align-items:var(--repel-vertical-alignment,center);
+	gap:var(--repel-row-gap,var(--space-gutter)) var(--repel-column-gap,var(--space-gutter))
+}
+.repel--nowrap { --repel-wrap: wrap; }
+.repel--stretch { --repel-vertical-alignment: stretch; }
+
+/*
+Basic grid systeme
+*/
+
+.grid {
+	--grid-gap: var(--space-gutter);
+	display:grid;
+	gap: var(--grid-gap);
+	grid-template-columns: repeat(auto-fit,minmax(var(--grid-min-item-size,16rem),1fr))
+}
+
+.grid--large { --grid-gap: var(--space-gutter-large) }
+
+.grid-2 {
+	--grid-min-item-size: clamp(16rem,50vw,calc(50% - var(--grid-gap)));
+}
+
+.grid-3 {
+	--grid-min-item-size: clamp(16rem,33vw,calc(33% - var(--grid-gap)));
+}
+
+.grid-4 {
+	--grid-min-item-size: clamp(16rem,25vw,calc(25% - var(--grid-gap)));
+}
+
+/*
+Layer elements on top of eachothers
+*/
+
+.layered {
+	display: grid;
+	place-content: center; /* center items if not same size */
+}
+.layered > * { grid-area: 1 / 1; }
+
+
+/*
+Overlapping item on its predecessor
+*/
+
+.overlapHalf {
+	translate: 0 -50%;
+}

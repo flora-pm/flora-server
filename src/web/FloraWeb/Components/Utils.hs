@@ -7,23 +7,26 @@ import Lucid.Base (makeAttributes)
 
 import FloraWeb.Pages.Templates.Types (FloraHTML)
 
+ariaCurrent_ :: Text -> Attributes
+ariaCurrent_ = makeAttributes "aria-current"
+
 text :: Text -> FloraHTML
 text = toHtml
 
 property_ :: Text -> Attributes
 property_ = makeAttributes "property"
 
+autocorrect_ :: Text -> Attributes
+autocorrect_ = makeAttributes "autocorrect"
+
+autocapitalize_ :: Text -> Attributes
+autocapitalize_ = makeAttributes "autocapitalize"
+
 data LinkOptions = LinkOptions
   { href :: Text
   , classes :: Text
   , childNode :: FloraHTML
   }
-
-link :: LinkOptions -> FloraHTML
-link LinkOptions{href, classes, childNode} =
-  a_
-    [class_ classes, role_ "link", href_ href]
-    childNode
 
 defaultLinkOptions :: LinkOptions
 defaultLinkOptions =
@@ -36,6 +39,12 @@ defaultLinkOptions =
 -- Standard WAI-ARIA attributes for accessibility purpose
 ariaLabel_ :: Text -> Attributes
 ariaLabel_ = makeAttributes "aria-label"
+
+ariaLabelledby_ :: Text -> Attributes
+ariaLabelledby_ = makeAttributes "aria-labelledby"
+
+ariaHidden :: Text -> Attributes
+ariaHidden = makeAttributes "aria-hidden"
 
 -- Prefer these ones as they are integrated with AlpineJS
 ariaControls_ :: Text -> Attributes
@@ -142,3 +151,8 @@ popovertargetaction_
   :: Text
   -> Attributes
 popovertargetaction_ = makeAttributes "popovertargetaction"
+
+interestfor_
+  :: Text
+  -> Attributes
+interestfor_ = makeAttributes "interestfor"

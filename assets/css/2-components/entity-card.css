@@ -1,0 +1,69 @@
+.entityCard {
+	--entity-card-radius: var(--radius-sm);
+	--entity-card-inset-block: var(--space-2);
+	--entity-card-inset-inline: min(var(--wrapper-padding, 0), var(--space-2));
+	flex-grow: 1;
+	display: block;
+	padding: var(--entity-card-inset-block) var(--entity-card-inset-inline);
+	border-radius: var(--entity-card-radius);
+	margin-inline: calc(var(--entity-card-inset-block) * -1);
+}
+
+.entityCard:is(
+	:hover,
+	.entityCard--highlighted
+) {
+	background-color: var(--color-surface-brand);
+}
+
+.entityCard:is(
+	:active,
+	.entityCard--highlighted
+	) {
+	box-shadow: inset 0 0 0 1px var(--color-underline-default);
+}
+
+.entityCard > * + * {
+	margin-top: var(--space-1);
+}
+
+.entityCard-title {
+	color: var(--color-text-raise);
+	font-weight: 500;
+}
+
+a.entityCard:where(:hover, :active, :focus) :is(
+	.entityCard-title,
+	.entityCard-prefix
+	) {
+	text-decoration: underline;
+}
+
+.entityCard-synopsis {
+	color: var(--color-text-secondary);
+}
+
+.entityCard-synopsis:not(:first-child)::before {
+	content: ":: ";
+	content: ":: " / "";
+	color: var(--color-text-quaternary);
+}
+
+@media (forced-colors:active) {
+	.entityCard-title,
+	.entityCard-synopsis {
+		text-decoration: underline;
+	}
+
+	.entityCard:is(:hover, :active) .entityCard-title,
+	.entityCard:is(:hover, :active) .entityCard-synopsis {
+		color: LinkText;
+	}
+}
+
+.entityCard-prefix {
+	color: var(--color-text-tertiary);
+	font-weight: 250;
+	letter-spacing: var(--kerning-tight);
+	vertical-align: baseline;
+}

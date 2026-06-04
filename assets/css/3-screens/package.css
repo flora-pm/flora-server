@@ -1,0 +1,11 @@
+.package-about {
+	--package-layout-gap: var(--space-gutter-large);
+	--aside-gutter: var(--package-layout-gap);
+	--aside-width: 18.75rem;
+}
+
+.package-details {
+	display: flex;
+	flex-direction: column;
+	gap: var(--package-layout-gap);
+}

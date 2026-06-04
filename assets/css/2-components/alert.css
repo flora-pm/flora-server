@@ -1,0 +1,74 @@
+.alert {
+	padding: var(--space-2) var(--space-3);
+	color: var(--alert-color, currentColor);
+	line-height: var(--alert-leading, var(--leading-short));
+	background: var(--alert-bg, var(--color-surface-tertiary));
+	border: 1px solid var(--alert-border-color, var(--color-stroke-default));
+	border-radius: var(--radius-xs);
+}
+
+/* styles */
+.alert--brand {
+	--alert-color: var(--color-text-brand);
+	--alert-bg: var(--color-surface-brand);
+	--alert-border-color: oklch(from var(--color-surface-brand) calc(l - 0.15) calc(c + 0.025) h);
+	text-decoration-color: currentcolor;
+}
+
+.alert--green {
+	--alert-color: var(--color-text-valid);
+	--alert-bg: var(--color-surface-valid);
+	--alert-border-color: oklch(from var(--color-surface-valid) calc(l - 0.15) calc(c + 0.025) h);
+	text-decoration-color: currentcolor;
+}
+
+.alert--info {
+	--alert-color: var(--color-text-informational);
+	--alert-bg: var(--color-surface-informational);
+	--alert-border-color: oklch(from var(--color-surface-informational) calc(l - 0.15) calc(c + 0.025) h);
+	text-decoration-color: currentcolor;
+}
+
+.alert--warning {
+	--alert-color: var(--color-text-warning);
+	--alert-bg: var(--color-surface-warning);
+	--alert-border-color: oklch(from var(--color-surface-warning) calc(l - 0.15) calc(c + 0.025) h);
+	text-decoration-color: currentcolor;
+}
+
+.alert--danger {
+	--alert-color: var(--color-text-danger);
+	--alert-bg: var(--color-surface-danger);
+	--alert-border-color: oklch(from var(--color-surface-danger) calc(l - 0.15) calc(c + 0.025) h);
+	--color-underline-default: currentcolor;
+}
+
+/* sizes */
+.alert--big {
+	font-size: var(--text-large);
+	padding: var(--space-3) var(--space-4);
+}
+
+.alert--small {
+	font-size: var(--text-small);
+}
+
+/* content */
+.alert > * + * {
+	margin-top: var(--space-gutter-small);
+}
+
+.alert-title {
+	display: block;
+	font-weight: 600;
+}
+
+.alert-title ~ * {
+	display: block;
+}
+
+.alert :is(ul, ol) {
+	list-style: revert;
+	padding-left: revert;
+}
+

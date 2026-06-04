@@ -1,50 +1,43 @@
-/* stylelint-disable selector-class-pattern */
-/* stylelint-disable declaration-block-no-redundant-longhand-properties */
+/* Establish layers order up-front, from lowest to highest priority */
+@layer reset, dependencies, base, components, screens, utilities, vendors;
 
-/* Core (careful before touching the foundations) */
-@import "1-core/1-reset.css";
-@import "1-core/2-core.css";
-@import "1-core/3-variables.css";
+/* Core */
+@import "0-core/reset.css" layer(reset);
+@import "0-core/fonts.css" layer(dependencies);
+@import "0-core/variables.css" layer(dependencies);
 
-/* Atomic (small) reusable components */
-@import "2-components/1-navbar.css";
-@import "2-components/2-package-component.css";
-@import "2-components/3-breadcrumb.css";
-@import "2-components/4-license.css";
-@import "2-components/5-primary-search.css";
-@import "2-components/6-secondary-search.css";
-@import "2-components/7-button.css";
-@import "2-components/8-alert.css";
-@import "2-components/9-terminal-icon.css";
-@import "2-components/10-error.css";
-@import "2-components/11-advisory-list-item.css";
-@import "2-components/12-headline.css";
-@import "2-components/13-package-group.css";
-@import "2-components/14-version-list.css";
-@import "2-components/15-theme-switch.css";
-@import "2-components/16-page-title.css";
-@import "2-components/17-skip-link.css";
+/* Sensible defaults */
+@import "1-base/base.css" layer(base);
+@import "1-base/layouts.css" layer(base);
+@import "1-base/forms.css" layer(base);
+@import "1-base/tables.css" layer(base);
+@import "1-base/icons.css" layer(base);
+@import "1-base/buttons.css" layer(base);
+@import "1-base/prose.css" layer(base);
 
-/* Screens/Pages specific style */
-@import "3-screens/1-package/1-package.css";
-@import "3-screens/1-package/2-release-changelog.css";
-@import "3-screens/1-package/3-release-readme.css";
-@import "3-screens/1-package/4-compiler-badge.css";
-@import "3-screens/1-package/5-security.css";
-@import "3-screens/2-categories.css";
-@import "3-screens/3-package-list.css";
-@import "3-screens/4-front-page.css";
-@import "3-screens/5-settings/1-dashboard.css";
-@import "3-screens/6-about.css";
-@import "3-screens/7-auth.css";
+/* Reusable components */
+@import "2-components/header.css" layer(components);
+@import "2-components/page-head.css" layer(components);
+@import "2-components/skip-link.css" layer(components);
+@import "2-components/tabs.css" layer(components);
+@import "2-components/badge.css" layer(components);
+@import "2-components/alert.css" layer(components);
+@import "2-components/tooltip.css" layer(components);
+@import "2-components/dropdown.css" layer(components);
+@import "2-components/entity-card.css" layer(components);
+@import "2-components/pagination.css" layer(components);
+@import "2-components/footer.css" layer(components);
+
+/* Specific to some screens/pages */
+@import "3-screens/package.css" layer(components);
 
 /* Helpers/Utility classes */
-@import "4-helpers/1-globals.css";
-@import "4-helpers/2-colors.css";
-@import "4-helpers/3-spacing.css";
-@import "4-helpers/4-typography.css";
-@import "4-helpers/5-state.css";
+@import "4-utilities/global.css" layer(utilities);
+@import "4-utilities/colors.css" layer(utilities);
+@import "4-utilities/typography.css" layer(utilities);
+@import "4-utilities/state.css" layer(utilities);
+@import "4-utilities/spacing.css" layer(utilities);
+@import "4-utilities/sizing.css" layer(utilities);
 
 /* External vendors */
-@import "5-vendors/prism.css";
-@import "5-vendors/font-awesome.css";
+@import "5-vendors/prism.css" layer(dependencies);

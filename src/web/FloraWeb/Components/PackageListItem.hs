@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module FloraWeb.Components.PackageListItem
   ( packageListItem
   , packageWithExecutableListItem
@@ -8,13 +6,15 @@ module FloraWeb.Components.PackageListItem
 where
 
 import Data.Foldable (traverse_)
-import Data.List (intersperse, sortOn)
+import Data.Function ((&))
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Time (UTCTime, defaultTimeLocale)
 import Data.Time qualified as Time
+import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Version (Version)
 import Lucid
@@ -26,7 +26,9 @@ import Flora.Model.Requirement
   , DependencyInfo (..)
   )
 import FloraWeb.Components.Icons qualified as Icon
+import FloraWeb.Components.PackageCard (PackageCardProps (..), packageCard)
 import FloraWeb.Components.Utils
+import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML)
 import Lucid.Orphans ()
 
@@ -87,47 +89,51 @@ packageWithExecutableListItem PackageInfoWithExecutables{namespace, name, synops
             Icon.terminal
             toHtml element
 
-requirementListItem :: ComponentDependencies -> FloraHTML
-requirementListItem allComponentDeps =
-  traverse_ (uncurry componentTitle) . sortOn ((.componentType) . fst) $ Map.toList allComponentDeps
+requirementListItem :: UTCTime -> ComponentDependencies -> FloraHTML
+requirementListItem now allComponentDeps =
+  allComponentDeps
+    & Map.toList
+    & Vector.fromList
+    & Vector.modify (MVector.sortBy (\r1 r2 -> compare (fst r1).componentType (fst r2).componentType))
+    & \sortedComponents -> case Vector.uncons sortedComponents of
+      Nothing -> pure ()
+      Just (firstComponent, rest) -> do
+        uncurry (componentTitle True) firstComponent
+        Vector.forM_ rest (uncurry (componentTitle False))
   where
-    open = if Map.size allComponentDeps == 1 then [open_ ""] else mempty
-    componentTitle component componentDeps = do
-      details_ open $ do
-        summary_ [class_ "package-component"] . h3_ [] $ do
-          strong_ [] . toHtml $ display component
-          toHtml $ " (" <> display (Vector.length componentDeps) <> " dependencies)"
-        traverse_ componentListItems componentDeps
+    componentTitle :: Bool -> CanonicalComponent -> Vector DependencyInfo -> FloraHTML
+    componentTitle isOpen component componentDeps = do
+      let open = if isOpen then [open_ ""] else mempty
+      details_ ([class_ "details--nobody"] <> open) $ do
+        summary_ [class_ "package-component"] $
+          h3_ [class_ "inline-block text-large color-raise"] $ do
+            toHtml $ display component
+            span_ [class_ "text-small color-secondary"] $
+              toHtml $
+                " (" <> display (Vector.length componentDeps) <> " dependencies)"
+        ul_ [class_ "flow", role_ "list"] $
+          traverse_ (componentListItems now) componentDeps
 
-componentListItems :: DependencyInfo -> FloraHTML
-componentListItems DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense, components} = do
-  let href = href_ ("/packages/" <> display namespace <> "/" <> display packageName)
-      component_ = p_ [class_ "package-list-item__component"] . toHtml
-  li_ [class_ "package-list-item"] $
-    a_ [href, class_ ""] $ do
-      h4_ [class_ "package-list-item__name"] $ do
-        strong_ [class_ ""] . toHtml $
-          display namespace <> "/" <> display packageName
-      case components of
-        [name]
-          | name == display packageName -> pure ()
-          | otherwise -> ":" >> component_ name
-        -- The empty case should never happen but displaying pkg:{} will indicate
-        -- something has gone wrong.
-        _ -> do
-          ":{"
-          sequence_ . intersperse (toHtml @Text ", ") $
-            component_ <$> Vector.toList components
-          "}"
-      p_ [class_ "package-list-item__synopsis"] $ toHtml latestSynopsis
-      div_ [class_ "package-list-item__metadata"] $ do
-        span_ [class_ "package-list-item__license"] $ do
-          Icon.license
-          toHtml latestLicense
-        displayVersionRange requirement
+componentListItems :: UTCTime -> DependencyInfo -> FloraHTML
+componentListItems now DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do
+  -- let component_ = p_ [class_ "package-list-item__component"] . toHtml
+  let link = Links.packageResource namespace packageName
+  li_ [] $ do
+    packageCard
+      now
+      PackageCardProps
+        { link = link
+        , namespace = namespace
+        , name = packageName
+        , synopsis = latestSynopsis
+        , mVersion = Just (displayVersionRange requirement)
+        , mLastUploadedAt = Nothing
+        , mLicense = Just latestLicense
+        , exactMatch = False
+        }
 
-displayVersionRange :: Text -> FloraHTML
+displayVersionRange :: Text -> Text
 displayVersionRange versionRange =
   if versionRange == ">=0"
     then ""
-    else span_ [class_ "package-list-item__version-range"] $ toHtml versionRange
+    else versionRange

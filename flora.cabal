@@ -72,7 +72,7 @@ common common-rts-options
     -threaded
     "-with-rtsopts=-N -Iw1 --disable-delayed-os-memory-return -T"
 
-  -- Use TCMalloc instead of glibc's malloc.
+-- Use TCMalloc instead of glibc's malloc.
   if !(os(osx) && arch(aarch64))
     pkgconfig-depends: libtcmalloc
 
@@ -350,17 +350,18 @@ library flora-web
     FloraWeb.Components.Alert
     FloraWeb.Components.Button
     FloraWeb.Components.CategoryCard
+    FloraWeb.Components.Footer
     FloraWeb.Components.Header
     FloraWeb.Components.Icons
     FloraWeb.Components.MainSearchBar
     FloraWeb.Components.Navbar
+    FloraWeb.Components.PackageCard
     FloraWeb.Components.PackageGroup
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
     FloraWeb.Components.Pill
     FloraWeb.Components.SkipLink
-    FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
     FloraWeb.Embedded
