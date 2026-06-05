@@ -107,7 +107,6 @@ showDependents now numberOfReleases latestRelease numberOfDependencies numberOfD
     numberOfDependencies
     numberOfDependents
     package
-    latestRelease.synopsis
     mempty
     "dependents"
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
@@ -151,7 +150,6 @@ showDependencies now numberOfReleases latestRelease numberOfDependencies numberO
     numberOfDependencies
     numberOfDependents
     package
-    latestRelease.synopsis
     mempty
     "dependencies"
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
@@ -165,17 +163,15 @@ listVersions
   -> Word
   -> Word
   -> Package
-  -> Text
   -> Vector Release
   -> FloraHTML
-listVersions latestRelease now numberOfDependencies numberOfDependents package synopsis releases = do
+listVersions latestRelease now numberOfDependencies numberOfDependents package releases = do
   presentationHeader
     (fromIntegral $ Vector.length releases)
     latestRelease
     numberOfDependencies
     numberOfDependents
     package
-    synopsis
     mempty
     "versions"
 
@@ -291,7 +287,6 @@ showChangelog numberOfReleases latestRelease numberOfDependencies numberOfDepend
     numberOfDependencies
     numberOfDependents
     package
-    latestRelease.synopsis
     mempty
     "changelog"
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
@@ -517,18 +512,16 @@ showPackageSecurityPage
   -> Word
   -> Word
   -> Package
-  -> Text
   -> Word
   -> Vector PackageAdvisoryPreview
   -> FloraHTML
-showPackageSecurityPage latestRelease numberOfDependencies numberOfDependents package synopsis numberOfReleases advisoryPreviews = do
+showPackageSecurityPage latestRelease numberOfDependencies numberOfDependents package numberOfReleases advisoryPreviews = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
     package
-    synopsis
     mempty
     "security"
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
@@ -610,12 +603,10 @@ presentationHeader
   -> Word
   -- ^ Number of dependents
   -> Package
-  -> Text
-  -- ^  Synopsis
   -> Vector PackageGroupName
   -> String
   -> FloraHTML
-presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} synopsis groups sectionId =
+presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} groups sectionId =
   header_ [class_ "pageHead"] $ do
     div_ [class_ "wrapper flow flow--large"] $ do
       div_ [class_ "aside gap--large"] $ do
@@ -625,7 +616,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
               a_ [href_ (Links.namespacePage package.namespace (PositiveUnsafe 1))] (toHtml $ display namespace)
               toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text)
             toHtml package.name
-          p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
+          p_ [class_ "pageHead-subtitle text-break"] (toHtml release.synopsis)
         div_ [class_ "flow flow--small self-center"] $ do
           div_ [class_ "cluster cluster--small items-end"] $ do
             -- TODO: [non-urgent] Display for latest non-deprecated release

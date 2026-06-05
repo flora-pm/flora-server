@@ -502,7 +502,6 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
           numberOfDependencies
           numberOfDependents
           package
-          latestRelease.synopsis
           releases
 
 constructTarballPath :: PackageName -> Version -> Text
@@ -574,6 +573,5 @@ showPackageSecurityHandler (Headers session _) packageNamespace packageName =
             numberOfDependencies
             numberOfDependents
             package
-            latestRelease.synopsis
             numberOfReleases
             (Vector.reverse $ Vector.modify (MVector.sortBy (\v1 v2 -> compare v1.hsecId v2.hsecId)) advisoryPreviews)

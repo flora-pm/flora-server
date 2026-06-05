@@ -42,7 +42,7 @@ showPackage
   -> Maybe PackageUploader
   -> FloraHTML
 showPackage
-  latestRelease
+  release
   packageReleases
   numberOfReleases
   package
@@ -55,18 +55,17 @@ showPackage
   mUploader = do
     presentationHeader
       numberOfReleases
-      latestRelease
+      release
       numberOfDependencies
       numberOfDependents
       package
-      latestRelease.synopsis
       groups
       "about"
     div_ [class_ "wrapper inset-large"] $ do
       packageBody
         package
         packageIndexURL
-        latestRelease
+        release
         packageReleases
         categories
         (fmap Vector.length activeMaintainers)
