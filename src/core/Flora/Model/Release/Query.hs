@@ -20,6 +20,7 @@ module Flora.Model.Release.Query
   , getVersionFromManyReleaseIds
   , getReleasePackageIndex
   , getLatestReleases
+  , getLatestPackageReleaseVersion
   )
 where
 
@@ -279,4 +280,20 @@ getLatestReleases =
       FROM latest_versions as l0
       ORDER BY l0.uploaded_at DESC
       LIMIT 6
+      |]
+
+getLatestPackageReleaseVersion
+  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  => PackageId
+  -> FloraM es (Maybe Version)
+getLatestPackageReleaseVersion packageId = do
+  result :: (Maybe (Only Version)) <- labeled @ReadOnly @WithConnection $ queryOne sqlQuery (Only packageId)
+  pure $ fromOnly <$> result
+  where
+    sqlQuery =
+      [sql|
+      SELECT l0.version
+      FROM latest_versions as l0
+      WHERE l0.package_id = ?
+      LIMIT 1
       |]

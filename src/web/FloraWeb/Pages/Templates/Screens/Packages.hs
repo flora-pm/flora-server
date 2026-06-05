@@ -40,6 +40,7 @@ showPackage
   -> Vector PackageGroupName
   -> Maybe (Vector Text)
   -> Maybe PackageUploader
+  -> Bool
   -> FloraHTML
 showPackage
   release
@@ -52,7 +53,8 @@ showPackage
   categories
   groups
   activeMaintainers
-  mUploader = do
+  mUploader
+  isLatestViableRelease = do
     presentationHeader
       numberOfReleases
       release
@@ -61,6 +63,8 @@ showPackage
       package
       groups
       "about"
+      isLatestViableRelease
+      True
     div_ [class_ "wrapper inset-large"] $ do
       packageBody
         package
