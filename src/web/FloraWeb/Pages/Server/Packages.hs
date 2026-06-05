@@ -333,8 +333,7 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
           release
           numberOfDependencies
           numberOfDependents
-          packageNamespace
-          packageName
+          package
           results
           pageNumber
 
@@ -400,8 +399,7 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
           release
           numberOfDependencies
           numberOfDependents
-          packageNamespace
-          packageName
+          package
           releaseDependencies
 
 showChangelogHandler
@@ -461,8 +459,7 @@ showVersionChangelogHandler (Headers session _) packageNamespace packageName ver
         release
         numberOfDependencies
         numberOfDependents
-        packageNamespace
-        packageName
+        package
         release.changelog
 
 listVersionsHandler
@@ -496,7 +493,6 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
           withReadOnlyPool pool $
             Query.getNumberOfPackageDependents packageNamespace packageName Nothing
       numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements latestRelease.releaseId
-
       releases <- withReadOnlyPool pool $ Query.getAllReleases package.packageId
 
       render templateEnv $
@@ -505,8 +501,7 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
           now
           numberOfDependencies
           numberOfDependents
-          packageNamespace
-          packageName
+          package
           latestRelease.synopsis
           releases
 
@@ -578,8 +573,7 @@ showPackageSecurityHandler (Headers session _) packageNamespace packageName =
             latestRelease
             numberOfDependencies
             numberOfDependents
-            packageNamespace
-            packageName
+            package
             latestRelease.synopsis
             numberOfReleases
             (Vector.reverse $ Vector.modify (MVector.sortBy (\v1 v2 -> compare v1.hsecId v2.hsecId)) advisoryPreviews)
