@@ -6,6 +6,7 @@ module FloraWeb.Pages.Templates.Screens.Packages
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Data.Function ((&))
+import Data.List qualified as List
 import Data.Maybe (fromMaybe, isJust)
 import Data.Text (Text)
 import Data.Text.Display
@@ -172,10 +173,9 @@ renderCategory :: Category -> FloraHTML
 renderCategory Category{name, slug} = do
   let resource = "/categories/" <> slug
   a_ [href_ resource] (toHtml name)
-  ", " -- TODO: Not display comma after last category
 
 displayCategories :: Vector Category -> FloraHTML
-displayCategories categories = foldMap renderCategory categories
+displayCategories categories = mconcat $ List.intersperse ", " (Vector.toList $ fmap renderCategory categories)
 
 displayMaintainer
   :: Namespace
