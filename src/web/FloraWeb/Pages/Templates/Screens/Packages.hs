@@ -44,7 +44,7 @@ showPackage
   latestRelease
   packageReleases
   numberOfReleases
-  package@Package{namespace, name}
+  package
   packageIndexURL
   numberOfDependents
   numberOfDependencies
@@ -57,8 +57,7 @@ showPackage
       latestRelease
       numberOfDependencies
       numberOfDependents
-      namespace
-      name
+      package
       latestRelease.synopsis
       groups
       "about"

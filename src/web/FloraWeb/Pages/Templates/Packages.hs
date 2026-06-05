@@ -96,19 +96,17 @@ showDependents
   -> Release
   -> Word
   -> Word
-  -> Namespace
-  -> PackageName
+  -> Package
   -> Vector DependencyInfo
   -> Positive Word
   -> FloraHTML
-showDependents now numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName packagesInfo currentPage = do
+showDependents now numberOfReleases latestRelease numberOfDependencies numberOfDependents package packagesInfo currentPage = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
-    namespace
-    packageName
+    package
     latestRelease.synopsis
     mempty
     "dependents"
@@ -135,7 +133,7 @@ showDependents now numberOfReleases latestRelease numberOfDependencies numberOfD
                   }
         )
     when (numberOfDependents > 30) $
-      paginationNav numberOfDependents currentPage (DependentsOf namespace packageName Nothing)
+      paginationNav numberOfDependents currentPage (DependentsOf package.namespace package.name Nothing)
 
 showDependencies
   :: UTCTime
@@ -143,18 +141,16 @@ showDependencies
   -> Release
   -> Word
   -> Word
-  -> Namespace
-  -> PackageName
+  -> Package
   -> ComponentDependencies
   -> FloraHTML
-showDependencies now numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName componentsInfo = do
+showDependencies now numberOfReleases latestRelease numberOfDependencies numberOfDependents package componentsInfo = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
-    namespace
-    packageName
+    package
     latestRelease.synopsis
     mempty
     "dependencies"
@@ -163,30 +159,22 @@ showDependencies now numberOfReleases latestRelease numberOfDependencies numberO
     ul_ [class_ "flow", role_ "list"] $ do
       requirementListItem now componentsInfo
 
--- Vector.forM_
---   componentsInfo
---   ( \dep -> do
-
---   )
-
 listVersions
   :: Release
   -> UTCTime
   -> Word
   -> Word
-  -> Namespace
-  -> PackageName
+  -> Package
   -> Text
   -> Vector Release
   -> FloraHTML
-listVersions latestRelease now numberOfDependencies numberOfDependents namespace packageName synopsis releases = do
+listVersions latestRelease now numberOfDependencies numberOfDependents package synopsis releases = do
   presentationHeader
     (fromIntegral $ Vector.length releases)
     latestRelease
     numberOfDependencies
     numberOfDependents
-    namespace
-    packageName
+    package
     synopsis
     mempty
     "versions"
@@ -196,7 +184,7 @@ listVersions latestRelease now numberOfDependencies numberOfDependents namespace
     ul_ [class_ "flow", role_ "list"] $ do
       Vector.forM_
         releases
-        (versionListItem now namespace packageName)
+        (versionListItem now package.namespace package.name)
 
 versionListItem :: UTCTime -> Namespace -> PackageName -> Release -> FloraHTML
 versionListItem now namespace packageName release = do
@@ -293,18 +281,16 @@ showChangelog
   -> Release
   -> Word
   -> Word
-  -> Namespace
-  -> PackageName
+  -> Package
   -> Maybe TextHtml
   -> FloraHTML
-showChangelog numberOfReleases latestRelease numberOfDependencies numberOfDependents namespace packageName mChangelog = do
+showChangelog numberOfReleases latestRelease numberOfDependencies numberOfDependents package mChangelog = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
-    namespace
-    packageName
+    package
     latestRelease.synopsis
     mempty
     "changelog"
@@ -530,20 +516,18 @@ showPackageSecurityPage
   :: Release
   -> Word
   -> Word
-  -> Namespace
-  -> PackageName
+  -> Package
   -> Text
   -> Word
   -> Vector PackageAdvisoryPreview
   -> FloraHTML
-showPackageSecurityPage latestRelease numberOfDependencies numberOfDependents namespace packageName synopsis numberOfReleases advisoryPreviews = do
+showPackageSecurityPage latestRelease numberOfDependencies numberOfDependents package synopsis numberOfReleases advisoryPreviews = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
-    namespace
-    packageName
+    package
     synopsis
     mempty
     "security"
@@ -625,23 +609,22 @@ presentationHeader
   -- ^ Number of dependencies
   -> Word
   -- ^ Number of dependents
-  -> Namespace
-  -> PackageName
+  -> Package
   -> Text
   -- ^  Synopsis
   -> Vector PackageGroupName
   -> String
   -> FloraHTML
-presentationHeader numberOfReleases release numberOfDependencies numberOfDependents namespace name synopsis groups sectionId =
+presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} synopsis groups sectionId =
   header_ [class_ "pageHead"] $ do
     div_ [class_ "wrapper flow flow--large"] $ do
       div_ [class_ "aside gap--large"] $ do
         div_ [class_ "flow"] $ do
           h1_ [class_ "pageHead-title tracking-tight"] $ do
             span_ [class_ "prefix"] $ do
-              a_ [href_ (Links.namespacePage namespace (PositiveUnsafe 1))] (toHtml $ display namespace)
+              a_ [href_ (Links.namespacePage package.namespace (PositiveUnsafe 1))] (toHtml $ display namespace)
               toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text)
-            toHtml name
+            toHtml package.name
           p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
         div_ [class_ "flow flow--small self-center"] $ do
           div_ [class_ "cluster cluster--small items-end"] $ do
@@ -649,7 +632,11 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             -- span_ [class_ "badge badge--big badge--green"] $ do
             --   Icons.check
             --   "Latest"
-            -- TODO: Display deprecated badge also for deprecated package
+            whenJust deprecationInfo $ \_ ->
+              span_ [class_ "badge badge--danger"] $ do
+                span_ [class_ "sr-only"] "Version "
+                Icons.trash
+                "Deprecated"
             when (release.deprecated == Just True) $
               span_ [class_ "badge badge--big badge--danger"] $ do
                 Icons.trash
