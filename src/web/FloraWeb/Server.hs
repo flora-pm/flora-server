@@ -105,12 +105,12 @@ type FloraAuthContext =
    , ErrorFormatters
    ]
 
-runFlora :: IO ()
-runFlora = do
+runFlora :: FilePath -> IO ()
+runFlora config = do
   setBacktraceMechanismState HasCallStackBacktrace True
   secureMain $
     bracket
-      (getFloraEnv & runFileSystem & runFailIO & runEff)
+      (getFloraEnv config & runFileSystem & runFailIO & runEff)
       (runEff . shutdownFlora)
       ( \env ->
           runEff . withUnliftStrategy (ConcUnlift Ephemeral Unlimited) . runTime . runConcurrent $ do

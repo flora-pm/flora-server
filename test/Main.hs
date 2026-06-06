@@ -33,7 +33,7 @@ import Flora.UserSpec qualified as UserSpec
 main :: IO ()
 main = provideCallStack $ do
   hSetBuffering stdout LineBuffering
-  env <- runEff . runFailIO . runFileSystem $ getFloraEnv
+  env <- runEff . runFailIO . runFileSystem $ getFloraEnv "./env.test.kdl"
   fixtures <-
     runTestEff
       ( do

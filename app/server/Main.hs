@@ -25,6 +25,7 @@ import Effectful.Log (Log, runLog)
 import Effectful.PostgreSQL
 import Effectful.Reader.Static qualified as Reader
 import Log qualified
+import Options.Applicative
 import RequireCallStack
 import System.Exit
 import System.IO
@@ -40,13 +41,14 @@ import FloraWeb.Server
 
 main :: IO ()
 main = do
+  config <- _
   hSetBuffering stdout LineBuffering
-  preFlightChecks
-  runFlora
+  preFlightChecks config
+  runFlora config
 
-preFlightChecks :: IO ()
-preFlightChecks = do
-  env <- getFloraEnv & runFileSystem & runFailIO & runEff
+preFlightChecks :: FilePath -> IO ()
+preFlightChecks config = do
+  env <- getFloraEnv config & runFileSystem & runFailIO & runEff
   runEff $ do
     let withLogger = Logging.makeLogger env.mltp.logger
     withLogger $ \appLogger ->

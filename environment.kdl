@@ -1,0 +1,27 @@
+flora {
+  connectionInfo "db conn string should be derived"
+  domain localhost
+  httpPort 8083
+  environment development
+
+  pool {
+    timeout 100
+    connections 1
+  }
+
+
+  mltp {
+    sentryDSN ""
+    prometheusEnabled #true
+    loggingDestination stdout
+    zipkinEnabled #true
+    zipkinHost localhost
+    zipkinPort 8800
+    eventlogSocket "/tmp/flora-eventlog.sock"
+  }
+
+  features {
+    tarballsEnabled #false
+    blobStoreFilePath #null
+  }
+}

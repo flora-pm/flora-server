@@ -40,8 +40,9 @@ import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
 main :: IO ()
 main = do
+  let config = undefined
   jobsEnv <- runEff getFloraJobsEnv
-  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv
+  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv config
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
   workerEnv <- ArbS.createSimpleEnv (Proxy @JobQueues) jobsEnv.connectionInfo "public"
   let withLogger = makeLogger floraEnv.mltp.logger

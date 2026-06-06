@@ -1,3 +1,7 @@
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
   ( FloraConfig (..)
@@ -18,10 +22,11 @@ module Flora.Environment.Config
   , getAssetHash
   , parseJobsConfig
   , parseJobRunnerPort
+  , floraEnvDecoder
   )
 where
 
-import Control.Monad ((>=>))
+import Control.Monad (when, (>=>))
 import Data.Aeson qualified as Aeson
 import Data.Base64.Types qualified as Base64
 import Data.Bifunctor (Bifunctor (second))
@@ -29,9 +34,12 @@ import Data.ByteString (ByteString, StrictByteString)
 import Data.ByteString.Base64 qualified as Base64
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
+import Data.Scientific (toBoundedInteger)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (Display (..))
+import Data.Text.Encoding qualified as Text
 import Data.Time (NominalDiffTime)
 import Data.Typeable (Typeable)
 import Data.Word (Word16)
@@ -55,6 +63,7 @@ import Env
   , (<=<)
   )
 import GHC.Generics (Generic)
+import KDL qualified
 import Network.Socket (HostName, PortNumber)
 import Sel.Hashing.SHA256 qualified as Sel
 import System.FilePath (isValid)
@@ -81,6 +90,14 @@ instance Display DeploymentEnv where
   displayBuilder Development = "development"
   displayBuilder Test = "test"
 
+instance KDL.DecodeValue DeploymentEnv where
+  valueDecoder = KDL.withDecoder KDL.string \x -> do
+    case x of
+      "production" -> pure Production
+      "development" -> pure Development
+      "test" -> pure Test
+      _ -> KDL.failM "Name of the current environment (production, development, test)"
+
 data LoggingDestination
   = -- | Logs are printed on the standard output
     StdOut
@@ -89,6 +106,13 @@ data LoggingDestination
   | -- | Logs are sent to a file as JSON
     JSONFile
   deriving (Generic, Show)
+
+instance KDL.DecodeValue LoggingDestination where
+  valueDecoder = KDL.withDecoder KDL.string $ \case
+    "stdout" -> pure StdOut
+    "json" -> pure Json
+    "json-file" -> pure JSONFile
+    e -> KDL.failM $ "Unsupported logging destination: " <> e
 
 data Assets = Assets
   { jsBundle :: AssetBundle
@@ -114,11 +138,28 @@ data MLTP = MLTP
   }
   deriving stock (Generic, Show)
 
+instance KDL.DecodeNode MLTP where
+  nodeDecoder = KDL.children do
+    sentryDSN <- KDL.optional $ KDL.argAt "sentryDSN"
+    prometheusEnabled <- KDL.argAt "prometheusEnabled"
+    logger <- KDL.argAt "loggingDestination"
+    zipkinEnabled <- KDL.argAt "zipkinEnabled"
+    zipkinHost <- KDL.optional $ KDL.argAt "zipkinHost"
+    zipkinPort <- fmap toEnum <$> KDL.optional (KDL.argAt "zipkinPort")
+    eventlogSocket <- KDL.optional $ KDL.argAt "eventlogSocket"
+    pure MLTP{..}
+
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
   , blobStoreFS :: Maybe FilePath
   }
   deriving stock (Generic, Show)
+
+instance KDL.DecodeNode FeatureConfig where
+  nodeDecoder = KDL.children do
+    tarballsEnabled <- KDL.argAt "tarballsEnabled"
+    blobStoreFS <- KDL.argAt "blobStoreFilePath"
+    pure FeatureConfig{..}
 
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
@@ -132,11 +173,39 @@ data FloraConfig = FloraConfig
   }
   deriving stock (Generic, Show)
 
+instance KDL.DecodeNode FloraConfig where
+  nodeDecoder = KDL.children do
+    dbConfig <- KDL.node "pool"
+    connectionInfo <- Text.encodeUtf8 <$> KDL.argAt @Text "connectionInfo"
+    domain <- KDL.argAt "domain"
+    httpPort <- KDL.argAt "httpPort"
+    mltp <- KDL.node "mltp"
+    features <- fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing}) <$> KDL.optional (KDL.node "features")
+    environment <- KDL.argAt "environment"
+    pure FloraConfig{..}
+
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
   , connections :: Int
   }
   deriving stock (Show)
+
+instance KDL.DecodeValue NominalDiffTime where
+  valueDecoder = KDL.withDecoder KDL.number \x -> do
+    when
+      (x < 0)
+      (KDL.failM "Timeout can't be negative")
+    pure (fromMaybe 0 (fromIntegral @Int <$> toBoundedInteger x))
+
+instance KDL.DecodeNode PoolConfig where
+  nodeDecoder = KDL.children do
+    connectionTimeout <- KDL.argAt "timeout"
+    connections <- KDL.argAt "connections"
+    pure PoolConfig{..}
+
+floraEnvDecoder :: KDL.DocumentDecoder FloraConfig
+floraEnvDecoder = KDL.document do
+  KDL.node "flora"
 
 data TestConfig = TestConfig
   { httpPort :: Word16
@@ -210,6 +279,10 @@ parseDomain = var str "FLORA_DOMAIN" (help "URL domain for Flora")
 parseDeploymentEnv :: Parser Error DeploymentEnv
 parseDeploymentEnv =
   var deploymentEnv "FLORA_ENVIRONMENT" (help "Name of the current environment (production, development, test)")
+
+-- floraConfigDecoder :: KDL.DocumentDecoder FloraConfig
+-- floraConfigDecoder = KDL.document do
+--   KDL.node "db"
 
 parseConfig :: Parser Error FloraConfig
 parseConfig =

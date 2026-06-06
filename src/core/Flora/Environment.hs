@@ -14,7 +14,7 @@ import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
-import Env (parse)
+import KDL qualified
 
 import Flora.Environment.Config
 import Flora.Environment.Env
@@ -69,7 +69,8 @@ configToEnv floraConfig = do
       , theme = Nothing
       }
 
-getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv
-getFloraEnv = do
-  config <- liftIO $ Env.parse id parseConfig
-  configToEnv config
+getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FilePath -> Eff es FloraEnv
+getFloraEnv fp = do
+  liftIO (KDL.decodeFileWith floraEnvDecoder fp) >>= \case
+    Right env -> configToEnv env
+    Left e -> fail $ show e
