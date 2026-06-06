@@ -40,9 +40,10 @@ showPackage
   -> Vector PackageGroupName
   -> Maybe (Vector Text)
   -> Maybe PackageUploader
+  -> Bool
   -> FloraHTML
 showPackage
-  latestRelease
+  release
   packageReleases
   numberOfReleases
   package
@@ -52,21 +53,23 @@ showPackage
   categories
   groups
   activeMaintainers
-  mUploader = do
+  mUploader
+  isLatestViableRelease = do
     presentationHeader
       numberOfReleases
-      latestRelease
+      release
       numberOfDependencies
       numberOfDependents
       package
-      latestRelease.synopsis
       groups
       "about"
+      isLatestViableRelease
+      True
     div_ [class_ "wrapper inset-large"] $ do
       packageBody
         package
         packageIndexURL
-        latestRelease
+        release
         packageReleases
         categories
         (fmap Vector.length activeMaintainers)

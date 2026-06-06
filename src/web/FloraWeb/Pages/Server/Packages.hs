@@ -239,7 +239,11 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
         ]
 
     let packageIndexURL = packageIndex.url
-
+    isLatestViableRelease <- do
+      result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
+      case result of
+        Nothing -> pure False
+        Just v -> pure $ v == release.version
     Trace.withSpan "render showPackage" $
       render templateEnv $
         Packages.showPackage
@@ -254,6 +258,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
           groups
           activeMaintainers
           mUploader
+          isLatestViableRelease
 
 showDependentsHandler
   :: ( Error ServerError :> es
@@ -324,6 +329,11 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
     numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
     numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
     now <- Time.currentTime
+    isLatestViableRelease <- do
+      result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
+      case result of
+        Nothing -> pure False
+        Just v -> pure $ v == release.version
 
     Trace.withSpan "render showDependents" $
       render templateEnv $
@@ -336,6 +346,7 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
           package
           results
           pageNumber
+          isLatestViableRelease
 
 showDependenciesHandler
   :: ( Error ServerError :> es
@@ -391,6 +402,11 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
           Query.getAllRequirements release.releaseId
 
     now <- Time.currentTime
+    isLatestViableRelease <- do
+      result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
+      case result of
+        Nothing -> pure False
+        Just v -> pure $ v == release.version
     Trace.withSpan "render showDependencies" $
       render templateEnv $
         Package.showDependencies
@@ -401,6 +417,7 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
           numberOfDependents
           package
           releaseDependencies
+          isLatestViableRelease
 
 showChangelogHandler
   :: ( Error ServerError :> es
@@ -452,6 +469,11 @@ showVersionChangelogHandler (Headers session _) packageNamespace packageName ver
             { title = display packageNamespace <> "/" <> display packageName
             , description = "Changelog of " <> display packageNamespace <> "/" <> display packageName
             }
+    isLatestViableRelease <- do
+      result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
+      case result of
+        Nothing -> pure False
+        Just v -> pure $ v == release.version
 
     render templateEnv $
       Package.showChangelog
@@ -461,6 +483,7 @@ showVersionChangelogHandler (Headers session _) packageNamespace packageName ver
         numberOfDependents
         package
         release.changelog
+        isLatestViableRelease
 
 listVersionsHandler
   :: ( Error ServerError :> es
@@ -494,7 +517,11 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
             Query.getNumberOfPackageDependents packageNamespace packageName Nothing
       numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements latestRelease.releaseId
       releases <- withReadOnlyPool pool $ Query.getAllReleases package.packageId
-
+      isLatestViableRelease <- do
+        result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
+        case result of
+          Nothing -> pure False
+          Just v -> pure $ v == latestRelease.version
       render templateEnv $
         Package.listVersions
           latestRelease
@@ -502,8 +529,8 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
           numberOfDependencies
           numberOfDependents
           package
-          latestRelease.synopsis
           releases
+          isLatestViableRelease
 
 constructTarballPath :: PackageName -> Version -> Text
 constructTarballPath pname v = display pname <> "-" <> display v <> ".tar.gz"
@@ -574,6 +601,6 @@ showPackageSecurityHandler (Headers session _) packageNamespace packageName =
             numberOfDependencies
             numberOfDependents
             package
-            latestRelease.synopsis
             numberOfReleases
             (Vector.reverse $ Vector.modify (MVector.sortBy (\v1 v2 -> compare v1.hsecId v2.hsecId)) advisoryPreviews)
+            True

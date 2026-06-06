@@ -99,17 +99,19 @@ showDependents
   -> Package
   -> Vector DependencyInfo
   -> Positive Word
+  -> Bool
   -> FloraHTML
-showDependents now numberOfReleases latestRelease numberOfDependencies numberOfDependents package packagesInfo currentPage = do
+showDependents now numberOfReleases latestRelease numberOfDependencies numberOfDependents package packagesInfo currentPage latestViableRelease = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
     package
-    latestRelease.synopsis
     mempty
     "dependents"
+    False
+    latestViableRelease
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependents"
     ul_ [class_ "flow", role_ "list"] $ do
@@ -143,17 +145,19 @@ showDependencies
   -> Word
   -> Package
   -> ComponentDependencies
+  -> Bool
   -> FloraHTML
-showDependencies now numberOfReleases latestRelease numberOfDependencies numberOfDependents package componentsInfo = do
+showDependencies now numberOfReleases latestRelease numberOfDependencies numberOfDependents package componentsInfo isLatestViableRelease = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
     package
-    latestRelease.synopsis
     mempty
     "dependencies"
+    True
+    isLatestViableRelease
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependencies"
     ul_ [class_ "flow", role_ "list"] $ do
@@ -165,19 +169,20 @@ listVersions
   -> Word
   -> Word
   -> Package
-  -> Text
   -> Vector Release
+  -> Bool
   -> FloraHTML
-listVersions latestRelease now numberOfDependencies numberOfDependents package synopsis releases = do
+listVersions latestRelease now numberOfDependencies numberOfDependents package releases isLatestViableRelease = do
   presentationHeader
     (fromIntegral $ Vector.length releases)
     latestRelease
     numberOfDependencies
     numberOfDependents
     package
-    synopsis
     mempty
     "versions"
+    False
+    isLatestViableRelease
 
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Version history"
@@ -283,17 +288,19 @@ showChangelog
   -> Word
   -> Package
   -> Maybe TextHtml
+  -> Bool
   -> FloraHTML
-showChangelog numberOfReleases latestRelease numberOfDependencies numberOfDependents package mChangelog = do
+showChangelog numberOfReleases latestRelease numberOfDependencies numberOfDependents package mChangelog latestViableRelease = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
     package
-    latestRelease.synopsis
     mempty
     "changelog"
+    True
+    latestViableRelease
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Changelog"
     div_ [class_ "prose"] $ do
@@ -517,20 +524,21 @@ showPackageSecurityPage
   -> Word
   -> Word
   -> Package
-  -> Text
   -> Word
   -> Vector PackageAdvisoryPreview
+  -> Bool
   -> FloraHTML
-showPackageSecurityPage latestRelease numberOfDependencies numberOfDependents package synopsis numberOfReleases advisoryPreviews = do
+showPackageSecurityPage latestRelease numberOfDependencies numberOfDependents package numberOfReleases advisoryPreviews isLatestViableRelease = do
   presentationHeader
     numberOfReleases
     latestRelease
     numberOfDependencies
     numberOfDependents
     package
-    synopsis
     mempty
     "security"
+    False
+    isLatestViableRelease
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Security Advisories"
     packageAdvisoriesListing False advisoryPreviews
@@ -610,12 +618,12 @@ presentationHeader
   -> Word
   -- ^ Number of dependents
   -> Package
-  -> Text
-  -- ^  Synopsis
   -> Vector PackageGroupName
   -> String
+  -> Bool
+  -> Bool
   -> FloraHTML
-presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} synopsis groups sectionId =
+presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} groups sectionId latestViableRelease showVersion =
   header_ [class_ "pageHead"] $ do
     div_ [class_ "wrapper flow flow--large"] $ do
       div_ [class_ "aside gap--large"] $ do
@@ -625,23 +633,28 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
               a_ [href_ (Links.namespacePage package.namespace (PositiveUnsafe 1))] (toHtml $ display namespace)
               toHtmlRaw ("&ThinSpace;/&ThinSpace;" :: Text)
             toHtml package.name
-          p_ [class_ "pageHead-subtitle text-break"] (toHtml synopsis)
+          p_ [class_ "pageHead-subtitle text-break"] (toHtml release.synopsis)
         div_ [class_ "flow flow--small self-center"] $ do
           div_ [class_ "cluster cluster--small items-end"] $ do
-            -- TODO: [non-urgent] Display for latest non-deprecated release
-            -- span_ [class_ "badge badge--big badge--green"] $ do
-            --   Icons.check
-            --   "Latest"
-            whenJust deprecationInfo $ \_ ->
-              span_ [class_ "badge badge--danger"] $ do
-                span_ [class_ "sr-only"] "Version "
-                Icons.trash
-                "Deprecated"
-            when (release.deprecated == Just True) $
-              span_ [class_ "badge badge--big badge--danger"] $ do
-                Icons.trash
-                "Deprecated"
-            span_ [class_ "title-2 text-right leading-thin"] $ toHtml release.version
+            when showVersion $ do
+              case release.deprecated of
+                Just True -> do
+                  span_ [class_ "badge badge--big badge--danger"] $ do
+                    Icons.trash
+                    "Deprecated release"
+                _ ->
+                  case deprecationInfo of
+                    Just _ ->
+                      span_ [class_ "badge badge--big badge--danger"] $ do
+                        span_ [class_ "sr-only"] "Version "
+                        Icons.trash
+                        "Deprecated package"
+                    _ -> do
+                      when latestViableRelease $
+                        span_ [class_ "badge badge--big badge--green"] $ do
+                          Icons.check
+                          "Latest"
+              span_ [class_ "title-2 text-right leading-thin"] $ toHtml release.version
       div_ [class_ "pageHead-tip"] $ do
         -- TODO: [non-urgent] Split tabs in a separate function
         nav_ [class_ "tabs", id_ "subsections", ariaLabel_ "Package sections"] $ do
