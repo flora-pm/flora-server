@@ -1,5 +1,6 @@
 module Flora.Environment
   ( getFloraEnv
+  , parseConfig
   )
 where
 
@@ -15,11 +16,24 @@ import Effectful
 import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
 import KDL qualified
+import Options.Applicative
 
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Monitoring
+
+parseConfig :: ParserInfo FilePath
+parseConfig =
+  info
+    ( helper
+        <*> strOption
+          ( long "config"
+              <> short 'c'
+              <> help "KDL configuration file"
+          )
+    )
+    $ progDesc "flora-server expects a KDL configuration file"
 
 mkPool
   :: IOE :> es

@@ -26,6 +26,7 @@ import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import RequireCallStack
+import Options.Applicative
 
 import Flora.Environment
 import Flora.Environment.Config
@@ -40,9 +41,9 @@ import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
 main :: IO ()
 main = do
-  let config = undefined
-  jobsEnv <- runEff getFloraJobsEnv
-  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv config
+  floraConfig <- execParser parseConfig
+  jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
+  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
   workerEnv <- ArbS.createSimpleEnv (Proxy @JobQueues) jobsEnv.connectionInfo "public"
   let withLogger = makeLogger floraEnv.mltp.logger

@@ -31,7 +31,7 @@ import System.Exit
 import System.IO
 
 import Flora.Database
-import Flora.Environment (getFloraEnv)
+import Flora.Environment
 import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.PackageIndex.Types
@@ -41,10 +41,10 @@ import FloraWeb.Server
 
 main :: IO ()
 main = do
-  config <- _
+  configFile <- execParser parseConfig
   hSetBuffering stdout LineBuffering
-  preFlightChecks config
-  runFlora config
+  preFlightChecks configFile
+  runFlora configFile
 
 preFlightChecks :: FilePath -> IO ()
 preFlightChecks config = do

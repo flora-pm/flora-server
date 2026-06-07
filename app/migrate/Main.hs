@@ -8,6 +8,7 @@ import Data.Text qualified as T
 import Database.PostgreSQL.Simple.Migration
 import Effectful
 import Effectful.Exception qualified as E
+import Effectful.Fail (runFailIO)
 import Effectful.Log (Log, runLog)
 import Effectful.Reader.Static
 import Effectful.Reader.Static qualified as Reader
@@ -15,14 +16,17 @@ import Log
 import Log.Backend.StandardOutput qualified as Log
 import System.Exit (exitFailure)
 import System.IO
+import Options.Applicative
 
 import Flora.Model.Job
 import FloraJobs.Environment
+import Flora.Environment
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
-  env <- runEff getFloraJobsEnv
+  config <- execParser parseConfig
+  env <- runEff . runFailIO $ getFloraJobsEnv config
   runAllMigrations
     & Reader.runReader env
     & (`E.catches` exceptionHandlers)

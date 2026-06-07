@@ -15,14 +15,12 @@ module Flora.Environment.Config
   , LoggingDestination (..)
   , Assets (..)
   , AssetBundle (..)
-  , parseConfig
   , parseTestConfig
   , parseDeploymentEnv
   , getAssets
   , getAssetHash
-  , parseJobsConfig
-  , parseJobRunnerPort
   , floraEnvDecoder
+  , floraJobsConfigDecoder
   )
 where
 
@@ -176,7 +174,7 @@ data FloraConfig = FloraConfig
 instance KDL.DecodeNode FloraConfig where
   nodeDecoder = KDL.children do
     dbConfig <- KDL.node "pool"
-    connectionInfo <- Text.encodeUtf8 <$> KDL.argAt @Text "connectionInfo"
+    connectionInfo <- Text.encodeUtf8 <$> KDL.argAt @Text "dbConnString"
     domain <- KDL.argAt "domain"
     httpPort <- KDL.argAt "httpPort"
     mltp <- KDL.node "mltp"
@@ -222,6 +220,18 @@ data FloraJobsConfig = FloraJobsConfig
   , mltp :: MLTP
   }
   deriving stock (Generic)
+
+instance KDL.DecodeNode FloraJobsConfig where
+  nodeDecoder = KDL.children do
+    dbConfig <- KDL.node "pool"
+    connectionInfo <- Text.encodeUtf8 <$> KDL.argAt @Text "dbConnString"
+    httpPort <- KDL.argAt "httpPort"
+    mltp <- KDL.node "mltp"
+    pure FloraJobsConfig{..}
+
+floraJobsConfigDecoder :: KDL.DocumentDecoder FloraJobsConfig
+floraJobsConfigDecoder = KDL.document do
+  KDL.node "jobs"
 
 parseConnectionInfo :: Parser Error ByteString
 parseConnectionInfo =
@@ -279,10 +289,6 @@ parseDomain = var str "FLORA_DOMAIN" (help "URL domain for Flora")
 parseDeploymentEnv :: Parser Error DeploymentEnv
 parseDeploymentEnv =
   var deploymentEnv "FLORA_ENVIRONMENT" (help "Name of the current environment (production, development, test)")
-
--- floraConfigDecoder :: KDL.DocumentDecoder FloraConfig
--- floraConfigDecoder = KDL.document do
---   KDL.node "db"
 
 parseConfig :: Parser Error FloraConfig
 parseConfig =

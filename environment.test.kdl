@@ -1,20 +1,20 @@
 flora {
   domain localhost
-  httpPort 8083
-  environment development
-  dbConnString #"host=localhost dbname=flora_dev port=5432"#
+  httpPort 8085
+  environment test
+  dbConnString #"host=localhost dbname=flora_test user=postgres password=postgres sslmode=allow"#
 
   pool {
     timeout 10
-    connections 50
+    connections 15
   }
 
 
   mltp {
     sentryDSN ""
-    prometheusEnabled #true
+    prometheusEnabled #false
     loggingDestination stdout
-    zipkinEnabled #true
+    zipkinEnabled #false
     zipkinHost localhost
     zipkinPort 8800
     eventlogSocket "/tmp/flora-eventlog.sock"

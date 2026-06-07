@@ -55,40 +55,40 @@ db-migrate: ## Apply database migrations
 db-reset: db-drop db-setup db-provision ## Reset the dev database
 
 db-provision: ## Create categories and repositories
-	@cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
-	@cabal run -- flora-cli provision categories
-	@cabal run -- flora-cli provision-repository --name "hackage" \
+	@cabal run -- flora-cli -c environment.kdl create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
+	@cabal run -- flora-cli -c environment.kdl provision categories
+	@cabal run -- flora-cli -c environment.kdl provision-repository --name "hackage" \
 			--url https://hackage.haskell.org \
 			--description "Central package repository"
-	@cabal run -- flora-cli provision-repository --name "cardano" \
+	@cabal run -- flora-cli -c environment.kdl provision-repository --name "cardano" \
 			--url https://chap.intersectmbo.org \
 			--description "Packages of the Cardano project"
-	@cabal run -- flora-cli provision-repository --name "horizon" \
+	@cabal run -- flora-cli -c environment.kdl provision-repository --name "horizon" \
 			--url https://packages.horizon-haskell.net \
 			--description "Packages of the Horizon project"
-	@cabal run -- flora-cli provision-repository --name "mlabs" \
+	@cabal run -- flora-cli -c environment.kdl provision-repository --name "mlabs" \
 			--url https://plutonomicon.github.io/plutarch-plutus \
 			--description "Packages of the MLabs Cardano ecosystem"
-	@cabal run -- flora-cli index-dependency --name "cardano"\
+	@cabal run -- flora-cli -c environment.kdl index-dependency --name "cardano"\
 			--depends-on "hackage" \
 			--priority 1
-	@cabal run -- flora-cli index-dependency --name "horizon"\
+	@cabal run -- flora-cli -c environment.kdl index-dependency --name "horizon"\
 			--depends-on "hackage" \
 			--priority 1
-	@cabal run -- flora-cli index-dependency --name "mlabs" \
+	@cabal run -- flora-cli -c environment.kdl index-dependency --name "mlabs" \
 			--depends-on "cardano" \
 			--priority 1
-	@cabal run -- flora-cli index-dependency --name "mlabs" \
+	@cabal run -- flora-cli -c environment.kdl index-dependency --name "mlabs" \
 			--depends-on "hackage" \
 			--priority 2
 
 db-provision-advisories: ## Load HSEC advisories in the database
-	@cabal run -- flora-cli provision advisories
+	@cabal run -- flora-cli -c environment.kdl provision advisories
 
 db-provision-packages: ## Load development data in the dev database
-	@cabal run -- flora-cli provision test-packages --repository "hackage"
-	@cabal run -- flora-cli provision test-packages --repository "cardano"
-	@cabal run -- flora-cli provision test-packages --repository "mlabs"
+	@cabal run -- flora-cli -c environment.kdl provision test-packages --repository "hackage"
+	@cabal run -- flora-cli -c environment.kdl provision test-packages --repository "cardano"
+	@cabal run -- flora-cli -c environment.kdl provision test-packages --repository "mlabs"
 
 db-test-create: ## Create the test database
 	./scripts/run-with-test-config.sh db-create
@@ -104,7 +104,32 @@ db-test-migrate: ## Apply test database migrations
 db-test-reset: db-test-drop db-test-setup db-test-provision ## Reset the test database
 
 db-test-provision: ## Create categories and repositories
-	./scripts/run-with-test-config.sh db-provision
+	@cabal run -- flora-cli -c environment.test.kdl create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
+	@cabal run -- flora-cli -c environment.test.kdl provision categories
+	@cabal run -- flora-cli -c environment.test.kdl provision-repository --name "hackage" \
+			--url https://hackage.haskell.org \
+			--description "Central package repository"
+	@cabal run -- flora-cli -c environment.test.kdl provision-repository --name "cardano" \
+			--url https://chap.intersectmbo.org \
+			--description "Packages of the Cardano project"
+	@cabal run -- flora-cli -c environment.test.kdl provision-repository --name "horizon" \
+			--url https://packages.horizon-haskell.net \
+			--description "Packages of the Horizon project"
+	@cabal run -- flora-cli -c environment.test.kdl provision-repository --name "mlabs" \
+			--url https://plutonomicon.github.io/plutarch-plutus \
+			--description "Packages of the MLabs Cardano ecosystem"
+	@cabal run -- flora-cli -c environment.test.kdl index-dependency --name "cardano"\
+			--depends-on "hackage" \
+			--priority 1
+	@cabal run -- flora-cli -c environment.test.kdl index-dependency --name "horizon"\
+			--depends-on "hackage" \
+			--priority 1
+	@cabal run -- flora-cli -c environment.test.kdl index-dependency --name "mlabs" \
+			--depends-on "cardano" \
+			--priority 1
+	@cabal run -- flora-cli -c environment.test.kdl index-dependency --name "mlabs" \
+			--depends-on "hackage" \
+			--priority 2
 
 db-test-provision-advisories: ## Load HSEC advisories in the test database
 	./scripts/run-with-test-config.sh db-provision-advisories
@@ -113,7 +138,7 @@ db-test-provision-packages: ## Load development data in the database
 	./scripts/run-with-test-config.sh db-provision-packages
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
-	@cabal run -- flora-cli import-packages ./01-index
+	@cabal run -- flora-cli -c environment.kdl import-packages ./01-index
 
 repl: ## Start a cabal REPL
 	@cabal repl lib:flora
@@ -130,7 +155,7 @@ watch-test: ## Load the tests in ghcid and reload them on file change
 	./scripts/run-tests.sh --watch
 
 watch-server: ## Start flora-server in ghcid
-	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora'
+	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora "environment.kdl"'
 
 lint-hs: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
@@ -173,7 +198,7 @@ tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c src app
 
 design-system: ## Generate the HTML components used by the design system
-	@cabal run -- flora-cli gen-design-system
+	@cabal run -- flora-cli -c environment.kdl gen-design-system
 
 start-design-system: ## Start storybook.js
 	@cd design; yarn storybook
