@@ -28,6 +28,10 @@ cabal install hlint cabal-gild ghcid ghc-tags --semaphore -j
 * `esbuild`: The tool that handles asset bundling
 * `changelog-d` v1.0: https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0
 
+### Notes on MacOS
+
+* `cabal.project.freeze` is not portable, so make sure to delete it before running `make build`, if not using the Docker-based setup.
+
 ### Questions
 
 Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
