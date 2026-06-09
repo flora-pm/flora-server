@@ -6,7 +6,6 @@ ARG GHCID_VERSION=0.8.9
 ARG GHC_TAGS_VERSION=1.9
 ARG GHC_VERSION=9.10.3
 ARG HLINT_VERSION=3.10
-ARG HLS_VERSION=2.14.0.0
 ARG CABAL_GILD_VERSION=1.6.0.2
 
 # This stage installs libraries required to install GHC and other tools
