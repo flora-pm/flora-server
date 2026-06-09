@@ -12,6 +12,7 @@ import Effectful
 import Effectful.Concurrent (forkIO, runConcurrent)
 import Effectful.Fail
 import Effectful.FileSystem
+import Effectful.Log
 import Effectful.Log qualified as Log
 import Effectful.Prometheus (runPrometheusMetrics)
 import Log
@@ -23,6 +24,7 @@ import Network.Wai.Handler.Warp
   , setPort
   )
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
+import NoThunks.Class
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import RequireCallStack
@@ -52,6 +54,8 @@ main = do
         void $ P.register P.ghcMetrics
         setGitHash
     withLogger $ \logger -> do
+      runLog "flora-server" logger Log.LogTrace $
+        checkJobsEnvForThunks jobsEnv
       void . forkIO $ runServer logger floraEnv jobsEnv
       defaultConfig <- liftIO $ Worker.defaultWorkerConfig jobsEnv.connectionInfo 50 (processJob workerEnv jobsEnv logger floraEnv)
       let config =
@@ -111,3 +115,14 @@ processJob workerEnv jobsRunnerEnv logger floraEnv _conn job =
         floraEnv
         logger
         (Log.localDomain "job-runner" $ Runner.runner workerEnv job)
+
+checkJobsEnvForThunks :: (IOE :> es, Log :> es) => FloraJobsEnv -> Eff es ()
+checkJobsEnvForThunks env = do
+  mThunk <- liftIO $ noThunks [] env
+  forM_ mThunk $ \info ->
+    Log.logAttention
+      "Unexpected thunk detected in JobsEnv (possible space leak): "
+      $ object
+        [ "thunk_context" .= info.thunkContext
+        , "thunk_info" .= info.thunkInfo
+        ]

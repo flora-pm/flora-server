@@ -1,3 +1,6 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module FloraJobs.Environment
   ( FloraJobsEnv (..)
   , getFloraJobsEnv
@@ -13,9 +16,13 @@ import Env (parse)
 import GHC.Generics
 import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Client.TLS
+import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
 
 import Flora.Environment.Config
+import Flora.Environment.Env ()
 import FloraJobs.Metrics
+
+deriving via OnlyCheckWhnf HTTP.Manager instance NoThunks HTTP.Manager
 
 data FloraJobsEnv = FloraJobsEnv
   { pool :: Pool PG.Connection
@@ -26,6 +33,7 @@ data FloraJobsEnv = FloraJobsEnv
   , mltp :: MLTP
   }
   deriving stock (Generic)
+  deriving anyclass (NoThunks)
 
 getFloraJobsEnv :: IOE :> es => Eff es FloraJobsEnv
 getFloraJobsEnv = do

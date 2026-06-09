@@ -23,6 +23,7 @@ import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
+import Flora.NoThunksSpec qualified as NoThunksSpec
 import Flora.PackageGroupSpec qualified as PackageGroupSpec
 import Flora.PackageSpec qualified as PackageSpec
 import Flora.SearchSpec qualified as SearchSpec
@@ -61,6 +62,7 @@ specs fixtures =
   , CategorySpec.spec
   , FeedSpec.spec
   , ImportSpec.spec
+  , NoThunksSpec.spec
   , PackageGroupSpec.spec
   , PackageSpec.spec
   , SearchSpec.spec
