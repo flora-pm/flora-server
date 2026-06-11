@@ -6,6 +6,7 @@ module FloraWeb.Pages.Templates.Screens.Packages
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Data.Function ((&))
+import Data.List qualified as List
 import Data.Maybe (fromMaybe, isJust)
 import Data.Text (Text)
 import Data.Text.Display
@@ -39,34 +40,36 @@ showPackage
   -> Vector PackageGroupName
   -> Maybe (Vector Text)
   -> Maybe PackageUploader
+  -> Bool
   -> FloraHTML
 showPackage
-  latestRelease
+  release
   packageReleases
   numberOfReleases
-  package@Package{namespace, name}
+  package
   packageIndexURL
   numberOfDependents
   numberOfDependencies
   categories
   groups
   activeMaintainers
-  mUploader = do
+  mUploader
+  isLatestViableRelease = do
     presentationHeader
       numberOfReleases
-      latestRelease
+      release
       numberOfDependencies
       numberOfDependents
-      namespace
-      name
-      latestRelease.synopsis
+      package
       groups
       "about"
+      isLatestViableRelease
+      True
     div_ [class_ "wrapper inset-large"] $ do
       packageBody
         package
         packageIndexURL
-        latestRelease
+        release
         packageReleases
         categories
         (fmap Vector.length activeMaintainers)
@@ -173,10 +176,9 @@ renderCategory :: Category -> FloraHTML
 renderCategory Category{name, slug} = do
   let resource = "/categories/" <> slug
   a_ [href_ resource] (toHtml name)
-  ", " -- TODO: Not display comma after last category
 
 displayCategories :: Vector Category -> FloraHTML
-displayCategories categories = foldMap renderCategory categories
+displayCategories categories = mconcat $ List.intersperse ", " (Vector.toList $ fmap renderCategory categories)
 
 displayMaintainer
   :: Namespace
