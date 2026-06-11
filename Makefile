@@ -50,7 +50,7 @@ db-drop: ## Drop the database
 	@dropdb -f --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
 
 db-migrate: ## Apply database migrations
-	@cabal run -- flora-migrate
+	@cabal run -- flora-migrate -c environment.kdl
 
 db-reset: db-drop db-setup db-provision ## Reset the dev database
 
@@ -91,15 +91,15 @@ db-provision-packages: ## Load development data in the dev database
 	@cabal run -- flora-cli -c environment.kdl provision test-packages --repository "mlabs"
 
 db-test-create: ## Create the test database
-	./scripts/run-with-test-config.sh db-create
+	@createdb -h localhost -p 5432 -U postgres flora_test
 
 db-test-setup: db-test-create db-test-migrate ## Setup the dev database
 
 db-test-drop: ## Drop the test database
-	./scripts/run-with-test-config.sh db-drop
+	@dropdb -f --if-exists -h localhost -p 5432 -U postgres flora_test
 
 db-test-migrate: ## Apply test database migrations
-	./scripts/run-with-test-config.sh db-migrate
+	@cabal run -- flora-migrate -- -c environment.test.kdl
 
 db-test-reset: db-test-drop db-test-setup db-test-provision ## Reset the test database
 
@@ -132,10 +132,12 @@ db-test-provision: ## Create categories and repositories
 			--priority 2
 
 db-test-provision-advisories: ## Load HSEC advisories in the test database
-	./scripts/run-with-test-config.sh db-provision-advisories
+	@cabal run -- flora-cli -c environment.test.kdl provision advisories
 
 db-test-provision-packages: ## Load development data in the database
-	./scripts/run-with-test-config.sh db-provision-packages
+	@cabal run -- flora-cli -c environment.test.kdl provision test-packages --repository "hackage"
+	@cabal run -- flora-cli -c environment.test.kdl provision test-packages --repository "cardano"
+	@cabal run -- flora-cli -c environment.test.kdl provision test-packages --repository "mlabs"
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
 	@cabal run -- flora-cli -c environment.kdl import-packages ./01-index
@@ -149,10 +151,10 @@ watch: ## Load the main library and reload on file change
 	@ghcid --target flora-server --restart="src" -l
 
 test:  ## Run the test suite
-	./scripts/run-tests.sh
+	@cabal test --test-options="-c environment.test.kdl"
 
 watch-test: ## Load the tests in ghcid and reload them on file change
-	./scripts/run-tests.sh --watch
+	@ghcid --command='cabal v2-repl flora-test' --test 'Main.main' --setup ':set args -c environment.test.kdl'
 
 watch-server: ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora "environment.kdl"'

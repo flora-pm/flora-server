@@ -14,13 +14,13 @@ import Effectful.Reader.Static
 import Effectful.Reader.Static qualified as Reader
 import Log
 import Log.Backend.StandardOutput qualified as Log
+import Options.Applicative
 import System.Exit (exitFailure)
 import System.IO
-import Options.Applicative
 
+import Flora.Environment
 import Flora.Model.Job
 import FloraJobs.Environment
-import Flora.Environment
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do

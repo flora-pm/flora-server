@@ -23,10 +23,10 @@ import Network.Wai.Handler.Warp
   , setPort
   )
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
+import Options.Applicative
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import RequireCallStack
-import Options.Applicative
 
 import Flora.Environment
 import Flora.Environment.Config

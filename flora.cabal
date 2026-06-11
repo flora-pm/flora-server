@@ -692,6 +692,7 @@ test-suite flora-test
   import: common-extensions
   import: common-ghc-options
   import: common-rts-options
+  ghc-options: -Werror=unused-imports
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
@@ -720,6 +721,7 @@ test-suite flora-test
     log-effectful,
     monad-time-effectful,
     optics-core,
+    optparse-applicative,
     pg-entity,
     postgresql-migration,
     postgresql-simple,

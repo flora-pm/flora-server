@@ -9,11 +9,11 @@ import Data.Pool qualified as Pool
 import Data.Word
 import Database.PostgreSQL.Simple qualified as PG
 import Effectful
+import Effectful.Fail (Fail)
 import GHC.Generics
 import KDL qualified
 import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Client.TLS
-import Effectful.Fail (Fail)
 
 import Flora.Environment.Config
 import FloraJobs.Metrics
