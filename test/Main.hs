@@ -9,8 +9,8 @@ import Effectful.PostgreSQL
 import Options.Applicative
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
-import System.IO
 import System.Environment (withArgs)
+import System.IO
 import Test.Tasty
 
 import Flora.BlobSpec qualified as BlobSpec
@@ -35,7 +35,7 @@ import Flora.UserSpec qualified as UserSpec
 main :: IO ()
 main = provideCallStack $ do
   hSetBuffering stdout LineBuffering
-  configFile <- execParser parseConfig
+  (configFile, tastyArgs) <- customExecParser defaultPrefs $ info parser forwardOptions
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv configFile
   fixtures <-
     runTestEff
@@ -54,9 +54,11 @@ main = provideCallStack $ do
       )
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
-  withArgs [] $
+  withArgs tastyArgs $
     defaultMain $
       testGroup "Flora Tests" spec
+  where
+    parser = (,) <$> infoParser parseConfig <*> many (strArgument mempty)
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =
