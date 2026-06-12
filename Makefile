@@ -44,10 +44,10 @@ db-stop:
 db-setup: db-create db-migrate ## Setup the dev database
 
 db-create: ## Create the database
-	@createdb -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
+	@cabal run -- flora-cli -c environment.kdl create-db
 
 db-drop: ## Drop the database
-	@dropdb -f --if-exists -h $(FLORA_DB_HOST) -p $(FLORA_DB_PORT) -U $(FLORA_DB_USER) $(FLORA_DB_DATABASE)
+	@cabal run -- flora-cli -c environment.kdl drop-db
 
 db-migrate: ## Apply database migrations
 	@cabal run -- flora-migrate -c environment.kdl
@@ -91,12 +91,12 @@ db-provision-packages: ## Load development data in the dev database
 	@cabal run -- flora-cli -c environment.kdl provision test-packages --repository "mlabs"
 
 db-test-create: ## Create the test database
-	@createdb -h localhost -p 5432 -U postgres flora_test
+	@cabal run -- flora-cli -c environment.test.kdl create-db
 
 db-test-setup: db-test-create db-test-migrate ## Setup the dev database
 
 db-test-drop: ## Drop the test database
-	@dropdb -f --if-exists -h localhost -p 5432 -U postgres flora_test
+	@cabal run -- flora-cli -c environment.test.kdl drop-db
 
 db-test-migrate: ## Apply test database migrations
 	@cabal run -- flora-migrate -- -c environment.test.kdl

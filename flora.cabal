@@ -677,6 +677,7 @@ executable flora-cli
     monad-time-effectful,
     optics-core,
     optparse-applicative,
+    process,
     prometheus-effectful,
     require-callstack,
     sel,

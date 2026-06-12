@@ -3,7 +3,8 @@ module Main where
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad.Extra (forM_, unlessM)
 import Data.Bifunctor
-import Data.ByteString.Lazy.Char8 qualified as BS
+import Data.ByteString.Char8 qualified as BS
+import Data.ByteString.Lazy.Char8 qualified as BSL
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set (Set)
 import Data.Text (Text)
@@ -36,6 +37,7 @@ import Sel.Hashing.Password qualified as Sel
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
 import System.IO
+import System.Process (callProcess)
 import Text.Read (readMaybe)
 
 import Advisories.Import (importAdvisories)
@@ -44,6 +46,7 @@ import Data.Positive
 import DesignSystem (generateComponents)
 import Flora.Database
 import Flora.Environment (getFloraEnv)
+import Flora.Environment.Config (FloraConfig (..))
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
@@ -81,6 +84,8 @@ data Command
       -- ^ Dependency name
       (Positive Word)
       -- ^ Priority
+  | CreateDB
+  | DropDB
   deriving stock (Eq, Show)
 
 data ProvisionTarget
@@ -166,6 +171,8 @@ parseCommand =
             `withInfo` "Import a single package tarball, useful for testing"
         )
       <> command "index-dependency" (parseIndexDependency `withInfo` "Declare the dependency of an index on another index, with priority")
+      <> command "create-db" (pure CreateDB `withInfo` "Create the application database")
+      <> command "drop-db" (pure DropDB `withInfo` "Drop the application database")
 
 parseProvision :: Parser Command
 parseProvision =
@@ -285,6 +292,12 @@ runCommand _ (ProvisionRepository name url description) = do
   FloraEnv{pool} <- Reader.ask
   withReadWritePool pool $ Update.upsertPackageIndex name url description Nothing
 runCommand _ (ImportPackageTarball pname version path) = importPackageTarball (Namespace "hackage") pname version path
+runCommand _ CreateDB = do
+  FloraEnv{config = FloraConfig{connectionInfo}} <- Reader.ask
+  liftIO $ callProcess "createdb" [BS.unpack connectionInfo]
+runCommand _ DropDB = do
+  FloraEnv{config = FloraConfig{connectionInfo}} <- Reader.ask
+  liftIO $ callProcess "dropdb" ["--if-exists", BS.unpack connectionInfo]
 runCommand _ (IndexDependency indexName dependencyName priority) = do
   FloraEnv{pool} <- Reader.ask
   index <- withReadOnlyPool pool $ guardThatPackageIndexExists indexName (error $ Text.unpack indexName <> " does not exist in database!")
@@ -340,7 +353,7 @@ importPackageTarball
   -> FloraM es ()
 importPackageTarball namespace pname version path = do
   FloraEnv{pool} <- Reader.ask
-  contents <- liftIO $ GZip.decompress <$> BS.readFile path
+  contents <- liftIO $ GZip.decompress <$> BSL.readFile path
   res <- withReadWritePool pool $ Update.insertTar namespace pname version contents
   case res of
     Right hash -> Log.logInfo_ $ "Insert tarball with root hash: " <> display hash
