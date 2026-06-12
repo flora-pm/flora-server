@@ -11,35 +11,35 @@
 .alert--brand {
 	--alert-color: var(--color-text-brand);
 	--alert-bg: var(--color-surface-brand);
-	--alert-border-color: oklch(from var(--color-surface-brand) calc(l - 0.15) calc(c + 0.025) h);
+	--alert-border-color: var(--color-border-brand);
 	text-decoration-color: currentcolor;
 }
 
 .alert--green {
 	--alert-color: var(--color-text-valid);
 	--alert-bg: var(--color-surface-valid);
-	--alert-border-color: oklch(from var(--color-surface-valid) calc(l - 0.15) calc(c + 0.025) h);
+	--alert-border-color: var(--color-border-valid);
 	text-decoration-color: currentcolor;
 }
 
 .alert--info {
 	--alert-color: var(--color-text-informational);
 	--alert-bg: var(--color-surface-informational);
-	--alert-border-color: oklch(from var(--color-surface-informational) calc(l - 0.15) calc(c + 0.025) h);
+	--alert-border-color: var(--color-border-informational);
 	text-decoration-color: currentcolor;
 }
 
 .alert--warning {
 	--alert-color: var(--color-text-warning);
 	--alert-bg: var(--color-surface-warning);
-	--alert-border-color: oklch(from var(--color-surface-warning) calc(l - 0.15) calc(c + 0.025) h);
+	--alert-border-color: var(--color-border-warning);
 	text-decoration-color: currentcolor;
 }
 
 .alert--danger {
 	--alert-color: var(--color-text-danger);
 	--alert-bg: var(--color-surface-danger);
-	--alert-border-color: oklch(from var(--color-surface-danger) calc(l - 0.15) calc(c + 0.025) h);
+	--alert-border-color: var(--color-border-danger);
 	--color-underline-default: currentcolor;
 }
 

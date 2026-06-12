@@ -132,6 +132,11 @@
 	--color-surface-warning-interact: oklch(94% .064 var(--hue-warning));
 	--color-surface-danger-interact: oklch(94% .064 var(--hue-danger));
 
+	--color-border-brand: oklch(from var(--color-surface-brand) calc(l - 0.15) calc(c + 0.025) h);
+	--color-border-valid: oklch(from var(--color-surface-valid) calc(l - 0.15) calc(c + 0.025) h);
+	--color-border-informational: oklch(from var(--color-surface-informational) calc(l - 0.15) calc(c + 0.025) h);
+	--color-border-warning: oklch(from var(--color-surface-warning) calc(l - 0.15) calc(c + 0.025) h);
+	--color-border-danger: oklch(from var(--color-surface-danger) calc(l - 0.15) calc(c + 0.025) h);
 
 	--color-underline-default: oklch(65% .2 var(--hue-brand));
 	--color-underline-secondary: oklch(75% .08 var(--hue-brand));
