@@ -15,7 +15,7 @@
 	text-decoration-color: currentcolor;
 }
 
-.alert--green {
+.alert--valid {
 	--alert-color: var(--color-text-valid);
 	--alert-bg: var(--color-surface-valid);
 	--alert-border-color: var(--color-border-valid);

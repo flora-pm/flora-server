@@ -213,7 +213,7 @@ versionListItem now namespace packageName release = do
               Icons.trash
               "Deprecated"
       -- TODO: [non-urgent] Display on latest non-deprecated release
-      -- span_ [class_ "badge badge--green"] $ do
+      -- span_ [class_ "badge badge--valid"] $ do
       --   "Latest Release"
       ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
         uploadedAt
@@ -651,7 +651,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
                         "Deprecated package"
                     _ -> do
                       when latestViableRelease $
-                        span_ [class_ "badge badge--big badge--green"] $ do
+                        span_ [class_ "badge badge--big badge--valid"] $ do
                           Icons.check
                           "Latest"
               span_ [class_ "title-2 text-right leading-thin"] $ toHtml release.version

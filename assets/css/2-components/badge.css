@@ -21,13 +21,15 @@
 	font-size: 1em;
 }
 
+/* Styles */
+
 .badge--brand {
 	--badge-bg: var(--color-surface-brand);
 	--badge-color: var(--color-text-brand);
 	--badge-border-color: var(--color-border-brand);
 }
 
-.badge--green {
+.badge--valid {
 	--badge-bg: var(--color-surface-valid);
 	--badge-color: var(--color-text-valid);
 	--badge-border-color: var(--color-border-valid);
@@ -50,6 +52,8 @@
 	--badge-color: var(--color-text-danger);
 	--badge-border-color: var(--color-border-danger);
 }
+
+/* Content */
 
 .badge .icon {
 	margin-block-start: revert;
