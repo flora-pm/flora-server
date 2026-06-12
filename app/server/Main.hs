@@ -60,8 +60,8 @@ preFlightChecks config = do
           Log.LogTrace
         $ provideCallStack
         $ do
-          withReadOnlyPool env.pool $ checkExpectedTables
-          withReadOnlyPool env.pool $ checkRepositoriesAreConfigured
+          withReadOnlyPool env.pool checkExpectedTables
+          withReadOnlyPool env.pool checkRepositoriesAreConfigured
           checkIfIndexRefreshJobIsPlanned env.workerEnv
 
 checkExpectedTables :: (IOE :> es, IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es) => FloraM es ()

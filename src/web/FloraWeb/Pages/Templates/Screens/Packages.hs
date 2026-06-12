@@ -109,7 +109,7 @@ packageBody
                   let formattedTime = display (Time.formatTime Time.defaultTimeLocale "%_d %b %Y" timestamp)
                   time_ [datetime_ formattedTime, title_ ("Uploaded: " <> timeLabelFull)] (toHtml formattedTime)
                   whenJust mUploader $ \uploader -> do
-                    ", by " <> (toHtml uploader.username)
+                    ", by " <> toHtml uploader.username
             li_ [class_ "cluster cluster--tiny cluster--nowrap cluster--stretch text-break"] $ do
               span_ [class_ "sr-only"] "License"
               span_ [class_ "color-quaternary"] Icons.scale

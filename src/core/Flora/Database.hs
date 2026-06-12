@@ -80,7 +80,7 @@ unliftedWithResource accessMode loggerEnv pool action = withRunInIO $ \io ->
             , "label" .= resource.poolLabel
             , "available" .= resource.availableResources
             , "time" .= resource.acquisitionTime
-            , "acquisition" .= show (resource.acquisition)
+            , "acquisition" .= show resource.acquisition
             , "access_mode" .= display accessMode
             ]
     io $ action resource.resource

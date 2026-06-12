@@ -12,7 +12,9 @@ import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
 import Data.Pool qualified as Pool
+import Data.Text qualified as Text
 import Data.Text.Display (display)
+import Data.Text.Encoding qualified as Text
 import Effectful
 import Effectful.Concurrent
 import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
@@ -64,7 +66,7 @@ import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..))
+import Flora.Environment.Config (ConnectionInfo (..), DeploymentEnv (..), FloraConfig (..))
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
@@ -180,7 +182,24 @@ runServer appLogger floraEnv traceRunner = do
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   ioref <- liftIO $ newIORef True
-  arbiterConfig <- liftIO $ ArbS.initArbiterServer (Proxy @JobQueues) floraEnv.config.connectionInfo "public"
+  let connectionInfo = floraEnv.config.connectionInfo
+  arbiterConfig <-
+    liftIO $
+      ArbS.initArbiterServer
+        (Proxy @JobQueues)
+        ( Text.encodeUtf8 $
+            "host="
+              <> connectionInfo.connectHost
+              <> " port="
+              <> Text.pack (show connectionInfo.connectPort)
+              <> " user="
+              <> connectionInfo.connectUser
+              <> " password="
+              <> connectionInfo.connectPassword
+              <> " dbname="
+              <> connectionInfo.connectDatabase
+        )
+        "public"
   let server = mkServer arbiterConfig appLogger webEnvStore floraEnv ioref traceRunner
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $

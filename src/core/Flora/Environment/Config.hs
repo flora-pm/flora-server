@@ -1,10 +1,8 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
   ( FloraConfig (..)
-  , FloraJobsConfig (..)
   , MLTP (..)
   , FeatureConfig (..)
   , ConnectionInfo (..)
@@ -16,14 +14,12 @@ module Flora.Environment.Config
   , getAssets
   , getAssetHash
   , floraEnvDecoder
-  , floraJobsConfigDecoder
   )
 where
 
 import Control.Monad (mfilter, when)
 import Data.Aeson qualified as Aeson
 import Data.Base64.Types qualified as Base64
-import Data.ByteString (ByteString, StrictByteString)
 import Data.ByteString.Base64 qualified as Base64
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -32,7 +28,6 @@ import Data.Scientific (toBoundedInteger)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (Display (..))
-import Data.Text.Encoding qualified as Text
 import Data.Time (NominalDiffTime)
 import Data.Typeable (Typeable)
 import Data.Word (Word16)
@@ -123,7 +118,7 @@ mltpDecoder = KDL.children do
   zipkinHost <- KDL.optional $ KDL.argAt "zipkinHost"
   zipkinPort <- fmap toEnum <$> KDL.optional (KDL.argAt "zipkinPort")
   eventlogSocket <- KDL.optional $ KDL.argAt "eventlogSocket"
-  pure MLTP{..}
+  pure MLTP{sentryDSN, prometheusEnabled, logger, zipkinEnabled, zipkinHost, zipkinPort, eventlogSocket}
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
@@ -135,30 +130,42 @@ featureConfigDecoder :: KDL.NodeDecoder FeatureConfig
 featureConfigDecoder = KDL.children do
   tarballsEnabled <- KDL.argAt "tarballsEnabled"
   blobStoreFS <- KDL.argAt "blobStoreFilePath"
-  pure FeatureConfig{..}
+  pure FeatureConfig{tarballsEnabled, blobStoreFS}
 
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
   { dbConfig :: PoolConfig
-  , connectionInfo :: ByteString
+  , connectionInfo :: ConnectionInfo
   , domain :: Text
   , httpPort :: Word16
+  , jobsHttpPort :: Word16
   , mltp :: MLTP
   , features :: FeatureConfig
   , environment :: DeploymentEnv
   }
   deriving stock (Generic, Show)
 
+connectionInfoDecoder :: KDL.NodeDecoder ConnectionInfo
+connectionInfoDecoder = KDL.children do
+  connectHost <- KDL.argAt "host"
+  connectPort <- KDL.argAt "port"
+  connectUser <- KDL.argAt "user"
+  connectPassword <- KDL.argAt "password"
+  connectDatabase <- KDL.argAt "dbname"
+  sslMode <- fromMaybe "prefer" <$> KDL.optional (KDL.argAt "sslmode")
+  pure ConnectionInfo{connectHost, connectPort, connectUser, connectPassword, connectDatabase, sslMode}
+
 floraConfigDecoder :: KDL.NodeDecoder FloraConfig
 floraConfigDecoder = KDL.children do
   dbConfig <- KDL.nodeWith "pool" poolConfigDecoder
-  connectionInfo <- Text.encodeUtf8 <$> KDL.argAt @Text "dbConnString"
+  connectionInfo <- KDL.nodeWith "db" connectionInfoDecoder
   domain <- KDL.argAt "domain"
   httpPort <- KDL.argAt "httpPort"
+  jobsHttpPort <- KDL.argAt "jobsHttpPort"
   mltp <- KDL.nodeWith "mltp" mltpDecoder
   features <- fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing}) <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
   environment <- KDL.argAtWith "environment" deploymentEnvDecoder
-  pure FloraConfig{..}
+  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment}
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
@@ -177,31 +184,11 @@ poolConfigDecoder :: KDL.NodeDecoder PoolConfig
 poolConfigDecoder = KDL.children do
   connectionTimeout <- KDL.argAtWith "timeout" nominalDiffTimeDecoder
   connections <- KDL.argAt "connections"
-  pure PoolConfig{..}
+  pure PoolConfig{connectionTimeout, connections}
 
 floraEnvDecoder :: KDL.DocumentDecoder FloraConfig
 floraEnvDecoder = KDL.document do
   KDL.nodeWith "flora" floraConfigDecoder
-
-data FloraJobsConfig = FloraJobsConfig
-  { dbConfig :: PoolConfig
-  , connectionInfo :: StrictByteString
-  , httpPort :: Word16
-  , mltp :: MLTP
-  }
-  deriving stock (Generic)
-
-floraJobsConfigNodeDecoder :: KDL.NodeDecoder FloraJobsConfig
-floraJobsConfigNodeDecoder = KDL.children do
-  dbConfig <- KDL.nodeWith "pool" poolConfigDecoder
-  connectionInfo <- Text.encodeUtf8 <$> KDL.argAt @Text "dbConnString"
-  httpPort <- KDL.argAt "httpPort"
-  mltp <- KDL.nodeWith "mltp" mltpDecoder
-  pure FloraJobsConfig{..}
-
-floraJobsConfigDecoder :: KDL.DocumentDecoder FloraJobsConfig
-floraJobsConfigDecoder = KDL.document do
-  KDL.nodeWith "jobs" floraJobsConfigNodeDecoder
 
 getAssets :: (Fail :> es, FileSystem :> es, IOE :> es) => DeploymentEnv -> Eff es Assets
 getAssets environment =

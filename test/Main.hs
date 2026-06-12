@@ -17,7 +17,7 @@ import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Database
-import Flora.Environment (getFloraEnv, parseConfig)
+import Flora.Environment (configFileParser, getFloraEnv)
 import Flora.Environment.Env
 import Flora.FeedSpec qualified as FeedSpec
 import Flora.Import.Categories (importCategories)
@@ -35,7 +35,7 @@ import Flora.UserSpec qualified as UserSpec
 main :: IO ()
 main = provideCallStack $ do
   hSetBuffering stdout LineBuffering
-  (configFile, tastyArgs) <- customExecParser defaultPrefs $ info parser forwardOptions
+  (configFile, tastyArgs) <- execParser $ info parser forwardOptions
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv configFile
   fixtures <-
     runTestEff
@@ -58,7 +58,7 @@ main = provideCallStack $ do
     defaultMain $
       testGroup "Flora Tests" spec
   where
-    parser = (,) <$> infoParser parseConfig <*> many (strArgument mempty)
+    parser = (,) <$> configFileParser <*> many (strArgument mempty)
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =

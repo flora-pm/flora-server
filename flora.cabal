@@ -601,6 +601,7 @@ executable flora-migrate
   build-depends:
     arbiter-migrations,
     base,
+    effectful,
     effectful-core,
     effectful-plugin,
     effectful-postgresql,
@@ -625,6 +626,7 @@ executable flora-jobs-runner
     arbiter-simple,
     arbiter-worker,
     base,
+    bytestring,
     effectful,
     effectful-core,
     effectful-plugin,

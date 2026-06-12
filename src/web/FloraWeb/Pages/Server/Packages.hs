@@ -210,7 +210,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
       if package.namespace == Namespace "hackage"
         then withReadOnlyPool pool $ Just <$> Query.getActiveMaintainers package.packageId
         else pure Nothing
-    mUploader <- join <$> (traverse (\u -> withReadOnlyPool pool $ Query.getPackageUploaderById u) release.uploaderId)
+    mUploader <- join <$> traverse (\u -> withReadOnlyPool pool $ Query.getPackageUploaderById u) release.uploaderId
 
     let templateEnv =
           templateEnv'

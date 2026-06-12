@@ -3,7 +3,6 @@ module Main where
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad.Extra (forM_, unlessM)
 import Data.Bifunctor
-import Data.ByteString.Char8 qualified as BS
 import Data.ByteString.Lazy.Char8 qualified as BSL
 import Data.List.NonEmpty (NonEmpty)
 import Data.Set (Set)
@@ -34,6 +33,7 @@ import Optics.Core
 import Options.Applicative
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
+import System.Environment (setEnv)
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
 import System.IO
@@ -45,8 +45,8 @@ import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
 import DesignSystem (generateComponents)
 import Flora.Database
-import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (FloraConfig (..))
+import Flora.Environment (configFileParser, getFloraEnv)
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
@@ -147,15 +147,7 @@ main = Log.withStdOutLogger $ \logger -> do
 
 parseOptions :: Parser Options
 parseOptions =
-  Options <$> parseCommand <*> parseConfig
-
-parseConfig :: Parser FilePath
-parseConfig =
-  strOption
-    ( long "config"
-        <> short 'c'
-        <> help "KDL configuration file"
-    )
+  Options <$> parseCommand <*> configFileParser
 
 parseCommand :: Parser Command
 parseCommand =
@@ -267,24 +259,21 @@ runCommand _ (Provision (TestPackages repository)) = do
     else error $ "Could not find " <> indexArchivePath
 runCommand _ (CreateUser opts) = do
   FloraEnv{pool} <- Reader.ask
-  let username = opts ^. #username
-      email = opts ^. #email
-      canLogin = opts ^. #canLogin
-  mUser <- withReadOnlyPool pool $ Query.getUserByEmail email
+  mUser <- withReadOnlyPool pool $ Query.getUserByEmail opts.email
   case mUser of
     Just _ -> pure ()
     Nothing -> do
       password <- liftIO $ Sel.hashText opts.password
-      if opts ^. #isAdmin
+      if opts.isAdmin
         then
-          addAdmin AdminCreationForm{username, email, password}
+          addAdmin AdminCreationForm{username = opts.username, email = opts.email, password}
             >>= \admin ->
-              if canLogin
+              if opts.canLogin
                 then pure ()
                 else withReadWritePool pool $ lockAccount admin.userId
         else do
-          templateUser <- mkUser UserCreationForm{username, email, password}
-          let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
+          templateUser <- mkUser UserCreationForm{username = opts.username, email = opts.email, password}
+          let user = if opts.canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           withReadWritePool pool $ insertUser user
 runCommand configFile GenDesignSystemComponents = generateComponents configFile
 runCommand _ (ImportIndex path repository) = importIndex path repository
@@ -294,10 +283,33 @@ runCommand _ (ProvisionRepository name url description) = do
 runCommand _ (ImportPackageTarball pname version path) = importPackageTarball (Namespace "hackage") pname version path
 runCommand _ CreateDB = do
   FloraEnv{config = FloraConfig{connectionInfo}} <- Reader.ask
-  liftIO $ callProcess "createdb" [BS.unpack connectionInfo]
+  liftIO $ do
+    setEnv "PGPASSWORD" (Text.unpack connectionInfo.connectPassword)
+    callProcess
+      "createdb"
+      [ "-h"
+      , Text.unpack connectionInfo.connectHost
+      , "-p"
+      , show connectionInfo.connectPort
+      , "-U"
+      , Text.unpack connectionInfo.connectUser
+      , Text.unpack connectionInfo.connectDatabase
+      ]
 runCommand _ DropDB = do
   FloraEnv{config = FloraConfig{connectionInfo}} <- Reader.ask
-  liftIO $ callProcess "dropdb" ["--if-exists", BS.unpack connectionInfo]
+  liftIO $ do
+    setEnv "PGPASSWORD" (Text.unpack connectionInfo.connectPassword)
+    callProcess
+      "dropdb"
+      [ "--if-exists"
+      , "-h"
+      , Text.unpack connectionInfo.connectHost
+      , "-p"
+      , show connectionInfo.connectPort
+      , "-U"
+      , Text.unpack connectionInfo.connectUser
+      , Text.unpack connectionInfo.connectDatabase
+      ]
 runCommand _ (IndexDependency indexName dependencyName priority) = do
   FloraEnv{pool} <- Reader.ask
   index <- withReadOnlyPool pool $ guardThatPackageIndexExists indexName (error $ Text.unpack indexName <> " does not exist in database!")

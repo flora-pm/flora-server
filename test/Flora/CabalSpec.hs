@@ -68,8 +68,8 @@ testImportSimplePackage :: RequireCallStack => TestEff ()
 testImportSimplePackage = do
   FloraEnv{pool} <- Reader.ask
   packageA <- assertJust "Search for package a" =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "a"))
-  releaseA <- Vector.head <$> withReadOnlyPool pool (Query.getReleases (packageA.packageId))
-  componentsA <- withReadOnlyPool pool $ Query.getReleaseComponents (releaseA.releaseId)
+  releaseA <- Vector.head <$> withReadOnlyPool pool (Query.getReleases packageA.packageId)
+  componentsA <- withReadOnlyPool pool $ Query.getReleaseComponents releaseA.releaseId
   assertEqual_
     (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
     ( Set.fromList
@@ -82,8 +82,8 @@ testImportMultiplePublicLibraries :: RequireCallStack => TestEff ()
 testImportMultiplePublicLibraries = do
   FloraEnv{pool} <- Reader.ask
   packageA <- assertJust "Search for package b" =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "b"))
-  releaseA <- Vector.head <$> withReadOnlyPool pool (Query.getReleases (packageA.packageId))
-  componentsA <- withReadOnlyPool pool $ Query.getReleaseComponents (releaseA.releaseId)
+  releaseA <- Vector.head <$> withReadOnlyPool pool (Query.getReleases packageA.packageId)
+  componentsA <- withReadOnlyPool pool $ Query.getReleaseComponents releaseA.releaseId
   assertEqual_
     (Set.fromList $ Vector.toList $ fmap (.canonicalForm) componentsA)
     ( Set.fromList

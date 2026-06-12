@@ -1,8 +1,15 @@
 flora {
   domain localhost
   httpPort 8084
+  jobsHttpPort 8085
   environment development
-  dbConnString #"host=flora-database port=5432 dbname=flora_dev_1 user=postgres password=postgres"#
+  db {
+    host "flora-database"
+    port 5432
+    user "postgres"
+    password "postgres"
+    dbname "flora_dev_1"
+  }
 
   pool {
     timeout 10
