@@ -3,6 +3,7 @@
 module FloraWeb.Components.Icons
   ( usageInstructionTooltip
   , chevronUpDown
+  , chevronDown
   , pen
   , lookingGlass
   , information
@@ -35,6 +36,7 @@ module FloraWeb.Components.Icons
   , house
   , bookText
   , code
+  , slidersHorizontal
   ) where
 
 import Data.Text (Text)
@@ -58,6 +60,15 @@ chevronUpDown =
     [str|
 <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
   <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m7 15l5 5l5-5M7 9l5-5l5 5"></path>
+</svg>
+|]
+
+chevronDown :: FloraHTML
+chevronDown =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="m6 9 6 6 6-6"/>
 </svg>
 |]
 
@@ -395,5 +406,14 @@ code =
     [str|
 <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
   <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16 18l6-6l-6-6M8 6l-6 6l6 6"></path>
+</svg>
+    |]
+
+slidersHorizontal :: FloraHTML
+slidersHorizontal =
+  toHtmlRaw @Text
+    [str|
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 5H3m9 14H3M14 3v4m2 10v4m5-9h-9m9 7h-5m5-14h-7m-6 5v4m0-2H3"></path>
 </svg>
     |]

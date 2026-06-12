@@ -1,5 +1,6 @@
 module FloraWeb.Components.Navbar where
 
+import Control.Monad.Extra (whenJust)
 import Control.Monad.Reader (ask, asks)
 import Data.Text (Text)
 import Lucid
@@ -47,7 +48,7 @@ navbar = do
         nav_ [class_ "header-nav cluster", ariaLabel_ "Main"] $ do
           navBarLink' "/about" "About" aboutNav
           navBarLink' "/categories" "Browse" packagesNav
-
+          userMenu
 brand :: FloraHTML
 brand = do
   "Flora"
@@ -82,8 +83,8 @@ userMenu :: FloraHTML
 userMenu = do
   ActiveElements{adminDashboard} <- asks (.activeElements)
   TemplateEnv{mUser} <- ask
-  getUsernameOrLogin mUser
   adminLink adminDashboard mUser
+  settingsLink mUser
 
 navbarSearch :: FloraHTML
 navbarSearch = do
@@ -120,12 +121,19 @@ navbarSearch = do
 
 adminLink :: Bool -> Maybe User -> FloraHTML
 adminLink active (Just user)
-  | user.userFlags.isAdmin = navBarLink' "/admin" "Admin Dashboard" active
+  | user.userFlags.isAdmin = navBarLink' "/admin" "Admin" active
 adminLink _ _ = ""
 
-getUsernameOrLogin :: Maybe User -> FloraHTML
-getUsernameOrLogin Nothing = navBarLink' "/sessions/new" "Login" False
-getUsernameOrLogin _ = navBarLink' "/settings/" "Profile" False
+settingsLink :: Maybe User -> FloraHTML
+settingsLink Nothing = ""
+settingsLink _ =
+  a_
+    [ href_ "/settings/"
+    , class_ ("btn btn--invisible btn--uppercase")
+    , ariaLabel_ "Settings"
+    -- TODO: Add active class and aria-current attribute when it's the current page
+    ]
+    Icons.slidersHorizontal
 
 isActive :: Bool -> Text
 isActive True = " active"
