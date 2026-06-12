@@ -64,11 +64,6 @@ jobs:
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
-        source ./environment.ci.sh
-        touch ~/.pgpass
-        chmod 0600 ~/.pgpass
-        echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
-        cat ~/.pgpass
         cabal update
 
     - name: Cache
@@ -81,16 +76,12 @@ jobs:
 
     - name: Migrate
       run: |
-        cabal install postgresql-migration
         set -x
-        source ./environment.ci.sh
-        createdb -h "${FLORA_DB_HOST}" -p "${FLORA_DB_PORT}" -U "${FLORA_DB_USER}" -w "${FLORA_DB_DATABASE}"
-        migrate init "${FLORA_DB_CONNSTRING}"
-        migrate migrate "${FLORA_DB_CONNSTRING}" migrations
+        flora-cli createdb -c environment.ci.sh
+        flora-cli migrate -c environment.ci.sh
       env:
         PGPASSWORD: "postgres"
 
     - name: Check
       run: |
-        source ./environment.ci.sh
         .github/workflows/check-missing-fk-indexes.sh
