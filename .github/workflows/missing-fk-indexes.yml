@@ -78,7 +78,8 @@ jobs:
       run: |
         set -x
         flora-cli createdb -c environment.ci.sh
-        flora-cli migrate -c environment.ci.sh
+cabal run -- flora-cli createdb -c environment.ci.sh
+cabal run -- flora-cli migrate -c environment.ci.sh
       env:
         PGPASSWORD: "postgres"
 
