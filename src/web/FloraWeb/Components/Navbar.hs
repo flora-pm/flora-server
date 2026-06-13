@@ -129,7 +129,7 @@ settingsLink Nothing = ""
 settingsLink _ =
   a_
     [ href_ "/settings/"
-    , class_ ("btn btn--invisible btn--uppercase")
+    , class_ "btn btn--invisible btn--uppercase"
     , ariaLabel_ "Settings"
     -- TODO: Add active class and aria-current attribute when it's the current page
     ]
