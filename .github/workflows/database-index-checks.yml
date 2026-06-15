@@ -1,4 +1,4 @@
-name: Missing FK Indexes
+name: Database Index Checks
 
 on:
   pull_request:
@@ -6,39 +6,17 @@ on:
     branches: ["main", "development"]
 
 concurrency:
-  group: missing-kf-indexes-${{ github.ref_name }}
+  group: database-index-checks-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
-  generateMatrix:
-    name: "Generate matrix from cabal"
+  database-index-checks:
     runs-on: ubuntu-24.04
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Extract the tested GHC versions
-        id: set-matrix
-        uses: kleidukos/get-tested@v0.1.9.1
-        with:
-          cabal-file: flora.cabal
-          ubuntu-version: "24.04"
-          version: 0.1.7.1
-
-  missing-fk-index-check:
-    needs: generateMatrix
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix: ${{ fromJSON(needs.generateMatrix.outputs.matrix) }}
-    # Service containers to run with `container-job`
     services:
-      # Label used to access the service container
       postgres:
-        # Docker Hub image
         image: postgres
-        # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: postgres
-        # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -53,26 +31,29 @@ jobs:
       id: setup-haskell
       uses: haskell-actions/setup@v2
       with:
-        ghc-version: "${{ matrix.ghc }}"
+        ghc-version: "9.10.3"
         cabal-version: "latest"
 
     - name: Configure environment
       run: |
         ./.github/workflows/setup.sh
-        echo "/usr/lib/postgresql/14/bin/" >> $GITHUB_PATH
         echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
+        touch ~/.pgpass
+        chmod 0600 ~/.pgpass
         cabal update
+
+    - name: Create freeze file
+      run: cabal freeze --enable-tests
 
     - name: Cache
       uses: actions/cache@v5
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}
-        restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
-
+        key: ${{ runner.os }}-ghc-9.10.3-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
+        restore-keys: ${{ runner.os }}-ghc-9.10.3-
 
     - name: Migrate
       run: |
@@ -82,8 +63,12 @@ jobs:
       env:
         PGPASSWORD: "postgres"
 
-    - name: Check
-      run: |
-        .github/workflows/check-missing-fk-indexes.sh
+    - name: Check missing FK indexes
+      run: .github/workflows/check-missing-fk-indexes.sh
+      env:
+        FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"
+
+    - name: Check duplicate indexes
+      run: .github/workflows/check-duplicate-indexes.sh
       env:
         FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"
