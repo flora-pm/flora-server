@@ -86,6 +86,6 @@ jobs:
     - name: Test
       run: |
         set -x
-        make db-setup
+        make db-test-setup
         cabal run -- flora-cli -c environment.ci.kdl create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         make test

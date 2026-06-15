@@ -99,7 +99,7 @@ db-test-drop: ## Drop the test database
 	@cabal run -- flora-cli -c environment.test.kdl drop-db
 
 db-test-migrate: ## Apply test database migrations
-	@cabal run -- flora-migrate -- -c environment.test.kdl
+	@cabal run -- flora-migrate -c environment.test.kdl
 
 db-test-reset: db-test-drop db-test-setup db-test-provision ## Reset the test database
 
