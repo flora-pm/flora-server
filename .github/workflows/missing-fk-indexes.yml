@@ -77,9 +77,8 @@ jobs:
     - name: Migrate
       run: |
         set -x
-        flora-cli createdb -c environment.ci.sh
-cabal run -- flora-cli createdb -c environment.ci.sh
-cabal run -- flora-cli migrate -c environment.ci.sh
+        cabal run -- flora-cli -c environment.ci.kdl create-db
+        cabal run -- flora-migrate -c environment.ci.kdl
       env:
         PGPASSWORD: "postgres"
 
