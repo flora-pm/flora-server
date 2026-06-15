@@ -86,3 +86,5 @@ jobs:
     - name: Check
       run: |
         .github/workflows/check-duplicate-indexes.sh
+      env:
+        FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"
