@@ -11,7 +11,7 @@ index :: AdminReport -> FloraHTML
 index adminReport = do
   header_ [class_ "pageHead"] $ do
     div_ [class_ "wrapper"] $ do
-      h1_ [class_ "pageHead-title"] "Overview"
+      h1_ [class_ "pageHead-title"] "Admin Overview"
   div_ [class_ "wrapper inset-region flow flow--large"] $ do
     dataReport adminReport
 

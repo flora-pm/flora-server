@@ -34,7 +34,7 @@ footer =
             li_ $
               a_ [href_ "https://bsky.app/profile/flora.pm"] "Bluesky"
     div_ [class_ "footer-by"] $
-      p_ [class_ "wapper"] $ do
+      p_ [class_ "wrapper"] $ do
         "A project "
         a_ [href_ "https://notbyai.fyi/"] "made by humans"
         " "

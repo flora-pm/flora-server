@@ -49,8 +49,8 @@ newSessionHandler (Headers session _) = do
       templateEnv' <- templateFromSession session defaultTemplateEnv
       let templateEnv =
             templateEnv'
-              { title = "Sign in — Flora.pm"
-              , description = "Sign in page"
+              { title = "Login — Flora.pm"
+              , description = "Login page"
               }
       html <- render templateEnv Sessions.newSession
       pure $ AuthenticationRequired html

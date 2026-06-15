@@ -70,7 +70,7 @@ A content+aside container
 	flex-basis: var(--aside-width, fit-content);
 	flex-grow: 1;
 	min-inline-size: initial;
-	max-width: 95vw;
+	max-width: 98vw;
 }
 
 /*
