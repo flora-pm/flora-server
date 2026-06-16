@@ -10,8 +10,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  database-index-checks:
+  generateMatrix:
+    name: "Generate matrix from cabal"
     runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Extract the tested GHC versions
+        id: set-matrix
+        uses: kleidukos/get-tested@v0.1.9.1
+        with:
+          cabal-file: flora.cabal
+          ubuntu-version: "24.04"
+          version: 0.1.7.1
+
+  database-index-checks:
+    needs: generateMatrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{ fromJSON(needs.generateMatrix.outputs.matrix) }}
     services:
       postgres:
         image: postgres
@@ -31,7 +48,7 @@ jobs:
       id: setup-haskell
       uses: haskell-actions/setup@v2
       with:
-        ghc-version: "9.10.3"
+        ghc-version: ${{ matrix.ghc }}
         cabal-version: "latest"
 
     - name: Configure environment
@@ -52,8 +69,8 @@ jobs:
       uses: actions/cache@v5
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ${{ runner.os }}-ghc-9.10.3-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
-        restore-keys: ${{ runner.os }}-ghc-9.10.3-
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
+        restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
     - name: Migrate
       run: |
