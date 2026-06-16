@@ -108,18 +108,14 @@ Step 2. Keep reading from here.
 
 ### Flora server
 
-The configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
-server will tell you which ones are missing.
+The configuration is handled through KDL files. A production, docker, CI and test environment are provided. When interfacing via `make` this is handled for you. If you're interfacing with the `flora-cli` directly, pass an environment with `--config` or `-c`.
 
-To start in the best of conditions, create a file called `environment.local.sh` with the following content:
-
+Example:
 ```bash
-source environment.sh
+cabal run -- flora-cli -c environment.test.kdl provision
 ```
 
-This will get all the variables from `environment.sh` and allow you to override them locally.
-
-If you use `direnv`, you are advised to create a symbolic link from `environment.local.sh` to `.envrc`.
+Use `flora-cli --help` to see what commands are available.
 
 You can then build the server with `make build`. Do **not** simply run `cabal build`.
 
@@ -224,7 +220,7 @@ After everything is set up, (locally or via Docker), you can start populating th
 ```bash
 $ make db-setup
 $ make db-provision
-$ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
+$ cabal run -- flora-cli -c environment.test.kdl create-user --admin --can-login --username "admin" \
     --email "admin@localhost" --password "password123"
 $ make db-provision-packages
 ```
@@ -236,14 +232,14 @@ The previous paragraph shows how to import test packages, but you may want to im
 You can do so with:
 
 ```bash
-$ cabal run flora-cli -- import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
+$ cabal run flora-cli -c environment.test.kdl -- import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
   --repository hackage.haskell.org
 ```
 
 Similarly if you have the [cardano packages index](https://input-output-hk.github.io/cardano-haskell-packages/) configured, run:
 
 ```bash
-$ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz \
+$ cabal run -- flora-cli -c environment.test.kdl import-index ~/.cabal/packages/cardano/01-index.tar.gz \
   --repository "cardano"
 ```
 
@@ -251,24 +247,22 @@ $ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz 
 
 To enable capturing live events from Flora server running locally:
 
-1. Ensure `FLORA_EVENTLOG_SOCKET` is being present in your local environment config script.
+1. Ensure `eventlogSocket` is correctly set for the given environment file.
 2. Run:
 
 ```
-$ source environment.local.sh
-$ cabal run -- flora-server  +RTS -l -hT --eventlog-flush-interval=1 -RTS
+$ cabal run -- flora-server -c environment.test.kdl +RTS -l -hT --eventlog-flush-interval=1 -RTS
 ```
 
 3. After that, run separately:
 
 ```
-$ source environment.local.sh
 $ docker compose -f docker-compose.live-eventlog.yml up
 ```
 
-4. Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
+Note: You might need to export `FLORA_EVENTLOG_SOCKET` to the same value as given by the KDL file when using Docker.
 
-To disable live events, `unset FLORA_EVENTLOG_SOCKET`.
+4. Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
 
 ### Nix
 
