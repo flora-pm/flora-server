@@ -2,14 +2,14 @@ Thank you for your contribution to Flora! We need you to read and understand thi
 
 ## Project Setup
 
-We need you to read and acknowledge our [Code of Conduct][CoC] document.
+Before you proceed, we need you to read and acknowledge our [Code of Conduct][CoC] document.
 
 The compiler version used is described in the `cabal.project` file.
 `cabal-install` version 3.8 or higher is needed.
 
 The following Haskell command-line tools will have to be installed:
 
-* `fourmolu`: To style the code base. Version is 0.17.0.0
+* `fourmolu`: To style the code base. Version is 0.18.0.0
 * `hlint` v3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-gild` and `nixfmt`: To style the cabal and nix files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
@@ -99,7 +99,7 @@ Here are the steps:
 2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
 3. `$ eventlog2html flora-server.eventlog`
 
-Also consider [capturing live eventlogs](#live-eventlogs) during developement.
+Also consider [capturing live eventlogs](#live-eventlogs) during development.
 
 ## Installation and Configuration
 
@@ -122,10 +122,9 @@ You can then build the server with `make build`. Do **not** simply run `cabal bu
 A very useful command to run is
 
 ```bash
+# Starts a tmux session with code reloading for frontend and backend
 $ make start-tmux
 ```
-To start a tmux session with code reloading for frontend and backend:
-
 
 To explore the other possible `Make` rules, type:
 
@@ -135,7 +134,7 @@ $ make help
 
 ### Database
 
-The Flora server uses PostgreSQL 14. Please install it.
+The Flora server uses PostgreSQL. Please install it.
 
 #### Side-Quest: First installation
 
@@ -154,7 +153,7 @@ local   all             all                                     peer
 - host    all             all             ::1/128                 md5
 + host    all             all             ::1/128                 scram-sha-256
 ```
-3. Restart the database engine (using `systemctl` on Linux, or `brew services restart postgresql@14`
+3. Restart the database engine (using `systemctl` on Linux, or `brew services restart postgresql@17`
     if you have installed PostgreSQL with `brew`)
 
 3. Connect (via sudo) to the `root` user
@@ -168,7 +167,7 @@ Then as root, connect to the postgres account, and open a `psql` shell.
 ```bash
 root # su -l postgres
 postgres $ psql
-psql (14.7 (Ubuntu 14.7-1.pgdg18.04+1))
+psql (17.9 (OS version here))
 Type "help" for help.
 ```
 
@@ -188,7 +187,7 @@ To create the database and apply the migrations, type:
 $ make db-setup
 ```
 
-you can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
+You can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
 
 ### Docker Workflow
 
@@ -200,8 +199,8 @@ and communicates with another container for the PostgreSQL database.
 $ make docker-up
 # Once the containers are running, you can enter the development environment and start hacking
 $ make docker-enter
-# You'll be in the docker container. Environment variables are automatically set
-# so you should be able to start Flora
+# You'll be in the docker container. Configuration variables are automatically set
+# via the Makefile, so you should be able to start Flora
 (docker)$ make start-tmux
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.
@@ -227,7 +226,7 @@ $ make db-provision-packages
 
 ### Importing a package index
 
-The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shit and giggles.
+The previous paragraph shows how to import test packages, but you may want to import a whole package index, just because.
 
 You can do so with:
 
@@ -241,6 +240,15 @@ Similarly if you have the [cardano packages index](https://input-output-hk.githu
 ```bash
 $ cabal run -- flora-cli -c environment.test.kdl import-index ~/.cabal/packages/cardano/01-index.tar.gz \
   --repository "cardano"
+```
+
+### Connecting to the local database
+
+If you need to connect to the database directly:
+
+```bash
+# replace flora_test if connecting to flora_dev database
+psql -h localhost -p 5432 -U postgres -d flora_test
 ```
 
 ### Live Eventlogs
@@ -298,7 +306,7 @@ this repository, which is a drastic improvement, especially with `IFD` (which th
 Devshell startup times will be instant if you didn't change anything in the configuration and as long as usual if you
 need to re-evaluate the `nix`-expressions (i.e. on cabal config changes or `nix` changes).
 
-Find out how to install `direnv` on your machine by visiting [their github](https://github.com/direnv/direnv/).o
+Find out how to install `direnv` on your machine by visiting [their github](https://github.com/direnv/direnv/).
 After installing, add a `.envrc` file to the root of the project containing:
 
 ```bash
