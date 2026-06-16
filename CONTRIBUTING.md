@@ -5,7 +5,7 @@ Thank you for your contribution to Flora! We need you to read and understand thi
 Before you proceed, we need you to read and acknowledge our [Code of Conduct][CoC] document.
 
 The compiler version used is described in the `cabal.project` file.
-`cabal-install` version 3.8 or higher is needed.
+`cabal-install` version 3.16 or higher is needed.
 
 The following Haskell command-line tools will have to be installed:
 
@@ -103,7 +103,7 @@ Also consider [capturing live eventlogs](#live-eventlogs) during development.
 
 ## Installation and Configuration
 
-Step 1. Read The above "Project Setup" section.
+Step 1. Read the above "Project Setup" section.
 Step 2. Keep reading from here.
 
 ### Flora server
@@ -156,7 +156,7 @@ local   all             all                                     peer
 3. Restart the database engine (using `systemctl` on Linux, or `brew services restart postgresql@17`
     if you have installed PostgreSQL with `brew`)
 
-3. Connect (via sudo) to the `root` user
+4. Connect (via sudo) to the `root` user
 
 ```bash
 user $ sudo -s
@@ -231,7 +231,7 @@ The previous paragraph shows how to import test packages, but you may want to im
 You can do so with:
 
 ```bash
-$ cabal run flora-cli -c environment.test.kdl -- import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
+$ cabal run -- flora-cli -c environment.test.kdl import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
   --repository hackage.haskell.org
 ```
 
