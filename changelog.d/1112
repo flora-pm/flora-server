@@ -1,0 +1,3 @@
+-- synopsis: Replace env.sh with kdl configuration files
+-- description: Replaces almost all usage of ENV vars with structured configuration files, an exception being some of the Docker configurations.
+-- prs: #1112
