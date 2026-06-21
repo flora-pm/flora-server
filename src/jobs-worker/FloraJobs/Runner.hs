@@ -11,13 +11,11 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Function
-import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Distribution.Types.Version (Version)
 import Effectful (IOE, type (:>))
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
@@ -29,7 +27,7 @@ import Effectful.Process.Typed
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Tracing (Tracer)
 import Log hiding (LogLevel)
@@ -76,7 +74,7 @@ runner env job = case job.payload of
   FetchTarball x -> fetchTarball x
   FetchUploadInformation x -> fetchUploadInformation x
   FetchChangelog x -> fetchChangeLog x
-  ImportPackage x -> persistImportOutput x
+  ImportPackage x -> State.evalState mempty $ persistImportOutput x
   FetchPackageDeprecationList -> fetchPackageDeprecationList
   FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
   RefreshLatestVersions -> do
@@ -352,7 +350,6 @@ refreshIndex
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      , Tracer :> es
      , TypedProcess :> es

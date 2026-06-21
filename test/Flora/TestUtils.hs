@@ -94,7 +94,6 @@ import Control.Monad.Catch
 import Data.Function
 import Data.List.NonEmpty qualified as NE
 import Data.Pool hiding (PoolConfig)
-import Data.Set (Set)
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
@@ -121,8 +120,6 @@ import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
 import Effectful.Time
 import Effectful.Tracing (Tracer)
 import Effectful.Tracing qualified as Trace
@@ -182,7 +179,6 @@ type TestEff a =
      , Reader FloraEnv
      , Log
      , Time
-     , State (Set (Namespace, PackageName, Version))
      , Metrics AppMetrics
      , Concurrent
      , Error ImportError
@@ -228,7 +224,6 @@ runTestEff comp env = runEff $
       & Log.runLog "flora-test" logger LogInfo
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime
-      & State.evalState mempty
       & runPrometheusMetrics env.metrics
       & runConcurrent
       & Error.runErrorWith

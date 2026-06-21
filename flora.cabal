@@ -65,6 +65,8 @@ common common-ghc-options
     -finline-generics-aggressively
     -fexpose-all-unfoldings
     -fplugin=Effectful.Plugin
+    -finfo-table-map
+    -fdistinct-constructor-tables
 
 common common-rts-options
   ghc-options:
@@ -227,6 +229,7 @@ library
     lucid2,
     monad-time-effectful,
     network,
+    nothunks,
     openapi3,
     optics-core,
     osv,
@@ -528,7 +531,6 @@ library flora-jobs
     commonmark,
     commonmark-extensions,
     commonmark-pandoc,
-    containers,
     data-default,
     deriving-aeson,
     effectful,
@@ -547,6 +549,7 @@ library flora-jobs
     log-base,
     log-effectful,
     monad-time-effectful,
+    nothunks,
     pandoc,
     pandoc-types,
     postgresql-simple,
@@ -581,6 +584,7 @@ executable flora-server
     flora-web,
     log-base,
     log-effectful,
+    nothunks,
     pg-entity,
     postgresql-simple,
     require-callstack,
@@ -627,6 +631,7 @@ executable flora-jobs-runner
     flora-web,
     log-base,
     log-effectful,
+    nothunks,
     prometheus-client,
     prometheus-effectful,
     prometheus-metrics-ghc,
@@ -649,7 +654,6 @@ executable flora-cli
     PyF,
     base,
     bytestring,
-    containers,
     cvss,
     effectful,
     effectful-core,
@@ -712,6 +716,7 @@ test-suite flora-test
     log-base,
     log-effectful,
     monad-time-effectful,
+    nothunks,
     optics-core,
     pg-entity,
     postgresql-migration,
@@ -740,6 +745,7 @@ test-suite flora-test
     Flora.CategorySpec
     Flora.FeedSpec
     Flora.ImportSpec
+    Flora.NoThunksSpec
     Flora.PackageGroupSpec
     Flora.PackageSpec
     Flora.SearchSpec

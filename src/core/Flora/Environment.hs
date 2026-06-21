@@ -4,6 +4,7 @@ module Flora.Environment
 where
 
 import Arbiter.Simple qualified as ArbS
+import Control.DeepSeq (force)
 import Data.ByteString (ByteString)
 import Data.Pool
 import Data.Pool qualified as Pool
@@ -72,4 +73,4 @@ configToEnv floraConfig = do
 getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv
 getFloraEnv = do
   config <- liftIO $ Env.parse id parseConfig
-  configToEnv config
+  configToEnv (force config)

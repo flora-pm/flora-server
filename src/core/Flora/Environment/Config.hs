@@ -1,3 +1,6 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
   ( FloraConfig (..)
@@ -21,6 +24,7 @@ module Flora.Environment.Config
   )
 where
 
+import Control.DeepSeq
 import Control.Monad ((>=>))
 import Data.Aeson qualified as Aeson
 import Data.Base64.Types qualified as Base64
@@ -56,9 +60,12 @@ import Env
   )
 import GHC.Generics (Generic)
 import Network.Socket (HostName, PortNumber)
+import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
 import Sel.Hashing.SHA256 qualified as Sel
 import System.FilePath (isValid)
 import Text.Read (readMaybe)
+
+deriving via OnlyCheckWhnf PortNumber instance NoThunks PortNumber
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
@@ -75,6 +82,7 @@ data DeploymentEnv
   | Development
   | Test
   deriving stock (Bounded, Enum, Eq, Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 instance Display DeploymentEnv where
   displayBuilder Production = "production"
@@ -88,19 +96,22 @@ data LoggingDestination
     Json
   | -- | Logs are sent to a file as JSON
     JSONFile
-  deriving (Generic, Show)
+  deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 data Assets = Assets
   { jsBundle :: AssetBundle
   , cssBundle :: AssetBundle
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NoThunks)
 
 data AssetBundle = AssetBundle
   { name :: Text
   , hash :: Text
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NoThunks)
 
 -- | MLTP stands for Metrics, Logs, Traces and Profiles
 data MLTP = MLTP
@@ -113,12 +124,17 @@ data MLTP = MLTP
   , eventlogSocket :: Maybe FilePath
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
+
+instance NFData PortNumber where
+  rnf a = seq a ()
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
   , blobStoreFS :: Maybe FilePath
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
@@ -131,12 +147,14 @@ data FloraConfig = FloraConfig
   , environment :: DeploymentEnv
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
   , connections :: Int
   }
-  deriving stock (Show)
+  deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 data TestConfig = TestConfig
   { httpPort :: Word16

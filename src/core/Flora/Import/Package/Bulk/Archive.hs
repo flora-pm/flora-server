@@ -27,7 +27,6 @@ import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
@@ -37,7 +36,7 @@ import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
+import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Tracing (Tracer)
 import Optics.Core
@@ -50,7 +49,6 @@ import Flora.Database
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Stream
 import Flora.Import.Types (ImportError (..), ImportFileType (..))
-import Flora.Model.Package.Types (Namespace)
 import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Types
@@ -64,7 +62,6 @@ importFromArchive
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
      , RequireCallStack
-     , State (Set (Namespace, Flora.PackageName, Version)) :> es
      , Time :> es
      , Tracer :> es
      )
@@ -99,10 +96,11 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
           packageIndex.timestamp
   case Tar.foldlEntries (buildContentStream packageIndex time) Streamly.nil entries of
     Right stream ->
-      importFromStream
-        packageIndex
-        indexPackages
-        stream
+      State.evalState mempty $
+        importFromStream
+          packageIndex
+          indexPackages
+          stream
     Left (err, _) ->
       Log.logAttention_ $
         "Failed to get files from index: " <> Text.pack (show err)
