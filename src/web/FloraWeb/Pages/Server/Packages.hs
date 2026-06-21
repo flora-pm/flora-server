@@ -249,8 +249,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
         , "releases" .= numberOfReleases
         ]
 
-    let packageIndexURL = packageIndex.url
-    isLatestViableRelease <- isLatestRelease package.packageId release.version
+    let isLatestViableRelease = release.version == latestRelease.version
     Trace.withSpan "render showPackage" $
       render templateEnv $
         Packages.showPackage
@@ -258,7 +257,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
           releases
           numberOfReleases
           package
-          packageIndexURL
+          packageIndex.url
           numberOfDependents
           numberOfDependencies
           categories
