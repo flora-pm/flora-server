@@ -126,35 +126,28 @@ class FromSession a where
   templateFromSession :: (IOE :> es, Reader FeatureEnv :> es) => a -> TemplateDefaults -> Eff es TemplateEnv
 
 instance FromSession (Session User) where
-  templateFromSession session defaults = do
-    let muser = Just session.user
-    let webEnvStore = session.webEnvStore
-    floraEnv <- liftIO $ fetchFloraEnv webEnvStore
-    featuresEnv <- ask @FeatureEnv
-    let assets = floraEnv.assets
-    let domain = floraEnv.domain
-        httpPort = floraEnv.httpPort
-        theme = floraEnv.theme
-    let TemplateDefaults{..} =
-          defaults
-            & (#mUser .~ muser)
-            & (#environment .~ floraEnv.environment)
-            & (#features .~ featuresEnv)
-    pure TemplateEnv{..}
+  templateFromSession session = templateFromSessionImpl (Just session.user) session
 
 instance FromSession (Session (Maybe User)) where
-  templateFromSession session defaults = do
-    let muser = session.user
-    let webEnvStore = session.webEnvStore
-    floraEnv <- liftIO $ fetchFloraEnv webEnvStore
-    featuresEnv <- ask @FeatureEnv
-    let assets = floraEnv.assets
-    let domain = floraEnv.domain
-        httpPort = floraEnv.httpPort
-        theme = floraEnv.theme
-    let TemplateDefaults{..} =
-          defaults
-            & (#mUser .~ muser)
-            & (#environment .~ floraEnv.environment)
-            & (#features .~ featuresEnv)
-    pure TemplateEnv{..}
+  templateFromSession session = templateFromSessionImpl session.user session
+
+templateFromSessionImpl
+  :: (IOE :> es, Reader FeatureEnv :> es)
+  => Maybe User
+  -> Session a
+  -> TemplateDefaults
+  -> Eff es TemplateEnv
+templateFromSessionImpl muser session defaults = do
+  let webEnvStore = session.webEnvStore
+  floraEnv <- liftIO $ fetchFloraEnv webEnvStore
+  featuresEnv <- ask @FeatureEnv
+  let assets = floraEnv.assets
+  let domain = floraEnv.domain
+      httpPort = floraEnv.httpPort
+      theme = floraEnv.theme
+  let TemplateDefaults{..} =
+        defaults
+          & (#mUser .~ muser)
+          & (#environment .~ floraEnv.environment)
+          & (#features .~ featuresEnv)
+  pure TemplateEnv{..}
