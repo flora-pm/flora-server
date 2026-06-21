@@ -91,7 +91,7 @@ isLatestRelease
 isLatestRelease packageId version = do
   FloraEnv{pool} <- Reader.ask
   result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion packageId
-  pure $ maybe False (== version) result
+  pure $ (\mv -> Just version == mv) result
 
 listPackagesHandler
   :: ( IOE :> es
