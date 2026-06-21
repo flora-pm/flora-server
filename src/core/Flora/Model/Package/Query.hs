@@ -325,7 +325,6 @@ getRequirements (PackageName packageName) releaseId = labeled @ReadOnly @WithCon
 
 -- | This query finds all the dependencies of a release,
 --  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
---  HACK: This query is terrifying, must be optimised by someone who knows their shit.
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
@@ -349,19 +348,14 @@ WITH requirements AS (SELECT DISTINCT p0.package_id
        , req.name
        , req.requirement
        , req.components
-       , r3.version AS dependency_latest_version
-       , r3.synopsis AS dependency_latest_synopsis
-       , r3.license AS dependency_latest_license
-       , r3.uploaded_at
-       , r3.revised_at
+       , lv.version AS dependency_latest_version
+       , lv.synopsis AS dependency_latest_synopsis
+       , lv.license AS dependency_latest_license
+       , lv.uploaded_at
+       , lv.revised_at
   FROM requirements AS req
-       INNER JOIN packages AS p2 ON p2.namespace = req.namespace
-                                AND p2.name = req.name
-       INNER JOIN releases AS r3 ON r3.package_id = p2.package_id
-  WHERE r3.version = (SELECT max(version)
-                      FROM releases
-                      WHERE package_id = p2.package_id)
-  GROUP BY req.package_id, req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license, r3.uploaded_at, r3.revised_at
+       INNER JOIN latest_versions AS lv ON lv.namespace = req.namespace
+                                       AND lv.name = req.name
   ORDER BY req.component_type
          , req.component_name DESC
 |]
