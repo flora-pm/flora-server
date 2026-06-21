@@ -36,11 +36,12 @@ getFloraJobsEnv = do
   pool <-
     liftIO $
       Pool.newPool $
-        Pool.defaultPoolConfig
-          (PG.connectPostgreSQL jobsConfig.connectionInfo)
-          PG.close
-          (realToFrac connectionTimeout)
-          connections
+        setNumStripes (Just 1) $
+          Pool.defaultPoolConfig
+            (PG.connectPostgreSQL jobsConfig.connectionInfo)
+            PG.close
+            (realToFrac connectionTimeout)
+            connections
   pure
     FloraJobsEnv
       { pool

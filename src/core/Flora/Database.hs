@@ -74,7 +74,7 @@ unliftedWithResource accessMode loggerEnv pool action = withRunInIO $ \io ->
   liftIO $ Pool.withResource pool $ \resource -> do
     runEff $
       Log.runLogT loggerEnv.leComponent loggerEnv.leLogger LogInfo $
-        Log.logInfo "Database connection acquired" $
+        Log.logTrace "Database connection acquired" $
           object
             [ "stripe" .= resource.stripeNumber
             , "label" .= resource.poolLabel
