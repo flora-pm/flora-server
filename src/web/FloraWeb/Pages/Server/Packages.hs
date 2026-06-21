@@ -82,6 +82,17 @@ server =
     , showPackageSecurity = showPackageSecurityHandler
     }
 
+-- | Return whether @version@ is the latest release version of the given package.
+isLatestRelease
+  :: (IOE :> es, Log :> es, Reader FloraEnv :> es)
+  => PackageId
+  -> Version
+  -> FloraM es Bool
+isLatestRelease packageId version = do
+  FloraEnv{pool} <- Reader.ask
+  result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion packageId
+  pure $ (\mv -> Just version == mv) result
+
 listPackagesHandler
   :: ( IOE :> es
      , Reader FeatureEnv :> es
@@ -239,11 +250,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
         ]
 
     let packageIndexURL = packageIndex.url
-    isLatestViableRelease <- do
-      result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
-      case result of
-        Nothing -> pure False
-        Just v -> pure $ v == release.version
+    isLatestViableRelease <- isLatestRelease package.packageId release.version
     Trace.withSpan "render showPackage" $
       render templateEnv $
         Packages.showPackage
@@ -329,11 +336,7 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
     numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
     numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
     now <- Time.currentTime
-    isLatestViableRelease <- do
-      result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
-      case result of
-        Nothing -> pure False
-        Just v -> pure $ v == release.version
+    isLatestViableRelease <- isLatestRelease package.packageId release.version
 
     Trace.withSpan "render showDependents" $
       render templateEnv $
@@ -402,11 +405,7 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
           Query.getAllRequirements release.releaseId
 
     now <- Time.currentTime
-    isLatestViableRelease <- do
-      result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
-      case result of
-        Nothing -> pure False
-        Just v -> pure $ v == release.version
+    isLatestViableRelease <- isLatestRelease package.packageId release.version
     Trace.withSpan "render showDependencies" $
       render templateEnv $
         Package.showDependencies
@@ -469,11 +468,7 @@ showVersionChangelogHandler (Headers session _) packageNamespace packageName ver
             { title = display packageNamespace <> "/" <> display packageName
             , description = "Changelog of " <> display packageNamespace <> "/" <> display packageName
             }
-    isLatestViableRelease <- do
-      result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
-      case result of
-        Nothing -> pure False
-        Just v -> pure $ v == release.version
+    isLatestViableRelease <- isLatestRelease package.packageId release.version
 
     render templateEnv $
       Package.showChangelog
@@ -517,11 +512,7 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
             Query.getNumberOfPackageDependents packageNamespace packageName Nothing
       numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements latestRelease.releaseId
       releases <- withReadOnlyPool pool $ Query.getAllReleases package.packageId
-      isLatestViableRelease <- do
-        result <- withReadOnlyPool pool $ Query.getLatestPackageReleaseVersion package.packageId
-        case result of
-          Nothing -> pure False
-          Just v -> pure $ v == latestRelease.version
+      isLatestViableRelease <- isLatestRelease package.packageId latestRelease.version
       render templateEnv $
         Package.listVersions
           latestRelease

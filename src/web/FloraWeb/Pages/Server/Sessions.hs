@@ -11,6 +11,7 @@ import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time
 import Log qualified
+import Lucid (Html)
 import Optics.Core
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
@@ -39,6 +40,16 @@ server s =
     , create = createSessionHandler s
     , delete = deleteSessionHandler
     }
+
+-- | Render the login page with a generic "Could not authenticate" flash error.
+renderAuthFailure
+  :: (IOE :> es, Reader FeatureEnv :> es)
+  => Session (Maybe User)
+  -> FloraM es (Html ())
+renderAuthFailure session = do
+  templateDefaults <- templateFromSession session defaultTemplateEnv
+  let templateEnv = templateDefaults & (#flashError ?~ mkError "Could not authenticate")
+  render templateEnv Sessions.newSession
 
 newSessionHandler :: SessionWithCookies (Maybe User) -> FloraEff NewSessionResult
 newSessionHandler (Headers session _) = do
@@ -69,11 +80,7 @@ createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
   case mUser of
     Nothing -> do
       Log.logInfo_ "[+] Couldn't find user"
-      templateDefaults <- templateFromSession session defaultTemplateEnv
-      let templateEnv =
-            templateDefaults
-              & (#flashError ?~ mkError "Could not authenticate")
-      body <- render templateEnv Sessions.newSession
+      body <- renderAuthFailure session
       pure $ AuthenticationFailure body
     Just user ->
       if user.userFlags.canLogin
@@ -88,19 +95,11 @@ createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
                   pure $ AuthenticationSuccess ("/", sessionCookie)
             else do
               Log.logInfo_ "Invalid password"
-              templateDefaults <- templateFromSession session defaultTemplateEnv
-              let templateEnv =
-                    templateDefaults
-                      & (#flashError ?~ mkError "Could not authenticate")
-              body <- render templateEnv Sessions.newSession
+              body <- renderAuthFailure session
               pure $ AuthenticationFailure body
         else do
           Log.logInfo_ "User not allowed to log-in"
-          templateDefaults <- templateFromSession session defaultTemplateEnv
-          let templateEnv =
-                templateDefaults
-                  & (#flashError ?~ mkError "Could not authenticate")
-          body <- render templateEnv Sessions.newSession
+          body <- renderAuthFailure session
           pure $ AuthenticationFailure body
 
 checkTOTPIsValid
@@ -120,11 +119,7 @@ checkTOTPIsValid session userCode user = do
       pure $ AuthenticationSuccess ("/", sessionCookie)
     else do
       Log.logInfo_ "[+] Couldn't authenticate user's TOTP code"
-      templateDefaults <- templateFromSession session defaultTemplateEnv
-      let templateEnv =
-            templateDefaults
-              & (#flashError ?~ mkError "Could not authenticate")
-      body <- render templateEnv Sessions.newSession
+      body <- renderAuthFailure session
       pure $ AuthenticationFailure body
 
 deleteSessionHandler :: (IOE :> es, Reader FloraEnv :> es) => PersistentSessionId -> FloraM es DeleteSessionResponse
