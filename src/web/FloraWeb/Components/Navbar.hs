@@ -1,6 +1,5 @@
 module FloraWeb.Components.Navbar where
 
-import Control.Monad.Extra (whenJust)
 import Control.Monad.Reader (ask, asks)
 import Data.Text (Text)
 import Lucid
