@@ -5,9 +5,8 @@ where
 
 import Arbiter.Simple qualified as ArbS
 import Data.ByteString (ByteString)
-import Data.Pool (Pool)
+import Data.Pool
 import Data.Pool qualified as Pool
-import Data.Pool.Introspection (defaultPoolConfig)
 import Data.Proxy
 import Data.Time (NominalDiffTime)
 import Database.PostgreSQL.Simple qualified as PG
@@ -30,11 +29,12 @@ mkPool
 mkPool connectionInfo timeout' connections =
   liftIO $
     Pool.newPool $
-      defaultPoolConfig
-        (PG.connectPostgreSQL connectionInfo)
-        PG.close
-        (realToFrac timeout')
-        connections
+      setNumStripes (Just 1) $
+        defaultPoolConfig
+          (PG.connectPostgreSQL connectionInfo)
+          PG.close
+          (realToFrac timeout')
+          connections
 
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv

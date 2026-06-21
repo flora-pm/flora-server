@@ -164,8 +164,9 @@ testSearchResultText = do
   text <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") (PackageName "text"))
   releases <- withReadOnlyPool pool $ Query.getNumberOfReleases text.packageId
   assertEqual_ 3 releases
-  results <- withReadOnlyPool pool $ Query.searchPackage (0, 30) "text"
+  (count, results) <- withReadOnlyPool pool $ Query.searchPackage (0, 30) "text"
   assertEqual_ 2 (Vector.length results)
+  assertEqual_ 2 count
   assertEqual_ (Cabal.mkVersion [2, 1, 2]) ((.version) $ Vector.head results)
 
 testPackagesDeprecation :: RequireCallStack => TestEff ()

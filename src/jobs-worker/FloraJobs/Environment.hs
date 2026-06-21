@@ -4,7 +4,7 @@ module FloraJobs.Environment
   ) where
 
 import Data.ByteString (StrictByteString)
-import Data.Pool (Pool)
+import Data.Pool
 import Data.Pool qualified as Pool
 import Data.Word
 import Database.PostgreSQL.Simple qualified as PG
@@ -36,11 +36,12 @@ getFloraJobsEnv = do
   pool <-
     liftIO $
       Pool.newPool $
-        Pool.defaultPoolConfig
-          (PG.connectPostgreSQL jobsConfig.connectionInfo)
-          PG.close
-          (realToFrac connectionTimeout)
-          connections
+        setNumStripes (Just 1) $
+          Pool.defaultPoolConfig
+            (PG.connectPostgreSQL jobsConfig.connectionInfo)
+            PG.close
+            (realToFrac connectionTimeout)
+            connections
   pure
     FloraJobsEnv
       { pool

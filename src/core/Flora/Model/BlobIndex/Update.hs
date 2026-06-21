@@ -39,34 +39,39 @@ insertTar
   -> FloraM es (Either BlobStoreInsertError Sha256Sum)
 insertTar namespace packageName version contents = do
   FloraEnv{pool} <- Reader.ask
-  mpackage <- withReadOnlyPool pool $ Query.getPackageByNamespaceAndName namespace packageName
-  case mpackage of
-    Nothing -> pure . Left $ NoPackage packageName
-    Just package -> do
-      mrelease <- withReadOnlyPool pool $ Query.getReleaseByVersion package.packageId version
-      case mrelease of
-        Nothing -> pure . Left $ NoRelease packageName version
-        Just release -> do
-          Update.updateTarballArchiveHash release.releaseId contents
-          case hashTree <$> tarballToTree packageName version contents of
-            Left err -> pure . Left $ BlobStoreTarError packageName version err
-            Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree release.releaseId t
+  lookups <- withReadOnlyPool pool $ do
+    mpackage <- Query.getPackageByNamespaceAndName namespace packageName
+    case mpackage of
+      Nothing -> pure . Left $ NoPackage packageName
+      Just package -> do
+        mrelease <- Query.getReleaseByVersion package.packageId version
+        case mrelease of
+          Nothing -> pure . Left $ NoRelease packageName version
+          Just release -> do
+            existing <- Query.getReleaseTarballRootHash release.releaseId
+            pure $ Right (release, existing)
+  case lookups of
+    Left err -> pure $ Left err
+    Right (_release, Just rootHash) -> do
+      Log.logInfo_ $ "Tarball already inserted with root " <> display rootHash
+      pure $ Right rootHash
+    Right (release, Nothing) -> do
+      Update.updateTarballArchiveHash release.releaseId contents
+      case hashTree <$> tarballToTree packageName version contents of
+        Left err -> pure . Left $ BlobStoreTarError packageName version err
+        Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree release.releaseId t
 
 insertTree
   :: (BlobStoreAPI :> es, IOE :> es, Labeled ReadWrite WithConnection :> es, Log :> es, Reader FloraEnv :> es)
   => ReleaseId
   -> TarRoot Sha256Sum
   -> FloraM es ()
-insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
-  FloraEnv{pool} <- Reader.ask
-  Log.logTrace "Trying to insert directory tree" t
-  mTarballHash <- withReadOnlyPool pool $ Query.getReleaseTarballRootHash releaseId
-  case mTarballHash of
-    Just tarballHash -> Log.logInfo_ $ "Hash already inserted with hash: " <> display tarballHash
-    Nothing -> do
-      Update.updateTarballRootHash releaseId rootHash
-      void $! M.traverseWithKey (insertBlobs rootHash) tree
-      Log.logInfo_ $ "Inserted hash tree with root " <> display rootHash
+insertTree releaseId (TarRoot rootHash _ _ tree) = do
+  Log.logInfo_ $
+    "Inserting tarball tree with root " <> display rootHash <> " (" <> display (M.size tree) <> " top-level nodes)"
+  Update.updateTarballRootHash releaseId rootHash
+  void $! M.traverseWithKey (insertBlobs rootHash) tree
+  Log.logInfo_ $ "Inserted hash tree with root " <> display rootHash
   where
     _onConflictDoNothing :: Query
     _onConflictDoNothing = fromString "on conflict do nothing"
@@ -77,7 +82,6 @@ insertTree releaseId t@(TarRoot rootHash _ _ tree) = do
     insertBlobs parentHash dir (TarDirectory childHash nodes) = do
       res <- insertDoNothing $! BlobRelation parentHash childHash dir True
       when (res > 0) $! void $ M.traverseWithKey (insertBlobs childHash) nodes
-      void . insertDoNothing $! BlobRelation parentHash childHash dir True
     insertBlobs parentHash dir (TarFile childHash content) = do
       put childHash content
       void . insertDoNothing $! BlobRelation parentHash childHash dir False

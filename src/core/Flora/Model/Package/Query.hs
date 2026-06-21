@@ -65,11 +65,15 @@ import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
-  ( ComponentDependencies
-  , DependencyInfo
-  , toComponentDependencies
-  )
 import Flora.Monad
+
+withTotalCount :: [a :. Only Int] -> (Word, Vector a)
+withTotalCount rows =
+  ( case rows of
+      [] -> 0
+      ((_ :. Only n) : _) -> fromIntegral n
+  , Vector.fromList [x | (x :. _) <- rows]
+  )
 
 getAllPackages :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Eff es (Vector Package)
 getAllPackages = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query_ (_select @Package)
@@ -465,10 +469,10 @@ searchPackage
   :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Text
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfo)
 searchPackage (offset, limit) searchString =
   labeled @ReadOnly @WithConnection $
-    Vector.fromList
+    withTotalCount
       <$> query
         [sql|
         SELECT  lv."package_id"
@@ -480,6 +484,7 @@ searchPackage (offset, limit) searchString =
               , word_similarity(lv.name, ?) as rating
               , lv."uploaded_at"
               , lv."revised_at"
+              , count(*) OVER () AS total
         FROM latest_versions as lv
         WHERE ? <% lv.name
         GROUP BY
@@ -503,10 +508,10 @@ searchPackageByNamespace
   => (Word, Word)
   -> Namespace
   -> Text
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfo)
 searchPackageByNamespace (offset, limit) namespace searchString =
   labeled @ReadOnly @WithConnection $
-    Vector.fromList
+    withTotalCount
       <$> query
         [sql|
         SELECT  lv."package_id"
@@ -518,6 +523,7 @@ searchPackageByNamespace (offset, limit) namespace searchString =
               , word_similarity(lv.name, ?) as rating
               , lv."uploaded_at"
               , lv."revised_at"
+              , count(*) OVER () AS total
         FROM latest_versions as lv
         WHERE
         ? <% lv."name"
@@ -611,10 +617,10 @@ WITH results AS (SELECT l2.name
 listAllPackages
   :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfo)
 listAllPackages (offset, limit) =
   labeled @ReadOnly @WithConnection $
-    Vector.fromList
+    withTotalCount
       <$> query
         [sql|
     SELECT  lv."package_id"
@@ -626,6 +632,7 @@ listAllPackages (offset, limit) =
           , (1.0::real) as rating
           , lv."uploaded_at"
           , lv."revised_at"
+          , count(*) OVER () AS total
     FROM latest_versions as lv
     GROUP BY
         lv."package_id"
@@ -649,10 +656,10 @@ listAllPackagesInNamespace
   :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Namespace
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfo)
 listAllPackagesInNamespace (offset, limit) namespace =
   labeled @ReadOnly @WithConnection $
-    Vector.fromList
+    withTotalCount
       <$> query
         [sql|
     SELECT  lv."package_id"
@@ -664,6 +671,7 @@ listAllPackagesInNamespace (offset, limit) namespace =
           , (1.0::real) as rating
           , lv."uploaded_at"
           , lv."revised_at"
+          , count(*) OVER () AS total
     FROM latest_versions as lv
     WHERE lv."namespace" = ?
     GROUP BY

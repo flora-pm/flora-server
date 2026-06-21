@@ -13,6 +13,7 @@ import Data.List (sortBy)
 import Data.Maybe (fromJust)
 import Distribution.Version (mkVersion)
 import Effectful.Reader.Static qualified as Reader
+import Log
 import RequireCallStack
 import System.FilePath ((</>))
 
@@ -41,15 +42,28 @@ toList :: RequireCallStack => Tar.Entries e -> Either e [Tar.Entry]
 toList = right reverse . left fst . Tar.foldlEntries (\acc x -> x : acc) []
 
 readTarball :: RequireCallStack => FilePath -> TestEff LazyByteString
-readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/test-namespace" </> tarball)
+readTarball tarball = do
+  Log.logInfo "Starting to read tarball" $
+    object ["tarball" .= tarball]
+  content <- liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/test-namespace" </> tarball)
+  Log.logInfo "Tarball read" $
+    object ["tarball" .= tarball]
+  pure content
 
 testImportTarball :: TestEff ()
 testImportTarball = provideCallStack $ do
   FloraEnv{pool} <- Reader.ask
-  content <- readTarball "b-0.1.0.0.tar.gz"
+  let tarballFileName = "b-0.1.0.0.tar.gz"
+  content <- readTarball tarballFileName
   let pname = PackageName "b"
       version = mkVersion [0, 1, 0, 0]
-  res <- withReadWritePool pool $ Update.insertTar (Namespace "local-hackage") pname version content
+  res <- withReadWritePool pool $ do
+    Log.logInfo "Starting to insert tarball" $
+      object ["tarball" .= tarballFileName]
+    result <- Update.insertTar (Namespace "local-hackage") pname version content
+    Log.logInfo "Tarball inserted" $
+      object ["tarball" .= tarballFileName]
+    pure result
   case res of
     Left err -> assertFailure (show err)
     Right hash -> do
@@ -65,9 +79,10 @@ testImportTarball = provideCallStack $ do
           checkAll Tar.entryContent (sortByPath tarEntries) tarEntries'
 
           -- check that we also archived the initial tarball along with the release
-          package <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") pname)
-          release <- assertJust_ =<< withReadOnlyPool pool (Query.getReleaseByVersion package.packageId version)
-          archivedContent <- assertJust_ =<< withReadOnlyPool pool (Query.getReleaseTarballArchive release.releaseId)
+          archivedContent <- withReadOnlyPool pool $ do
+            package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") pname
+            release <- assertJust_ =<< Query.getReleaseByVersion package.packageId version
+            assertJust_ =<< Query.getReleaseTarballArchive release.releaseId
           assertEqual_ content archivedContent
         [Left _, _] -> assertFailure "Input tar is corrupted"
         [_, Left _] -> assertFailure "Generated corrupted tarball"

@@ -78,9 +78,7 @@ searchPackageByName
   -> FloraM es (Word, Vector PackageInfo)
 searchPackageByName (offset, limit) queryString = do
   FloraEnv{pool} <- Reader.ask
-  results <- withReadOnlyPool pool $ Query.searchPackage (offset, limit) queryString
-  count <- withReadOnlyPool pool $ Query.countPackagesByName queryString
-  pure (count, results)
+  withReadOnlyPool pool $ Query.searchPackage (offset, limit) queryString
 
 searchPackageByNamespaceAndName
   :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
@@ -90,7 +88,7 @@ searchPackageByNamespaceAndName
   -> FloraM es (Word, Vector PackageInfo)
 searchPackageByNamespaceAndName (offset, limit) namespace queryString = do
   FloraEnv{pool} <- Reader.ask
-  (results, duration) <-
+  ((count, results), duration) <-
     timeAction $
       withReadOnlyPool pool $
         Query.searchPackageByNamespace (offset, limit) namespace queryString
@@ -109,7 +107,6 @@ searchPackageByNamespaceAndName (offset, limit) namespace queryString = do
             )
             (Vector.toList results)
       ]
-  count <- withReadOnlyPool pool $ Query.countPackagesByName queryString
   pure (count, results)
 
 searchDependents
@@ -195,9 +192,7 @@ listAllPackagesInNamespace
   -> FloraM es (Word, Vector PackageInfo)
 listAllPackagesInNamespace pagination namespace = do
   FloraEnv{pool} <- Reader.ask
-  results <- withReadOnlyPool pool $ Query.listAllPackagesInNamespace pagination namespace
-  count <- withReadOnlyPool pool $ Query.countPackagesInNamespace namespace
-  pure (count, results)
+  withReadOnlyPool pool $ Query.listAllPackagesInNamespace pagination namespace
 
 listAllPackages
   :: forall (es :: [Effect])
@@ -206,9 +201,7 @@ listAllPackages
   -> FloraM es (Word, Vector PackageInfo)
 listAllPackages (offset, limit) = do
   FloraEnv{pool} <- Reader.ask
-  results <- withReadOnlyPool pool $ Query.listAllPackages (offset, limit)
-  count <- withReadOnlyPool pool Query.countPackages
-  pure (count, results)
+  withReadOnlyPool pool $ Query.listAllPackages (offset, limit)
 
 -- | Search modifiers:
 --
