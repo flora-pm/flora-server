@@ -32,6 +32,7 @@ spec =
     , testThis "Import index" testImportIndex
     , testThis "Package list from archive" testPackageListFromArchive
     , testThis "MLabs dependencies in Cardano are correctly inserted" testNthLevelDependencies
+    , testThis "Cardano dependencies are preferred in Cardano, then in Hackage" testCardanoDependencyResolution
     ]
 
 testIndex :: FilePath
@@ -89,6 +90,30 @@ testNthLevelDependencies = do
   dependencies <- Set.fromList . Vector.toList <$> withReadOnlyPool pool (Query.getRequirements plutarch.name latestRelease.releaseId)
   assertEqual_
     ( Set.fromList
-        [DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "aeson", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "base", version = ">=4.9 && <5"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "bytestring", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "constraints", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "containers", version = ">=0"}, DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "cryptonite", version = ">=0"}]
+        [ DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "aeson", version = ">=0"}
+        , DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "base", version = ">=4.9 && <5"}
+        , DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "bytestring", version = ">=0"}
+        , DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "constraints", version = ">=0"}
+        , DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "containers", version = ">=0"}
+        , DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "cryptonite", version = ">=0"}
+        ]
+    )
+    dependencies
+
+testCardanoDependencyResolution :: RequireCallStack => TestEff ()
+testCardanoDependencyResolution = do
+  FloraEnv{pool} <- Reader.ask
+  strictCheckedVars <-
+    assertJust_
+      =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "cardano") (PackageName "strict-checked-vars"))
+  latestRelease <- assertJust_ =<< withReadOnlyPool pool (Query.getLatestPackageRelease strictCheckedVars.packageId)
+  dependencies <- Set.fromList . Vector.toList <$> withReadOnlyPool pool (Query.getRequirements strictCheckedVars.name latestRelease.releaseId)
+  assertEqual_
+    ( Set.fromList
+        [ DependencyVersionRequirement{namespace = Namespace "cardano", packageName = PackageName "io-classes", version = ">=1.2 && <1.6"}
+        , DependencyVersionRequirement{namespace = Namespace "cardano", packageName = PackageName "strict-mvar", version = ">=1.2 && <1.6"}
+        , DependencyVersionRequirement{namespace = Namespace "cardano", packageName = PackageName "strict-stm", version = ">=1.2 && <1.6"}
+        , DependencyVersionRequirement{namespace = Namespace "local-hackage", packageName = PackageName "base", version = ">=4.9 && <5"}
+        ]
     )
     dependencies
