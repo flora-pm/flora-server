@@ -24,6 +24,7 @@ module Flora.Environment.Config
   )
 where
 
+import Control.DeepSeq
 import Control.Monad ((>=>))
 import Data.Aeson qualified as Aeson
 import Data.Base64.Types qualified as Base64
@@ -81,7 +82,7 @@ data DeploymentEnv
   | Development
   | Test
   deriving stock (Bounded, Enum, Eq, Generic, Show)
-  deriving anyclass (NoThunks)
+  deriving anyclass (NFData, NoThunks)
 
 instance Display DeploymentEnv where
   displayBuilder Production = "production"
@@ -96,7 +97,7 @@ data LoggingDestination
   | -- | Logs are sent to a file as JSON
     JSONFile
   deriving stock (Generic, Show)
-  deriving anyclass (NoThunks)
+  deriving anyclass (NFData, NoThunks)
 
 data Assets = Assets
   { jsBundle :: AssetBundle
@@ -123,14 +124,17 @@ data MLTP = MLTP
   , eventlogSocket :: Maybe FilePath
   }
   deriving stock (Generic, Show)
-  deriving anyclass (NoThunks)
+  deriving anyclass (NFData, NoThunks)
+
+instance NFData PortNumber where
+  rnf a = seq a ()
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
   , blobStoreFS :: Maybe FilePath
   }
   deriving stock (Generic, Show)
-  deriving anyclass (NoThunks)
+  deriving anyclass (NFData, NoThunks)
 
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
@@ -143,14 +147,14 @@ data FloraConfig = FloraConfig
   , environment :: DeploymentEnv
   }
   deriving stock (Generic, Show)
-  deriving anyclass (NoThunks)
+  deriving anyclass (NFData, NoThunks)
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
   , connections :: Int
   }
   deriving stock (Generic, Show)
-  deriving anyclass (NoThunks)
+  deriving anyclass (NFData, NoThunks)
 
 data TestConfig = TestConfig
   { httpPort :: Word16

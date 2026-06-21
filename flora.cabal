@@ -65,6 +65,8 @@ common common-ghc-options
     -finline-generics-aggressively
     -fexpose-all-unfoldings
     -fplugin=Effectful.Plugin
+    -finfo-table-map
+    -fdistinct-constructor-tables
 
 common common-rts-options
   ghc-options:
@@ -529,7 +531,6 @@ library flora-jobs
     commonmark,
     commonmark-extensions,
     commonmark-pandoc,
-    containers,
     data-default,
     deriving-aeson,
     effectful,
@@ -653,7 +654,6 @@ executable flora-cli
     PyF,
     base,
     bytestring,
-    containers,
     cvss,
     effectful,
     effectful-core,
