@@ -268,17 +268,17 @@ assertEqual message expected actual = liftIO $ Test.assertEqual message expected
 --  Usage:
 --
 --  >>> assertEqual expected actual
-assertEqual_ :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
+assertEqual_ :: (Eq a, HasCallStack, IOE :> es, Show a) => a -> a -> Eff es ()
 assertEqual_ expected actual = liftIO $ Test.assertEqual "" expected actual
 
 assertFailure :: (HasCallStack, MonadIO m) => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
-assertJust :: (HasCallStack, RequireCallStack) => String -> Maybe a -> TestEff a
+assertJust :: (HasCallStack, IOE :> es, RequireCallStack) => String -> Maybe a -> Eff es a
 assertJust _ (Just a) = pure a
 assertJust message Nothing = liftIO $ Test.assertFailure message
 
-assertJust_ :: (HasCallStack, RequireCallStack) => Maybe a -> TestEff a
+assertJust_ :: (HasCallStack, IOE :> es, RequireCallStack) => Maybe a -> Eff es a
 assertJust_ (Just a) = pure a
 assertJust_ Nothing = liftIO $ Test.assertFailure "Test return Nothing instead of Just"
 

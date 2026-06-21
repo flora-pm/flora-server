@@ -65,9 +65,10 @@ testImportTarball = provideCallStack $ do
           checkAll Tar.entryContent (sortByPath tarEntries) tarEntries'
 
           -- check that we also archived the initial tarball along with the release
-          package <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace "local-hackage") pname)
-          release <- assertJust_ =<< withReadOnlyPool pool (Query.getReleaseByVersion package.packageId version)
-          archivedContent <- assertJust_ =<< withReadOnlyPool pool (Query.getReleaseTarballArchive release.releaseId)
+          archivedContent <- withReadOnlyPool pool $ do
+            package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") pname
+            release <- assertJust_ =<< Query.getReleaseByVersion package.packageId version
+            assertJust_ =<< Query.getReleaseTarballArchive release.releaseId
           assertEqual_ content archivedContent
         [Left _, _] -> assertFailure "Input tar is corrupted"
         [_, Left _] -> assertFailure "Generated corrupted tarball"
