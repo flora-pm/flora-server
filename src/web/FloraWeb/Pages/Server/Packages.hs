@@ -199,29 +199,51 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion =
     templateEnv' <- templateFromSession session defaultTemplateEnv
     package <- withReadOnlyPool pool $ guardThatPackageExists packageNamespace packageName (\_ _ -> web404 session)
     packageIndex <- guardThatPackageIndexExists packageNamespace $ const (web404 session)
-    releases <-
-      Trace.withSpan "Query.getReleases" $
-        withReadOnlyPool pool $
-          Query.getReleases package.packageId
-    let latestRelease =
-          releases
-            & Vector.filter (\r -> r.deprecated /= Just True)
-            & maximumBy (compare `on` (.version))
-        version = fromMaybe latestRelease.version mversion
-    release <- withReadOnlyPool pool $ guardThatReleaseExists package.packageId version $ const (web404 session)
-    numberOfReleases <- withReadOnlyPool pool $ Query.getNumberOfReleases package.packageId
-    categories <- withReadOnlyPool pool $ Query.getPackageCategories package.packageId
-    numberOfDependents <-
-      Trace.withSpan "Query.getNumberOfPackageDependents" $
-        withReadOnlyPool pool $
-          Query.getNumberOfPackageDependents packageNamespace packageName Nothing
-    numberOfDependencies <- withReadOnlyPool pool $ Query.getNumberOfPackageRequirements release.releaseId
-    groups <- withReadOnlyPool pool $ Query.getPackageGroupsForPackage package.packageId
-    activeMaintainers <-
-      if package.namespace == Namespace "hackage"
-        then withReadOnlyPool pool $ Just <$> Query.getActiveMaintainers package.packageId
-        else pure Nothing
-    mUploader <- join <$> (traverse (\u -> withReadOnlyPool pool $ Query.getPackageUploaderById u) release.uploaderId)
+    -- All of the following reads run on a single pooled connection (one checkout,
+    -- one transaction) instead of a checkout per query.
+    ( releases
+      , latestRelease
+      , release
+      , numberOfReleases
+      , categories
+      , numberOfDependents
+      , numberOfDependencies
+      , groups
+      , activeMaintainers
+      , mUploader
+      ) <-
+      withReadOnlyPool pool $ do
+        releases <- Trace.withSpan "Query.getReleases" $ Query.getReleases package.packageId
+        let latestRelease =
+              releases
+                & Vector.filter (\r -> r.deprecated /= Just True)
+                & maximumBy (compare `on` (.version))
+            version = fromMaybe latestRelease.version mversion
+        release <- guardThatReleaseExists package.packageId version $ const (web404 session)
+        numberOfReleases <- Query.getNumberOfReleases package.packageId
+        categories <- Query.getPackageCategories package.packageId
+        numberOfDependents <-
+          Trace.withSpan "Query.getNumberOfPackageDependents" $
+            Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+        numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+        groups <- Query.getPackageGroupsForPackage package.packageId
+        activeMaintainers <-
+          if package.namespace == Namespace "hackage"
+            then Just <$> Query.getActiveMaintainers package.packageId
+            else pure Nothing
+        mUploader <- join <$> traverse (\u -> Query.getPackageUploaderById u) release.uploaderId
+        pure
+          ( releases
+          , latestRelease
+          , release
+          , numberOfReleases
+          , categories
+          , numberOfDependents
+          , numberOfDependencies
+          , groups
+          , activeMaintainers
+          , mUploader
+          )
 
     let templateEnv =
           templateEnv'
