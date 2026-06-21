@@ -10,11 +10,9 @@ import Control.Monad.Extra (whenJust)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.Reader (ask, runReaderT)
 import Data.ByteString.Lazy
-import Data.Text (Text)
 import Data.Text.Display
 import Lucid
 
-import Flora.Environment.Config
 import FloraWeb.Components.Alert qualified as Alert
 import FloraWeb.Components.Footer (footer)
 import FloraWeb.Components.Header (header)
