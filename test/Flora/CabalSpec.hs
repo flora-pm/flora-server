@@ -27,6 +27,7 @@ spec =
         [ testThis "Import package with 1 public library and 1 executable" testImportSimplePackage
         , testThis "Import package with multiple public libraries" testImportMultiplePublicLibraries
         , testThis "Flatten CondTree by taking the union of conditions" testFlattenCondTree
+        , testThis "Flatten CondTree accumulates nested conditions with CAnd" testFlattenCondTreeNested
         ]
     ]
 
@@ -62,6 +63,67 @@ testFlattenCondTree = do
                    , (Just (Lit True), 1)
                    , (Just (COr (Var (Arch JavaScript)) (Var (PackageFlag (mkFlagName "pure-haskell")))), 2)
                    , (Just (CNot (COr (Var (Arch JavaScript)) (Var (PackageFlag (mkFlagName "pure-haskell"))))), 3)
+                   ]
+
+-- | Here is the mock tree in its Cabal syntax:
+--
+--   -- [0]
+--   if arch(javascript)
+--     -- [1]
+--     if flag(pure-haskell)
+--       -- [2]
+--     else
+--       -- [3]
+--   else
+--     -- [4]
+--
+-- Otherwise visualised like this:
+--
+--   CondNode [0]
+--   └─ if archCond
+--      ├─ then CondNode [1]
+--      │       └─ if flagCond
+--      │          ├─ then CondNode [2]
+--      │          └─ else CondNode [3]
+--      └─ else CondNode [4]
+--
+-- Flattening accumulates the enclosing conditions, combining nested ones with
+-- 'CAnd' and negating each else-branch with 'CNot'.
+testFlattenCondTreeNested :: RequireCallStack => TestEff ()
+testFlattenCondTreeNested = do
+  let archCond = Var (Arch JavaScript)
+      flagCond = Var (PackageFlag (mkFlagName "pure-haskell"))
+      condTreeMock :: CondTree ConfVar [Dependency] Int
+      condTreeMock =
+        CondNode
+          { condTreeData = 0
+          , condTreeConstraints = mempty
+          , condTreeComponents =
+              [ CondBranch
+                  { condBranchCondition = archCond
+                  , condBranchIfTrue =
+                      CondNode
+                        { condTreeData = 1
+                        , condTreeConstraints = mempty
+                        , condTreeComponents =
+                            [ CondBranch
+                                { condBranchCondition = flagCond
+                                , condBranchIfTrue = CondNode{condTreeData = 2, condTreeConstraints = [], condTreeComponents = []}
+                                , condBranchIfFalse = Just (CondNode{condTreeData = 3, condTreeConstraints = [], condTreeComponents = []})
+                                }
+                            ]
+                        }
+                  , condBranchIfFalse = Just (CondNode{condTreeData = 4, condTreeConstraints = [], condTreeComponents = []})
+                  }
+              ]
+          }
+
+  flattenCondTree condTreeMock
+    `assertEqual_` [ (Nothing, 0)
+                   , (Just archCond, 1)
+                   , (Just (CAnd archCond flagCond), 2)
+                   , (Just (CAnd archCond (CNot flagCond)), 3)
+                   , (Just (CNot archCond), 4)
                    ]
 
 testImportSimplePackage :: RequireCallStack => TestEff ()
