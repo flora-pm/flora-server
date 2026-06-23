@@ -82,6 +82,9 @@ checkExpectedTables = do
         Set.fromList
           [ "affected_packages"
           , "affected_version_ranges"
+          , "arbiter_gates"
+          , "arbiter_queues"
+          , "arbiter_workers"
           , "blob_relations"
           , "categories"
           , "cron_schedules"
