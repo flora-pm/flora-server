@@ -17,7 +17,7 @@ The following Haskell command-line tools will have to be installed:
 
 Outside of the flora root directory run:
 ```
-cabal install hlint cabal-gild ghcid ghc-tags --semaphore -j
+cabal install fourmolu hlint cabal-gild ghcid ghc-tags --semaphore -j
 ```
 
 (Some of the above packages could have incompatible dependencies, so consider installing them separately with `cabal install`)
@@ -30,9 +30,26 @@ cabal install hlint cabal-gild ghcid ghc-tags --semaphore -j
 
 ### Notes on MacOS
 
-* `cabal.project.freeze` is not portable, so make sure to delete it before running `make build`, if not using the Docker-based setup.
+`cabal.project.freeze` is not portable, so make sure to delete it before running `make build`, if not using the Docker-based setup.
 
-### Questions
+If using `brew`, install both libsodium and pkg-config:
+```
+$ brew install libsodium pkg-config
+```
+
+And add the following to your `cabal.project.local`
+```
+-- ARM
+package *
+  extra-include-dirs: /opt/homebrew/include
+  extra-lib-dirs: /opt/homebrew/lib
+-- Intel
+package *
+  extra-include-dirs: /usr/local/include
+  extra-lib-dirs: /usr/local/lib
+```
+
+### Questions 
 
 Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
 
