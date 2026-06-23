@@ -30,7 +30,7 @@ cabal install fourmolu hlint cabal-gild ghcid ghc-tags --semaphore -j
 
 ### Notes on MacOS
 
-`cabal.project.freeze` is not portable, so make sure to delete it before running `make build`, if not using the Docker-based setup.  ### Questions Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
+`cabal.project.freeze` is not portable, so make sure to delete it before running `make build`, if not using the Docker-based setup.  
 
 If using `brew`, install both libsodium and pkg-config:
 ```
@@ -48,6 +48,10 @@ package *
   extra-include-dirs: /usr/local/include
   extra-lib-dirs: /usr/local/lib
 ```
+
+### Questions 
+
+Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
 
 ### Issues & Bugs
 
