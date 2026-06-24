@@ -49,7 +49,7 @@ package *
   extra-lib-dirs: /usr/local/lib
 ```
 
-### Questions 
+### Questions
 
 Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
 
@@ -133,8 +133,6 @@ cabal run -- flora-cli -c environment.test.kdl provision
 ```
 
 Use `flora-cli --help` to see what commands are available.
-
-You can then build the server with `make build`. Do **not** simply run `cabal build`.
 
 A very useful command to run is
 
