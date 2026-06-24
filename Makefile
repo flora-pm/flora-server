@@ -82,7 +82,7 @@ db-test-migrate: ## Apply test database migrations
 db-test-reset: db-test-drop db-test-setup db-test-provision ## Reset the test database
 
 db-test-provision: ## Create categories and repositories
-  ./scripts/db-provision.sh $(CONFIG_TEST)
+	./scripts/db-provision.sh $(CONFIG_TEST)
 
 db-test-provision-advisories: ## Load HSEC advisories in the test database
 	@cabal run -- flora-cli -c $(CONFIG_TEST) provision advisories
