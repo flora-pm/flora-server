@@ -84,7 +84,7 @@ data LoggingDestination
     Json
   | -- | Logs are sent to a file as JSON
     JSONFile
-  deriving (Generic, Show)
+  deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
 
 loggingDestinationDecoder :: KDL.ValueDecoder LoggingDestination
