@@ -246,14 +246,14 @@ The previous paragraph shows how to import test packages, but you may want to im
 You can do so with:
 
 ```bash
-$ cabal run -- flora-cli -c environment.test.kdl import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
+$ cabal run flora-cli -- -c environment.test.kdl import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
   --repository hackage.haskell.org
 ```
 
 Similarly if you have the [cardano packages index](https://input-output-hk.github.io/cardano-haskell-packages/) configured, run:
 
 ```bash
-$ cabal run -- flora-cli -c environment.test.kdl import-index ~/.cabal/packages/cardano/01-index.tar.gz \
+$ cabal run flora-cli -- -c environment.test.kdl import-index ~/.cabal/packages/cardano/01-index.tar.gz \
   --repository "cardano"
 ```
 
@@ -274,7 +274,7 @@ To enable capturing live events from Flora server running locally:
 2. Run:
 
 ```
-$ cabal run -- flora-server -c environment.test.kdl +RTS -l -hT --eventlog-flush-interval=1 -RTS
+$ cabal run flora-server -- -c environment.test.kdl +RTS -l -hT --eventlog-flush-interval=1 -RTS
 ```
 
 3. After that, run separately:
