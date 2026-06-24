@@ -58,32 +58,7 @@ db-migrate: ## Apply database migrations
 db-reset: db-drop db-setup db-provision ## Reset the dev database
 
 db-provision: ## Create categories and repositories
-	@cabal run -- flora-cli -c $(CONFIG) create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
-	@cabal run -- flora-cli -c $(CONFIG) provision categories
-	@cabal run -- flora-cli -c $(CONFIG) provision-repository --name "hackage" \
-			--url https://hackage.haskell.org \
-			--description "Central package repository"
-	@cabal run -- flora-cli -c $(CONFIG) provision-repository --name "cardano" \
-			--url https://chap.intersectmbo.org \
-			--description "Packages of the Cardano project"
-	@cabal run -- flora-cli -c $(CONFIG) provision-repository --name "horizon" \
-			--url https://packages.horizon-haskell.net \
-			--description "Packages of the Horizon project"
-	@cabal run -- flora-cli -c $(CONFIG) provision-repository --name "mlabs" \
-			--url https://plutonomicon.github.io/plutarch-plutus \
-			--description "Packages of the MLabs Cardano ecosystem"
-	@cabal run -- flora-cli -c $(CONFIG) index-dependency --name "cardano"\
-			--depends-on "hackage" \
-			--priority 1
-	@cabal run -- flora-cli -c $(CONFIG) index-dependency --name "horizon"\
-			--depends-on "hackage" \
-			--priority 1
-	@cabal run -- flora-cli -c $(CONFIG) index-dependency --name "mlabs" \
-			--depends-on "cardano" \
-			--priority 1
-	@cabal run -- flora-cli -c $(CONFIG) index-dependency --name "mlabs" \
-			--depends-on "hackage" \
-			--priority 2
+	./scripts/db-provision.sh $(CONFIG)
 
 db-provision-advisories: ## Load HSEC advisories in the database
 	@cabal run -- flora-cli -c $(CONFIG) provision advisories
@@ -107,32 +82,7 @@ db-test-migrate: ## Apply test database migrations
 db-test-reset: db-test-drop db-test-setup db-test-provision ## Reset the test database
 
 db-test-provision: ## Create categories and repositories
-	@cabal run -- flora-cli -c $(CONFIG_TEST) create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision categories
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision-repository --name "hackage" \
-			--url https://hackage.haskell.org \
-			--description "Central package repository"
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision-repository --name "cardano" \
-			--url https://chap.intersectmbo.org \
-			--description "Packages of the Cardano project"
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision-repository --name "horizon" \
-			--url https://packages.horizon-haskell.net \
-			--description "Packages of the Horizon project"
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision-repository --name "mlabs" \
-			--url https://plutonomicon.github.io/plutarch-plutus \
-			--description "Packages of the MLabs Cardano ecosystem"
-	@cabal run -- flora-cli -c $(CONFIG_TEST) index-dependency --name "cardano"\
-			--depends-on "hackage" \
-			--priority 1
-	@cabal run -- flora-cli -c $(CONFIG_TEST) index-dependency --name "horizon"\
-			--depends-on "hackage" \
-			--priority 1
-	@cabal run -- flora-cli -c $(CONFIG_TEST) index-dependency --name "mlabs" \
-			--depends-on "cardano" \
-			--priority 1
-	@cabal run -- flora-cli -c $(CONFIG_TEST) index-dependency --name "mlabs" \
-			--depends-on "hackage" \
-			--priority 2
+  ./scripts/db-provision.sh $(CONFIG_TEST)
 
 db-test-provision-advisories: ## Load HSEC advisories in the test database
 	@cabal run -- flora-cli -c $(CONFIG_TEST) provision advisories
