@@ -12,9 +12,7 @@ import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
 import Data.Pool qualified as Pool
-import Data.Text qualified as Text
 import Data.Text.Display (display)
-import Data.Text.Encoding qualified as Text
 import Effectful
 import Effectful.Concurrent
 import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
@@ -66,7 +64,7 @@ import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (ConnectionInfo (..), DeploymentEnv (..), FloraConfig (..), toConnString)
+import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..), toConnString)
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
