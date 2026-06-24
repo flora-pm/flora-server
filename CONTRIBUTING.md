@@ -241,7 +241,7 @@ $ make db-provision-packages
 
 ### Importing a package index
 
-The previous paragraph shows how to import test packages, but you may want to import a whole package index, just because.
+The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shits and giggles.
 
 You can do so with:
 
