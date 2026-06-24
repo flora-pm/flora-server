@@ -20,7 +20,7 @@ import System.Exit (exitFailure)
 import System.IO
 
 import Flora.Environment
-import Flora.Environment.Config (toConnString, ConnectionInfo (..), FloraConfig (..))
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), toConnString)
 import Flora.Environment.Env (FloraEnv (..))
 import Flora.Model.Job
 import FloraJobs.Environment

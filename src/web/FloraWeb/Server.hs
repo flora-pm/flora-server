@@ -66,7 +66,7 @@ import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (toConnString, ConnectionInfo (..), DeploymentEnv (..), FloraConfig (..))
+import Flora.Environment.Config (ConnectionInfo (..), DeploymentEnv (..), FloraConfig (..), toConnString)
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
