@@ -104,10 +104,10 @@ watch: ## Load the main library and reload on file change
 	@ghcid --target flora-server --restart="src" -l
 
 test:  ## Run the test suite
-	@cabal test --test-options="-c $(CONFIG_TEST)"
+	@cabal test --ghc-option "-Werror=unused-imports" --test-options="-c $(CONFIG_TEST)"
 
 watch-test: ## Load the tests in ghcid and reload them on file change
-	@ghcid --command='cabal v2-repl flora-test' --test 'Main.main' --setup ':set args -c $(CONFIG_TEST)'
+	@ghcid --command='cabal v2-repl flora-test --ghc-option "-Werror=unused-imports"' --test 'Main.main' --setup ':set args -c $(CONFIG_TEST)'
 
 watch-server: ## Start flora-server in ghcid
 	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora "environment.kdl"'
