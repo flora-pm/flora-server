@@ -65,11 +65,15 @@ import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types (ReleaseId)
 import Flora.Model.Requirement
-  ( ComponentDependencies
-  , DependencyInfo
-  , toComponentDependencies
-  )
 import Flora.Monad
+
+withTotalCount :: [a :. Only Int] -> (Word, Vector a)
+withTotalCount rows =
+  ( case rows of
+      [] -> 0
+      ((_ :. Only n) : _) -> fromIntegral n
+  , Vector.fromList [x | (x :. _) <- rows]
+  )
 
 getAllPackages :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Eff es (Vector Package)
 getAllPackages = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query_ (_select @Package)
@@ -325,7 +329,6 @@ getRequirements (PackageName packageName) releaseId = labeled @ReadOnly @WithCon
 
 -- | This query finds all the dependencies of a release,
 --  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
---  HACK: This query is terrifying, must be optimised by someone who knows their shit.
 getAllRequirementsQuery :: Query
 getAllRequirementsQuery =
   [sql|
@@ -349,19 +352,14 @@ WITH requirements AS (SELECT DISTINCT p0.package_id
        , req.name
        , req.requirement
        , req.components
-       , r3.version AS dependency_latest_version
-       , r3.synopsis AS dependency_latest_synopsis
-       , r3.license AS dependency_latest_license
-       , r3.uploaded_at
-       , r3.revised_at
+       , lv.version AS dependency_latest_version
+       , lv.synopsis AS dependency_latest_synopsis
+       , lv.license AS dependency_latest_license
+       , lv.uploaded_at
+       , lv.revised_at
   FROM requirements AS req
-       INNER JOIN packages AS p2 ON p2.namespace = req.namespace
-                                AND p2.name = req.name
-       INNER JOIN releases AS r3 ON r3.package_id = p2.package_id
-  WHERE r3.version = (SELECT max(version)
-                      FROM releases
-                      WHERE package_id = p2.package_id)
-  GROUP BY req.package_id, req.component_type, req.component_name, req.namespace, req.name, req.requirement, req.components, r3.version, r3.synopsis, r3.license, r3.uploaded_at, r3.revised_at
+       INNER JOIN latest_versions AS lv ON lv.namespace = req.namespace
+                                       AND lv.name = req.name
   ORDER BY req.component_type
          , req.component_name DESC
 |]
@@ -472,10 +470,10 @@ searchPackage
   :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Text
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfo)
 searchPackage (offset, limit) searchString =
   labeled @ReadOnly @WithConnection $
-    Vector.fromList
+    withTotalCount
       <$> query
         [sql|
         SELECT  lv."package_id"
@@ -487,6 +485,7 @@ searchPackage (offset, limit) searchString =
               , word_similarity(lv.name, ?) as rating
               , lv."uploaded_at"
               , lv."revised_at"
+              , count(*) OVER () AS total
         FROM latest_versions as lv
         WHERE ? <% lv.name
         GROUP BY
@@ -510,10 +509,10 @@ searchPackageByNamespace
   => (Word, Word)
   -> Namespace
   -> Text
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfo)
 searchPackageByNamespace (offset, limit) namespace searchString =
   labeled @ReadOnly @WithConnection $
-    Vector.fromList
+    withTotalCount
       <$> query
         [sql|
         SELECT  lv."package_id"
@@ -525,6 +524,7 @@ searchPackageByNamespace (offset, limit) namespace searchString =
               , word_similarity(lv.name, ?) as rating
               , lv."uploaded_at"
               , lv."revised_at"
+              , count(*) OVER () AS total
         FROM latest_versions as lv
         WHERE
         ? <% lv."name"
@@ -618,10 +618,10 @@ WITH results AS (SELECT l2.name
 listAllPackages
   :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfo)
 listAllPackages (offset, limit) =
   labeled @ReadOnly @WithConnection $
-    Vector.fromList
+    withTotalCount
       <$> query
         [sql|
     SELECT  lv."package_id"
@@ -633,6 +633,7 @@ listAllPackages (offset, limit) =
           , (1.0::real) as rating
           , lv."uploaded_at"
           , lv."revised_at"
+          , count(*) OVER () AS total
     FROM latest_versions as lv
     GROUP BY
         lv."package_id"
@@ -656,10 +657,10 @@ listAllPackagesInNamespace
   :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
   => (Word, Word)
   -> Namespace
-  -> Eff es (Vector PackageInfo)
+  -> Eff es (Word, Vector PackageInfo)
 listAllPackagesInNamespace (offset, limit) namespace =
   labeled @ReadOnly @WithConnection $
-    Vector.fromList
+    withTotalCount
       <$> query
         [sql|
     SELECT  lv."package_id"
@@ -671,6 +672,7 @@ listAllPackagesInNamespace (offset, limit) namespace =
           , (1.0::real) as rating
           , lv."uploaded_at"
           , lv."revised_at"
+          , count(*) OVER () AS total
     FROM latest_versions as lv
     WHERE lv."namespace" = ?
     GROUP BY

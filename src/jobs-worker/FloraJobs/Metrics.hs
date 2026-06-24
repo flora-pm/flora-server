@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module FloraJobs.Metrics where
@@ -7,6 +8,7 @@ import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import Effectful
 import Effectful.Prometheus
+import NoThunks.Class (NoThunks, OnlyCheckWhnfNamed (..))
 import Prometheus
 import Prometheus qualified as P
 
@@ -15,6 +17,13 @@ import Paths_flora (version)
 data JobsRunnerMetrics = JobsRunnerMetrics
   { buildInformation :: P.Vector P.Label2 P.Gauge
   }
+
+-- Opaque, long-lived Prometheus metric state held for the jobs process lifetime:
+-- assert WHNF only, do not descend into the library's intentionally-lazy metric map.
+deriving via
+  OnlyCheckWhnfNamed "FloraJobs.Metrics.JobsRunnerMetrics" JobsRunnerMetrics
+  instance
+    NoThunks JobsRunnerMetrics
 
 registerMetrics :: IOE :> es => Eff es JobsRunnerMetrics
 registerMetrics = do

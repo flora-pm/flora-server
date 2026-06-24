@@ -21,10 +21,11 @@ import Effectful
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
 import Effectful.Labeled
-import Effectful.Log (Log, runLog)
+import Effectful.Log
 import Effectful.PostgreSQL
 import Effectful.Reader.Static qualified as Reader
 import Log qualified
+import NoThunks.Class
 import Options.Applicative
 import RequireCallStack
 import System.Exit
@@ -60,9 +61,21 @@ preFlightChecks config = do
           Log.LogTrace
         $ provideCallStack
         $ do
+          checkFloraEnvForThunks env
           withReadOnlyPool env.pool checkExpectedTables
           withReadOnlyPool env.pool checkRepositoriesAreConfigured
           checkIfIndexRefreshJobIsPlanned env.workerEnv
+
+checkFloraEnvForThunks :: (IOE :> es, Log :> es) => FloraEnv -> Eff es ()
+checkFloraEnvForThunks env = do
+  mThunk <- liftIO $ noThunks [] env
+  forM_ mThunk $ \info ->
+    Log.logAttention
+      "Unexpected thunk detected in FloraEnv (possible space leak): "
+      $ object
+        [ "thunk_context" .= info.thunkContext
+        , "thunk_info" .= info.thunkInfo
+        ]
 
 checkExpectedTables :: (IOE :> es, IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es) => FloraM es ()
 checkExpectedTables = do
@@ -71,6 +84,9 @@ checkExpectedTables = do
         Set.fromList
           [ "affected_packages"
           , "affected_version_ranges"
+          , "arbiter_gates"
+          , "arbiter_queues"
+          , "arbiter_workers"
           , "blob_relations"
           , "categories"
           , "cron_schedules"

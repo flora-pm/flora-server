@@ -41,6 +41,7 @@ a.entityCard:where(:hover, :active, :focus) :is(
 	.entityCard-prefix
 	) {
 	text-decoration: underline;
+	text-decoration-color: var(--color-text-raise);
 }
 
 .entityCard-synopsis {

@@ -1,9 +1,7 @@
 module FloraJobs.Types where
 
 import Data.Function ((&))
-import Data.Set (Set)
 import Data.Text.Display (display)
-import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent.Async
 import Effectful.Error.Static (Error)
@@ -16,18 +14,14 @@ import Effectful.Process.Typed
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
 import Effectful.Tracing (Tracer)
 import GHC.Stack (prettyCallStack)
 import RequireCallStack
 
-import Distribution.Orphans.Version ()
 import Flora.Environment.Env
 import Flora.Import.Types (ImportError)
 import Flora.Model.BlobStore.API
-import Flora.Model.Package.Types (Namespace, PackageName (..))
 import Flora.Tracing qualified as Tracing
 import FloraJobs.Environment
 
@@ -39,7 +33,6 @@ type JobsRunner =
      , Time
      , TypedProcess
      , FileSystem
-     , State (Set (Namespace, PackageName, Version))
      , Tracer
      , Reader FloraEnv
      , Concurrent
@@ -70,7 +63,6 @@ runJobRunner runnerEnv floraEnv logger jobRunner = do
     & runTime
     & runTypedProcess
     & runFileSystem
-    & State.evalState mempty
     & runTrace
     & Reader.runReader floraEnv
     & runConcurrent

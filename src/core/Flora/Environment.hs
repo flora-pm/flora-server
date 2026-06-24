@@ -7,9 +7,10 @@ module Flora.Environment
 where
 
 import Arbiter.Simple qualified as ArbS
-import Data.Pool (Pool)
+import Control.DeepSeq (force)
+import Control.Exception (evaluate)
+import Data.Pool
 import Data.Pool qualified as Pool
-import Data.Pool.Introspection (defaultPoolConfig)
 import Data.Proxy
 import Data.Text qualified as Text
 import Data.Time (NominalDiffTime)
@@ -47,19 +48,20 @@ mkPool
 mkPool connectionInfo timeout' connections =
   liftIO $
     Pool.newPool $
-      defaultPoolConfig
-        ( PG.connect
-            PG.ConnectInfo
-              { PG.connectHost = Text.unpack connectionInfo.connectHost
-              , PG.connectPort = connectionInfo.connectPort
-              , PG.connectUser = Text.unpack connectionInfo.connectUser
-              , PG.connectPassword = Text.unpack connectionInfo.connectPassword
-              , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
-              }
-        )
-        PG.close
-        (realToFrac timeout')
-        connections
+      setNumStripes (Just 1) $
+        defaultPoolConfig
+          ( PG.connect
+              PG.ConnectInfo
+                { PG.connectHost = Text.unpack connectionInfo.connectHost
+                , PG.connectPort = connectionInfo.connectPort
+                , PG.connectUser = Text.unpack connectionInfo.connectUser
+                , PG.connectPassword = Text.unpack connectionInfo.connectPassword
+                , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
+                }
+          )
+          PG.close
+          (realToFrac timeout')
+          connections
 
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
@@ -97,5 +99,5 @@ configToEnv floraConfig = do
 getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FilePath -> Eff es FloraEnv
 getFloraEnv fp = do
   liftIO (KDL.decodeFileWith floraEnvDecoder fp) >>= \case
-    Right env -> configToEnv env
+    Right env -> liftIO (evaluate (force env)) >>= configToEnv
     Left e -> fail $ show e

@@ -1,4 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
@@ -17,6 +19,7 @@ module Flora.Environment.Config
   )
 where
 
+import Control.DeepSeq
 import Control.Monad (mfilter, when)
 import Data.Aeson qualified as Aeson
 import Data.Base64.Types qualified as Base64
@@ -38,7 +41,10 @@ import Effectful.FileSystem.IO.ByteString qualified as EBS
 import GHC.Generics (Generic)
 import KDL qualified
 import Network.Socket (HostName, PortNumber)
+import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
 import Sel.Hashing.SHA256 qualified as Sel
+
+deriving via OnlyCheckWhnf PortNumber instance NoThunks PortNumber
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
@@ -48,13 +54,15 @@ data ConnectionInfo = ConnectionInfo
   , connectDatabase :: Text
   , sslMode :: Text
   }
-  deriving (Eq, Generic, Read, Show, Typeable)
+  deriving stock (Eq, Generic, Read, Show, Typeable)
+  deriving anyclass (NFData, NoThunks)
 
 data DeploymentEnv
   = Production
   | Development
   | Test
   deriving stock (Bounded, Enum, Eq, Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 instance Display DeploymentEnv where
   displayBuilder Production = "production"
@@ -77,6 +85,7 @@ data LoggingDestination
   | -- | Logs are sent to a file as JSON
     JSONFile
   deriving (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 loggingDestinationDecoder :: KDL.ValueDecoder LoggingDestination
 loggingDestinationDecoder = KDL.withDecoder KDL.string $ \case
@@ -90,12 +99,14 @@ data Assets = Assets
   , cssBundle :: AssetBundle
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NoThunks)
 
 data AssetBundle = AssetBundle
   { name :: Text
   , hash :: Text
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NoThunks)
 
 -- | MLTP stands for Metrics, Logs, Traces and Profiles
 data MLTP = MLTP
@@ -108,6 +119,10 @@ data MLTP = MLTP
   , eventlogSocket :: Maybe FilePath
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
+
+instance NFData PortNumber where
+  rnf a = seq a ()
 
 mltpDecoder :: KDL.NodeDecoder MLTP
 mltpDecoder = KDL.children do
@@ -125,6 +140,7 @@ data FeatureConfig = FeatureConfig
   , blobStoreFS :: Maybe FilePath
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 featureConfigDecoder :: KDL.NodeDecoder FeatureConfig
 featureConfigDecoder = KDL.children do
@@ -144,6 +160,7 @@ data FloraConfig = FloraConfig
   , environment :: DeploymentEnv
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 connectionInfoDecoder :: KDL.NodeDecoder ConnectionInfo
 connectionInfoDecoder = KDL.children do
@@ -171,7 +188,24 @@ data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
   , connections :: Int
   }
-  deriving stock (Show)
+  deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
+
+data TestConfig = TestConfig
+  { httpPort :: Word16
+  , dbConfig :: PoolConfig
+  , connectionInfo :: ConnectionInfo
+  , mltp :: MLTP
+  }
+  deriving stock (Generic)
+
+data FloraJobsConfig = FloraJobsConfig
+  { dbConfig :: PoolConfig
+  , connectionInfo :: ConnectionInfo
+  , httpPort :: Word16
+  , mltp :: MLTP
+  }
+  deriving stock (Generic)
 
 nominalDiffTimeDecoder :: KDL.ValueDecoder NominalDiffTime
 nominalDiffTimeDecoder = KDL.withDecoder KDL.number \x -> do

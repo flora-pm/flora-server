@@ -382,7 +382,9 @@ body {
 	:root { font-size: 100%; }
 }
 
-/* Remove all animations and transitions for people that prefer not to see them */
+/*
+Remove all animations and transitions for people that prefer not to see them
+*/
 @media (prefers-reduced-motion: reduce) {
 	html:focus-within {
 		scroll-behavior: auto;
@@ -397,3 +399,10 @@ body {
 		animation-iteration-count: 1;
 	}
 }
+
+/*
+Remove ⓘ pseudo-element from interest invoker buttons
+ cf. https://github.com/w3c/csswg-drafts/issues/13980#issuecomment-4694540737
+*/
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+::interest-button { display: none; }

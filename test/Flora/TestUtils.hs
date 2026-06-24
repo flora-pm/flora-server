@@ -94,7 +94,6 @@ import Control.Monad.Catch
 import Data.Function
 import Data.List.NonEmpty qualified as NE
 import Data.Pool hiding (PoolConfig)
-import Data.Set (Set)
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
@@ -121,8 +120,6 @@ import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
 import Effectful.Time
 import Effectful.Tracing (Tracer)
 import Effectful.Tracing qualified as Trace
@@ -182,7 +179,6 @@ type TestEff a =
      , Reader FloraEnv
      , Log
      , Time
-     , State (Set (Namespace, PackageName, Version))
      , Metrics AppMetrics
      , Concurrent
      , Error ImportError
@@ -228,7 +224,6 @@ runTestEff comp env = runEff $
       & Log.runLog "flora-test" logger LogInfo
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime
-      & State.evalState mempty
       & runPrometheusMetrics env.metrics
       & runConcurrent
       & Error.runErrorWith
@@ -268,17 +263,17 @@ assertEqual message expected actual = liftIO $ Test.assertEqual message expected
 --  Usage:
 --
 --  >>> assertEqual expected actual
-assertEqual_ :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
+assertEqual_ :: (Eq a, HasCallStack, IOE :> es, Show a) => a -> a -> Eff es ()
 assertEqual_ expected actual = liftIO $ Test.assertEqual "" expected actual
 
 assertFailure :: (HasCallStack, MonadIO m) => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
-assertJust :: (HasCallStack, RequireCallStack) => String -> Maybe a -> TestEff a
+assertJust :: (HasCallStack, IOE :> es, RequireCallStack) => String -> Maybe a -> Eff es a
 assertJust _ (Just a) = pure a
 assertJust message Nothing = liftIO $ Test.assertFailure message
 
-assertJust_ :: (HasCallStack, RequireCallStack) => Maybe a -> TestEff a
+assertJust_ :: (HasCallStack, IOE :> es, RequireCallStack) => Maybe a -> Eff es a
 assertJust_ (Just a) = pure a
 assertJust_ Nothing = liftIO $ Test.assertFailure "Test return Nothing instead of Just"
 

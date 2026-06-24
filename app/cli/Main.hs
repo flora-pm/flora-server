@@ -5,7 +5,6 @@ import Control.Monad.Extra (forM_, unlessM)
 import Data.Bifunctor
 import Data.ByteString.Lazy.Char8 qualified as BSL
 import Data.List.NonEmpty (NonEmpty)
-import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
@@ -22,8 +21,6 @@ import Effectful.Log (Log, runLog)
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
 import Effectful.Tracing (Tracer)
 import GHC.Generics (Generic)
@@ -124,7 +121,6 @@ main = Log.withStdOutLogger $ \logger -> do
       & runTime
       & runFailIO
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
       & runErrorWith @(NonEmpty AdvisoryImportError)
         ( \callstack err -> do
             liftIO $ putStrLn $ prettyCallStack callstack
@@ -235,7 +231,6 @@ runCommand
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      , Tracer :> es
      )
@@ -327,7 +322,6 @@ importIndex
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      , Tracer :> es
      )

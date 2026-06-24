@@ -12,7 +12,7 @@ test-show-details: direct
 jobs: $ncpus
 
 package *
-  ghc-options: +RTS -I0 -RTS
+  ghc-options: +RTS -I0 -RTS -finfo-table-map -fdistinct-constructor-tables
 
 allow-newer: chronos:hashable
            , feed:*
@@ -93,7 +93,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/velveteer/arbiter.git
-  tag: 4939a5e8ce815669764beaf48483aa8053c30db8
+  tag: 96097411a0480e182d0cbce819c45023fe8aeec7
   subdir:
     arbiter-core
     arbiter-worker
@@ -101,3 +101,4 @@ source-repository-package
     arbiter-migrations
     arbiter-servant
     arbiter-servant-ui
+    arbiter-test-common
