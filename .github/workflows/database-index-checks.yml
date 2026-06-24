@@ -1,4 +1,4 @@
-name: Duplicate Indexes
+name: Database Index Checks
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     branches: ["main", "development"]
 
 concurrency:
-  group: duplicate-indexes-${{ github.ref_name }}
+  group: database-index-checks-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
           ubuntu-version: "24.04"
           version: 0.1.7.1
 
-  duplicate-index-check:
+  database-index-checks:
     needs: generateMatrix
     runs-on: ${{ matrix.os }}
     strategy:
@@ -63,33 +63,34 @@ jobs:
         echo "$HOME/.cabal/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
-        source ./environment.ci.sh
         touch ~/.pgpass
         chmod 0600 ~/.pgpass
-        echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
-        cat ~/.pgpass
         cabal update
+
+    - name: Create freeze file
+      run: cabal freeze --enable-tests
 
     - name: Cache
       uses: actions/cache@v5
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
-        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
-
 
     - name: Migrate
       run: |
-        cabal install postgresql-migration
         set -x
-        source ./environment.ci.sh
-        createdb -h "${FLORA_DB_HOST}" -p "${FLORA_DB_PORT}" -U "${FLORA_DB_USER}" -w "${FLORA_DB_DATABASE}"
-        migrate init "${FLORA_DB_CONNSTRING}"
-        migrate migrate "${FLORA_DB_CONNSTRING}" migrations
+        cabal run -- flora-cli -c environment.ci.kdl create-db
+        cabal run -- flora-migrate -c environment.ci.kdl
       env:
         PGPASSWORD: "postgres"
 
-    - name: Check
-      run: |
-        source ./environment.ci.sh
-        .github/workflows/check-duplicate-indexes.sh
+    - name: Check missing FK indexes
+      run: .github/workflows/check-missing-fk-indexes.sh
+      env:
+        FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"
+
+    - name: Check duplicate indexes
+      run: .github/workflows/check-duplicate-indexes.sh
+      env:
+        FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"

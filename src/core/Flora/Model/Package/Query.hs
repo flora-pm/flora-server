@@ -325,7 +325,7 @@ getRequirements (PackageName packageName) releaseId = labeled @ReadOnly @WithCon
       Vector.fromList <$> query (getRequirementsQuery True <> " LIMIT 6") (componentType, releaseId)
     Nothing ->
       Vector.fromList <$> query (getRequirementsQuery False <> " LIMIT 6") (Only releaseId)
-  pure $ Vector.map (\(namespace, name, requirement) -> DependencyVersionRequirement namespace name requirement) results
+  pure $ Vector.map (\(namespace, name, requirement, _nameLowercase :: Text) -> DependencyVersionRequirement namespace name requirement) results
 
 -- | This query finds all the dependencies of a release,
 --  and displays their namespace, name and the requirement spec (version range) expressed by the dependent.
@@ -381,6 +381,7 @@ getRequirementsQuery singleComponentType =
       SELECT DISTINCT dependency.namespace
                     , dependency.name
                     , req.requirement
+                    , LOWER(dependency.name)
       |]
     tablesSingleType =
       [sql|
@@ -405,7 +406,7 @@ getRequirementsQuery singleComponentType =
 
     orderClause =
       [sql|
-      ORDER BY dependency.namespace DESC
+      ORDER BY dependency.namespace DESC, LOWER(dependency.name) ASC
       |]
 
 getNumberOfPackageRequirements :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => ReleaseId -> Eff es Word

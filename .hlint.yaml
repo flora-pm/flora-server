@@ -1,3 +1,4 @@
+- arguments: [-XOverloadedRecordDot]
 - ignore: {name: "Redundant ^."}
 - ignore: {name: "Eta reduce"}
 - ignore: {name: "Avoid lambda"}

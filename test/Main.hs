@@ -6,8 +6,10 @@ import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.Labeled
 import Effectful.PostgreSQL
+import Options.Applicative
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
+import System.Environment (withArgs)
 import System.IO
 import Test.Tasty
 
@@ -15,7 +17,7 @@ import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Database
-import Flora.Environment
+import Flora.Environment (configFileParser, getFloraEnv)
 import Flora.Environment.Env
 import Flora.FeedSpec qualified as FeedSpec
 import Flora.Import.Categories (importCategories)
@@ -34,7 +36,8 @@ import Flora.UserSpec qualified as UserSpec
 main :: IO ()
 main = provideCallStack $ do
   hSetBuffering stdout LineBuffering
-  env <- runEff . runFailIO . runFileSystem $ getFloraEnv
+  (configFile, tastyArgs) <- execParser $ info parser forwardOptions
+  env <- runEff . runFailIO . runFileSystem $ getFloraEnv configFile
   fixtures <-
     runTestEff
       ( do
@@ -52,8 +55,11 @@ main = provideCallStack $ do
       )
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
-  defaultMain $
-    testGroup "Flora Tests" spec
+  withArgs tastyArgs $
+    defaultMain $
+      testGroup "Flora Tests" spec
+  where
+    parser = (,) <$> configFileParser <*> many (strArgument mempty)
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =

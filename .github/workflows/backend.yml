@@ -49,10 +49,11 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 
-    - uses: haskell/ghcup-setup@v1
+    - name: Set up Haskell
+      uses: haskell-actions/setup@v2
       with:
-        ghc: ${{ matrix.ghc }}
-        cabal: "latest"
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: "latest"
 
     - name: Configure environment
       run: |
@@ -62,19 +63,12 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
         echo "STORE_PATH=$(cabal -v0 path --store-dir)" >> $GITHUB_ENV
-        source ./environment.ci.sh
-        touch ~/.pgpass
-        chmod 0600 ~/.pgpass
-        echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
-        cat ~/.pgpass
         cabal update
         mkdir -p ~/.local/share
         git clone https://github.com/haskell/security-advisories.git ~/.local/share/security-advisories
 
-    - name: "Create freeze file"
-      run: |
-        cabal freeze --enable-tests
-
+    - name: Create freeze file
+      run: cabal freeze --enable-tests
 
     - name: Cache
       uses: actions/cache@v5
@@ -91,9 +85,6 @@ jobs:
     - name: Test
       run: |
         set -x
-        source ./environment.ci.sh
-        make db-setup
-        cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
+        make db-test-setup
+        cabal run -- flora-cli -c environment.ci.kdl create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         make test
-      env:
-        PGPASSWORD: "postgres"

@@ -3,7 +3,7 @@ module Main where
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad.Extra (forM_, unlessM)
 import Data.Bifunctor
-import Data.ByteString.Lazy.Char8 qualified as BS
+import Data.ByteString.Lazy.Char8 qualified as BSL
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -30,9 +30,11 @@ import Optics.Core
 import Options.Applicative
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
+import System.Environment (setEnv)
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
 import System.IO
+import System.Process (callProcess)
 import Text.Read (readMaybe)
 
 import Advisories.Import (importAdvisories)
@@ -40,7 +42,8 @@ import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
 import DesignSystem (generateComponents)
 import Flora.Database
-import Flora.Environment (getFloraEnv)
+import Flora.Environment (configFileParser, getFloraEnv)
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
 import Flora.Environment.Env
 import Flora.Import.Categories (importCategories)
 import Flora.Import.Package.Bulk.Archive (importFromArchive)
@@ -60,6 +63,7 @@ import Flora.Tracing qualified as Tracing
 
 data Options = Options
   { cliCommand :: Command
+  , configFile :: FilePath
   }
   deriving stock (Eq, Show)
 
@@ -77,6 +81,8 @@ data Command
       -- ^ Dependency name
       (Positive Word)
       -- ^ Priority
+  | CreateDB
+  | DropDB
   deriving stock (Eq, Show)
 
 data ProvisionTarget
@@ -98,12 +104,12 @@ main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
-  env <- getFloraEnv & runFileSystem & runFailIO & runEff
+  env <- getFloraEnv cliArgs.configFile & runFileSystem & runFailIO & runEff
   runTrace <- do
     traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
     pure $ Tracing.runTraceRunner traceRunner
   provideCallStack $
-    runOptions cliArgs
+    runCommand cliArgs.configFile cliArgs.cliCommand
       & Reader.runReader env
       & (`E.catches` exceptionHandlers)
       & runLog "flora-cli" logger Log.LogTrace
@@ -137,7 +143,7 @@ main = Log.withStdOutLogger $ \logger -> do
 
 parseOptions :: Parser Options
 parseOptions =
-  Options <$> parseCommand
+  Options <$> parseCommand <*> configFileParser
 
 parseCommand :: Parser Command
 parseCommand =
@@ -153,6 +159,8 @@ parseCommand =
             `withInfo` "Import a single package tarball, useful for testing"
         )
       <> command "index-dependency" (parseIndexDependency `withInfo` "Declare the dependency of an index on another index, with priority")
+      <> command "create-db" (pure CreateDB `withInfo` "Create the application database")
+      <> command "drop-db" (pure DropDB `withInfo` "Drop the application database")
 
 parseProvision :: Parser Command
 parseProvision =
@@ -212,7 +220,7 @@ parseImportPackageTarball =
     <*> argument str (metavar "VERSION")
     <*> argument str (metavar "PATH")
 
-runOptions
+runCommand
   :: ( BlobStoreAPI :> es
      , Concurrent :> es
      , Error (NonEmpty AdvisoryImportError) :> es
@@ -226,51 +234,78 @@ runOptions
      , Time :> es
      , Tracer :> es
      )
-  => Options
+  => FilePath
+  -> Command
   -> FloraM es ()
-runOptions (Options (Provision Categories)) = importCategories
-runOptions (Options (Provision Advisories)) = do
+runCommand _ (Provision Categories) = importCategories
+runCommand _ (Provision Advisories) = do
   dataDir <- getXdgDirectory XdgData ""
   let advisoriesDirectory = dataDir </> "security-advisories"
   unlessM (doesDirectoryExist advisoriesDirectory) $ do
     Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
     liftIO exitFailure
   importAdvisories advisoriesDirectory
-runOptions (Options (Provision (TestPackages repository))) = do
+runCommand _ (Provision (TestPackages repository)) = do
   let indexArchiveBasePath = "./test/fixtures/Cabal"
   let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repository <> "/01-index.tar.gz"
   indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
   if indexArchiveExists
     then importIndex indexArchiveBasePath repository
     else error $ "Could not find " <> indexArchivePath
-runOptions (Options (CreateUser opts)) = do
+runCommand _ (CreateUser opts) = do
   FloraEnv{pool} <- Reader.ask
-  let username = opts ^. #username
-      email = opts ^. #email
-      canLogin = opts ^. #canLogin
-  mUser <- withReadOnlyPool pool $ Query.getUserByEmail email
+  mUser <- withReadOnlyPool pool $ Query.getUserByEmail opts.email
   case mUser of
     Just _ -> pure ()
     Nothing -> do
       password <- liftIO $ Sel.hashText opts.password
-      if opts ^. #isAdmin
+      if opts.isAdmin
         then
-          addAdmin AdminCreationForm{username, email, password}
+          addAdmin AdminCreationForm{username = opts.username, email = opts.email, password}
             >>= \admin ->
-              if canLogin
+              if opts.canLogin
                 then pure ()
                 else withReadWritePool pool $ lockAccount admin.userId
         else do
-          templateUser <- mkUser UserCreationForm{username, email, password}
-          let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
+          templateUser <- mkUser UserCreationForm{username = opts.username, email = opts.email, password}
+          let user = if opts.canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           withReadWritePool pool $ insertUser user
-runOptions (Options GenDesignSystemComponents) = generateComponents
-runOptions (Options (ImportIndex path repository)) = importIndex path repository
-runOptions (Options (ProvisionRepository name url description)) = do
+runCommand configFile GenDesignSystemComponents = generateComponents configFile
+runCommand _ (ImportIndex path repository) = importIndex path repository
+runCommand _ (ProvisionRepository name url description) = do
   FloraEnv{pool} <- Reader.ask
   withReadWritePool pool $ Update.upsertPackageIndex name url description Nothing
-runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball (Namespace "hackage") pname version path
-runOptions (Options (IndexDependency indexName dependencyName priority)) = do
+runCommand _ (ImportPackageTarball pname version path) = importPackageTarball (Namespace "hackage") pname version path
+runCommand _ CreateDB = do
+  FloraEnv{config = FloraConfig{connectionInfo}} <- Reader.ask
+  liftIO $ do
+    setEnv "PGPASSWORD" (Text.unpack connectionInfo.connectPassword)
+    callProcess
+      "createdb"
+      [ "-h"
+      , Text.unpack connectionInfo.connectHost
+      , "-p"
+      , show connectionInfo.connectPort
+      , "-U"
+      , Text.unpack connectionInfo.connectUser
+      , Text.unpack connectionInfo.connectDatabase
+      ]
+runCommand _ DropDB = do
+  FloraEnv{config = FloraConfig{connectionInfo}} <- Reader.ask
+  liftIO $ do
+    setEnv "PGPASSWORD" (Text.unpack connectionInfo.connectPassword)
+    callProcess
+      "dropdb"
+      [ "--if-exists"
+      , "-h"
+      , Text.unpack connectionInfo.connectHost
+      , "-p"
+      , show connectionInfo.connectPort
+      , "-U"
+      , Text.unpack connectionInfo.connectUser
+      , Text.unpack connectionInfo.connectDatabase
+      ]
+runCommand _ (IndexDependency indexName dependencyName priority) = do
   FloraEnv{pool} <- Reader.ask
   index <- withReadOnlyPool pool $ guardThatPackageIndexExists indexName (error $ Text.unpack indexName <> " does not exist in database!")
   dependency <- withReadOnlyPool pool $ guardThatPackageIndexExists dependencyName (error $ Text.unpack indexName <> " does not exist in database!")
@@ -324,7 +359,7 @@ importPackageTarball
   -> FloraM es ()
 importPackageTarball namespace pname version path = do
   FloraEnv{pool} <- Reader.ask
-  contents <- liftIO $ GZip.decompress <$> BS.readFile path
+  contents <- liftIO $ GZip.decompress <$> BSL.readFile path
   res <- withReadWritePool pool $ Update.insertTar namespace pname version contents
   case res of
     Right hash -> Log.logInfo_ $ "Insert tarball with root hash: " <> display hash

@@ -133,7 +133,7 @@ instance
       defaultPageSizeDesc :: Text
       defaultPageSizeDesc = case settingDefPageSize @settings of
         Nothing -> "By default, no limit will be applied."
-        Just s -> "Defaults to " <> Text.pack (show $ s.unPositive) <> "."
+        Just s -> "Defaults to " <> Text.pack (show s.unPositive) <> "."
 
 instance
   ( a ~ O.Operation

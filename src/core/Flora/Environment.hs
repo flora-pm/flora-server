@@ -1,29 +1,47 @@
 module Flora.Environment
   ( getFloraEnv
+  , mkPool
+  , parseConfig
+  , configFileParser
   )
 where
 
 import Arbiter.Simple qualified as ArbS
 import Control.DeepSeq (force)
-import Data.ByteString (ByteString)
+import Control.Exception (evaluate)
 import Data.Pool
 import Data.Pool qualified as Pool
 import Data.Proxy
+import Data.Text qualified as Text
 import Data.Time (NominalDiffTime)
 import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
-import Env (parse)
+import KDL qualified
+import Options.Applicative
 
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Monitoring
 
+configFileParser :: Parser FilePath
+configFileParser =
+  strOption
+    ( long "config"
+        <> short 'c'
+        <> help "KDL configuration file"
+    )
+
+parseConfig :: ParserInfo FilePath
+parseConfig =
+  info (helper <*> configFileParser) $
+    progDesc "flora-server expects a KDL configuration file"
+
 mkPool
   :: IOE :> es
-  => ByteString -- Database access information
+  => ConnectionInfo
   -> NominalDiffTime -- Allowed timeout
   -> Int -- Number of connections
   -> Eff es (Pool PG.Connection)
@@ -32,7 +50,15 @@ mkPool connectionInfo timeout' connections =
     Pool.newPool $
       setNumStripes (Just 1) $
         defaultPoolConfig
-          (PG.connectPostgreSQL connectionInfo)
+          ( PG.connect
+              PG.ConnectInfo
+                { PG.connectHost = Text.unpack connectionInfo.connectHost
+                , PG.connectPort = connectionInfo.connectPort
+                , PG.connectUser = Text.unpack connectionInfo.connectUser
+                , PG.connectPassword = Text.unpack connectionInfo.connectPassword
+                , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
+                }
+          )
           PG.close
           (realToFrac timeout')
           connections
@@ -50,7 +76,7 @@ configToEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FloraConfig -> Eff e
 configToEnv floraConfig = do
   let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
-  workerEnv <- ArbS.createSimpleEnv (Proxy @JobQueues) floraConfig.connectionInfo "public"
+  let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) pool "public"
   assets <- getAssets floraConfig.environment
   featureEnv <- featureConfigToEnv floraConfig.features
   metrics <- registerMetrics
@@ -70,7 +96,8 @@ configToEnv floraConfig = do
       , theme = Nothing
       }
 
-getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es FloraEnv
-getFloraEnv = do
-  config <- liftIO $ Env.parse id parseConfig
-  configToEnv (force config)
+getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FilePath -> Eff es FloraEnv
+getFloraEnv fp = do
+  liftIO (KDL.decodeFileWith floraEnvDecoder fp) >>= \case
+    Right env -> liftIO (evaluate (force env)) >>= configToEnv
+    Left e -> fail $ show e

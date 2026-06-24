@@ -2,10 +2,10 @@ Thank you for your contribution to Flora! We need you to read and understand thi
 
 ## Project Setup
 
-We need you to read and acknowledge our [Code of Conduct][CoC] document.
+Before you proceed, we need you to read and acknowledge our [Code of Conduct][CoC] document.
 
 The compiler version used is described in the `cabal.project` file.
-`cabal-install` version 3.8 or higher is needed.
+`cabal-install` version 3.16 or higher is needed.
 
 The following Haskell command-line tools will have to be installed:
 
@@ -49,7 +49,7 @@ package *
   extra-lib-dirs: /usr/local/lib
 ```
 
-### Questions 
+### Questions
 
 Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
 
@@ -116,37 +116,30 @@ Here are the steps:
 2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
 3. `$ eventlog2html flora-server.eventlog`
 
-Also consider [capturing live eventlogs](#live-eventlogs) during developement.
+Also consider [capturing live eventlogs](#live-eventlogs) during development.
 
 ## Installation and Configuration
 
-Step 1. Read The above "Project Setup" section.
+Step 1. Read the above "Project Setup" section.
 Step 2. Keep reading from here.
 
 ### Flora server
 
-The configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
-server will tell you which ones are missing.
+The configuration is handled through KDL files. A production, docker, CI and test environment are provided. When interfacing via `make` this is handled for you. If you're interfacing with the `flora-cli` directly, pass an environment with `--config` or `-c`.
 
-To start in the best of conditions, create a file called `environment.local.sh` with the following content:
-
+Example:
 ```bash
-source environment.sh
+cabal run -- flora-cli -c environment.test.kdl provision
 ```
 
-This will get all the variables from `environment.sh` and allow you to override them locally.
-
-If you use `direnv`, you are advised to create a symbolic link from `environment.local.sh` to `.envrc`.
-
-You can then build the server with `make build`. Do **not** simply run `cabal build`.
+Use `flora-cli --help` to see what commands are available.
 
 A very useful command to run is
 
 ```bash
+# Starts a tmux session with code reloading for frontend and backend
 $ make start-tmux
 ```
-To start a tmux session with code reloading for frontend and backend:
-
 
 To explore the other possible `Make` rules, type:
 
@@ -156,7 +149,7 @@ $ make help
 
 ### Database
 
-The Flora server uses PostgreSQL 14. Please install it.
+The Flora server uses PostgreSQL. Please install it.
 
 #### Side-Quest: First installation
 
@@ -175,10 +168,10 @@ local   all             all                                     peer
 - host    all             all             ::1/128                 md5
 + host    all             all             ::1/128                 scram-sha-256
 ```
-3. Restart the database engine (using `systemctl` on Linux, or `brew services restart postgresql@14`
+3. Restart the database engine (using `systemctl` on Linux, or `brew services restart postgresql@17`
     if you have installed PostgreSQL with `brew`)
 
-3. Connect (via sudo) to the `root` user
+4. Connect (via sudo) to the `root` user
 
 ```bash
 user $ sudo -s
@@ -189,7 +182,7 @@ Then as root, connect to the postgres account, and open a `psql` shell.
 ```bash
 root # su -l postgres
 postgres $ psql
-psql (14.7 (Ubuntu 14.7-1.pgdg18.04+1))
+psql (17.9 (OS version here))
 Type "help" for help.
 ```
 
@@ -209,7 +202,7 @@ To create the database and apply the migrations, type:
 $ make db-setup
 ```
 
-you can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
+You can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
 
 ### Docker Workflow
 
@@ -221,8 +214,8 @@ and communicates with another container for the PostgreSQL database.
 $ make docker-up
 # Once the containers are running, you can enter the development environment and start hacking
 $ make docker-enter
-# You'll be in the docker container. Environment variables are automatically set
-# so you should be able to start Flora
+# You'll be in the docker container. Configuration variables are automatically set
+# via the Makefile, so you should be able to start Flora
 (docker)$ make start-tmux
 # You'll be in a tmux session, everything should be launched
 # Visit localhost:8084 from your web browser to see if it all works.
@@ -241,51 +234,58 @@ After everything is set up, (locally or via Docker), you can start populating th
 ```bash
 $ make db-setup
 $ make db-provision
-$ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
+$ cabal run -- flora-cli -c environment.test.kdl create-user --admin --can-login --username "admin" \
     --email "admin@localhost" --password "password123"
 $ make db-provision-packages
 ```
 
 ### Importing a package index
 
-The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shit and giggles.
+The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shits and giggles.
 
 You can do so with:
 
 ```bash
-$ cabal run flora-cli -- import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
+$ cabal run flora-cli -- -c environment.test.kdl import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
   --repository hackage.haskell.org
 ```
 
 Similarly if you have the [cardano packages index](https://input-output-hk.github.io/cardano-haskell-packages/) configured, run:
 
 ```bash
-$ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz \
+$ cabal run flora-cli -- -c environment.test.kdl import-index ~/.cabal/packages/cardano/01-index.tar.gz \
   --repository "cardano"
+```
+
+### Connecting to the local database
+
+If you need to connect to the database directly:
+
+```bash
+# replace flora_test if connecting to flora_dev database
+psql -h localhost -p 5432 -U postgres -d flora_test
 ```
 
 ### Live Eventlogs
 
 To enable capturing live events from Flora server running locally:
 
-1. Ensure `FLORA_EVENTLOG_SOCKET` is being present in your local environment config script.
+1. Ensure `eventlogSocket` is correctly set for the given environment file.
 2. Run:
 
 ```
-$ source environment.local.sh
-$ cabal run -- flora-server  +RTS -l -hT --eventlog-flush-interval=1 -RTS
+$ cabal run flora-server -- -c environment.test.kdl +RTS -l -hT --eventlog-flush-interval=1 -RTS
 ```
 
 3. After that, run separately:
 
 ```
-$ source environment.local.sh
 $ docker compose -f docker-compose.live-eventlog.yml up
 ```
 
-4. Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
+Note: You might need to export `FLORA_EVENTLOG_SOCKET` to the same value as given by the KDL file when using Docker.
 
-To disable live events, `unset FLORA_EVENTLOG_SOCKET`.
+4. Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
 
 ### Nix
 
@@ -321,7 +321,7 @@ this repository, which is a drastic improvement, especially with `IFD` (which th
 Devshell startup times will be instant if you didn't change anything in the configuration and as long as usual if you
 need to re-evaluate the `nix`-expressions (i.e. on cabal config changes or `nix` changes).
 
-Find out how to install `direnv` on your machine by visiting [their github](https://github.com/direnv/direnv/).o
+Find out how to install `direnv` on your machine by visiting [their github](https://github.com/direnv/direnv/).
 After installing, add a `.envrc` file to the root of the project containing:
 
 ```bash

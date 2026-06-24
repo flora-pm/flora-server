@@ -24,13 +24,13 @@ dataReport adminReport = do
         dt_ [class_ "title-section"] "Total Packages"
         dd_ [class_ "title-2 color-raise leading-loose"] $
           toHtml $
-            display (adminReport.totalPackages)
+            display adminReport.totalPackages
 
       div_ [class_ "flow flow--small"] $ do
         dt_ [class_ "title-section"] "Total Users"
         dd_ [class_ "title-2 color-raise leading-loose"] $
           toHtml $
-            display (adminReport.totalUsers)
+            display adminReport.totalUsers
 
   section_ [class_ "flow"] $ do
     h2_ [class_ "title-2"] "Actions"

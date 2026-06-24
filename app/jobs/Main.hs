@@ -5,7 +5,9 @@ import Arbiter.Simple qualified as ArbS
 import Arbiter.Worker qualified as Worker
 import Control.Monad
 import Data.Proxy
+import Data.Text qualified as Text
 import Data.Text.Display
+import Data.Text.Encoding qualified as Text
 import Data.Text.IO qualified as T
 import Data.Time
 import Effectful
@@ -25,12 +27,13 @@ import Network.Wai.Handler.Warp
   )
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
 import NoThunks.Class
+import Options.Applicative
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import RequireCallStack
 
 import Flora.Environment
-import Flora.Environment.Config
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), LoggingDestination (..))
 import Flora.Environment.Env
 import Flora.Model.Job
 import FloraJobs.Environment
@@ -42,10 +45,11 @@ import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
 main :: IO ()
 main = do
-  jobsEnv <- runEff getFloraJobsEnv
-  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv
+  floraConfig <- execParser parseConfig
+  jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
+  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
-  workerEnv <- ArbS.createSimpleEnv (Proxy @JobQueues) jobsEnv.connectionInfo "public"
+  let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
   let withLogger = makeLogger floraEnv.mltp.logger
   runEff . runConcurrent $ do
     when floraEnv.mltp.prometheusEnabled $ do
@@ -57,7 +61,7 @@ main = do
       runLog "flora-server" logger Log.LogTrace $
         checkJobsEnvForThunks jobsEnv
       void . forkIO $ runServer logger floraEnv jobsEnv
-      defaultConfig <- liftIO $ Worker.defaultWorkerConfig jobsEnv.connectionInfo 50 (processJob workerEnv jobsEnv logger floraEnv)
+      defaultConfig <- liftIO $ Worker.defaultWorkerConfig (connString floraEnv.config.connectionInfo) 50 (processJob workerEnv jobsEnv logger floraEnv)
       let config =
             defaultConfig
               { Worker.observabilityHooks =
@@ -80,6 +84,18 @@ main = do
     makeLogger StdOut = Log.withStdOutLogger
     makeLogger Json = Log.withJsonStdOutLogger
     makeLogger JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = "logs/flora-jobs.json"}
+    connString connectionInfo =
+      Text.encodeUtf8 $
+        "host="
+          <> connectionInfo.connectHost
+          <> " port="
+          <> Text.pack (show connectionInfo.connectPort)
+          <> " user="
+          <> connectionInfo.connectUser
+          <> " password="
+          <> connectionInfo.connectPassword
+          <> " dbname="
+          <> connectionInfo.connectDatabase
 
 runServer
   :: IOE :> es

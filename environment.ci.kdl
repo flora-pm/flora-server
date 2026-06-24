@@ -1,0 +1,33 @@
+flora {
+  domain localhost
+  httpPort 8083
+  jobsHttpPort 8085
+  environment test
+  db {
+    host "localhost"
+    port 5432
+    user "postgres"
+    password "postgres"
+    dbname "flora_test"
+  }
+
+  pool {
+    timeout 10
+    connections 20
+  }
+
+  mltp {
+    sentryDSN ""
+    prometheusEnabled #false
+    loggingDestination stdout
+    zipkinEnabled #false
+    zipkinHost localhost
+    zipkinPort 8800
+    eventlogSocket "/tmp/flora-eventlog.sock"
+  }
+
+  features {
+    tarballsEnabled #false
+    blobStoreFilePath #null
+  }
+}

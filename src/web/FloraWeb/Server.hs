@@ -64,7 +64,7 @@ import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..))
+import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..), toConnString)
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
@@ -105,12 +105,12 @@ type FloraAuthContext =
    , ErrorFormatters
    ]
 
-runFlora :: IO ()
-runFlora = do
+runFlora :: FilePath -> IO ()
+runFlora config = do
   setBacktraceMechanismState HasCallStackBacktrace True
   secureMain $
     bracket
-      (getFloraEnv & runFileSystem & runFailIO & runEff)
+      (getFloraEnv config & runFileSystem & runFailIO & runEff)
       (runEff . shutdownFlora)
       ( \env ->
           runEff . withUnliftStrategy (ConcUnlift Ephemeral Unlimited) . runTime . runConcurrent $ do
@@ -180,7 +180,13 @@ runServer appLogger floraEnv traceRunner = do
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
   ioref <- liftIO $ newIORef True
-  arbiterConfig <- liftIO $ ArbS.initArbiterServer (Proxy @JobQueues) floraEnv.config.connectionInfo "public"
+  let connectionInfo = floraEnv.config.connectionInfo
+  arbiterConfig <-
+    liftIO $
+      ArbS.initArbiterServer
+        (Proxy @JobQueues)
+        (toConnString connectionInfo)
+        "public"
   let server = mkServer arbiterConfig appLogger webEnvStore floraEnv ioref traceRunner
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $

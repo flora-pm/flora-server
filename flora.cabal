@@ -112,8 +112,8 @@ library
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
     Distribution.Orphans.Version
-    Flora.Database
     Flora.DB.Exception
+    Flora.Database
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
@@ -190,6 +190,8 @@ library
     Servant.API.ContentTypes.GZip
 
   build-depends:
+    Cabal-syntax,
+    JuicyPixels,
     aeson,
     arbiter-simple,
     attoparsec,
@@ -197,7 +199,6 @@ library
     base16-bytestring,
     base64,
     bytestring,
-    Cabal-syntax,
     commonmark,
     commonmark-pandoc,
     containers,
@@ -223,7 +224,7 @@ library
     http-api-data,
     http-media,
     iso8601-time,
-    JuicyPixels,
+    kdl-hs,
     log-base,
     log-effectful,
     lucid2,
@@ -232,6 +233,7 @@ library
     nothunks,
     openapi3,
     optics-core,
+    optparse-applicative,
     osv,
     pandoc,
     pandoc-types,
@@ -245,6 +247,7 @@ library
     qrcode-juicypixels,
     require-callstack,
     resource-pool,
+    scientific,
     sel,
     servant,
     servant-prometheus,
@@ -303,9 +306,9 @@ library flora-advisories
     Advisories.Model.Affected.Update
 
   build-depends:
+    Cabal-syntax,
     aeson,
     base,
-    Cabal-syntax,
     cvss,
     deepseq,
     effectful-core,
@@ -413,6 +416,8 @@ library flora-web
     FloraWeb.Types
 
   build-depends:
+    Cabal-syntax,
+    PyF,
     aeson,
     arbiter-servant,
     arbiter-servant-ui,
@@ -420,7 +425,6 @@ library flora-web
     base ^>=4.20,
     base32,
     bytestring,
-    Cabal-syntax,
     chronos,
     cmark-gfm,
     colourista,
@@ -470,7 +474,6 @@ library flora-web
     prometheus-effectful,
     prometheus-metrics-ghc,
     prometheus-proc,
-    PyF,
     raven-haskell,
     require-callstack,
     resource-pool,
@@ -520,6 +523,7 @@ library flora-jobs
     FloraJobs.Types
 
   build-depends:
+    Cabal-syntax,
     aeson,
     arbiter-core,
     arbiter-simple,
@@ -527,7 +531,6 @@ library flora-jobs
     base,
     blaze-markup,
     bytestring,
-    Cabal-syntax,
     commonmark,
     commonmark-extensions,
     commonmark-pandoc,
@@ -546,6 +549,7 @@ library flora-jobs
     http-client-tls,
     http-media,
     http-types,
+    kdl-hs,
     log-base,
     log-effectful,
     monad-time-effectful,
@@ -585,6 +589,7 @@ executable flora-server
     log-base,
     log-effectful,
     nothunks,
+    optparse-applicative,
     pg-entity,
     postgresql-simple,
     require-callstack,
@@ -600,6 +605,7 @@ executable flora-migrate
   build-depends:
     arbiter-migrations,
     base,
+    effectful,
     effectful-core,
     effectful-plugin,
     effectful-postgresql,
@@ -608,6 +614,7 @@ executable flora-migrate
     flora-web,
     log-base,
     log-effectful,
+    optparse-applicative,
     postgresql-migration,
     resource-pool,
     text,
@@ -623,6 +630,7 @@ executable flora-jobs-runner
     arbiter-simple,
     arbiter-worker,
     base,
+    bytestring,
     effectful,
     effectful-core,
     effectful-plugin,
@@ -632,6 +640,7 @@ executable flora-jobs-runner
     log-base,
     log-effectful,
     nothunks,
+    optparse-applicative,
     prometheus-client,
     prometheus-effectful,
     prometheus-metrics-ghc,
@@ -650,9 +659,10 @@ executable flora-cli
   other-modules: DesignSystem
   hs-source-dirs: app/cli
   build-depends:
+    Cabal-syntax,
+    PyF,
     base,
     bytestring,
-    Cabal-syntax,
     cvss,
     effectful,
     effectful-core,
@@ -673,8 +683,8 @@ executable flora-cli
     monad-time-effectful,
     optics-core,
     optparse-applicative,
+    process,
     prometheus-effectful,
-    PyF,
     require-callstack,
     sel,
     text,
@@ -689,14 +699,15 @@ test-suite flora-test
   import: common-extensions
   import: common-ghc-options
   import: common-rts-options
+  ghc-options: -Werror=unused-imports
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
   build-depends:
+    Cabal-syntax,
     aeson,
     base,
     bytestring,
-    Cabal-syntax,
     containers,
     effectful,
     effectful-core,
@@ -718,6 +729,7 @@ test-suite flora-test
     monad-time-effectful,
     nothunks,
     optics-core,
+    optparse-applicative,
     pg-entity,
     postgresql-migration,
     postgresql-simple,

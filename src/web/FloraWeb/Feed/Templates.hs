@@ -25,7 +25,7 @@ showFeedsBuilderPage = do
   let baseURL =
         case env.environment of
           Production -> "https://" <> env.domain
-          _ -> "http://" <> env.domain <> ":" <> (display env.httpPort)
+          _ -> "http://" <> env.domain <> ":" <> display env.httpPort
 
   banner
   let alpineData =

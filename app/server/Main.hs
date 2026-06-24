@@ -26,12 +26,13 @@ import Effectful.PostgreSQL
 import Effectful.Reader.Static qualified as Reader
 import Log qualified
 import NoThunks.Class
+import Options.Applicative
 import RequireCallStack
 import System.Exit
 import System.IO
 
 import Flora.Database
-import Flora.Environment (getFloraEnv)
+import Flora.Environment
 import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.PackageIndex.Types
@@ -41,13 +42,14 @@ import FloraWeb.Server
 
 main :: IO ()
 main = do
+  configFile <- execParser parseConfig
   hSetBuffering stdout LineBuffering
-  preFlightChecks
-  runFlora
+  preFlightChecks configFile
+  runFlora configFile
 
-preFlightChecks :: IO ()
-preFlightChecks = do
-  env <- getFloraEnv & runFileSystem & runFailIO & runEff
+preFlightChecks :: FilePath -> IO ()
+preFlightChecks config = do
+  env <- getFloraEnv config & runFileSystem & runFailIO & runEff
   runEff $ do
     let withLogger = Logging.makeLogger env.mltp.logger
     withLogger $ \appLogger ->
@@ -60,8 +62,8 @@ preFlightChecks = do
         $ provideCallStack
         $ do
           checkFloraEnvForThunks env
-          withReadOnlyPool env.pool $ checkExpectedTables
-          withReadOnlyPool env.pool $ checkRepositoriesAreConfigured
+          withReadOnlyPool env.pool checkExpectedTables
+          withReadOnlyPool env.pool checkRepositoriesAreConfigured
           checkIfIndexRefreshJobIsPlanned env.workerEnv
 
 checkFloraEnvForThunks :: (IOE :> es, Log :> es) => FloraEnv -> Eff es ()

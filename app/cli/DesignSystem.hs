@@ -46,9 +46,9 @@ newtype ComponentName = ComponentName Text
 newtype ComponentTitle = ComponentTitle Text
   deriving newtype (Eq, Ord, Show)
 
-generateComponents :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es ()
-generateComponents = do
-  floraEnv <- getFloraEnv
+generateComponents :: (Fail :> es, FileSystem :> es, IOE :> es) => FilePath -> Eff es ()
+generateComponents config = do
+  floraEnv <- getFloraEnv config
   forM_ components $ \(filename, title, name, template) -> do
     let html = TL.replace "\"" "\\\"" $ renderHtml floraEnv template
     writeComponent filename title name html
