@@ -5,7 +5,6 @@ import Data.Function
 import Data.Pool
 import Data.Proxy (Proxy (..))
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as Text
 import Database.PostgreSQL.Simple.Migration
 import Effectful
 import Effectful.Exception qualified as E
@@ -21,7 +20,7 @@ import System.Exit (exitFailure)
 import System.IO
 
 import Flora.Environment
-import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
+import Flora.Environment.Config (toConnString, ConnectionInfo (..), FloraConfig (..))
 import Flora.Environment.Env (FloraEnv (..))
 import Flora.Model.Job
 import FloraJobs.Environment
@@ -50,26 +49,13 @@ runAllMigrations connectionInfo = do
 
 arbiterMigrations :: (IOE :> es, Log :> es) => ConnectionInfo -> Eff es ()
 arbiterMigrations connectionInfo = do
-  result <- liftIO $ Mig.runMigrationsForRegistry (Proxy @JobQueues) connStr "public" Mig.defaultMigrationConfig
+  result <- liftIO $ Mig.runMigrationsForRegistry (Proxy @JobQueues) (toConnString connectionInfo) "public" Mig.defaultMigrationConfig
   case result of
     Mig.MigrationSuccess ->
       Log.logInfo_ "Arbiter migrations complete"
     Mig.MigrationError err -> do
       Log.logAttention_ $ "Arbiter migrations failed: " <> T.pack err
       liftIO exitFailure
-  where
-    connStr =
-      Text.encodeUtf8 $
-        "host="
-          <> connectionInfo.connectHost
-          <> " port="
-          <> T.pack (show connectionInfo.connectPort)
-          <> " user="
-          <> connectionInfo.connectUser
-          <> " password="
-          <> connectionInfo.connectPassword
-          <> " dbname="
-          <> connectionInfo.connectDatabase
 
 floraMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
 floraMigrations = do

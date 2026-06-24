@@ -16,6 +16,7 @@ module Flora.Environment.Config
   , getAssets
   , getAssetHash
   , floraEnvDecoder
+  , toConnString
   )
 where
 
@@ -30,6 +31,7 @@ import Data.Maybe (fromMaybe)
 import Data.Scientific (toBoundedInteger)
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
 import Data.Text.Display (Display (..))
 import Data.Time (NominalDiffTime)
 import Data.Typeable (Typeable)
@@ -38,6 +40,7 @@ import Effectful (Eff, IOE, MonadIO (liftIO), type (:>))
 import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem.IO.ByteString qualified as EBS
+import Data.ByteString (ByteString)
 import GHC.Generics (Generic)
 import KDL qualified
 import Network.Socket (HostName, PortNumber)
@@ -56,6 +59,20 @@ data ConnectionInfo = ConnectionInfo
   }
   deriving stock (Eq, Generic, Read, Show, Typeable)
   deriving anyclass (NFData, NoThunks)
+
+toConnString :: ConnectionInfo -> ByteString
+toConnString connectionInfo =
+  Text.encodeUtf8 $
+    "host="
+      <> connectionInfo.connectHost
+      <> " port="
+      <> Text.pack (show connectionInfo.connectPort)
+      <> " user="
+      <> connectionInfo.connectUser
+      <> " password="
+      <> connectionInfo.connectPassword
+      <> " dbname="
+      <> connectionInfo.connectDatabase
 
 data DeploymentEnv
   = Production

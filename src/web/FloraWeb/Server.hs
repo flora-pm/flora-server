@@ -66,7 +66,7 @@ import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (ConnectionInfo (..), DeploymentEnv (..), FloraConfig (..))
+import Flora.Environment.Config (toConnString, ConnectionInfo (..), DeploymentEnv (..), FloraConfig (..))
 import Flora.Environment.Env
   ( BlobStoreImpl (..)
   , FeatureEnv (..)
@@ -187,18 +187,7 @@ runServer appLogger floraEnv traceRunner = do
     liftIO $
       ArbS.initArbiterServer
         (Proxy @JobQueues)
-        ( Text.encodeUtf8 $
-            "host="
-              <> connectionInfo.connectHost
-              <> " port="
-              <> Text.pack (show connectionInfo.connectPort)
-              <> " user="
-              <> connectionInfo.connectUser
-              <> " password="
-              <> connectionInfo.connectPassword
-              <> " dbname="
-              <> connectionInfo.connectDatabase
-        )
+        (toConnString connectionInfo)
         "public"
   let server = mkServer arbiterConfig appLogger webEnvStore floraEnv ioref traceRunner
   let warpSettings =
