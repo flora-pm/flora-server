@@ -411,6 +411,20 @@ Contributions to our `nix` infrastructures are always appreciated, however, ther
   - we don't use any fetcher, if not absolutely needed (e.g. if you need a tarball which is
     not unpacked, it might sometimes be necessary)
 
+
+## License to shitpost
+
+You can include (in moderation) some shitposting in your contributions, be it funny memes in your PR descriptions,
+humour in git commits that do not prevent their understanding. They will be accepted at the core team's discretion.
+
+Example:
+
+### Circumstantial git trailer
+
+```
+Sponsored-By: 2 bottles of Club Mate & a heat wave in Western Europe
+```
+
 [CoC]: https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions
