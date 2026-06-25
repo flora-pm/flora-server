@@ -15,8 +15,6 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Simple.ToRow
 import Effectful
 import Effectful.Exception qualified as E
-import Effectful.Labeled
-import Effectful.PostgreSQL
 import RequireCallStack
 
 import Flora.DB.Exception
@@ -26,10 +24,10 @@ import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement)
 
-upsertPackage :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => Package -> Eff es ()
+upsertPackage :: (IOE :> es, RequireCallStack, WriteDB :> es) => Package -> Eff es ()
 upsertPackage package =
   E.catch
-    ( labeled @ReadWrite @WithConnection $ do
+    ( do
         upsertWith package
         case package.status of
           UnknownPackage -> pure ()
@@ -44,8 +42,8 @@ upsertPackage package =
     upsertWith entity =
       void $ execute (_insert @Package <> " ON CONFLICT DO NOTHING") entity
 
-deprecatePackages :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => Vector DeprecatedPackage -> Eff es ()
-deprecatePackages dp = labeled @ReadWrite @WithConnection $ void $ executeMany q (dp & Vector.map Only & Vector.toList)
+deprecatePackages :: (IOE :> es, RequireCallStack, WriteDB :> es) => Vector DeprecatedPackage -> Eff es ()
+deprecatePackages dp = void $ executeMany q (dp & Vector.map Only & Vector.toList)
   where
     q =
       [sql|
@@ -55,33 +53,33 @@ deprecatePackages dp = labeled @ReadWrite @WithConnection $ void $ executeMany q
       WHERE p0.name = jsonb(js) ->> 'package'
       |]
 
-deletePackage :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => (Namespace, PackageName) -> Eff es ()
-deletePackage (namespace, packageName) = labeled @ReadWrite @WithConnection $ void $ execute (_deleteWhere @Package [primaryKey @Package]) (namespace, packageName)
+deletePackage :: (IOE :> es, RequireCallStack, WriteDB :> es) => (Namespace, PackageName) -> Eff es ()
+deletePackage (namespace, packageName) = void $ execute (_deleteWhere @Package [primaryKey @Package]) (namespace, packageName)
 
-refreshDependents :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => Eff es ()
+refreshDependents :: (IOE :> es, RequireCallStack, WriteDB :> es) => Eff es ()
 refreshDependents =
-  labeled @ReadWrite @WithConnection $ void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
+  void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
 
-insertPackageComponent :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => PackageComponent -> Eff es ()
-insertPackageComponent pc = labeled @ReadWrite @WithConnection $ void $ execute (_insert @PackageComponent) pc
+insertPackageComponent :: (IOE :> es, RequireCallStack, WriteDB :> es) => PackageComponent -> Eff es ()
+insertPackageComponent pc = void $ execute (_insert @PackageComponent) pc
 
-upsertPackageComponent :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => PackageComponent -> Eff es ()
+upsertPackageComponent :: (IOE :> es, RequireCallStack, WriteDB :> es) => PackageComponent -> Eff es ()
 upsertPackageComponent packageComponent =
-  labeled @ReadWrite @WithConnection $ upsert @PackageComponent packageComponent (fields @PackageComponent)
+  upsert @PackageComponent packageComponent (fields @PackageComponent)
 
-upsertPackageComponents :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => [PackageComponent] -> Eff es ()
+upsertPackageComponents :: (IOE :> es, RequireCallStack, WriteDB :> es) => [PackageComponent] -> Eff es ()
 upsertPackageComponents packageComponents =
-  labeled @ReadWrite @WithConnection $ void $ executeMany (_insert @PackageComponent <> " ON CONFLICT DO NOTHING") packageComponents
+  void $ executeMany (_insert @PackageComponent <> " ON CONFLICT DO NOTHING") packageComponents
 
-bulkInsertPackageComponents :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => [PackageComponent] -> Eff es ()
-bulkInsertPackageComponents pcs = labeled @ReadWrite @WithConnection $ void $ executeMany (_insert @PackageComponent) pcs
+bulkInsertPackageComponents :: (IOE :> es, RequireCallStack, WriteDB :> es) => [PackageComponent] -> Eff es ()
+bulkInsertPackageComponents pcs = void $ executeMany (_insert @PackageComponent) pcs
 
-insertRequirement :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => Requirement -> Eff es ()
-insertRequirement req = labeled @ReadWrite @WithConnection $ void $ execute (_insert @Requirement) req
+insertRequirement :: (IOE :> es, RequireCallStack, WriteDB :> es) => Requirement -> Eff es ()
+insertRequirement req = void $ execute (_insert @Requirement) req
 
-upsertRequirement :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => Requirement -> Eff es ()
-upsertRequirement req = labeled @ReadWrite @WithConnection $ upsert @Requirement req [[field| components |], [field| requirement |]]
+upsertRequirement :: (IOE :> es, RequireCallStack, WriteDB :> es) => Requirement -> Eff es ()
+upsertRequirement req = upsert @Requirement req [[field| components |], [field| requirement |]]
 
-bulkInsertRequirements :: (IOE :> es, Labeled ReadWrite WithConnection :> es, RequireCallStack) => [Requirement] -> Eff es ()
+bulkInsertRequirements :: (IOE :> es, RequireCallStack, WriteDB :> es) => [Requirement] -> Eff es ()
 bulkInsertRequirements requirements =
-  labeled @ReadWrite @WithConnection $ unless (List.null requirements) $ void (executeMany (_insert @Requirement) requirements)
+  unless (List.null requirements) $ void (executeMany (_insert @Requirement) requirements)

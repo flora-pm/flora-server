@@ -2,8 +2,6 @@ module Flora.Model.PackageUploader.Guard where
 
 import Data.Text
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 import Effectful.Tracing (Tracer)
 import Effectful.Tracing qualified as Trace
 
@@ -13,7 +11,7 @@ import Flora.Model.PackageUploader.Query qualified as Query
 import Flora.Model.PackageUploader.Types
 
 guardThatPackageUploaderExists
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Tracer :> es)
+  :: (IOE :> es, ReadDB :> es, Tracer :> es)
   => Text
   -> PackageIndexId
   -> Eff es PackageUploader

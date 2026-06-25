@@ -4,8 +4,6 @@ import Control.Monad.Extra
 import Effectful
 import Effectful.Fail
 import Effectful.FileSystem
-import Effectful.Labeled
-import Effectful.PostgreSQL
 import Options.Applicative
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
@@ -76,8 +74,8 @@ specs fixtures =
   , UserSpec.spec fixtures
   ]
 
-cleanUp :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Eff es ()
-cleanUp = labeled @ReadWrite @WithConnection $ do
+cleanUp :: (IOE :> es, WriteDB :> es) => Eff es ()
+cleanUp = do
   void $ execute "DELETE FROM blob_relations" ()
   void $ execute "DELETE FROM package_categories" ()
   void $ execute "DELETE FROM categories" ()

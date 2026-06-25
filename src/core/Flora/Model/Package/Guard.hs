@@ -1,8 +1,6 @@
 module Flora.Model.Package.Guard where
 
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 import Effectful.Tracing (Tracer)
 import Effectful.Tracing qualified as Trace
 
@@ -11,7 +9,7 @@ import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 
 guardThatPackageExists
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Tracer :> es)
+  :: (IOE :> es, ReadDB :> es, Tracer :> es)
   => Namespace
   -> PackageName
   -> (Namespace -> PackageName -> Eff es Package)

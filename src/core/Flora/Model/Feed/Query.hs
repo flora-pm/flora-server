@@ -8,15 +8,13 @@ import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (In (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 
 import Flora.Database
 import Flora.Model.Feed.Types
 import Flora.Model.Package.Types
 
 getEntriesByPackage
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => List (Namespace, PackageName)
   -> Word
   -- ^ Offset
@@ -24,7 +22,7 @@ getEntriesByPackage
   -- ^ Limit
   -> Eff es (Vector FeedEntry)
 getEntriesByPackage packages offset limit = do
-  labeled @ReadOnly @WithConnection $ Vector.fromList <$> query querySpec (In packages, offset, limit)
+  Vector.fromList <$> query querySpec (In packages, offset, limit)
   where
     querySpec =
       [sql|

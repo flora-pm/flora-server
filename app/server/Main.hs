@@ -20,9 +20,7 @@ import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
-import Effectful.Labeled
 import Effectful.Log
-import Effectful.PostgreSQL
 import Effectful.Reader.Static qualified as Reader
 import Log qualified
 import NoThunks.Class
@@ -77,7 +75,7 @@ checkFloraEnvForThunks env = do
         , "thunk_info" .= info.thunkInfo
         ]
 
-checkExpectedTables :: (IOE :> es, IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es) => FloraM es ()
+checkExpectedTables :: (IOE :> es, Log :> es, ReadDB :> es) => FloraM es ()
 checkExpectedTables = do
   -- Update the list in alphabetical order when adding or removing a table!
   let expectedTables =
@@ -114,10 +112,9 @@ checkExpectedTables = do
           , "users"
           ]
   actualTables <-
-    labeled @ReadOnly @WithConnection $
-      Set.fromAscList . List.map fromOnly
-        <$> query_
-          [sql|
+    Set.fromAscList . List.map fromOnly
+      <$> query_
+        [sql|
       SELECT table_name
       FROM information_schema.tables
       WHERE table_name <> 'schema_migrations'
@@ -155,13 +152,12 @@ checkExpectedTables = do
     forM_ messages Log.logAttention_
     liftIO exitFailure
 
-checkRepositoriesAreConfigured :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es) => Eff es ()
+checkRepositoriesAreConfigured :: (IOE :> es, Log :> es, ReadDB :> es) => Eff es ()
 checkRepositoriesAreConfigured = do
   let expectedRepositories = Set.fromList ["hackage", "cardano", "horizon", "mlabs"]
   (result :: (List (Only Text))) <-
-    labeled @ReadOnly @WithConnection $
-      query_
-        (_selectWithFields @PackageIndex [[field| repository |]])
+    query_
+      (_selectWithFields @PackageIndex [[field| repository |]])
   let actualRepositories = Set.fromList $ List.map fromOnly result
   let missingExpectedIndexes = Set.difference expectedRepositories actualRepositories
   let unexpectedIndexes = Set.difference actualRepositories expectedRepositories

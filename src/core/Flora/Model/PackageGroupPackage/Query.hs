@@ -13,20 +13,18 @@ import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 
 import Flora.Database
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroupPackage.Types
 
-getPackageGroupPackage :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageGroupPackageId -> Eff es (Maybe PackageGroupPackage)
-getPackageGroupPackage packageGroupPackageId = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @PackageGroupPackage [primaryKey @PackageGroupPackage]) (Only packageGroupPackageId)
+getPackageGroupPackage :: (IOE :> es, ReadDB :> es) => PackageGroupPackageId -> Eff es (Maybe PackageGroupPackage)
+getPackageGroupPackage packageGroupPackageId = queryOne (_selectWhere @PackageGroupPackage [primaryKey @PackageGroupPackage]) (Only packageGroupPackageId)
 
-getPackageGroupsForPackage :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageId -> Eff es (Vector PackageGroupName)
+getPackageGroupsForPackage :: (IOE :> es, ReadDB :> es) => PackageId -> Eff es (Vector PackageGroupName)
 getPackageGroupsForPackage packageId = do
-  results :: Vector (Only PackageGroupName) <- labeled @ReadOnly @WithConnection $ Vector.fromList <$> query q (Only packageId)
+  results :: Vector (Only PackageGroupName) <- Vector.fromList <$> query q (Only packageId)
   pure $ fmap fromOnly results
   where
     q =
@@ -37,8 +35,8 @@ getPackageGroupsForPackage packageId = do
         WHERE p0.package_id = ?
       |]
 
-listPackageGroupPackages :: (IOE :> es, Labeled w0 WithConnection :> es) => PackageGroupId -> Eff es (Vector PackageInfo)
-listPackageGroupPackages groupId = labeled @_ @WithConnection $ Vector.fromList <$> query q (Only groupId)
+listPackageGroupPackages :: (IOE :> es, ReadDB :> es) => PackageGroupId -> Eff es (Vector PackageInfo)
+listPackageGroupPackages groupId = Vector.fromList <$> query q (Only groupId)
   where
     q =
       [sql|

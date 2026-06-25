@@ -11,8 +11,6 @@ import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 import Security.Advisories.Core.HsecId
 
 import Advisories.HsecId.Orphans ()
@@ -22,33 +20,31 @@ import Flora.Database
 import Flora.Model.Package.Types
 
 getAffectedPackageById
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => AffectedPackageId
   -> Eff es (Maybe AffectedPackageDAO)
-getAffectedPackageById affectedPackageId = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @AffectedPackageDAO [primaryKey @AffectedPackageDAO]) (Only affectedPackageId)
+getAffectedPackageById affectedPackageId = queryOne (_selectWhere @AffectedPackageDAO [primaryKey @AffectedPackageDAO]) (Only affectedPackageId)
 
 getAffectedPackagesByAdvisoryId
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => AdvisoryId
   -> Eff es (Vector AffectedPackageDAO)
 getAffectedPackagesByAdvisoryId advisoryId =
-  labeled @ReadOnly @WithConnection $ Vector.fromList <$> query (_selectWhere @AffectedPackageDAO [[field| advisory_id |]]) (Only advisoryId)
+  Vector.fromList <$> query (_selectWhere @AffectedPackageDAO [[field| advisory_id |]]) (Only advisoryId)
 
 getAffectedPackagesByHsecId
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => HsecId
   -> Eff es (Vector AffectedPackageDAO)
 getAffectedPackagesByHsecId hsecId =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query (_joinSelectOneByField @AffectedPackageDAO @AdvisoryDAO [field| advisory_id |] [field| hsec_id |]) (Only hsecId)
+  Vector.fromList
+    <$> query (_joinSelectOneByField @AffectedPackageDAO @AdvisoryDAO [field| advisory_id |] [field| hsec_id |]) (Only hsecId)
 
-getAdvisoryPreviewsByPackageId :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageId -> Eff es (Vector PackageAdvisoryPreview)
+getAdvisoryPreviewsByPackageId :: (IOE :> es, ReadDB :> es) => PackageId -> Eff es (Vector PackageAdvisoryPreview)
 getAdvisoryPreviewsByPackageId packageId =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query
-        [sql|
+  Vector.fromList
+    <$> query
+      [sql|
 SELECT s0.hsec_id
      , p3.namespace
      , p3.name
@@ -67,15 +63,14 @@ FROM security_advisories AS s0
 WHERE a1.package_id = ?
 GROUP BY s0.hsec_id, p3.namespace, p3.name, s0.summary, fixed, s0.published, a1.cvss
   |]
-        (Only packageId)
+      (Only packageId)
 
-searchInAdvisories :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => (Word, Word) -> Text -> Eff es (Vector PackageAdvisoryPreview)
+searchInAdvisories :: (IOE :> es, ReadDB :> es) => (Word, Word) -> Text -> Eff es (Vector PackageAdvisoryPreview)
 searchInAdvisories (offset, limit) searchTerm =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query
-        searchAdvisoriesQuery
-        (searchTerm, searchTerm, offset, limit)
+  Vector.fromList
+    <$> query
+      searchAdvisoriesQuery
+      (searchTerm, searchTerm, offset, limit)
 
 searchAdvisoriesQuery :: Query
 searchAdvisoriesQuery =
@@ -114,16 +109,9 @@ SELECT r0.hsec_id
 FROM results as r0
   |]
 
-countAdvisorySearchResults :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Text -> Eff es Word
+countAdvisorySearchResults :: (IOE :> es, ReadDB :> es) => Text -> Eff es Word
 countAdvisorySearchResults searchTerm =
-  labeled @ReadOnly @WithConnection $ do
-    (result :: Maybe (Only Int)) <-
-      queryOne
-        countAdvisorySearchResultsQuery
-        (searchTerm, searchTerm)
-    case result of
-      Just (Only n) -> pure $ fromIntegral n
-      Nothing -> pure 0
+  queryCount countAdvisorySearchResultsQuery (searchTerm, searchTerm)
 
 countAdvisorySearchResultsQuery :: Query
 countAdvisorySearchResultsQuery =

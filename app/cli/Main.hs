@@ -330,7 +330,7 @@ importIndex
   -> FloraM es ()
 importIndex indexArchivebasePath repository = do
   FloraEnv{pool} <- Reader.ask
-  mPackageIndex <- withReadOnlyPool pool $ withReadWritePool pool $ Query.getPackageIndexByName repository
+  mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex -> do

@@ -212,13 +212,13 @@ fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageV
         if packageInfo.metadataRevision == 0
           then do
             withReadWritePool pool $ Update.updateUploadTime releaseId packageInfo.uploadedAt
-            withReadWritePool pool $ withReadOnlyPool pool $ Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
+            withReadWritePool pool $ Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
           else do
             Hackage.request (Hackage.getPackageWithRevision requestPayload 0) >>= \case
               Right originalPackageInfo -> do
                 withReadWritePool pool $ Update.updateRevisionTime releaseId packageInfo.uploadedAt
                 withReadWritePool pool $ Update.updateUploadTime releaseId originalPackageInfo.uploadedAt
-                withReadWritePool pool $ withReadOnlyPool pool $ Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
+                withReadWritePool pool $ Update.linkPackageUploaderToImportedRelease releaseId packageInfo.uploader
               Left e -> handleClientError e
   where
     handleClientError :: ClientError -> JobsRunner ()
@@ -443,8 +443,8 @@ fetchPackageMaintainers packageName = do
               namespace
               packageName
               (\_ _ -> Error.throwError (CouldNotFindPackage namespace packageName))
-        packageUploaders <- forM (Vector.toList maintainers) $ \(HackagePackageMaintainer username) ->
-          withReadOnlyPool pool $
+        packageUploaders <- withReadOnlyPool pool $
+          forM (Vector.toList maintainers) $ \(HackagePackageMaintainer username) ->
             guardThatPackageUploaderExists
               username
               packageIndex.packageIndexId
@@ -489,9 +489,10 @@ fetchPackageUploaders = do
     Hackage.request Hackage.listHackageUsers >>= \case
       Left e -> handleClientError e
       Right users -> do
-        forM_ users $ \user -> do
-          dao <- mkPackageUploaderDAO user.username packageIndex.packageIndexId Nothing
-          withReadWritePool pool $ Update.insertMaybeExistingPackageUploader dao
+        withReadWritePool pool $
+          forM_ users $ \user -> do
+            dao <- mkPackageUploaderDAO user.username packageIndex.packageIndexId Nothing
+            Update.insertMaybeExistingPackageUploader dao
   where
     handleClientError :: ClientError -> JobsRunner a
     handleClientError e = Arb.throwRetryable (Text.show e)

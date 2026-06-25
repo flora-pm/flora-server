@@ -2,8 +2,6 @@ module Flora.Model.PackageIndex.Guard where
 
 import Data.Text (Text)
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 import Effectful.Tracing (Tracer)
 import Effectful.Tracing qualified as Trace
 
@@ -12,7 +10,7 @@ import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 
 guardThatPackageIndexExists
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Tracer :> es)
+  :: (IOE :> es, ReadDB :> es, Tracer :> es)
   => Text
   -> Eff es PackageIndex
   -- ^ Action to run if the package does not exist
