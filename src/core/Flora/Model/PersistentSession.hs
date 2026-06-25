@@ -20,17 +20,12 @@ import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Simple.ToRow
 import Database.PostgreSQL.Simple.Types
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
-import Effectful.Reader.Static (Reader)
-import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import Env.Generic
 import Web.HttpApiData
 
 import Flora.Database
-import Flora.Environment.Env
 import Flora.Model.User (UserId)
 import Flora.Monad
 
@@ -71,24 +66,23 @@ newPersistentSession userId persistentSessionId = do
   pure $ PersistentSession{userId, persistentSessionId, createdAt, sessionData}
 
 persistSession
-  :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Reader FloraEnv :> es, Time :> es)
+  :: (IOE :> es, Time :> es, WriteDB :> es)
   => PersistentSessionId
   -> UserId
   -> FloraM es PersistentSessionId
 persistSession persistentSessionId userId = do
-  FloraEnv{pool} <- Reader.ask
   persistentSession <- newPersistentSession userId persistentSessionId
-  withReadWritePool pool $ insertSession persistentSession
+  insertSession persistentSession
   pure persistentSession.persistentSessionId
 
-insertSession :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => PersistentSession -> FloraM es ()
-insertSession = void . labeled @ReadWrite @WithConnection . execute (_insert @PersistentSession)
+insertSession :: (IOE :> es, WriteDB :> es) => PersistentSession -> FloraM es ()
+insertSession = void . execute (_insert @PersistentSession)
 
-deleteSession :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => PersistentSessionId -> FloraM es ()
-deleteSession sessionId = void . labeled @ReadWrite @WithConnection $ execute (_delete @PersistentSession) (Only sessionId)
+deleteSession :: (IOE :> es, WriteDB :> es) => PersistentSessionId -> FloraM es ()
+deleteSession sessionId = void $ execute (_delete @PersistentSession) (Only sessionId)
 
-getPersistentSession :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PersistentSessionId -> FloraM es (Maybe PersistentSession)
-getPersistentSession sessionId = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @PersistentSession [primaryKey @PersistentSession]) (Only sessionId)
+getPersistentSession :: (IOE :> es, ReadDB :> es) => PersistentSessionId -> FloraM es (Maybe PersistentSession)
+getPersistentSession sessionId = queryOne (_selectWhere @PersistentSession [primaryKey @PersistentSession]) (Only sessionId)
 
 lookup :: Text -> SessionData -> Maybe Text
 lookup key (SessionData sdMap) = Map.lookup key sdMap

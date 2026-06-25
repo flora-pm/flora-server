@@ -12,23 +12,21 @@ import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 
 import Flora.Database
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
-getCategoryById :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => CategoryId -> Eff es (Maybe Category)
-getCategoryById categoryId = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @Category [primaryKey @Category]) (Only categoryId)
+getCategoryById :: (IOE :> es, ReadDB :> es) => CategoryId -> Eff es (Maybe Category)
+getCategoryById categoryId = queryOne (_selectWhere @Category [primaryKey @Category]) (Only categoryId)
 
-getCategoryBySlug :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Text -> Eff es (Maybe Category)
-getCategoryBySlug slug = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @Category [[field| slug |]]) (Only slug)
+getCategoryBySlug :: (IOE :> es, ReadDB :> es) => Text -> Eff es (Maybe Category)
+getCategoryBySlug slug = queryOne (_selectWhere @Category [[field| slug |]]) (Only slug)
 
-getCategoryByName :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Text -> Eff es (Maybe Category)
-getCategoryByName categoryName = labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @Category [[field| name |]]) (Only categoryName)
+getCategoryByName :: (IOE :> es, ReadDB :> es) => Text -> Eff es (Maybe Category)
+getCategoryByName categoryName = queryOne (_selectWhere @Category [[field| name |]]) (Only categoryName)
 
-getPackagesFromCategorySlug :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Text -> Eff es (Vector Package)
+getPackagesFromCategorySlug :: (IOE :> es, ReadDB :> es) => Text -> Eff es (Vector Package)
 getPackagesFromCategorySlug slug =
   do
     getCategoryBySlug slug
@@ -37,9 +35,8 @@ getPackagesFromCategorySlug slug =
         liftIO $ T.putStrLn $ "Could not find category from slug: \"" <> slug <> "\""
         pure Vector.empty
       Just Category{categoryId} -> do
-        labeled @ReadOnly @WithConnection $
-          Vector.fromList
-            <$> query (_joinSelectOneByField @Package @PackageCategory [field| package_id |] [field| category_id |]) (Only categoryId)
+        Vector.fromList
+          <$> query (_joinSelectOneByField @Package @PackageCategory [field| package_id |] [field| category_id |]) (Only categoryId)
 
-getAllCategories :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Eff es (Vector Category)
-getAllCategories = labeled @ReadOnly @WithConnection $ Vector.fromList <$> query_ (_select @Category)
+getAllCategories :: ReadDB :> es => Eff es (Vector Category)
+getAllCategories = Vector.fromList <$> query_ (_select @Category)

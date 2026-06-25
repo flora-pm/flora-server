@@ -37,8 +37,6 @@ import Database.PostgreSQL.Simple.SqlQQ
 import Database.PostgreSQL.Simple.Types (In (..), Only (..), Query)
 import Distribution.Version (Version)
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 
 import Distribution.Orphans.Version ()
 import Flora.Database
@@ -60,53 +58,49 @@ packageReleasesQuery =
   _selectWhere @Release [[field| package_id |]]
     <> " ORDER BY releases.version DESC "
 
-getReleases :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageId -> FloraM es (Vector Release)
+getReleases :: (IOE :> es, ReadDB :> es) => PackageId -> FloraM es (Vector Release)
 getReleases pid =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query (packageReleasesQuery <> " LIMIT 6") (Only pid)
+  Vector.fromList
+    <$> query (packageReleasesQuery <> " LIMIT 6") (Only pid)
 
-getLatestPackageRelease :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageId -> FloraM es (Maybe Release)
+getLatestPackageRelease :: (IOE :> es, ReadDB :> es) => PackageId -> FloraM es (Maybe Release)
 getLatestPackageRelease pid =
-  labeled @ReadOnly @WithConnection $ do
-    queryOne getLatestPackageReleaseQuery (Only pid)
+  queryOne getLatestPackageReleaseQuery (Only pid)
 
-getLatestReleaseTime :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => Maybe Text -> FloraM es (Maybe UTCTime)
+getLatestReleaseTime :: (IOE :> es, ReadDB :> es) => Maybe Text -> FloraM es (Maybe UTCTime)
 getLatestReleaseTime repo =
-  labeled @ReadOnly @WithConnection $ fmap fromOnly <$> maybe (queryOne_ q') (queryOne q . Only) repo
+  fmap fromOnly <$> maybe (queryOne_ q') (queryOne q . Only) repo
   where
     q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
     q' = [sql| select max(uploaded_at) from releases |]
 
-getReleaseTarballRootHash :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => ReleaseId -> FloraM es (Maybe Sha256Sum)
-getReleaseTarballRootHash releaseId = labeled @ReadOnly @WithConnection $ do
+getReleaseTarballRootHash :: (IOE :> es, ReadDB :> es) => ReleaseId -> FloraM es (Maybe Sha256Sum)
+getReleaseTarballRootHash releaseId = do
   mRelease :: Maybe Release <- queryOne (_selectWhere @Release [[field| release_id |]]) (Only releaseId)
   case mRelease of
     Just release -> pure release.tarballRootHash
     Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
 
-getReleaseTarballArchive :: (BlobStoreAPI :> es, IOE :> es, Labeled ReadOnly WithConnection :> es) => ReleaseId -> FloraM es (Maybe LazyByteString)
-getReleaseTarballArchive releaseId = labeled @ReadOnly @WithConnection $ do
+getReleaseTarballArchive :: (BlobStoreAPI :> es, IOE :> es, ReadDB :> es) => ReleaseId -> FloraM es (Maybe LazyByteString)
+getReleaseTarballArchive releaseId = do
   mRelease :: Maybe Release <- queryOne (_selectWhere @Release [[field| release_id |]]) (Only releaseId)
   case mRelease of
     Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
     Just release -> do
       fmap fromStrict . join <$> traverse get release.tarballArchiveHash
 
-getAllReleases :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageId -> FloraM es (Vector Release)
+getAllReleases :: (IOE :> es, ReadDB :> es) => PackageId -> FloraM es (Vector Release)
 getAllReleases pid =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query packageReleasesQuery (Only pid)
+  Vector.fromList
+    <$> query packageReleasesQuery (Only pid)
 
 getVersionFromManyReleaseIds
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => Vector ReleaseId
   -> FloraM es (Vector (ReleaseId, Version))
 getVersionFromManyReleaseIds releaseIds = do
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query q (Only (In (Vector.toList releaseIds)))
+  Vector.fromList
+    <$> query q (Only (In (Vector.toList releaseIds)))
   where
     q =
       [sql|
@@ -116,12 +110,11 @@ getVersionFromManyReleaseIds releaseIds = do
       |]
 
 getHackagePackageReleasesWithoutReadme
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutReadme =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query querySpec ()
+  Vector.fromList
+    <$> query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -136,12 +129,11 @@ getHackagePackageReleasesWithoutReadme =
       |]
 
 getHackagePackageReleasesWithoutUploadInformation
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutUploadInformation =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query querySpec ()
+  Vector.fromList
+    <$> query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -156,12 +148,11 @@ getHackagePackageReleasesWithoutUploadInformation =
       |]
 
 getHackagePackageReleasesWithoutChangelog
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutChangelog =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query querySpec ()
+  Vector.fromList
+    <$> query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -176,12 +167,11 @@ getHackagePackageReleasesWithoutChangelog =
       |]
 
 getHackagePackageReleasesWithoutTarball
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutTarball =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query querySpec ()
+  Vector.fromList
+    <$> query querySpec ()
   where
     querySpec =
       [sql|
@@ -194,10 +184,10 @@ getHackagePackageReleasesWithoutTarball =
       |]
 
 getHackagePackagesWithoutReleaseDeprecationInformation
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (PackageName, Vector ReleaseId))
 getHackagePackagesWithoutReleaseDeprecationInformation =
-  labeled @ReadOnly @WithConnection $ Vector.fromList <$> query_ q
+  Vector.fromList <$> query_ q
   where
     q =
       [sql|
@@ -211,33 +201,27 @@ getHackagePackagesWithoutReleaseDeprecationInformation =
         |]
 
 getReleaseById
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => ReleaseId
   -> FloraM es (Maybe Release)
 getReleaseById releaseId =
-  labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @Release [primaryKey @Release]) (Only releaseId)
+  queryOne (_selectWhere @Release [primaryKey @Release]) (Only releaseId)
 
 getReleaseByVersion
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => PackageId
   -> Version
   -> FloraM es (Maybe Release)
 getReleaseByVersion packageId version =
-  labeled @ReadOnly @WithConnection $
-    queryOne
-      ( _selectWhere
-          @Release
-          [[field| package_id |], [field| version |]]
-      )
-      (packageId, version)
+  queryOne
+    ( _selectWhere
+        @Release
+        [[field| package_id |], [field| version |]]
+    )
+    (packageId, version)
 
-getNumberOfReleases :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => PackageId -> FloraM es Word
-getNumberOfReleases pid =
-  labeled @ReadOnly @WithConnection $ do
-    (result :: Maybe (Only Int)) <- queryOne numberOfReleasesQuery (Only pid)
-    case result of
-      Just (Only n) -> pure $ fromIntegral n
-      Nothing -> pure 0
+getNumberOfReleases :: (IOE :> es, ReadDB :> es) => PackageId -> FloraM es Word
+getNumberOfReleases pid = queryCount numberOfReleasesQuery (Only pid)
 
 numberOfReleasesQuery :: Query
 numberOfReleasesQuery =
@@ -247,14 +231,13 @@ numberOfReleasesQuery =
   WHERE rel."package_id" = ?
   |]
 
-getReleaseComponents :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => ReleaseId -> FloraM es (Vector PackageComponent)
+getReleaseComponents :: (IOE :> es, ReadDB :> es) => ReleaseId -> FloraM es (Vector PackageComponent)
 getReleaseComponents releaseId =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
+  Vector.fromList
+    <$> query (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
 
-getReleasePackageIndex :: (IOE :> es, Labeled ReadOnly WithConnection :> es) => ReleaseId -> FloraM es (Maybe PackageIndexId)
-getReleasePackageIndex releaseId = labeled @ReadOnly @WithConnection $ do
+getReleasePackageIndex :: (IOE :> es, ReadDB :> es) => ReleaseId -> FloraM es (Maybe PackageIndexId)
+getReleasePackageIndex releaseId = do
   result :: Maybe (Only PackageIndexId) <- queryOne q (Only releaseId)
   pure $ fromOnly <$> result
   where
@@ -267,12 +250,11 @@ getReleasePackageIndex releaseId = labeled @ReadOnly @WithConnection $ do
       |]
 
 getLatestReleases
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (Namespace, PackageName, Text, Version, Maybe UTCTime))
 getLatestReleases =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query sqlQuery ()
+  Vector.fromList
+    <$> query sqlQuery ()
   where
     sqlQuery =
       [sql|
@@ -283,11 +265,11 @@ getLatestReleases =
       |]
 
 getLatestPackageReleaseVersion
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => PackageId
   -> FloraM es (Maybe Version)
 getLatestPackageReleaseVersion packageId = do
-  result :: (Maybe (Only Version)) <- labeled @ReadOnly @WithConnection $ queryOne sqlQuery (Only packageId)
+  result :: (Maybe (Only Version)) <- queryOne sqlQuery (Only packageId)
   pure $ fromOnly <$> result
   where
     sqlQuery =

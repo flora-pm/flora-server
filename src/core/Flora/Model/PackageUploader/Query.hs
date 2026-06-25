@@ -15,8 +15,6 @@ import Database.PostgreSQL.Entity.Internal.QQ (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 
 import Flora.Database
 import Flora.Model.Package.Types
@@ -26,11 +24,11 @@ import Flora.Model.PackageUploader.Types
 import Flora.Monad
 
 getPackageUploaderById
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => PackageUploaderId
   -> Eff es (Maybe PackageUploader)
 getPackageUploaderById packageUploaderId = do
-  mDao :: Maybe PackageUploaderDAO <- labeled @ReadOnly @WithConnection $ queryOne (_selectWhere @PackageUploaderDAO [primaryKey @PackageUploaderDAO]) (Only packageUploaderId)
+  mDao :: Maybe PackageUploaderDAO <- queryOne (_selectWhere @PackageUploaderDAO [primaryKey @PackageUploaderDAO]) (Only packageUploaderId)
   case mDao of
     Nothing -> pure Nothing
     Just dao -> do
@@ -48,12 +46,12 @@ getPackageUploaderById packageUploaderId = do
                 }
 
 getPackageUploaderByUsernameAndIndex
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => Text
   -> PackageIndexId
   -> Eff es (Maybe PackageUploader)
 getPackageUploaderByUsernameAndIndex username packageIndexId = do
-  mDao :: Maybe PackageUploaderDAO <- labeled @ReadOnly @WithConnection $ queryOne q (username, packageIndexId)
+  mDao :: Maybe PackageUploaderDAO <- queryOne q (username, packageIndexId)
   case mDao of
     Nothing -> pure Nothing
     Just dao -> do
@@ -77,13 +75,12 @@ getPackageUploaderByUsernameAndIndex username packageIndexId = do
         ]
 
 getPackageUploaders
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es)
+  :: (IOE :> es, ReadDB :> es)
   => PackageId
   -> FloraM es (Vector PackageUploaderDAO)
 getPackageUploaders packageId =
-  labeled @ReadOnly @WithConnection $
-    Vector.fromList
-      <$> query sqlQuery (Only packageId)
+  Vector.fromList
+    <$> query sqlQuery (Only packageId)
   where
     sqlQuery =
       [sql|

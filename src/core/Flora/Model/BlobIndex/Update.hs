@@ -11,15 +11,10 @@ import Database.PostgreSQL.Simple (ToRow)
 import Database.PostgreSQL.Simple.Types (Query)
 import Distribution.Version (Version)
 import Effectful
-import Effectful.Labeled
 import Effectful.Log (Log)
-import Effectful.PostgreSQL
-import Effectful.Reader.Static (Reader)
-import Effectful.Reader.Static qualified as Reader
 import Log qualified
 
 import Flora.Database
-import Flora.Environment.Env
 import Flora.Model.BlobIndex.Internal
 import Flora.Model.BlobIndex.Types
 import Flora.Model.BlobStore.API
@@ -31,15 +26,14 @@ import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
 
 insertTar
-  :: (BlobStoreAPI :> es, IOE :> es, Labeled ReadWrite WithConnection :> es, Log :> es, Reader FloraEnv :> es)
+  :: (BlobStoreAPI :> es, IOE :> es, Log :> es, ReadDB :> es, WriteDB :> es)
   => Namespace
   -> PackageName
   -> Version
   -> LazyByteString
   -> FloraM es (Either BlobStoreInsertError Sha256Sum)
 insertTar namespace packageName version contents = do
-  FloraEnv{pool} <- Reader.ask
-  lookups <- withReadOnlyPool pool $ do
+  lookups <- do
     mpackage <- Query.getPackageByNamespaceAndName namespace packageName
     case mpackage of
       Nothing -> pure . Left $ NoPackage packageName
@@ -62,7 +56,7 @@ insertTar namespace packageName version contents = do
         Right t@(TarRoot rootHash _ _ _) -> Right rootHash <$ insertTree release.releaseId t
 
 insertTree
-  :: (BlobStoreAPI :> es, IOE :> es, Labeled ReadWrite WithConnection :> es, Log :> es, Reader FloraEnv :> es)
+  :: (BlobStoreAPI :> es, IOE :> es, Log :> es, WriteDB :> es)
   => ReleaseId
   -> TarRoot Sha256Sum
   -> FloraM es ()
@@ -76,8 +70,8 @@ insertTree releaseId (TarRoot rootHash _ _ tree) = do
     _onConflictDoNothing :: Query
     _onConflictDoNothing = fromString "on conflict do nothing"
 
-    insertDoNothing :: forall e es. (Entity e, IOE :> es, Labeled ReadWrite WithConnection :> es, ToRow e) => e -> Eff es Int64
-    insertDoNothing params = labeled @ReadWrite @WithConnection $ execute (_insert @e <> _onConflictDoNothing) params
+    insertDoNothing :: forall e es. (Entity e, IOE :> es, ToRow e, WriteDB :> es) => e -> Eff es Int64
+    insertDoNothing params = execute (_insert @e <> _onConflictDoNothing) params
 
     insertBlobs parentHash dir (TarDirectory childHash nodes) = do
       res <- insertDoNothing $! BlobRelation parentHash childHash dir True

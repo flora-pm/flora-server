@@ -16,8 +16,6 @@ import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
@@ -33,14 +31,15 @@ addAdmin :: (IOE :> es, Reader FloraEnv :> es, Time :> es) => AdminCreationForm 
 addAdmin form = do
   FloraEnv{pool} <- Reader.ask
   adminUser <- mkAdmin form
-  withReadWritePool pool $ insertUser adminUser
-  withReadWritePool pool $ unlockAccount adminUser.userId
+  withReadWritePool pool $ do
+    insertUser adminUser
+    unlockAccount adminUser.userId
   pure adminUser
 
-lockAccount :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es) => UserId -> FloraM es ()
+lockAccount :: (IOE :> es, Time :> es, WriteDB :> es) => UserId -> FloraM es ()
 lockAccount userId = do
   ts <- Time.currentTime
-  labeled @ReadWrite @WithConnection $ void $ execute q (ts, userId)
+  void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -50,10 +49,10 @@ lockAccount userId = do
         where u.user_id = ?;
       |]
 
-unlockAccount :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es) => UserId -> FloraM es ()
+unlockAccount :: (IOE :> es, Time :> es, WriteDB :> es) => UserId -> FloraM es ()
 unlockAccount userId = do
   ts <- Time.currentTime
-  labeled @ReadWrite @WithConnection $ void $ execute q (ts, userId)
+  void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -63,20 +62,20 @@ unlockAccount userId = do
         where u.user_id = ?
       |]
 
-insertUser :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => User -> FloraM es ()
-insertUser user = labeled @ReadWrite @WithConnection $ void $ execute (_insert @User) user
+insertUser :: (IOE :> es, WriteDB :> es) => User -> FloraM es ()
+insertUser user = void $ execute (_insert @User) user
 
-deleteUser :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => UserId -> FloraM es ()
-deleteUser userId = labeled @ReadWrite @WithConnection $ void $ execute (_delete @User) (Only userId)
+deleteUser :: (IOE :> es, WriteDB :> es) => UserId -> FloraM es ()
+deleteUser userId = void $ execute (_delete @User) (Only userId)
 
 setupTOTP
-  :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es)
+  :: (IOE :> es, Time :> es, WriteDB :> es)
   => UserId
   -> HMAC.AuthenticationKey
   -> FloraM es ()
 setupTOTP userId key = do
   ts <- Time.currentTime
-  labeled @ReadWrite @WithConnection $ void $ execute q (key, ts, userId)
+  void $ execute q (key, ts, userId)
   where
     q =
       [sql|
@@ -87,12 +86,12 @@ setupTOTP userId key = do
       |]
 
 confirmTOTP
-  :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es)
+  :: (IOE :> es, Time :> es, WriteDB :> es)
   => UserId
   -> FloraM es ()
 confirmTOTP userId = do
   ts <- Time.currentTime
-  labeled @ReadWrite @WithConnection $ void $ execute q (ts, userId)
+  void $ execute q (ts, userId)
   where
     q =
       [sql|
@@ -103,12 +102,12 @@ confirmTOTP userId = do
       |]
 
 unSetTOTP
-  :: (IOE :> es, Labeled ReadWrite WithConnection :> es, Time :> es)
+  :: (IOE :> es, Time :> es, WriteDB :> es)
   => UserId
   -> FloraM es ()
 unSetTOTP userId = do
   ts <- Time.currentTime
-  labeled @ReadWrite @WithConnection $ void $ execute q (ts, userId)
+  void $ execute q (ts, userId)
   where
     q =
       [sql|

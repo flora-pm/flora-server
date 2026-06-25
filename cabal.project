@@ -12,7 +12,7 @@ test-show-details: direct
 jobs: $ncpus
 
 package *
-  ghc-options: +RTS -I0 -RTS -finfo-table-map -fdistinct-constructor-tables
+  ghc-options: +RTS -I0 -RTS -finfo-table-map -fdistinct-constructor-tables -fwrite-ide-info
 
 allow-newer: chronos:hashable
            , feed:*

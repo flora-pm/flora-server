@@ -37,9 +37,7 @@ import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
-import Effectful.Labeled
 import Effectful.Log (Log)
-import Effectful.PostgreSQL
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
@@ -60,11 +58,11 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Monad
 
-insertRelease :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Release -> FloraM es ()
-insertRelease r = labeled @ReadWrite @WithConnection $ void $ execute (_insert @Release) r
+insertRelease :: (IOE :> es, WriteDB :> es) => Release -> FloraM es ()
+insertRelease r = void $ execute (_insert @Release) r
 
 upsertRelease
-  :: (IOE :> es, Labeled ReadOnly WithConnection :> es, Labeled ReadWrite WithConnection :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
+  :: (IOE :> es, Log :> es, ReadDB :> es, Reader FloraEnv :> es, Time :> es, WriteDB :> es)
   => Package -> Release -> FloraM es ()
 upsertRelease package newRelease = do
   mReleaseFromDB <- Query.getReleaseById newRelease.releaseId
@@ -90,117 +88,108 @@ upsertRelease package newRelease = do
       entry <- Types.newReleaseEntry instanceInfo package newRelease.version
       Update.insertFeedEntry entry
 
-refreshLatestVersions :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => FloraM es ()
-refreshLatestVersions = labeled @ReadWrite @WithConnection $ void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
+refreshLatestVersions :: (IOE :> es, WriteDB :> es) => FloraM es ()
+refreshLatestVersions = void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
 
-updateReadme :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
+updateReadme :: (IOE :> es, WriteDB :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
 updateReadme releaseId readmeBody status =
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [ [field| readme |]
-            , [field| readme_status |]
-            ]
-            [field| release_id |]
-        )
-        (toRow (readmeBody, status) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [ [field| readme |]
+          , [field| readme_status |]
+          ]
+          [field| release_id |]
+      )
+      (toRow (readmeBody, status) ++ toRow (Only releaseId))
 
-updateUploadTime :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => ReleaseId -> UTCTime -> FloraM es ()
+updateUploadTime :: (IOE :> es, WriteDB :> es) => ReleaseId -> UTCTime -> FloraM es ()
 updateUploadTime releaseId timestamp =
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [[field| uploaded_at |]]
-            [field| release_id |]
-        )
-        (toRow (Only (Just timestamp)) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| uploaded_at |]]
+          [field| release_id |]
+      )
+      (toRow (Only (Just timestamp)) ++ toRow (Only releaseId))
 
-updateRevisionTime :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => ReleaseId -> UTCTime -> FloraM es ()
+updateRevisionTime :: (IOE :> es, WriteDB :> es) => ReleaseId -> UTCTime -> FloraM es ()
 updateRevisionTime releaseId timestamp =
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [[field| revised_at |]]
-            [field| release_id |]
-        )
-        (toRow (Only (Just timestamp)) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| revised_at |]]
+          [field| release_id |]
+      )
+      (toRow (Only (Just timestamp)) ++ toRow (Only releaseId))
 
-updateChangelog :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
+updateChangelog :: (IOE :> es, WriteDB :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
 updateChangelog releaseId changelogBody status =
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [ [field| changelog |]
-            , [field| changelog_status |]
-            ]
-            [field| release_id |]
-        )
-        (toRow (changelogBody, status) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [ [field| changelog |]
+          , [field| changelog_status |]
+          ]
+          [field| release_id |]
+      )
+      (toRow (changelogBody, status) ++ toRow (Only releaseId))
 
-updateTarballRootHash :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => ReleaseId -> Sha256Sum -> FloraM es ()
+updateTarballRootHash :: (IOE :> es, WriteDB :> es) => ReleaseId -> Sha256Sum -> FloraM es ()
 updateTarballRootHash releaseId hash =
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [[field| tarball_root_hash |]]
-            [field| release_id |]
-        )
-        (toRow (Only $ Just $ display hash) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| tarball_root_hash |]]
+          [field| release_id |]
+      )
+      (toRow (Only $ Just $ display hash) ++ toRow (Only releaseId))
 
 updateTestedWith
-  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
+  :: (IOE :> es, WriteDB :> es)
   => ReleaseId
   -> Vector Version
   -> UTCTime
   -> FloraM es ()
 updateTestedWith releaseId testedCompilers timestamp =
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [[field| tested_with |], [field| updated_at |]]
-            [field| release_id |]
-        )
-        (toRow (Just testedCompilers, timestamp) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| tested_with |], [field| updated_at |]]
+          [field| release_id |]
+      )
+      (toRow (Just testedCompilers, timestamp) ++ toRow (Only releaseId))
 
 updateTarballArchiveHash
-  :: (BlobStoreAPI :> es, IOE :> es, Labeled ReadWrite WithConnection :> es)
+  :: (BlobStoreAPI :> es, IOE :> es, WriteDB :> es)
   => ReleaseId
   -> LazyByteString
   -> FloraM es ()
 updateTarballArchiveHash releaseId (toStrict -> content) = do
   let hash = Sha256Sum . SHA.hash $ content
   put hash content
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [[field| tarball_archive_hash |]]
-            [field| release_id |]
-        )
-        (toRow (Only . Just $ display hash) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| tarball_archive_hash |]]
+          [field| release_id |]
+      )
+      (toRow (Only . Just $ display hash) ++ toRow (Only releaseId))
 
 linkPackageUploaderToImportedRelease
-  :: (Error ImportError :> es, IOE :> es, Labeled ReadOnly WithConnection :> es, Labeled ReadWrite WithConnection :> es, Reader FloraEnv :> es)
+  :: (Error ImportError :> es, IOE :> es, ReadDB :> es, WriteDB :> es)
   => ReleaseId
   -> Text
   -> FloraM es ()
 linkPackageUploaderToImportedRelease releaseId username = do
-  FloraEnv{pool} <- Reader.ask
   mPackageIndexId <- Query.getReleasePackageIndex releaseId
   case mPackageIndexId of
     Nothing -> Error.throwError $ CouldNotFindPackageIndexForRelease releaseId
     Just packageIndexId -> do
       mPackageUploader <-
-        withReadOnlyPool pool $
-          Query.getPackageUploaderByUsernameAndIndex
-            username
-            packageIndexId
+        Query.getPackageUploaderByUsernameAndIndex
+          username
+          packageIndexId
       case mPackageUploader of
         Just packageUploader ->
           updateReleaseUploader releaseId packageUploader.packageUploaderId
@@ -210,26 +199,25 @@ linkPackageUploaderToImportedRelease releaseId username = do
           updateReleaseUploader releaseId packageUploaderDAO.packageUploaderId
 
 updateReleaseUploader
-  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
+  :: (IOE :> es, WriteDB :> es)
   => ReleaseId
   -> PackageUploaderId
   -> FloraM es ()
 updateReleaseUploader releaseId packageUploaderId =
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [[field| uploader_id |]]
-            [field| release_id |]
-        )
-        (toRow (Only packageUploaderId) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| uploader_id |]]
+          [field| release_id |]
+      )
+      (toRow (Only packageUploaderId) ++ toRow (Only releaseId))
 
 setReleasesDeprecationMarker
-  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
+  :: (IOE :> es, WriteDB :> es)
   => Vector (Bool, ReleaseId)
   -> FloraM es ()
 setReleasesDeprecationMarker releaseVersions =
-  labeled @ReadWrite @WithConnection $ void $ executeMany q (releaseVersions & Vector.toList)
+  void $ executeMany q (releaseVersions & Vector.toList)
   where
     q =
       [sql|
@@ -239,13 +227,12 @@ setReleasesDeprecationMarker releaseVersions =
     WHERE r0.release_id = (upd.y :: uuid)
     |]
 
-setArchiveChecksum :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => ReleaseId -> Text -> FloraM es ()
+setArchiveChecksum :: (IOE :> es, WriteDB :> es) => ReleaseId -> Text -> FloraM es ()
 setArchiveChecksum releaseId sha256Hash =
-  labeled @ReadWrite @WithConnection $
-    void $
-      execute
-        ( _updateFieldsBy @Release
-            [[field| archive_checksum |]]
-            [field| release_id |]
-        )
-        (toRow (Only sha256Hash) ++ toRow (Only releaseId))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| archive_checksum |]]
+          [field| release_id |]
+      )
+      (toRow (Only sha256Hash) ++ toRow (Only releaseId))

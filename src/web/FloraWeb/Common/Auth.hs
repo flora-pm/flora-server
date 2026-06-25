@@ -81,8 +81,7 @@ requireUserHandler
 requireUserHandler floraEnv req = do
   let cookies = getCookies req
   mbPersistentSessionId <- handlerToEff $ getSessionId cookies
-  mbPersistentSession <- getInTheFuckingSessionShinji floraEnv.pool mbPersistentSessionId
-  mUserInfo <- fetchUser floraEnv.pool mbPersistentSession
+  mUserInfo <- getInTheFuckingSessionShinji floraEnv.pool mbPersistentSessionId
   requestID <- liftIO $ getRequestID req
   (user, sessionId) <- do
     case mUserInfo of
@@ -101,8 +100,7 @@ handler floraEnv req = do
   let cookies = getCookies req
   let theme = getTheme cookies
   mbPersistentSessionId <- handlerToEff $ getSessionId cookies
-  mbPersistentSession <- getInTheFuckingSessionShinji floraEnv.pool mbPersistentSessionId
-  mUserInfo <- fetchUser floraEnv.pool mbPersistentSession
+  mUserInfo <- getInTheFuckingSessionShinji floraEnv.pool mbPersistentSessionId
   requestID <- liftIO $ getRequestID req
   (user, sessionId) <- do
     case mUserInfo of
@@ -122,8 +120,7 @@ requireAdminHandler
 requireAdminHandler floraEnv req = do
   let cookies = getCookies req
   mbPersistentSessionId <- handlerToEff $ getSessionId cookies
-  mbPersistentSession <- getInTheFuckingSessionShinji floraEnv.pool mbPersistentSessionId
-  mUserInfo <- fetchUser floraEnv.pool mbPersistentSession
+  mUserInfo <- getInTheFuckingSessionShinji floraEnv.pool mbPersistentSessionId
   requestID <- liftIO $ getRequestID req
   (user, sessionId) <- do
     case mUserInfo of
@@ -164,38 +161,26 @@ getSessionId cookies =
         Nothing -> pure Nothing
         Just sessionId -> pure (Just sessionId)
 
+-- | Resolve the session and its user in a single read-only transaction, so an
+-- authenticated request draws one pooled connection instead of two.
 getInTheFuckingSessionShinji
-  :: IOE :> es
+  :: (Error ServerError :> es, IOE :> es)
   => Pool PG.Connection
   -> Maybe PersistentSessionId
-  -> FloraM es (Maybe PersistentSession)
+  -> FloraM es (Maybe (User, PersistentSession))
 getInTheFuckingSessionShinji _ Nothing = pure Nothing
 getInTheFuckingSessionShinji pool (Just persistentSessionId) = do
-  result <- withReadOnlyPool pool $ getPersistentSession persistentSessionId
+  result <- withReadOnlyPool pool $ do
+    mUserSession <- getPersistentSession persistentSessionId
+    case mUserSession of
+      Nothing -> pure Nothing
+      Just userSession -> do
+        mUser <- getUserById userSession.userId
+        pure (Just (userSession, mUser))
   case result of
     Nothing -> pure Nothing
-    (Just userSession) -> pure (Just userSession)
-
-fetchUser
-  :: (Error ServerError :> es, IOE :> es)
-  => Pool PG.Connection
-  -> Maybe PersistentSession
-  -> FloraM es (Maybe (User, PersistentSession))
-fetchUser _ Nothing = pure Nothing
-fetchUser pool (Just userSession) = do
-  user <- lookupUser pool userSession.userId
-  pure (Just (user, userSession))
-
-lookupUser
-  :: (Error ServerError :> es, IOE :> es)
-  => Pool PG.Connection
-  -> UserId
-  -> FloraM es User
-lookupUser pool uid = do
-  result <- withReadOnlyPool pool $ getUserById uid
-  case result of
-    Nothing -> throwError (err403{errBody = "Invalid Cookie"})
-    (Just user) -> pure user
+    Just (_, Nothing) -> throwError (err403{errBody = "Invalid Cookie"})
+    Just (userSession, Just user) -> pure (Just (user, userSession))
 
 handlerToEff
   :: forall (es :: [Effect]) (a :: Type)

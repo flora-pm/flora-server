@@ -16,9 +16,7 @@ import Database.PostgreSQL.Entity.Types (SortKeyword (..), field)
 import Database.PostgreSQL.Simple (Only (..))
 import Distribution.Version (Version)
 import Effectful
-import Effectful.Labeled
 import Effectful.Log (Log)
-import Effectful.PostgreSQL
 import Log qualified
 
 import Flora.Database
@@ -31,7 +29,7 @@ import Flora.Model.Package.Types (PackageName)
 -- from the database
 queryTar
   :: forall es
-   . (BlobStoreAPI :> es, IOE :> es, Labeled ReadOnly WithConnection :> es, Log :> es)
+   . (BlobStoreAPI :> es, IOE :> es, Log :> es, ReadDB :> es)
   => PackageName
   -> Version
   -> Sha256Sum
@@ -44,15 +42,14 @@ queryTar pname version rootHash = do
   where
     queryChildren :: Sha256Sum -> Eff es (V.Vector BlobRelation)
     queryChildren hash =
-      labeled @ReadOnly @WithConnection $
-        Vector.fromList
-          <$> query
-            ( _selectWhere @BlobRelation [[field| blob_hash |]]
-                -- Ensures we consistently get back the directory structure
-                -- This may not be the same as the hackage tarball!
-                <> _orderBy ([field| blob_dep_path |], ASC)
-            )
-            (Only hash)
+      Vector.fromList
+        <$> query
+          ( _selectWhere @BlobRelation [[field| blob_hash |]]
+              -- Ensures we consistently get back the directory structure
+              -- This may not be the same as the hackage tarball!
+              <> _orderBy ([field| blob_dep_path |], ASC)
+          )
+          (Only hash)
     go :: BlobRelation -> Eff es (FilePath, TarTree Sha256Sum)
     go (BlobRelation _blobHash blobDepHash blobDepPath blobDepDirectory)
       | blobDepDirectory =

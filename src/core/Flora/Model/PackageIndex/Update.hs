@@ -17,8 +17,6 @@ import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Database.PostgreSQL.Simple.ToRow
 import Effectful
-import Effectful.Labeled
-import Effectful.PostgreSQL
 import Heptapod qualified
 
 import Data.Positive
@@ -29,31 +27,30 @@ import Flora.Model.PackageIndex.Types
   , mkPackageIndex
   )
 
-updatePackageIndexByName :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Text -> Maybe UTCTime -> Eff es ()
+updatePackageIndexByName :: (IOE :> es, WriteDB :> es) => Text -> Maybe UTCTime -> Eff es ()
 updatePackageIndexByName repositoryName newTimestamp = do
   void $
-    labeled @ReadWrite @WithConnection $
-      execute
-        ( _updateFieldsBy @PackageIndex
-            [[field| timestamp |]]
-            [field| repository |]
-        )
-        ( toRow (Only newTimestamp)
-            ++ toRow (Only repositoryName)
-        )
+    execute
+      ( _updateFieldsBy @PackageIndex
+          [[field| timestamp |]]
+          [field| repository |]
+      )
+      ( toRow (Only newTimestamp)
+          ++ toRow (Only repositoryName)
+      )
 
-createPackageIndex :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
+createPackageIndex :: (IOE :> es, WriteDB :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
 createPackageIndex repositoryName url description timestamp = do
   packageIndex <- mkPackageIndex repositoryName url description timestamp
-  void $ labeled @_ @WithConnection $ execute (_insert @PackageIndex) packageIndex
+  void $ execute (_insert @PackageIndex) packageIndex
 
-upsertPackageIndex :: (IOE :> es, Labeled ReadWrite WithConnection :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
+upsertPackageIndex :: (IOE :> es, WriteDB :> es) => Text -> Text -> Text -> Maybe UTCTime -> Eff es ()
 upsertPackageIndex repositoryName url description timestamp = do
   packageIndex <- mkPackageIndex repositoryName url description timestamp
-  labeled @ReadWrite @WithConnection $ void $ execute (_insert @PackageIndex <> " ON CONFLICT DO NOTHING") packageIndex
+  void $ execute (_insert @PackageIndex <> " ON CONFLICT DO NOTHING") packageIndex
 
 addDependency
-  :: (IOE :> es, Labeled ReadWrite WithConnection :> es)
+  :: (IOE :> es, WriteDB :> es)
   => PackageIndexId
   -- ^ Index
   -> PackageIndexId
@@ -64,8 +61,7 @@ addDependency
 addDependency indexId dependencyId priority = do
   indexDependencyId <- liftIO Heptapod.generate
   void $
-    labeled @ReadWrite @WithConnection $
-      execute q (indexDependencyId, indexId, dependencyId, priority)
+    execute q (indexDependencyId, indexId, dependencyId, priority)
   where
     q =
       [sql|
