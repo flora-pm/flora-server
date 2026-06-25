@@ -18,6 +18,7 @@ dist-newstyle
 environment.local.sh
 environment.test.local.sh
 environment.prod.sh
+environment.prod.kdl
 ghcid.text
 logs/*
 pgdata/
