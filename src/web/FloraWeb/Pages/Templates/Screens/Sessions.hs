@@ -20,52 +20,55 @@ newSession = do
       , class_ formClasses
       , xData_ "{ open: false }"
       , xInit_ "const sync = () => { open = $refs.useTotp.checked }; sync(); window.addEventListener('pageshow', sync);"
-      ] $ do
-      div_ [class_ "flow flow--small"] $ do
-        label_ [class_ "sr-only", for_ "email"] "Email address"
-        input_
-          [ id_ "email"
-          , name_ "email"
-          , type_ "email"
-          , autocomplete_ "email"
-          , required_ ""
-          , placeholder_ "Email address"
-          , class_ "w100"
+      ]
+      $ do
+        div_ [class_ "flow flow--small"] $ do
+          label_ [class_ "sr-only", for_ "email"] "Email address"
+          input_
+            [ id_ "email"
+            , name_ "email"
+            , type_ "email"
+            , autocomplete_ "email"
+            , required_ ""
+            , placeholder_ "Email address"
+            , class_ "w100"
+            ]
+        div_ [class_ "flow flow--small"] $ do
+          label_ [class_ "sr-only", for_ "password"] "Email address"
+          input_
+            [ id_ "password"
+            , name_ "password"
+            , type_ "password"
+            , autocomplete_ "current-password"
+            , required_ ""
+            , placeholder_ "Password"
+            , class_ "w100 password"
+            ]
+        div_ [class_ "flow flow--small"] $ do
+          input_
+            [ id_ "use_totp"
+            , name_ "use_totp"
+            , type_ "checkbox"
+            , xRef_ "useTotp"
+            , ariaControls_ "totp_wrap"
+            , xModel_ [] "open"
+            ]
+          label_ [for_ "use_totp"] "Use two-factor authentication"
+        div_
+          [ id_ "totp_wrap"
+          , class_ "flow flow--small"
+          , xBind_ "hidden" "!open"
+          , xBind_ "inert" "!open"
           ]
-      div_ [class_ "flow flow--small"] $ do
-        label_ [class_ "sr-only", for_ "password"] "Email address"
-        input_
-          [ id_ "password"
-          , name_ "password"
-          , type_ "password"
-          , autocomplete_ "current-password"
-          , required_ ""
-          , placeholder_ "Password"
-          , class_ "w100 password"
-          ]
-      div_ [class_ "flow flow--small"] $ do
-        input_
-          [ id_ "use_totp"
-          , name_ "use_totp"
-          , type_ "checkbox"
-          , xRef_ "useTotp"
-          , ariaControls_ "totp_wrap"
-          , xModel_ [] "open"
-          ]
-        label_ [for_ "use_totp"] "Use two-factor authentication"
-      div_
-        [ id_ "totp_wrap"
-        , class_ "flow flow--small"
-        , xBind_ "hidden" "!open"
-        , xBind_ "inert" "!open"] $ do
-        label_ [class_ "label", for_ "totp"] "Two-factor code"
-        input_
-          [ id_ "totp"
-          , name_ "totp"
-          , type_ "text"
-          , pattern_ "0-9]+"
-          , autocomplete_ "off"
-          , class_ "w100"
-          ]
-      div_ [class_ "flow flow--small"] $ do
-        button_ [class_ "btn btn--big w100", type_ "submit"] "Log In"
+          $ do
+            label_ [class_ "label", for_ "totp"] "Two-factor code"
+            input_
+              [ id_ "totp"
+              , name_ "totp"
+              , type_ "text"
+              , pattern_ "0-9]+"
+              , autocomplete_ "off"
+              , class_ "w100"
+              ]
+        div_ [class_ "flow flow--small"] $ do
+          button_ [class_ "btn btn--big w100", type_ "submit"] "Log In"
