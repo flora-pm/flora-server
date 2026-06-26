@@ -48,7 +48,7 @@ ariaHidden = makeAttributes "aria-hidden"
 
 -- Prefer these ones as they are integrated with AlpineJS
 ariaControls_ :: Text -> Attributes
-ariaControls_ = makeAttributes ":aria-controls"
+ariaControls_ = makeAttributes "aria-controls"
 
 ariaExpanded_ :: Text -> Attributes
 ariaExpanded_ = makeAttributes ":aria-expanded"
