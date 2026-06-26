@@ -109,6 +109,11 @@ xBind_
   -> Attributes
 xBind_ attr = makeAttributes ("x-bind:" <> attr)
 
+-- | x-ref
+-- Target DOM elements directly
+xRef_ :: Text -> Attributes
+xRef_ = makeAttributes "x-ref"
+
 -- | x-init
 -- Run code when an element is initialized by Alpine
 xInit_ :: Text -> Attributes
