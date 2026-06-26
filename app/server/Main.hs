@@ -24,6 +24,7 @@ import Effectful.Log
 import Effectful.Reader.Static qualified as Reader
 import Log qualified
 import NoThunks.Class
+import Options.Applicative (execParser)
 import RequireCallStack
 import System.Exit
 import System.IO
@@ -36,7 +37,6 @@ import Flora.Model.PackageIndex.Types
 import Flora.Monad
 import FloraJobs.Scheduler (checkIfIndexRefreshJobIsPlanned)
 import FloraWeb.Server
-import Options.Applicative (execParser)
 
 main :: IO ()
 main = do
