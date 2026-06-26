@@ -27,9 +27,13 @@ textarea {
 input::placeholder,
 select::placeholder,
 textarea::placeholder {
-	color: var(--color-text-tertiary)
+	color: var(--color-text-tertiary);
 }
 
 .label {
 	display: block;
+}
+
+input[type="checkbox"]:has(+ label) {
+	margin-inline-end: var(--space-2);
 }
