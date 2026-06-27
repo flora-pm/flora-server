@@ -338,4 +338,3 @@ Sponsored-By: 2 bottles of Club Mate & a heat wave in Western Europe
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions
 [Ticket]: https://github.com/flora-pm/flora-server/issues/new
-[nix-flakes]: https://nixos.wiki/wiki/Flakes
