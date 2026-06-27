@@ -128,9 +128,6 @@ style-css: ## Run the CSS code formatter (stylelint)
 
 style: style-hs style-css ## Run all the code formatters
 
-nix-shell: ## Enter the Nix shell
-	@nix-shell
-
 docker-build: ## Build and start the container cluster
 	@docker compose build devel
 

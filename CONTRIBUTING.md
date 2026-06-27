@@ -11,7 +11,7 @@ The following Haskell command-line tools will have to be installed:
 
 * `fourmolu`: To style the code base. Version is 0.20.0.0
 * `hlint` v3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
-* `cabal-gild` and `nixfmt`: To style the cabal and nix files
+* `cabal-gild`: To style cabal files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
 * `ghc-tags`: To generate ctags or etags for the project
 
@@ -291,54 +291,7 @@ Note: You might need to export `FLORA_EVENTLOG_SOCKET` to the same value as give
 
 Nix is an alternative way to interact with the Flora codebase.
 
-`Flora` provides a `nix` setup to make provisioning a development environment and creating reproducible and simple
-builds. To show all available flake attributes, run
-
-```bash
-nix flake show -Lv --allow-import-from-derivation --fallback
-```
-
-#### Using `nix` as provider for a development environment
-
-Obtaining a `devShell` which contains all tools for develop `flora`, including correct compiler and haskell tooling
-is as simple as running
-
-```bash
-nix -Lv develop
-```
-
-We recommend using our proposed `nix` config settings, including the extra binary cache, but ultimately it's up to you
-whether you trust those settings by reacting with `y` on the prompt after running a `nix` command.
-
-> **Warning**
-> accepting binary caches from a flake requires elevated rights for `nix`, only allow it, if you know what you're doing
-
-#### Using `nix` with `direnv`
-
-Direnv can drastically reduce development cycles by reducing the amount of times `nix` evaluates the expressions for
-this repository, which is a drastic improvement, especially with `IFD` (which this repo uses due to `callCabal2nix`).
-
-Devshell startup times will be instant if you didn't change anything in the configuration and as long as usual if you
-need to re-evaluate the `nix`-expressions (i.e. on cabal config changes or `nix` changes).
-
-Find out how to install `direnv` on your machine by visiting [their github](https://github.com/direnv/direnv/).
-After installing, add a `.envrc` file to the root of the project containing:
-
-```bash
-use flake -Lv --fallback
-```
-
-and run
-
-```bash
-direnv allow
-```
-
-To reload the `direnv` environment, run
-
-```bash
-direnv reload
-```
+`Flora` provides a [nix](https://github.com/flora-pm/flora.nix) setup to make provisioning a development environment.
 
 #### Formatting and Linting with nix and `pre-commit-hooks`
 
@@ -368,50 +321,6 @@ If you want to commit although they do not succeed, pass `--no-verify` to the `g
 > **Warning**
 > Be careful that this does not mean you get around linting and formatting, as they're checked in `CI`
 
-#### Using `nix` to build and run flora
-
-To verify, that the haskell code builds, the tests pass and the formatting and linting are correct, as well as the nix code
-working, run
-
-```bash
-nix flake check -Lv --allow-import-from-derivation
-```
-
-To build `flora`, invoke
-
-```bash
-nix build -Lv
-```
-
-To run the `cli`, run
-
-```bash
-nix run .#cli
-```
-
-To run the server, run
-
-```bash
-nix run .#server
-```
-
-#### Contributing to our `nix` infrastructure
-
-Contributions to our `nix` infrastructures are always appreciated, however, there are a couple of guidelines
-- don't forget to run formatting and linting (see above for `pre-commit-hooks`)
-- prefer cached derivations, that means:
-  - prefer upstream haskell packages over custom versions-
-  - prefer frameworks that have reliable and trusted binary caches
-- prefer versions with less IFD:
-  - prefer realized `nix` derivations over `callHackage` over `callCabal2nix`
-  - don't use custom packages if not absolutely necessary
-- locking happens in the `nix` flake
-  - `nix` provides a native locking mechanism with flakes, we only use that mechanism
-  - if we need a source of a package, we add it as a flake input with `flake = false;`
-  - we don't use any fetcher, if not absolutely needed (e.g. if you need a tarball which is
-    not unpacked, it might sometimes be necessary)
-
-
 ## License to shitpost
 
 You can include (in moderation) some shitposting in your contributions, be it funny memes in your PR descriptions,
@@ -429,4 +338,3 @@ Sponsored-By: 2 bottles of Club Mate & a heat wave in Western Europe
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions
 [Ticket]: https://github.com/flora-pm/flora-server/issues/new
-[nix-flakes]: https://nixos.wiki/wiki/Flakes
