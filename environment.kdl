@@ -16,7 +16,6 @@ flora {
     connections 50
   }
 
-
   mltp {
     sentryDSN ""
     prometheusEnabled #true
