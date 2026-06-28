@@ -6,9 +6,7 @@ module FloraJobs.Environment
   , getFloraJobsEnv
   ) where
 
-import Data.Pool (Pool)
 import Data.Word
-import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Fail (Fail)
 import GHC.Generics
@@ -19,13 +17,13 @@ import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
 
 import Flora.Environment (mkPool)
 import Flora.Environment.Config
-import Flora.Environment.Env ()
+import Flora.Environment.Env (NamedPool)
 import FloraJobs.Metrics
 
 deriving via OnlyCheckWhnf HTTP.Manager instance NoThunks HTTP.Manager
 
 data FloraJobsEnv = FloraJobsEnv
-  { pool :: Pool PG.Connection
+  { pool :: NamedPool
   , httpManager :: HTTP.Manager
   , httpPort :: Word16
   , metrics :: JobsRunnerMetrics
@@ -48,6 +46,7 @@ getFloraJobsEnv config = do
       jobsConfig.connectionInfo
       connectionTimeout
       connections
+      "flora_jobs"
   pure
     FloraJobsEnv
       { pool

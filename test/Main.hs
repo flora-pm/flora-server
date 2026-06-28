@@ -40,7 +40,7 @@ main = provideCallStack $ do
     runTestEff
       ( do
           withReadWritePool env.pool cleanUp
-          testMigrations env.pool
+          testMigrations env.pool.connectionPool
           importCategories
           withReadWritePool env.pool $ Update.createPackageIndex "local-hackage" "" "" Nothing
           withReadWritePool env.pool $ Update.createPackageIndex "cardano" "" "" Nothing

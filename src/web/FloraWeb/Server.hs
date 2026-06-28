@@ -70,6 +70,7 @@ import Flora.Environment.Env
   , FeatureEnv (..)
   , FloraEnv (..)
   , MLTP (..)
+  , NamedPool (..)
   )
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
@@ -140,7 +141,7 @@ runFlora config = do
 shutdownFlora :: FloraEnv -> Eff '[IOE] ()
 shutdownFlora env =
   liftIO $
-    Pool.destroyAllResources env.pool
+    Pool.destroyAllResources env.pool.connectionPool
 
 logException
   :: DeploymentEnv

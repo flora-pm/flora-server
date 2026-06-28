@@ -1,5 +1,6 @@
 flora {
   domain localhost
+  instanceName "flora-test"
   httpPort 8085
   jobsHttpPort 8086
   environment test

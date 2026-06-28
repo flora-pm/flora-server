@@ -49,7 +49,7 @@ main = do
   jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
   floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
-  let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
+  let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool.connectionPool "public"
   let withLogger = makeLogger floraEnv.mltp.logger
   runEff . runConcurrent $ do
     when floraEnv.mltp.prometheusEnabled $ do

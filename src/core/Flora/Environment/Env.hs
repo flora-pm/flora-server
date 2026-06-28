@@ -3,6 +3,7 @@
 
 module Flora.Environment.Env
   ( FloraEnv (..)
+  , NamedPool (..)
   , AppMetrics (..)
   , DeploymentEnv (..)
   , MLTP (..)
@@ -24,13 +25,26 @@ import Prometheus qualified as P
 import Flora.Environment.Config
 import Flora.Model.Job
 
+-- | A connection pool tagged with its role name (`flora_server`, `flora_jobs`…).
+data NamedPool = NamedPool
+  { connectionPool :: Pool PG.Connection
+  , name :: Text
+  }
+  deriving stock (Generic)
+
+deriving via
+  OnlyCheckWhnfNamed "Flora.Environment.Env.NamedPool" NamedPool
+  instance
+    NoThunks NamedPool
+
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
-  { pool :: Pool PG.Connection
+  { pool :: NamedPool
   , dbConfig :: PoolConfig
   , workerEnv :: ArbS.SimpleEnv JobQueues
   , httpPort :: Word16
   , domain :: Text
+  , instanceName :: Text
   , mltp :: MLTP
   , environment :: DeploymentEnv
   , features :: FeatureEnv
@@ -45,6 +59,8 @@ data FloraEnv = FloraEnv
 data AppMetrics = AppMetrics
   { packageImportCounter :: P.Vector P.Label1 P.Counter
   , buildInformation :: P.Vector P.Label2 P.Gauge
+  , poolAcquisitionTime :: P.Vector P.Label2 P.Histogram
+  , poolWaitingThreads :: P.Vector P.Label2 P.Gauge
   }
 
 deriving via

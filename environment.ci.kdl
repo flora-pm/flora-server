@@ -1,5 +1,6 @@
 flora {
   domain localhost
+  instanceName "ci-runner"
   httpPort 8083
   jobsHttpPort 8085
   environment test

@@ -21,7 +21,7 @@ import System.IO
 
 import Flora.Environment
 import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), toConnString)
-import Flora.Environment.Env (FloraEnv (..))
+import Flora.Environment.Env (FloraEnv (..), NamedPool (..))
 import Flora.Model.Job
 import FloraJobs.Environment
 
@@ -60,7 +60,7 @@ arbiterMigrations connectionInfo = do
 floraMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
 floraMigrations = do
   FloraJobsEnv{pool} <- Reader.ask
-  result <- liftIO $ withResource pool $ \conn -> do
+  result <- liftIO $ withResource pool.connectionPool $ \conn -> do
     runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
   case result of
     Mig.MigrationSuccess ->

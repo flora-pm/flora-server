@@ -170,6 +170,7 @@ data FloraConfig = FloraConfig
   { dbConfig :: PoolConfig
   , connectionInfo :: ConnectionInfo
   , domain :: Text
+  , instanceName :: Text
   , httpPort :: Word16
   , jobsHttpPort :: Word16
   , mltp :: MLTP
@@ -194,12 +195,13 @@ floraConfigDecoder = KDL.children do
   dbConfig <- KDL.nodeWith "pool" poolConfigDecoder
   connectionInfo <- KDL.nodeWith "db" connectionInfoDecoder
   domain <- KDL.argAt "domain"
+  instanceName <- KDL.argAt "instanceName"
   httpPort <- KDL.argAt "httpPort"
   jobsHttpPort <- KDL.argAt "jobsHttpPort"
   mltp <- KDL.nodeWith "mltp" mltpDecoder
   features <- fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing}) <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
   environment <- KDL.argAtWith "environment" deploymentEnvDecoder
-  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment}
+  pure FloraConfig{dbConfig, connectionInfo, domain, instanceName, httpPort, jobsHttpPort, mltp, features, environment}
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime

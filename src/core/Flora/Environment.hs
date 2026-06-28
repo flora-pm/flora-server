@@ -12,6 +12,7 @@ import Control.Exception (evaluate)
 import Data.Pool
 import Data.Pool qualified as Pool
 import Data.Proxy
+import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Time (NominalDiffTime)
 import Database.PostgreSQL.Simple qualified as PG
@@ -44,24 +45,28 @@ mkPool
   => ConnectionInfo
   -> NominalDiffTime -- Allowed timeout
   -> Int -- Number of connections
-  -> Eff es (Pool PG.Connection)
-mkPool connectionInfo timeout' connections =
-  liftIO $
-    Pool.newPool $
-      setNumStripes (Just 1) $
-        defaultPoolConfig
-          ( PG.connect
-              PG.ConnectInfo
-                { PG.connectHost = Text.unpack connectionInfo.connectHost
-                , PG.connectPort = connectionInfo.connectPort
-                , PG.connectUser = Text.unpack connectionInfo.connectUser
-                , PG.connectPassword = Text.unpack connectionInfo.connectPassword
-                , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
-                }
-          )
-          PG.close
-          (realToFrac timeout')
-          connections
+  -> Text
+  -> Eff es NamedPool
+mkPool connectionInfo timeout' connections poolName = do
+  pool <-
+    liftIO $
+      Pool.newPool $
+        setPoolLabel poolName $
+          setNumStripes (Just 1) $
+            defaultPoolConfig
+              ( PG.connect
+                  PG.ConnectInfo
+                    { PG.connectHost = Text.unpack connectionInfo.connectHost
+                    , PG.connectPort = connectionInfo.connectPort
+                    , PG.connectUser = Text.unpack connectionInfo.connectUser
+                    , PG.connectPassword = Text.unpack connectionInfo.connectPassword
+                    , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
+                    }
+              )
+              PG.close
+              (realToFrac timeout')
+              connections
+  pure (NamedPool pool poolName)
 
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
@@ -75,8 +80,8 @@ featureConfigToEnv FeatureConfig{blobStoreFS, tarballsEnabled} =
 configToEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FloraConfig -> Eff es FloraEnv
 configToEnv floraConfig = do
   let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
-  pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
-  let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) pool "public"
+  pool <- mkPool floraConfig.connectionInfo connectionTimeout connections "flora_server"
+  let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) pool.connectionPool "public"
   assets <- getAssets floraConfig.environment
   featureEnv <- featureConfigToEnv floraConfig.features
   metrics <- registerMetrics
@@ -87,6 +92,7 @@ configToEnv floraConfig = do
       , workerEnv
       , httpPort = floraConfig.httpPort
       , domain = floraConfig.domain
+      , instanceName = floraConfig.instanceName
       , mltp = floraConfig.mltp
       , environment = floraConfig.environment
       , features = featureEnv

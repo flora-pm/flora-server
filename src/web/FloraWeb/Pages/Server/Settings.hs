@@ -67,6 +67,7 @@ userSecuritySettingsHandler (Headers session _) = do
 getTwoFactorSettingsHandler
   :: ( IOE :> es
      , Reader FeatureEnv :> es
+     , Reader FloraEnv :> es
      , Time :> es
      )
   => SessionWithCookies User

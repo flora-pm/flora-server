@@ -24,12 +24,15 @@ module Flora.Database
   , withReadWritePool
   ) where
 
-import Control.Monad (void)
+import Control.Exception (bracket_)
+import Control.Monad (unless, void)
+import Data.IORef (atomicModifyIORef', newIORef)
 import Data.Int (Int64)
 import Data.Maybe (listToMaybe)
-import Data.Pool (Pool)
+import Data.Pool
 import Data.Pool.Introspection (Resource (..))
 import Data.Pool.Introspection qualified as Pool
+import Data.Text (Text)
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -41,9 +44,13 @@ import Database.PostgreSQL.Simple.Transaction qualified as PGTransaction
 import Effectful
 import Effectful.Dispatch.Dynamic (interpret, send)
 import Effectful.Log
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Log qualified
 
+import Flora.Environment.Env (AppMetrics, FloraEnv (..), NamedPool (..))
 import Flora.Monad (FloraM)
+import Flora.Monitoring
 
 -- | The read capability: queries that return rows.
 data ReadDB :: Effect where
@@ -129,8 +136,8 @@ interpretWriteDB conn = interpret $ \_ -> \case
 -- compile error here.
 withReadOnlyPool
   :: forall a es
-   . (IOE :> es, Log :> es)
-  => Pool Connection
+   . (IOE :> es, Log :> es, Reader FloraEnv :> es)
+  => NamedPool
   -> Eff (ReadDB ': es) a
   -> FloraM es a
 withReadOnlyPool pool action =
@@ -142,8 +149,8 @@ withReadOnlyPool pool action =
 -- transaction instead of drawing a second connection.
 withReadWritePool
   :: forall a es
-   . (IOE :> es, Log :> es)
-  => Pool Connection
+   . (IOE :> es, Log :> es, Reader FloraEnv :> es)
+  => NamedPool
   -> Eff (WriteDB ': ReadDB ': es) a
   -> FloraM es a
 withReadWritePool pool action =
@@ -155,15 +162,16 @@ withReadWritePool pool action =
 -- transaction mode, so the two cannot drift.
 runTransaction
   :: forall a es
-   . (IOE :> es, Log :> es)
+   . (IOE :> es, Log :> es, Reader FloraEnv :> es)
   => AccessMode
-  -> Pool Connection
+  -> NamedPool
   -> (Connection -> Eff es a)
   -> FloraM es a
-runTransaction mode pool run = do
+runTransaction mode (NamedPool pool poolName) run = do
   loggerEnv <- getLoggerEnv
+  FloraEnv{metrics, instanceName} <- Reader.ask
   withRunInIO $ \io ->
-    unliftedWithResource mode loggerEnv pool $ \conn ->
+    unliftedWithResource mode loggerEnv metrics pool poolName instanceName $ \conn ->
       PGTransaction.withTransactionMode (transactionMode mode) conn $
         io (run conn)
 
@@ -186,20 +194,39 @@ unliftedWithResource
   :: MonadUnliftIO m
   => AccessMode
   -> LoggerEnv
+  -> AppMetrics
   -> Pool Connection
+  -> Text
+  -> Text
   -> (Connection -> m b)
   -> m b
-unliftedWithResource accessMode loggerEnv pool action = withRunInIO $ \io ->
-  liftIO $ Pool.withResource pool $ \resource -> do
-    runEff $
-      Log.runLogT loggerEnv.leComponent loggerEnv.leLogger LogInfo $
-        Log.logTrace "Database connection acquired" $
-          object
-            [ "stripe" .= resource.stripeNumber
-            , "label" .= resource.poolLabel
-            , "available" .= resource.availableResources
-            , "time" .= resource.acquisitionTime
-            , "acquisition" .= show resource.acquisition
-            , "access_mode" .= display accessMode
-            ]
-    io $ action resource.resource
+unliftedWithResource accessMode loggerEnv metrics pool poolName instanceName action = withRunInIO $ \io -> do
+  let onResource resource = do
+        observePoolAcquisition metrics poolName instanceName resource.acquisitionTime
+        runEff $
+          Log.runLogT loggerEnv.leComponent loggerEnv.leLogger LogInfo $
+            Log.logTrace "Database connection acquired" $
+              object
+                [ "stripe" .= resource.stripeNumber
+                , "label" .= resource.poolLabel
+                , "available" .= resource.availableResources
+                , "time" .= resource.acquisitionTime
+                , "acquisition" .= show resource.acquisition
+                , "access_mode" .= display accessMode
+                ]
+        io $ action resource.resource
+  Pool.tryWithResource pool onResource >>= \case
+    Just result -> pure result
+    Nothing -> do
+      acquiredRef <- newIORef False
+      let stopWaiting = do
+            alreadyStopped <- atomicModifyIORef' acquiredRef (\stopped -> (True, stopped))
+            unless alreadyStopped $
+              decPoolWaitingThreads metrics poolName instanceName
+      bracket_
+        (incPoolWaitingThreads metrics poolName instanceName)
+        stopWaiting
+        ( Pool.withResource pool $ \resource -> do
+            stopWaiting
+            onResource resource
+        )

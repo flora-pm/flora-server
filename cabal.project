@@ -83,7 +83,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/haskell-effectful/prometheus-effectful
-  tag: cd362b4f0a9f1a7dcc743176a9fa663f2cfe33d3
+  tag: 7bc9390aaa44059b5ebcfc82865e6f9f446db393
 
 source-repository-package
   type: git

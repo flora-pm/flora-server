@@ -12,17 +12,16 @@ import Control.Monad.Except qualified as T
 import Data.Function ((&))
 import Data.Kind (Type)
 import Data.List qualified as List
-import Data.Pool
 import Data.Text (Text)
 import Data.Text.Display
 import Data.Text.Encoding qualified as Text
 import Data.UUID qualified as UUID
 import Data.UUID.V4 qualified as UUID
-import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Dispatch.Static
 import Effectful.Error.Static (Error, runErrorNoCallStack, throwError)
 import Effectful.Log qualified as Log
+import Effectful.Reader.Static (Reader, runReader)
 import Log
 import Network.HTTP.Types (hCookie)
 import Network.Wai
@@ -52,6 +51,7 @@ optionalAuthHandler logger floraEnv =
     ( \request ->
         handler floraEnv request
           & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
+          & runReader floraEnv
           & effToHandler
     )
 
@@ -61,6 +61,7 @@ strictAuthHandler logger floraEnv =
     ( \request ->
         requireUserHandler floraEnv request
           & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
+          & runReader floraEnv
           & effToHandler
     )
 
@@ -70,11 +71,12 @@ adminAuthHandler logger floraEnv =
     ( \request ->
         requireAdminHandler floraEnv request
           & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
+          & runReader floraEnv
           & effToHandler
     )
 
 requireUserHandler
-  :: (Error ServerError :> es, IOE :> es)
+  :: (Error ServerError :> es, IOE :> es, Reader FloraEnv :> es)
   => FloraEnv
   -> Request
   -> FloraM es (Headers '[Header "Set-Cookie" SetCookie] (Session User))
@@ -92,7 +94,7 @@ requireUserHandler floraEnv req = do
   pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
 handler
-  :: (Error ServerError :> es, IOE :> es)
+  :: (Error ServerError :> es, IOE :> es, Reader FloraEnv :> es)
   => FloraEnv
   -> Request
   -> FloraM es (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
@@ -113,7 +115,7 @@ handler floraEnv req = do
   pure $ addCookie sessionCookie $ Session sessionId user webEnvStore requestID
 
 requireAdminHandler
-  :: (Error ServerError :> es, IOE :> es)
+  :: (Error ServerError :> es, IOE :> es, Reader FloraEnv :> es)
   => FloraEnv
   -> Request
   -> FloraM es (Headers '[Header "Set-Cookie" SetCookie] (Session User))
@@ -164,8 +166,8 @@ getSessionId cookies =
 -- | Resolve the session and its user in a single read-only transaction, so an
 -- authenticated request draws one pooled connection instead of two.
 getInTheFuckingSessionShinji
-  :: (Error ServerError :> es, IOE :> es)
-  => Pool PG.Connection
+  :: (Error ServerError :> es, IOE :> es, Reader FloraEnv :> es)
+  => NamedPool
   -> Maybe PersistentSessionId
   -> FloraM es (Maybe (User, PersistentSession))
 getInTheFuckingSessionShinji _ Nothing = pure Nothing

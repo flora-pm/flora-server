@@ -20,7 +20,7 @@ import RequireCallStack
 import Servant (HasServer (..), Headers (..))
 
 import Flora.Database
-import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
+import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..), NamedPool (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Job
 import Flora.Model.Package.Query qualified as Query
@@ -62,8 +62,8 @@ indexHandler (Headers session _) = do
   templateEnv <-
     templateFromSession session defaultTemplateEnv
       >>= \te -> pure $ set (#activeElements % #adminDashboard) True te
-  FloraEnv{pool} <- liftIO $ fetchFloraEnv session.webEnvStore
-  report <- liftIO $ withPool pool getReport
+  FloraEnv{pool = namedPool} <- liftIO $ fetchFloraEnv session.webEnvStore
+  report <- liftIO $ withPool namedPool.connectionPool getReport
   render templateEnv (Templates.index report)
 
 fetchMetadataHandler :: RequireCallStack => SessionWithCookies User -> FloraM RouteEffects FetchMetadataResponse
