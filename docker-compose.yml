@@ -11,6 +11,9 @@ services:
     ports:
       - "8084:8084"
       - "8085:8085"
+    expose:
+      - "8084"
+      - "8084"
     volumes:
       - database-data:/flora-server/pgdata/
       - .:/flora-server:Z
@@ -26,6 +29,7 @@ services:
   flora-database:
     image: docker.io/library/postgres:17.9
     container_name: flora-database
+    command: postgres -c 'max_connections=250'
     user: postgres
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready" ]
@@ -49,6 +53,8 @@ services:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
     ports:
       - 9090:9090
+    expose:
+      - "9090"
     profiles:
       - local
   jaeger:
