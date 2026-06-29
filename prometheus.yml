@@ -10,3 +10,7 @@ scrape_configs:
    static_configs:
     - targets:
        - devel:8084
+ - job_name: flora-jobs
+   static_configs:
+    - targets:
+       - devel:8085
