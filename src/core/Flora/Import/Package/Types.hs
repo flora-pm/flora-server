@@ -13,7 +13,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Requirement
 
 -- | Package being depended on and its requirement constraint.
-data ImportDependency = ImportDependency
+data HaskellDependency = HaskellDependency
   { package :: Package
   -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
   , requirement :: Requirement
@@ -30,7 +30,7 @@ data ImportOutput = ImportOutput
   { package :: Package
   , categories :: [Text]
   , release :: Release
-  , components :: NonEmpty (PackageComponent, List ImportDependency)
+  , components :: NonEmpty (PackageComponent, List HaskellDependency)
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, ToJSON)

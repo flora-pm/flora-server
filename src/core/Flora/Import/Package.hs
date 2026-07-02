@@ -314,11 +314,11 @@ persistImportOutput (ImportOutput package categories release components) = State
                   Log.logInfo_ "Upserting package"
                   Update.upsertPackage p
               )
-            forM_ dependencies persistImportDependency
+            forM_ dependencies persistHaskellDependency
             unless (null dependencies) sanityCheck
             pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    persistImportDependency dep = do
+    persistHaskellDependency dep = do
       Log.logInfo "Inserting requirement" $
         object
           [ "dependent_namespace" .= display package.namespace
@@ -465,33 +465,33 @@ extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername gene
               , uploaderId = mPackageUploaderId
               }
 
-      let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List ImportDependency)
+      let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List HaskellDependency)
           extractCondTreeComponent' = extractCondTreeComponent package indexPackages release
 
-          lib :: [(PackageComponent, [ImportDependency])]
+          lib :: [(PackageComponent, [HaskellDependency])]
           lib = extractCondTreeComponent' Component.Library (display package.name) <$> maybeToList genericDesc.condLibrary
 
-          subLibs :: [(PackageComponent, [ImportDependency])]
+          subLibs :: [(PackageComponent, [HaskellDependency])]
           subLibs =
             (\(compName, subLibrary) -> extractCondTreeComponent' Component.Library (display compName) subLibrary)
               <$> genericDesc.condSubLibraries
 
-          foreignLibs :: [(PackageComponent, [ImportDependency])]
+          foreignLibs :: [(PackageComponent, [HaskellDependency])]
           foreignLibs =
             (\(compName, fLib) -> extractCondTreeComponent' Component.ForeignLib (display compName) fLib)
               <$> genericDesc.condForeignLibs
 
-          executables :: [(PackageComponent, [ImportDependency])]
+          executables :: [(PackageComponent, [HaskellDependency])]
           executables =
             (\(compName, exe) -> extractCondTreeComponent' Component.Executable (display compName) exe)
               <$> genericDesc.condExecutables
 
-          testSuites :: [(PackageComponent, [ImportDependency])]
+          testSuites :: [(PackageComponent, [HaskellDependency])]
           testSuites =
             (\(compName, testSuite) -> extractCondTreeComponent' Component.TestSuite (display compName) testSuite)
               <$> genericDesc.condTestSuites
 
-          benchmarks :: [(PackageComponent, [ImportDependency])]
+          benchmarks :: [(PackageComponent, [HaskellDependency])]
           benchmarks =
             (\(compName, benchmark) -> extractCondTreeComponent' Component.Benchmark (display compName) benchmark)
               <$> genericDesc.condBenchmarks
@@ -522,7 +522,7 @@ extractCondTreeComponent
   -> Text
   -- ^ component name
   -> CondTree ConfVar c component
-  -> (PackageComponent, List ImportDependency)
+  -> (PackageComponent, List HaskellDependency)
 extractCondTreeComponent
   package
   indexPackages
@@ -531,7 +531,7 @@ extractCondTreeComponent
   componentName
   conditionalComp =
     ( mkPackageComponent componentType componentName release
-    , mkImportDependencies
+    , mkHaskellDependencies
         package
         indexPackages
         (mkComponentId componentType componentName release)
@@ -549,14 +549,14 @@ mkPackageComponent componentType componentName release =
       componentId = deterministicComponentId releaseId canonicalForm
    in PackageComponent componentId releaseId canonicalForm
 
-mkImportDependency
+mkHaskellDependency
   :: Package
   -> Vector (Text, Set PackageName)
   -> ComponentId
   -> Maybe (Condition ConfVar)
   -> Cabal.Dependency
-  -> Maybe ImportDependency
-mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependency depName versionRange libs) = do
+  -> Maybe HaskellDependency
+mkHaskellDependency package indexPackages packageComponentId cond (Cabal.Dependency depName versionRange libs) = do
   let name = depName & unPackageName & pack & PackageName
   namespace <- chooseNamespace name indexPackages
   let packageId = deterministicPackageId namespace name
@@ -574,7 +574,7 @@ mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependen
           , components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
           , condition = cond
           }
-   in Just (ImportDependency{package = dependencyPackage, requirement})
+   in Just (HaskellDependency{package = dependencyPackage, requirement})
 
 mkComponentId
   :: ComponentType
@@ -586,18 +586,18 @@ mkComponentId componentType componentName release =
       releaseId = release.releaseId
    in deterministicComponentId releaseId canonicalForm
 
-mkImportDependencies
+mkHaskellDependencies
   :: L.HasBuildInfo component
   => Package
   -> Vector (Text, Set PackageName)
   -> ComponentId
   -> CondTree ConfVar c component
-  -> [ImportDependency]
-mkImportDependencies package indexPackages packageComponentId comp =
+  -> [HaskellDependency]
+mkHaskellDependencies package indexPackages packageComponentId comp =
   let conditionalDeps :: [(Maybe (Condition ConfVar), [Dependency])]
       conditionalDeps = fmap (L.view L.targetBuildDepends) <$> flattenCondTree comp
-      mkImportDependency' = mkImportDependency package indexPackages packageComponentId
-   in (\(cond, deps) -> mkImportDependency' cond `mapMaybe` deps) =<< conditionalDeps
+      mkHaskellDependency' = mkHaskellDependency package indexPackages packageComponentId
+   in (\(cond, deps) -> mkHaskellDependency' cond `mapMaybe` deps) =<< conditionalDeps
 
 getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty
