@@ -555,35 +555,7 @@ mkHaskellDependency
   -> Cabal.Dependency
   -> Maybe HaskellDependency
 mkHaskellDependency package indexPackages packageComponentId cond (Cabal.Dependency depName versionRange libs) = do
-  uncurry HaskellDependency
-     <$> mkDependency_ package indexPackages packageComponentId cond (name, display versionRange, components)
-  where
-    name = depName & unPackageName & pack & PackageName
-    components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
-
--- TODO(leana8959): dedup this somehow
-mkSystemDependency
-  :: Package
-  -> Vector (Text, Set PackageName)
-  -> ComponentId
-  -> Maybe (Condition ConfVar)
-  -> Cabal.PkgconfigDependency
-  -> Maybe SystemDependency
-mkSystemDependency package indexPackages packageComponentId cond (Cabal.PkgconfigDependency pcDepName pcVersionRange) =
-  uncurry SystemDependency
-     <$> mkDependency_ package indexPackages packageComponentId cond (name, display pcVersionRange, Vector.empty)
-  where
-    name = pcDepName & unPkgconfigName & pack & PackageName
-
-mkDependency_
-  :: Package
-  -> Vector (Text, Set PackageName)
-  -> ComponentId
-  -> Maybe (Condition ConfVar)
-  -> (PackageName, Text, Vector Text)
-  -- ^ (package name of the dependency, textual representation of version range, components)
-  -> Maybe (Package, Requirement)
-mkDependency_ package indexPackages packageComponentId cond (name, versionRangeTxt, components) = do
+  let name = depName & unPackageName & pack & PackageName
   namespace <- chooseNamespace name indexPackages
   let packageId = deterministicPackageId namespace name
       createdAt = package.createdAt
@@ -596,11 +568,39 @@ mkDependency_ package indexPackages packageComponentId cond (name, versionRangeT
           { requirementId = deterministicRequirementId packageComponentId packageId
           , packageComponentId
           , packageId
-          , requirement = versionRangeTxt
-          , components = components
+          , requirement = display versionRange
+          , components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
           , condition = cond
           }
-   in Just (dependencyPackage, requirement)
+   in Just (HaskellDependency{package = dependencyPackage, requirement})
+
+-- TODO(leana8959): dedup this somehow
+mkSystemDependency
+  :: Package
+  -> Vector (Text, Set PackageName)
+  -> ComponentId
+  -> Maybe (Condition ConfVar)
+  -> Cabal.PkgconfigDependency
+  -> Maybe SystemDependency
+mkSystemDependency package indexPackages packageComponentId cond (Cabal.PkgconfigDependency pcDepName pcVersionRange) = do
+  let name = pcDepName & unPkgconfigName & pack & PackageName
+  namespace <- chooseNamespace name indexPackages
+  let packageId = deterministicPackageId namespace name
+      createdAt = package.createdAt
+      updatedAt = package.updatedAt
+      status = UnknownPackage
+      deprecationInfo = Nothing
+      dependencyPackage = Package packageId namespace name createdAt updatedAt status deprecationInfo
+      requirement =
+        Requirement
+          { requirementId = deterministicRequirementId packageComponentId packageId
+          , packageComponentId
+          , packageId
+          , requirement = display pcVersionRange
+          , components = Vector.empty
+          , condition = cond
+          }
+   in Just (SystemDependency{package = dependencyPackage, requirement})
 
 mkComponentId
   :: ComponentType
