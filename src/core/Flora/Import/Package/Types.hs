@@ -22,6 +22,16 @@ data HaskellDependency = HaskellDependency
   deriving anyclass (NFData)
   deriving anyclass (FromJSON, ToJSON)
 
+-- | System libraries.
+data SystemDependency = SystemDependency
+  { package :: Package
+  -- ^ the package that is being depended on. Must be inserted in the DB before the requirement
+  , requirement :: Requirement
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving anyclass (NFData)
+  deriving anyclass (FromJSON, ToJSON)
+
 -- | This tuple represents the package that depends on any associated dependency/requirement.
 --  It is used in the recursive loading of Cabal files
 type DependentName = (Namespace, PackageName)
@@ -30,7 +40,7 @@ data ImportOutput = ImportOutput
   { package :: Package
   , categories :: [Text]
   , release :: Release
-  , components :: NonEmpty (PackageComponent, List HaskellDependency)
+  , components :: NonEmpty (PackageComponent, List HaskellDependency, List SystemDependency)
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, ToJSON)

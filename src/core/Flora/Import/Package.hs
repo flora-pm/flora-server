@@ -303,8 +303,10 @@ persistImportOutput (ImportOutput package categories release components) = State
             pure packageCache
           else do
             Update.upsertRelease package release
-            let componentsList = NE.toList $ fmap fst components
-            let dependencies = foldMap snd components
+            let fst3 (x, _, _) = x
+            let snd3 (_, y, _) = y
+            let componentsList = NE.toList $ fmap fst3 components
+            let dependencies = foldMap snd3 components
             let dependencyPackages = fmap (.package) dependencies
             Update.upsertPackageComponents componentsList
             Log.logInfo_ "Inserting dependencies"
@@ -465,33 +467,24 @@ extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername gene
               , uploaderId = mPackageUploaderId
               }
 
-      let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List HaskellDependency)
+      let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List HaskellDependency, List SystemDependency)
           extractCondTreeComponent' = extractCondTreeComponent package indexPackages release
 
-          lib :: [(PackageComponent, [HaskellDependency])]
-          lib = extractCondTreeComponent' Component.Library (display package.name) <$> maybeToList genericDesc.condLibrary
+          lib, subLibs, foreignLibs, executables, testSuites, benchmarks :: [(PackageComponent, [HaskellDependency], [SystemDependency])]
 
-          subLibs :: [(PackageComponent, [HaskellDependency])]
+          lib = extractCondTreeComponent' Component.Library (display package.name) <$> maybeToList genericDesc.condLibrary
           subLibs =
             (\(compName, subLibrary) -> extractCondTreeComponent' Component.Library (display compName) subLibrary)
               <$> genericDesc.condSubLibraries
-
-          foreignLibs :: [(PackageComponent, [HaskellDependency])]
           foreignLibs =
             (\(compName, fLib) -> extractCondTreeComponent' Component.ForeignLib (display compName) fLib)
               <$> genericDesc.condForeignLibs
-
-          executables :: [(PackageComponent, [HaskellDependency])]
           executables =
             (\(compName, exe) -> extractCondTreeComponent' Component.Executable (display compName) exe)
               <$> genericDesc.condExecutables
-
-          testSuites :: [(PackageComponent, [HaskellDependency])]
           testSuites =
             (\(compName, testSuite) -> extractCondTreeComponent' Component.TestSuite (display compName) testSuite)
               <$> genericDesc.condTestSuites
-
-          benchmarks :: [(PackageComponent, [HaskellDependency])]
           benchmarks =
             (\(compName, benchmark) -> extractCondTreeComponent' Component.Benchmark (display compName) benchmark)
               <$> genericDesc.condBenchmarks
@@ -522,7 +515,7 @@ extractCondTreeComponent
   -> Text
   -- ^ component name
   -> CondTree ConfVar c component
-  -> (PackageComponent, List HaskellDependency)
+  -> (PackageComponent, List HaskellDependency, List SystemDependency)
 extractCondTreeComponent
   package
   indexPackages
@@ -532,6 +525,11 @@ extractCondTreeComponent
   conditionalComp =
     ( mkPackageComponent componentType componentName release
     , mkHaskellDependencies
+        package
+        indexPackages
+        (mkComponentId componentType componentName release)
+        conditionalComp
+    , mkSystemDependencies
         package
         indexPackages
         (mkComponentId componentType componentName release)
@@ -576,6 +574,34 @@ mkHaskellDependency package indexPackages packageComponentId cond (Cabal.Depende
           }
    in Just (HaskellDependency{package = dependencyPackage, requirement})
 
+-- TODO(leana8959): dedup this somehow
+mkSystemDependency
+  :: Package
+  -> Vector (Text, Set PackageName)
+  -> ComponentId
+  -> Maybe (Condition ConfVar)
+  -> Cabal.PkgconfigDependency
+  -> Maybe SystemDependency
+mkSystemDependency package indexPackages packageComponentId cond (Cabal.PkgconfigDependency pcDepName pcVersionRange) = do
+  let name = pcDepName & unPkgconfigName & pack & PackageName
+  namespace <- chooseNamespace name indexPackages
+  let packageId = deterministicPackageId namespace name
+      createdAt = package.createdAt
+      updatedAt = package.updatedAt
+      status = UnknownPackage
+      deprecationInfo = Nothing
+      dependencyPackage = Package packageId namespace name createdAt updatedAt status deprecationInfo
+      requirement =
+        Requirement
+          { requirementId = deterministicRequirementId packageComponentId packageId
+          , packageComponentId
+          , packageId
+          , requirement = display pcVersionRange
+          , components = Vector.empty
+          , condition = cond
+          }
+   in Just (SystemDependency{package = dependencyPackage, requirement})
+
 mkComponentId
   :: ComponentType
   -> Text
@@ -599,10 +625,25 @@ mkHaskellDependencies package indexPackages packageComponentId comp =
       mkHaskellDependency' = mkHaskellDependency package indexPackages packageComponentId
    in (\(cond, deps) -> mkHaskellDependency' cond `mapMaybe` deps) =<< conditionalDeps
 
+mkSystemDependencies
+  :: L.HasBuildInfo component
+  => Package
+  -> Vector (Text, Set PackageName)
+  -> ComponentId
+  -> CondTree ConfVar c component
+  -> [SystemDependency]
+mkSystemDependencies package indexPackages packageComponentId comp =
+  let conditionalDeps :: [(Maybe (Condition ConfVar), [PkgconfigDependency])]
+      conditionalDeps = fmap (L.view L.pkgconfigDepends) <$> flattenCondTree comp
+      mkSystemDependency' = mkSystemDependency package indexPackages packageComponentId
+   in (\(cond, deps) -> mkSystemDependency' cond `mapMaybe` deps) =<< conditionalDeps
+
 getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty
 getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.repoLocation
 
+-- | Get the namespace of a given package from package set.
+--   If it cannot be found, Nothing is returned.
 chooseNamespace
   :: PackageName
   -> Vector (Text, Set PackageName)

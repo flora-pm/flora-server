@@ -17,6 +17,7 @@ import Distribution.Parsec
 import Distribution.Pretty qualified as Pretty
 import Distribution.Types.Version
 import Distribution.Types.Version qualified as Cabal
+import Distribution.Types.PkgconfigVersionRange qualified as Cabal
 import Distribution.Version (VersionRange)
 import Servant
 
@@ -70,3 +71,6 @@ instance FromJSON VersionRange where
 deriving via (Aeson VersionRange) instance ToField VersionRange
 
 deriving via (Aeson VersionRange) instance FromField VersionRange
+
+instance Display Cabal.PkgconfigVersionRange where
+  displayBuilder = displayBuilder . Pretty.prettyShow
