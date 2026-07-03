@@ -19,7 +19,7 @@ newSession = do
       , method_ "POST"
       , class_ formClasses
       , xData_ "{ open: false }"
-      , xInit_ "const sync = () => { open = $refs.useTotp.checked }; sync(); window.addEventListener('pageshow', sync);"
+      , xInit_ "open = $refs.useTotp.checked"
       ]
       $ do
         div_ [class_ "flow flow--small"] $ do
