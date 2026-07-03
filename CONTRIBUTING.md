@@ -1,6 +1,6 @@
 Thank you for your contribution to Flora! We need you to read and understand this document when you open your PR or your ticket:
 
-## Project Setup
+### Project Setup
 
 Before you proceed, we need you to read and acknowledge our [Code of Conduct][CoC] document.
 
@@ -28,7 +28,7 @@ cabal install fourmolu hlint cabal-gild ghcid ghc-tags --semaphore -j
 * `esbuild`: The tool that handles asset bundling
 * `changelog-d` v1.0: https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0
 
-### Notes on MacOS
+#### Notes on MacOS
 
 `cabal.project.freeze` is not portable, so make sure to delete it before running `make build`, if not using the Docker-based setup.
 
@@ -49,15 +49,15 @@ package *
   extra-lib-dirs: /usr/local/lib
 ```
 
-### Questions
+#### Questions
 
 Open a thread in the [Questions][Questions board] discussion board. You'll get help from everyone in the community.
 
-### Issues & Bugs
+#### Issues & Bugs
 
 Open a [Ticket][Ticket] and tell us what you can about your problem.
 
-### Pull Requests
+#### Pull Requests
 
 You need to
 
@@ -87,12 +87,12 @@ description: {
 }
 ```
 
-### Feature request
+#### Feature request
 
 Open a thread in the [Feature Request][Feature Request board] discussion board.
 Be certain to search if it has already been suggested!
 
-### Making a release
+#### Making a release
 
 Here is the procedure to follow when making a release:
 
@@ -105,7 +105,7 @@ Here is the procedure to follow when making a release:
 2. Once the PR is merged into `development`, merge `development` into `main`
 3. Create a [new release](https://github.com/flora-pm/flora-server/releases/new).
 
-### Profiling
+#### Profiling
 
 If you are about to run `flora-cli` or `flora-server` with profiling, please first read
 https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/.
@@ -118,12 +118,12 @@ Here are the steps:
 
 Also consider [capturing live eventlogs](#live-eventlogs) during development.
 
-## Installation and Configuration
+### Installation and Configuration
 
 Step 1. Read the above "Project Setup" section.
 Step 2. Keep reading from here.
 
-### Flora server
+#### Flora server
 
 The configuration is handled through KDL files. A production, docker, CI and test environment are provided. When interfacing via `make` this is handled for you. If you're interfacing with the `flora-cli` directly, pass an environment with `--config` or `-c`.
 
@@ -137,7 +137,7 @@ Use `flora-cli --help` to see what commands are available.
 A very useful command to run is
 
 ```bash
-# Starts a tmux session with code reloading for frontend and backend
+## Starts a tmux session with code reloading for frontend and backend
 $ make start-tmux
 ```
 
@@ -147,11 +147,11 @@ To explore the other possible `Make` rules, type:
 $ make help
 ```
 
-### Database
+#### Database
 
 The Flora server uses PostgreSQL. Please install it.
 
-#### Side-Quest: First installation
+##### Side-Quest: First installation
 
 If this is your first time with PostgreSQL, here is what you should do:
 
@@ -161,10 +161,10 @@ If this is your first time with PostgreSQL, here is what you should do:
 
 ```diff
 local   all             all                                     peer
-# IPv4 local connections:
+## IPv4 local connections:
 - host    all             all             127.0.0.1/32            md5
 + host    all             all             127.0.0.1/32            scram-sha-256
-# IPv6 local connections:
+## IPv6 local connections:
 - host    all             all             ::1/128                 md5
 + host    all             all             ::1/128                 scram-sha-256
 ```
@@ -194,7 +194,7 @@ postgres=# alter role postgres with password 'postgres';
 
 And you are good to go.
 
-#### Setup project
+##### Setup project
 
 To create the database and apply the migrations, type:
 
@@ -204,21 +204,21 @@ $ make db-setup
 
 You can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
 
-### Docker Workflow
+#### Docker Workflow
 
 A docker-based workflow is provided. The idea is to develop from within a container that brings with it all dependencies,
 and communicates with another container for the PostgreSQL database.
 
 ```bash
-# Start the containers for the database and the server
+## Start the containers for the database and the server
 $ make docker-up
-# Once the containers are running, you can enter the development environment and start hacking
+## Once the containers are running, you can enter the development environment and start hacking
 $ make docker-enter
-# You'll be in the docker container. Configuration variables are automatically set
-# via the Makefile, so you should be able to start Flora
+## You'll be in the docker container. Configuration variables are automatically set
+## via the Makefile, so you should be able to start Flora
 (docker)$ make start-tmux
-# You'll be in a tmux session, everything should be launched
-# Visit localhost:8084 from your web browser to see if it all works.
+## You'll be in a tmux session, everything should be launched
+## Visit localhost:8084 from your web browser to see if it all works.
 ```
 
 If you need to rebuild the container, run the following command:
@@ -227,7 +227,7 @@ If you need to rebuild the container, run the following command:
 $ make docker-build
 ```
 
-### Provisioning the database
+#### Provisioning the database
 
 After everything is set up, (locally or via Docker), you can start populating the database:
 
@@ -239,7 +239,7 @@ $ cabal run -- flora-cli -c environment.test.kdl create-user --admin --can-login
 $ make db-provision-packages
 ```
 
-### Importing a package index
+#### Importing a package index
 
 The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shits and giggles.
 
@@ -257,16 +257,16 @@ $ cabal run flora-cli -- -c environment.test.kdl import-index ~/.cabal/packages/
   --repository "cardano"
 ```
 
-### Connecting to the local database
+#### Connecting to the local database
 
 If you need to connect to the database directly:
 
 ```bash
-# replace flora_test if connecting to flora_dev database
+## replace flora_test if connecting to flora_dev database
 psql -h localhost -p 5432 -U postgres -d flora_test
 ```
 
-### Live Eventlogs
+#### Live Eventlogs
 
 To enable capturing live events from Flora server running locally:
 
@@ -287,13 +287,13 @@ Note: You might need to export `FLORA_EVENTLOG_SOCKET` to the same value as give
 
 4. Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
 
-### Nix
+#### Nix
 
 Nix is an alternative way to interact with the Flora codebase.
 
 `Flora` provides a [nix](https://github.com/flora-pm/flora.nix) setup to make provisioning a development environment.
 
-#### Formatting and Linting with nix and `pre-commit-hooks`
+##### Formatting and Linting with nix and `pre-commit-hooks`
 
 After starting up a `devShell` with `nix develop` or `direnv`, a `shellHook` will run that installs two things
 - a script, called `pre-commit`
@@ -321,20 +321,61 @@ If you want to commit although they do not succeed, pass `--no-verify` to the `g
 > **Warning**
 > Be careful that this does not mean you get around linting and formatting, as they're checked in `CI`
 
-## License to shitpost
+### License to shitpost
 
 You can include (in moderation) some shitposting in your contributions, be it funny memes in your PR descriptions,
 humour in git commits that do not prevent their understanding. They will be accepted at the core team's discretion.
 
 Example:
 
-### Circumstantial git trailer
+#### Circumstantial git trailer
 
 ```
 Sponsored-By: 2 bottles of Club Mate & a heat wave in Western Europe
 ```
 
+## Project Architecture
+
+### File layout
+
+The files of our data model follows a predictible layout:
+
+```
+.
+├── Database model
+│   ├── Guard.hs  ← monadic guards that ensure validity of input data
+│   ├── Query.hs  ← read-only database queries
+│   ├── Types.hs  ← type definitions, class instances, smart constructors
+│   └── Update.hs ← read-write database statements
+```
+
+### Wrapped entity IDs
+
+We never use raw UUIDs for primary keys, but we wrap those UUIDs in smart constructors that will either generate one randomly,
+or in certain cases generate the ID deterministically, based on immutable characteristics of the entity in question.
+
+### Effects
+
+Since Flora is a piece of software with lots of interactions with the outside world, we model those through an effect system,
+which allows us to tag functions' type signatures. Effects are provided by most of the third-party libraries that we use
+(logging, filesystem, etc.) and we have defined our own for database interactions (See the [Database](#database) section for more information).
+
+### Database
+
+#### Schema migrations
+
+Application schema migrations are kept as raw SQL in the `migrations/` directory. They are applied through the `flora-migrate` executable.
+Arbiter – the job queue – generates its own schema migrations, which are applied in `flora-migrate` too.
+
+#### Read-Only and Read-Write operations
+
+We differentiate read-only and read-write operations in the codebase through the usage of two different effects in type signatures: `ReadDB` and `WriteDB`.
+
+Interpreting the `ReadDB` effect gives us access to read-only transactions, that are enforced in PostgreSQL by setting the transaction mode to "READ ONLY".
+See [SET TRANSACTION][SET TRANSACTION] for more details.
+
 [CoC]: https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions
 [Ticket]: https://github.com/flora-pm/flora-server/issues/new
+[SET TRANSACTION]: https://www.postgresql.org/docs/current/sql-set-transaction.html
