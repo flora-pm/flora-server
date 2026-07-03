@@ -307,8 +307,8 @@ runCommand _ DropDB = do
       ]
 runCommand _ (IndexDependency indexName dependencyName priority) = do
   FloraEnv{pool} <- Reader.ask
-  index <- withReadOnlyPool pool $ guardThatPackageIndexExists indexName (error $ Text.unpack indexName <> " does not exist in database!")
-  dependency <- withReadOnlyPool pool $ guardThatPackageIndexExists dependencyName (error $ Text.unpack indexName <> " does not exist in database!")
+  index <- guardThatPackageIndexExists pool indexName (error $ Text.unpack indexName <> " does not exist in database!")
+  dependency <- guardThatPackageIndexExists pool dependencyName (error $ Text.unpack indexName <> " does not exist in database!")
   withReadWritePool pool $
     Update.addDependency
       index.packageIndexId

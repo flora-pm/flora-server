@@ -58,13 +58,12 @@ getDependenciesHandler
   -> FloraM RouteEffects (PackageDependenciesDTO 0)
 getDependenciesHandler namespace packageName version transitive = do
   FloraEnv{pool} <- Reader.ask
-  package <- withReadOnlyPool pool $ guardThatPackageExists namespace packageName packageNotFound
+  package <-
+    guardThatPackageExists pool namespace packageName
+      >>= maybe (packageNotFound namespace packageName) pure
   release <-
-    withReadOnlyPool pool $
-      guardThatReleaseExists package.packageId version $
-        versionNotFound
-          package.namespace
-          package.name
+    guardThatReleaseExists pool package.packageId version
+      >>= maybe (versionNotFound package.namespace package.name version) pure
 
   mMainLibrary <- withReadOnlyPool pool $ Query.getComponent release.releaseId (display packageName) Library
   mMainExecutable <- withReadOnlyPool pool $ Query.getComponent release.releaseId (display packageName) Executable
@@ -97,7 +96,9 @@ getPackageHandler
   -> (FloraM es) (PackageDTO 0)
 getPackageHandler namespace packageName = do
   FloraEnv{pool} <- Reader.ask
-  package <- withReadOnlyPool pool $ guardThatPackageExists namespace packageName packageNotFound
+  package <-
+    guardThatPackageExists pool namespace packageName
+      >>= maybe (packageNotFound namespace packageName) pure
   releases <- withReadOnlyPool pool $ Query.getReleases package.packageId
   let latestRelease =
         releases
@@ -105,11 +106,8 @@ getPackageHandler namespace packageName = do
           & Vector.maximumBy (compare `on` (.version))
       version = latestRelease.version
   release <-
-    withReadOnlyPool pool $
-      guardThatReleaseExists package.packageId version $
-        versionNotFound
-          package.namespace
-          package.name
+    guardThatReleaseExists pool package.packageId version
+      >>= maybe (versionNotFound package.namespace package.name version) pure
   components <- withReadOnlyPool pool $ Query.getComponentsByReleaseId release.releaseId
   pure $ toPackageDTO package release components
 
@@ -146,12 +144,11 @@ getVersionedPackageHandler
   -> (FloraM es) (PackageDTO 0)
 getVersionedPackageHandler namespace packageName version = do
   FloraEnv{pool} <- Reader.ask
-  package <- withReadOnlyPool pool $ guardThatPackageExists namespace packageName packageNotFound
+  package <-
+    guardThatPackageExists pool namespace packageName
+      >>= maybe (packageNotFound namespace packageName) pure
   release <-
-    withReadOnlyPool pool $
-      guardThatReleaseExists package.packageId version $
-        versionNotFound
-          package.namespace
-          package.name
+    guardThatReleaseExists pool package.packageId version
+      >>= maybe (versionNotFound package.namespace package.name version) pure
   components <- withReadOnlyPool pool $ Query.getComponentsByReleaseId release.releaseId
   pure $ toPackageDTO package release components

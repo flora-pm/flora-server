@@ -1,5 +1,7 @@
 module Flora.Model.Release.Guard where
 
+import Data.Pool (Pool)
+import Database.PostgreSQL.Simple (Connection)
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Tracing (Tracer)
@@ -12,16 +14,12 @@ import Flora.Model.Release.Types
 import Flora.Monad
 
 guardThatReleaseExists
-  :: (IOE :> es, ReadDB :> es, Tracer :> es)
-  => PackageId
+  :: (IOE :> es, Tracer :> es)
+  => Pool Connection
+  -> PackageId
   -> Version
-  -> (Version -> FloraM es Release)
-  -- ^ Action to run if the package does not exist
-  -> FloraM es Release
-guardThatReleaseExists packageId version action = do
-  result <-
-    Trace.withSpan "Query.getReleaseByVersion" $
+  -> FloraM es (Maybe Release)
+guardThatReleaseExists pool packageId version =
+  Trace.withSpan "Query.getReleaseByVersion" $
+    withReadOnlyPool pool $
       Query.getReleaseByVersion packageId version
-  case result of
-    Just release -> pure release
-    Nothing -> action version

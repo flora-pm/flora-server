@@ -45,7 +45,6 @@ import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude qualified as Streamly
 import System.FilePath
 
-import Flora.Database
 import Flora.Environment.Env
 import Flora.Import.Package.Bulk.Stream
 import Flora.Import.Types (ImportError (..), ImportFileType (..))
@@ -84,7 +83,7 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
       pure (dep, indexPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
-  packageIndex <- withReadOnlyPool pool $ guardThatPackageIndexExists repositoryName $ do
+  packageIndex <- guardThatPackageIndexExists pool repositoryName $ do
     Log.logAttention "Could not find package index" $
       object
         [ "package_index_name" .= repositoryName
