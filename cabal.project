@@ -28,6 +28,7 @@ allow-newer: chronos:hashable
            , pandoc-types:QuickCheck
            , pg-entity:resource-pool
            , arbiter:resource-pool
+           , xss-sanitize:text
 
 package feed
   ghc-options: -Wno-tabs

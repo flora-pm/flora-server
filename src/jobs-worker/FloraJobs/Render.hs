@@ -11,6 +11,7 @@ import Data.Typeable
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
+import Text.HTML.SanitizeXSS (sanitizeBalance)
 import Text.Pandoc.Builder
 import Text.Pandoc.Builder qualified as Builder
 import Text.Pandoc.Class (runPure)
@@ -53,7 +54,7 @@ renderMarkdown name bodyText = do
                 & HTML.writeHtml5String def
                 & runPure
          in case result of
-              Right m -> pure m
+              Right m -> pure (sanitizeBalance m)
               Left e -> Error.throwError (MarkdownRenderingError e)
 
 shiftHeadingLevel :: Block -> Block
