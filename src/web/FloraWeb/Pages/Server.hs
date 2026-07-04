@@ -34,7 +34,7 @@ server arbiterConfig =
   Routes'
     { home = homeHandler
     , about = aboutHandler
-    , admin = Admin.server arbiterConfig
+    , admin = \(AdminSession session) -> Admin.server arbiterConfig session
     , sessions = Sessions.server
     , packages = Packages.server
     , categories = Categories.server

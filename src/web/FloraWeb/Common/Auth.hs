@@ -2,6 +2,7 @@ module FloraWeb.Common.Auth
   ( module FloraWeb.Common.Auth.Types
   , OptionalAuthContext
   , StrictAuthContext
+  , AdminAuthContext
   , optionalAuthHandler
   , strictAuthHandler
   , adminAuthHandler
@@ -45,6 +46,7 @@ import FloraWeb.Types
 
 type OptionalAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session (Maybe User)))
 type StrictAuthContext = AuthHandler Request (Headers '[Header "Set-Cookie" SetCookie] (Session User))
+type AdminAuthContext = AuthHandler Request AdminSession
 
 optionalAuthHandler :: RequireCallStack => Logger -> FloraEnv -> OptionalAuthContext
 optionalAuthHandler logger floraEnv =
@@ -64,11 +66,11 @@ strictAuthHandler logger floraEnv =
           & effToHandler
     )
 
-adminAuthHandler :: RequireCallStack => Logger -> FloraEnv -> StrictAuthContext
+adminAuthHandler :: RequireCallStack => Logger -> FloraEnv -> AdminAuthContext
 adminAuthHandler logger floraEnv =
   mkAuthHandler
     ( \request ->
-        requireAdminHandler floraEnv request
+        (AdminSession <$> requireAdminHandler floraEnv request)
           & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
           & effToHandler
     )
