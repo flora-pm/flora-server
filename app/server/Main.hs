@@ -24,7 +24,7 @@ import Effectful.Log
 import Effectful.Reader.Static qualified as Reader
 import Log qualified
 import NoThunks.Class
-import Options.Applicative
+import Options.Applicative (execParser)
 import RequireCallStack
 import System.Exit
 import System.IO

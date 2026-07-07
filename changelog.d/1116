@@ -1,0 +1,10 @@
+synopsis: Hide 2FA/TOTP input on login page by default
+prs: #1141
+issues: #1116
+
+description: {
+
+- Added spacing between checkbox and label
+- Fixed 2fa toggle behaviour to hide the input by default
+
+}

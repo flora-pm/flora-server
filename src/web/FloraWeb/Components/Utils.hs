@@ -48,7 +48,7 @@ ariaHidden = makeAttributes "aria-hidden"
 
 -- Prefer these ones as they are integrated with AlpineJS
 ariaControls_ :: Text -> Attributes
-ariaControls_ = makeAttributes ":aria-controls"
+ariaControls_ = makeAttributes "aria-controls"
 
 ariaExpanded_ :: Text -> Attributes
 ariaExpanded_ = makeAttributes ":aria-expanded"
@@ -108,6 +108,11 @@ xBind_
   -> Text
   -> Attributes
 xBind_ attr = makeAttributes ("x-bind:" <> attr)
+
+-- | x-ref
+-- Target DOM elements directly
+xRef_ :: Text -> Attributes
+xRef_ = makeAttributes "x-ref"
 
 -- | x-init
 -- Run code when an element is initialized by Alpine

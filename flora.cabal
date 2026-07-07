@@ -112,8 +112,8 @@ library
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
     Distribution.Orphans.Version
-    Flora.DB.Exception
     Flora.Database
+    Flora.DB.Exception
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
@@ -190,8 +190,6 @@ library
     Servant.API.ContentTypes.GZip
 
   build-depends:
-    Cabal-syntax,
-    JuicyPixels,
     aeson,
     arbiter-simple,
     attoparsec,
@@ -199,6 +197,7 @@ library
     base16-bytestring,
     base64,
     bytestring,
+    Cabal-syntax,
     commonmark,
     commonmark-pandoc,
     containers,
@@ -224,6 +223,7 @@ library
     http-api-data,
     http-media,
     iso8601-time,
+    JuicyPixels,
     kdl-hs,
     log-base,
     log-effectful,
@@ -307,9 +307,9 @@ library flora-advisories
     Advisories.Model.Affected.Update
 
   build-depends:
-    Cabal-syntax,
     aeson,
     base,
+    Cabal-syntax,
     cvss,
     deepseq,
     effectful-core,
@@ -417,8 +417,6 @@ library flora-web
     FloraWeb.Types
 
   build-depends:
-    Cabal-syntax,
-    PyF,
     aeson,
     arbiter-servant,
     arbiter-servant-ui,
@@ -426,6 +424,7 @@ library flora-web
     base ^>=4.20,
     base32,
     bytestring,
+    Cabal-syntax,
     chronos,
     cmark-gfm,
     colourista,
@@ -475,6 +474,7 @@ library flora-web
     prometheus-effectful,
     prometheus-metrics-ghc,
     prometheus-proc,
+    PyF,
     raven-haskell,
     require-callstack,
     resource-pool,
@@ -525,7 +525,6 @@ library flora-jobs
     FloraJobs.Types
 
   build-depends:
-    Cabal-syntax,
     aeson,
     arbiter-core,
     arbiter-simple,
@@ -533,6 +532,7 @@ library flora-jobs
     base,
     blaze-markup,
     bytestring,
+    Cabal-syntax,
     commonmark,
     commonmark-extensions,
     commonmark-pandoc,
@@ -662,10 +662,9 @@ executable flora-cli
   other-modules: DesignSystem
   hs-source-dirs: app/cli
   build-depends:
-    Cabal-syntax,
-    PyF,
     base,
     bytestring,
+    Cabal-syntax,
     cvss,
     effectful,
     effectful-core,
@@ -688,6 +687,7 @@ executable flora-cli
     optparse-applicative,
     process,
     prometheus-effectful,
+    PyF,
     require-callstack,
     sel,
     text,
@@ -707,10 +707,10 @@ test-suite flora-test
   main-is: Main.hs
   hs-source-dirs: test
   build-depends:
-    Cabal-syntax,
     aeson,
     base,
     bytestring,
+    Cabal-syntax,
     containers,
     effectful,
     effectful-core,
