@@ -125,13 +125,16 @@ processAffectedPackage advisoryId affected = do
           Repository _ (RepositoryName repositoryName) affectedPackageName ->
             (Namespace repositoryName, PackageName (Text.pack . unPackageName $ affectedPackageName))
           GHC _ -> (Namespace "hackage", PackageName "ghc")
-  package <- withReadOnlyPool pool $ guardThatPackageExists namespace packageName $ \_ _ -> do
-    Log.logAttention "Affected package does not not exist" $
-      object
-        [ "namespace" .= display namespace
-        , "package" .= display packageName
-        ]
-    throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
+  package <-
+    guardThatPackageExists pool namespace packageName >>= \case
+      Just package -> pure package
+      Nothing -> do
+        Log.logAttention "Affected package does not not exist" $
+          object
+            [ "namespace" .= display namespace
+            , "package" .= display packageName
+            ]
+        throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
   let declarations =
         affected.affectedDeclarations
           & fmap (uncurry AffectedDeclaration)

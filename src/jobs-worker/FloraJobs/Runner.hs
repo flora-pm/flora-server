@@ -432,20 +432,18 @@ fetchPackageMaintainers
 fetchPackageMaintainers packageName = do
   localDomain "fetch-package-maintainers" $ do
     FloraJobsEnv{pool} <- Reader.ask
-    packageIndex <- withReadOnlyPool pool $ guardThatPackageIndexExists "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
+    packageIndex <- guardThatPackageIndexExists pool "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
     Hackage.request (Hackage.getPackageMaintainers packageName) >>= \case
       Left e -> handleClientError e
       Right (HackagePackageMaintainers maintainers) -> do
         let namespace = Namespace packageIndex.repository
         package <-
-          withReadOnlyPool pool $
-            guardThatPackageExists
-              namespace
-              packageName
-              (\_ _ -> Error.throwError (CouldNotFindPackage namespace packageName))
-        packageUploaders <- withReadOnlyPool pool $
+          guardThatPackageExists pool namespace packageName
+            >>= maybe (Error.throwError (CouldNotFindPackage namespace packageName)) pure
+        packageUploaders <-
           forM (Vector.toList maintainers) $ \(HackagePackageMaintainer username) ->
             guardThatPackageUploaderExists
+              pool
               username
               packageIndex.packageIndexId
               (Error.throwError (CouldNotFindPackageUploader username namespace))
@@ -485,7 +483,7 @@ fetchPackageUploaders :: RequireCallStack => JobsRunner ()
 fetchPackageUploaders = do
   localDomain "fetch-package-uploaders" $ do
     FloraJobsEnv{pool} <- Reader.ask
-    packageIndex <- withReadOnlyPool pool $ guardThatPackageIndexExists "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
+    packageIndex <- guardThatPackageIndexExists pool "hackage" (Error.throwError (CouldNotFindPackageIndex "hackage"))
     Hackage.request Hackage.listHackageUsers >>= \case
       Left e -> handleClientError e
       Right users -> do

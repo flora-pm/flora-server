@@ -58,7 +58,8 @@ importFromStream
   -> FloraM es ()
 importFromStream packageIndex indexPackages stream = do
   env <- Reader.ask
-  let cfg = Streamly.maxBuffer (env.dbConfig.connections `div` 2) . Streamly.inspect True
+  let workerLimit = max 1 (env.dbConfig.connections `div` 2)
+      cfg = Streamly.maxThreads workerLimit . Streamly.maxBuffer workerLimit . Streamly.inspect True
   processedPackageCount <-
     finally
       ( Streamly.fold displayCount $
