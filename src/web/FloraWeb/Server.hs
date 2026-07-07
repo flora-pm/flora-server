@@ -80,7 +80,8 @@ import Flora.Tracing qualified as Tracing
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
 import FloraWeb.Common.Auth
-  ( OptionalAuthContext
+  ( AdminAuthContext
+  , OptionalAuthContext
   , StrictAuthContext
   , adminAuthHandler
   , optionalAuthHandler
@@ -101,7 +102,7 @@ import Prometheus.Servant.HasEndpoint ()
 type FloraAuthContext =
   '[ OptionalAuthContext
    , StrictAuthContext
-   , StrictAuthContext
+   , AdminAuthContext
    , ErrorFormatters
    ]
 

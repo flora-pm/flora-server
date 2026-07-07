@@ -265,6 +265,7 @@ library
     uuid,
     vector,
     wai,
+    xss-sanitize,
     zlib,
 
 library flora-search
@@ -500,6 +501,7 @@ library flora-web
     wai-middleware-prometheus,
     warp,
     xml-conduit,
+    xss-sanitize,
 
 library flora-jobs
   import: common-extensions
@@ -569,6 +571,7 @@ library flora-jobs
     time,
     typed-process-effectful,
     vector,
+    xss-sanitize,
 
 executable flora-server
   import: common-extensions
