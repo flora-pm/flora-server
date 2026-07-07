@@ -27,7 +27,7 @@ import Network.Wai.Handler.Warp
   )
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
 import NoThunks.Class
-import Options.Applicative
+import Options.Applicative (execParser)
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import RequireCallStack
