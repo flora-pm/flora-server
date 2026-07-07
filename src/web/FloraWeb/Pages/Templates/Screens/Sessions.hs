@@ -18,8 +18,9 @@ newSession = do
       , action_ "/sessions/new"
       , method_ "POST"
       , class_ formClasses
-      , xData_ "{ open: false }"
-      , xInit_ "open = $refs.useTotp.checked"
+      , xData_ "{ open: false, sync() { this.open = this.$refs.useTotp.checked; }}"
+      , xInit_ "sync()"
+      , xOn_ "pageshow.window" "sync()"
       ]
       $ do
         div_ [class_ "flow flow--small"] $ do
