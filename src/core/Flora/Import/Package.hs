@@ -291,7 +291,7 @@ persistImportOutput (ImportOutput package categories release components) = State
         categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
         forM_
           categoriesByName
-          (\c -> Update.addToCategoryByName package.packageId c.name)
+          (\c -> Update.addToCategory package.packageId c.categoryId)
         if Set.member (package.namespace, package.name, release.version) packageCache
           then do
             Log.logInfo "Release already present" $
@@ -305,31 +305,12 @@ persistImportOutput (ImportOutput package categories release components) = State
             Update.upsertRelease package release
             let componentsList = NE.toList $ fmap fst components
             let dependencies = foldMap snd components
-            let dependencyPackages = fmap (.package) dependencies
             Update.upsertPackageComponents componentsList
-            Log.logInfo_ "Inserting dependencies"
-            forM_
-              dependencyPackages
-              ( \p -> do
-                  Log.logInfo_ "Upserting package"
-                  Update.upsertPackage p
-              )
-            forM_ dependencies persistImportDependency
+            Update.bulkInsertUnknownPackages (fmap (.package) dependencies)
+            Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
             unless (null dependencies) sanityCheck
             pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    persistImportDependency dep = do
-      Log.logInfo "Inserting requirement" $
-        object
-          [ "dependent_namespace" .= display package.namespace
-          , "dependent_name" .= display package.name
-          , "dependent_id" .= display package.packageId
-          , "dependency_namespace" .= display dep.package.namespace
-          , "dependency_name" .= display dep.package.name
-          , "dependency_id" .= display dep.package.packageId
-          ]
-      Update.upsertRequirement dep.requirement
-
     sanityCheck = do
       dependencies <- Query.getAllRequirements release.releaseId
       when (Map.null dependencies) $ do

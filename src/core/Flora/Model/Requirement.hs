@@ -31,7 +31,7 @@ import Flora.Model.Package.Types
 newtype RequirementId = RequirementId {getRequirementId :: UUID}
   deriving (Display) via ShowInstance UUID
   deriving
-    (Eq, FromField, FromJSON, NFData, Show, ToField, ToJSON)
+    (Eq, FromField, FromJSON, NFData, Ord, Show, ToField, ToJSON)
     via UUID
 
 deterministicRequirementId :: ComponentId -> PackageId -> RequirementId

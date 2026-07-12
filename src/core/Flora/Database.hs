@@ -18,6 +18,7 @@ module Flora.Database
   , execute_
   , executeMany
   , upsert
+  , upsertMany
 
     -- * Interpreters
   , withReadOnlyPool
@@ -97,6 +98,10 @@ execute_ q = send (Execute_ q)
 executeMany :: (ToRow q, WriteDB :> es) => Query -> [q] -> Eff es Int64
 executeMany q params = send (ExecuteMany q params)
 
+upsertQuery :: forall e. Entity e => Vector Field -> Query
+upsertQuery fieldsToReplace =
+  _insert @e <> _onConflictDoUpdate (Vector.singleton (primaryKey @e)) fieldsToReplace
+
 -- | Insert an entity, replacing the given fields on primary-key conflict.
 upsert
   :: forall e es values
@@ -107,9 +112,18 @@ upsert
   -- ^ Fields to replace in case of conflict
   -> Eff es ()
 upsert entity fieldsToReplace =
-  void $ execute (_insert @e <> _onConflictDoUpdate conflictTarget fieldsToReplace) entity
-  where
-    conflictTarget = Vector.singleton $ primaryKey @e
+  void $ execute (upsertQuery @e fieldsToReplace) entity
+
+-- | Bulk upsert. Callers must not pass two rows with the same primary key
+-- in one batch, because `ON CONFLICT DO UPDATE` rejects a repeated key.
+upsertMany
+  :: forall e es values
+   . (Entity e, ToRow values, WriteDB :> es)
+  => [values]
+  -> Vector Field
+  -> Eff es ()
+upsertMany entities fieldsToReplace =
+  void $ executeMany (upsertQuery @e fieldsToReplace) entities
 
 -- | Discharge 'ReadDB' against a fixed connection.
 interpretReadDB :: IOE :> es => Connection -> Eff (ReadDB ': es) a -> Eff es a
