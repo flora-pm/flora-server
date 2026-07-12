@@ -262,7 +262,7 @@ fetchUploadInformation payload@UploadInformationJobPayload{packageName, packageV
 
 -- | This job fetches the deprecation list and inserts the appropriate metadata in the packages
 fetchPackageDeprecationList :: RequireCallStack => JobsRunner ()
-fetchPackageDeprecationList = do
+fetchPackageDeprecationList = localDomain "fetch-package-deprecation-list" $ do
   FloraJobsEnv{pool} <- Reader.ask
   result <- Hackage.request Hackage.getDeprecatedPackages
   case result of
@@ -292,7 +292,7 @@ assignNamespace =
   PackageAlternatives . Vector.map (\p -> PackageAlternative (Namespace "hackage") p)
 
 fetchReleaseDeprecationList :: RequireCallStack => PackageName -> Vector ReleaseId -> JobsRunner ()
-fetchReleaseDeprecationList packageName releases = do
+fetchReleaseDeprecationList packageName releases = localDomain "fetch-release-deprecation-list" $ do
   FloraJobsEnv{pool} <- Reader.ask
   result <- Hackage.request $ Hackage.getDeprecatedReleasesList packageName
   case result of
@@ -357,62 +357,64 @@ refreshIndex
   => ArbS.SimpleEnv JobQueues
   -> Text
   -> FloraM es ()
-refreshIndex env indexName = do
-  FloraEnv{pool} <- Reader.ask
-  runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
-  packagesPath <- getCabalPackagesDirectory
-  mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName indexName
-  case mPackageIndex of
-    Nothing -> do
-      Log.logAttention "Package index not found" $
-        object ["package_index" .= indexName]
-      error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
-    Just packageIndex -> do
-      indexDependencies <- withReadOnlyPool pool $ Query.getIndexDependencies packageIndex.packageIndexId
-      Import.importFromArchive indexName indexDependencies packagesPath
+refreshIndex env indexName = localDomain "refresh-index" $ do
+  Log.localData ["index_name" .= indexName] $ do
+    Log.logInfo_ "Refreshing index"
+    FloraEnv{pool} <- Reader.ask
+    runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
+    packagesPath <- getCabalPackagesDirectory
+    mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName indexName
+    case mPackageIndex of
+      Nothing -> do
+        Log.logAttention "Package index not found" $
+          object ["package_index" .= indexName]
+        error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
+      Just packageIndex -> do
+        indexDependencies <- withReadOnlyPool pool $ Query.getIndexDependencies packageIndex.packageIndexId
+        Import.importFromArchive indexName indexDependencies packagesPath
 
-      releasesWithoutReadme <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutReadme
-      liftIO $
-        void $
-          forkIO $
-            Async.forConcurrently_
-              releasesWithoutReadme
-              (\(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version)
+        releasesWithoutReadme <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutReadme
+        liftIO $
+          void $
+            forkIO $
+              Async.forConcurrently_
+                releasesWithoutReadme
+                (\(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version)
 
-      hackageReleasesWithoutUploadInformation <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutUploadInformation
-      liftIO $
-        void $
-          forkIO $
-            Async.forConcurrently_
-              hackageReleasesWithoutUploadInformation
-              (\(releaseId, version, packagename) -> scheduleUploadInformationJob env releaseId packagename version)
+        hackageReleasesWithoutUploadInformation <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutUploadInformation
+        liftIO $
+          void $
+            forkIO $
+              Async.forConcurrently_
+                hackageReleasesWithoutUploadInformation
+                (\(releaseId, version, packagename) -> scheduleUploadInformationJob env releaseId packagename version)
 
-      releasesWithoutChangelog <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutChangelog
-      liftIO $
-        void $
-          forkIO $
-            Async.forConcurrently_
-              releasesWithoutChangelog
-              (\(releaseId, version, packagename) -> scheduleChangelogJob env releaseId packagename version)
+        releasesWithoutChangelog <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutChangelog
+        liftIO $
+          void $
+            forkIO $
+              Async.forConcurrently_
+                releasesWithoutChangelog
+                (\(releaseId, version, packagename) -> scheduleChangelogJob env releaseId packagename version)
 
-      packagesWithoutDeprecationInformation <- withReadOnlyPool pool Query.getHackagePackagesWithoutReleaseDeprecationInformation
-      liftIO $
-        void $
-          forkIO $ do
-            Async.forConcurrently_
-              packagesWithoutDeprecationInformation
-              (\a -> scheduleReleaseDeprecationListJob env a)
-            void $ scheduleRefreshLatestVersions env
+        packagesWithoutDeprecationInformation <- withReadOnlyPool pool Query.getHackagePackagesWithoutReleaseDeprecationInformation
+        liftIO $
+          void $
+            forkIO $ do
+              Async.forConcurrently_
+                packagesWithoutDeprecationInformation
+                (\a -> scheduleReleaseDeprecationListJob env a)
+              void $ scheduleRefreshLatestVersions env
 
-      packagesWithoutMaintainerInformation <- withReadOnlyPool pool Query.getPackagesWithoutMaintainersInformation
-      liftIO $
-        void $
-          forkIO $
-            Async.forConcurrently_
-              packagesWithoutMaintainerInformation
-              (\(_namespace, packageName) -> schedulePackageMaintainersListJob env packageName)
+        packagesWithoutMaintainerInformation <- withReadOnlyPool pool Query.getPackagesWithoutMaintainersInformation
+        liftIO $
+          void $
+            forkIO $
+              Async.forConcurrently_
+                packagesWithoutMaintainerInformation
+                (\(_namespace, packageName) -> schedulePackageMaintainersListJob env packageName)
 
-      void $ liftIO $ scheduleRefreshIndex env indexName
+        void $ liftIO $ scheduleRefreshIndex env indexName
 
 getCabalPackagesDirectory :: FileSystem :> es => FloraM es FilePath
 getCabalPackagesDirectory = do
