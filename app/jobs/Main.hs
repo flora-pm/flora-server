@@ -4,6 +4,7 @@ import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Arbiter.Worker qualified as Worker
 import Control.Monad
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Proxy
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -61,7 +62,11 @@ main = do
       runLog "flora-server" logger Log.LogTrace $
         checkJobsEnvForThunks jobsEnv
       void . forkIO $ runServer logger floraEnv jobsEnv
-      defaultConfig <- liftIO $ Worker.defaultWorkerConfig (connString floraEnv.config.connectionInfo) 50 (processJob workerEnv jobsEnv logger floraEnv)
+      defaultConfig <- liftIO $
+        Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) 50 1 $
+          \(job :| _) callbacks -> do
+            processJob workerEnv jobsEnv logger floraEnv job
+            Worker.ack callbacks job
       let config =
             defaultConfig
               { Worker.observabilityHooks =
@@ -122,8 +127,9 @@ processJob
   -> FloraJobsEnv
   -> Log.Logger
   -> FloraEnv
-  -> Arb.JobHandler (ArbS.SimpleDb JobQueues IO) PackageJob ()
-processJob workerEnv jobsRunnerEnv logger floraEnv _conn job =
+  -> Arb.JobRead PackageJob
+  -> ArbS.SimpleDb JobQueues IO ()
+processJob workerEnv jobsRunnerEnv logger floraEnv job =
   provideCallStack $
     liftIO $
       runJobRunner

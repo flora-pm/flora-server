@@ -10,7 +10,7 @@ import Log
 import Flora.Database
 import Flora.Environment.Env
 import Flora.Model.Category.Types (Category, mkCategory, mkCategoryId)
-import Flora.Model.Category.Update (insertCategory)
+import Flora.Model.Category.Update (bulkInsertCategories)
 import Flora.Monad
 import Flora.Normalise
 
@@ -20,7 +20,7 @@ importCategories = do
   Log.logInfo_ "Sourcing categories"
   categories <- mapM fromCanonical floraCategories
   withReadWritePool pool $
-    mapM_ insertCategory categories
+    bulkInsertCategories categories
   Log.logInfo_ "Categories done sourcing"
 
 fromCanonical :: IOE :> es => (Text, Text, Text) -> Eff es Category
