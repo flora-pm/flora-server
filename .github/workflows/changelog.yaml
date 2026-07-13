@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: "actions/checkout@v7"
+        uses: "actions/checkout@v7.0.0"
       - name: Install changelog-d
         run: |
           mkdir -p ~/.local/bin
