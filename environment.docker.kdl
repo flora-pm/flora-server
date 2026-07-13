@@ -23,7 +23,7 @@ flora {
     zipkinEnabled #true
     zipkinHost jaeger
     zipkinPort 4318
-    eventlogSocket "/tmp/flora-eventlog.sock"
+    eventlogSocketDirectory "/tmp/flora-eventlog"
   }
 
   features {

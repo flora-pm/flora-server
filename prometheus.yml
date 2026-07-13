@@ -14,3 +14,10 @@ scrape_configs:
    static_configs:
     - targets:
        - devel:8085
+
+ - job_name: otelcol
+   scrape_interval: 1s
+   honor_labels: true
+   static_configs:
+    - targets:
+       - eventlog-otelcol:9090

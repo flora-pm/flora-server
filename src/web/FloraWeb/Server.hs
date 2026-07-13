@@ -5,7 +5,7 @@ import Colourista.IO (blueMessage)
 import Control.Exception (bracket)
 import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
-import Control.Monad (forM_, void, when)
+import Control.Monad (void, when)
 import Control.Monad.Except qualified as Except
 import Data.Aeson
 import Data.IORef (IORef, newIORef)
@@ -25,7 +25,6 @@ import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
 import Effectful.Tracing.Effect
 import Effectful.Tracing.Instrumentation.Servant (traceServantMiddleware)
-import GHC.Eventlog.Socket qualified as Socket
 import Log
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
@@ -117,9 +116,7 @@ runFlora config = do
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
-            liftIO $ do
-              forM_ env.mltp.eventlogSocket Socket.start
-              when (isJust env.mltp.eventlogSocket) (blueMessage "🔥 Sending live events to socket")
+            liftIO $ startEventlogSocket env.mltp.eventlogSocketDirectory
             when env.mltp.prometheusEnabled $ do
               liftIO $ blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               runPrometheusMetrics env.metrics $ do
