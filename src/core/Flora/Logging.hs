@@ -15,10 +15,10 @@ import Log.Backend.StandardOutput qualified as Log
 import Flora.Environment.Config
 import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
-makeLogger :: IOE :> es => LoggingDestination -> (Logger -> Eff es a) -> Eff es a
-makeLogger StdOut = Log.withStdOutLogger
-makeLogger Json = Log.withJsonStdOutLogger
-makeLogger JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = "logs/flora-server.json"}
+makeLogger :: IOE :> es => FilePath -> LoggingDestination -> (Logger -> Eff es a) -> Eff es a
+makeLogger _ StdOut = Log.withStdOutLogger
+makeLogger _ Json = Log.withJsonStdOutLogger
+makeLogger jsonFile JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = jsonFile}
 
 timeAction
   :: forall (es :: [Effect]) (a :: Type)

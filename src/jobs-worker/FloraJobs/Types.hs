@@ -46,24 +46,19 @@ runJobRunner
   => FloraJobsEnv
   -> FloraEnv
   -> Logger
+  -> Tracing.TraceRunner
   -> JobsRunner a
   -> IO a
-runJobRunner runnerEnv floraEnv logger jobRunner = do
-  runTrace <- do
-    traceRunner <- liftIO $ Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
-    pure $ Tracing.runTraceRunner traceRunner
+runJobRunner runnerEnv floraEnv logger traceRunner jobRunner = do
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & Reader.runReader runnerEnv
-    & ( case floraEnv.features.blobStoreImpl of
-          Just (BlobStoreFS fp) -> runBlobStoreFS fp
-          _ -> runBlobStorePure
-      )
+    & withBlobStore floraEnv.features
     & LogEff.runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel
     & runTime
     & runTypedProcess
     & runFileSystem
-    & runTrace
+    & Tracing.runTraceRunner traceRunner
     & Reader.runReader floraEnv
     & runConcurrent
     & runPrometheusMetrics floraEnv.metrics
