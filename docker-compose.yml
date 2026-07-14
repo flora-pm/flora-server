@@ -23,6 +23,8 @@ services:
       - eventlog-socket:/tmp/flora-eventlog
     links:
       - flora-database
+    environment:
+      - CONFIG=environment.docker.kdl
     command: sleep infinity
     profiles:
       - local
