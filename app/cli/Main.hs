@@ -60,6 +60,7 @@ import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Monad
 import Flora.Tracing qualified as Tracing
+import FloraWeb.Common.Tracing (startEventlogSocket)
 
 data Options = Options
   { cliCommand :: Command
@@ -105,6 +106,7 @@ main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv cliArgs.configFile & runFileSystem & runFailIO & runEff
+  startEventlogSocket env.mltp.eventlogSocketDirectory
   runTrace <- do
     traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
     pure $ Tracing.runTraceRunner traceRunner

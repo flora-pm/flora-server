@@ -1,0 +1,24 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+        # Heap profile batches exceed the 4MiB gRPC default.
+        max_recv_msg_size_mib: 20
+        # Tolerate the forwarder's frequent keepalive pings.
+        keepalive:
+          enforcement_policy:
+            min_time: 0s
+            permit_without_stream: true
+
+exporters:
+  debug:
+    verbosity: normal
+  prometheus:
+    endpoint: "0.0.0.0:9090"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [debug, prometheus]

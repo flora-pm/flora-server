@@ -54,6 +54,7 @@ main = do
   let withLogger = makeLogger "logs/flora-jobs.json" floraEnv.mltp.logger
   traceRunner <- Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
   runEff . runConcurrent $ do
+    liftIO $ startEventlogSocket floraEnv.mltp.eventlogSocketDirectory
     when floraEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
       runPrometheusMetrics jobsEnv.metrics $ do
