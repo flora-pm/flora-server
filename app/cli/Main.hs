@@ -114,10 +114,7 @@ main = Log.withStdOutLogger $ \logger -> do
       & (`E.catches` exceptionHandlers)
       & runLog "flora-cli" logger Log.LogTrace
       & runFileSystem
-      & ( case env.features.blobStoreImpl of
-            Just (BlobStoreFS fp) -> runBlobStoreFS fp
-            _ -> runBlobStorePure
-        )
+      & withBlobStore env.features
       & runTime
       & runFailIO
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)

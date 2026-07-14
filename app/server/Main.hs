@@ -49,7 +49,7 @@ preFlightChecks :: FilePath -> IO ()
 preFlightChecks config = do
   env <- getFloraEnv config & runFileSystem & runFailIO & runEff
   runEff $ do
-    let withLogger = Logging.makeLogger env.mltp.logger
+    let withLogger = Logging.makeLogger "logs/flora-server.json" env.mltp.logger
     withLogger $ \appLogger ->
       Reader.runReader env
         . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)

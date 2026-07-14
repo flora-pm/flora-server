@@ -66,8 +66,7 @@ import System.Info qualified as System
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..), toConnString)
 import Flora.Environment.Env
-  ( BlobStoreImpl (..)
-  , FeatureEnv (..)
+  ( FeatureEnv (..)
   , FloraEnv (..)
   , MLTP (..)
   )
@@ -131,7 +130,7 @@ runFlora config = do
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to OpenTelemetry endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-server"
-            let withLogger = Logging.makeLogger env.mltp.logger
+            let withLogger = Logging.makeLogger "logs/flora-server.json" env.mltp.logger
             withLogger
               ( \appLogger ->
                   provideCallStack $ Tracing.runTraceRunner traceRunner $ runServer appLogger env traceRunner
@@ -258,10 +257,7 @@ naturalTransform floraEnv logger _webEnvStore traceRunner app = do
           & Tracing.runTraceRunner traceRunner
           & runTime
           & runReader floraEnv.features
-          & ( case floraEnv.features.blobStoreImpl of
-                Just (BlobStoreFS fp) -> runBlobStoreFS fp
-                _ -> runBlobStorePure
-            )
+          & withBlobStore floraEnv.features
           & runErrorWith
             ( \callstack err -> do
                 Log.logInfo "Server error" $
