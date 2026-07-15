@@ -1,4 +1,4 @@
-module Flora.Normalise where
+module Flora.Domain.Category.Normalise where
 
 import Data.List qualified as List
 import Data.Maybe (isJust)

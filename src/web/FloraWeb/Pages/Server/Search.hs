@@ -12,12 +12,12 @@ import RequireCallStack
 import Servant (Headers (..), ServerT)
 
 import Data.Positive
+import Flora.Domain.Search (SearchAction (..))
+import Flora.Domain.Search qualified as Search
 import Flora.Environment.Env
 import Flora.Model.Package.Types
 import Flora.Model.User (User)
 import Flora.Monad
-import Flora.Search (SearchAction (..))
-import Flora.Search qualified as Search
 import FloraWeb.Common.Pagination
 import FloraWeb.Pages.Routes.Search (Routes, Routes' (..))
 import FloraWeb.Pages.Templates

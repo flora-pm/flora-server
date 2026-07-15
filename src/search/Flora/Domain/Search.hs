@@ -3,7 +3,7 @@
 
 {-# HLINT ignore "Use <$>" #-}
 
-module Flora.Search where
+module Flora.Domain.Search where
 
 import Data.Aeson
 import Data.List qualified as List

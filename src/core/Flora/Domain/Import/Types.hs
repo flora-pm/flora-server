@@ -1,4 +1,4 @@
-module Flora.Import.Types
+module Flora.Domain.Import.Types
   ( ImportError (..)
   , Target (..)
   , Hashes (..)

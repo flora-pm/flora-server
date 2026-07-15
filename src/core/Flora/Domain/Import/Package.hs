@@ -1,5 +1,5 @@
 -- |
--- Module: Flora.Import.Package
+-- Module: Flora.Domain.Import.Package
 --
 -- This module contains all the code to import Cabal packages into Flora. The import process
 -- for a single package is divided in three consecutive steps:
@@ -15,7 +15,7 @@
 -- any dependency that isn't yet known will be imported as an "unknown package", as indicated by its status field.
 -- If and when that package is fully imported later, we complete its data and change its status to "fully imported" without
 -- altering its id.
-module Flora.Import.Package
+module Flora.Domain.Import.Package
   ( versionList
   , persistImportOutput
   , parseString
@@ -76,9 +76,10 @@ import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
 import Flora.Database
+import Flora.Domain.Category.Normalise
+import Flora.Domain.Import.Package.Types
+import Flora.Domain.Import.Types
 import Flora.Environment.Env (FloraEnv (..))
-import Flora.Import.Package.Types
-import Flora.Import.Types
 import Flora.Model.Category.Query as Query
 import Flora.Model.Category.Types
 import Flora.Model.Category.Update qualified as Update
@@ -99,7 +100,6 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Monad
-import Flora.Normalise
 
 flattenCondTree
   :: CondTree ConfVar c component

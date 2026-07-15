@@ -374,17 +374,49 @@ $ FLORA_EVENTLOG_DIR=/tmp/flora-eventlog docker compose --profile live-eventlog 
 
 ## Project Architecture
 
-### File layout
+### Layers
 
-The files of our data model follows a predictible layout:
+#### Database model layer
+
+The files of our data model follows a predictible layout.
+
+`Flora.Model` contains directories where the database entities live. They have standardised files within them:
 
 ```
 .
-├── Database model
-│   ├── Guard.hs  ← monadic guards that ensure validity of input data
-│   ├── Query.hs  ← read-only database queries
-│   ├── Types.hs  ← type definitions, class instances, smart constructors
-│   └── Update.hs ← read-write database statements
+└─ Flora.Model.*
+   ├── Guard.hs  ← monadic guards for easy acces to resources
+   ├── Query.hs  ← read-only database queries
+   ├── Types.hs  ← type definitions, class instances, smart constructors
+   └── Update.hs ← read-write database statements
+```
+
+#### Business logic layer
+
+Business logic lives under `Flora.Domain`:
+
+```
+.
+└─ Flora.Domain
+   ├── Flora.Domain.Package ← package/release resolution
+   ├── Flora.Domain.Release ← pure release rules, e.g. `latestViableRelease`
+   ├── Flora.Domain.Search  ← search over the model (own `flora-search` library)
+   └── Flora.Domain.Import  ← the package import pipeline
+```
+
+These modules use the database layer to expose re-usable functions and logic, which can be shared
+between the Pages and API controllers
+
+#### Web layer
+
+Route definitions and implementation are located in the `FloraWeb` namespace, with in particular:
+
+```
+.
+└─ FloraWeb
+   ├── FloraWeb.API   ← JSON API
+   ├── FloraWeb.Atom  ← Atom Feed
+   └── FloraWeb.Pages ← HTML pages
 ```
 
 ### Wrapped entity IDs
