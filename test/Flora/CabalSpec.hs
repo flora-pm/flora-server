@@ -9,8 +9,8 @@ import RequireCallStack
 import Test.Tasty
 
 import Flora.Database
+import Flora.Domain.Import.Package
 import Flora.Environment.Env
-import Flora.Import.Package
 import Flora.Model.Component.Types
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types

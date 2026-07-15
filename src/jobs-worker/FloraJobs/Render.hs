@@ -18,7 +18,7 @@ import Text.Pandoc.Class (runPure)
 import Text.Pandoc.Walk
 import Text.Pandoc.Writers.HTML qualified as HTML
 
-import Flora.Import.Types
+import Flora.Domain.Import.Types
 
 renderMarkdown :: (Error ImportError :> es, Typeable es) => String -> Text -> Eff es Text
 renderMarkdown name bodyText = do

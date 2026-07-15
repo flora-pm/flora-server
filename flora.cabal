@@ -114,15 +114,18 @@ library
     Distribution.Orphans.Version
     Flora.Database
     Flora.DB.Exception
+    Flora.Domain.Category.Normalise
+    Flora.Domain.Import.Categories
+    Flora.Domain.Import.Package
+    Flora.Domain.Import.Package.Bulk.Archive
+    Flora.Domain.Import.Package.Bulk.Stream
+    Flora.Domain.Import.Package.Types
+    Flora.Domain.Import.Types
+    Flora.Domain.Package
+    Flora.Domain.Release
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
-    Flora.Import.Categories
-    Flora.Import.Package
-    Flora.Import.Package.Bulk.Archive
-    Flora.Import.Package.Bulk.Stream
-    Flora.Import.Package.Types
-    Flora.Import.Types
     Flora.Logging
     Flora.Model.Admin.Report
     Flora.Model.BlobIndex.Internal
@@ -178,7 +181,6 @@ library
     Flora.Model.User.Update
     Flora.Monad
     Flora.Monitoring
-    Flora.Normalise
     Flora.QRCode
     Flora.Tracing
     JSON
@@ -273,7 +275,7 @@ library flora-search
   import: common-ghc-options
   hs-source-dirs: ./src/search
   -- cabal-gild: discover src/search
-  exposed-modules: Flora.Search
+  exposed-modules: Flora.Domain.Search
   build-depends:
     aeson,
     base,

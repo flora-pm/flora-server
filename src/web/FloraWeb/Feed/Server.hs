@@ -17,13 +17,13 @@ import Servant (Headers (..), ServerT)
 import Text.Atom.Feed qualified as Atom
 
 import Flora.Database
+import Flora.Domain.Search (searchPackageByName)
 import Flora.Environment.Env
 import Flora.Model.Feed.Query qualified as Query
 import Flora.Model.Feed.Types
 import Flora.Model.Package.Types
 import Flora.Model.User
 import Flora.Monad
-import Flora.Search (searchPackageByName)
 import FloraWeb.Atom (makeFeed)
 import FloraWeb.Common.Auth
 import FloraWeb.Feed.Routes

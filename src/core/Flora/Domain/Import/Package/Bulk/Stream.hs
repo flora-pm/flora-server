@@ -1,4 +1,4 @@
-module Flora.Import.Package.Bulk.Stream
+module Flora.Domain.Import.Package.Bulk.Stream
   ( importFromStream
   ) where
 
@@ -26,10 +26,10 @@ import Streamly.Data.Stream.Prelude qualified as Streamly
 import UnliftIO (finally)
 
 import Flora.Database
+import Flora.Domain.Import.Package
+import Flora.Domain.Import.Types
 import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Import.Package
-import Flora.Import.Types
 import Flora.Model.Package.Types hiding (PackageName)
 import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.Package.Update qualified as Update

@@ -4,7 +4,7 @@ import Data.Set qualified as Set
 import RequireCallStack
 import Test.Tasty
 
-import Flora.Normalise
+import Flora.Domain.Category.Normalise
 import Flora.TestUtils
 
 spec :: RequireCallStack => TestEff TestTree

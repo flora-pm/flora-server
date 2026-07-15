@@ -143,9 +143,9 @@ import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
 import Flora.Database
+import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
+import Flora.Domain.Import.Types (ImportError)
 import Flora.Environment.Env
-import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Types (ImportError)
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
 import Flora.Model.Component.Types

@@ -5,10 +5,10 @@ import Optics.Core
 import RequireCallStack
 import Test.Tasty
 
+import Flora.Domain.Search
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
-import Flora.Search
 import Flora.TestUtils
 
 spec :: RequireCallStack => TestEff TestTree

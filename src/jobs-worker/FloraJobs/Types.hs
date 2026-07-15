@@ -19,8 +19,8 @@ import Effectful.Tracing (Tracer)
 import GHC.Stack (prettyCallStack)
 import RequireCallStack
 
+import Flora.Domain.Import.Types (ImportError)
 import Flora.Environment.Env
-import Flora.Import.Types (ImportError)
 import Flora.Model.BlobStore.API
 import Flora.Tracing qualified as Tracing
 import FloraJobs.Environment

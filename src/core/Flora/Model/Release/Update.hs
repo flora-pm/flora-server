@@ -44,8 +44,8 @@ import Effectful.Time (Time)
 import Log qualified
 
 import Flora.Database
+import Flora.Domain.Import.Types
 import Flora.Environment.Env (DeploymentEnv (..), FloraEnv (..))
-import Flora.Import.Types
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Feed.Types qualified as Types

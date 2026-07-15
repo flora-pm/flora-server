@@ -54,12 +54,12 @@ import Text.PrettyPrint qualified as PP
 import Advisories.Model.Affected.Types
 import Data.Positive
 import Distribution.Orphans ()
+import Flora.Domain.Search (SearchAction (..))
 import Flora.Environment.Env (FeatureEnv (..))
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
-import Flora.Search (SearchAction (..))
 import FloraWeb.Components.AdvisoryListItem
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.PackageCard

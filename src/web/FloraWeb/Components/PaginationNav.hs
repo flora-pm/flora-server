@@ -9,7 +9,7 @@ import Lucid (a_, class_, href_, nav_)
 import Servant.API (toUrlPiece)
 
 import Data.Positive
-import Flora.Search (SearchAction (..))
+import Flora.Domain.Search (SearchAction (..))
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links

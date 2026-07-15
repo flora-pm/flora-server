@@ -39,10 +39,10 @@ import System.FilePath
 
 import Data.Text.HTML qualified as HTML
 import Flora.Database
+import Flora.Domain.Import.Package (persistImportOutput)
+import Flora.Domain.Import.Package.Bulk.Archive qualified as Import
+import Flora.Domain.Import.Types
 import Flora.Environment.Env
-import Flora.Import.Package (persistImportOutput)
-import Flora.Import.Package.Bulk.Archive qualified as Import
-import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.Job
 import Flora.Model.Package.Guard (guardThatPackageExists)
