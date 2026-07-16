@@ -2,16 +2,17 @@ module FloraWeb.Server where
 
 import Arbiter.Servant qualified as ArbS
 import Colourista.IO (blueMessage)
+import Control.Concurrent.STM (TChan, newBroadcastTChanIO)
 import Control.Exception (bracket)
 import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
 import Control.Monad.Except qualified as Except
 import Data.Aeson
-import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
 import Data.Pool qualified as Pool
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Effectful
 import Effectful.Concurrent
@@ -176,7 +177,14 @@ runServer appLogger floraEnv traceRunner = do
           else id
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
-  ioref <- liftIO $ newIORef True
+  reloadChannel <- liftIO newBroadcastTChanIO
+  when (floraEnv.environment == Development) $
+    void $
+      forkIO $
+        liftIO $
+          Safe.catchAny
+            (LiveReload.watchAssets "./static" reloadChannel)
+            (\e -> blueMessage $ "⚠️ Live-reload watcher stopped: " <> Text.pack (show e))
   let connectionInfo = floraEnv.config.connectionInfo
   arbiterConfig <-
     liftIO $
@@ -184,7 +192,7 @@ runServer appLogger floraEnv traceRunner = do
         (Proxy @JobQueues)
         (toConnString connectionInfo)
         "public"
-  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv ioref traceRunner
+  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv reloadChannel traceRunner
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -210,23 +218,23 @@ mkServer
   -> Logger
   -> WebEnvStore
   -> FloraEnv
-  -> IORef Bool
+  -> TChan ()
   -> TraceRunner
   -> Application
-mkServer arbiterConfig logger webEnvStore floraEnv ioref traceRunner =
+mkServer arbiterConfig logger webEnvStore floraEnv reloadChannel traceRunner =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
     (naturalTransform floraEnv logger webEnvStore traceRunner)
-    (floraServer arbiterConfig floraEnv.environment ioref)
+    (floraServer arbiterConfig floraEnv.environment reloadChannel)
 
 floraServer
   :: RequireCallStack
   => ArbS.ArbiterServerConfig JobQueues
   -> DeploymentEnv
-  -> IORef Bool
+  -> TChan ()
   -> Routes (AsServerT FloraEff)
-floraServer arbiterConfig environment ioref =
+floraServer arbiterConfig environment reloadChannel =
   Routes
     { assets = serveDirectoryWebApp "./static"
     , feed = Feed.server
@@ -235,7 +243,7 @@ floraServer arbiterConfig environment ioref =
     , api = API.apiServer
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
-    , livereload = LiveReload.livereloadHandler environment ioref
+    , livereload = LiveReload.liveReloadHandler environment reloadChannel
     }
 
 naturalTransform

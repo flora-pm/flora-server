@@ -64,12 +64,6 @@ id'_ = makeAttributes ":id"
 dataText_ :: Text -> Attributes
 dataText_ = makeAttributes "data-text"
 
-hxSseConnect_ :: Text -> Attributes
-hxSseConnect_ = makeAttributes "sse-connect"
-
-hxSseSwap_ :: Text -> Attributes
-hxSseSwap_ = makeAttributes "sse-swap"
-
 color_ :: Text -> Attributes
 color_ = makeAttributes "color"
 
