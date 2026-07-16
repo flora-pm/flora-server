@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # Stage 1: Builder
-FROM ubuntu:22.04@sha256:0e0a0fc6d18feda9db1590da249ac93e8d5abfea8f4c3c0c849ce512b5ef8982 AS builder
+FROM debian:bookworm-slim@sha256:7b140f374b289a7c2befc338f42ebe6441b7ea838a042bbd5acbfca6ec875818 AS builder
 ARG GHC_VERSION=9.10.3
 ARG CABAL_VERSION=3.16.1.0
 ENV LANG=en_GB.UTF-8 \
@@ -18,23 +18,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 WORKDIR /src
-COPY . .
 
-# mount caches, as long as deps don't change, this image doesn't need rebuilding
+# Resolve and build dependencies first, keyed only on the package metadata,
+# so source edits don't re-trigger `cabal update` or dependency resolution.
+COPY cabal.project cabal.project.freeze flora.cabal ./
 RUN --mount=type=cache,target=/root/.cabal \
     --mount=type=cache,target=/src/dist-newstyle \
     . /opt/ghcup/.ghcup/env && \
     cabal update && \
-    cabal build exe:flora-server exe:flora-migrate exe:flora-cli exe:flora-jobs-runner && \
+    cabal build --only-dependencies \
+      exe:flora-server exe:flora-migrate exe:flora-cli exe:flora-jobs-runner
+
+COPY . .
+RUN --mount=type=cache,target=/root/.cabal \
+    --mount=type=cache,target=/src/dist-newstyle \
+    . /opt/ghcup/.ghcup/env && \
     cabal install exe:flora-server exe:flora-migrate exe:flora-cli exe:flora-jobs-runner \
       --installdir=/out --install-method=copy --overwrite-policy=always && \
-    strip /out/flora-server /out/flora-migrate /out/flora-cli /out/flora-jobs-runner
+    strip /out/flora-server /out/flora-jobs-runner
 
 # Stage 2: Frontend
 FROM node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS frontend
 WORKDIR /src
 COPY assets ./assets
 COPY docs ./docs
+# NOTE: no manifest/node_modules layer split; assets are small, so a reinstall
+# on every source change is cheap enough for now.
 RUN cd assets && yarn install --frozen-lockfile && yarn build
 RUN cd docs && yarn install --frozen-lockfile && yarn build
 
@@ -50,7 +59,7 @@ LABEL org.opencontainers.image.created=${BUILD_DATE} \
       org.opencontainers.image.source=https://github.com/flora-pm/flora-server
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates libffi8 libgmp10 libncurses6 libpq5 libsodium23 \
-    libtinfo6 libgoogle-perftools4 postgresql-client \
+    libtinfo6 libgoogle-perftools4 \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -u 1000 flora
 COPY --from=builder /out/flora-server /usr/local/bin/

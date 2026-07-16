@@ -1,6 +1,7 @@
 &
 01-index
 .envrc
+.git
 .hie
 .hspec-failures
 /.stack-work/
