@@ -1,5 +1,5 @@
 -- |
--- Module: Flora.Import.Package
+-- Module: Flora.Domain.Import.Package
 --
 -- This module contains all the code to import Cabal packages into Flora. The import process
 -- for a single package is divided in three consecutive steps:
@@ -15,7 +15,7 @@
 -- any dependency that isn't yet known will be imported as an "unknown package", as indicated by its status field.
 -- If and when that package is fully imported later, we complete its data and change its status to "fully imported" without
 -- altering its id.
-module Flora.Import.Package
+module Flora.Domain.Import.Package
   ( versionList
   , persistImportOutput
   , parseString
@@ -76,9 +76,10 @@ import System.Exit (exitFailure)
 import System.FilePath qualified as FilePath
 
 import Flora.Database
+import Flora.Domain.Category.Normalise
+import Flora.Domain.Import.Package.Types
+import Flora.Domain.Import.Types
 import Flora.Environment.Env (FloraEnv (..))
-import Flora.Import.Package.Types
-import Flora.Import.Types
 import Flora.Model.Category.Query as Query
 import Flora.Model.Category.Types
 import Flora.Model.Category.Update qualified as Update
@@ -99,7 +100,6 @@ import Flora.Model.Requirement
   , deterministicRequirementId
   )
 import Flora.Monad
-import Flora.Normalise
 
 flattenCondTree
   :: CondTree ConfVar c component
@@ -291,7 +291,7 @@ persistImportOutput (ImportOutput package categories release components) = State
         categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
         forM_
           categoriesByName
-          (\c -> Update.addToCategoryByName package.packageId c.name)
+          (\c -> Update.addToCategory package.packageId c.categoryId)
         if Set.member (package.namespace, package.name, release.version) packageCache
           then do
             Log.logInfo "Release already present" $
@@ -305,31 +305,12 @@ persistImportOutput (ImportOutput package categories release components) = State
             Update.upsertRelease package release
             let componentsList = NE.toList $ fmap fst components
             let dependencies = foldMap snd components
-            let dependencyPackages = fmap (.package) dependencies
             Update.upsertPackageComponents componentsList
-            Log.logInfo_ "Inserting dependencies"
-            forM_
-              dependencyPackages
-              ( \p -> do
-                  Log.logInfo_ "Upserting package"
-                  Update.upsertPackage p
-              )
-            forM_ dependencies persistImportDependency
+            Update.bulkInsertUnknownPackages (fmap (.package) dependencies)
+            Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
             unless (null dependencies) sanityCheck
             pure $ Set.insert (package.namespace, package.name, release.version) packageCache
   where
-    persistImportDependency dep = do
-      Log.logInfo "Inserting requirement" $
-        object
-          [ "dependent_namespace" .= display package.namespace
-          , "dependent_name" .= display package.name
-          , "dependent_id" .= display package.packageId
-          , "dependency_namespace" .= display dep.package.namespace
-          , "dependency_name" .= display dep.package.name
-          , "dependency_id" .= display dep.package.packageId
-          ]
-      Update.upsertRequirement dep.requirement
-
     sanityCheck = do
       dependencies <- Query.getAllRequirements release.releaseId
       when (Map.null dependencies) $ do

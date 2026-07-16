@@ -114,15 +114,18 @@ library
     Distribution.Orphans.Version
     Flora.Database
     Flora.DB.Exception
+    Flora.Domain.Category.Normalise
+    Flora.Domain.Import.Categories
+    Flora.Domain.Import.Package
+    Flora.Domain.Import.Package.Bulk.Archive
+    Flora.Domain.Import.Package.Bulk.Stream
+    Flora.Domain.Import.Package.Types
+    Flora.Domain.Import.Types
+    Flora.Domain.Package
+    Flora.Domain.Release
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
-    Flora.Import.Categories
-    Flora.Import.Package
-    Flora.Import.Package.Bulk.Archive
-    Flora.Import.Package.Bulk.Stream
-    Flora.Import.Package.Types
-    Flora.Import.Types
     Flora.Logging
     Flora.Model.Admin.Report
     Flora.Model.BlobIndex.Internal
@@ -178,7 +181,6 @@ library
     Flora.Model.User.Update
     Flora.Monad
     Flora.Monitoring
-    Flora.Normalise
     Flora.QRCode
     Flora.Tracing
     JSON
@@ -250,6 +252,7 @@ library
     scientific,
     sel,
     servant,
+    servant-event-stream,
     servant-prometheus,
     servant-server,
     slugify,
@@ -273,7 +276,7 @@ library flora-search
   import: common-ghc-options
   hs-source-dirs: ./src/search
   -- cabal-gild: discover src/search
-  exposed-modules: Flora.Search
+  exposed-modules: Flora.Domain.Search
   build-depends:
     aeson,
     base,
@@ -435,6 +438,7 @@ library flora-web
     data-default,
     deepseq,
     deriving-aeson,
+    directory,
     dlist,
     effectful,
     effectful-core,
@@ -444,10 +448,12 @@ library flora-web
     eventlog-socket,
     extra,
     feed,
+    filepath,
     flora,
     flora-advisories,
     flora-jobs,
     flora-search,
+    fsnotify,
     generics-sop,
     haddock-library,
     hs-opentelemetry-sdk,
@@ -483,9 +489,11 @@ library flora-web
     servant,
     servant-client,
     servant-client-core,
+    servant-event-stream,
     servant-openapi3,
     servant-prometheus,
     servant-server,
+    stm,
     text,
     text-display,
     time,

@@ -5,8 +5,16 @@ module Prometheus.Servant.HasEndpoint where
 import Data.Proxy
 import Network.Wai
 import Prometheus.Servant.Internal
-import Servant
+import Servant hiding (ServerSentEvents)
+import Servant.API.EventStream (ServerSentEvents)
 import Servant.API.MultiVerb
+
+instance HasEndpoint (ServerSentEvents a) where
+  getEndpoint _ req = case pathInfo req of
+    [] | requestMethod req == "GET" -> Just (Endpoint [] "GET")
+    _ -> Nothing
+
+  enumerateEndpoints _ = [Endpoint [] "GET"]
 
 instance ReflectMethod method => HasEndpoint (MultiVerb method requestContentType returnValues responses) where
   getEndpoint _ req = case pathInfo req of

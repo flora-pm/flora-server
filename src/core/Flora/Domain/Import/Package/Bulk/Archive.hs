@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# OPTIONS_GHC -fno-full-laziness #-}
 
-module Flora.Import.Package.Bulk.Archive
+module Flora.Domain.Import.Package.Bulk.Archive
   ( importFromArchive
   , buildPackageListFromArchive
   ) where
@@ -45,9 +45,9 @@ import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude qualified as Streamly
 import System.FilePath
 
+import Flora.Domain.Import.Package.Bulk.Stream
+import Flora.Domain.Import.Types (ImportError (..), ImportFileType (..))
 import Flora.Environment.Env
-import Flora.Import.Package.Bulk.Stream
-import Flora.Import.Types (ImportError (..), ImportFileType (..))
 import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Types

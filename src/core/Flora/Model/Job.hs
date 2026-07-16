@@ -13,7 +13,7 @@ import Distribution.Types.Version (Version)
 import Distribution.Version (mkVersion, versionNumbers)
 import Web.HttpApiData
 
-import Flora.Import.Package.Types
+import Flora.Domain.Import.Package.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 

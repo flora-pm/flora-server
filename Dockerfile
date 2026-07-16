@@ -130,4 +130,8 @@ RUN echo 'eval "$(direnv hook bash)"' >>~/.bashrc
 RUN echo 'direnv allow' >>~/.bashrc
 RUN cabal update
 
+# Mountpoint for the eventlog-socket volume shared with the live-eventlog
+# forwarder; pre-created so the volume inherits writable permissions.
+RUN mkdir -p -m 1777 /tmp/flora-eventlog
+
 WORKDIR /flora-server

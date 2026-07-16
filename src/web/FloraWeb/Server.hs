@@ -2,16 +2,17 @@ module FloraWeb.Server where
 
 import Arbiter.Servant qualified as ArbS
 import Colourista.IO (blueMessage)
+import Control.Concurrent.STM (TChan, newBroadcastTChanIO)
 import Control.Exception (bracket)
 import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
-import Control.Monad (forM_, void, when)
+import Control.Monad (void, when)
 import Control.Monad.Except qualified as Except
 import Data.Aeson
-import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
 import Data.Pool qualified as Pool
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Effectful
 import Effectful.Concurrent
@@ -25,7 +26,6 @@ import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
 import Effectful.Tracing.Effect
 import Effectful.Tracing.Instrumentation.Servant (traceServantMiddleware)
-import GHC.Eventlog.Socket qualified as Socket
 import Log
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
@@ -66,8 +66,7 @@ import System.Info qualified as System
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..), toConnString)
 import Flora.Environment.Env
-  ( BlobStoreImpl (..)
-  , FeatureEnv (..)
+  ( FeatureEnv (..)
   , FloraEnv (..)
   , MLTP (..)
   )
@@ -118,9 +117,7 @@ runFlora config = do
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
-            liftIO $ do
-              forM_ env.mltp.eventlogSocket Socket.start
-              when (isJust env.mltp.eventlogSocket) (blueMessage "🔥 Sending live events to socket")
+            liftIO $ startEventlogSocket env.mltp.eventlogSocketDirectory
             when env.mltp.prometheusEnabled $ do
               liftIO $ blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               runPrometheusMetrics env.metrics $ do
@@ -131,7 +128,7 @@ runFlora config = do
             liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to OpenTelemetry endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
             traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-server"
-            let withLogger = Logging.makeLogger env.mltp.logger
+            let withLogger = Logging.makeLogger "logs/flora-server.json" env.mltp.logger
             withLogger
               ( \appLogger ->
                   provideCallStack $ Tracing.runTraceRunner traceRunner $ runServer appLogger env traceRunner
@@ -180,7 +177,14 @@ runServer appLogger floraEnv traceRunner = do
           else id
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
-  ioref <- liftIO $ newIORef True
+  reloadChannel <- liftIO newBroadcastTChanIO
+  when (floraEnv.environment == Development) $
+    void $
+      forkIO $
+        liftIO $
+          Safe.catchAny
+            (LiveReload.watchAssets "./static" reloadChannel)
+            (\e -> blueMessage $ "⚠️ Live-reload watcher stopped: " <> Text.pack (show e))
   let connectionInfo = floraEnv.config.connectionInfo
   arbiterConfig <-
     liftIO $
@@ -188,7 +192,7 @@ runServer appLogger floraEnv traceRunner = do
         (Proxy @JobQueues)
         (toConnString connectionInfo)
         "public"
-  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv ioref traceRunner
+  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv reloadChannel traceRunner
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -214,23 +218,23 @@ mkServer
   -> Logger
   -> WebEnvStore
   -> FloraEnv
-  -> IORef Bool
+  -> TChan ()
   -> TraceRunner
   -> Application
-mkServer arbiterConfig logger webEnvStore floraEnv ioref traceRunner =
+mkServer arbiterConfig logger webEnvStore floraEnv reloadChannel traceRunner =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
     (naturalTransform floraEnv logger webEnvStore traceRunner)
-    (floraServer arbiterConfig floraEnv.environment ioref)
+    (floraServer arbiterConfig floraEnv.environment reloadChannel)
 
 floraServer
   :: RequireCallStack
   => ArbS.ArbiterServerConfig JobQueues
   -> DeploymentEnv
-  -> IORef Bool
+  -> TChan ()
   -> Routes (AsServerT FloraEff)
-floraServer arbiterConfig environment ioref =
+floraServer arbiterConfig environment reloadChannel =
   Routes
     { assets = serveDirectoryWebApp "./static"
     , feed = Feed.server
@@ -239,7 +243,7 @@ floraServer arbiterConfig environment ioref =
     , api = API.apiServer
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
-    , livereload = LiveReload.livereloadHandler environment ioref
+    , livereload = LiveReload.liveReloadHandler environment reloadChannel
     }
 
 naturalTransform
@@ -258,10 +262,7 @@ naturalTransform floraEnv logger _webEnvStore traceRunner app = do
           & Tracing.runTraceRunner traceRunner
           & runTime
           & runReader floraEnv.features
-          & ( case floraEnv.features.blobStoreImpl of
-                Just (BlobStoreFS fp) -> runBlobStoreFS fp
-                _ -> runBlobStorePure
-            )
+          & withBlobStore floraEnv.features
           & runErrorWith
             ( \callstack err -> do
                 Log.logInfo "Server error" $

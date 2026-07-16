@@ -23,7 +23,7 @@ flora {
     zipkinEnabled #true
     zipkinHost localhost
     zipkinPort 8800
-    eventlogSocket "/tmp/flora-eventlog.sock"
+    eventlogSocketDirectory "/tmp/flora-eventlog"
   }
 
   features {

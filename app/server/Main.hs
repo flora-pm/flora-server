@@ -49,7 +49,7 @@ preFlightChecks :: FilePath -> IO ()
 preFlightChecks config = do
   env <- getFloraEnv config & runFileSystem & runFailIO & runEff
   runEff $ do
-    let withLogger = Logging.makeLogger env.mltp.logger
+    let withLogger = Logging.makeLogger "logs/flora-server.json" env.mltp.logger
     withLogger $ \appLogger ->
       Reader.runReader env
         . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
@@ -82,8 +82,12 @@ checkExpectedTables = do
         Set.fromList
           [ "affected_packages"
           , "affected_version_ranges"
+          , "arbiter_concurrency"
+          , "arbiter_concurrency_policies"
           , "arbiter_gates"
           , "arbiter_queues"
+          , "arbiter_rate_limit_policies"
+          , "arbiter_rate_limits"
           , "arbiter_workers"
           , "blob_relations"
           , "categories"

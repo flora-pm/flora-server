@@ -6,25 +6,32 @@ import Control.Monad (void)
 import Control.Monad.IO.Class
 import Data.Text (Text)
 import Data.Text.IO qualified as T
+import Database.PostgreSQL.Simple (Query)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
 
 import Flora.Database
-import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
-import Flora.Monad
 
 insertCategory :: WriteDB :> es => Category -> Eff es ()
 insertCategory category = do
-  void $ execute q category
-  where
-    q =
-      [sql|
-          insert into categories (category_id, name, slug, synopsis)
-            values (?, ?, ?, ?)
-          on conflict do nothing
-        |]
+  void $ execute insertCategoryQuery category
+
+bulkInsertCategories :: WriteDB :> es => [Category] -> Eff es ()
+bulkInsertCategories categories =
+  void $ executeMany insertCategoryQuery categories
+
+insertCategoryQuery :: Query
+insertCategoryQuery =
+  [sql|
+  INSERT INTO categories (category_id
+                        , name
+                        , slug
+                        , synopsis)
+  VALUES (?, ?, ?, ?)
+  ON CONFLICT DO NOTHING
+    |]
 
 -- | Adds a package to a category. Adding a package to an already-assigned category has no effect
 addToCategory :: (IOE :> es, WriteDB :> es) => PackageId -> CategoryId -> Eff es ()
@@ -35,12 +42,3 @@ addToCategory packageId categoryId = (void . execute q) (packageId, categoryId)
         insert into package_categories (package_id, category_id) values (?, ?)
         on conflict do nothing
       |]
-
-addToCategoryByName :: (IOE :> es, ReadDB :> es, WriteDB :> es) => PackageId -> Text -> FloraM es ()
-addToCategoryByName packageId categoryName = do
-  mCategory <- Query.getCategoryByName categoryName
-  case mCategory of
-    Nothing -> do
-      liftIO $ T.putStrLn ("Could not find category " <> categoryName)
-    Just Category{categoryId} -> do
-      addToCategory packageId categoryId

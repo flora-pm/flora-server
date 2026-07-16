@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Extract the tested GHC versions
         id: set-matrix
-        uses: kleidukos/get-tested@v0.1.9.1
+        uses: kleidukos/get-tested@a55a250eac23bcc4bcd1cb22d77be61baea5a7e2 # v0.1.9.1
         with:
           cabal-file: flora.cabal
           ubuntu-version: "24.04"
@@ -47,11 +47,11 @@ jobs:
         ports:
           - 5432:5432
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Set up Haskell
       id: setup-haskell
-      uses: haskell-actions/setup@v2
+      uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2.11.0
       with:
         ghc-version: "${{ matrix.ghc }}"
         cabal-version: "latest"
@@ -71,7 +71,7 @@ jobs:
       run: cabal freeze --enable-tests
 
     - name: Cache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ steps.setup-haskell.outputs.cabal-store }}
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}

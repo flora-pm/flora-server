@@ -4,6 +4,7 @@ import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Arbiter.Worker qualified as Worker
 import Control.Monad
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Proxy
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -18,7 +19,6 @@ import Effectful.Log
 import Effectful.Log qualified as Log
 import Effectful.Prometheus (runPrometheusMetrics)
 import Log
-import Log.Backend.StandardOutput qualified as Log
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
@@ -33,15 +33,16 @@ import Prometheus.Metric.GHC qualified as P
 import RequireCallStack
 
 import Flora.Environment
-import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), LoggingDestination (..))
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
 import Flora.Environment.Env
+import Flora.Logging (makeLogger)
 import Flora.Model.Job
+import Flora.Tracing qualified as Tracing
 import FloraJobs.Environment
 import FloraJobs.Metrics
 import FloraJobs.Runner qualified as Runner
 import FloraJobs.Types
 import FloraWeb.Common.Tracing
-import Log.Backend.File (FileBackendConfig (..), withJSONFileBackend)
 
 main :: IO ()
 main = do
@@ -50,8 +51,10 @@ main = do
   floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
   let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
-  let withLogger = makeLogger floraEnv.mltp.logger
+  let withLogger = makeLogger "logs/flora-jobs.json" floraEnv.mltp.logger
+  traceRunner <- Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
   runEff . runConcurrent $ do
+    liftIO $ startEventlogSocket floraEnv.mltp.eventlogSocketDirectory
     when floraEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
       runPrometheusMetrics jobsEnv.metrics $ do
@@ -61,7 +64,11 @@ main = do
       runLog "flora-server" logger Log.LogTrace $
         checkJobsEnvForThunks jobsEnv
       void . forkIO $ runServer logger floraEnv jobsEnv
-      defaultConfig <- liftIO $ Worker.defaultWorkerConfig (connString floraEnv.config.connectionInfo) 50 (processJob workerEnv jobsEnv logger floraEnv)
+      defaultConfig <- liftIO $
+        Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) 50 1 $
+          \(job :| _) callbacks -> do
+            processJob workerEnv jobsEnv logger floraEnv traceRunner job
+            Worker.ack callbacks job
       let config =
             defaultConfig
               { Worker.observabilityHooks =
@@ -80,10 +87,6 @@ main = do
 
       liftIO $ ArbS.runSimpleDb workerEnv $ Worker.runWorkerPool config
   where
-    makeLogger :: IOE :> es => LoggingDestination -> (Logger -> Eff es a) -> Eff es a
-    makeLogger StdOut = Log.withStdOutLogger
-    makeLogger Json = Log.withJsonStdOutLogger
-    makeLogger JSONFile = withJSONFileBackend FileBackendConfig{destinationFile = "logs/flora-jobs.json"}
     connString connectionInfo =
       Text.encodeUtf8 $
         "host="
@@ -122,14 +125,17 @@ processJob
   -> FloraJobsEnv
   -> Log.Logger
   -> FloraEnv
-  -> Arb.JobHandler (ArbS.SimpleDb JobQueues IO) PackageJob ()
-processJob workerEnv jobsRunnerEnv logger floraEnv _conn job =
+  -> Tracing.TraceRunner
+  -> Arb.JobRead PackageJob
+  -> ArbS.SimpleDb JobQueues IO ()
+processJob workerEnv jobsRunnerEnv logger floraEnv traceRunner job =
   provideCallStack $
     liftIO $
       runJobRunner
         jobsRunnerEnv
         floraEnv
         logger
+        traceRunner
         (Log.localDomain "job-runner" $ Runner.runner workerEnv job)
 
 checkJobsEnvForThunks :: (IOE :> es, Log :> es) => FloraJobsEnv -> Eff es ()

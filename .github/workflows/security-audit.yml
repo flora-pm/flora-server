@@ -1,0 +1,26 @@
+name: Scan for vulnerabilities
+on:
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  haskell-security:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: haskell-actions/setup@cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553 # v2.11.0
+        with:
+          ghc-version: '9.10.3'
+
+      - name: Run Haskell Security Action
+        uses: blackheaven/haskell-security-action@5b175efa1845a44cb6404a8dfd9a9cc65fcdb2ac # master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+

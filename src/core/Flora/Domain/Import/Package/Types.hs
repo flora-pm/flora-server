@@ -1,4 +1,4 @@
-module Flora.Import.Package.Types where
+module Flora.Domain.Import.Package.Types where
 
 import Control.DeepSeq
 import Data.Aeson

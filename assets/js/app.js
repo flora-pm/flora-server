@@ -1,5 +1,4 @@
 import './htmx.js';
-import 'htmx-ext-sse';
 
 import './polyfills.js';
 

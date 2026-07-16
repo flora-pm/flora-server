@@ -9,9 +9,9 @@ jobs:
   fourmolu:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-    - uses: haskell-actions/run-fourmolu@v13
+    - uses: haskell-actions/run-fourmolu@1b9df64b784203126500372730b9725c97e4040b # v13
       with:
         version: "0.20.0.0"
         pattern: |
@@ -22,15 +22,15 @@ jobs:
   hlint:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: 'Set up HLint'
-      uses: haskell-actions/hlint-setup@v2
+      uses: haskell-actions/hlint-setup@fe9cd1cd1af94a23900c06738e73f6ddb092966a # v2.4.10
       with:
         version: '3.10'
 
     - name: 'Run HLint'
-      uses: haskell-actions/hlint-run@v2
+      uses: haskell-actions/hlint-run@eaca4cfbf4a69f4eb875df38b6bc3e1657020378 # v2.4.10
       with:
         path: '["src/", "test/", "app/"]'
         fail-on: warning

@@ -13,9 +13,9 @@ import Log.Backend.StandardOutput (withStdOutLogger)
 import RequireCallStack
 
 import Flora.Database
+import Flora.Domain.Import.Package (chooseNamespace)
+import Flora.Domain.Import.Package.Bulk.Archive
 import Flora.Environment.Env
-import Flora.Import.Package (chooseNamespace)
-import Flora.Import.Package.Bulk.Archive
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query

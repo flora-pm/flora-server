@@ -27,12 +27,12 @@ import Security.Advisories.Core.HsecId qualified as HsecId
 import Security.CVSS
 
 import Advisories.Model.Affected.Types
+import Flora.Domain.Search
 import Flora.Environment
 import Flora.Environment.Env
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category
 import Flora.Model.Package.Types
-import Flora.Search
 import FloraWeb.Components.AdvisoryListItem qualified as Component
 import FloraWeb.Components.Alert qualified as Component
 import FloraWeb.Components.CategoryCard qualified as Component

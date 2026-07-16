@@ -1,4 +1,4 @@
-module Flora.Import.Categories where
+module Flora.Domain.Import.Categories where
 
 import Control.Monad.IO.Class
 import Data.Text (Text)
@@ -8,11 +8,11 @@ import Effectful.Reader.Static qualified as Reader
 import Log
 
 import Flora.Database
+import Flora.Domain.Category.Normalise
 import Flora.Environment.Env
 import Flora.Model.Category.Types (Category, mkCategory, mkCategoryId)
-import Flora.Model.Category.Update (insertCategory)
+import Flora.Model.Category.Update (bulkInsertCategories)
 import Flora.Monad
-import Flora.Normalise
 
 importCategories :: (IOE :> es, Reader FloraEnv :> es) => FloraM es ()
 importCategories = do
@@ -20,7 +20,7 @@ importCategories = do
   Log.logInfo_ "Sourcing categories"
   categories <- mapM fromCanonical floraCategories
   withReadWritePool pool $
-    mapM_ insertCategory categories
+    bulkInsertCategories categories
   Log.logInfo_ "Categories done sourcing"
 
 fromCanonical :: IOE :> es => (Text, Text, Text) -> Eff es Category

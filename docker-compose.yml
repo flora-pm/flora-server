@@ -18,8 +18,13 @@ services:
       - database-data:/flora-server/pgdata/
       - .:/flora-server:Z
       - home-data:/home/$USER/
+      # Shared with the live-eventlog forwarder;
+      # This path is configured in the `eventlogSocketDirectory` configuration.
+      - eventlog-socket:/tmp/flora-eventlog
     links:
       - flora-database
+    environment:
+      - CONFIG=environment.docker.kdl
     command: sleep infinity
     profiles:
       - local
@@ -57,6 +62,7 @@ services:
       - "9090"
     profiles:
       - local
+      - live-eventlog
   jaeger:
     image: jaegertracing/jaeger:2.18.0
     environment:
@@ -67,6 +73,81 @@ services:
       - "4318:4318"     # OTLP HTTP
     profiles:
       - local
+
+  # Live eventlog profiling stack (profile: live-eventlog).
+  # See the "Live Eventlogs" section of CONTRIBUTING.md for usage.
+  eventlog-live-otelcol-server:
+    image: flora-eventlog-live-otelcol
+    build:
+      context: "."
+      dockerfile: "Dockerfile.eventlog-live-otelcol"
+    restart: "unless-stopped"
+    depends_on:
+      eventlog-otelcol:
+        condition: "service_started"
+    volumes:
+      - "${FLORA_EVENTLOG_DIR:-eventlog-socket}:/run/flora"
+      - "./deployment/eventlog-live/eventlog-live-otelcol.yaml:/etc/eventlog-live-otelcol/config.yaml"
+    command:
+      - "--config=/etc/eventlog-live-otelcol/config.yaml"
+      - "--service-name=flora-server"
+      - "--eventlog-socket=/run/flora/flora-server.sock"
+      - "-hi"
+      - "--eventlog-flush-interval=1"
+      - "--eventlog-socket-timeout=5"
+      - "--otelcol-host=eventlog-otelcol"
+    profiles:
+      - live-eventlog
+
+  eventlog-live-otelcol-jobs:
+    image: flora-eventlog-live-otelcol
+    build:
+      context: "."
+      dockerfile: "Dockerfile.eventlog-live-otelcol"
+    restart: "unless-stopped"
+    depends_on:
+      eventlog-otelcol:
+        condition: "service_started"
+    volumes:
+      - "${FLORA_EVENTLOG_DIR:-eventlog-socket}:/run/flora"
+      - "./deployment/eventlog-live/eventlog-live-otelcol.yaml:/etc/eventlog-live-otelcol/config.yaml"
+    command:
+      - "--config=/etc/eventlog-live-otelcol/config.yaml"
+      - "--service-name=flora-jobs-runner"
+      - "--eventlog-socket=/run/flora/flora-jobs-runner.sock"
+      - "-hi"
+      - "--eventlog-flush-interval=1"
+      - "--eventlog-socket-timeout=5"
+      - "--otelcol-host=eventlog-otelcol"
+    profiles:
+      - live-eventlog
+
+  eventlog-otelcol:
+    image: "otel/opentelemetry-collector-contrib:0.140.1"
+    restart: "unless-stopped"
+    command:
+      - "--config=/etc/otelcol/config.yaml"
+    volumes:
+      - "./deployment/eventlog-live/compose/otelcol.yaml:/etc/otelcol/config.yaml"
+    profiles:
+      - live-eventlog
+
+  eventlog-grafana:
+    image: "grafana/grafana:latest"
+    restart: "unless-stopped"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+    volumes:
+      - "./deployment/eventlog-live/compose/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml"
+      - "./deployment/eventlog-live/compose/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml"
+      - "./deployment/eventlog-live/dashboards:/var/lib/grafana/dashboards"
+    ports:
+      - "127.0.0.1:${FLORA_GRAFANA_PORT:-3000}:3000"
+    profiles:
+      - live-eventlog
+
 volumes:
   database-data:
   home-data:
+  eventlog-socket:

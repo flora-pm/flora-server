@@ -9,8 +9,8 @@ import Lucid
 
 import Advisories.Model.Affected.Types
 import Data.Positive
+import Flora.Domain.Search (SearchAction (..))
 import Flora.Model.Package.Types (Namespace, PackageInfo (..), PackageInfoWithExecutables (..))
-import Flora.Search (SearchAction (..))
 import FloraWeb.Components.PackageListHeader (presentationHeader)
 import FloraWeb.Components.PaginationNav (paginationNav)
 import FloraWeb.Pages.Templates

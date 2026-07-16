@@ -15,10 +15,10 @@ import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
 import Flora.Database
+import Flora.Domain.Import.Categories (importCategories)
 import Flora.Environment (configFileParser, getFloraEnv)
 import Flora.Environment.Env
 import Flora.FeedSpec qualified as FeedSpec
-import Flora.Import.Categories (importCategories)
 import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)

@@ -42,12 +42,12 @@ import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
 import DesignSystem (generateComponents)
 import Flora.Database
+import Flora.Domain.Import.Categories (importCategories)
+import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
+import Flora.Domain.Import.Types
 import Flora.Environment (configFileParser, getFloraEnv)
 import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
 import Flora.Environment.Env
-import Flora.Import.Categories (importCategories)
-import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
 import Flora.Model.Package.Types (Namespace (..), PackageName)
@@ -60,6 +60,7 @@ import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Monad
 import Flora.Tracing qualified as Tracing
+import FloraWeb.Common.Tracing (startEventlogSocket)
 
 data Options = Options
   { cliCommand :: Command
@@ -105,6 +106,7 @@ main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv cliArgs.configFile & runFileSystem & runFailIO & runEff
+  startEventlogSocket env.mltp.eventlogSocketDirectory
   runTrace <- do
     traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
     pure $ Tracing.runTraceRunner traceRunner
@@ -114,10 +116,7 @@ main = Log.withStdOutLogger $ \logger -> do
       & (`E.catches` exceptionHandlers)
       & runLog "flora-cli" logger Log.LogTrace
       & runFileSystem
-      & ( case env.features.blobStoreImpl of
-            Just (BlobStoreFS fp) -> runBlobStoreFS fp
-            _ -> runBlobStorePure
-        )
+      & withBlobStore env.features
       & runTime
       & runFailIO
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)

@@ -1,7 +1,6 @@
 module FloraWeb.API.Server.Packages where
 
 import Control.Applicative (asum)
-import Data.Function
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text.Display
@@ -10,6 +9,7 @@ import Data.Vector qualified as Vector
 import Distribution.Version (Version)
 import Effectful (IOE, (:>))
 import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
@@ -19,17 +19,15 @@ import RequireCallStack
 import Servant hiding ((:>))
 
 import Flora.Database
+import Flora.Domain.Package (resolveExactRelease, resolvePackage, resolveReleaseAtVersion)
+import Flora.Domain.Search (searchPackageByName)
 import Flora.Environment.Env
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Component.Types
-import Flora.Model.Package.Guard
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
-import Flora.Model.Release.Guard (guardThatReleaseExists)
-import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Monad
-import Flora.Search (searchPackageByName)
 import FloraWeb.API.Errors
 import FloraWeb.API.Routes.Packages qualified as Packages
 import FloraWeb.API.Routes.Packages.Types
@@ -58,12 +56,11 @@ getDependenciesHandler
   -> FloraM RouteEffects (PackageDependenciesDTO 0)
 getDependenciesHandler namespace packageName version transitive = do
   FloraEnv{pool} <- Reader.ask
-  package <-
-    guardThatPackageExists pool namespace packageName
-      >>= maybe (packageNotFound namespace packageName) pure
-  release <-
-    guardThatReleaseExists pool package.packageId version
-      >>= maybe (versionNotFound package.namespace package.name version) pure
+  (package, release) <-
+    Error.runErrorWith (const renderPackageResolutionError) $ do
+      package <- resolvePackage namespace packageName
+      release <- resolveExactRelease package version
+      pure (package, release)
 
   mMainLibrary <- withReadOnlyPool pool $ Query.getComponent release.releaseId (display packageName) Library
   mMainExecutable <- withReadOnlyPool pool $ Query.getComponent release.releaseId (display packageName) Executable
@@ -96,18 +93,11 @@ getPackageHandler
   -> (FloraM es) (PackageDTO 0)
 getPackageHandler namespace packageName = do
   FloraEnv{pool} <- Reader.ask
-  package <-
-    guardThatPackageExists pool namespace packageName
-      >>= maybe (packageNotFound namespace packageName) pure
-  releases <- withReadOnlyPool pool $ Query.getReleases package.packageId
-  let latestRelease =
-        releases
-          & Vector.filter (\r -> not (fromMaybe False r.deprecated))
-          & Vector.maximumBy (compare `on` (.version))
-      version = latestRelease.version
-  release <-
-    guardThatReleaseExists pool package.packageId version
-      >>= maybe (versionNotFound package.namespace package.name version) pure
+  (package, release) <-
+    Error.runErrorWith (const renderPackageResolutionError) $ do
+      package <- resolvePackage namespace packageName
+      (release, _releases) <- resolveReleaseAtVersion package Nothing
+      pure (package, release)
   components <- withReadOnlyPool pool $ Query.getComponentsByReleaseId release.releaseId
   pure $ toPackageDTO package release components
 
@@ -144,11 +134,10 @@ getVersionedPackageHandler
   -> (FloraM es) (PackageDTO 0)
 getVersionedPackageHandler namespace packageName version = do
   FloraEnv{pool} <- Reader.ask
-  package <-
-    guardThatPackageExists pool namespace packageName
-      >>= maybe (packageNotFound namespace packageName) pure
-  release <-
-    guardThatReleaseExists pool package.packageId version
-      >>= maybe (versionNotFound package.namespace package.name version) pure
+  (package, release) <-
+    Error.runErrorWith (const renderPackageResolutionError) $ do
+      package <- resolvePackage namespace packageName
+      release <- resolveExactRelease package version
+      pure (package, release)
   components <- withReadOnlyPool pool $ Query.getComponentsByReleaseId release.releaseId
   pure $ toPackageDTO package release components
