@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # Stage 1: Builder
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:22.04@sha256:0e0a0fc6d18feda9db1590da249ac93e8d5abfea8f4c3c0c849ce512b5ef8982 AS builder
 ARG GHC_VERSION=9.10.3
 ARG CABAL_VERSION=3.16.1.0
 ENV LANG=en_GB.UTF-8 \
@@ -17,9 +17,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev libsodium-dev libgoogle-perftools-dev pkg-config zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-RUN . /opt/ghcup/.ghcup/env && \
-    ghcup install ghc ${GHC_VERSION} && \
-    ghcup install cabal ${CABAL_VERSION}
 WORKDIR /src
 COPY . .
 
@@ -34,7 +31,7 @@ RUN --mount=type=cache,target=/root/.cabal \
     strip /out/flora-server /out/flora-migrate /out/flora-cli /out/flora-jobs-runner
 
 # Stage 2: Frontend
-FROM node:20-bookworm-slim AS frontend
+FROM node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS frontend
 WORKDIR /src
 COPY assets ./assets
 COPY docs ./docs
@@ -42,7 +39,7 @@ RUN cd assets && yarn install --frozen-lockfile && yarn build
 RUN cd docs && yarn install --frozen-lockfile && yarn build
 
 # Stage 3: Runtime
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim@sha256:7b140f374b289a7c2befc338f42ebe6441b7ea838a042bbd5acbfca6ec875818
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 ARG BUILD_DATE
 ARG VCS_REF
