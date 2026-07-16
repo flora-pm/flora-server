@@ -372,6 +372,11 @@ instead of the named volume:
 $ FLORA_EVENTLOG_DIR=/tmp/flora-eventlog docker compose --profile live-eventlog up --build
 ```
 
+### Live reload
+
+During development, the server notifies the frontend when it restarts, or when assets change on disk,
+so that the page can be refreshed and the changes automatically visible.
+
 ## Project Architecture
 
 ### Layers

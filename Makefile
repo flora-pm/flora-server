@@ -1,4 +1,4 @@
-CONFIG := environment.kdl
+CONFIG ?= environment.kdl
 CONFIG_TEST := environment.test.kdl
 
 init: ## Set up git hooks properly - needs calling once when cloning the repo
@@ -110,7 +110,7 @@ watch-test: ## Load the tests in ghcid and reload them on file change
 	@ghcid --command='cabal v2-repl flora-test --ghc-option "-Werror=unused-imports"' --test 'Main.main' --setup ':set args -c $(CONFIG_TEST)'
 
 watch-server: ## Start flora-server in ghcid
-	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora "environment.kdl"'
+	@ghcid --target=flora-server --restart="src" --test 'FloraWeb.Server.runFlora "$(CONFIG)"'
 
 lint-hs: ## Run the code linter (HLint)
 	@find app test src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}

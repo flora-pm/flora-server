@@ -5,7 +5,6 @@ module FloraWeb.Components.Header where
 import Control.Monad (unless)
 import Control.Monad.Reader
 import Data.Text (Text)
-import Htmx.Lucid.Core (hxGet_, hxTrigger_)
 import Lucid
 import PyF
 
@@ -75,7 +74,15 @@ header = do
       body_ [] $ do
         case environment of
           Development ->
-            div_ [hxGet_ "/livereload", hxTrigger_ "every 2s"] mempty
+            script_ [type_ "module"] $
+              toHtmlRaw @Text
+                [str|
+          const floraLiveReload = new EventSource("/livereload");
+          let floraReloadErrored = false;
+          floraLiveReload.onopen = () => floraReloadErrored && window.location.reload();
+          floraLiveReload.addEventListener("reload", () => window.location.reload());
+          floraLiveReload.onerror = () => floraReloadErrored = true;
+          |]
           _ -> mempty
         skipLink
         navbar

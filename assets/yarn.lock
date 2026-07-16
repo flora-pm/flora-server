@@ -86,7 +86,6 @@
 
 "@deanc/esbuild-plugin-postcss@deanc/esbuild-plugin-postcss#v2.0.0":
   version "1.0.1"
-  uid ccd71a9bffd6a7a3862fea3755a6e09505fcdb2f
   resolved "https://codeload.github.com/deanc/esbuild-plugin-postcss/tar.gz/ccd71a9bffd6a7a3862fea3755a6e09505fcdb2f"
   dependencies:
     autoprefixer "^10.2.4"
@@ -1292,13 +1291,6 @@ html-tags@^5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/html-tags/-/html-tags-5.1.0.tgz#ec7214b57b3e50e2a4cec39414454338a94291f8"
   integrity sha512-n6l5uca7/y5joxZ3LUePhzmBFUJ+U2YWzhMa8XUTecSeSlQiZdF5XAd/Q3/WUl0VsXgUwWi8I7CNIwdI5WN1SQ==
-
-htmx-ext-sse@^2.2.2:
-  version "2.2.4"
-  resolved "https://registry.yarnpkg.com/htmx-ext-sse/-/htmx-ext-sse-2.2.4.tgz#56c131924e57c862f42a1a963949633815fd4192"
-  integrity sha512-LJmxVhykyflBWgh5PvbRidcyuqMHlgfajmmzumvKctv9puvsufeH6OaejSMZTNTnEI8O2wXXn4ZZtBdpEMqmEQ==
-  dependencies:
-    htmx.org "^2.0.2"
 
 htmx.org@^2.0.2:
   version "2.0.8"
