@@ -9,6 +9,7 @@
     "esbuild": "^0.28.0",
     "esbuild-copy-static-files": "^0.1.0",
     "esbuild-plugin-assets-manifest": "^1.0.7",
+    "esbuild-plugin-compressor": "^1.0.1",
     "onchange": "^7.1.0",
     "postcss": "^8.4.31",
     "postcss-color-oklch-for-old-webkit": "^0.1.3",

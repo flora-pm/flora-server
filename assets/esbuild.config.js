@@ -1,4 +1,5 @@
 const esbuild = require("esbuild");
+const { compressor:compressorPlugin } = require("esbuild-plugin-compressor");
 const assetsManifestPlugin = require("esbuild-plugin-assets-manifest");
 const postcssPlugin = require("@deanc/esbuild-plugin-postcss");
 
@@ -33,7 +34,10 @@ const mkProdPlugins = () => {
         }
         return JSON.stringify(orderAssets, null, "  ");
       }
-    })
+    }),
+    compressorPlugin({
+      fileTypes: ['js', 'css'],
+    }),
   ];
 }
 
@@ -90,4 +94,7 @@ const config = {
   },
 }
 
-esbuild.build(config).catch(() => process.exit(1));
+esbuild.build(config).catch((err) => {
+  console.error(err)
+  process.exit(1)
+});

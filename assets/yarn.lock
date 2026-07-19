@@ -934,6 +934,13 @@ esbuild-plugin-assets-manifest@^1.0.7:
   resolved "https://registry.yarnpkg.com/esbuild-plugin-assets-manifest/-/esbuild-plugin-assets-manifest-1.0.8.tgz#af597aa2753f2e087c04a31f712a54ab5ffbdab1"
   integrity sha512-2goWUmBLpqaHASkMQIgsSqcAs3Y1rDMKcOjk8cWOTtAzmbHYQLh77MEjuQYDx3bBEQ9dVZCaU0/cBIjhvdJf+w==
 
+esbuild-plugin-compressor@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/esbuild-plugin-compressor/-/esbuild-plugin-compressor-1.0.1.tgz#54e33186a695d0b611f79e35c645caf5a9f03d8d"
+  integrity sha512-B6YUuIOppaylSpytEmkGgF2rUL89n9Z/ebu8qF5OkwZojAJI5npSqGgAZ6zrqnfEoLerxkk5j1e7LHyFs4DJOg==
+  dependencies:
+    fs-extra "^11.1.1"
+
 esbuild@^0.28.0:
   version "0.28.1"
   resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.28.1.tgz#ef45b4634c9c9d97a296aea4114a5f9840f95578"
@@ -1123,6 +1130,15 @@ fs-extra@^11.1.0:
   version "11.3.2"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-11.3.2.tgz#c838aeddc6f4a8c74dd15f85e11fe5511bfe02a4"
   integrity sha512-Xr9F6z6up6Ws+NjzMCZc6WXg2YFRlrLP9NQDO3VQrWrfiojdhS56TzueT88ze0uBdCTwEIhQ3ptnmKeWGFAe0A==
+  dependencies:
+    graceful-fs "^4.2.0"
+    jsonfile "^6.0.1"
+    universalify "^2.0.0"
+
+fs-extra@^11.1.1:
+  version "11.3.6"
+  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-11.3.6.tgz#f7cb80e9df550cd1db6f537fa5cdd568d3e70d10"
+  integrity sha512-w8ZNZr2mKIc7qeNaQ9AVPT1+iFaI+Avd4xudVOvdDJ8VytREi1Ft5Ih7hd9jjehod8vAM5GMsfQ/TpPf4EyoEA==
   dependencies:
     graceful-fs "^4.2.0"
     jsonfile "^6.0.1"
