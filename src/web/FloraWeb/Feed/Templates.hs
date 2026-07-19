@@ -5,7 +5,9 @@ module FloraWeb.Feed.Templates
   , showSearchedPackages
   ) where
 
+import Control.Monad.Reader
 import Control.Monad.Reader.Class qualified as Reader
+import Data.Text (Text)
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -13,11 +15,32 @@ import Htmx.Lucid.Core
 import Lucid
 import PyF
 
+import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Model.Package.Types
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates
+
+jsHtmxLink :: FloraHTML
+jsHtmxLink = do
+  TemplateEnv{assets, environment} <- ask
+  let jsHtmxURL = "/static/" <> assets.jsHtmx.name
+  case environment of
+    Production ->
+      script_ [src_ jsHtmxURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsHtmx.hash)] ("" :: Text)
+    _ ->
+      script_ [src_ jsHtmxURL, type_ "module", defer_ ""] ("" :: Text)
+
+jsAlpineLink :: FloraHTML
+jsAlpineLink = do
+  TemplateEnv{assets, environment} <- ask
+  let jsAlpineURL = "/static/" <> assets.jsAlpine.name
+  case environment of
+    Production ->
+      script_ [src_ jsAlpineURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsAlpine.hash)] ("" :: Text)
+    _ ->
+      script_ [src_ jsAlpineURL, type_ "module", defer_ ""] ("" :: Text)
 
 showFeedsBuilderPage :: FloraHTML
 showFeedsBuilderPage = do
@@ -55,6 +78,8 @@ showFeedsBuilderPage = do
         $ do
           span_ [xText_ "package"] mempty
           Icons.cross
+  jsHtmxLink
+  jsAlpineLink
 
 banner :: FloraHTML
 banner = do
