@@ -1,22 +1,9 @@
 module FloraWeb.Pages.Templates.Screens.Sessions where
 
-import Control.Monad.Reader
-import Data.Text (Text)
 import Lucid
 
-import Flora.Environment.Config
 import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types
-
-jsAlpineLink :: FloraHTML
-jsAlpineLink = do
-  TemplateEnv{assets, environment} <- ask
-  let jsAlpineURL = "/static/" <> assets.jsAlpine.name
-  case environment of
-    Production ->
-      script_ [src_ jsAlpineURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsAlpine.hash)] ("" :: Text)
-    _ ->
-      script_ [src_ jsAlpineURL, type_ "module", defer_ ""] ("" :: Text)
 
 newSession :: FloraHTML
 newSession = do
@@ -69,4 +56,3 @@ newSession = do
             ]
         div_ [class_ "flow flow--small"] $ do
           button_ [class_ "btn btn--big w100", type_ "submit"] "Log In"
-  jsAlpineLink
