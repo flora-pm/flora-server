@@ -56,7 +56,7 @@ newSession = do
             , class_ "w100 password"
             ]
         details_ [class_ "details--nobody flow flow--small"] $ do
-          summary_ [] $ "Use two-factor authentication"
+          summary_ [] "Use two-factor authentication"
           label_ [class_ "sr-only", for_ "totp"] "Two-factor code"
           input_
             [ id_ "totp"
