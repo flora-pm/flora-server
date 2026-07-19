@@ -12,6 +12,7 @@ const postcssCopy = require("postcss-copy")({
 });
 const postcssDesignTokenUtils = require("postcss-design-token-utils");
 const designTokensConfig = require("./style-tokens/tokens.js");
+const postcssOklchForOldWebkit = require("postcss-color-oklch-for-old-webkit");
 
 let minify = false;
 let sourcemap = true;
@@ -44,6 +45,7 @@ const pluginsList = () => {
         postcssImport,
         postcssNesting,
         postcssCustomMedia,
+        postcssOklchForOldWebkit,
         autoprefixer,
         postcssCopy,
       ],
