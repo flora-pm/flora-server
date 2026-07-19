@@ -57,8 +57,6 @@ header = do
           |]
 
         jsPolyfillsLink
-        jsAlpineLink
-        jsHtmxLink
         cssLink
         meta_ [name_ "color-scheme", content_ "light dark"]
         link_
@@ -98,26 +96,6 @@ jsPolyfillsLink = do
       script_ [src_ jsPolyfillsURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsPolyfills.hash)] ("" :: Text)
     _ ->
       script_ [src_ jsPolyfillsURL, type_ "module", defer_ ""] ("" :: Text)
-
-jsAlpineLink :: FloraHTML
-jsAlpineLink = do
-  TemplateEnv{assets, environment} <- ask
-  let jsAlpineURL = "/static/" <> assets.jsAlpine.name
-  case environment of
-    Production ->
-      script_ [src_ jsAlpineURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsAlpine.hash)] ("" :: Text)
-    _ ->
-      script_ [src_ jsAlpineURL, type_ "module", defer_ ""] ("" :: Text)
-
-jsHtmxLink :: FloraHTML
-jsHtmxLink = do
-  TemplateEnv{assets, environment} <- ask
-  let jsHtmxURL = "/static/" <> assets.jsHtmx.name
-  case environment of
-    Production ->
-      script_ [src_ jsHtmxURL, type_ "module", defer_ "", integrity_ ("sha256-" <> assets.jsHtmx.hash)] ("" :: Text)
-    _ ->
-      script_ [src_ jsHtmxURL, type_ "module", defer_ ""] ("" :: Text)
 
 cssLink :: FloraHTML
 cssLink = do
