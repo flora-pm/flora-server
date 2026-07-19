@@ -101,46 +101,42 @@
 	--size-wrapper-small: 35rem;
 
 
-	--color-text-raise: oklch(20% .02 var(--hue-brand));
-	--color-text-default: oklch(35% .02 var(--hue-brand));
-	--color-text-secondary: oklch(45% .02 var(--hue-brand));
-	--color-text-tertiary: oklch(55% .02 var(--hue-brand));
-	--color-text-quaternary: oklch(75% .02 var(--hue-brand));
-	--color-surface-default: oklch(98% .002 var(--hue-brand));
-	--color-surface-secondary: oklch(92% .008 var(--hue-brand));
-	--color-surface-tertiary: oklch(95% .006 var(--hue-brand));
-	--color-surface-hover: oklch(92.701% .0012 var(--hue-brand));
-	--color-stroke-default: oklch(80.126% .02 var(--hue-brand));
-	--color-stroke-secondary: oklch(94.213% .00542 var(--hue-brand));
+	--color-text-raise: oklch(20% 5% var(--hue-brand));
+	--color-text-default: oklch(35% 5% var(--hue-brand));
+	--color-text-secondary: oklch(45% 5% var(--hue-brand));
+	--color-text-tertiary: oklch(55% 5% var(--hue-brand));
+	--color-text-quaternary: oklch(75% 5% var(--hue-brand));
+	--color-surface-default: oklch(98% 0.5% var(--hue-brand));
+	--color-surface-secondary: oklch(92% 2% var(--hue-brand));
+	--color-surface-tertiary: oklch(95% 1.5% var(--hue-brand));
+	--color-surface-hover: oklch(92.701% 0.3% var(--hue-brand));
+	--color-stroke-default: oklch(80.126% 5% var(--hue-brand));
+	--color-stroke-secondary: oklch(94.213% 1.355% var(--hue-brand));
 
 
-	--color-text-brand: oklch(45% .2 var(--hue-brand));
-	--color-text-valid: oklch(45% .2 var(--hue-valid));
-	--color-text-informational: oklch(45% .2 var(--hue-informational));
-	--color-text-warning: oklch(45% .2 var(--hue-warning));
-	--color-text-danger: oklch(45% .2 var(--hue-danger));
+	--color-text-brand: oklch(45% 25% var(--hue-brand));
+	--color-text-valid: oklch(45% 25% var(--hue-valid));
+	--color-text-informational: oklch(45% 25% var(--hue-informational));
+	--color-text-warning: oklch(45% 25% var(--hue-warning));
+	--color-text-danger: oklch(45% 25% var(--hue-danger));
 
-	--color-surface-brand: oklch(95% .016 var(--hue-brand));
-	--color-surface-valid: oklch(97% .028 var(--hue-valid));
-	--color-surface-informational: oklch(97% .028 var(--hue-informational));
-	--color-surface-warning: oklch(97% .028 var(--hue-warning));
-	--color-surface-danger: oklch(97% .028 var(--hue-danger));
+	--color-surface-brand: oklch(95% 4% var(--hue-brand));
+	--color-surface-valid: oklch(97% 7% var(--hue-valid));
+	--color-surface-informational: oklch(97% 7% var(--hue-informational));
+	--color-surface-warning: oklch(97% 7% var(--hue-warning));
+	--color-surface-danger: oklch(97% 7% var(--hue-danger));
 
-	--color-surface-brand-interact: oklch(92% .04 var(--hue-brand));
-	--color-surface-valid-interact: oklch(94% .064 var(--hue-valid));
-	--color-surface-informational-interact: oklch(94% .064 var(--hue-informational));
-	--color-surface-warning-interact: oklch(94% .064 var(--hue-warning));
-	--color-surface-danger-interact: oklch(94% .064 var(--hue-danger));
+	--color-surface-brand-interact: oklch(92% 10% var(--hue-brand));
+	--color-surface-valid-interact: oklch(94% 16% var(--hue-valid));
+	--color-surface-informational-interact: oklch(94% 16% var(--hue-informational));
+	--color-surface-warning-interact: oklch(94% 16% var(--hue-warning));
+	--color-surface-danger-interact: oklch(94% 16% var(--hue-danger));
 
-	--color-border-brand: oklch(from var(--color-surface-brand) calc(l - 0.15) calc(c + 0.025) h);
-	--color-border-valid: oklch(from var(--color-surface-valid) calc(l - 0.15) calc(c + 0.025) h);
-	--color-border-informational: oklch(from var(--color-surface-informational) calc(l - 0.15) calc(c + 0.025) h);
-	--color-border-warning: oklch(from var(--color-surface-warning) calc(l - 0.15) calc(c + 0.025) h);
-	--color-border-danger: oklch(from var(--color-surface-danger) calc(l - 0.15) calc(c + 0.025) h);
 
-	--color-underline-default: oklch(65% .2 var(--hue-brand));
-	--color-underline-secondary: oklch(75% .08 var(--hue-brand));
-	--color-underline-tertiary: oklch(85% .06 var(--hue-brand));
+	--color-underline-default: oklch(65% 25% var(--hue-brand));
+	--color-underline-secondary: oklch(75% 20% var(--hue-brand));
+	--color-underline-tertiary: oklch(85% 15% var(--hue-brand));
+
 
 	--shadow-default: 0 0.25rem 0.5rem var(--color-stroke-secondary);
 
@@ -156,7 +152,7 @@
 	--input-leading: var(--leading-short); /* at least 1.2 to be respected */
 
 
-	--outline-color: oklch(65% .2 var(--hue-brand));
+	--outline-color: oklch(65% 25% var(--hue-brand));
 	--outline-width: .1875rem;
 	--outline-offset: .125rem;
 
