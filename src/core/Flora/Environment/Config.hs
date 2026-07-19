@@ -112,7 +112,9 @@ loggingDestinationDecoder = KDL.withDecoder KDL.string $ \case
   e -> KDL.failM $ "Unsupported logging destination: " <> e
 
 data Assets = Assets
-  { jsBundle :: AssetBundle
+  { jsPolyfills :: AssetBundle
+  , jsAlpine :: AssetBundle
+  , jsHtmx :: AssetBundle
   , cssBundle :: AssetBundle
   }
   deriving stock (Generic, Show)
@@ -246,11 +248,15 @@ getAssets environment =
   case environment of
     Production -> do
       Assets
-        <$> getAsset "app.js"
+        <$> getAsset "polyfills.js"
+        <*> getAsset "alpine.js"
+        <*> getAsset "htmx.js"
         <*> getAsset "styles.css"
     _ -> do
       Assets
-        <$> getStaticAsset "app.js"
+        <$> getStaticAsset "polyfills.js"
+        <*> getStaticAsset "alpine.js"
+        <*> getStaticAsset "htmx.js"
         <*> getStaticAsset "styles.css"
 
 getStaticAsset :: Text -> Eff es AssetBundle

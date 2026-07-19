@@ -26,7 +26,9 @@ const mkProdPlugins = () => {
       processOutput(assets) {
         console.log(assets);
         const orderAssets = {
-          "app.js": assets.app.js,
+          "polyfills.js": assets.polyfills.js,
+          "alpine.js": assets.alpine.js,
+          "htmx.js": assets.htmx.js,
           "styles.css": assets[''].css[0],
         }
         return JSON.stringify(orderAssets, null, "  ");
@@ -65,7 +67,9 @@ if (process.env.NODE_ENV === "prod") {
 const config = {
   color: true,
   entryPoints: {
-    "app": "./js/app.js",
+    "polyfills": "./js/polyfills.js",
+    "alpine": "./js/alpine.js",
+    "htmx": "./js/htmx.js",
     "styles": "./css/styles.css",
   },
   outdir: "../static",
@@ -81,9 +85,9 @@ const config = {
   metafile: true,
   loader:
     { '.woff2': 'file',
-	  '.ttf': 'file',
-	  '.svg': 'file',
-	},
+    '.ttf': 'file',
+    '.svg': 'file',
+  },
 }
 
 esbuild.build(config).catch(() => process.exit(1));
