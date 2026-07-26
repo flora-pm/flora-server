@@ -6,6 +6,7 @@ module Flora.Monitoring
   , registerMetrics
   , increaseCounterBy
   , increasePackageImportCounterBy
+  , increaseImportFailureCounter
   , setGitHash
   ) where
 
@@ -31,6 +32,13 @@ registerMetrics = do
               { metricName = "flora_imported_packages_total"
               , metricHelp = "Packages imported and their index"
               }
+  let packageImportFailureCount =
+        P.vector ("package_index", "reason") $
+          P.counter
+            P.Info
+              { metricName = "flora_import_failures_total"
+              , metricHelp = "Packages that failed to import, and why"
+              }
   let gitHashMetric =
         P.vector ("git_revision", "version") $
           P.gauge
@@ -39,8 +47,9 @@ registerMetrics = do
               , metricHelp = "Build information"
               }
   packageImportCounter <- P.register packageImportCount
+  packageImportFailureCounter <- P.register packageImportFailureCount
   gitHashText <- P.register gitHashMetric
-  pure $ AppMetrics packageImportCounter gitHashText
+  pure $ AppMetrics packageImportCounter packageImportFailureCounter gitHashText
 
 setGitHash
   :: Metrics AppMetrics :> es
@@ -70,3 +79,11 @@ increasePackageImportCounterBy
   -> Eff es ()
 increasePackageImportCounterBy value repository = do
   increaseCounterBy value repository
+
+increaseImportFailureCounter
+  :: Metrics AppMetrics :> es
+  => Text
+  -> Text
+  -> Eff es ()
+increaseImportFailureCounter repository reason = do
+  increaseLabelledCounter (.packageImportFailureCounter) (repository, reason)

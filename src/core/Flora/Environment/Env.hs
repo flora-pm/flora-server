@@ -44,6 +44,7 @@ data FloraEnv = FloraEnv
 
 data AppMetrics = AppMetrics
   { packageImportCounter :: P.Vector P.Label1 P.Counter
+  , packageImportFailureCounter :: P.Vector P.Label2 P.Counter
   , buildInformation :: P.Vector P.Label2 P.Gauge
   }
 

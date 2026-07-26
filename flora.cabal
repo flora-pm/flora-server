@@ -750,6 +750,7 @@ test-suite flora-test
     sel,
     servant,
     servant-client,
+    streamly-core,
     tar,
     tasty,
     tasty-hunit,

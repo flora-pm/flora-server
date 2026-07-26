@@ -14,7 +14,6 @@ import Codec.Archive.Tar.Index qualified as Tar
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad
 import Data.Aeson
-import Data.ByteString (StrictByteString)
 import Data.ByteString.Lazy (LazyByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.List (isSuffixOf)
@@ -46,7 +45,7 @@ import Streamly.Data.Stream.Prelude qualified as Streamly
 import System.FilePath
 
 import Flora.Domain.Import.Package.Bulk.Stream
-import Flora.Domain.Import.Types (ImportError (..), ImportFileType (..))
+import Flora.Domain.Import.Types (ImportError (..), ImportFileType (..), ImportSubject)
 import Flora.Environment.Env
 import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.PackageIndex.Guard
@@ -73,14 +72,12 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
   let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repositoryName <> "/01-index.tar.gz"
   entries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile indexArchivePath)
   indexPackages <- do
-    let Right localPackages = buildPackageListFromArchive entries
-    when (null localPackages) $ error $ "Index " <> Text.unpack repositoryName <> " has no entries!"
+    localPackages <- packageListOrThrow repositoryName entries
     dependencyPackages <- forM indexDependencies $ \dep -> do
       let depArchivePath = indexArchiveBasePath <> "/" <> Text.unpack dep <> "/01-index.tar.gz"
       indexDependencyEntries <- Tar.read . GZip.decompress <$> liftIO (BL.readFile depArchivePath)
-      let Right indexPackages = buildPackageListFromArchive indexDependencyEntries
-      when (null indexPackages) $ error $ "Index dependency " <> Text.unpack dep <> " has no entries!"
-      pure (dep, indexPackages)
+      depPackages <- packageListOrThrow dep indexDependencyEntries
+      pure (dep, depPackages)
     pure $ (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
   packageIndex <- guardThatPackageIndexExists pool repositoryName $ do
@@ -107,9 +104,9 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
     buildContentStream
       :: PackageIndex
       -> UTCTime
-      -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
+      -> Stream (Eff es) ImportSubject
       -> Tar.GenEntry LazyByteString Tar.TarPath linkTarget
-      -> Stream (Eff es) (ImportFileType, UTCTime, Maybe Text, StrictByteString)
+      -> Stream (Eff es) ImportSubject
     buildContentStream packageIndex time acc entry =
       let entryPath = Tar.entryPath entry
           entryTime = posixSecondsToUTCTime . fromIntegral $ Tar.entryTime entry
@@ -132,6 +129,23 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
 --   do
 --     loadJSONContent path content repository
 --     >>= persistHashes
+
+packageListOrThrow
+  :: (Error ImportError :> es, Log :> es, Show e)
+  => Text
+  -> Entries e
+  -> FloraM es (Set Flora.PackageName)
+packageListOrThrow indexName entries = do
+  packages <- case buildPackageListFromArchive entries of
+    Left err -> do
+      Log.logAttention "Could not parse package index" $
+        object ["package_index_name" .= indexName, "error" .= show err]
+      Error.throwError $ MalformedPackageIndex indexName (Text.pack (show err))
+    Right packages -> pure packages
+  when (null packages) $ do
+    Log.logAttention "Package index has no entries" $ object ["package_index_name" .= indexName]
+    Error.throwError $ EmptyPackageIndex indexName
+  pure packages
 
 {-# HLINT ignore "Functor law" #-}
 buildPackageListFromArchive :: Entries e -> Either e (Set Flora.PackageName)

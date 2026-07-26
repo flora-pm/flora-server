@@ -389,7 +389,7 @@ extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername gene
         object
           [ "package_name" .= display packageName
           , "index" .= packageIndex.repository
-          , "index_packages" .= indexPackages
+          , "indexes_consulted" .= fmap (fmap Set.size) indexPackages
           ]
       Error.throwError $ CouldNotSelectNamespace packageIndex.repository packageName
     Just namespace -> do
@@ -486,8 +486,8 @@ extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername gene
               <> benchmarks
       case NE.nonEmpty components' of
         Nothing -> do
-          Log.logAttention "Empty dependencies" $ object ["package" .= package]
-          extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername genericDesc
+          Log.logAttention "No importable components" $ object ["package" .= package]
+          Error.throwError $ NoImportableComponents namespace package.name release.version
         Just components -> pure $ ImportOutput package categories release components
 
 determinePackageUploaderId :: (IOE :> es, ReadDB :> es, WriteDB :> es) => Maybe Text -> PackageIndexId -> Eff es (Maybe PackageUploaderId)

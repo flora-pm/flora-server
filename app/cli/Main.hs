@@ -123,12 +123,12 @@ main = Log.withStdOutLogger $ \logger -> do
       & runErrorWith @(NonEmpty AdvisoryImportError)
         ( \callstack err -> do
             liftIO $ putStrLn $ prettyCallStack callstack
-            pure $ error $ show err
+            E.throwIO $ userError $ show err
         )
       & runErrorWith @ImportError
         ( \callstack err -> do
             liftIO $ putStrLn $ prettyCallStack callstack
-            pure $ error $ show err
+            E.throwIO $ userError $ show err
         )
       & runTrace
       & runPrometheusMetrics env.metrics
@@ -138,6 +138,7 @@ main = Log.withStdOutLogger $ \logger -> do
     exceptionHandlers =
       [ E.Handler $ \(ex :: E.SomeException) -> do
           logAttention "Unhandled exception" $ object ["exception" .= show ex]
+          E.throwIO ex
       ]
 
 parseOptions :: Parser Options

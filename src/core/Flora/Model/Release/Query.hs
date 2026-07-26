@@ -68,8 +68,9 @@ getLatestPackageRelease pid =
   queryOne getLatestPackageReleaseQuery (Only pid)
 
 getLatestReleaseTime :: (IOE :> es, ReadDB :> es) => Maybe Text -> FloraM es (Maybe UTCTime)
-getLatestReleaseTime repo =
-  fmap fromOnly <$> maybe (queryOne_ q') (queryOne q . Only) repo
+getLatestReleaseTime repo = do
+  result :: Maybe (Only (Maybe UTCTime)) <- maybe (queryOne_ q') (queryOne q . Only) repo
+  pure $ result >>= fromOnly
   where
     q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
     q' = [sql| select max(uploaded_at) from releases |]
