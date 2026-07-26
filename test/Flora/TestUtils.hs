@@ -88,7 +88,7 @@ module Flora.TestUtils
   )
 where
 
-import Control.Exception (throw)
+import Control.Exception (throw, throwIO)
 import Control.Monad (void)
 import Control.Monad.Catch
 import Data.Function
@@ -229,7 +229,7 @@ runTestEff comp env = runEff $
       & Error.runErrorWith
         ( \callstack err -> do
             liftIO $ putStrLn $ prettyCallStack callstack
-            pure $ error $ show err
+            liftIO $ throwIO $ userError $ show err
         )
 
 testThis :: (HasCallStack, RequireCallStack) => String -> TestEff () -> TestEff TestTree

@@ -2,19 +2,29 @@ module Flora.ImportSpec where
 
 import Codec.Archive.Tar qualified as Tar
 import Codec.Compression.GZip qualified as GZip
+import Control.Monad (void)
+import Data.ByteString (StrictByteString)
+import Data.ByteString.Char8 qualified as BS8
 import Data.ByteString.Lazy qualified as BL
 import Data.Foldable (traverse_)
 import Data.Maybe (catMaybes)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Text qualified as Text
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Vector qualified as Vector
+import Effectful.Error.Static qualified as Error
 import Effectful.Reader.Static qualified as Reader
+import Effectful.State.Static.Shared qualified as State
 import Log.Backend.StandardOutput (withStdOutLogger)
 import RequireCallStack
+import Streamly.Data.Stream qualified as Stream
 
 import Flora.Database
 import Flora.Domain.Import.Package (chooseNamespace)
 import Flora.Domain.Import.Package.Bulk.Archive
+import Flora.Domain.Import.Package.Bulk.Stream (importFromStream)
+import Flora.Domain.Import.Types (ImportError (..), ImportFileType (..))
 import Flora.Environment.Env
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
@@ -33,6 +43,9 @@ spec =
     , testThis "Package list from archive" testPackageListFromArchive
     , testThis "MLabs dependencies in Cardano are correctly inserted" testNthLevelDependencies
     , testThis "Cardano dependencies are preferred in Cardano, then in Hackage" testCardanoDependencyResolution
+    , testThis "One bad cabal file among many good ones does not fail the import" testImportStreamSkipsBadFilesUnderThreshold
+    , testThis "High failure rate trips the import circuit breaker" testImportStreamTripsCircuitBreakerOverThreshold
+    , testThis "Repository with zero successful imports does not crash on NULL latest-release-time" testImportStreamAllFailuresUnderFloorDoesNotCrash
     ]
 
 testIndex :: FilePath
@@ -51,10 +64,7 @@ testImportIndex :: RequireCallStack => TestEff ()
 testImportIndex = withStdOutLogger $
   \_ -> do
     FloraEnv{pool} <- Reader.ask
-    mIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName defaultRepo
-    case mIndex of
-      Nothing -> withReadWritePool pool $ Update.createPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
-      Just _ -> pure ()
+    withReadWritePool pool $ Update.upsertPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
     importFromArchive
       "test-namespace"
       Vector.empty
@@ -99,6 +109,70 @@ testNthLevelDependencies = do
         ]
     )
     dependencies
+
+resilienceGoodName :: Int -> String
+resilienceGoodName n = "resilience-good" <> show n
+
+goodCabalFile :: Int -> StrictByteString
+goodCabalFile n =
+  BS8.pack $
+    unlines
+      [ "cabal-version: 3.0"
+      , "name: " <> resilienceGoodName n
+      , "version: 1.0.0"
+      , "build-type: Simple"
+      , ""
+      , "library"
+      , "  exposed-modules: ResilienceGood"
+      , "  build-depends: base"
+      , "  default-language: Haskell2010"
+      ]
+
+badCabalFile :: StrictByteString
+badCabalFile = "this is not a valid cabal file !!!"
+
+runResilienceImport :: RequireCallStack => Text -> Int -> Int -> TestEff ()
+runResilienceImport repo goodCount badCount = do
+  FloraEnv{pool} <- Reader.ask
+  withReadWritePool pool $ Update.upsertPackageIndex repo defaultRepoURL defaultDescription Nothing
+  packageIndex <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageIndexByName repo)
+  let indexPackages =
+        Vector.singleton
+          ( repo
+          , Set.fromList [PackageName (Text.pack (resilienceGoodName n)) | n <- [1 .. goodCount]]
+          )
+      epoch = posixSecondsToUTCTime 0
+      subjects =
+        [ (CabalFile (resilienceGoodName n <> ".cabal"), epoch, Nothing, goodCabalFile n)
+        | n <- [1 .. goodCount]
+        ]
+          <> replicate badCount (CabalFile "resilience-bad.cabal", epoch, Nothing, badCabalFile)
+  State.evalState mempty $
+    importFromStream packageIndex indexPackages (Stream.fromList subjects)
+
+testImportStreamSkipsBadFilesUnderThreshold :: RequireCallStack => TestEff ()
+testImportStreamSkipsBadFilesUnderThreshold = do
+  FloraEnv{pool} <- Reader.ask
+  let repo = "resilience-test"
+  runResilienceImport repo 99 1
+  void . assertJust_
+    =<< withReadOnlyPool pool (Query.getPackageByNamespaceAndName (Namespace repo) (PackageName "resilience-good1"))
+
+testImportStreamTripsCircuitBreakerOverThreshold :: RequireCallStack => TestEff ()
+testImportStreamTripsCircuitBreakerOverThreshold = do
+  result <- Error.tryError @ImportError $ runResilienceImport "resilience-test-cb" 19 1
+  case result of
+    Left (_, TooManyImportFailures failures total) -> assertEqual_ (1 :: Int, 20 :: Int) (failures, total)
+    Left (_, err) -> assertFailure $ "expected TooManyImportFailures, got " <> show err
+    Right () -> assertFailure "import unexpectedly succeeded"
+
+testImportStreamAllFailuresUnderFloorDoesNotCrash :: RequireCallStack => TestEff ()
+testImportStreamAllFailuresUnderFloorDoesNotCrash = do
+  FloraEnv{pool} <- Reader.ask
+  let repo = "resilience-test-allfail"
+  runResilienceImport repo 0 5
+  latestReleaseTime <- withReadOnlyPool pool $ Query.getLatestReleaseTime (Just repo)
+  assertEqual "no release was ever persisted for this repository" Nothing latestReleaseTime
 
 testCardanoDependencyResolution :: RequireCallStack => TestEff ()
 testCardanoDependencyResolution = do
