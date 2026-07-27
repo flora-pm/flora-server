@@ -77,6 +77,17 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
     (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportHackageIndexPayload)
 
+data MetadataPass
+  = ReadmePass
+  | UploadInformationPass
+  | ChangelogPass
+  | TarballPass
+  | ReleaseDeprecationPass
+  | RefreshLatestVersionsPass
+  | MaintainersPass
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (FromJSON, ToJSON)
+
 data PackageJob
   = FetchReadme ReadmeJobPayload
   | FetchTarball TarballJobPayload
@@ -89,6 +100,7 @@ data PackageJob
   | RefreshIndex Text
   | FetchPackageMaintainers PackageName
   | FetchPackageUploaders
+  | ScheduleMetadata MetadataPass
   deriving stock (Generic)
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''PackageJob)

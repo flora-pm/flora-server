@@ -67,6 +67,6 @@ fetchMetadataHandler (Headers session _) = do
   liftIO $ void $ schedulePackageDeprecationListJob workerEnv
 
   features <- ask @FeatureEnv
-  scheduleMissingMetadataJobs workerEnv (isJust features.blobStoreImpl)
+  liftIO $ void $ scheduleMissingMetadataJobs workerEnv (isJust features.blobStoreImpl)
 
   pure $ redirect "/admin"

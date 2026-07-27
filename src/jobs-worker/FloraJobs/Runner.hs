@@ -78,6 +78,7 @@ runner env job = case job.payload of
     FloraJobsEnv{pool} <- Reader.ask
     withReadWritePool pool Update.refreshLatestVersions
   RefreshIndex indexName -> refreshIndex env indexName
+  ScheduleMetadata pass -> runMetadataPass env pass
   FetchPackageMaintainers packageName -> fetchPackageMaintainers packageName
   FetchPackageUploaders -> fetchPackageUploaders
 
@@ -370,7 +371,7 @@ refreshIndex env indexName = localDomain "refresh-index" $ do
         indexDependencies <- withReadOnlyPool pool $ Query.getIndexDependencies packageIndex.packageIndexId
         Import.importFromArchive indexName indexDependencies packagesPath
 
-        scheduleMissingMetadataJobs env False
+        void $ scheduleMissingMetadataJobs env False
 
         void $ liftIO $ scheduleRefreshIndex env indexName
 

@@ -14,6 +14,8 @@ module FloraJobs.Scheduler
     -- * Enqueuing
   , scheduleJobs
   , scheduleMissingMetadataJobs
+  , metadataPasses
+  , runMetadataPass
   , schedulePackageDeprecationListJob
   , schedulePackageUploadersJob
   , scheduleRefreshIndex
@@ -34,16 +36,12 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Types.Version
 import Effectful
-import Effectful.Concurrent (Concurrent)
-import Effectful.Concurrent qualified as Concurrent
-import Effectful.Exception qualified as Exception
 import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Log
 
 import Flora.Database
-import Flora.Debug.ThreadDump (labelCurrentThread)
 import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Model.Package.Query qualified as PackageQuery
@@ -110,67 +108,76 @@ scheduleJobs env = go 0
                 fmap Arb.defaultJob (Vector.toList batch)
           go (inserted + batchInserted) rest
 
+metadataPasses
+  :: Bool
+  -- ^ Whether to enqueue the tarball pass
+  -> [MetadataPass]
+metadataPasses withTarballs = filter enabled [minBound .. maxBound]
+  where
+    enabled TarballPass = withTarballs
+    enabled _ = True
+
+passName :: MetadataPass -> Text
+passName = \case
+  ReadmePass -> "readme"
+  UploadInformationPass -> "upload-information"
+  ChangelogPass -> "changelog"
+  TarballPass -> "tarball"
+  ReleaseDeprecationPass -> "release-deprecation"
+  RefreshLatestVersionsPass -> "refresh-latest-versions"
+  MaintainersPass -> "maintainers"
+
 scheduleMissingMetadataJobs
-  :: ( Concurrent :> es
-     , IOE :> es
+  :: MonadUnliftIO m
+  => ArbS.SimpleEnv JobQueues
+  -> Bool
+  -> m Int64
+scheduleMissingMetadataJobs env withTarballs =
+  ArbS.runSimpleDb env $
+    Arb.insertJobsBatch_
+      [ (Arb.defaultJob (ScheduleMetadata pass))
+          { Arb.dedupKey = Just $ Arb.IgnoreDuplicate $ "metadata-pass-" <> passName pass
+          }
+      | pass <- metadataPasses withTarballs
+      ]
+
+runMetadataPass
+  :: ( IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
      )
   => ArbS.SimpleEnv JobQueues
-  -> Bool
-  -- ^ Whether to enqueue tarball fetching jobs
+  -> MetadataPass
   -> FloraM es ()
-scheduleMissingMetadataJobs env withTarballs = do
+runMetadataPass env pass = do
   FloraEnv{pool} <- Reader.ask
-  void $ Concurrent.forkIO $ do
-    liftIO $ labelCurrentThread "schedule-metadata"
-
-    schedulingPass "readme" $ do
+  count <- case pass of
+    ReadmePass -> do
       releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutReadme
       scheduleJobs env $
         fmap (\(releaseId, version, package) -> readmeJob releaseId package version) releases
-
-    schedulingPass "upload-information" $ do
+    UploadInformationPass -> do
       releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutUploadInformation
       scheduleJobs env $
         fmap (\(releaseId, version, package) -> uploadInformationJob releaseId package version) releases
-
-    schedulingPass "changelog" $ do
+    ChangelogPass -> do
       releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutChangelog
       scheduleJobs env $
         fmap (\(releaseId, version, package) -> changelogJob releaseId package version) releases
-
-    when withTarballs $
-      schedulingPass "tarball" $ do
-        releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutTarball
-        scheduleJobs env $
-          fmap (\(releaseId, version, package) -> tarballJob releaseId (Namespace "hackage") package version) releases
-
-    schedulingPass "release-deprecation" $ do
+    TarballPass -> do
+      releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutTarball
+      scheduleJobs env $
+        fmap (\(releaseId, version, package) -> tarballJob releaseId (Namespace "hackage") package version) releases
+    ReleaseDeprecationPass -> do
       packages <- withReadOnlyPool pool ReleaseQuery.getHackagePackagesWithoutReleaseDeprecationInformation
       scheduleJobs env $ fmap releaseDeprecationListJob packages
-
-    schedulingPass "refresh-latest-versions" $
-      scheduleJobs env $
-        Vector.singleton refreshLatestVersionsJob
-
-    schedulingPass "maintainers" $ do
+    RefreshLatestVersionsPass ->
+      scheduleJobs env $ Vector.singleton refreshLatestVersionsJob
+    MaintainersPass -> do
       packages <- withReadOnlyPool pool PackageQuery.getPackagesWithoutMaintainersInformation
       scheduleJobs env $ fmap (packageMaintainersListJob . snd) packages
-
-schedulingPass
-  :: Log :> es
-  => Text
-  -> Eff es Int64
-  -> Eff es ()
-schedulingPass name action =
-  Exception.trySync action >>= \case
-    Right count ->
-      Log.logInfo "Scheduled metadata jobs" $
-        object ["pass" .= name, "jobs" .= count]
-    Left err ->
-      Log.logAttention "Could not schedule metadata jobs" $
-        object ["pass" .= name, "error" .= show err]
+  Log.logInfo "Scheduled metadata jobs" $
+    object ["pass" .= passName pass, "jobs" .= count]
 
 schedulePackageDeprecationListJob
   :: MonadUnliftIO m

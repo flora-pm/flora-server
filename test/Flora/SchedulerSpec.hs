@@ -1,11 +1,13 @@
-module Flora.SchedulerSpec where
+module Flora.SchedulerSpec (spec) where
 
+import Control.Monad (void)
 import Data.Int (Int64)
 import Data.Text (Text)
-import Data.Text qualified as T
+import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (Only (..))
 import Effectful
+import Effectful.Exception (finally)
 import Effectful.Reader.Static (ask)
 import RequireCallStack
 
@@ -13,21 +15,21 @@ import Flora.Database
 import Flora.Environment.Env (FloraEnv (..))
 import Flora.Model.Package.Types (PackageName (..))
 import Flora.TestUtils
-import FloraJobs.Scheduler (packageMaintainersListJob, scheduleJobs)
+import FloraJobs.Scheduler
 
 spec :: RequireCallStack => TestEff TestTree
 spec =
-  testThese
+  testTheseInOrder
     "scheduler"
     [ testThis "scheduleJobs inserts every job across batch boundaries" testScheduleJobsSpansBatches
+    , testThis "scheduleMissingMetadataJobs honours the tarball gate" testTarballGate
+    , testThis "scheduleMissingMetadataJobs is idempotent" testPassesAreDeduplicated
     ]
 
-jobCount :: Int
-jobCount = 2500
-
 testScheduleJobsSpansBatches :: RequireCallStack => TestEff ()
-testScheduleJobsSpansBatches = do
+testScheduleJobsSpansBatches = withoutMarkedJobs $ do
   FloraEnv{pool, workerEnv} <- ask
+  let jobCount = 2500
   let jobs =
         Vector.generate jobCount $ \i ->
           packageMaintainersListJob $ PackageName $ jobMarker <> Text.pack (show i)
@@ -39,6 +41,36 @@ testScheduleJobsSpansBatches = do
   enqueued <- withReadOnlyPool pool countMarkedJobs
   assertEqual "every job reached the queue" jobCount enqueued
 
+testTarballGate :: RequireCallStack => TestEff ()
+testTarballGate = withoutPassJobs $ do
+  FloraEnv{pool, workerEnv} <- ask
+  assertEqual
+    "leaving the tarball pass out drops exactly one pass"
+    (length (metadataPasses True) - 1)
+    (length (metadataPasses False))
+  inserted <- scheduleMissingMetadataJobs workerEnv False
+  assertEqual
+    "every pass but the tarball one is enqueued"
+    (fromIntegral (length (metadataPasses False)) :: Int64)
+    inserted
+  tarballs <- withReadOnlyPool pool countTarballPassJobs
+  assertEqual "no tarball pass reached the queue" 0 tarballs
+
+testPassesAreDeduplicated :: RequireCallStack => TestEff ()
+testPassesAreDeduplicated = withoutPassJobs $ do
+  FloraEnv{pool, workerEnv} <- ask
+  inserted <- scheduleMissingMetadataJobs workerEnv True
+  assertEqual
+    "the first call enqueues every pass"
+    (fromIntegral (length (metadataPasses True)) :: Int64)
+    inserted
+  _ <- scheduleMissingMetadataJobs workerEnv True
+  enqueued <- withReadOnlyPool pool countPassJobs
+  assertEqual
+    "the second call does not stack a second sweep"
+    (length (metadataPasses True))
+    enqueued
+
 jobMarker :: Text
 jobMarker = "scheduler-spec-package-"
 
@@ -47,3 +79,35 @@ countMarkedJobs =
   queryCount "select count(*) from package_jobs where payload::text like ?" (Only marker)
   where
     marker = "%" <> jobMarker <> "%"
+
+countPassJobs :: ReadDB :> es => Eff es Int
+countPassJobs =
+  queryCount_ "select count(*) from package_jobs where payload->>'tag' = 'ScheduleMetadata'"
+
+countTarballPassJobs :: ReadDB :> es => Eff es Int
+countTarballPassJobs =
+  queryCount_
+    "select count(*) from package_jobs \
+    \where payload->>'tag' = 'ScheduleMetadata' and payload->>'contents' = 'TarballPass'"
+
+withoutMarkedJobs :: RequireCallStack => TestEff a -> TestEff a
+withoutMarkedJobs action = action `finally` deleteMarkedJobs
+
+withoutPassJobs :: RequireCallStack => TestEff a -> TestEff a
+withoutPassJobs action = action `finally` deletePassJobs
+
+deleteMarkedJobs :: RequireCallStack => TestEff ()
+deleteMarkedJobs = do
+  FloraEnv{pool} <- ask
+  withReadWritePool pool $
+    void $
+      execute "delete from package_jobs where payload::text like ?" (Only marker)
+  where
+    marker = "%" <> jobMarker <> "%"
+
+deletePassJobs :: RequireCallStack => TestEff ()
+deletePassJobs = do
+  FloraEnv{pool} <- ask
+  withReadWritePool pool $
+    void $
+      execute_ "delete from package_jobs where payload->>'tag' = 'ScheduleMetadata'"
