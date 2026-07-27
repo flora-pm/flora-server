@@ -7,6 +7,7 @@ module Flora.TestUtils
     testRequest
   , testThis
   , testThese
+  , testTheseInOrder
 
     -- ** Assertion functions
   , assertBool
@@ -243,6 +244,10 @@ testThese groupName tests = fmap (Test.testGroup groupName) newTests
   where
     newTests :: TestEff [TestTree]
     newTests = sequenceA tests
+
+testTheseInOrder :: String -> [TestEff TestTree] -> TestEff TestTree
+testTheseInOrder groupName tests =
+  fmap (Test.dependentTestGroup groupName Test.AllFinish) (sequenceA tests)
 
 assertBool :: Bool -> TestEff ()
 assertBool boolean = liftIO $ Test.assertBool "" boolean

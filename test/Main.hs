@@ -26,6 +26,7 @@ import Flora.Model.User.Update qualified as Update
 import Flora.NoThunksSpec qualified as NoThunksSpec
 import Flora.PackageGroupSpec qualified as PackageGroupSpec
 import Flora.PackageSpec qualified as PackageSpec
+import Flora.SchedulerSpec qualified as SchedulerSpec
 import Flora.SearchSpec qualified as SearchSpec
 import Flora.TemplateSpec qualified as TemplateSpec
 import Flora.TestUtils
@@ -69,6 +70,7 @@ specs fixtures =
   , NoThunksSpec.spec
   , PackageGroupSpec.spec
   , PackageSpec.spec
+  , SchedulerSpec.spec
   , SearchSpec.spec
   , TemplateSpec.spec
   , UserSpec.spec fixtures

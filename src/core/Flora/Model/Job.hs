@@ -13,7 +13,6 @@ import Distribution.Types.Version (Version)
 import Distribution.Version (mkVersion, versionNumbers)
 import Web.HttpApiData
 
-import Flora.Domain.Import.Package.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
@@ -77,18 +76,29 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
     (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportHackageIndexPayload)
 
+data MetadataPass
+  = ReadmePass
+  | UploadInformationPass
+  | ChangelogPass
+  | TarballPass
+  | ReleaseDeprecationPass
+  | RefreshLatestVersionsPass
+  | MaintainersPass
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (FromJSON, ToJSON)
+
 data PackageJob
   = FetchReadme ReadmeJobPayload
   | FetchTarball TarballJobPayload
   | FetchUploadInformation UploadInformationJobPayload
   | FetchChangelog ChangelogJobPayload
-  | ImportPackage ImportOutput
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
   | RefreshIndex Text
   | FetchPackageMaintainers PackageName
   | FetchPackageUploaders
+  | ScheduleMetadata MetadataPass
   deriving stock (Generic)
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''PackageJob)

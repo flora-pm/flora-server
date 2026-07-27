@@ -195,7 +195,6 @@ library
   build-depends:
     aeson,
     arbiter-simple,
-    async,
     attoparsec,
     base ^>=4.20,
     base16-bytestring,
@@ -732,6 +731,7 @@ test-suite flora-test
     filepath,
     flora,
     flora-advisories,
+    flora-jobs,
     flora-search,
     flora-web,
     hedgehog,
@@ -774,6 +774,7 @@ test-suite flora-test
     Flora.NoThunksSpec
     Flora.PackageGroupSpec
     Flora.PackageSpec
+    Flora.SchedulerSpec
     Flora.SearchSpec
     Flora.TemplateSpec
     Flora.TestUtils
