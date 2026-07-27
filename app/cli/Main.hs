@@ -42,6 +42,7 @@ import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
 import DesignSystem (generateComponents)
 import Flora.Database
+import Flora.Debug.ThreadDump (installThreadDumpHandler)
 import Flora.Domain.Import.Categories (importCategories)
 import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Domain.Import.Types
@@ -107,6 +108,7 @@ main = Log.withStdOutLogger $ \logger -> do
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv cliArgs.configFile & runFileSystem & runFailIO & runEff
   startEventlogSocket env.mltp.eventlogSocketDirectory
+  installThreadDumpHandler
   runTrace <- do
     traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
     pure $ Tracing.runTraceRunner traceRunner

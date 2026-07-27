@@ -5,8 +5,6 @@ module FloraWeb.Pages.Server.Admin where
 import Arbiter.Servant qualified as ArbS
 import Arbiter.Servant.Server qualified as ArbS
 import Arbiter.Servant.UI qualified as ArbUI
-import Control.Concurrent (forkIO)
-import Control.Concurrent.Async qualified as Async
 import Control.Monad (void, when)
 import Control.Monad.IO.Class
 import Data.Maybe (isJust)
@@ -20,6 +18,7 @@ import RequireCallStack
 import Servant (HasServer (..), Headers (..))
 
 import Flora.Database
+import Flora.Debug.ThreadDump (forkLabelled, labelledFor_)
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Job
@@ -75,56 +74,42 @@ fetchMetadataHandler (Headers session _) = do
 
   releasesWithoutReadme <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutReadme
   liftIO $
-    void $
-      forkIO $
-        Async.forConcurrently_
-          releasesWithoutReadme
-          (\(releaseId, version, packagename) -> scheduleReadmeJob workerEnv releaseId packagename version)
+    forkLabelled "admin/readme" $
+      labelledFor_ "schedule-readme" releasesWithoutReadme $
+        \(releaseId, version, packagename) -> scheduleReadmeJob workerEnv releaseId packagename version
 
   hackageReleasesWithoutUploadInformation <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutUploadInformation
   liftIO $
-    void $
-      forkIO $
-        Async.forConcurrently_
-          hackageReleasesWithoutUploadInformation
-          (\(releaseId, version, packagename) -> scheduleUploadInformationJob workerEnv releaseId packagename version)
+    forkLabelled "admin/upload-information" $
+      labelledFor_ "schedule-upload-information" hackageReleasesWithoutUploadInformation $
+        \(releaseId, version, packagename) -> scheduleUploadInformationJob workerEnv releaseId packagename version
 
   releasesWithoutChangelog <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutChangelog
   liftIO $
-    void $
-      forkIO $
-        Async.forConcurrently_
-          releasesWithoutChangelog
-          (\(releaseId, version, packagename) -> scheduleChangelogJob workerEnv releaseId packagename version)
+    forkLabelled "admin/changelog" $
+      labelledFor_ "schedule-changelog" releasesWithoutChangelog $
+        \(releaseId, version, packagename) -> scheduleChangelogJob workerEnv releaseId packagename version
 
   features <- ask @FeatureEnv
   Log.logAttention "features" features
   when (isJust features.blobStoreImpl) $ do
     releasesWithoutTarball <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutTarball
     liftIO $
-      void $
-        forkIO $!
-          Async.forConcurrently_
-            releasesWithoutTarball
-            ( \(releaseId, version, packagename) ->
-                scheduleTarballJob workerEnv releaseId (Namespace "hackage") packagename version
-            )
+      forkLabelled "admin/tarball" $
+        labelledFor_ "schedule-tarball" releasesWithoutTarball $
+          \(releaseId, version, packagename) ->
+            scheduleTarballJob workerEnv releaseId (Namespace "hackage") packagename version
 
   packagesWithoutDeprecationInformation <- withReadOnlyPool pool Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  liftIO $
-    void $
-      forkIO $ do
-        Async.forConcurrently_
-          packagesWithoutDeprecationInformation
-          (\a -> scheduleReleaseDeprecationListJob workerEnv a)
-        void $ scheduleRefreshLatestVersions workerEnv
+  liftIO $ forkLabelled "admin/deprecation" $ do
+    labelledFor_ "schedule-release-deprecation" packagesWithoutDeprecationInformation $
+      scheduleReleaseDeprecationListJob workerEnv
+    void $ scheduleRefreshLatestVersions workerEnv
 
   packagesWithoutMaintainerInformation <- withReadOnlyPool pool Query.getPackagesWithoutMaintainersInformation
   liftIO $
-    void $
-      forkIO $
-        Async.forConcurrently_
-          packagesWithoutMaintainerInformation
-          (\(_namespace, packageName) -> schedulePackageMaintainersListJob workerEnv packageName)
+    forkLabelled "admin/maintainers" $
+      labelledFor_ "schedule-maintainers" packagesWithoutMaintainerInformation $
+        \(_namespace, packageName) -> schedulePackageMaintainersListJob workerEnv packageName
 
   pure $ redirect "/admin"

@@ -114,6 +114,7 @@ library
     Distribution.Orphans.Version
     Flora.Database
     Flora.DB.Exception
+    Flora.Debug.ThreadDump
     Flora.Domain.Category.Normalise
     Flora.Domain.Import.Categories
     Flora.Domain.Import.Package
@@ -194,6 +195,7 @@ library
   build-depends:
     aeson,
     arbiter-simple,
+    async,
     attoparsec,
     base ^>=4.20,
     base16-bytestring,
@@ -263,6 +265,7 @@ library
     text-builder-linear,
     text-display,
     time,
+    unix,
     unliftio,
     utf8-string,
     uuid,
@@ -354,6 +357,7 @@ library flora-web
     FloraWeb.Common.Guards
     FloraWeb.Common.OpenSearch
     FloraWeb.Common.Pagination
+    FloraWeb.Common.ThreadLabel
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
     FloraWeb.Components.AdvisoryListItem
@@ -423,7 +427,6 @@ library flora-web
     aeson,
     arbiter-servant,
     arbiter-servant-ui,
-    async,
     base ^>=4.20,
     base32,
     bytestring,
@@ -536,7 +539,6 @@ library flora-jobs
     aeson,
     arbiter-core,
     arbiter-simple,
-    async,
     base,
     blaze-markup,
     bytestring,

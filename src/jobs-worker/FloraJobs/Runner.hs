@@ -5,8 +5,6 @@ module FloraJobs.Runner
 import Arbiter.Core
 import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
-import Control.Concurrent (forkIO)
-import Control.Concurrent.Async qualified as Async
 import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
@@ -39,6 +37,7 @@ import System.FilePath
 
 import Data.Text.HTML qualified as HTML
 import Flora.Database
+import Flora.Debug.ThreadDump (forkLabelled, labelledFor_)
 import Flora.Domain.Import.Package (persistImportOutput)
 import Flora.Domain.Import.Package.Bulk.Archive qualified as Import
 import Flora.Domain.Import.Types
@@ -375,44 +374,33 @@ refreshIndex env indexName = localDomain "refresh-index" $ do
 
         releasesWithoutReadme <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutReadme
         liftIO $
-          void $
-            forkIO $
-              Async.forConcurrently_
-                releasesWithoutReadme
-                (\(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version)
+          forkLabelled "refresh-index/readme" $
+            labelledFor_ "schedule-readme" releasesWithoutReadme $
+              \(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version
 
         hackageReleasesWithoutUploadInformation <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutUploadInformation
         liftIO $
-          void $
-            forkIO $
-              Async.forConcurrently_
-                hackageReleasesWithoutUploadInformation
-                (\(releaseId, version, packagename) -> scheduleUploadInformationJob env releaseId packagename version)
+          forkLabelled "refresh-index/upload-information" $
+            labelledFor_ "schedule-upload-information" hackageReleasesWithoutUploadInformation $
+              \(releaseId, version, packagename) -> scheduleUploadInformationJob env releaseId packagename version
 
         releasesWithoutChangelog <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutChangelog
         liftIO $
-          void $
-            forkIO $
-              Async.forConcurrently_
-                releasesWithoutChangelog
-                (\(releaseId, version, packagename) -> scheduleChangelogJob env releaseId packagename version)
+          forkLabelled "refresh-index/changelog" $
+            labelledFor_ "schedule-changelog" releasesWithoutChangelog $
+              \(releaseId, version, packagename) -> scheduleChangelogJob env releaseId packagename version
 
         packagesWithoutDeprecationInformation <- withReadOnlyPool pool Query.getHackagePackagesWithoutReleaseDeprecationInformation
-        liftIO $
-          void $
-            forkIO $ do
-              Async.forConcurrently_
-                packagesWithoutDeprecationInformation
-                (\a -> scheduleReleaseDeprecationListJob env a)
-              void $ scheduleRefreshLatestVersions env
+        liftIO $ forkLabelled "refresh-index/deprecation" $ do
+          labelledFor_ "schedule-release-deprecation" packagesWithoutDeprecationInformation $
+            scheduleReleaseDeprecationListJob env
+          void $ scheduleRefreshLatestVersions env
 
         packagesWithoutMaintainerInformation <- withReadOnlyPool pool Query.getPackagesWithoutMaintainersInformation
         liftIO $
-          void $
-            forkIO $
-              Async.forConcurrently_
-                packagesWithoutMaintainerInformation
-                (\(_namespace, packageName) -> schedulePackageMaintainersListJob env packageName)
+          forkLabelled "refresh-index/maintainers" $
+            labelledFor_ "schedule-maintainers" packagesWithoutMaintainerInformation $
+              \(_namespace, packageName) -> schedulePackageMaintainersListJob env packageName
 
         void $ liftIO $ scheduleRefreshIndex env indexName
 
