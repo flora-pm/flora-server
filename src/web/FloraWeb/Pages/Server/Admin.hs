@@ -91,7 +91,6 @@ fetchMetadataHandler (Headers session _) = do
         \(releaseId, version, packagename) -> scheduleChangelogJob workerEnv releaseId packagename version
 
   features <- ask @FeatureEnv
-  Log.logAttention "features" features
   when (isJust features.blobStoreImpl) $ do
     releasesWithoutTarball <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutTarball
     liftIO $
