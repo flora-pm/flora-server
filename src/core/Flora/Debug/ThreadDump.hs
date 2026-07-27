@@ -5,14 +5,11 @@ module Flora.Debug.ThreadDump
   ( installThreadDumpHandler
   , dumpThreads
   , labelCurrentThread
-  , forkLabelled
-  , labelledFor_
   ) where
 
-import Control.Concurrent.Async qualified as Async
 import Control.Concurrent.MVar (newMVar, putMVar, tryTakeMVar)
 import Control.Exception (SomeException, bracket, try)
-import Control.Monad (forM, void)
+import Control.Monad (forM)
 import Data.List (isInfixOf, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
@@ -23,7 +20,6 @@ import GHC.Conc.Sync
   ( BlockReason (..)
   , ThreadId
   , ThreadStatus (..)
-  , forkIO
   , labelThread
   , listThreads
   , myThreadId
@@ -147,10 +143,3 @@ labelCurrentThread :: String -> IO ()
 labelCurrentThread label = do
   tid <- myThreadId
   labelThread tid label
-
-forkLabelled :: String -> IO a -> IO ()
-forkLabelled label action = void . forkIO $ labelCurrentThread label >> void action
-
-labelledFor_ :: Foldable t => String -> t a -> (a -> IO b) -> IO ()
-labelledFor_ label xs action =
-  Async.forConcurrently_ xs $ \x -> labelCurrentThread label >> action x

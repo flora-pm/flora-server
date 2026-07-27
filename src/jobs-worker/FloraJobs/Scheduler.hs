@@ -1,16 +1,23 @@
 -- | Represents the various jobs that can be run
 module FloraJobs.Scheduler
-  ( scheduleReadmeJob
-  , scheduleTarballJob
-  , scheduleChangelogJob
-  , scheduleUploadInformationJob
+  ( -- * Job payload constructors
+    readmeJob
+  , tarballJob
+  , changelogJob
+  , uploadInformationJob
+  , packageDeprecationListJob
+  , releaseDeprecationListJob
+  , refreshLatestVersionsJob
+  , packageMaintainersListJob
+  , packageUploadersJob
+
+    -- * Enqueuing
+  , scheduleJobs
+  , scheduleMissingMetadataJobs
   , schedulePackageDeprecationListJob
-  , scheduleReleaseDeprecationListJob
-  , scheduleRefreshLatestVersions
+  , schedulePackageUploadersJob
   , scheduleRefreshIndex
   , checkIfIndexRefreshJobIsPlanned
-  , schedulePackageMaintainersListJob
-  , schedulePackageUploadersJob
   --   prefer using smart constructors.
   , ReadmeJobPayload (..)
   , IntAesonVersion (..)
@@ -20,100 +27,164 @@ where
 import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Control.Monad
+import Data.Int (Int64)
 import Data.Text (Text)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Distribution.Types.Version
 import Effectful
+import Effectful.Concurrent (Concurrent)
+import Effectful.Concurrent qualified as Concurrent
+import Effectful.Exception qualified as Exception
 import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Log
 
 import Flora.Database
+import Flora.Debug.ThreadDump (labelCurrentThread)
 import Flora.Environment.Env
 import Flora.Model.Job
+import Flora.Model.Package.Query qualified as PackageQuery
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
+import Flora.Model.Release.Query qualified as ReleaseQuery
 import Flora.Model.Release.Types
 import Flora.Monad
 
-scheduleReadmeJob
-  :: MonadUnliftIO m
-  => ArbS.SimpleEnv JobQueues
-  -> ReleaseId
-  -> PackageName
-  -> Version
-  -> m (Maybe (Arb.JobRead PackageJob))
-scheduleReadmeJob env rid package version =
-  createJobWithResource env (FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version)
+--------------------------------------------------------------------------------
+-- Job payload constructors
+--------------------------------------------------------------------------------
 
-scheduleTarballJob
-  :: MonadUnliftIO m
-  => ArbS.SimpleEnv JobQueues
-  -> ReleaseId
-  -> Namespace
-  -> PackageName
-  -> Version
-  -> m (Maybe (Arb.JobRead PackageJob))
-scheduleTarballJob env rid namespace package version =
-  createJobWithResource env $ FetchTarball $ TarballJobPayload namespace package rid $ MkIntAesonVersion version
+readmeJob :: ReleaseId -> PackageName -> Version -> PackageJob
+readmeJob rid package version =
+  FetchReadme $ ReadmeJobPayload package rid $ MkIntAesonVersion version
 
-scheduleChangelogJob
-  :: MonadUnliftIO m
-  => ArbS.SimpleEnv JobQueues
-  -> ReleaseId
-  -> PackageName
-  -> Version
-  -> m (Maybe (Arb.JobRead PackageJob))
-scheduleChangelogJob env rid package version =
-  createJobWithResource env $ FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version
+tarballJob :: ReleaseId -> Namespace -> PackageName -> Version -> PackageJob
+tarballJob rid namespace package version =
+  FetchTarball $ TarballJobPayload namespace package rid $ MkIntAesonVersion version
 
-scheduleUploadInformationJob
+changelogJob :: ReleaseId -> PackageName -> Version -> PackageJob
+changelogJob rid package version =
+  FetchChangelog $ ChangelogJobPayload package rid $ MkIntAesonVersion version
+
+uploadInformationJob :: ReleaseId -> PackageName -> Version -> PackageJob
+uploadInformationJob rid package version =
+  FetchUploadInformation $ UploadInformationJobPayload package rid $ MkIntAesonVersion version
+
+packageDeprecationListJob :: PackageJob
+packageDeprecationListJob = FetchPackageDeprecationList
+
+releaseDeprecationListJob :: (PackageName, Vector ReleaseId) -> PackageJob
+releaseDeprecationListJob (package, releaseIds) =
+  FetchReleaseDeprecationList package releaseIds
+
+refreshLatestVersionsJob :: PackageJob
+refreshLatestVersionsJob = RefreshLatestVersions
+
+packageMaintainersListJob :: PackageName -> PackageJob
+packageMaintainersListJob = FetchPackageMaintainers
+
+packageUploadersJob :: PackageJob
+packageUploadersJob = FetchPackageUploaders
+
+jobBatchSize :: Int
+jobBatchSize = 1000
+
+scheduleJobs
   :: MonadUnliftIO m
   => ArbS.SimpleEnv JobQueues
-  -> ReleaseId
-  -> PackageName
-  -> Version
-  -> m (Maybe (Arb.JobRead PackageJob))
-scheduleUploadInformationJob env releaseId packageName version =
-  createJobWithResource env $
-    FetchUploadInformation $
-      UploadInformationJobPayload packageName releaseId (MkIntAesonVersion version)
+  -> Vector PackageJob
+  -> m Int64
+scheduleJobs env = go 0
+  where
+    go !inserted jobs
+      | Vector.null jobs = pure inserted
+      | otherwise = do
+          let (batch, rest) = Vector.splitAt jobBatchSize jobs
+          batchInserted <-
+            ArbS.runSimpleDb env $
+              Arb.insertJobsBatch_ $
+                fmap Arb.defaultJob (Vector.toList batch)
+          go (inserted + batchInserted) rest
+
+scheduleMissingMetadataJobs
+  :: ( Concurrent :> es
+     , IOE :> es
+     , Log :> es
+     , Reader FloraEnv :> es
+     )
+  => ArbS.SimpleEnv JobQueues
+  -> Bool
+  -- ^ Whether to enqueue tarball fetching jobs
+  -> FloraM es ()
+scheduleMissingMetadataJobs env withTarballs = do
+  FloraEnv{pool} <- Reader.ask
+  void $ Concurrent.forkIO $ do
+    liftIO $ labelCurrentThread "schedule-metadata"
+
+    schedulingPass "readme" $ do
+      releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutReadme
+      scheduleJobs env $
+        fmap (\(releaseId, version, package) -> readmeJob releaseId package version) releases
+
+    schedulingPass "upload-information" $ do
+      releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutUploadInformation
+      scheduleJobs env $
+        fmap (\(releaseId, version, package) -> uploadInformationJob releaseId package version) releases
+
+    schedulingPass "changelog" $ do
+      releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutChangelog
+      scheduleJobs env $
+        fmap (\(releaseId, version, package) -> changelogJob releaseId package version) releases
+
+    when withTarballs $
+      schedulingPass "tarball" $ do
+        releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutTarball
+        scheduleJobs env $
+          fmap (\(releaseId, version, package) -> tarballJob releaseId (Namespace "hackage") package version) releases
+
+    schedulingPass "release-deprecation" $ do
+      packages <- withReadOnlyPool pool ReleaseQuery.getHackagePackagesWithoutReleaseDeprecationInformation
+      scheduleJobs env $ fmap releaseDeprecationListJob packages
+
+    schedulingPass "refresh-latest-versions" $
+      scheduleJobs env $
+        Vector.singleton refreshLatestVersionsJob
+
+    schedulingPass "maintainers" $ do
+      packages <- withReadOnlyPool pool PackageQuery.getPackagesWithoutMaintainersInformation
+      scheduleJobs env $ fmap (packageMaintainersListJob . snd) packages
+
+schedulingPass
+  :: Log :> es
+  => Text
+  -> Eff es Int64
+  -> Eff es ()
+schedulingPass name action =
+  Exception.trySync action >>= \case
+    Right count ->
+      Log.logInfo "Scheduled metadata jobs" $
+        object ["pass" .= name, "jobs" .= count]
+    Left err ->
+      Log.logAttention "Could not schedule metadata jobs" $
+        object ["pass" .= name, "error" .= show err]
 
 schedulePackageDeprecationListJob
   :: MonadUnliftIO m
   => ArbS.SimpleEnv JobQueues
-  -> m (Maybe (Arb.JobRead PackageJob))
+  -> m Int64
 schedulePackageDeprecationListJob env =
-  createJobWithResource env FetchPackageDeprecationList
-
-scheduleReleaseDeprecationListJob
-  :: MonadUnliftIO m
-  => ArbS.SimpleEnv JobQueues
-  -> (PackageName, Vector ReleaseId)
-  -> m (Maybe (Arb.JobRead PackageJob))
-scheduleReleaseDeprecationListJob env (package, releaseIds) =
-  createJobWithResource env (FetchReleaseDeprecationList package releaseIds)
-
-schedulePackageMaintainersListJob
-  :: MonadUnliftIO m
-  => ArbS.SimpleEnv JobQueues
-  -> PackageName
-  -> m (Maybe (Arb.JobRead PackageJob))
-schedulePackageMaintainersListJob env package =
-  createJobWithResource env (FetchPackageMaintainers package)
+  scheduleJobs env $ Vector.singleton packageDeprecationListJob
 
 schedulePackageUploadersJob
   :: MonadUnliftIO m
   => ArbS.SimpleEnv JobQueues
-  -> m (Maybe (Arb.JobRead PackageJob))
+  -> m Int64
 schedulePackageUploadersJob env =
-  createJobWithResource env FetchPackageUploaders
-
-scheduleRefreshLatestVersions :: MonadUnliftIO m => ArbS.SimpleEnv JobQueues -> m (Maybe (Arb.JobRead PackageJob))
-scheduleRefreshLatestVersions env = createJobWithResource env RefreshLatestVersions
+  scheduleJobs env $ Vector.singleton packageUploadersJob
 
 scheduleRefreshIndex :: ArbS.SimpleEnv JobQueues -> Text -> IO (Maybe (Arb.JobRead PackageJob))
 scheduleRefreshIndex env indexName = ArbS.runSimpleDb env $ do
@@ -121,15 +192,6 @@ scheduleRefreshIndex env indexName = ArbS.runSimpleDb env $ do
   let scheduledTime = Time.addUTCTime Time.nominalDay now
   let arbJob = Arb.defaultJob $ RefreshIndex indexName
   Arb.insertJob arbJob{Arb.notVisibleUntil = Just scheduledTime, Arb.dedupKey = Just (Arb.IgnoreDuplicate ("index-refresh-" <> indexName))}
-
-createJobWithResource
-  :: MonadUnliftIO m
-  => ArbS.SimpleEnv JobQueues
-  -> PackageJob
-  -> m (Maybe (Arb.JobRead PackageJob))
-createJobWithResource env job =
-  ArbS.runSimpleDb env $
-    Arb.insertJob (Arb.defaultJob job)
 
 checkIfIndexRefreshJobIsPlanned
   :: ( IOE :> es

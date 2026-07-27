@@ -37,7 +37,6 @@ import System.FilePath
 
 import Data.Text.HTML qualified as HTML
 import Flora.Database
-import Flora.Debug.ThreadDump (forkLabelled, labelledFor_)
 import Flora.Domain.Import.Package (persistImportOutput)
 import Flora.Domain.Import.Package.Bulk.Archive qualified as Import
 import Flora.Domain.Import.Types
@@ -45,7 +44,6 @@ import Flora.Environment.Env
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.Job
 import Flora.Model.Package.Guard (guardThatPackageExists)
-import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Guard
@@ -372,35 +370,7 @@ refreshIndex env indexName = localDomain "refresh-index" $ do
         indexDependencies <- withReadOnlyPool pool $ Query.getIndexDependencies packageIndex.packageIndexId
         Import.importFromArchive indexName indexDependencies packagesPath
 
-        releasesWithoutReadme <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutReadme
-        liftIO $
-          forkLabelled "refresh-index/readme" $
-            labelledFor_ "schedule-readme" releasesWithoutReadme $
-              \(releaseId, version, packagename) -> scheduleReadmeJob env releaseId packagename version
-
-        hackageReleasesWithoutUploadInformation <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutUploadInformation
-        liftIO $
-          forkLabelled "refresh-index/upload-information" $
-            labelledFor_ "schedule-upload-information" hackageReleasesWithoutUploadInformation $
-              \(releaseId, version, packagename) -> scheduleUploadInformationJob env releaseId packagename version
-
-        releasesWithoutChangelog <- withReadOnlyPool pool Query.getHackagePackageReleasesWithoutChangelog
-        liftIO $
-          forkLabelled "refresh-index/changelog" $
-            labelledFor_ "schedule-changelog" releasesWithoutChangelog $
-              \(releaseId, version, packagename) -> scheduleChangelogJob env releaseId packagename version
-
-        packagesWithoutDeprecationInformation <- withReadOnlyPool pool Query.getHackagePackagesWithoutReleaseDeprecationInformation
-        liftIO $ forkLabelled "refresh-index/deprecation" $ do
-          labelledFor_ "schedule-release-deprecation" packagesWithoutDeprecationInformation $
-            scheduleReleaseDeprecationListJob env
-          void $ scheduleRefreshLatestVersions env
-
-        packagesWithoutMaintainerInformation <- withReadOnlyPool pool Query.getPackagesWithoutMaintainersInformation
-        liftIO $
-          forkLabelled "refresh-index/maintainers" $
-            labelledFor_ "schedule-maintainers" packagesWithoutMaintainerInformation $
-              \(_namespace, packageName) -> schedulePackageMaintainersListJob env packageName
+        scheduleMissingMetadataJobs env False
 
         void $ liftIO $ scheduleRefreshIndex env indexName
 
