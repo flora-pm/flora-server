@@ -13,7 +13,6 @@ import Distribution.Types.Version (Version)
 import Distribution.Version (mkVersion, versionNumbers)
 import Web.HttpApiData
 
-import Flora.Domain.Import.Package.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
@@ -93,7 +92,6 @@ data PackageJob
   | FetchTarball TarballJobPayload
   | FetchUploadInformation UploadInformationJobPayload
   | FetchChangelog ChangelogJobPayload
-  | ImportPackage ImportOutput
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions

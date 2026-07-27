@@ -25,7 +25,6 @@ import Effectful.Process.Typed
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Tracing (Tracer)
 import Log hiding (LogLevel)
@@ -37,7 +36,6 @@ import System.FilePath
 
 import Data.Text.HTML qualified as HTML
 import Flora.Database
-import Flora.Domain.Import.Package (persistImportOutput)
 import Flora.Domain.Import.Package.Bulk.Archive qualified as Import
 import Flora.Domain.Import.Types
 import Flora.Environment.Env
@@ -71,7 +69,6 @@ runner env job = case job.payload of
   FetchTarball x -> fetchTarball x
   FetchUploadInformation x -> fetchUploadInformation x
   FetchChangelog x -> fetchChangeLog x
-  ImportPackage x -> State.evalState mempty $ persistImportOutput x
   FetchPackageDeprecationList -> fetchPackageDeprecationList
   FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
   RefreshLatestVersions -> do

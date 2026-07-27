@@ -31,6 +31,7 @@ import Arbiter.Simple qualified as ArbS
 import Control.Monad
 import Data.Int (Int64)
 import Data.Text (Text)
+import Data.Text.Display (display)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -91,6 +92,24 @@ packageUploadersJob = FetchPackageUploaders
 jobBatchSize :: Int
 jobBatchSize = 1000
 
+jobDedupKey :: PackageJob -> Arb.DedupKey
+jobDedupKey =
+  Arb.IgnoreDuplicate . \case
+    FetchReadme payload -> "readme-" <> display payload.mpReleaseId
+    FetchTarball payload -> "tarball-" <> display payload.releaseId
+    FetchUploadInformation payload -> "upload-information-" <> display payload.releaseId
+    FetchChangelog payload -> "changelog-" <> display payload.releaseId
+    FetchPackageMaintainers package -> "maintainers-" <> display package
+    FetchReleaseDeprecationList package _ -> "release-deprecation-" <> display package
+    FetchPackageDeprecationList -> "package-deprecation-list"
+    RefreshLatestVersions -> "refresh-latest-versions"
+    FetchPackageUploaders -> "package-uploaders"
+    RefreshIndex indexName -> "index-refresh-" <> indexName
+    ScheduleMetadata pass -> "metadata-pass-" <> passName pass
+
+toJobWrite :: PackageJob -> Arb.JobWrite PackageJob
+toJobWrite job = (Arb.defaultJob job){Arb.dedupKey = Just (jobDedupKey job)}
+
 scheduleJobs
   :: MonadUnliftIO m
   => ArbS.SimpleEnv JobQueues
@@ -105,7 +124,7 @@ scheduleJobs env = go 0
           batchInserted <-
             ArbS.runSimpleDb env $
               Arb.insertJobsBatch_ $
-                fmap Arb.defaultJob (Vector.toList batch)
+                fmap toJobWrite (Vector.toList batch)
           go (inserted + batchInserted) rest
 
 metadataPasses
@@ -133,13 +152,9 @@ scheduleMissingMetadataJobs
   -> Bool
   -> m Int64
 scheduleMissingMetadataJobs env withTarballs =
-  ArbS.runSimpleDb env $
-    Arb.insertJobsBatch_
-      [ (Arb.defaultJob (ScheduleMetadata pass))
-          { Arb.dedupKey = Just $ Arb.IgnoreDuplicate $ "metadata-pass-" <> passName pass
-          }
-      | pass <- metadataPasses withTarballs
-      ]
+  scheduleJobs env $
+    Vector.fromList $
+      fmap ScheduleMetadata (metadataPasses withTarballs)
 
 runMetadataPass
   :: ( IOE :> es
@@ -197,8 +212,8 @@ scheduleRefreshIndex :: ArbS.SimpleEnv JobQueues -> Text -> IO (Maybe (Arb.JobRe
 scheduleRefreshIndex env indexName = ArbS.runSimpleDb env $ do
   now <- liftIO Time.getCurrentTime
   let scheduledTime = Time.addUTCTime Time.nominalDay now
-  let arbJob = Arb.defaultJob $ RefreshIndex indexName
-  Arb.insertJob arbJob{Arb.notVisibleUntil = Just scheduledTime, Arb.dedupKey = Just (Arb.IgnoreDuplicate ("index-refresh-" <> indexName))}
+  let arbJob = toJobWrite $ RefreshIndex indexName
+  Arb.insertJob arbJob{Arb.notVisibleUntil = Just scheduledTime}
 
 checkIfIndexRefreshJobIsPlanned
   :: ( IOE :> es

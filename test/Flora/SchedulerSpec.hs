@@ -22,6 +22,7 @@ spec =
   testTheseInOrder
     "scheduler"
     [ testThis "scheduleJobs inserts every job across batch boundaries" testScheduleJobsSpansBatches
+    , testThis "scheduleJobs does not enqueue a job twice" testJobsAreDeduplicated
     , testThis "scheduleMissingMetadataJobs honours the tarball gate" testTarballGate
     , testThis "scheduleMissingMetadataJobs is idempotent" testPassesAreDeduplicated
     ]
@@ -40,6 +41,19 @@ testScheduleJobsSpansBatches = withoutMarkedJobs $ do
     inserted
   enqueued <- withReadOnlyPool pool countMarkedJobs
   assertEqual "every job reached the queue" jobCount enqueued
+
+-- | Covers both routes to a duplicate: the same key twice inside one batch,
+-- and a pass re-run while its previous jobs are still queued.
+testJobsAreDeduplicated :: RequireCallStack => TestEff ()
+testJobsAreDeduplicated = withoutMarkedJobs $ do
+  FloraEnv{pool, workerEnv} <- ask
+  let jobs = Vector.singleton $ packageMaintainersListJob $ PackageName $ jobMarker <> "duplicated"
+  collapsed <- scheduleJobs workerEnv (jobs <> jobs)
+  assertEqual "two copies in one batch collapse into one" (1 :: Int64) collapsed
+  again <- scheduleJobs workerEnv jobs
+  assertEqual "enqueuing it while it is still pending is a no-op" (0 :: Int64) again
+  enqueued <- withReadOnlyPool pool countMarkedJobs
+  assertEqual "only one row reached the queue" 1 enqueued
 
 testTarballGate :: RequireCallStack => TestEff ()
 testTarballGate = withoutPassJobs $ do
