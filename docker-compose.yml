@@ -141,7 +141,7 @@ services:
     volumes:
       - "./deployment/eventlog-live/compose/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml"
       - "./deployment/eventlog-live/compose/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml"
-      - "./deployment/eventlog-live/dashboards:/var/lib/grafana/dashboards"
+      - "./deployment/dashboards:/var/lib/grafana/dashboards"
     ports:
       - "127.0.0.1:${FLORA_GRAFANA_PORT:-3000}:3000"
     profiles:
