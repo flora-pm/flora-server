@@ -3,9 +3,6 @@
 module Flora.Model.Category.Update where
 
 import Control.Monad (void)
-import Control.Monad.IO.Class
-import Data.Text (Text)
-import Data.Text.IO qualified as T
 import Database.PostgreSQL.Simple (Query)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful

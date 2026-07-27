@@ -32,6 +32,7 @@ import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
 import RequireCallStack
 
+import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment
 import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
 import Flora.Environment.Env
@@ -55,6 +56,7 @@ main = do
   traceRunner <- Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
   runEff . runConcurrent $ do
     liftIO $ startEventlogSocket floraEnv.mltp.eventlogSocketDirectory
+    liftIO installThreadDumpHandler
     when floraEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
       runPrometheusMetrics jobsEnv.metrics $ do
@@ -63,7 +65,9 @@ main = do
     withLogger $ \logger -> do
       runLog "flora-server" logger Log.LogTrace $
         checkJobsEnvForThunks jobsEnv
-      void . forkIO $ runServer logger floraEnv jobsEnv
+      void . forkIO $ do
+        liftIO $ labelCurrentThread "jobs-http-server"
+        runServer logger floraEnv jobsEnv
       defaultConfig <- liftIO $
         Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) 50 1 $
           \(job :| _) callbacks -> do

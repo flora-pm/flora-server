@@ -63,6 +63,7 @@ import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
+import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..), toConnString)
 import Flora.Environment.Env
@@ -87,6 +88,7 @@ import FloraWeb.Common.Auth
   , strictAuthHandler
   )
 import FloraWeb.Common.OpenSearch
+import FloraWeb.Common.ThreadLabel (labelRequestThread)
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
 import FloraWeb.Feed.Server qualified as Feed
@@ -118,6 +120,7 @@ runFlora config = do
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
             liftIO $ startEventlogSocket env.mltp.eventlogSocketDirectory
+            liftIO installThreadDumpHandler
             when env.mltp.prometheusEnabled $ do
               liftIO $ blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               runPrometheusMetrics env.metrics $ do
@@ -181,7 +184,8 @@ runServer appLogger floraEnv traceRunner = do
   when (floraEnv.environment == Development) $
     void $
       forkIO $
-        liftIO $
+        liftIO $ do
+          labelCurrentThread "live-reload-watcher"
           Safe.catchAny
             (LiveReload.watchAssets "./static" reloadChannel)
             (\e -> blueMessage $ "⚠️ Live-reload watcher stopped: " <> Text.pack (show e))
@@ -205,7 +209,8 @@ runServer appLogger floraEnv traceRunner = do
             defaultSettings
   withEffToIO (ConcUnlift Persistent Unlimited) $ \runInIO ->
     runSettings warpSettings
-      $ heartbeatMiddleware
+      $ labelRequestThread
+        . heartbeatMiddleware
         . loggingMiddleware
         . const
       $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
