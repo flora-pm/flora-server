@@ -53,7 +53,7 @@ services:
       - local
 
   prometheus:
-    image: prom/prometheus
+    image: "prom/prometheus:v3.13.1"
     volumes:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
     ports:
@@ -133,7 +133,7 @@ services:
       - live-eventlog
 
   eventlog-grafana:
-    image: "grafana/grafana:latest"
+    image: "grafana/grafana:13.1.1"
     restart: "unless-stopped"
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"

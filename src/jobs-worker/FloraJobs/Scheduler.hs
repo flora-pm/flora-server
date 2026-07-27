@@ -31,6 +31,7 @@ import Arbiter.Simple qualified as ArbS
 import Control.Monad
 import Data.Int (Int64)
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
@@ -137,14 +138,7 @@ metadataPasses withTarballs = filter enabled [minBound .. maxBound]
     enabled _ = True
 
 passName :: MetadataPass -> Text
-passName = \case
-  ReadmePass -> "readme"
-  UploadInformationPass -> "upload-information"
-  ChangelogPass -> "changelog"
-  TarballPass -> "tarball"
-  ReleaseDeprecationPass -> "release-deprecation"
-  RefreshLatestVersionsPass -> "refresh-latest-versions"
-  MaintainersPass -> "maintainers"
+passName = Text.replace "_" "-" . metadataPassLabel
 
 scheduleMissingMetadataJobs
   :: MonadUnliftIO m

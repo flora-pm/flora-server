@@ -527,6 +527,7 @@ library flora-jobs
   exposed-modules:
     FloraJobs.Environment
     FloraJobs.Metrics
+    FloraJobs.QueueMetrics
     FloraJobs.Render
     FloraJobs.Runner
     FloraJobs.Scheduler
@@ -656,6 +657,7 @@ executable flora-jobs-runner
     prometheus-client,
     prometheus-effectful,
     prometheus-metrics-ghc,
+    prometheus-proc,
     require-callstack,
     text,
     text-display,

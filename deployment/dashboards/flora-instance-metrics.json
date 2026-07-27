@@ -28,6 +28,35 @@
           "name": "Annotations & Alerts",
           "builtIn": true
         }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "${DS_PROMETHEUS}"
+            },
+            "spec": {
+              "editorMode": "code",
+              "expr": "sum by (instance, git_revision, version) (build_information{instance=~\"$instance\", env=~\"$environment\"}) unless sum by (instance, git_revision, version) (build_information{instance=~\"$instance\", env=~\"$environment\"} offset 10m)",
+              "legendFormat": "{{instance}} {{version}} {{git_revision}}",
+              "titleFormat": "Deploy: {{version}}",
+              "textFormat": "{{instance}} → {{git_revision}}",
+              "tagKeys": "instance",
+              "instant": false,
+              "range": true,
+              "step": "5m"
+            }
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "purple",
+          "name": "Deploys",
+          "builtIn": false
+        }
       }
     ],
     "cursorSync": "Crosshair",
@@ -38,7 +67,7 @@
         "spec": {
           "id": 1,
           "title": "CPU Time (Mutator vs GC)",
-          "description": "",
+          "description": "CPU seconds burned per wall-clock second, stacked. 100% = one full core.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -117,7 +146,7 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "s",
+                  "unit": "percentunit",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -246,6 +275,27 @@
                       }
                     },
                     "refId": "C",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "process_resident_memory_bytes{instance=~\"$instance\", env=~\"$environment\"}",
+                        "legendFormat": "RSS ({{instance}})",
+                        "range": true
+                      }
+                    },
+                    "refId": "D",
                     "hidden": false
                   }
                 }
@@ -647,9 +697,10 @@
                       "includeByName": {},
                       "indexByName": {
                         "Time": 0,
-                        "Value": 3,
+                        "Value": 4,
                         "git_revision": 2,
-                        "instance": 1
+                        "instance": 1,
+                        "version": 3
                       },
                       "orderByMode": "manual",
                       "renameByName": {
@@ -681,7 +732,6 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "displayName": "Git revision",
                   "unit": "string",
                   "thresholds": {
                     "mode": "absolute",
@@ -712,12 +762,12 @@
           }
         }
       },
-      "panel-6": {
+      "panel-7": {
         "kind": "Panel",
         "spec": {
-          "id": 6,
-          "title": "Memory in use",
-          "description": "",
+          "id": 7,
+          "title": "Instance Up",
+          "description": "Prometheus scrape health per target.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -735,8 +785,111 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(ghc_gcdetails_mem_in_use_bytes{instance=~\"$instance\", env=~\"$environment\"}[$__rate_interval])",
+                        "expr": "up{instance=~\"$instance\", env=~\"$environment\"}",
                         "legendFormat": "{{instance}}",
+                        "instant": true,
+                        "range": false
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.1.0-25206366476",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "DOWN",
+                          "color": "red",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "UP",
+                          "color": "green",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "red"
+                      },
+                      {
+                        "value": 1,
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Memory in Use (current)",
+          "description": "Bytes the RTS held from the OS at the last GC.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "ghc_gcdetails_mem_in_use_bytes{instance=~\"$instance\", env=~\"$environment\"}",
+                        "legendFormat": "Mem in Use ({{instance}})",
                         "range": true
                       }
                     },
@@ -773,7 +926,7 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "decbytes",
+                  "unit": "bytes",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -848,6 +1001,15 @@
                   "columnWidthMode": "standard",
                   "rowHeightMode": "standard",
                   "items": [
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-7"
+                        }
+                      }
+                    },
                     {
                       "kind": "AutoGridLayoutItem",
                       "spec": {
@@ -944,7 +1106,20 @@
         ]
       }
     },
-    "links": [],
+    "links": [
+      {
+        "title": "Flora job runners",
+        "url": "/d/flora-jobs-metrics",
+        "type": "link",
+        "icon": "external link",
+        "tags": [],
+        "asDropdown": false,
+        "includeVars": true,
+        "keepTime": true,
+        "targetBlank": false,
+        "tooltip": "Job pipeline, queue depth and latency for the jobs runners"
+      }
+    ],
     "liveNow": true,
     "preload": false,
     "tags": [
@@ -996,29 +1171,6 @@
       {
         "kind": "CustomVariable",
         "spec": {
-          "name": "instance",
-          "query": "prod-web-1,prod-jobs-1,dev-web-1, dev-jobs-1",
-          "current": {
-            "text": [
-              "prod-1"
-            ],
-            "value": [
-              "prod-1"
-            ]
-          },
-          "options": [],
-          "multi": false,
-          "includeAll": true,
-          "label": "instance",
-          "hide": "dontHide",
-          "skipUrlSync": false,
-          "allowCustomValue": true,
-          "valuesFormat": "csv"
-        }
-      },
-      {
-        "kind": "CustomVariable",
-        "spec": {
           "name": "environment",
           "query": "dev,prod",
           "current": {
@@ -1033,6 +1185,41 @@
           "skipUrlSync": false,
           "allowCustomValue": true,
           "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "instance",
+          "label": "instance",
+          "description": "Flora scrape targets",
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "${DS_PROMETHEUS}"
+            },
+            "spec": {
+              "qryType": 1,
+              "query": "label_values(up{job=~\"flora-server|flora-jobs\", env=~\"$environment\"}, instance)",
+              "refId": "PrometheusVariableQueryEditor-VariableQuery"
+            }
+          },
+          "definition": "label_values(up{job=~\"flora-server|flora-jobs\", env=~\"$environment\"}, instance)",
+          "regex": "",
+          "sort": "alphabeticalAsc",
+          "refresh": "onTimeRangeChanged",
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "options": [],
+          "multi": true,
+          "includeAll": true,
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "allowCustomValue": true
         }
       }
     ]
