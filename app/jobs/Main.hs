@@ -30,7 +30,9 @@ import NoThunks.Class
 import Options.Applicative (execParser)
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
+import Prometheus.Metric.Proc qualified as P
 import RequireCallStack
+import System.Info qualified as System
 
 import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment
@@ -41,6 +43,7 @@ import Flora.Model.Job
 import Flora.Tracing qualified as Tracing
 import FloraJobs.Environment
 import FloraJobs.Metrics
+import FloraJobs.QueueMetrics qualified as QueueMetrics
 import FloraJobs.Runner qualified as Runner
 import FloraJobs.Types
 import FloraWeb.Common.Tracing
@@ -61,29 +64,41 @@ main = do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
       runPrometheusMetrics jobsEnv.metrics $ do
         void $ P.register P.ghcMetrics
+        when (System.os == "linux") $ void $ P.register P.procMetrics
         setGitHash
     withLogger $ \logger -> do
       runLog "flora-server" logger Log.LogTrace $
         checkJobsEnvForThunks jobsEnv
-      void . forkIO $ do
-        liftIO $ labelCurrentThread "jobs-http-server"
-        runServer logger floraEnv jobsEnv
+      when floraEnv.mltp.prometheusEnabled $ do
+        void . forkIO $ do
+          liftIO $ labelCurrentThread "jobs-http-server"
+          runServer logger floraEnv jobsEnv
+        void . forkIO $ do
+          liftIO $ labelCurrentThread "jobs-queue-metrics"
+          runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
+            QueueMetrics.runQueueMetricsLoop workerEnv jobsEnv.metrics
       defaultConfig <- liftIO $
         Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) 50 1 $
           \(job :| _) callbacks -> do
             processJob workerEnv jobsEnv logger floraEnv traceRunner job
             Worker.ack callbacks job
+      let instrumentedHooks =
+            if floraEnv.mltp.prometheusEnabled
+              then metricsObservabilityHooks jobsEnv.metrics
+              else Arb.defaultObservabilityHooks
       let config =
             defaultConfig
               { Worker.observabilityHooks =
-                  Arb.defaultObservabilityHooks
-                    { Arb.onJobFailure = \job message startTime endTime ->
+                  instrumentedHooks
+                    { Arb.onJobFailure = \job message startTime endTime -> do
+                        let duration = diffUTCTime endTime startTime
+                        Arb.onJobFailure instrumentedHooks job message startTime endTime
                         liftIO $
                           runEff $
                             Log.runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
                               Log.logAttention message $
                                 object
-                                  [ "duration" .= diffUTCTime endTime startTime
+                                  [ "duration" .= duration
                                   , "payload" .= job.payload
                                   ]
                     }

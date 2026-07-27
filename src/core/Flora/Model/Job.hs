@@ -102,3 +102,27 @@ data PackageJob
   deriving stock (Generic)
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''PackageJob)
+
+jobTypeLabel :: PackageJob -> Text
+jobTypeLabel = \case
+  FetchReadme{} -> "fetch_readme"
+  FetchTarball{} -> "fetch_tarball"
+  FetchUploadInformation{} -> "fetch_upload_information"
+  FetchChangelog{} -> "fetch_changelog"
+  FetchPackageDeprecationList -> "fetch_package_deprecation_list"
+  FetchReleaseDeprecationList{} -> "fetch_release_deprecation_list"
+  RefreshLatestVersions -> "refresh_latest_versions"
+  RefreshIndex{} -> "refresh_index"
+  FetchPackageMaintainers{} -> "fetch_package_maintainers"
+  FetchPackageUploaders -> "fetch_package_uploaders"
+  ScheduleMetadata pass -> "schedule_metadata_" <> metadataPassLabel pass
+
+metadataPassLabel :: MetadataPass -> Text
+metadataPassLabel = \case
+  ReadmePass -> "readme"
+  UploadInformationPass -> "upload_information"
+  ChangelogPass -> "changelog"
+  TarballPass -> "tarball"
+  ReleaseDeprecationPass -> "release_deprecation"
+  RefreshLatestVersionsPass -> "refresh_latest_versions"
+  MaintainersPass -> "maintainers"
