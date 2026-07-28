@@ -27,12 +27,16 @@ with different maintainership, release policies, etc.
 In order to get packages from various repositories, you must configure them
 explicitly in your cabal configuration, and they will act as overlays.
 
-### Release Candidates Index
+* https://flora.internal.network/index/hackage
+
+* https://flora.internal.network/index/cardano
+
+* https://flora.internal.network/index/mycompany
+
+### Release Candidates
 
 By default, uploaded packages will land on in a staging area known
-as the "release candidates" index. This index, fully compatible with
-cabal-install, would allow modifications, as to avoid growing indefinitely
-with releases that will not be used, or may contain defects.
+as the "release candidates".
 
 Having a mandatory "candidates" index grants us several abilities:
 
@@ -43,6 +47,7 @@ package:
   * Cabal file validity
   * Build plan check
   * Documentation build
+  * Presence of README and CHANGELOG
 
 #### Cooldowns
 
@@ -55,7 +60,8 @@ system.
 
 While end-developers are prevented from selecting a version of a package
 still in cooldown, the package is made available to other consumers,
-like anti-virus engines
+like anti-virus engines, or lets you scan for forbidden payloads or files
+such as executable binaries.
 
 This is not a mandatory behaviour of the package indices, as we sometimes
 need to upgrade to the latest version of a package in order to get a
@@ -89,7 +95,6 @@ Much like Hackage, we want the index tarballs to have the following semantics:
 * Append-only – In order to let cabal query the missing bytes of the archive and not re-download everything.
 * Ownership – The uploader will appear at the user in the tar archive's entries' metadata.
 
-
 ### Open Questions
 
 * Revisions, yea or nay
@@ -110,6 +115,22 @@ Below items will correspond to individual tickets
 3. Index tarball construction
 4. Index tarball serving, with byte-range support (probably from the web server itself?)
 5. Repository bootstrap
+
+### Phase 2
+
+As a second milestone, we will set in place the ownership model
+
+2. cabal-install authentication for CLI uploads
+3. Authorisation system
+
+### Phase 3
+
+As a third milestone, we will implement the package validation pipeline
+
+1. Accept `cabal sdist` outputs and stage them in the RC index.
+2. `cabal check` on the cabal file
+3. Ensure that all dependencies exist in the indexes
+
 
 ## References
 
