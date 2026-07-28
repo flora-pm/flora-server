@@ -47,24 +47,6 @@ paginationNav totalResults currentPage searchAction = do
       ]
       Icons.arrowRight
 
--- ul_ [class_ "pagination-footer inline-flex"] $ do
---   when (currentPage.unPositive > 1) $
---     li_ [class_ "pagination-footer__item"] $ do
---       link
---         defaultLinkOptions
---           { href = mkURL searchAction (currentPage - 1)
---           , classes = "pagination-footer__page pagination-footer__previous"
---           , childNode = "Previous"
---           }
---   when (currentPage.unPositive < totalPages) $
---     li_ [class_ "pagination-footer__item"] $
---       link
---         defaultLinkOptions
---           { href = mkURL searchAction (currentPage + 1)
---           , classes = "pagination-footer__page pagination-footer__next"
---           , childNode = "Next"
---           }
-
 mkURL :: SearchAction -> Positive Word -> Text
 mkURL ListAllPackages pageNumber =
   "/" <> toUrlPiece (Links.packageIndexLink pageNumber)

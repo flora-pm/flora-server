@@ -4,21 +4,14 @@ module Flora.Domain.Import.Types
   ( ImportError (..)
   , importErrorReason
   , ImportSubject
-  , Target (..)
-  , Hashes (..)
   , ImportFileType (..)
-  , ReleaseJSONFile (..)
-  , Signed (..)
   ) where
 
 import Control.Exception
-import Data.Aeson
-import Data.Aeson.KeyMap
 import Data.ByteString (StrictByteString)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Distribution.Version (Version)
-import GHC.Generics
 import Text.Pandoc.Error
 
 import Flora.Model.Package.Types
@@ -63,31 +56,5 @@ importErrorReason = \case
 
 type ImportSubject = (ImportFileType, UTCTime, Maybe Text, StrictByteString)
 
-data ReleaseJSONFile = ReleaseJSONFile
-  { signed :: Signed
-  }
-  deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromJSON, ToJSON)
-
-data Signed = Signed
-  { targets :: KeyMap Target
-  }
-  deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromJSON, ToJSON)
-
-data Target = Target
-  { hashes :: Hashes
-  }
-  deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromJSON, ToJSON)
-
-data Hashes = Hashes
-  { sha256 :: Text
-  }
-  deriving stock (Eq, Generic, Show)
-  deriving anyclass (FromJSON, ToJSON)
-
 data ImportFileType
   = CabalFile FilePath
-
--- \| JSONFile FilePath

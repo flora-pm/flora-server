@@ -17,18 +17,14 @@ module Flora.Model.Package.Query
   , getPackageByNamespaceAndName
   , getPackageCategories
   , getPackageDependents
-  , getPackageDependentsByName
   , getPackagesByNamespace
   , getPackagesFromCategoryWithLatestVersion
   , getRequirements
-  , getRequirementsQuery
   , listAllPackages
   , listAllPackagesInNamespace
-  , numberOfPackageRequirementsQuery
   , searchExecutable
   , searchPackage
   , searchPackageByNamespace
-  , unsafeGetComponent
   , getNumberOfExecutablesByName
   , getTransitiveDependencies
   , getPackageById
@@ -99,18 +95,6 @@ getAllPackageDependents
 getAllPackageDependents namespace packageName =
   Vector.fromList <$> query packageDependentsQuery (namespace, packageName)
 
-getPackageDependentsByName
-  :: (IOE :> es, ReadDB :> es)
-  => Namespace
-  -> PackageName
-  -> Text
-  -> Eff es (Vector Package)
-getPackageDependentsByName namespace packageName searchString =
-  Vector.fromList
-    <$> query
-      searchPackageDependentsQuery
-      (namespace, packageName, searchString)
-
 -- | This function gets the first 6 dependents of a package
 getPackageDependents :: (IOE :> es, ReadDB :> es) => Namespace -> PackageName -> Eff es (Vector Package)
 getPackageDependents namespace packageName = Vector.fromList <$> query q (namespace, packageName)
@@ -168,10 +152,6 @@ packageDependentsQuery =
   WHERE dep."namespace" = ?
     AND dep."name" = ?
   |]
-
-searchPackageDependentsQuery :: Query
-searchPackageDependentsQuery =
-  packageDependentsQuery <> " AND ? <% p.name"
 
 getAllPackageDependentsWithLatestVersion
   :: (IOE :> es, ReadDB :> es)
@@ -273,16 +253,6 @@ getComponent releaseId name componentType =
       , [field| component_name |]
       , [field| component_type |]
       ]
-
-unsafeGetComponent
-  :: (IOE :> es, ReadDB :> es)
-  => ReleaseId
-  -> Eff es (Maybe PackageComponent)
-unsafeGetComponent releaseId =
-  queryOne (_selectWhere @PackageComponent queryFields) (Only releaseId)
-  where
-    queryFields :: Vector Field
-    queryFields = [[field| release_id |]]
 
 getAllRequirements
   :: (IOE :> es, ReadDB :> es)

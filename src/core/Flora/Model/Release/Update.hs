@@ -13,7 +13,6 @@ module Flora.Model.Release.Update
   , updateTarballArchiveHash
   , updateReleaseUploader
   , setReleasesDeprecationMarker
-  , setArchiveChecksum
   , linkPackageUploaderToImportedRelease
   ) where
 
@@ -226,13 +225,3 @@ setReleasesDeprecationMarker releaseVersions =
     FROM (VALUES (?,?)) as upd(x,y)
     WHERE r0.release_id = (upd.y :: uuid)
     |]
-
-setArchiveChecksum :: (IOE :> es, WriteDB :> es) => ReleaseId -> Text -> FloraM es ()
-setArchiveChecksum releaseId sha256Hash =
-  void $
-    execute
-      ( _updateFieldsBy @Release
-          [[field| archive_checksum |]]
-          [field| release_id |]
-      )
-      (toRow (Only sha256Hash) ++ toRow (Only releaseId))

@@ -21,8 +21,6 @@ module Flora.Domain.Import.Package
   , parseString
   , extractPackageDataFromCabal
   , chooseNamespace
-  , loadJSONContent
-  , persistHashes
   , flattenCondTree
   ) where
 
@@ -30,12 +28,8 @@ import Control.Applicative ((<|>))
 import Control.DeepSeq (force)
 import Control.Exception ()
 import Control.Monad
-import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.List.NonEmpty qualified as NE
-import Data.Map (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe as Maybe
 import Data.Set (Set)
@@ -43,7 +37,6 @@ import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Text.Encoding qualified as Text
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Compat.Lens qualified as L
@@ -52,7 +45,6 @@ import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
 import Distribution.PackageDescription hiding (PackageId, PackageName)
 import Distribution.PackageDescription qualified as Cabal
-import Distribution.Parsec qualified as Parsec
 import Distribution.Types.BuildInfo.Lens qualified as L
 import Distribution.Types.PackageDescription ()
 import Distribution.Utils.ShortText (fromShortText)
@@ -72,8 +64,6 @@ import GHC.List (List)
 import Log
 import Optics.Core
 import RequireCallStack
-import System.Exit (exitFailure)
-import System.FilePath qualified as FilePath
 
 import Flora.Database
 import Flora.Domain.Category.Normalise
@@ -92,7 +82,6 @@ import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageUploader.Types
 import Flora.Model.PackageUploader.Update qualified as Update
 import Flora.Model.Release (deterministicReleaseId)
-import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Model.Requirement
@@ -187,69 +176,6 @@ versionList =
     , Version.mkVersion [7, 10, 3]
     ]
 
-loadJSONContent
-  :: (IOE :> es, Log :> es, State (Map (Namespace, PackageName, Version) Text) :> es)
-  => FilePath
-  -> BS.ByteString
-  -> Vector (Text, Set PackageName)
-  -> FloraM es (Namespace, PackageName, Version, Target)
-loadJSONContent path content indexPackages = do
-  case getNameAndVersionFromPath path of
-    Left (name, versionText) -> do
-      Log.logAttention "Could not parse version" $
-        object ["version" .= versionText, "package" .= name]
-      error "Parse error"
-    Right (name, version) -> do
-      let packageName = PackageName name
-      case chooseNamespace packageName indexPackages of
-        Nothing -> undefined
-        Just chosenNamespace -> do
-          let field = "<repo>/package/" <> display packageName <> "-" <> display version <> ".tar.gz"
-          mHashFromCache <- State.state $ \m ->
-            case Map.lookup (chosenNamespace, packageName, version) m of
-              Nothing -> (Nothing, m)
-              Just (hash :: Text) -> (Just hash, Map.delete (chosenNamespace, packageName, version) m)
-          case mHashFromCache of
-            Nothing -> processJSONContent field chosenNamespace packageName version content
-            Just hash -> do
-              let target = Target (Hashes hash)
-              pure (chosenNamespace, packageName, version, target)
-
-processJSONContent
-  :: (IOE :> es, Log :> es)
-  => Text
-  -> a
-  -> b
-  -> c
-  -> BS.ByteString
-  -> FloraM es (a, b, c, Target)
-processJSONContent field namespace packageName version content = do
-  let (mReleaseJSON :: Maybe ReleaseJSONFile) = Aeson.decodeStrict' content
-  case mReleaseJSON of
-    Nothing -> do
-      Log.logAttention "Could not parse JSON" $
-        object ["json" .= Text.decodeUtf8 content]
-      liftIO exitFailure
-    Just releaseJSON -> do
-      let mTarget = KeyMap.lookup (Key.fromText field) releaseJSON.signed.targets
-      case mTarget of
-        Nothing -> do
-          Log.logAttention ("Could not find field: " <> field) $
-            object ["json" .= releaseJSON]
-          liftIO exitFailure
-        Just target -> do
-          pure (namespace, packageName, version, target)
-
-getNameAndVersionFromPath :: FilePath -> Either (Text, Text) (Text, Version)
-getNameAndVersionFromPath path =
-  case Text.split (== '/') $ Text.pack $ FilePath.takeDirectory path of
-    [name, versionText] ->
-      case Parsec.simpleParsec $ Text.unpack versionText of
-        Nothing -> Left (name, versionText)
-        Just version ->
-          Right (name, version)
-    _ -> Left ("", "")
-
 parseString
   :: (Error ImportError :> es, Log :> es)
   => (BS.ByteString -> ParseResult a)
@@ -321,42 +247,6 @@ persistImportOutput (ImportOutput package categories release components) = State
             , "package_id" .= display package.packageId
             , "version" .= release.version
             ]
-
-persistHashes
-  :: ( IOE :> es
-     , Log :> es
-     , ReadDB :> es
-     , State (Map (Namespace, PackageName, Version) Text) :> es
-     , WriteDB :> es
-     )
-  => (Namespace, PackageName, Version, Target)
-  -> FloraM es ()
-persistHashes (namespace, packageName, version, target) = do
-  mPackage <- Query.getPackageByNamespaceAndName namespace packageName
-  case mPackage of
-    Just package -> do
-      mRelease <- Query.getReleaseByVersion package.packageId version
-      case mRelease of
-        Nothing -> do
-          Log.logAttention "Release does not exist, saving the hash for later" $
-            object
-              [ "package" .= packageName
-              , "namespace" .= namespace
-              , "version" .= version
-              , "hash" .= target.hashes.sha256
-              ]
-          State.modify (\m -> Map.insert (namespace, packageName, version) target.hashes.sha256 m)
-        Just release -> do
-          Update.setArchiveChecksum release.releaseId target.hashes.sha256
-    Nothing -> do
-      Log.logAttention "Package does not exist, saving the hash for later" $
-        object
-          [ "package" .= packageName
-          , "namespace" .= namespace
-          , "version" .= version
-          , "hash" .= target.hashes.sha256
-          ]
-      State.modify (\m -> Map.insert (namespace, packageName, version) target.hashes.sha256 m)
 
 -- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
 -- that can later be inserted into the database. This function produces stable, deterministic ids,

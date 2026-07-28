@@ -316,23 +316,6 @@ assertClientLeft name request =
 assertClientLeft' :: (HasCallStack, RequireCallStack) => String -> TestEff (Either ClientError a) -> TestEff ()
 assertClientLeft' name request = void $ assertClientLeft name request
 
--- assertStatus :: forall (statusCode :: Type) (httpValue :: Type) (a :: Type)
---              -- . KnownNat statusCode
---              . String
---              -> TestEff (Either ClientError httpValue)
---              -> TestEff a
--- assertStatus name request = do
---   result <- assertClientRight $ testRequest name request
---   case matchUnion result of
---     Nothing ->
---       let statusCode = show $ natVal (Proxy :: Proxy statusCode)
---        in assertFailure $ "Test “" <> name <> "” did not return expected status " <> statusCode
---     Just (WithStatus a :: WithStatus @statusCode @httpValue) ->
---       let headers = getHeaders a
---        in assertEqual
---           (True, True)
---           (List.find (\(name, _) -> name == hLocation), List.find (\(name, _) -> name == hSetCookie))
-
 testRequest :: ClientM a -> TestEff (Either ClientError a)
 testRequest req = liftIO . runClientM req =<< getEnv managerSettings
 
