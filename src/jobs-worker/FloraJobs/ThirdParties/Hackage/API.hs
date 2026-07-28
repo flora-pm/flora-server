@@ -1,8 +1,9 @@
 module FloraJobs.ThirdParties.Hackage.API where
 
 import Data.Aeson
-import Data.Bifunctor qualified as Bifunctor
+import Data.ByteString (StrictByteString)
 import Data.ByteString.Lazy as ByteString
+import Data.Either
 import Data.List.NonEmpty
 import Data.Text (Text)
 import Data.Text.Display
@@ -13,7 +14,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Deriving.Aeson
 import Distribution.Types.Version (Version)
-import Network.HTTP.Media ((//), (/:))
+import Network.HTTP.Media (matches, parseAccept, (//), (/:))
 import Servant.API
 
 import Distribution.Orphans ()
@@ -23,14 +24,29 @@ import Servant.API.ContentTypes.GZip
 
 type HackageAPI = NamedRoutes HackageAPI'
 
+type HackageTextResponse = Headers '[Header "Content-Type" Text] Text
+
 data PlainerText
   deriving (Typeable)
 
 instance Accept PlainerText where
-  contentTypes _ = "text" // "plain" /: ("charset", "utf-8") :| ["text" // "plain"]
+  contentTypes _ =
+    "text" // "plain" /: ("charset", "utf-8")
+      :| ["text" // "plain", "text" // "html"]
 
 instance MimeUnrender PlainerText Text where
-  mimeUnrender _ = Bifunctor.first show . Text.decodeUtf8' . ByteString.toStrict
+  mimeUnrender _ = Right . decodeLenient . ByteString.toStrict
+
+decodeLenient :: StrictByteString -> Text
+decodeLenient bytes =
+  fromRight (Text.decodeLatin1 bytes) (Text.decodeUtf8' bytes)
+
+isHtmlResponse :: HackageTextResponse -> Bool
+isHtmlResponse response =
+  case lookupResponseHeader response :: ResponseHeader "Content-Type" Text of
+    Header served ->
+      maybe False (`matches` ("text" // "html")) (parseAccept (Text.encodeUtf8 served))
+    _ -> False
 
 data VersionedPackage = VersionedPackage
   { package :: PackageName
@@ -62,9 +78,9 @@ data HackagePackagesAPI mode = HackagePackagesAPI
   deriving stock (Generic)
 
 data HackagePackageAPI mode = HackagePackageAPI
-  { getReadme :: mode :- "readme.txt" :> Get '[PlainerText] Text
+  { getReadme :: mode :- "readme.txt" :> Get '[PlainerText] HackageTextResponse
   , getUploadTime :: mode :- "upload-time" :> Get '[PlainText] UTCTime
-  , getChangelog :: mode :- "changelog.txt" :> Get '[PlainerText] Text
+  , getChangelog :: mode :- "changelog.txt" :> Get '[PlainerText] HackageTextResponse
   , getDeprecatedReleases :: mode :- "preferred.json" :> Get '[JSON] HackagePreferredVersions
   , getPackageInfo :: mode :- Get '[JSON] HackagePackageInfo
   , getPackageWithRevision :: mode :- "revision" :> Capture "revision_number" Word :> Get '[JSON] HackagePackageInfo

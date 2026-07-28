@@ -57,7 +57,7 @@ import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
 import FloraJobs.Environment
-import FloraJobs.Render (renderMarkdown)
+import FloraJobs.Render (renderImportedDocument)
 import FloraJobs.Scheduler
 import FloraJobs.ThirdParties.Hackage.API
 import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
@@ -87,8 +87,8 @@ fetchChangeLog ChangelogJobPayload{packageName, packageVersion, releaseId} =
     result <- Hackage.request $ Hackage.getPackageChangelog requestPayload
     case result of
       Left e -> handleClientError e
-      Right bodyText -> do
-        changelogBody <- renderMarkdown ("CHANGELOG" <> show packageName) bodyText
+      Right document -> do
+        changelogBody <- renderImportedDocument ("CHANGELOG" <> show packageName) document
         withReadWritePool pool $ Update.updateChangelog releaseId (Just $ HTML.fromText changelogBody) Imported
   where
     handleClientError :: ClientError -> JobsRunner ()
@@ -111,8 +111,8 @@ makeReadme ReadmeJobPayload{mpPackage, mpReleaseId, mpVersion} =
     result <- Hackage.request $ Hackage.getPackageReadme payload
     case result of
       Left e -> handleClientError e
-      Right bodyText -> do
-        readmeBody <- renderMarkdown ("README" <> show mpPackage) bodyText
+      Right document -> do
+        readmeBody <- renderImportedDocument ("README" <> show mpPackage) document
         withReadWritePool pool $ Update.updateReadme mpReleaseId (Just $ HTML.fromText readmeBody) Imported
   where
     handleClientError :: ClientError -> JobsRunner ()

@@ -193,7 +193,9 @@ recordJobClaimed :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> 
 recordJobClaimed metrics job claimTime = liftIO $ do
   let jobType = jobTypeLabel job.payload
   P.withLabel metrics.jobsClaimed jobType P.incCounter
-  P.withLabel metrics.jobQueueLatency jobType $
+  P.withLabel
+    metrics.jobQueueLatency
+    jobType
     (`P.observe` realToFrac (queueWait job.insertedAt job.notVisibleUntil claimTime))
 
 recordJobSuccess :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> NominalDiffTime -> m ()

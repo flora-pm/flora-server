@@ -11,12 +11,13 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Effectful (Eff, IOE, type (:>))
 import Effectful.Reader.Static
-import Servant.API ()
+import Servant.API (getResponse)
 import Servant.Client
 
 import Data.Time.Orphans ()
 import Flora.Model.Package.Types
 import FloraJobs.Environment
+import FloraJobs.Render (ImportedDocument (..))
 import FloraJobs.ThirdParties.Hackage.API
 
 request
@@ -50,12 +51,13 @@ getPackageTarball versionedPackage =
     // (.getTarball)
     /: VersionedTarball versionedPackage
 
-getPackageReadme :: VersionedPackage -> ClientM Text
+getPackageReadme :: VersionedPackage -> ClientM ImportedDocument
 getPackageReadme versionedPackage =
-  hackageClient
-    // (.withPackage)
-    /: versionedPackage
-    // (.getReadme)
+  fmap classifyTextResponse $
+    hackageClient
+      // (.withPackage)
+      /: versionedPackage
+      // (.getReadme)
 
 getPackageUploadTime :: VersionedPackage -> ClientM UTCTime
 getPackageUploadTime packageName =
@@ -64,12 +66,20 @@ getPackageUploadTime packageName =
     /: packageName
     // (.getUploadTime)
 
-getPackageChangelog :: VersionedPackage -> ClientM Text
+getPackageChangelog :: VersionedPackage -> ClientM ImportedDocument
 getPackageChangelog versionedPackage =
-  hackageClient
-    // (.withPackage)
-    /: versionedPackage
-    // (.getChangelog)
+  fmap classifyTextResponse $
+    hackageClient
+      // (.withPackage)
+      /: versionedPackage
+      // (.getChangelog)
+
+classifyTextResponse :: HackageTextResponse -> ImportedDocument
+classifyTextResponse response
+  | isHtmlResponse response = RenderedHtml body
+  | otherwise = MarkdownSource body
+  where
+    body = getResponse response
 
 getDeprecatedPackages :: ClientM (Vector DeprecatedPackage')
 getDeprecatedPackages =
