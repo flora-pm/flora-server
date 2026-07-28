@@ -180,16 +180,6 @@ renderCategory Category{name, slug} = do
 displayCategories :: Vector Category -> FloraHTML
 displayCategories categories = mconcat $ List.intersperse ", " (Vector.toList $ fmap renderCategory categories)
 
-displayMaintainer
-  :: Namespace
-  -> PackageName
-  -> Maybe Int
-  -> Maybe PackageUploader
-  -> Text
-  -> FloraHTML
-displayMaintainer namespace packageName mLotteryFactor mUploader maintainerInfo =
-  p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
-
 displayLotteryFactor
   :: Namespace
   -> PackageName
@@ -215,22 +205,6 @@ displayLotteryFactor namespace packageName lotteryFactor = do
     ]
     $ p_
     $ toHtml ("The number of people with uploader permission on " <> formatPackage namespace packageName <> " who have released something to " <> display namespace <> " in the last 2 years (i.e. the number of people likely able to release critical fixes in a timely manner)")
-
--- displayMaintainer
---   :: Namespace
---   -> PackageName
---   -> Maybe Int
---   -> Maybe PackageUploader
---   -> Text
---   -> FloraHTML
--- displayMaintainer namespace packageName mLotteryFactor mUploader maintainerInfo =
---   li_ [class_ ""] $ do
---     h3_ [class_ "package-body-section"] "Maintainer"
---     div_ [] $ do
---       p_ [class_ "maintainer-info"] (toHtml maintainerInfo)
---       whenJust mLotteryFactor $ \lotteryFactor ->
---         p_ [] $ displayLotteryFactor namespace packageName lotteryFactor
---       whenJust mUploader $ \uploader -> p_ [] $ displayUploader uploader.username
 
 getHomepage :: Release -> Text
 getHomepage release =

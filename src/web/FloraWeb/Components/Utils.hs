@@ -22,20 +22,6 @@ autocorrect_ = makeAttributes "autocorrect"
 autocapitalize_ :: Text -> Attributes
 autocapitalize_ = makeAttributes "autocapitalize"
 
-data LinkOptions = LinkOptions
-  { href :: Text
-  , classes :: Text
-  , childNode :: FloraHTML
-  }
-
-defaultLinkOptions :: LinkOptions
-defaultLinkOptions =
-  LinkOptions
-    { href = ""
-    , classes = ""
-    , childNode = mempty
-    }
-
 -- Standard WAI-ARIA attributes for accessibility purpose
 ariaLabel_ :: Text -> Attributes
 ariaLabel_ = makeAttributes "aria-label"
@@ -49,16 +35,6 @@ ariaHidden = makeAttributes "aria-hidden"
 -- Prefer these ones as they are integrated with AlpineJS
 ariaControls_ :: Text -> Attributes
 ariaControls_ = makeAttributes "aria-controls"
-
-ariaExpanded_ :: Text -> Attributes
-ariaExpanded_ = makeAttributes ":aria-expanded"
-
--- AlpineJS bindings
-xId_ :: Text -> Attributes
-xId_ = makeAttributes "x-id"
-
-id'_ :: Text -> Attributes
-id'_ = makeAttributes ":id"
 
 -- | @datalist@ element
 dataText_ :: Text -> Attributes
@@ -145,11 +121,6 @@ popovertarget_
   :: Text
   -> Attributes
 popovertarget_ = makeAttributes "popovertarget"
-
-popovertargetaction_
-  :: Text
-  -> Attributes
-popovertargetaction_ = makeAttributes "popovertargetaction"
 
 interestfor_
   :: Text

@@ -1,16 +1,10 @@
 module FloraWeb.Pages.Templates.Packages
   ( presentationHeader
-  , displayDependencies
-  , displayDependents
   , displayInstructions
-  , displayLicense
-  , displayNamespace
   , displayPackageDeprecation
   , displayPackageFlags
   , displayReadme
   , displayReleaseDeprecation
-  , displayReleaseVersion
-  , displayVersions
   , listVersions
   , packageListing
   , packageWithExecutableListing
@@ -30,9 +24,9 @@ import Control.Monad (when)
 import Control.Monad.Extra (whenJust)
 import Control.Monad.Reader (ask)
 import Data.Fixed (Pico, div')
-import Data.Foldable (fold, forM_)
+import Data.Foldable (forM_)
 import Data.List qualified as List
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (isJust)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
@@ -41,7 +35,6 @@ import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Pretty (pretty)
-import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Flag (PackageFlag (..))
 import Distribution.Types.Flag qualified as Flag
@@ -76,19 +69,6 @@ import FloraWeb.Components.Utils
 import FloraWeb.Links qualified as Links
 import FloraWeb.Pages.Templates (FloraHTML, TemplateEnv (..))
 import FloraWeb.Pages.Templates.Haddock (renderHaddock)
-
-data Target
-  = Dependents
-  | Dependencies
-  | Versions
-  | Security
-  deriving stock (Eq, Ord)
-
-instance Display Target where
-  displayBuilder Dependents = "dependents"
-  displayBuilder Dependencies = "dependencies"
-  displayBuilder Versions = "versions"
-  displayBuilder Security = "security"
 
 showDependents
   :: UTCTime
@@ -308,88 +288,11 @@ showChangelog numberOfReleases latestRelease numberOfDependencies numberOfDepend
         Nothing -> toHtml @Text "This release does not have a Changelog"
         Just changelogText -> toHtmlRaw changelogText
 
-displayReleaseVersion :: Version -> FloraHTML
-displayReleaseVersion = toHtml
-
--- | Display a namespace with a link
-displayNamespace :: Namespace -> FloraHTML
-displayNamespace namespace =
-  a_
-    [ class_ "breadcrumb-segment"
-    , href_
-        ("/packages/" <> display namespace <> "?page=1")
-    ]
-    (toHtml $ display namespace)
-
-displayLicense :: SPDX.License -> FloraHTML
-displayLicense license =
-  li_ [class_ ""] $ do
-    div_ [class_ "license"] $ h3_ [class_ "package-body-section"] "License"
-    p_ [class_ "package-body-section__license"] $ toHtml license
-
 displayReadme :: Release -> FloraHTML
 displayReadme release =
   case release.readme of
     Nothing -> renderHaddock release.description
     Just readme -> toHtmlRaw readme
-
-displayVersions :: Namespace -> PackageName -> Vector Release -> Word -> FloraHTML
-displayVersions namespace packageName versions numberOfReleases =
-  li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section versions"] "Versions"
-    ul_ [class_ "package-versions"] $ do
-      Vector.forM_ versions displayVersion
-      if fromIntegral (Vector.length versions) >= numberOfReleases
-        then ""
-        else showAll Versions Nothing namespace packageName
-  where
-    displayVersion :: Release -> FloraHTML
-    displayVersion release =
-      li_ [class_ "release"] $ do
-        let versionClass = "release-version" <> if Just True == release.deprecated then " release-deprecated" else ""
-        let dataText = ([dataText_ "This release is deprecated, pick another one" | Just True == release.deprecated])
-        a_
-          ([class_ versionClass, href_ $ Links.versionResource namespace packageName release.version] <> dataText)
-          (toHtml $ display release.version)
-        " "
-        case release.uploadedAt of
-          Nothing -> ""
-          Just ts ->
-            span_ [] $ do
-              toHtml $ Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y" ts
-              case release.revisedAt of
-                Nothing -> span_ [] ""
-                Just revisionDate ->
-                  span_
-                    [ dataText_
-                        ("Revised on " <> display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate))
-                    , class_ "revised-date"
-                    ]
-                    Icons.pen
-
-displayDependencies
-  :: (Namespace, PackageName, Version)
-  -- ^ The package namespace and name
-  -> Word
-  -- ^ Number of dependenciesc
-  -> Vector DependencyVersionRequirement
-  -- ^ (Namespace, Name, Version requirement, Synopsis of the dependency)
-  -> FloraHTML
-displayDependencies (namespace, packageName, version) numberOfDependencies dependencies =
-  li_ [class_ ""] $ do
-    h3_ [class_ "package-body-section"] (toHtml $ "Dependencies (" <> display numberOfDependencies <> ")")
-    let deps = foldMap renderDependency dependencies
-    ul_ [class_ "dependencies"] $
-      deps
-        <> showAll Dependencies (Just version) namespace packageName
-
-showAll :: Target -> Maybe Version -> Namespace -> PackageName -> FloraHTML
-showAll target mVersion namespace packageName = do
-  let resource = case target of
-        Dependents -> Links.dependentsPage namespace packageName (PositiveUnsafe 1)
-        Dependencies -> Links.dependenciesPage namespace packageName (fromJust mVersion)
-        Versions -> Links.versionsPage namespace packageName
-  a_ [class_ "dependency", href_ resource] "Show all…"
 
 displayInstructions :: Namespace -> PackageName -> Release -> FloraHTML
 displayInstructions namespace packageName latestRelease = do
@@ -440,37 +343,6 @@ displayReleaseDeprecation mLatestViableRelease =
         [href_ $ Links.versionResource namespace package version]
         (text $ display namespace <> "/" <> display package <> "-" <> display version)
 
-displayDependents
-  :: (Namespace, PackageName)
-  -> Word
-  -> Vector Package
-  -> FloraHTML
-displayDependents (namespace, packageName) numberOfDependents dependents =
-  li_ [class_ " dependents"] $ do
-    h3_ [class_ "package-body-section"] (toHtml $ "Dependents (" <> display numberOfDependents <> ")")
-    if Vector.null dependents
-      then ""
-      else
-        let deps = fold $ intercalateVec ", " $ fmap renderDependent dependents
-         in if fromIntegral (Vector.length dependents) >= numberOfDependents
-              then deps
-              else deps <> ", " <> showAll Dependents Nothing namespace packageName
-
-renderDependent :: Package -> FloraHTML
-renderDependent Package{name, namespace} = do
-  let qualifiedName = toHtml $ display namespace <> "/" <> display name
-
-  a_ [class_ "dependent", href_ $ Links.packageResource namespace name] qualifiedName
-
-renderDependency :: DependencyVersionRequirement -> FloraHTML
-renderDependency DependencyVersionRequirement{namespace, packageName, version} = do
-  li_ [class_ "dependency"] $ do
-    a_ [href_ $ Links.packageResource namespace packageName] (toHtml packageName)
-    toHtmlRaw @Text "&nbsp;"
-    if version == ">=0"
-      then ""
-      else toHtml version
-
 displayPackageFlags :: ReleaseFlags -> FloraHTML
 displayPackageFlags (ReleaseFlags packageFlags) =
   if Vector.null packageFlags
@@ -498,12 +370,6 @@ displayPackageFlag MkPackageFlag{flagName, flagDescription, flagDefault} = case 
 defaultMarker :: Bool -> FloraHTML
 defaultMarker True = em_ [class_ "text-small"] "(on by default)"
 defaultMarker False = em_ [class_ "text-small"] "(off by default)"
-
-intercalateVec :: a -> Vector a -> Vector a
-intercalateVec sep vector =
-  if Vector.null vector
-    then vector
-    else Vector.tail $ Vector.concatMap (\word -> Vector.fromList [sep, word]) vector
 
 formatInstallString :: PackageName -> Release -> Text
 formatInstallString packageName Release{version} =

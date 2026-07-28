@@ -1,4 +1,3 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# OPTIONS_GHC -fno-full-laziness #-}
 
@@ -121,14 +120,7 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
             Tar.NormalFile bs _
               | ".cabal" `isSuffixOf` entryPath && entryTime > time ->
                   (CabalFile entryPath, entryTime, mUsername, BL.toStrict bs) `Streamly.cons` acc
-            -- \| ".json" `isSuffixOf` entryPath && entryTime > time ->
-            --     (JSONFile entryPath, entryTime, BL.toStrict bs) `Streamly.cons` acc
             _ -> acc
-
--- (JSONFile path, _, content) ->
---   do
---     loadJSONContent path content repository
---     >>= persistHashes
 
 packageListOrThrow
   :: (Error ImportError :> es, Log :> es, Show e)
