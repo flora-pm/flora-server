@@ -739,6 +739,7 @@ test-suite flora-test
     hedgehog,
     hs-opentelemetry-sdk,
     http-client,
+    http-media,
     log-base,
     log-effectful,
     monad-time-effectful,

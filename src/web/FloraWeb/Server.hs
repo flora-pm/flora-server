@@ -67,10 +67,6 @@ import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..), toConnString)
 import Flora.Environment.Env
-  ( FeatureEnv (..)
-  , FloraEnv (..)
-  , MLTP (..)
-  )
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
