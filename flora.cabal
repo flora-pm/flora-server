@@ -581,7 +581,6 @@ executable flora-server
     effectful-core,
     effectful-plugin,
     flora,
-    flora-jobs,
     flora-web,
     log-base,
     log-effectful,
@@ -643,6 +642,7 @@ executable flora-jobs-runner
     text,
     text-display,
     time,
+    vector,
     wai-middleware-prometheus,
     warp,
 

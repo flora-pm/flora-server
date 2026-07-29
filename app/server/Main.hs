@@ -35,7 +35,6 @@ import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.PackageIndex.Types
 import Flora.Monad
-import FloraJobs.Scheduler (checkIfIndexRefreshJobIsPlanned)
 import FloraWeb.Server
 
 main :: IO ()
@@ -62,7 +61,6 @@ preFlightChecks config = do
           checkFloraEnvForThunks env
           withReadOnlyPool env.pool checkExpectedTables
           withReadOnlyPool env.pool checkRepositoriesAreConfigured
-          checkIfIndexRefreshJobIsPlanned env.workerEnv
 
 checkFloraEnvForThunks :: (IOE :> es, Log :> es) => FloraEnv -> Eff es ()
 checkFloraEnvForThunks env = do

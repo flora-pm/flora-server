@@ -18,8 +18,6 @@ module FloraJobs.Scheduler
   , runMetadataPass
   , schedulePackageDeprecationListJob
   , schedulePackageUploadersJob
-  , scheduleRefreshIndex
-  , checkIfIndexRefreshJobIsPlanned
   --   prefer using smart constructors.
   , ReadmeJobPayload (..)
   , IntAesonVersion (..)
@@ -28,12 +26,10 @@ where
 
 import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
-import Control.Monad
 import Data.Int (Int64)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
-import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Distribution.Types.Version
@@ -48,8 +44,6 @@ import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Model.Package.Query qualified as PackageQuery
 import Flora.Model.Package.Types
-import Flora.Model.PackageIndex.Query qualified as Query
-import Flora.Model.PackageIndex.Types
 import Flora.Model.Release.Query qualified as ReleaseQuery
 import Flora.Model.Release.Types
 import Flora.Monad
@@ -201,25 +195,3 @@ schedulePackageUploadersJob
   -> m Int64
 schedulePackageUploadersJob env =
   scheduleJobs env $ Vector.singleton packageUploadersJob
-
-scheduleRefreshIndex :: ArbS.SimpleEnv JobQueues -> Text -> IO (Maybe (Arb.JobRead PackageJob))
-scheduleRefreshIndex env indexName = ArbS.runSimpleDb env $ do
-  now <- liftIO Time.getCurrentTime
-  let scheduledTime = Time.addUTCTime Time.nominalDay now
-  let arbJob = toJobWrite $ RefreshIndex indexName
-  Arb.insertJob arbJob{Arb.notVisibleUntil = Just scheduledTime}
-
-checkIfIndexRefreshJobIsPlanned
-  :: ( IOE :> es
-     , Log :> es
-     , Reader FloraEnv :> es
-     )
-  => ArbS.SimpleEnv JobQueues
-  -> FloraM es ()
-checkIfIndexRefreshJobIsPlanned env = do
-  FloraEnv{pool} <- Reader.ask
-  Log.logInfo_ "Checking if the index refresh job is planned…"
-  indexes <- withReadOnlyPool pool Query.listPackageIndexes
-  forM_ indexes $ \index -> do
-    Log.logInfo "Scheduling index refresh" $ object ["index" .= index.repository]
-    void $ liftIO $ scheduleRefreshIndex env index.repository
