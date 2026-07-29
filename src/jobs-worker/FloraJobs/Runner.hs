@@ -7,7 +7,6 @@ import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Control.Exception
 import Control.Monad
-import Control.Monad.IO.Class
 import Data.Function
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -369,8 +368,6 @@ refreshIndex env indexName = localDomain "refresh-index" $ do
         Import.importFromArchive indexName indexDependencies packagesPath
 
         void $ scheduleMissingMetadataJobs env False
-
-        void $ liftIO $ scheduleRefreshIndex env indexName
 
 getCabalPackagesDirectory :: FileSystem :> es => FloraM es FilePath
 getCabalPackagesDirectory = do
