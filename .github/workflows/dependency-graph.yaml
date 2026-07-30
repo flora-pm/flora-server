@@ -48,6 +48,7 @@ jobs:
             ${{ runner.os }}-ghc-9.10.3-
 
       - name: Configure environment
+        working-directory: project
         run: |
           ./.github/workflows/setup.sh
           cabal update
