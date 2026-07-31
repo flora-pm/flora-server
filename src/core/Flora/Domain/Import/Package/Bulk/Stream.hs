@@ -1,5 +1,6 @@
 module Flora.Domain.Import.Package.Bulk.Stream
   ( importFromStream
+  , importWorkerLimit
   ) where
 
 import Control.Monad
@@ -7,7 +8,6 @@ import Data.Set (Set)
 import Data.Text (Text)
 import Data.Vector (Vector)
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
-import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
@@ -16,7 +16,6 @@ import Effectful.Log (Log)
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
 import Effectful.Time (Time)
 import Log
 import RequireCallStack
@@ -30,7 +29,6 @@ import Flora.Domain.Import.Package
 import Flora.Domain.Import.Types
 import Flora.Environment.Config
 import Flora.Environment.Env
-import Flora.Model.Package.Types hiding (PackageName)
 import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Types
@@ -39,6 +37,10 @@ import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
 import Flora.Monitoring (increaseImportFailureCounter, increasePackageImportCounterBy)
+
+-- | How many cabal files 'importFromStream' works on at once (half the pool).
+importWorkerLimit :: PoolConfig -> Int
+importWorkerLimit poolConfig = max 1 (poolConfig.connections `div` 2)
 
 importFromStream
   :: forall es
@@ -49,7 +51,6 @@ importFromStream
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
      , RequireCallStack
-     , State (Set (Namespace, Flora.PackageName, Version)) :> es
      , Time :> es
      )
   => PackageIndex
@@ -58,7 +59,7 @@ importFromStream
   -> FloraM es ()
 importFromStream packageIndex indexPackages stream = do
   env <- Reader.ask
-  let workerLimit = max 1 (env.dbConfig.connections `div` 2)
+  let workerLimit = importWorkerLimit env.dbConfig
       cfg = Streamly.maxThreads workerLimit . Streamly.maxBuffer workerLimit . Streamly.inspect True
   Tally total failures <-
     finally
@@ -110,7 +111,6 @@ processFile
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
      , RequireCallStack
-     , State (Set (Namespace, Flora.PackageName, Version)) :> es
      , Time :> es
      )
   => PackageIndex

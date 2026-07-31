@@ -85,11 +85,13 @@ main = do
           liftIO $ labelCurrentThread "jobs-queue-metrics"
           runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
             QueueMetrics.runQueueMetricsLoop workerEnv jobsEnv.metrics
-      indexRefreshCrons <-
+      crons <-
         runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
           provideCallStack $ do
             indexes <- withReadOnlyPool jobsEnv.pool Query.listPackageIndexes
-            indexRefreshCronJobs indexes
+            indexRefreshCrons <- indexRefreshCronJobs indexes
+            feedRetentionCron <- feedRetentionCronJob
+            pure (indexRefreshCrons <> feedRetentionCron)
       defaultConfig <- liftIO $
         Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) 50 1 $
           \(job :| _) callbacks -> do
@@ -102,7 +104,7 @@ main = do
               else Arb.defaultObservabilityHooks
       let config =
             defaultConfig
-              { Worker.cronJobs = indexRefreshCrons
+              { Worker.cronJobs = crons
               , Worker.observabilityHooks =
                   instrumentedHooks
                     { Arb.onJobFailure = \job message startTime endTime -> do
@@ -167,6 +169,27 @@ indexRefreshCronJobs indexes = do
     everyTwelveHoursAt position =
       let hour = (3 + position) `mod` 12
        in "0 " <> display hour <> "," <> display (hour + 12) <> " * * *"
+
+feedRetentionCronJob
+  :: (IOE :> es, Log :> es)
+  => Eff es [Worker.CronJob PackageJob]
+feedRetentionCronJob =
+  case Worker.cronJob
+    "prune-feed-entries"
+    "30 2 * * *"
+    Worker.SkipOverlap
+    (\_tickKind _tickTime -> Arb.defaultJob PruneFeedEntries) of
+    Left parseError -> do
+      Log.logAttention "Invalid cron expression for the feed entry pruning" $
+        object ["error" .= Text.pack parseError]
+      liftIO exitFailure
+    Right cron -> do
+      Log.logInfo "Scheduling feed entry pruning" $
+        object
+          [ "schedule" .= cron.name
+          , "cron_expression" .= cron.cronExpression
+          ]
+      pure [cron]
 
 runServer
   :: IOE :> es

@@ -11,21 +11,17 @@ import Data.Function
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
+import Data.Time (NominalDiffTime, addUTCTime, nominalDay)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Effectful (IOE, type (:>))
-import Effectful.Concurrent (Concurrent)
-import Effectful.Error.Static (Error)
+import Effectful (type (:>))
 import Effectful.Error.Static qualified as Error
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log hiding (LogLevel)
 import Effectful.Process.Typed
-import Effectful.Prometheus
-import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.Time (Time)
-import Effectful.Tracing (Tracer)
+import Effectful.Time qualified as Time
 import Log hiding (LogLevel)
 import Network.HTTP.Types (gone410, notFound404, statusCode)
 import RequireCallStack
@@ -37,8 +33,8 @@ import Data.Text.HTML qualified as HTML
 import Flora.Database
 import Flora.Domain.Import.Package.Bulk.Archive qualified as Import
 import Flora.Domain.Import.Types
-import Flora.Environment.Env
 import Flora.Model.BlobIndex.Update qualified as Update
+import Flora.Model.Feed.Update qualified as Update
 import Flora.Model.Job
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types
@@ -77,6 +73,7 @@ runner env job = case job.payload of
   ScheduleMetadata pass -> runMetadataPass env pass
   FetchPackageMaintainers packageName -> fetchPackageMaintainers packageName
   FetchPackageUploaders -> fetchPackageUploaders
+  PruneFeedEntries -> pruneFeedEntries
 
 fetchChangeLog :: RequireCallStack => ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -337,24 +334,14 @@ fetchReleaseDeprecationList packageName releases = localDomain "fetch-release-de
     handleClientError e = Arb.throwRetryable (Text.show e)
 
 refreshIndex
-  :: ( Concurrent :> es
-     , Error ImportError :> es
-     , FileSystem :> es
-     , IOE :> es
-     , Log :> es
-     , Metrics AppMetrics :> es
-     , Reader FloraEnv :> es
-     , Time :> es
-     , Tracer :> es
-     , TypedProcess :> es
-     )
+  :: RequireCallStack
   => ArbS.SimpleEnv JobQueues
   -> Text
-  -> FloraM es ()
+  -> JobsRunner ()
 refreshIndex env indexName = localDomain "refresh-index" $ do
   Log.localData ["index_name" .= indexName] $ do
     Log.logInfo_ "Refreshing index"
-    FloraEnv{pool} <- Reader.ask
+    FloraJobsEnv{pool} <- Reader.ask
     runProcess_ $ shell "cabal update --project-file cabal.project.repositories"
     packagesPath <- getCabalPackagesDirectory
     mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName indexName
@@ -368,6 +355,18 @@ refreshIndex env indexName = localDomain "refresh-index" $ do
         Import.importFromArchive indexName indexDependencies packagesPath
 
         void $ scheduleMissingMetadataJobs env False
+
+-- | How long a feed entry stays in @package_feeds@ before 'pruneFeedEntries' removes it.
+feedRetentionPeriod :: NominalDiffTime
+feedRetentionPeriod = 90 * nominalDay
+
+pruneFeedEntries :: RequireCallStack => JobsRunner ()
+pruneFeedEntries = localDomain "prune-feed-entries" $ do
+  FloraJobsEnv{pool} <- Reader.ask
+  now <- Time.currentTime
+  let cutoff = addUTCTime (negate feedRetentionPeriod) now
+  withReadWritePool pool $ Update.deleteEntriesBefore cutoff
+  Log.logInfo "Pruned feed entries" $ object ["cutoff" .= cutoff]
 
 getCabalPackagesDirectory :: FileSystem :> es => FloraM es FilePath
 getCabalPackagesDirectory = do

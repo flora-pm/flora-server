@@ -55,11 +55,12 @@ Visit https://flora.pm/documentation for explanations on what Flora can do.
 
 We welcome new contributors! Join the [Matrix chatroom](https://app.element.io/#/room/#flora-pm:matrix.org) or open a [Discussion](https://github.com/flora-pm/flora-server/discussions/new/choose).
 
-To setup a local installation, see [CONTRIBUTING.md#project-setup](https://github.com/flora-pm/flora-server/blob/development/CONTRIBUTING.md#project-setup)
+To setup a local installation, see [CONTRIBUTING.md#development-environment](https://github.com/flora-pm/flora-server/blob/development/CONTRIBUTING.md#development-environment)
 
 ## 📖 Read More
 
 * [Code of Conduct](./CODE_OF_CONDUCT.md)
+* [Architecture](./architecture/)
 * [Development Wiki](https://github.com/flora-pm/flora-server/wiki)
 
 ## 🫶 Special Collaborations

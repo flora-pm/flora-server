@@ -4,12 +4,12 @@
 -- This module contains all the code to import Cabal packages into Flora. The import process
 -- for a single package is divided in three consecutive steps:
 --
---   1. The Cabal file is read from the file system and parsed into a 'GenericPackageDescription' from the Cabal package
+--   1. The contents of the Cabal file are parsed into a 'GenericPackageDescription' from the Cabal package
 --   2. Relevant data from the Cabal package is extracted and turned into an intermediate representation, 'ImportOutput'
 --   3. This 'ImportOutput' is inserted (or more precisely upserted) into the database
 --
--- We strive to keep step 2 deterministic and side-effect free, besides accessing the current time and logging.
--- We also want to keep the import procedure idempotent.
+-- Step 2 is deterministic: the same Cabal file yields the same ids. Its only effects are reading the
+-- clock, logging, and resolving the uploader id. The procedure as a whole is idempotent.
 --
 -- Packages can be imported in any order, even before their dependencies are known. When importing a package,
 -- any dependency that isn't yet known will be imported as an "unknown package", as indicated by its status field.
@@ -29,8 +29,8 @@ import Control.DeepSeq (force)
 import Control.Exception ()
 import Control.Monad
 import Data.ByteString qualified as BS
+import Data.List (sortOn)
 import Data.List.NonEmpty qualified as NE
-import Data.Map.Strict qualified as Map
 import Data.Maybe as Maybe
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -56,8 +56,6 @@ import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import GHC.List (List)
@@ -75,7 +73,6 @@ import Flora.Model.Category.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
 import Flora.Model.Package.Orphans ()
-import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Types
@@ -193,19 +190,22 @@ parseString parser name bs = do
       Error.throwError $ CabalFileCouldNotBeParsed name
 
 -- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
---  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'
+--  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'.
+--
+-- Workers run this concurrently, each in its own transaction, so every
+-- db statement takes row locks in a pre-defined order,
+-- otherwise two importers that reference each other's packages deadlock.
 persistImportOutput
   :: forall es
    . ( IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
      , RequireCallStack
-     , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
   => ImportOutput
   -> FloraM es ()
-persistImportOutput (ImportOutput package categories release components) = State.modifyM $ \packageCache -> do
+persistImportOutput (ImportOutput package categories release components) =
   Log.localData
     [ "package_name" .= package.name
     , "version" .= release.version
@@ -213,40 +213,17 @@ persistImportOutput (ImportOutput package categories release components) = State
     $ do
       env <- Reader.ask
       withReadWritePool env.pool $ do
-        Update.upsertPackage package
+        Update.upsertPackageWithDependencies package (fmap (.package) dependencies)
         categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
         forM_
-          categoriesByName
+          (sortOn (.categoryId) categoriesByName)
           (\c -> Update.addToCategory package.packageId c.categoryId)
-        if Set.member (package.namespace, package.name, release.version) packageCache
-          then do
-            Log.logInfo "Release already present" $
-              object
-                [ "namespace" .= package.namespace
-                , "package" .= package.name
-                , "version" .= release.version
-                ]
-            pure packageCache
-          else do
-            Update.upsertRelease package release
-            let componentsList = NE.toList $ fmap fst components
-            let dependencies = foldMap snd components
-            Update.upsertPackageComponents componentsList
-            Update.bulkInsertUnknownPackages (fmap (.package) dependencies)
-            Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
-            unless (null dependencies) sanityCheck
-            pure $ Set.insert (package.namespace, package.name, release.version) packageCache
+        Update.upsertRelease package release
+        Update.upsertPackageComponents componentsList
+        Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
   where
-    sanityCheck = do
-      dependencies <- Query.getAllRequirements release.releaseId
-      when (Map.null dependencies) $ do
-        Log.logAttention "No dependencies found after inserting release!" $
-          object
-            [ "namespace" .= package.namespace
-            , "package" .= package.name
-            , "package_id" .= display package.packageId
-            , "version" .= release.version
-            ]
+    componentsList = NE.toList $ fmap fst components
+    dependencies = foldMap snd components
 
 -- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
@@ -257,7 +234,6 @@ extractPackageDataFromCabal
      , Log :> es
      , Reader FloraEnv :> es
      , RequireCallStack
-     , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
   => PackageIndex

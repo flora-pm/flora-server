@@ -65,8 +65,8 @@ makeFeed instanceInfo updated entries =
    in feed{feedEntries, feedLinks}
 
 makeAtomEntry :: FeedEntry -> Entry
-makeAtomEntry FeedEntry{entryId = feedEntryId, title, updatedAt, link, content} =
-  let entryId = UUID.toText feedEntryId
+makeAtomEntry FeedEntry{entryId, title, updatedAt, link, content} =
+  let entryId = "urn:uuid:" <> display entryId
       entryTitle = Atom.TextString title
       entryUpdated = Text.pack $ Time.formatShow Time.iso8601Format updatedAt
       entryContent = Just $ Atom.TextContent content
