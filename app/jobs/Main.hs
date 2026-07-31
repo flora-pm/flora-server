@@ -93,6 +93,7 @@ main = do
       defaultConfig <- liftIO $
         Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) 50 1 $
           \(job :| _) callbacks -> do
+            liftIO $ labelCurrentThread (Text.unpack ("job-" <> job.queueName <> "-" <> jobTypeLabel job.payload))
             processJob workerEnv jobsEnv logger floraEnv traceRunner job
             Worker.ack callbacks job
       let instrumentedHooks =
