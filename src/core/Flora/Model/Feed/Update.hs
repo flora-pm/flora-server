@@ -11,7 +11,7 @@ import Flora.Model.Feed.Types
 
 insertFeedEntry :: (IOE :> es, WriteDB :> es) => FeedEntry -> Eff es ()
 insertFeedEntry entry =
-  void $ execute (_insert @FeedEntry) entry
+  void $ execute (_insert @FeedEntry <> " ON CONFLICT (entry_id) DO NOTHING") entry
 
 deleteEntriesBefore :: (IOE :> es, WriteDB :> es) => UTCTime -> Eff es ()
 deleteEntriesBefore date =

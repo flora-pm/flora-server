@@ -98,6 +98,7 @@ data PackageJob
   | RefreshIndex Text
   | FetchPackageMaintainers PackageName
   | FetchPackageUploaders
+  | PruneFeedEntries
   | ScheduleMetadata MetadataPass
   deriving stock (Generic)
 
@@ -115,6 +116,7 @@ jobTypeLabel = \case
   RefreshIndex{} -> "refresh_index"
   FetchPackageMaintainers{} -> "fetch_package_maintainers"
   FetchPackageUploaders -> "fetch_package_uploaders"
+  PruneFeedEntries -> "prune_feed_entries"
   ScheduleMetadata pass -> "schedule_metadata_" <> metadataPassLabel pass
 
 metadataPassLabel :: MetadataPass -> Text

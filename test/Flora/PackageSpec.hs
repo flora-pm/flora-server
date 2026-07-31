@@ -2,12 +2,14 @@ module Flora.PackageSpec where
 
 import Data.Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.List (find, sortOn)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe
 import Data.Monoid (Sum (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Time (UTCTime (..), fromGregorian)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms qualified as Vector
 import Distribution.Types.Version qualified as Cabal
@@ -43,6 +45,7 @@ spec =
     , testThis "Packages get deprecated" testPackagesDeprecation
     , testThis "Get non-deprecated packages" testGetNonDeprecatedPackages
     , testThis "Dependencies are deduplicated in the abbreviated listing" testDeduplicatedDependencies
+    , testThis "A package and its dependencies are inserted in a deterministic order" testPackageInsertOrder
     , testThese
         "Transitive dependencies"
         [ testThis "Aggregation of transitive dependencies" testAggregationOfTransitiveDependencies
@@ -209,6 +212,36 @@ testDeduplicatedDependencies = do
   assertEqual_
     uniqueRequirements
     requirements
+
+-- | The rows of 'Update.upsertPackageWithDependencies' are what every concurrent
+-- importer has to agree on, so both properties of that order are pinned here:
+-- sorted by 'PackageId', and the imported record ahead of a skeleton of itself.
+testPackageInsertOrder :: RequireCallStack => TestEff ()
+testPackageInsertOrder = do
+  let timestamp = UTCTime (fromGregorian 2024 1 1) 0
+      mkPackage :: Text -> PackageStatus -> Package
+      mkPackage name status =
+        Package
+          { packageId = deterministicPackageId (Namespace "hackage") (PackageName name)
+          , namespace = Namespace "hackage"
+          , name = PackageName name
+          , createdAt = timestamp
+          , updatedAt = timestamp
+          , status = status
+          , deprecationInfo = Nothing
+          }
+      imported = mkPackage "clique-pkg1" FullyImportedPackage
+      -- A test suite may depend on the library it tests, which puts the imported
+      -- package among its own dependencies.
+      dependencies = fmap (`mkPackage` UnknownPackage) ["clique-pkg1", "base", "containers", "text"]
+      ordered = Update.packageInsertOrder imported dependencies
+
+  assertEqual "the rows must be ordered by package id" (sortOn (.packageId) ordered) ordered
+  assertEqual "the imported package must not be inserted twice" 4 (length ordered)
+  assertEqual
+    "the imported record must win over a skeleton of itself"
+    (Just FullyImportedPackage)
+    (fmap (.status) (find (\p -> p.packageId == imported.packageId) ordered))
 
 testAggregationOfTransitiveDependencies :: RequireCallStack => TestEff ()
 testAggregationOfTransitiveDependencies = do

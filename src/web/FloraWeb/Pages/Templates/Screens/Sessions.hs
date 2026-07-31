@@ -2,7 +2,6 @@ module FloraWeb.Pages.Templates.Screens.Sessions where
 
 import Lucid
 
-import FloraWeb.Components.Utils
 import FloraWeb.Pages.Templates.Types
 
 newSession :: FloraHTML

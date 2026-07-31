@@ -6,7 +6,7 @@ where
 
 import Control.Monad
 import Data.ByteString.Lazy (ByteString)
-import Data.Maybe (fromMaybe, isJust, isNothing)
+import Data.Maybe (isJust, isNothing)
 import Data.Text (Text)
 import Data.Text.Display (display)
 import Data.Vector qualified as Vector

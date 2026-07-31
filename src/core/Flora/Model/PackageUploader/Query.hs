@@ -4,6 +4,7 @@
 module Flora.Model.PackageUploader.Query
   ( getPackageUploaderById
   , getPackageUploaderByUsernameAndIndex
+  , getPackageUploaderIdByUsernameAndIndex
   , getPackageUploaders
   ) where
 
@@ -12,7 +13,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Internal.QQ (field)
-import Database.PostgreSQL.Simple (Only (..))
+import Database.PostgreSQL.Simple (Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
 
@@ -68,11 +69,26 @@ getPackageUploaderByUsernameAndIndex username packageIndexId = do
                 , userId = dao.userId
                 }
   where
-    q =
-      _selectWhere @PackageUploaderDAO
-        [ [field| username |]
-        , [field| package_index_id |]
-        ]
+    q = selectByUsernameAndIndex
+
+-- | Just the id, skipping the 'PackageIndex' lookup that assembling a whole
+-- 'PackageUploader' needs. The import path resolves an uploader per cabal file
+-- and only ever wants the key.
+getPackageUploaderIdByUsernameAndIndex
+  :: (IOE :> es, ReadDB :> es)
+  => Text
+  -> PackageIndexId
+  -> Eff es (Maybe PackageUploaderId)
+getPackageUploaderIdByUsernameAndIndex username packageIndexId = do
+  mDao :: Maybe PackageUploaderDAO <- queryOne selectByUsernameAndIndex (username, packageIndexId)
+  pure $ fmap (.packageUploaderId) mDao
+
+selectByUsernameAndIndex :: Query
+selectByUsernameAndIndex =
+  _selectWhere @PackageUploaderDAO
+    [ [field| username |]
+    , [field| package_index_id |]
+    ]
 
 getPackageUploaders
   :: (IOE :> es, ReadDB :> es)

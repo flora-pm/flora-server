@@ -50,7 +50,6 @@ import Flora.Model.BlobStore.Types
 import Flora.Model.Feed.Types qualified as Types
 import Flora.Model.Feed.Update qualified as Update
 import Flora.Model.Package.Types (Package (..))
-import Flora.Model.PackageUploader.Query qualified as Query
 import Flora.Model.PackageUploader.Types
 import Flora.Model.PackageUploader.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
@@ -58,7 +57,7 @@ import Flora.Model.Release.Types
 import Flora.Monad
 
 insertRelease :: (IOE :> es, WriteDB :> es) => Release -> FloraM es ()
-insertRelease r = void $ execute (_insert @Release) r
+insertRelease r = void $ execute (_insert @Release <> " ON CONFLICT DO NOTHING") r
 
 upsertRelease
   :: (IOE :> es, Log :> es, ReadDB :> es, Reader FloraEnv :> es, Time :> es, WriteDB :> es)
@@ -67,7 +66,7 @@ upsertRelease package newRelease = do
   mReleaseFromDB <- Query.getReleaseById newRelease.releaseId
   case mReleaseFromDB of
     Just releaseFromDB ->
-      when (releaseFromDB.testedWith == newRelease.testedWith) $ do
+      when (releaseFromDB.testedWith /= newRelease.testedWith) $ do
         Log.logInfo "Duplicate releases found" $
           object
             [ "new_release" .= newRelease
@@ -185,17 +184,11 @@ linkPackageUploaderToImportedRelease releaseId username = do
   case mPackageIndexId of
     Nothing -> Error.throwError $ CouldNotFindPackageIndexForRelease releaseId
     Just packageIndexId -> do
-      mPackageUploader <-
-        Query.getPackageUploaderByUsernameAndIndex
-          username
-          packageIndexId
-      case mPackageUploader of
-        Just packageUploader ->
-          updateReleaseUploader releaseId packageUploader.packageUploaderId
-        Nothing -> do
-          packageUploaderDAO <- mkPackageUploaderDAO username packageIndexId Nothing
-          Update.insertPackageUploader packageUploaderDAO
-          updateReleaseUploader releaseId packageUploaderDAO.packageUploaderId
+      -- Metadata jobs run concurrently and a maintainer owns many packages, so
+      -- this has to tolerate another job inserting the same uploader first.
+      -- 'getOrInsertPackageUploader' is where that is handled.
+      packageUploaderId <- Update.getOrInsertPackageUploader username packageIndexId
+      updateReleaseUploader releaseId packageUploaderId
 
 updateReleaseUploader
   :: (IOE :> es, WriteDB :> es)

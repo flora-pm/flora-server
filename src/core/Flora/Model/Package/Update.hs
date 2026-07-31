@@ -1,10 +1,21 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Flora.Model.Package.Update where
+module Flora.Model.Package.Update
+  ( upsertPackageWithDependencies
+  , packageInsertOrder
+  , upsertPackage
+  , bulkUpsertRequirements
+  , insertRequirement
+  , upsertPackageComponents
+  , insertPackageComponent
+  , refreshDependents
+  , deprecatePackages
+  ) where
 
 import Control.Monad (void)
 import Data.Function ((&))
+import Data.List qualified as List
 import Data.Map.Strict qualified as Map
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -24,11 +35,25 @@ import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement (..))
 
-upsertPackage :: (IOE :> es, RequireCallStack, WriteDB :> es) => Package -> Eff es ()
-upsertPackage package =
+-- | Insert the package being imported together with the 'UnknownPackage'
+-- skeletons of the packages it depends on, promoting it to
+-- 'FullyImportedPackage' if that is its status.
+--
+-- The rows go in as a single statement ordered by 'PackageId'.
+upsertPackageWithDependencies
+  :: (IOE :> es, RequireCallStack, WriteDB :> es)
+  => Package
+  -- ^ The package being imported
+  -> [Package]
+  -- ^ 'UnknownPackage' skeletons for the packages it depends on
+  -> Eff es ()
+upsertPackageWithDependencies package dependencies =
   E.catch
     ( do
-        upsertWith package
+        void $
+          executeMany
+            (_insert @Package <> " ON CONFLICT DO NOTHING")
+            (packageInsertOrder package dependencies)
         case package.status of
           UnknownPackage -> pure ()
           FullyImportedPackage ->
@@ -38,28 +63,26 @@ upsertPackage package =
                 (toRow (Only package.status) ++ toRow (Only package.packageId))
     )
     (\sqlError@(SqlError{}) -> E.throwIO $ sqlErrorToDBException sqlError)
-  where
-    upsertWith entity =
-      void $ execute (_insert @Package <> " ON CONFLICT DO NOTHING") entity
 
--- | Keep the __last__ occurrence of each element by key (as 'Map.fromList'
--- does) to make a batch safe for a bulk insert.
-dedupOn :: Ord k => (a -> k) -> [a] -> [a]
-dedupOn key = Map.elems . Map.fromList . map (\x -> (key x, x))
-
--- | Insert many packages unknown packages.
--- This must not be used to promote a package to
--- 'FullyImportedPackage' (use 'upsertPackage' for that).
--- It is for inserting 'UnknownPackage' dependency skeletons without downgrading a package that is already known.
+-- | The rows of 'upsertPackageWithDependencies' are deduplicated and in order.
 --
--- TODO: Probably should label Packages at the type level for their import level?
-bulkInsertUnknownPackages :: (IOE :> es, RequireCallStack, WriteDB :> es) => [Package] -> Eff es ()
-bulkInsertUnknownPackages packages =
-  E.catch
-    (void $ executeMany (_insert @Package <> " ON CONFLICT DO NOTHING") deduped)
-    (\sqlError@(SqlError{}) -> E.throwIO $ sqlErrorToDBException sqlError)
-  where
-    deduped = dedupOn (.packageId) packages
+-- The package being imported goes last so that 'dedupOn' keeps it over an
+-- 'UnknownPackage' skeleton of itself, which a test suite depending on its own
+-- library puts among the dependencies.
+packageInsertOrder :: Package -> [Package] -> [Package]
+packageInsertOrder package dependencies =
+  dedupOn (.packageId) (dependencies <> [package])
+
+{-# WARNING in "x-flora-test-only" upsertPackage "Exported for tests only" #-}
+upsertPackage :: (IOE :> es, RequireCallStack, WriteDB :> es) => Package -> Eff es ()
+upsertPackage package = upsertPackageWithDependencies package []
+
+-- | Keep the last occurrence of each element by key, ordered by that key.
+--
+-- Both properties matter on the import path: the ordering is what stops
+-- concurrent importers from taking row locks in different orders.
+dedupOn :: Ord k => (a -> k) -> [a] -> [a]
+dedupOn keyFun = Map.elems . Map.fromList . List.map (\x -> (keyFun x, x))
 
 deprecatePackages :: (IOE :> es, RequireCallStack, WriteDB :> es) => Vector DeprecatedPackage -> Eff es ()
 deprecatePackages dp = void $ executeMany q (dp & Vector.map Only & Vector.toList)
@@ -72,9 +95,6 @@ deprecatePackages dp = void $ executeMany q (dp & Vector.map Only & Vector.toLis
       WHERE p0.name = jsonb(js) ->> 'package'
       |]
 
-deletePackage :: (IOE :> es, RequireCallStack, WriteDB :> es) => (Namespace, PackageName) -> Eff es ()
-deletePackage (namespace, packageName) = void $ execute (_deleteWhere @Package [primaryKey @Package]) (namespace, packageName)
-
 refreshDependents :: (IOE :> es, RequireCallStack, WriteDB :> es) => Eff es ()
 refreshDependents =
   void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "dependents"|] ()
@@ -82,16 +102,9 @@ refreshDependents =
 insertPackageComponent :: (IOE :> es, RequireCallStack, WriteDB :> es) => PackageComponent -> Eff es ()
 insertPackageComponent pc = void $ execute (_insert @PackageComponent) pc
 
-upsertPackageComponent :: (IOE :> es, RequireCallStack, WriteDB :> es) => PackageComponent -> Eff es ()
-upsertPackageComponent packageComponent =
-  upsert @PackageComponent packageComponent (fields @PackageComponent)
-
 upsertPackageComponents :: (IOE :> es, RequireCallStack, WriteDB :> es) => [PackageComponent] -> Eff es ()
 upsertPackageComponents packageComponents =
   void $ executeMany (_insert @PackageComponent <> " ON CONFLICT DO NOTHING") packageComponents
-
-bulkInsertPackageComponents :: (IOE :> es, RequireCallStack, WriteDB :> es) => [PackageComponent] -> Eff es ()
-bulkInsertPackageComponents pcs = void $ executeMany (_insert @PackageComponent) pcs
 
 insertRequirement :: (IOE :> es, RequireCallStack, WriteDB :> es) => Requirement -> Eff es ()
 insertRequirement req = void $ execute (_insert @Requirement) req

@@ -99,6 +99,7 @@ jobDedupKey =
     FetchPackageDeprecationList -> "package-deprecation-list"
     RefreshLatestVersions -> "refresh-latest-versions"
     FetchPackageUploaders -> "package-uploaders"
+    PruneFeedEntries -> "prune-feed-entries"
     RefreshIndex indexName -> "index-refresh-" <> indexName
     ScheduleMetadata pass -> "metadata-pass-" <> passName pass
 

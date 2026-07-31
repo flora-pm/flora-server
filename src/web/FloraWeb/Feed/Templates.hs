@@ -16,7 +16,6 @@ import Lucid
 import PyF
 
 import Flora.Environment.Config
-import Flora.Environment.Env
 import Flora.Model.Package.Types
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
