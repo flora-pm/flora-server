@@ -42,7 +42,7 @@ import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
 import DesignSystem (generateComponents)
 import Flora.Database
-import Flora.Debug.ThreadDump (installThreadDumpHandler)
+import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Domain.Import.Categories (importCategories)
 import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Domain.Import.Types
@@ -104,6 +104,7 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
+  labelCurrentThread "flora-cli-main"
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv cliArgs.configFile & runFileSystem & runFailIO & runEff

@@ -58,6 +58,7 @@ import FloraWeb.Common.Tracing
 
 main :: IO ()
 main = do
+  labelCurrentThread "flora-jobs-runner-main"
   floraConfig <- execParser parseConfig
   jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
   floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig

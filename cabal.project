@@ -42,6 +42,14 @@ package zlib
 package effectful-tracing
   flags: +otel +servant +postgresql-simple
 
+package async
+  flags: +debug-auto-label
+
+source-repository-package
+  type: git
+  location: https://github.com/simonmar/async
+  tag: dd6219c2c861ca1e989751fa69c7ad5749073d7d
+
 source-repository-package
   type: git
   location: https://gitlab.com/dpwiz/raven-haskell.git/

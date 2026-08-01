@@ -30,6 +30,7 @@ import System.Exit
 import System.IO
 
 import Flora.Database
+import Flora.Debug.ThreadDump (labelCurrentThread)
 import Flora.Environment
 import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
@@ -39,6 +40,7 @@ import FloraWeb.Server
 
 main :: IO ()
 main = do
+  labelCurrentThread "flora-server-main"
   configFile <- execParser parseConfig
   hSetBuffering stdout LineBuffering
   preFlightChecks configFile
