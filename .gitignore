@@ -1,5 +1,6 @@
 &
-*.eventlog*
+*.eventlog
+*.eventlog.html
 *.hp
 .DS_Store
 .envrc

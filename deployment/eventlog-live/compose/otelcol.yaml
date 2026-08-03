@@ -1,15 +1,16 @@
 receivers:
   otlp:
     protocols:
-      grpc:
-        endpoint: "0.0.0.0:4317"
-        # Heap profile batches exceed the 4MiB gRPC default.
-        max_recv_msg_size_mib: 20
-        # Tolerate the forwarder's frequent keepalive pings.
-        keepalive:
-          enforcement_policy:
-            min_time: 0s
-            permit_without_stream: true
+      http:
+        endpoint: "0.0.0.0:4318"
+        # Heap profile batches can exceed the 20MiB default.
+        max_request_body_size: 41943040
+
+processors:
+  # ghc_eventlog_HeapAllocated is a delta sum whose start
+  # timestamp never advances, so the prometheus exporter
+  # replaces rather than accumulates. Convert to cumulative.
+  deltatocumulative:
 
 exporters:
   debug:
@@ -21,4 +22,5 @@ service:
   pipelines:
     metrics:
       receivers: [otlp]
+      processors: [deltatocumulative]
       exporters: [debug, prometheus]

@@ -76,49 +76,59 @@ services:
 
   # Live eventlog profiling stack (profile: live-eventlog).
   # See the "Live Eventlogs" section of CONTRIBUTING.md for usage.
-  eventlog-live-otelcol-server:
-    image: flora-eventlog-live-otelcol
+  eventlog-live-otlp-server:
+    image: flora-eventlog-live-otlp
     build:
       context: "."
-      dockerfile: "Dockerfile.eventlog-live-otelcol"
+      dockerfile: "Dockerfile.eventlog-live-otlp"
     restart: "unless-stopped"
     depends_on:
       eventlog-otelcol:
         condition: "service_started"
     volumes:
       - "${FLORA_EVENTLOG_DIR:-eventlog-socket}:/run/flora"
-      - "./deployment/eventlog-live/eventlog-live-otelcol.yaml:/etc/eventlog-live-otelcol/config.yaml"
+      - "./deployment/eventlog-live/eventlog-live-otlp.yaml:/etc/eventlog-live-otlp/config.yaml"
+    environment:
+      OTEL_SERVICE_NAME: "flora-server"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://eventlog-otelcol:4318"
+      OTEL_TRACES_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
+      OTEL_PROFILES_EXPORTER: "none"
     command:
-      - "--config=/etc/eventlog-live-otelcol/config.yaml"
-      - "--service-name=flora-server"
+      - "--config=/etc/eventlog-live-otlp/config.yaml"
       - "--eventlog-socket=/run/flora/flora-server.sock"
       - "-hi"
       - "--eventlog-flush-interval=1"
       - "--eventlog-socket-timeout=5"
-      - "--otelcol-host=eventlog-otelcol"
     profiles:
       - live-eventlog
 
-  eventlog-live-otelcol-jobs:
-    image: flora-eventlog-live-otelcol
+  eventlog-live-otlp-jobs:
+    image: flora-eventlog-live-otlp
     build:
       context: "."
-      dockerfile: "Dockerfile.eventlog-live-otelcol"
+      dockerfile: "Dockerfile.eventlog-live-otlp"
     restart: "unless-stopped"
     depends_on:
       eventlog-otelcol:
         condition: "service_started"
     volumes:
       - "${FLORA_EVENTLOG_DIR:-eventlog-socket}:/run/flora"
-      - "./deployment/eventlog-live/eventlog-live-otelcol.yaml:/etc/eventlog-live-otelcol/config.yaml"
+      - "./deployment/eventlog-live/eventlog-live-otlp.yaml:/etc/eventlog-live-otlp/config.yaml"
+    environment:
+      OTEL_SERVICE_NAME: "flora-jobs-runner"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://eventlog-otelcol:4318"
+      OTEL_TRACES_EXPORTER: "none"
+      OTEL_LOGS_EXPORTER: "none"
+      OTEL_PROFILES_EXPORTER: "none"
     command:
-      - "--config=/etc/eventlog-live-otelcol/config.yaml"
-      - "--service-name=flora-jobs-runner"
+      - "--config=/etc/eventlog-live-otlp/config.yaml"
       - "--eventlog-socket=/run/flora/flora-jobs-runner.sock"
       - "-hi"
       - "--eventlog-flush-interval=1"
       - "--eventlog-socket-timeout=5"
-      - "--otelcol-host=eventlog-otelcol"
     profiles:
       - live-eventlog
 
