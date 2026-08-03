@@ -3,80 +3,80 @@ processors:
     thread_label:
       name: ghc_eventlog_ThreadLabel
       description: A thread label.
-      export: 30s
+      export: false
     user_marker:
       name: ghc_eventlog_UserMarker
       description: A user marker.
-      export: 30s
+      export: false
     user_message:
       name: ghc_eventlog_UserMessage
       description: A user log message.
-      export: 30s
+      export: false
     internal_log_message:
       name: eventlog_live_InternalLogMessage
       description: An internal eventlog-live log message.
-      export: 30s
+      export: false
   metrics:
     blocks_size:
       name: ghc_eventlog_BlocksSize
       description: The current heap size, calculated by the allocated number of blocks.
       aggregate: 1s
-      export: 30s
+      export: 5s
     capability_usage:
       name: ghc_eventlog_CapabilityUsageDuration
       description: The duration of each capability usage span.
       aggregate: 1s
-      export: 30s
+      export: false # The current format of this metric breaks various OTLP receivers
     heap_allocated:
       name: ghc_eventlog_HeapAllocated
       description: The size of a newly allocated chunk of heap.
       aggregate: 1s
-      export: 30s
+      export: 5s
     heap_live:
       name: ghc_eventlog_HeapLive
       description: The current heap size, calculated by the allocated number of megablocks.
       aggregate: 1s
-      export: 30s
+      export: 5s
     heap_prof_sample:
       name: ghc_eventlog_HeapProfSample
       description: A heap profile sample.
       aggregate: 1s
-      export: 30s
+      export: 5s
     heap_size:
       name: ghc_eventlog_HeapSize
       description: The current heap size, calculated by the allocated number of megablocks.
       aggregate: 1s
-      export: 30s
+      export: 5s
     mem_current:
       name: ghc_eventlog_MemCurrent
       description: The number of megablocks currently allocated.
       aggregate: 1s
-      export: 30s
+      export: 5s
     mem_needed:
       name: ghc_eventlog_MemNeeded
       description: The number of megablocks currently needed.
       aggregate: 1s
-      export: 30s
+      export: 5s
     mem_returned:
       name: ghc_eventlog_MemReturned
       description: The number of megablocks currently being returned to the OS.
       aggregate: 1s
-      export: 30s
+      export: 5s
   traces:
     capability_usage:
       name: ghc_eventlog_CapabilityUsage
       description: A trace of capability usage (either mutator thread or garbage collection).
-      export: false
+      export: false # These spans easily overwhelm most OTLP receivers
     thread_state:
       name: ghc_eventlog_ThreadState
       description: A trace of thread state changes (either running or stopped).
-      export: false
+      export: false # These spans easily overwhelm most OTLP receivers
   profiles:
-    stack_sample:
-      name: ghc_eventlog_StackSampleProfile
-      description: A thread RTS callstack sample.
-      export: 30s
-    cost_centre_sample:
-      name: ghc_eventlog_CostCentreProfile
-      description: A cost centre callstack sample.
-      export: 30s
+    call_stack_profile:
+      name: ghc_eventlog_CallStackProfile
+      description: A GHC call-stack profile.
+      export: false
+    cost_centre_stack_profile:
+      name: ghc_eventlog_CostCentreStackProfile
+      description: A GHC cost-centre stack profile.
+      export: false

@@ -318,9 +318,14 @@ Also consider [capturing live eventlogs](#live-eventlogs) during development.
 #### Live Eventlogs
 
 Flora can stream its GHC eventlog live via
-[eventlog-live](https://github.com/well-typed/eventlog-live): heap and GC
-metrics (to Prometheus). The `live-eventlog` compose profile runs the
-forwarders, an OpenTelemetry collector, Prometheus, and Grafana.
+[eventlog-live](https://github.com/well-typed/eventlog-live) 0.8.0.0: heap and
+GC metrics (to Prometheus). The `live-eventlog` compose profile runs the
+`eventlog-live-otlp` forwarders, an OpenTelemetry collector, Prometheus, and
+Grafana.
+
+The forwarders are configured through
+[OpenTelemetry environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables).
+`deployment/eventlog-live/eventlog-live-otlp.yaml` selects which processors run.
 
 1. Ensure `eventlogSocketDirectory` is set in your config file (the committed
    environment files set it to `/tmp/flora-eventlog`).
@@ -342,8 +347,9 @@ $ cabal --project-file=cabal.profiling.project run flora-jobs-runner -- -c envir
 Note: `--eventlog-flush-interval=1` has a measurable runtime cost; use it
 for profiling sessions only.
 
-`-hi` produces heap/GC metrics (to Prometheus). `-i5` sets the heap-census
-interval to 5s (the RTS default of 0.1s floods the collector).
+`-i5` sets the heap-census interval to 5s; the RTS default of 0.1s floods the
+collector. The forwarders pass `-hi`, and the RTS must be given the same
+breakdown flag.
 
 ##### Docker-compose
 
@@ -356,9 +362,8 @@ $ docker compose --profile local --profile live-eventlog up --build
 ```
 
 Then open `http://localhost:3000` and use the "Flora Eventlog Heap" dashboard
-for heap/GC metrics, or "Eventlog Profiles" for cost-centre flamegraphs (only
-populated when the process runs with `-p`, see above). If host port 3000 is
-taken, set `FLORA_GRAFANA_PORT` to remap Grafana's host port.
+for heap/GC metrics. If host port 3000 is taken, set `FLORA_GRAFANA_PORT` to
+remap Grafana's host port.
 
 ##### On the host machine
 
