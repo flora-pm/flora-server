@@ -1,7 +1,12 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Flora.Model.Category.Query where
+module Flora.Model.Category.Query
+  ( getCategoryById
+  , getCategoryBySlug
+  , getPackagesFromCategorySlug
+  , getAllCategories
+  ) where
 
 import Control.Monad.IO.Class
 import Data.Text (Text)
@@ -22,9 +27,6 @@ getCategoryById categoryId = queryOne (_selectWhere @Category [primaryKey @Categ
 
 getCategoryBySlug :: (IOE :> es, ReadDB :> es) => Text -> Eff es (Maybe Category)
 getCategoryBySlug slug = queryOne (_selectWhere @Category [[field| slug |]]) (Only slug)
-
-getCategoryByName :: (IOE :> es, ReadDB :> es) => Text -> Eff es (Maybe Category)
-getCategoryByName categoryName = queryOne (_selectWhere @Category [[field| name |]]) (Only categoryName)
 
 getPackagesFromCategorySlug :: (IOE :> es, ReadDB :> es) => Text -> Eff es (Vector Package)
 getPackagesFromCategorySlug slug =

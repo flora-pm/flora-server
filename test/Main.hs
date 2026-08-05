@@ -49,7 +49,7 @@ main = provideCallStack $ do
           password <- liftIO $ Sel.hashText "foobar2000"
           templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
           withReadWritePool env.pool $ Update.insertUser templateUser
-          importAllPackages
+          importAllPackages env.pool
           getFixtures
       )
       env

@@ -1,5 +1,6 @@
 module Flora.Environment
   ( getFloraEnv
+  , readFloraConfig
   , mkPool
   , parseConfig
   , configFileParser
@@ -48,7 +49,7 @@ mkPool
 mkPool connectionInfo timeout' connections =
   liftIO $
     Pool.newPool $
-      setNumStripes (Just 1) $
+      setNumStripes (Just poolStripes) $
         defaultPoolConfig
           ( PG.connect
               PG.ConnectInfo
@@ -96,8 +97,12 @@ configToEnv floraConfig = do
       , theme = Nothing
       }
 
-getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FilePath -> Eff es FloraEnv
-getFloraEnv fp = do
+-- | Decodes the KDL configuration file, without opening a connection pool.
+readFloraConfig :: (Fail :> es, IOE :> es) => FilePath -> Eff es FloraConfig
+readFloraConfig fp =
   liftIO (KDL.decodeFileWith floraEnvDecoder fp) >>= \case
-    Right env -> liftIO (evaluate (force env)) >>= configToEnv
+    Right config -> liftIO (evaluate (force config))
     Left e -> fail $ show e
+
+getFloraEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FilePath -> Eff es FloraEnv
+getFloraEnv fp = readFloraConfig fp >>= configToEnv

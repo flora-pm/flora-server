@@ -10,12 +10,15 @@ import Data.Foldable (traverse_)
 import Data.List (intercalate)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes)
+import Data.Pool (Pool)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Time (UTCTime (..), fromGregorian)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple (Only (..))
+import Database.PostgreSQL.Simple qualified as PG
 import Effectful.Error.Static qualified as Error
 import Effectful.Reader.Static qualified as Reader
 import Log.Backend.StandardOutput (withStdOutLogger)
@@ -25,9 +28,11 @@ import Streamly.Data.Stream qualified as Stream
 import Flora.Database
 import Flora.Domain.Import.Package (chooseNamespace)
 import Flora.Domain.Import.Package.Bulk.Archive
-import Flora.Domain.Import.Package.Bulk.Stream (importFromStream, importWorkerLimit)
+import Flora.Domain.Import.Package.Bulk.Stream (importFromStream)
 import Flora.Domain.Import.Types (ImportError (..), ImportFileType (..))
+import Flora.Environment.Config
 import Flora.Environment.Env
+import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -55,6 +60,8 @@ spec =
     , testThis "An incremental import still resolves dependencies on packages it skipped" testIncrementalImportResolvesSkippedDependencies
     , testThis "Only the newest revision of a cabal file is imported" testImportKeepsNewestCabalRevision
     , testThis "Mutually-dependent packages import concurrently without deadlocking" testConcurrentImportOfMutuallyDependentPackages
+    , testThis "Re-importing the same cabal file changes nothing" testReimportChangesNothing
+    , testThis "A dependency skeleton is promoted when its own cabal file arrives" testSkeletonIsPromoted
     ]
 
 testIndex :: FilePath
@@ -69,12 +76,18 @@ defaultRepoURL = "localhost"
 defaultDescription :: Text
 defaultDescription = "test-description"
 
+setUpPackageIndex :: RequireCallStack => Pool PG.Connection -> Text -> TestEff PackageIndex
+setUpPackageIndex pool repo = do
+  withReadWritePool pool $ Update.upsertPackageIndex repo defaultRepoURL defaultDescription Nothing
+  assertJust_ =<< withReadOnlyPool pool (Query.getPackageIndexByName repo)
+
 testImportIndex :: RequireCallStack => TestEff ()
 testImportIndex = withStdOutLogger $
   \_ -> do
     FloraEnv{pool} <- Reader.ask
     withReadWritePool pool $ Update.upsertPackageIndex defaultRepo defaultRepoURL defaultDescription Nothing
     importFromArchive
+      pool
       "test-namespace"
       Vector.empty
       "test/fixtures"
@@ -122,20 +135,24 @@ testNthLevelDependencies = do
 resilienceGoodName :: Int -> String
 resilienceGoodName n = "resilience-good" <> show n
 
+libraryCabalFile :: String -> [String] -> [String] -> StrictByteString
+libraryCabalFile name categories dependencies =
+  BS8.pack . unlines $
+    [ "cabal-version: 3.0"
+    , "name: " <> name
+    , "version: 1.0.0"
+    , "build-type: Simple"
+    ]
+      <> ["category: " <> intercalate ", " categories | not (null categories)]
+      <> [ ""
+         , "library"
+         , "  exposed-modules: Lib"
+         , "  build-depends: " <> intercalate ", " dependencies
+         , "  default-language: Haskell2010"
+         ]
+
 goodCabalFile :: Int -> StrictByteString
-goodCabalFile n =
-  BS8.pack $
-    unlines
-      [ "cabal-version: 3.0"
-      , "name: " <> resilienceGoodName n
-      , "version: 1.0.0"
-      , "build-type: Simple"
-      , ""
-      , "library"
-      , "  exposed-modules: ResilienceGood"
-      , "  build-depends: base"
-      , "  default-language: Haskell2010"
-      ]
+goodCabalFile n = libraryCabalFile (resilienceGoodName n) [] ["base"]
 
 badCabalFile :: StrictByteString
 badCabalFile = "this is not a valid cabal file !!!"
@@ -143,8 +160,7 @@ badCabalFile = "this is not a valid cabal file !!!"
 runResilienceImport :: RequireCallStack => Text -> Int -> Int -> TestEff ()
 runResilienceImport repo goodCount badCount = do
   FloraEnv{pool} <- Reader.ask
-  withReadWritePool pool $ Update.upsertPackageIndex repo defaultRepoURL defaultDescription Nothing
-  packageIndex <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageIndexByName repo)
+  packageIndex <- setUpPackageIndex pool repo
   let indexPackages =
         Vector.singleton
           ( repo
@@ -156,7 +172,7 @@ runResilienceImport repo goodCount badCount = do
         | n <- [1 .. goodCount]
         ]
           <> replicate badCount (CabalFile "resilience-bad.cabal", epoch, Nothing, badCabalFile)
-  importFromStream packageIndex indexPackages (Stream.fromList subjects)
+  importFromStream pool packageIndex indexPackages (Stream.fromList subjects)
 
 testImportStreamSkipsBadFilesUnderThreshold :: RequireCallStack => TestEff ()
 testImportStreamSkipsBadFilesUnderThreshold = do
@@ -220,8 +236,7 @@ testConcurrentImportOfMutuallyDependentPackages = do
   FloraEnv{pool, dbConfig} <- Reader.ask
   unless (importWorkerLimit dbConfig >= 2) $
     assertFailure "this test needs a connection pool big enough for concurrent workers"
-  withReadWritePool pool $ Update.upsertPackageIndex cliqueRepo defaultRepoURL defaultDescription Nothing
-  packageIndex <- assertJust_ =<< withReadOnlyPool pool (Query.getPackageIndexByName cliqueRepo)
+  packageIndex <- setUpPackageIndex pool cliqueRepo
   let cliquePackageNames = [PackageName (Text.pack (cliqueName n)) | n <- [1 .. cliqueSize]]
       indexPackages = Vector.singleton (cliqueRepo, Set.fromList cliquePackageNames)
       epoch = posixSecondsToUTCTime 0
@@ -229,7 +244,7 @@ testConcurrentImportOfMutuallyDependentPackages = do
         [ (CabalFile (cliqueName n <> ".cabal"), epoch, Just cliqueMaintainer, cliqueCabalFile n)
         | n <- [1 .. cliqueSize]
         ]
-  importFromStream packageIndex indexPackages (Stream.fromList subjects)
+  importFromStream pool packageIndex indexPackages (Stream.fromList subjects)
 
   imported <-
     catMaybes
@@ -245,6 +260,75 @@ testConcurrentImportOfMutuallyDependentPackages = do
   traverse_ (\r -> assertEqual_ (Just uploader.packageUploaderId) r.uploaderId) releases
 
   traverse_ (\p -> assertEqual_ FullyImportedPackage p.status) imported
+
+promoteRepo :: Text
+promoteRepo = "promote-index"
+
+testSkeletonIsPromoted :: RequireCallStack => TestEff ()
+testSkeletonIsPromoted = do
+  FloraEnv{pool} <- Reader.ask
+  packageIndex <- setUpPackageIndex pool promoteRepo
+  let names = ["promote-dependent", "promote-target"]
+      indexPackages =
+        Vector.singleton (promoteRepo, Set.fromList (fmap (PackageName . Text.pack) names))
+      subjectFor name dependencies =
+        ( CabalFile (name <> ".cabal")
+        , posixSecondsToUTCTime 0
+        , Nothing
+        , libraryCabalFile name [] dependencies
+        )
+
+  importFromStream pool packageIndex indexPackages $
+    Stream.fromList [subjectFor "promote-dependent" ["promote-target"]]
+  skeleton <- requirePackage promoteRepo "promote-target"
+  assertEqual
+    "the dependency is written as a skeleton, not as an imported package"
+    UnknownPackage
+    skeleton.status
+
+  importFromStream pool packageIndex indexPackages $
+    Stream.fromList [subjectFor "promote-target" ["base"]]
+  promoted <- requirePackage promoteRepo "promote-target"
+  assertEqual "importing it promotes the skeleton" FullyImportedPackage promoted.status
+  assertEqual "the promotion keeps the derived id" skeleton.packageId promoted.packageId
+
+reimportRepo :: Text
+reimportRepo = "reimport-index"
+
+reimportCabalFile :: StrictByteString
+reimportCabalFile =
+  libraryCabalFile "reimport-pkg" ["Concurrency", "Mathematics"] ["base"]
+
+testReimportChangesNothing :: RequireCallStack => TestEff ()
+testReimportChangesNothing = do
+  FloraEnv{pool} <- Reader.ask
+  packageIndex <- setUpPackageIndex pool reimportRepo
+  let indexPackages = Vector.singleton (reimportRepo, Set.singleton (PackageName "reimport-pkg"))
+      subjects =
+        [(CabalFile "reimport-pkg.cabal", posixSecondsToUTCTime 0, Nothing, reimportCabalFile)]
+
+  importFromStream pool packageIndex indexPackages (Stream.fromList subjects)
+  imported <- requirePackage reimportRepo "reimport-pkg"
+  assertEqual "the first import promotes the package" FullyImportedPackage imported.status
+  firstPass@(categories, _, _) <- reimportCounts imported
+  assertEqual "both categories of the cabal file are recorded" 2 categories
+
+  importFromStream pool packageIndex indexPackages (Stream.fromList subjects)
+  reimported <- requirePackage reimportRepo "reimport-pkg"
+  assertEqual "the status is not downgraded" FullyImportedPackage reimported.status
+  assertEqual_ firstPass =<< reimportCounts reimported
+
+reimportCounts :: RequireCallStack => Package -> TestEff (Int, Int, Int)
+reimportCounts package = do
+  FloraEnv{pool} <- Reader.ask
+  release <- requireLatestRelease package
+  withReadOnlyPool pool $
+    (,,)
+      <$> queryCount
+        "select count(*) from package_categories where package_id = ?"
+        (Only package.packageId)
+      <*> (length <$> Query.getReleases package.packageId)
+      <*> (length <$> Query.getComponentsByReleaseId release.releaseId)
 
 incrementalRepo :: Text
 incrementalRepo = "incremental-index"
@@ -268,7 +352,7 @@ importFixtureIndex repo timestamp = do
   FloraEnv{pool} <- Reader.ask
   withReadWritePool pool $
     Update.upsertPackageIndex repo defaultRepoURL defaultDescription timestamp
-  importFromArchive repo Vector.empty "test/fixtures"
+  importFromArchive pool repo Vector.empty "test/fixtures"
 
 requirePackage :: RequireCallStack => Text -> Text -> TestEff Package
 requirePackage namespace name = do

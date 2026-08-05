@@ -83,6 +83,7 @@ data MetadataPass
   | TarballPass
   | ReleaseDeprecationPass
   | RefreshLatestVersionsPass
+  | RefreshDependentsPass
   | MaintainersPass
   deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
   deriving anyclass (FromJSON, ToJSON)
@@ -95,6 +96,7 @@ data PackageJob
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
+  | RefreshDependents
   | RefreshIndex Text
   | FetchPackageMaintainers PackageName
   | FetchPackageUploaders
@@ -113,6 +115,7 @@ jobTypeLabel = \case
   FetchPackageDeprecationList -> "fetch_package_deprecation_list"
   FetchReleaseDeprecationList{} -> "fetch_release_deprecation_list"
   RefreshLatestVersions -> "refresh_latest_versions"
+  RefreshDependents -> "refresh_dependents"
   RefreshIndex{} -> "refresh_index"
   FetchPackageMaintainers{} -> "fetch_package_maintainers"
   FetchPackageUploaders -> "fetch_package_uploaders"
@@ -127,4 +130,5 @@ metadataPassLabel = \case
   TarballPass -> "tarball"
   ReleaseDeprecationPass -> "release_deprecation"
   RefreshLatestVersionsPass -> "refresh_latest_versions"
+  RefreshDependentsPass -> "refresh_dependents"
   MaintainersPass -> "maintainers"

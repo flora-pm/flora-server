@@ -13,6 +13,7 @@ import RequireCallStack
 
 import Flora.Database
 import Flora.Environment.Env (FloraEnv (..))
+import Flora.Model.Job
 import Flora.Model.Package.Types (PackageName (..))
 import Flora.TestUtils
 import FloraJobs.Scheduler
@@ -33,7 +34,7 @@ testScheduleJobsSpansBatches = withoutMarkedJobs $ do
   let jobCount = 2500
   let jobs =
         Vector.generate jobCount $ \i ->
-          packageMaintainersListJob $ PackageName $ jobMarker <> Text.pack (show i)
+          FetchPackageMaintainers $ PackageName $ jobMarker <> Text.pack (show i)
   inserted <- scheduleJobs workerEnv jobs
   assertEqual
     "scheduleJobs reports every job as inserted"
@@ -47,7 +48,7 @@ testScheduleJobsSpansBatches = withoutMarkedJobs $ do
 testJobsAreDeduplicated :: RequireCallStack => TestEff ()
 testJobsAreDeduplicated = withoutMarkedJobs $ do
   FloraEnv{pool, workerEnv} <- ask
-  let jobs = Vector.singleton $ packageMaintainersListJob $ PackageName $ jobMarker <> "duplicated"
+  let jobs = Vector.singleton $ FetchPackageMaintainers (PackageName $ jobMarker <> "duplicated")
   collapsed <- scheduleJobs workerEnv (jobs <> jobs)
   assertEqual "two copies in one batch collapse into one" (1 :: Int64) collapsed
   again <- scheduleJobs workerEnv jobs

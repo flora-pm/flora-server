@@ -59,21 +59,22 @@ import FloraJobs.ThirdParties.Hackage.Client qualified as Hackage
 import FloraJobs.Types
 
 runner :: RequireCallStack => ArbS.SimpleEnv JobQueues -> JobRead PackageJob -> JobsRunner ()
-runner env job = case job.payload of
-  FetchReadme x -> makeReadme x
-  FetchTarball x -> fetchTarball x
-  FetchUploadInformation x -> fetchUploadInformation x
-  FetchChangelog x -> fetchChangeLog x
-  FetchPackageDeprecationList -> fetchPackageDeprecationList
-  FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
-  RefreshLatestVersions -> do
-    FloraJobsEnv{pool} <- Reader.ask
-    withReadWritePool pool Update.refreshLatestVersions
-  RefreshIndex indexName -> refreshIndex env indexName
-  ScheduleMetadata pass -> runMetadataPass env pass
-  FetchPackageMaintainers packageName -> fetchPackageMaintainers packageName
-  FetchPackageUploaders -> fetchPackageUploaders
-  PruneFeedEntries -> pruneFeedEntries
+runner env job = do
+  FloraJobsEnv{pool} <- Reader.ask
+  case job.payload of
+    FetchReadme x -> makeReadme x
+    FetchTarball x -> fetchTarball x
+    FetchUploadInformation x -> fetchUploadInformation x
+    FetchChangelog x -> fetchChangeLog x
+    FetchPackageDeprecationList -> fetchPackageDeprecationList
+    FetchReleaseDeprecationList packageName releases -> fetchReleaseDeprecationList packageName releases
+    RefreshLatestVersions -> withReadWritePool pool Update.refreshLatestVersions
+    RefreshDependents -> withReadWritePool pool Update.refreshDependents
+    RefreshIndex indexName -> refreshIndex env indexName
+    ScheduleMetadata pass -> runMetadataPass pool env pass
+    FetchPackageMaintainers packageName -> fetchPackageMaintainers packageName
+    FetchPackageUploaders -> fetchPackageUploaders
+    PruneFeedEntries -> pruneFeedEntries
 
 fetchChangeLog :: RequireCallStack => ChangelogJobPayload -> JobsRunner ()
 fetchChangeLog ChangelogJobPayload{packageName, packageVersion, releaseId} =
@@ -352,7 +353,7 @@ refreshIndex env indexName = localDomain "refresh-index" $ do
         error $ Text.unpack $ "Package index " <> indexName <> " not found in the database!"
       Just packageIndex -> do
         indexDependencies <- withReadOnlyPool pool $ Query.getIndexDependencies packageIndex.packageIndexId
-        Import.importFromArchive indexName indexDependencies packagesPath
+        Import.importFromArchive pool indexName indexDependencies packagesPath
 
         void $ scheduleMissingMetadataJobs env False
 

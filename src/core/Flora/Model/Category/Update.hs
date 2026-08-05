@@ -3,6 +3,8 @@
 module Flora.Model.Category.Update where
 
 import Control.Monad (void)
+import Data.Set qualified as Set
+import Database.PostgreSQL.Entity (_insert)
 import Database.PostgreSQL.Simple (Query)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
@@ -30,12 +32,16 @@ insertCategoryQuery =
   ON CONFLICT DO NOTHING
     |]
 
--- | Adds a package to a category. Adding a package to an already-assigned category has no effect
-addToCategory :: (IOE :> es, WriteDB :> es) => PackageId -> CategoryId -> Eff es ()
-addToCategory packageId categoryId = (void . execute q) (packageId, categoryId)
-  where
-    q =
-      [sql|
-        insert into package_categories (package_id, category_id) values (?, ?)
-        on conflict do nothing
-      |]
+-- | Adds a package to many categories in one statement. Adding a package to an
+-- already-assigned category has no effect.
+bulkAddToCategory :: WriteDB :> es => PackageId -> [CategoryId] -> Eff es ()
+bulkAddToCategory packageId categoryIds =
+  void $
+    executeMany
+      (_insert @PackageCategory <> " ON CONFLICT DO NOTHING")
+      (PackageCategory packageId <$> categoryInsertOrder categoryIds)
+
+-- | The rows of 'bulkAddToCategory' are deduplicated and ordered by 'CategoryId',
+-- so that concurrent importers of one package take the row locks in one order.
+categoryInsertOrder :: [CategoryId] -> [CategoryId]
+categoryInsertOrder = Set.toAscList . Set.fromList

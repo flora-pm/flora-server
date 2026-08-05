@@ -228,6 +228,7 @@ library
     log-base,
     log-effectful,
     lucid2,
+    memory-cache,
     monad-time-effectful,
     network,
     nothunks,
@@ -546,7 +547,6 @@ library flora-jobs
     http-client-tls,
     http-media,
     http-types,
-    kdl-hs,
     log-base,
     log-effectful,
     monad-time-effectful,
@@ -601,7 +601,6 @@ executable flora-migrate
   build-depends:
     arbiter-migrations,
     base,
-    effectful,
     effectful-core,
     effectful-plugin,
     flora,
