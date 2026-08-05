@@ -205,9 +205,12 @@ unliftedWithResource
   -> m b
 unliftedWithResource accessMode loggerEnv pool action = withRunInIO $ \io ->
   liftIO $ Pool.withResource pool $ \resource -> do
+    let logAcquisition = case resource.acquisition of
+          Pool.Delayed -> Log.logInfo
+          Pool.Immediate -> Log.logTrace
     runEff $
-      Log.runLogT loggerEnv.leComponent loggerEnv.leLogger LogInfo $
-        Log.logInfo "Database connection acquired" $
+      Log.runLogT loggerEnv.leComponent loggerEnv.leLogger loggerEnv.leMaxLogLevel $
+        logAcquisition "Database connection acquired" $
           object
             [ "stripe" .= resource.stripeNumber
             , "label" .= resource.poolLabel

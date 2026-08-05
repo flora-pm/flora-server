@@ -17,6 +17,7 @@
 -- altering its id.
 module Flora.Domain.Import.Package
   ( versionList
+  , newUploaderCache
   , persistImportOutput
   , parseString
   , extractPackageDataFromCabal
@@ -27,11 +28,12 @@ module Flora.Domain.Import.Package
 import Control.Applicative ((<|>))
 import Control.DeepSeq (force)
 import Control.Exception ()
-import Control.Monad
 import Data.ByteString qualified as BS
-import Data.List (sortOn)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe as Maybe
+import Data.MemCache (MemCache)
+import Data.MemCache qualified as MemCache
+import Data.Pool (Pool)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -39,6 +41,7 @@ import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Compat.Lens qualified as L
 import Distribution.Compat.NonEmptySet qualified as NESet
 import Distribution.Compiler (CompilerFlavor (..))
@@ -55,7 +58,6 @@ import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
-import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Effectful.Time qualified as Time
 import GHC.List (List)
@@ -68,7 +70,6 @@ import Flora.Domain.Category.Normalise
 import Flora.Domain.Import.Package.Types
 import Flora.Domain.Import.Types
 import Flora.Environment.Env (FloraEnv (..))
-import Flora.Model.Category.Query as Query
 import Flora.Model.Category.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
@@ -189,12 +190,12 @@ parseString parser name bs = do
       Log.logAttention_ (display $ show err)
       Error.throwError $ CabalFileCouldNotBeParsed name
 
--- | Persists an 'ImportOutput' to the database. An 'ImportOutput' can be obtained
---  by extracting relevant information from a Cabal file using 'extractPackageDataFromCabal'.
---
--- Workers run this concurrently, each in its own transaction, so every
--- db statement takes row locks in a pre-defined order,
--- otherwise two importers that reference each other's packages deadlock.
+newUploaderCache :: IOE :> es => Eff es (MemCache Text PackageUploaderId)
+newUploaderCache = MemCache.new (const 1) 100_000
+
+-- Workers run the write transaction concurrently and it takes row locks in a
+-- pre-defined order, otherwise two importers that reference each other's
+-- packages deadlock.
 persistImportOutput
   :: forall es
    . ( IOE :> es
@@ -203,27 +204,29 @@ persistImportOutput
      , RequireCallStack
      , Time :> es
      )
-  => ImportOutput
+  => Pool PG.Connection
+  -> Vector Category
+  -> ImportOutput
   -> FloraM es ()
-persistImportOutput (ImportOutput package categories release components) =
+persistImportOutput pool allCategories (ImportOutput package categories release components) =
   Log.localData
     [ "package_name" .= package.name
     , "version" .= release.version
     ]
+    $ withReadWritePool pool
     $ do
-      env <- Reader.ask
-      withReadWritePool env.pool $ do
-        Update.upsertPackageWithDependencies package (fmap (.package) dependencies)
-        categoriesByName <- catMaybes <$> traverse Query.getCategoryByName categories
-        forM_
-          (sortOn (.categoryId) categoriesByName)
-          (\c -> Update.addToCategory package.packageId c.categoryId)
-        Update.upsertRelease package release
-        Update.upsertPackageComponents componentsList
-        Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
+      Update.upsertPackageWithDependencies package (fmap (.package) dependencies)
+      Update.bulkAddToCategory package.packageId packageCategoryIds
+      Update.upsertRelease package release
+      Update.upsertPackageComponents componentsList
+      Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
   where
     componentsList = NE.toList $ fmap fst components
     dependencies = foldMap snd components
+    packageCategoryIds =
+      Maybe.mapMaybe
+        (\name -> (.categoryId) <$> Vector.find (\c -> c.name == name) allCategories)
+        categories
 
 -- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
@@ -232,18 +235,18 @@ extractPackageDataFromCabal
   :: ( Error ImportError :> es
      , IOE :> es
      , Log :> es
-     , Reader FloraEnv :> es
      , RequireCallStack
      , Time :> es
      )
-  => PackageIndex
+  => Pool PG.Connection
+  -> MemCache Text PackageUploaderId
+  -> PackageIndex
   -> Vector (Text, Set PackageName)
   -> UTCTime
   -> Maybe Text
   -> GenericPackageDescription
   -> FloraM es ImportOutput
-extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername genericDesc = do
-  FloraEnv{pool} <- Reader.ask
+extractPackageDataFromCabal pool uploaderIds packageIndex indexPackages uploadTime mUsername genericDesc = do
   let packageDesc = genericDesc.packageDescription
   let flags = Vector.fromList genericDesc.genPackageFlags
   let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
@@ -266,9 +269,10 @@ extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername gene
       let rawCategoryField = packageDesc ^. #category % to fromShortText % to Text.pack
       let categoryList = fmap (Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
       let categories = Maybe.mapMaybe normaliseCategory categoryList
-      mPackageUploaderId <- case mUsername of
-        Nothing -> pure Nothing
-        Just username -> withReadWritePool pool $ determinePackageUploaderId (Just username) packageIndex.packageIndexId
+      mPackageUploaderId <-
+        traverse
+          (determinePackageUploaderId pool uploaderIds packageIndex.packageIndexId)
+          mUsername
       let package =
             Package
               { packageId
@@ -356,9 +360,17 @@ extractPackageDataFromCabal packageIndex indexPackages uploadTime mUsername gene
           Error.throwError $ NoImportableComponents namespace package.name release.version
         Just components -> pure $ ImportOutput package categories release components
 
-determinePackageUploaderId :: (IOE :> es, ReadDB :> es, WriteDB :> es) => Maybe Text -> PackageIndexId -> Eff es (Maybe PackageUploaderId)
-determinePackageUploaderId Nothing _ = pure Nothing
-determinePackageUploaderId (Just username) packageIndexId = Just <$> Update.getOrInsertPackageUploader username packageIndexId
+determinePackageUploaderId
+  :: (IOE :> es, Log :> es, RequireCallStack)
+  => Pool PG.Connection
+  -> MemCache Text PackageUploaderId
+  -> PackageIndexId
+  -> Text
+  -> Eff es PackageUploaderId
+determinePackageUploaderId pool uploaderIds packageIndexId username =
+  MemCache.fetch_ uploaderIds username $
+    withReadWritePool pool $
+      Update.getOrInsertPackageUploader username packageIndexId
 
 extractCondTreeComponent
   :: L.HasBuildInfo component

@@ -46,6 +46,7 @@ import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Domain.Import.Categories (importCategories)
 import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Domain.Import.Types
+import Flora.Domain.Package (refreshMaterialisedViews)
 import Flora.Environment (configFileParser, getFloraEnv)
 import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
 import Flora.Environment.Env
@@ -117,7 +118,7 @@ main = Log.withStdOutLogger $ \logger -> do
     runCommand cliArgs.configFile cliArgs.cliCommand
       & Reader.runReader env
       & (`E.catches` exceptionHandlers)
-      & runLog "flora-cli" logger Log.LogTrace
+      & runLog "flora-cli" logger defaultLogLevel
       & runFileSystem
       & withBlobStore env.features
       & runTime
@@ -253,7 +254,9 @@ runCommand _ (Provision (TestPackages repository)) = do
   let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repository <> "/01-index.tar.gz"
   indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
   if indexArchiveExists
-    then importIndex indexArchiveBasePath repository
+    then do
+      importIndex indexArchiveBasePath repository
+      Reader.ask >>= refreshMaterialisedViews . (.pool)
     else error $ "Could not find " <> indexArchivePath
 runCommand _ (CreateUser opts) = do
   FloraEnv{pool} <- Reader.ask
@@ -274,7 +277,9 @@ runCommand _ (CreateUser opts) = do
           let user = if opts.canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           withReadWritePool pool $ insertUser user
 runCommand configFile GenDesignSystemComponents = generateComponents configFile
-runCommand _ (ImportIndex path repository) = importIndex path repository
+runCommand _ (ImportIndex path repository) = do
+  importIndex path repository
+  Reader.ask >>= refreshMaterialisedViews . (.pool)
 runCommand _ (ProvisionRepository name url description) = do
   FloraEnv{pool} <- Reader.ask
   withReadWritePool pool $ Update.upsertPackageIndex name url description Nothing
@@ -344,6 +349,7 @@ importIndex indexArchivebasePath repository = do
       Log.logInfo "index dependencies" $
         object ["index_dependencies" .= indexDependencies]
       importFromArchive
+        pool
         repository
         indexDependencies
         indexArchivebasePath

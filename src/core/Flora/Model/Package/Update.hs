@@ -23,7 +23,6 @@ import Database.PostgreSQL.Entity hiding (upsert)
 import Database.PostgreSQL.Entity.Internal.QQ
 import Database.PostgreSQL.Simple (Only (..), SqlError (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
-import Database.PostgreSQL.Simple.ToRow
 import Effectful
 import Effectful.Exception qualified as E
 import RequireCallStack
@@ -59,8 +58,10 @@ upsertPackageWithDependencies package dependencies =
           FullyImportedPackage ->
             void $
               execute
-                (_updateFieldsBy @Package [[field| status |]] [field| package_id |])
-                (toRow (Only package.status) ++ toRow (Only package.packageId))
+                ( _updateFieldsBy @Package [[field| status |]] [field| package_id |]
+                    <> " AND status <> ?"
+                )
+                (package.status, package.packageId, package.status)
     )
     (\sqlError@(SqlError{}) -> E.throwIO $ sqlErrorToDBException sqlError)
 

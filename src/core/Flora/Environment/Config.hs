@@ -9,6 +9,14 @@ module Flora.Environment.Config
   , FeatureConfig (..)
   , ConnectionInfo (..)
   , PoolConfig (..)
+
+    -- * Dividing the pool
+  , poolStripes
+  , connectionsPerStripe
+  , transientReservePerStripe
+  , importSharePerStripe
+  , jobSharePerStripe
+  , importWorkerLimit
   , DeploymentEnv (..)
   , LoggingDestination (..)
   , Assets (..)
@@ -17,6 +25,7 @@ module Flora.Environment.Config
   , getAssetHash
   , floraEnvDecoder
   , toConnString
+  , jobWorkerLimit
   )
 where
 
@@ -209,6 +218,34 @@ data PoolConfig = PoolConfig
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
+
+-- | How many stripes 'Flora.Environment.mkPool' cuts every pool into.
+poolStripes :: Int
+poolStripes = 2
+
+connectionsPerStripe :: PoolConfig -> Int
+connectionsPerStripe poolConfig = max 1 (poolConfig.connections `div` poolStripes)
+
+transientReservePerStripe :: Int
+transientReservePerStripe = 3
+
+importSharePerStripe :: PoolConfig -> Int
+importSharePerStripe poolConfig = max 1 (connectionsPerStripe poolConfig `div` 2)
+
+jobSharePerStripe :: PoolConfig -> Int
+jobSharePerStripe poolConfig =
+  max
+    1
+    ( connectionsPerStripe poolConfig
+        - importSharePerStripe poolConfig
+        - transientReservePerStripe
+    )
+
+importWorkerLimit :: PoolConfig -> Int
+importWorkerLimit = (poolStripes *) . importSharePerStripe
+
+jobWorkerLimit :: PoolConfig -> Int
+jobWorkerLimit = (poolStripes *) . jobSharePerStripe
 
 data TestConfig = TestConfig
   { httpPort :: Word16

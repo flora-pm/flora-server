@@ -24,6 +24,7 @@ import Data.List (isSuffixOf)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Pool (Pool)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -32,6 +33,7 @@ import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
@@ -40,7 +42,6 @@ import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
-import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Effectful.Tracing (Tracer)
 import RequireCallStack
@@ -70,12 +71,12 @@ importFromArchive
      , Time :> es
      , Tracer :> es
      )
-  => Text
+  => Pool PG.Connection
+  -> Text
   -> Vector Text
   -> FilePath
   -> FloraM es ()
-importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
-  FloraEnv{pool} <- Reader.ask
+importFromArchive pool repositoryName indexDependencies indexArchiveBasePath = do
   packageIndex <- guardThatPackageIndexExists pool repositoryName $ do
     Log.logAttention "Could not find package index" $
       object
@@ -96,6 +97,7 @@ importFromArchive repositoryName indexDependencies indexArchiveBasePath = do
   let indexPackages = (repositoryName, localPackages) `Vector.cons` dependencyPackages
 
   importFromStream
+    pool
     packageIndex
     indexPackages
     (contentStream packageIndex time revisionCounts (entriesOf localArchive))

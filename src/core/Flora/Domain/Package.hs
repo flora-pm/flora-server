@@ -3,27 +3,42 @@ module Flora.Domain.Package
   , resolvePackage
   , resolveExactRelease
   , resolveReleaseAtVersion
+  , refreshMaterialisedViews
   ) where
 
+import Data.Pool (Pool)
 import Data.Vector (Vector)
+import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
+import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Tracing (Tracer)
 import GHC.Generics (Generic)
+import RequireCallStack
 
-import Flora.Database (withReadOnlyPool)
+import Flora.Database (withReadOnlyPool, withReadWritePool)
 import Flora.Domain.Release (latestViableRelease)
 import Flora.Environment.Env (FloraEnv (..))
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types (Namespace, Package (..), PackageName)
+import Flora.Model.Package.Update qualified as Update
 import Flora.Model.Release.Guard (guardThatReleaseExists)
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types (Release (..))
+import Flora.Model.Release.Update qualified as Update
 import Flora.Monad (FloraM)
+
+refreshMaterialisedViews
+  :: (IOE :> es, Log :> es, RequireCallStack)
+  => Pool PG.Connection
+  -> FloraM es ()
+refreshMaterialisedViews pool = do
+  withReadWritePool pool Update.refreshLatestVersions
+  withReadWritePool pool Update.refreshDependents
 
 data PackageResolutionError
   = PackageNotFound Namespace PackageName

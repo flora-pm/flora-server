@@ -147,6 +147,7 @@ import Test.Tasty.HUnit qualified as Test
 import Flora.Database
 import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Domain.Import.Types (ImportError)
+import Flora.Domain.Package (refreshMaterialisedViews)
 import Flora.Environment.Env
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
@@ -199,20 +200,24 @@ getFixtures = do
   Just hackageUser <- withReadOnlyPool pool $ Query.getUserByUsername "hackage-user"
   pure Fixtures{hackageUser}
 
-importAllPackages :: (HasCallStack, RequireCallStack) => TestEff ()
-importAllPackages = do
+importAllPackages :: (HasCallStack, RequireCallStack) => Pool PG.Connection -> TestEff ()
+importAllPackages pool = do
   importFromArchive
+    pool
     "local-hackage"
     Vector.empty
     "test/fixtures/Cabal"
   importFromArchive
+    pool
     "cardano"
     (Vector.fromList ["local-hackage"])
     "test/fixtures/Cabal"
   importFromArchive
+    pool
     "mlabs"
     (Vector.fromList ["cardano", "local-hackage"])
     "test/fixtures/Cabal"
+  refreshMaterialisedViews pool
 
 runTestEff :: (HasCallStack, RequireCallStack) => TestEff a -> FloraEnv -> IO a
 runTestEff comp env = runEff $

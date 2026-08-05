@@ -1,12 +1,14 @@
 module Flora.Domain.Import.Package.Bulk.Stream
   ( importFromStream
-  , importWorkerLimit
   ) where
 
 import Control.Monad
+import Data.MemCache
+import Data.Pool (Pool)
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Vector (Vector)
+import Database.PostgreSQL.Simple qualified as PG
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Effectful
 import Effectful.Concurrent (Concurrent)
@@ -29,18 +31,15 @@ import Flora.Domain.Import.Package
 import Flora.Domain.Import.Types
 import Flora.Environment.Config
 import Flora.Environment.Env
+import Flora.Model.Category.Query qualified as Query
+import Flora.Model.Category.Types
 import Flora.Model.Package.Types qualified as Flora
-import Flora.Model.Package.Update qualified as Update
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageIndex.Update qualified as Update
+import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Query qualified as Query
-import Flora.Model.Release.Update qualified as Update
 import Flora.Monad
 import Flora.Monitoring (increaseImportFailureCounter, increasePackageImportCounterBy)
-
--- | How many cabal files 'importFromStream' works on at once (half the pool).
-importWorkerLimit :: PoolConfig -> Int
-importWorkerLimit poolConfig = max 1 (poolConfig.connections `div` 2)
 
 importFromStream
   :: forall es
@@ -53,26 +52,27 @@ importFromStream
      , RequireCallStack
      , Time :> es
      )
-  => PackageIndex
+  => Pool PG.Connection
+  -> PackageIndex
   -> Vector (Text, Set Flora.PackageName)
   -> Stream (Eff es) ImportSubject
   -> FloraM es ()
-importFromStream packageIndex indexPackages stream = do
+importFromStream pool packageIndex indexPackages stream = do
   env <- Reader.ask
   let workerLimit = importWorkerLimit env.dbConfig
       cfg = Streamly.maxThreads workerLimit . Streamly.maxBuffer workerLimit . Streamly.inspect True
+  uploaderIds <- newUploaderCache
+  categories <- withReadOnlyPool pool Query.getAllCategories
   Tally total failures <-
     finally
       ( Streamly.fold tally $
-          Streamly.parMapM cfg (processFile packageIndex indexPackages) stream
+          Streamly.parMapM cfg (processFile pool categories uploaderIds packageIndex indexPackages) stream
       )
-      -- We want to refresh db and update latest timestamp even if we fell
-      -- over at some point
+      -- We want to narrow what the next import has to read even if we fell
+      -- over at some point. Refreshing the materialised views is a job.
       ( do
-          timestamp <- withReadOnlyPool env.pool $ Query.getLatestReleaseTime (Just packageIndex.repository)
-          withReadWritePool env.pool $ do
-            Update.refreshLatestVersions
-            Update.refreshDependents
+          timestamp <- withReadOnlyPool pool $ Query.getLatestReleaseTime (Just packageIndex.repository)
+          withReadWritePool pool $
             Update.updatePackageIndexByName packageIndex.repository timestamp
       )
   unless (total `mod` progressBatchSize == 0) $ displayStats total
@@ -113,19 +113,22 @@ processFile
      , RequireCallStack
      , Time :> es
      )
-  => PackageIndex
+  => Pool PG.Connection
+  -> Vector Category
+  -> MemCache Text PackageUploaderId
+  -> PackageIndex
   -> Vector (Text, Set Flora.PackageName)
   -> ImportSubject
   -> FloraM es Bool
-processFile packageIndex indexPackages importSubject =
+processFile pool categories uploaderIds packageIndex indexPackages importSubject =
   case importSubject of
     (CabalFile path, timestamp, mUsername, content) -> Log.localData ["filepath" .= path] $ do
       result <- Error.runErrorNoCallStack @ImportError $ do
         Log.logInfo_ "Importing cabal file"
         genericPackageDescription <- parseString parseGenericPackageDescription path content
         Log.logInfo_ "Parsed package description"
-        importOutput <- extractPackageDataFromCabal packageIndex indexPackages timestamp mUsername genericPackageDescription
-        persistImportOutput importOutput
+        importOutput <- extractPackageDataFromCabal pool uploaderIds packageIndex indexPackages timestamp mUsername genericPackageDescription
+        persistImportOutput pool categories importOutput
       case result of
         Right () -> pure True
         Left err -> do

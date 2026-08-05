@@ -58,12 +58,11 @@ but the stream keeps going. After the stream is done, an import of **at least
 `TooManyImportFailures`. Below that floor nothing is thrown however bad the
 rate, because one failure out of three is not a signal.
 
-Worker count is half of the available connections, floored at 1
+Worker count is half of each stripe, times the number of stripes
 (`importWorkerLimit`). A worker needs to hold at most one connection at a time
 (see [the `ReadDB`/`WriteDB` split](./overview.md#read-only-and-read-write-operations)),
 so halving leaves enough connections in that pool for the rest of the work drawing on it.
 
-A pool exhaustion stall looks exactly like a deadlock while being much less fun to diagnose.
 
 ## Invariants
 
@@ -80,9 +79,8 @@ derived rather than randomly generated: `deterministicPackageId namespace name`,
 `deterministicFeedEntryId packageId version`, and so on.
 
 Every write is an upsert, an `ON CONFLICT DO NOTHING`, or an idempotent
-`UPDATE`: the status promotion in `upsertPackageWithDependencies`,
-`updateTestedWith`, and `updateReleaseUploader` are plain `UPDATE`s that land on
-the same value twice.
+`UPDATE`: `updateTestedWith` and `updateReleaseUploader` are plain `UPDATE`s that
+land on the same value twice.
 
 </dd>
 
@@ -116,8 +114,8 @@ import.
 <dt>Progress is committed even on failure.</dt>
 <dd>
 
-The materialised views (`refreshLatestVersions`, `refreshDependents`) and the index timestamp are updated
-in a `finally`, so a crashed import still narrows what the next one has to read.
+The index timestamp is updated in a `finally`, so a crashed import still narrows
+what the next one has to read.
 </dd>
 </dl>
 
@@ -148,15 +146,17 @@ the test suite is large enough to catch the regression.
 
 ### Rules
 
-1. **Order every multi-row write whose rows two importers can both reach, by
-   primary key.** `dedupOn` gives us both properties at once: `Map.elems`
-   output is key-ordered. The table below says which writes those are, and which need nothing.
-2. **Never blind-`INSERT` a row two importers might both want.** Use
+1. Order every multi-row write whose rows two importers can both reach, by
+   primary key.
+2. Never blind-`INSERT` a row two importers might both want. Use
    `ON CONFLICT DO NOTHING`, then re-read (see `getOrInsertPackageUploader`).
-3. **Never nest `withReadWritePool`, and never hold a connection while waiting
-   for another one.** A cabal file takes *up to two* write transactions: the
-   uploader lookup during extraction, then `persistImportOutput` (they run
-   one after the other, so a worker only ever holds one connection).
+3. Never nest `withReadWritePool`, and never hold a connection while waiting
+   for another one. A cabal file takes one write transaction, plus a second
+   write transaction the first time a maintainer is
+   seen: `determinePackageUploaderId` memoises the id for the rest of the import,
+   so on a full index that cost is paid once per maintainer rather than once per
+   file. They run one after the other, so a worker only ever holds one
+   connection.
 
 ### Why
 
@@ -169,7 +169,6 @@ writing the skeleton dependency.
 | rows written | another worker can reach it | what keeps that safe |
 |---|---|---|
 | `packages`: self + dependency skeletons | yes: a worker importing one of those dependencies as its own package, and a worker importing a *different version* of the same package (the stream keys on `<package>/<version>/…`, so versions run concurrently) | ordered by `PackageId` (rule 1, via `packageInsertOrder`/`dedupOn`) |
-| `package_categories` | yes: another version of the same package writes the identical join rows. Two workers on *different* packages never do | `sortOn (.categoryId)` in `persistImportOutput` (rule 1) |
 | `package_uploaders` | yes: every package of that maintainer; Hackage only | `ON CONFLICT DO NOTHING` then re-read (rule 2), `getOrInsertPackageUploader` |
 | `requirements` | no. `RequirementId` derives from `ComponentId` + the dependency's `PackageId` | no lock rule. However `bulkUpsertRequirements` must still dedup (see below) |
 
@@ -203,8 +202,9 @@ The order inside one transaction:
 
 ```mermaid
 flowchart TB
-  U["uploader row<br/>(own tx, in extract)"] --> P
-  subgraph P["persistImportOutput (one tx)"]
+  C["categories table<br/>(read-only tx,<br/>once per import)"] --> U
+  U["uploader row<br/>(own tx, in extract,<br/>once per maintainer)"] --> P
+  subgraph P["persistImportOutput's write tx"]
     direction TB
     P1["packages<br/>(self + dep skeletons)"]
     --> P2[categories]

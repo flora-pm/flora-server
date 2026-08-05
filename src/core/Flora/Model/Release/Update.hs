@@ -60,7 +60,13 @@ insertRelease :: (IOE :> es, WriteDB :> es) => Release -> FloraM es ()
 insertRelease r = void $ execute (_insert @Release <> " ON CONFLICT DO NOTHING") r
 
 upsertRelease
-  :: (IOE :> es, Log :> es, ReadDB :> es, Reader FloraEnv :> es, Time :> es, WriteDB :> es)
+  :: ( IOE :> es
+     , Log :> es
+     , ReadDB :> es
+     , Reader FloraEnv :> es
+     , Time :> es
+     , WriteDB :> es
+     )
   => Package -> Release -> FloraM es ()
 upsertRelease package newRelease = do
   mReleaseFromDB <- Query.getReleaseById newRelease.releaseId

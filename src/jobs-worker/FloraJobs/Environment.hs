@@ -12,12 +12,11 @@ import Database.PostgreSQL.Simple qualified as PG
 import Effectful
 import Effectful.Fail (Fail)
 import GHC.Generics
-import KDL qualified
 import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Client.TLS
 import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
 
-import Flora.Environment (mkPool)
+import Flora.Environment (mkPool, readFloraConfig)
 import Flora.Environment.Config
 import Flora.Environment.Env ()
 import FloraJobs.Metrics
@@ -29,17 +28,14 @@ data FloraJobsEnv = FloraJobsEnv
   , httpManager :: HTTP.Manager
   , httpPort :: Word16
   , metrics :: JobsRunnerMetrics
-  , mltp :: MLTP
+  , config :: FloraConfig
   }
   deriving stock (Generic)
   deriving anyclass (NoThunks)
 
 getFloraJobsEnv :: (Fail :> es, IOE :> es) => FilePath -> Eff es FloraJobsEnv
 getFloraJobsEnv config = do
-  jobsConfig <-
-    liftIO (KDL.decodeFileWith floraEnvDecoder config) >>= \case
-      Right env -> pure env
-      Left e -> fail $ show e
+  jobsConfig <- readFloraConfig config
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   metrics <- registerMetrics
   let PoolConfig{connectionTimeout, connections} = jobsConfig.dbConfig
@@ -54,5 +50,5 @@ getFloraJobsEnv config = do
       , httpManager
       , httpPort = jobsConfig.jobsHttpPort
       , metrics
-      , mltp = jobsConfig.mltp
+      , config = jobsConfig
       }

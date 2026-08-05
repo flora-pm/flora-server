@@ -42,7 +42,7 @@ import System.Info qualified as System
 import Flora.Database (withReadOnlyPool)
 import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment
-import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), jobWorkerLimit)
 import Flora.Environment.Env
 import Flora.Logging (makeLogger)
 import Flora.Model.Job
@@ -94,7 +94,7 @@ main = do
             feedRetentionCron <- feedRetentionCronJob
             pure (indexRefreshCrons <> feedRetentionCron)
       defaultConfig <- liftIO $
-        Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) 50 1 $
+        Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) (jobWorkerLimit floraEnv.dbConfig) 1 $
           \(job :| _) callbacks -> do
             liftIO $ labelCurrentThread (Text.unpack ("job-" <> job.queueName <> "-" <> jobTypeLabel job.payload))
             processJob workerEnv jobsEnv logger floraEnv traceRunner job

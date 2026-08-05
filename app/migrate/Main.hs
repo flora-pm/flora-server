@@ -9,7 +9,6 @@ import Database.PostgreSQL.Simple.Migration
 import Effectful
 import Effectful.Exception qualified as E
 import Effectful.Fail (runFailIO)
-import Effectful.FileSystem (runFileSystem)
 import Effectful.Log (Log, runLog)
 import Effectful.Reader.Static
 import Effectful.Reader.Static qualified as Reader
@@ -21,7 +20,6 @@ import System.IO
 
 import Flora.Environment
 import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), toConnString)
-import Flora.Environment.Env (FloraEnv (..))
 import Flora.Model.Job
 import FloraJobs.Environment
 
@@ -30,8 +28,7 @@ main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
   config <- execParser parseConfig
   jobsEnv <- runEff . runFailIO $ getFloraJobsEnv config
-  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv config
-  runAllMigrations floraEnv.config.connectionInfo
+  runAllMigrations jobsEnv.config.connectionInfo
     & Reader.runReader jobsEnv
     & (`E.catches` exceptionHandlers)
     & runLog "flora-migrate" logger LogTrace

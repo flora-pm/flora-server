@@ -101,6 +101,11 @@ source-repository-package
 
 source-repository-package
   type: git
+  location: https://github.com/scrive/memory-cache
+  tag: 7b3664189b199ee5f8f3b6d0060ff28be505a89d
+
+source-repository-package
+  type: git
   location: https://github.com/velveteer/arbiter.git
   tag: 296034ea3a15b5c10f42cc0ea46d2dfc48e9493f
   subdir:

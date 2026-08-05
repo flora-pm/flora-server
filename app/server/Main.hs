@@ -63,6 +63,7 @@ preFlightChecks config = do
           checkFloraEnvForThunks env
           withReadOnlyPool env.pool checkExpectedTables
           withReadOnlyPool env.pool checkRepositoriesAreConfigured
+  runEff $ shutdownFlora env
 
 checkFloraEnvForThunks :: (IOE :> es, Log :> es) => FloraEnv -> Eff es ()
 checkFloraEnvForThunks env = do

@@ -5,11 +5,6 @@ module FloraJobs.Scheduler
   , tarballJob
   , changelogJob
   , uploadInformationJob
-  , packageDeprecationListJob
-  , releaseDeprecationListJob
-  , refreshLatestVersionsJob
-  , packageMaintainersListJob
-  , packageUploadersJob
 
     -- * Enqueuing
   , scheduleJobs
@@ -27,20 +22,19 @@ where
 import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Data.Int (Int64)
+import Data.Pool (Pool)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Types.Version
 import Effectful
 import Effectful.Log (Log)
-import Effectful.Reader.Static (Reader)
-import Effectful.Reader.Static qualified as Reader
 import Log
 
 import Flora.Database
-import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Model.Package.Query qualified as PackageQuery
 import Flora.Model.Package.Types
@@ -68,21 +62,9 @@ uploadInformationJob :: ReleaseId -> PackageName -> Version -> PackageJob
 uploadInformationJob rid package version =
   FetchUploadInformation $ UploadInformationJobPayload package rid $ MkIntAesonVersion version
 
-packageDeprecationListJob :: PackageJob
-packageDeprecationListJob = FetchPackageDeprecationList
-
 releaseDeprecationListJob :: (PackageName, Vector ReleaseId) -> PackageJob
 releaseDeprecationListJob (package, releaseIds) =
   FetchReleaseDeprecationList package releaseIds
-
-refreshLatestVersionsJob :: PackageJob
-refreshLatestVersionsJob = RefreshLatestVersions
-
-packageMaintainersListJob :: PackageName -> PackageJob
-packageMaintainersListJob = FetchPackageMaintainers
-
-packageUploadersJob :: PackageJob
-packageUploadersJob = FetchPackageUploaders
 
 jobBatchSize :: Int
 jobBatchSize = 1000
@@ -98,6 +80,7 @@ jobDedupKey =
     FetchReleaseDeprecationList package _ -> "release-deprecation-" <> display package
     FetchPackageDeprecationList -> "package-deprecation-list"
     RefreshLatestVersions -> "refresh-latest-versions"
+    RefreshDependents -> "refresh-dependents"
     FetchPackageUploaders -> "package-uploaders"
     PruneFeedEntries -> "prune-feed-entries"
     RefreshIndex indexName -> "index-refresh-" <> indexName
@@ -148,13 +131,12 @@ scheduleMissingMetadataJobs env withTarballs =
 runMetadataPass
   :: ( IOE :> es
      , Log :> es
-     , Reader FloraEnv :> es
      )
-  => ArbS.SimpleEnv JobQueues
+  => Pool PG.Connection
+  -> ArbS.SimpleEnv JobQueues
   -> MetadataPass
   -> FloraM es ()
-runMetadataPass env pass = do
-  FloraEnv{pool} <- Reader.ask
+runMetadataPass pool env pass = do
   count <- case pass of
     ReadmePass -> do
       releases <- withReadOnlyPool pool ReleaseQuery.getHackagePackageReleasesWithoutReadme
@@ -176,10 +158,12 @@ runMetadataPass env pass = do
       packages <- withReadOnlyPool pool ReleaseQuery.getHackagePackagesWithoutReleaseDeprecationInformation
       scheduleJobs env $ fmap releaseDeprecationListJob packages
     RefreshLatestVersionsPass ->
-      scheduleJobs env $ Vector.singleton refreshLatestVersionsJob
+      scheduleJobs env $ Vector.singleton RefreshLatestVersions
+    RefreshDependentsPass ->
+      scheduleJobs env $ Vector.singleton RefreshDependents
     MaintainersPass -> do
       packages <- withReadOnlyPool pool PackageQuery.getPackagesWithoutMaintainersInformation
-      scheduleJobs env $ fmap (packageMaintainersListJob . snd) packages
+      scheduleJobs env $ fmap (FetchPackageMaintainers . snd) packages
   Log.logInfo "Scheduled metadata jobs" $
     object ["pass" .= passName pass, "jobs" .= count]
 
@@ -188,11 +172,11 @@ schedulePackageDeprecationListJob
   => ArbS.SimpleEnv JobQueues
   -> m Int64
 schedulePackageDeprecationListJob env =
-  scheduleJobs env $ Vector.singleton packageDeprecationListJob
+  scheduleJobs env $ Vector.singleton FetchPackageDeprecationList
 
 schedulePackageUploadersJob
   :: MonadUnliftIO m
   => ArbS.SimpleEnv JobQueues
   -> m Int64
 schedulePackageUploadersJob env =
-  scheduleJobs env $ Vector.singleton packageUploadersJob
+  scheduleJobs env $ Vector.singleton FetchPackageUploaders
