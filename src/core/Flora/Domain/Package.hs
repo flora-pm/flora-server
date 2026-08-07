@@ -16,7 +16,6 @@ import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.Tracing (Tracer)
 import GHC.Generics (Generic)
 import RequireCallStack
 
@@ -51,7 +50,6 @@ resolvePackage
   :: ( Error PackageResolutionError :> es
      , IOE :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => Namespace
   -> PackageName
@@ -65,7 +63,6 @@ resolveExactRelease
   :: ( Error PackageResolutionError :> es
      , IOE :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => Package
   -> Version
@@ -82,7 +79,6 @@ resolveReleaseAtVersion
   :: ( Error PackageResolutionError :> es
      , IOE :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => Package
   -> Maybe Version

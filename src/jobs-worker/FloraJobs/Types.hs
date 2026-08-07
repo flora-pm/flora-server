@@ -15,14 +15,12 @@ import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time, runTime)
-import Effectful.Tracing (Tracer)
 import GHC.Stack (prettyCallStack)
 import RequireCallStack
 
 import Flora.Domain.Import.Types (ImportError)
 import Flora.Environment.Env
 import Flora.Model.BlobStore.API
-import Flora.Tracing qualified as Tracing
 import FloraJobs.Environment
 
 type JobsRunner =
@@ -33,7 +31,6 @@ type JobsRunner =
      , Time
      , TypedProcess
      , FileSystem
-     , Tracer
      , Reader FloraEnv
      , Concurrent
      , Metrics AppMetrics
@@ -46,10 +43,9 @@ runJobRunner
   => FloraJobsEnv
   -> FloraEnv
   -> Logger
-  -> Tracing.TraceRunner
   -> JobsRunner a
   -> IO a
-runJobRunner runnerEnv floraEnv logger traceRunner jobRunner = do
+runJobRunner runnerEnv floraEnv logger jobRunner = do
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & Reader.runReader runnerEnv
@@ -58,7 +54,6 @@ runJobRunner runnerEnv floraEnv logger traceRunner jobRunner = do
     & runTime
     & runTypedProcess
     & runFileSystem
-    & Tracing.runTraceRunner traceRunner
     & Reader.runReader floraEnv
     & runConcurrent
     & runPrometheusMetrics floraEnv.metrics

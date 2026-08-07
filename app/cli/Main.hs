@@ -22,7 +22,6 @@ import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time, runTime)
-import Effectful.Tracing (Tracer)
 import GHC.Generics (Generic)
 import Log
 import Log.Backend.StandardOutput qualified as Log
@@ -61,7 +60,6 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Monad
-import Flora.Tracing qualified as Tracing
 import FloraWeb.Common.Tracing (startEventlogSocket)
 
 data Options = Options
@@ -111,9 +109,6 @@ main = Log.withStdOutLogger $ \logger -> do
   env <- getFloraEnv cliArgs.configFile & runFileSystem & runFailIO & runEff
   startEventlogSocket env.mltp.eventlogSocketDirectory
   installThreadDumpHandler
-  runTrace <- do
-    traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-cli"
-    pure $ Tracing.runTraceRunner traceRunner
   provideCallStack $
     runCommand cliArgs.configFile cliArgs.cliCommand
       & Reader.runReader env
@@ -134,7 +129,6 @@ main = Log.withStdOutLogger $ \logger -> do
             liftIO $ putStrLn $ prettyCallStack callstack
             E.throwIO $ userError $ show err
         )
-      & runTrace
       & runPrometheusMetrics env.metrics
       & Concurrent.runConcurrent
       & runEff
@@ -236,7 +230,6 @@ runCommand
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
      , Time :> es
-     , Tracer :> es
      )
   => FilePath
   -> Command
@@ -331,7 +324,6 @@ importIndex
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
      , Time :> es
-     , Tracer :> es
      )
   => FilePath
   -> Text

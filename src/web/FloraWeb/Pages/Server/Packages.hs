@@ -19,8 +19,6 @@ import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time qualified as Time
-import Effectful.Tracing (Tracer)
-import Effectful.Tracing qualified as Trace
 import Log (object, (.=))
 import Log qualified
 import Lucid
@@ -98,23 +96,21 @@ listPackagesHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Maybe (Positive Word)
   -> FloraM es (Html ())
 listPackagesHandler (Headers session _) pageParam = do
-  Trace.withLinkedRoot [] $ Trace.withSpan "list-all-packages" $ do
-    let pageNumber = pageParam ?: PositiveUnsafe 1
-    templateEnv' <- templateFromSession session defaultTemplateEnv
-    now <- Time.currentTime
-    (count', results) <- Search.listAllPackages (fromPage pageNumber)
-    let templateEnv =
-          templateEnv'
-            { title = "Packages — Flora.pm"
-            , description = "List of packages"
-            }
-    render templateEnv $ Search.showAllPackages now count' pageNumber results
+  let pageNumber = pageParam ?: PositiveUnsafe 1
+  templateEnv' <- templateFromSession session defaultTemplateEnv
+  now <- Time.currentTime
+  (count', results) <- Search.listAllPackages (fromPage pageNumber)
+  let templateEnv =
+        templateEnv'
+          { title = "Packages — Flora.pm"
+          , description = "List of packages"
+          }
+  render templateEnv $ Search.showAllPackages now count' pageNumber results
 
 showNamespaceHandler
   :: ( Error ServerError :> es
@@ -123,31 +119,29 @@ showNamespaceHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> Maybe (Positive Word)
   -> FloraM es (Html ())
-showNamespaceHandler (Headers session _) packageNamespace pageParam =
-  Trace.withLinkedRoot [] $ Trace.withSpan "show-namespace" $ do
-    FloraEnv{pool} <- Reader.ask
-    let pageNumber = pageParam ?: PositiveUnsafe 1
-    templateDefaults <- templateFromSession session defaultTemplateEnv
-    (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) packageNamespace
-    mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName (extractNamespaceText packageNamespace)
-    now <- Time.currentTime
-    case mPackageIndex of
-      Nothing -> renderError templateDefaults notFound404
-      Just packageIndex -> do
-        let templateEnv =
-              templateDefaults
-                { navbarSearchContent = Just $ "in:" <> display packageNamespace <> " "
-                , title = "Packages in " <> display packageNamespace <> " — Flora.pm"
-                , description = packageIndex.description
-                }
-        render templateEnv $
-          Search.showAllPackagesInNamespace now packageNamespace packageIndex.description count' pageNumber results
+showNamespaceHandler (Headers session _) packageNamespace pageParam = do
+  FloraEnv{pool} <- Reader.ask
+  let pageNumber = pageParam ?: PositiveUnsafe 1
+  templateDefaults <- templateFromSession session defaultTemplateEnv
+  (count', results) <- Search.listAllPackagesInNamespace (fromPage pageNumber) packageNamespace
+  mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName (extractNamespaceText packageNamespace)
+  now <- Time.currentTime
+  case mPackageIndex of
+    Nothing -> renderError templateDefaults notFound404
+    Just packageIndex -> do
+      let templateEnv =
+            templateDefaults
+              { navbarSearchContent = Just $ "in:" <> display packageNamespace <> " "
+              , title = "Packages in " <> display packageNamespace <> " — Flora.pm"
+              , description = packageIndex.description
+              }
+      render templateEnv $
+        Search.showAllPackagesInNamespace now packageNamespace packageIndex.description count' pageNumber results
 
 showPackageHandler
   :: ( Error ServerError :> es
@@ -155,7 +149,6 @@ showPackageHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -170,7 +163,6 @@ showVersionHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -186,98 +178,94 @@ showPackageVersion
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> Maybe Version
   -> FloraM es (Html ())
-showPackageVersion (Headers session _) packageNamespace packageName mversion =
-  Trace.withLinkedRoot [] $ Trace.withSpan "show-package-with-version" $ do
-    FloraEnv{pool} <- Reader.ask
-    templateEnv' <- templateFromSession session defaultTemplateEnv
-    (package, release, releases) <-
-      Error.runErrorWith (\_ _ -> web404 session) $ do
-        package <- resolvePackage packageNamespace packageName
-        (release, releases) <- resolveReleaseAtVersion package mversion
-        pure (package, release, releases)
-    packageIndex <- guardThatPackageIndexExists packageNamespace $ const (web404 session)
-    -- The remaining reads run on a single pooled connection (one checkout, one
-    -- transaction) instead of a checkout per query.
-    ( numberOfReleases
-      , categories
-      , numberOfDependents
-      , numberOfDependencies
-      , groups
-      , activeMaintainers
-      , mUploader
-      ) <-
-      withReadOnlyPool pool $ do
-        numberOfReleases <- Query.getNumberOfReleases package.packageId
-        categories <- Query.getPackageCategories package.packageId
-        numberOfDependents <-
-          Trace.withSpan "Query.getNumberOfPackageDependents" $
-            Query.getNumberOfPackageDependents packageNamespace packageName Nothing
-        numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
-        groups <- Query.getPackageGroupsForPackage package.packageId
-        activeMaintainers <-
-          if package.namespace == Namespace "hackage"
-            then Just <$> Query.getActiveMaintainers package.packageId
-            else pure Nothing
-        mUploader <- join <$> traverse (\u -> Query.getPackageUploaderById u) release.uploaderId
-        pure
-          ( numberOfReleases
-          , categories
-          , numberOfDependents
-          , numberOfDependencies
-          , groups
-          , activeMaintainers
-          , mUploader
-          )
+showPackageVersion (Headers session _) packageNamespace packageName mversion = do
+  FloraEnv{pool} <- Reader.ask
+  templateEnv' <- templateFromSession session defaultTemplateEnv
+  (package, release, releases) <-
+    Error.runErrorWith (\_ _ -> web404 session) $ do
+      package <- resolvePackage packageNamespace packageName
+      (release, releases) <- resolveReleaseAtVersion package mversion
+      pure (package, release, releases)
+  packageIndex <- guardThatPackageIndexExists packageNamespace $ const (web404 session)
+  -- The remaining reads run on a single pooled connection (one checkout, one
+  -- transaction) instead of a checkout per query.
+  ( numberOfReleases
+    , categories
+    , numberOfDependents
+    , numberOfDependencies
+    , groups
+    , activeMaintainers
+    , mUploader
+    ) <-
+    withReadOnlyPool pool $ do
+      numberOfReleases <- Query.getNumberOfReleases package.packageId
+      categories <- Query.getPackageCategories package.packageId
+      numberOfDependents <-
+        Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+      numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+      groups <- Query.getPackageGroupsForPackage package.packageId
+      activeMaintainers <-
+        if package.namespace == Namespace "hackage"
+          then Just <$> Query.getActiveMaintainers package.packageId
+          else pure Nothing
+      mUploader <- join <$> traverse (\u -> Query.getPackageUploaderById u) release.uploaderId
+      pure
+        ( numberOfReleases
+        , categories
+        , numberOfDependents
+        , numberOfDependencies
+        , groups
+        , activeMaintainers
+        , mUploader
+        )
 
-    let templateEnv =
-          templateEnv'
-            { title = display packageNamespace <> " › " <> display packageName <> " — Flora.pm"
-            , description = release.synopsis
-            , indexPage = isNothing mversion
-            }
+  let templateEnv =
+        templateEnv'
+          { title = display packageNamespace <> " › " <> display packageName <> " — Flora.pm"
+          , description = release.synopsis
+          , indexPage = isNothing mversion
+          }
 
-    Log.logInfo "displaying a package" $
-      object
-        [ "release"
-            .= object
-              [ "id" .= release.releaseId
-              , "version" .= display release.version
-              ]
-        , "dependencies"
-            .= object
-              [ "count" .= numberOfDependencies
-              ]
-        , "dependents"
-            .= object
-              [ "count" .= numberOfDependents
-              ]
-        , "package" .= (display packageNamespace <> "/" <> display packageName)
-        , "releases" .= numberOfReleases
-        ]
+  Log.logInfo "displaying a package" $
+    object
+      [ "release"
+          .= object
+            [ "id" .= release.releaseId
+            , "version" .= display release.version
+            ]
+      , "dependencies"
+          .= object
+            [ "count" .= numberOfDependencies
+            ]
+      , "dependents"
+          .= object
+            [ "count" .= numberOfDependents
+            ]
+      , "package" .= (display packageNamespace <> "/" <> display packageName)
+      , "releases" .= numberOfReleases
+      ]
 
-    let isLatestViableRelease = Just release.version == fmap (.version) (latestViableRelease releases)
-    Trace.withSpan "render showPackage" $
-      render templateEnv $
-        Packages.showPackage
-          release
-          releases
-          numberOfReleases
-          package
-          packageIndex.url
-          numberOfDependents
-          numberOfDependencies
-          categories
-          groups
-          activeMaintainers
-          mUploader
-          isLatestViableRelease
+  let isLatestViableRelease = Just release.version == fmap (.version) (latestViableRelease releases)
+  render templateEnv $
+    Packages.showPackage
+      release
+      releases
+      numberOfReleases
+      package
+      packageIndex.url
+      numberOfDependents
+      numberOfDependencies
+      categories
+      groups
+      activeMaintainers
+      mUploader
+      isLatestViableRelease
 
 showDependentsHandler
   :: ( Error ServerError :> es
@@ -286,7 +274,6 @@ showDependentsHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -310,7 +297,6 @@ showVersionDependentsHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -324,50 +310,47 @@ showVersionDependentsHandler s packageNamespace packageName version Nothing mSea
 showVersionDependentsHandler s packageNamespace packageName version pageNumber (Just "") =
   showVersionDependentsHandler s packageNamespace packageName version pageNumber Nothing
 showVersionDependentsHandler (Headers session _) packageNamespace packageName version (Just pageNumber) mSearch = do
-  Trace.withLinkedRoot [] $ Trace.withSpan "show-package-version-dependents" $ do
-    FloraEnv{pool} <- Reader.ask
-    templateEnv' <- templateFromSession session defaultTemplateEnv
-    (package, release) <-
-      Error.runErrorWith (\_ _ -> web404 session) $ do
-        package <- resolvePackage packageNamespace packageName
-        release <- resolveExactRelease package version
-        pure (package, release)
-    let templateEnv =
-          templateEnv'
-            { title = display packageNamespace <> "/" <> display packageName
-            , description = "Dependents of " <> display packageNamespace <> "/" <> display packageName
-            , navbarSearchContent = Just $ "depends:" <> display packageNamespace <> "/" <> display packageName <> " "
-            }
-    results <-
-      Trace.withSpan "Query.getPackageDependents" $
-        withReadOnlyPool pool $
-          Query.getAllPackageDependentsWithLatestVersion
-            packageNamespace
-            packageName
-            (fromPage pageNumber)
-            mSearch
+  FloraEnv{pool} <- Reader.ask
+  templateEnv' <- templateFromSession session defaultTemplateEnv
+  (package, release) <-
+    Error.runErrorWith (\_ _ -> web404 session) $ do
+      package <- resolvePackage packageNamespace packageName
+      release <- resolveExactRelease package version
+      pure (package, release)
+  let templateEnv =
+        templateEnv'
+          { title = display packageNamespace <> "/" <> display packageName
+          , description = "Dependents of " <> display packageNamespace <> "/" <> display packageName
+          , navbarSearchContent = Just $ "depends:" <> display packageNamespace <> "/" <> display packageName <> " "
+          }
+  results <-
+    withReadOnlyPool pool $
+      Query.getAllPackageDependentsWithLatestVersion
+        packageNamespace
+        packageName
+        (fromPage pageNumber)
+        mSearch
 
-    (numberOfDependents, numberOfDependencies, numberOfReleases) <-
-      withReadOnlyPool pool $ do
-        numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName mSearch
-        numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
-        numberOfReleases <- Query.getNumberOfReleases package.packageId
-        pure (numberOfDependents, numberOfDependencies, numberOfReleases)
-    now <- Time.currentTime
-    isLatestViableRelease <- isLatestRelease package.packageId release.version
+  (numberOfDependents, numberOfDependencies, numberOfReleases) <-
+    withReadOnlyPool pool $ do
+      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName mSearch
+      numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+      numberOfReleases <- Query.getNumberOfReleases package.packageId
+      pure (numberOfDependents, numberOfDependencies, numberOfReleases)
+  now <- Time.currentTime
+  isLatestViableRelease <- isLatestRelease package.packageId release.version
 
-    Trace.withSpan "render showDependents" $
-      render templateEnv $
-        Package.showDependents
-          now
-          numberOfReleases
-          release
-          numberOfDependencies
-          numberOfDependents
-          package
-          results
-          pageNumber
-          isLatestViableRelease
+  render templateEnv $
+    Package.showDependents
+      now
+      numberOfReleases
+      release
+      numberOfDependencies
+      numberOfDependents
+      package
+      results
+      pageNumber
+      isLatestViableRelease
 
 showDependenciesHandler
   :: ( Error ServerError :> es
@@ -375,7 +358,6 @@ showDependenciesHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -396,7 +378,6 @@ showVersionDependenciesHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -404,74 +385,67 @@ showVersionDependenciesHandler
   -> Version
   -> FloraM es (Html ())
 showVersionDependenciesHandler (Headers session _) packageNamespace packageName version = do
-  Trace.withLinkedRoot [] $ Trace.withSpan "show-version-dependencies" $ do
-    FloraEnv{pool} <- Reader.ask
-    templateEnv' <- templateFromSession session defaultTemplateEnv
-    (package, release) <-
-      Error.runErrorWith (\_ _ -> web404 session) $ do
-        package <- resolvePackage packageNamespace packageName
-        release <- resolveExactRelease package version
-        pure (package, release)
-    (numberOfDependents, numberOfDependencies, numberOfReleases) <-
-      withReadOnlyPool pool $ do
-        numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
-        numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
-        numberOfReleases <- Query.getNumberOfReleases package.packageId
-        pure (numberOfDependents, numberOfDependencies, numberOfReleases)
-    let templateEnv =
-          templateEnv'
-            { title = display packageNamespace <> " › " <> display packageName <> " › dependencies — Flora.pm"
-            , description = "Dependencies of " <> display packageNamespace <> display packageName
-            }
-    releaseDependencies <-
-      Trace.withSpan "Query.getAllRequirements" $
-        withReadOnlyPool pool $
-          Query.getAllRequirements release.releaseId
+  FloraEnv{pool} <- Reader.ask
+  templateEnv' <- templateFromSession session defaultTemplateEnv
+  (package, release) <-
+    Error.runErrorWith (\_ _ -> web404 session) $ do
+      package <- resolvePackage packageNamespace packageName
+      release <- resolveExactRelease package version
+      pure (package, release)
+  (numberOfDependents, numberOfDependencies, numberOfReleases) <-
+    withReadOnlyPool pool $ do
+      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+      numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+      numberOfReleases <- Query.getNumberOfReleases package.packageId
+      pure (numberOfDependents, numberOfDependencies, numberOfReleases)
+  let templateEnv =
+        templateEnv'
+          { title = display packageNamespace <> " › " <> display packageName <> " › dependencies — Flora.pm"
+          , description = "Dependencies of " <> display packageNamespace <> display packageName
+          }
+  releaseDependencies <-
+    withReadOnlyPool pool $
+      Query.getAllRequirements release.releaseId
 
-    now <- Time.currentTime
-    isLatestViableRelease <- isLatestRelease package.packageId release.version
-    Trace.withSpan "render showDependencies" $
-      render templateEnv $
-        Package.showDependencies
-          now
-          numberOfReleases
-          release
-          numberOfDependencies
-          numberOfDependents
-          package
-          releaseDependencies
-          isLatestViableRelease
+  now <- Time.currentTime
+  isLatestViableRelease <- isLatestRelease package.packageId release.version
+  render templateEnv $
+    Package.showDependencies
+      now
+      numberOfReleases
+      release
+      numberOfDependencies
+      numberOfDependents
+      package
+      releaseDependencies
+      isLatestViableRelease
 
 showChangelogHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> FloraM es (Html ())
 showChangelogHandler s@(Headers session _) packageNamespace packageName = do
-  Trace.withLinkedRoot [] $ Trace.withSpan "show-changelog" $ do
-    FloraEnv{pool} <- Reader.ask
-    package <- guardThatPackageExists pool packageNamespace packageName >>= maybe (web404 session) pure
-    maybeLatestRelease <-
-      Trace.withSpan "Query.getLatestPackageRelease" $
-        withReadOnlyPool pool $
-          Query.getLatestPackageRelease package.packageId
-    case maybeLatestRelease of
-      Nothing -> throwError err404
-      Just latestRelease ->
-        showVersionChangelogHandler s packageNamespace packageName latestRelease.version
+  FloraEnv{pool} <- Reader.ask
+  package <- guardThatPackageExists pool packageNamespace packageName >>= maybe (web404 session) pure
+  maybeLatestRelease <-
+    withReadOnlyPool pool $
+      Query.getLatestPackageRelease package.packageId
+  case maybeLatestRelease of
+    Nothing -> throwError err404
+    Just latestRelease ->
+      showVersionChangelogHandler s packageNamespace packageName latestRelease.version
 
 showVersionChangelogHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -479,36 +453,35 @@ showVersionChangelogHandler
   -> Version
   -> FloraM es (Html ())
 showVersionChangelogHandler (Headers session _) packageNamespace packageName version = do
-  Trace.withLinkedRoot [] $ Trace.withSpan "show-version-changelog" $ do
-    FloraEnv{pool} <- Reader.ask
-    templateEnv' <- templateFromSession session defaultTemplateEnv
-    (package, release) <-
-      Error.runErrorWith (\_ _ -> web404 session) $ do
-        package <- resolvePackage packageNamespace packageName
-        release <- resolveExactRelease package version
-        pure (package, release)
-    (numberOfDependents, numberOfDependencies, numberOfReleases) <-
-      withReadOnlyPool pool $ do
-        numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
-        numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
-        numberOfReleases <- Query.getNumberOfReleases package.packageId
-        pure (numberOfDependents, numberOfDependencies, numberOfReleases)
-    let templateEnv =
-          templateEnv'
-            { title = display packageNamespace <> "/" <> display packageName
-            , description = "Changelog of " <> display packageNamespace <> "/" <> display packageName
-            }
-    isLatestViableRelease <- isLatestRelease package.packageId release.version
+  FloraEnv{pool} <- Reader.ask
+  templateEnv' <- templateFromSession session defaultTemplateEnv
+  (package, release) <-
+    Error.runErrorWith (\_ _ -> web404 session) $ do
+      package <- resolvePackage packageNamespace packageName
+      release <- resolveExactRelease package version
+      pure (package, release)
+  (numberOfDependents, numberOfDependencies, numberOfReleases) <-
+    withReadOnlyPool pool $ do
+      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+      numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
+      numberOfReleases <- Query.getNumberOfReleases package.packageId
+      pure (numberOfDependents, numberOfDependencies, numberOfReleases)
+  let templateEnv =
+        templateEnv'
+          { title = display packageNamespace <> "/" <> display packageName
+          , description = "Changelog of " <> display packageNamespace <> "/" <> display packageName
+          }
+  isLatestViableRelease <- isLatestRelease package.packageId release.version
 
-    render templateEnv $
-      Package.showChangelog
-        numberOfReleases
-        release
-        numberOfDependencies
-        numberOfDependents
-        package
-        release.changelog
-        isLatestViableRelease
+  render templateEnv $
+    Package.showChangelog
+      numberOfReleases
+      release
+      numberOfDependencies
+      numberOfDependents
+      package
+      release.changelog
+      isLatestViableRelease
 
 listVersionsHandler
   :: ( Error ServerError :> es
@@ -516,7 +489,6 @@ listVersionsHandler
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -539,8 +511,7 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
       (numberOfDependents, numberOfDependencies, releases) <-
         withReadOnlyPool pool $ do
           numberOfDependents <-
-            Trace.withSpan "Query.getNumberOfPackageDependents" $
-              Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+            Query.getNumberOfPackageDependents packageNamespace packageName Nothing
           numberOfDependencies <- Query.getNumberOfPackageRequirements latestRelease.releaseId
           releases <- Query.getAllReleases package.packageId
           pure (numberOfDependents, numberOfDependencies, releases)
@@ -565,7 +536,6 @@ getTarballHandler
      , Log :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
@@ -593,42 +563,39 @@ showPackageSecurityHandler
      , IOE :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User)
   -> Namespace
   -> PackageName
   -> FloraM es (Html ())
-showPackageSecurityHandler (Headers session _) packageNamespace packageName =
-  Trace.withLinkedRoot [] $ Trace.withSpan "show-package-security" $ do
-    FloraEnv{pool} <- Reader.ask
-    templateEnv' <- templateFromSession session defaultTemplateEnv
-    package <- guardThatPackageExists pool packageNamespace packageName >>= maybe (web404 session) pure
-    maybeLatestRelease <- withReadOnlyPool pool $ Query.getLatestPackageRelease package.packageId
-    case maybeLatestRelease of
-      Nothing -> throwError err404
-      Just latestRelease -> do
-        advisoryPreviews <-
-          Trace.withSpan "Query.getAdvisoryPreviewsByPackageId" $
-            withReadOnlyPool pool $
-              Query.getAdvisoryPreviewsByPackageId package.packageId
-        let templateEnv =
-              templateEnv'
-                { title = display packageNamespace <> "/" <> display packageName
-                , description = "Releases of " <> display packageNamespace <> display packageName
-                }
-        (numberOfDependents, numberOfDependencies, numberOfReleases) <-
-          withReadOnlyPool pool $ do
-            numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
-            numberOfDependencies <- Query.getNumberOfPackageRequirements latestRelease.releaseId
-            numberOfReleases <- Query.getNumberOfReleases package.packageId
-            pure (numberOfDependents, numberOfDependencies, numberOfReleases)
-        render templateEnv $
-          Package.showPackageSecurityPage
-            latestRelease
-            numberOfDependencies
-            numberOfDependents
-            package
-            numberOfReleases
-            (Vector.reverse $ Vector.modify (MVector.sortBy (\v1 v2 -> compare v1.hsecId v2.hsecId)) advisoryPreviews)
-            True
+showPackageSecurityHandler (Headers session _) packageNamespace packageName = do
+  FloraEnv{pool} <- Reader.ask
+  templateEnv' <- templateFromSession session defaultTemplateEnv
+  package <- guardThatPackageExists pool packageNamespace packageName >>= maybe (web404 session) pure
+  maybeLatestRelease <- withReadOnlyPool pool $ Query.getLatestPackageRelease package.packageId
+  case maybeLatestRelease of
+    Nothing -> throwError err404
+    Just latestRelease -> do
+      advisoryPreviews <-
+        withReadOnlyPool pool $
+          Query.getAdvisoryPreviewsByPackageId package.packageId
+      let templateEnv =
+            templateEnv'
+              { title = display packageNamespace <> "/" <> display packageName
+              , description = "Releases of " <> display packageNamespace <> display packageName
+              }
+      (numberOfDependents, numberOfDependencies, numberOfReleases) <-
+        withReadOnlyPool pool $ do
+          numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+          numberOfDependencies <- Query.getNumberOfPackageRequirements latestRelease.releaseId
+          numberOfReleases <- Query.getNumberOfReleases package.packageId
+          pure (numberOfDependents, numberOfDependencies, numberOfReleases)
+      render templateEnv $
+        Package.showPackageSecurityPage
+          latestRelease
+          numberOfDependencies
+          numberOfDependents
+          package
+          numberOfReleases
+          (Vector.reverse $ Vector.modify (MVector.sortBy (\v1 v2 -> compare v1.hsecId v2.hsecId)) advisoryPreviews)
+          True

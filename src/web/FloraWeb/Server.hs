@@ -24,8 +24,6 @@ import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
-import Effectful.Tracing.Effect
-import Effectful.Tracing.Instrumentation.Servant (traceServantMiddleware)
 import Log
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
@@ -71,8 +69,6 @@ import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
 import Flora.Monitoring (setGitHash)
-import Flora.Tracing
-import Flora.Tracing qualified as Tracing
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
 import FloraWeb.Common.Auth
@@ -123,14 +119,11 @@ runFlora config = do
                 void $ P.register P.ghcMetrics
                 when (System.os == "linux") $ void $ P.register P.procMetrics
                 setGitHash
-
-            liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to OpenTelemetry endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
-            traceRunner <- liftIO $ Tracing.newTraceRunner env.mltp.zipkinHost "flora-server"
             let withLogger = Logging.makeLogger "logs/flora-server.json" env.mltp.logger
             withLogger
               ( \appLogger ->
-                  provideCallStack $ Tracing.runTraceRunner traceRunner $ runServer appLogger env traceRunner
+                  provideCallStack $ runServer appLogger env
               )
       )
 
@@ -157,13 +150,11 @@ runServer
   :: ( Concurrent :> es
      , IOE :> es
      , RequireCallStack
-     , Tracer :> es
      )
   => Logger
   -> FloraEnv
-  -> TraceRunner
   -> Eff es ()
-runServer appLogger floraEnv traceRunner = do
+runServer appLogger floraEnv = do
   loggingMiddleware <-
     Log.runLog
       ("flora-server-" <> display floraEnv.environment)
@@ -192,7 +183,7 @@ runServer appLogger floraEnv traceRunner = do
         (Proxy @JobQueues)
         (toConnString connectionInfo)
         "public"
-  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv reloadChannel traceRunner
+  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv reloadChannel
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
@@ -203,14 +194,13 @@ runServer appLogger floraEnv traceRunner = do
                 floraEnv.mltp
             )
             defaultSettings
-  withEffToIO (ConcUnlift Persistent Unlimited) $ \runInIO ->
+  withEffToIO (ConcUnlift Persistent Unlimited) $ \_runInIO ->
     runSettings warpSettings
       $ labelRequestThread
         . heartbeatMiddleware
         . loggingMiddleware
         . const
       $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
-      $ traceServantMiddleware runInIO
       $ prometheusMiddleware server
 
 mkServer
@@ -220,13 +210,12 @@ mkServer
   -> WebEnvStore
   -> FloraEnv
   -> TChan ()
-  -> TraceRunner
   -> Application
-mkServer arbiterConfig logger webEnvStore floraEnv reloadChannel traceRunner =
+mkServer arbiterConfig logger webEnvStore floraEnv reloadChannel =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
-    (naturalTransform floraEnv logger webEnvStore traceRunner)
+    (naturalTransform floraEnv logger webEnvStore)
     (floraServer arbiterConfig floraEnv.environment reloadChannel)
 
 floraServer
@@ -252,15 +241,13 @@ naturalTransform
   => FloraEnv
   -> Logger
   -> WebEnvStore
-  -> TraceRunner
   -> FloraEff a
   -> Handler a
-naturalTransform floraEnv logger _webEnvStore traceRunner app = do
+naturalTransform floraEnv logger _webEnvStore app = do
   result <-
     liftIO $
       Right
         <$> app
-          & Tracing.runTraceRunner traceRunner
           & runTime
           & runReader floraEnv.features
           & withBlobStore floraEnv.features

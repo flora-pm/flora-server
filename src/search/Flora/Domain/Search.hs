@@ -17,8 +17,6 @@ import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
-import Effectful.Tracing (Tracer)
-import Effectful.Tracing qualified as Trace
 import Log qualified
 
 import Advisories.Model.Affected.Query qualified as Query
@@ -156,20 +154,18 @@ searchExecutable (offset, limit) queryString = do
   pure (count, results)
 
 searchInAdvisories
-  :: (IOE :> es, Reader FloraEnv :> es, Tracer :> es)
+  :: (IOE :> es, Reader FloraEnv :> es)
   => (Word, Word)
   -> Text
   -> FloraM es (Word, Vector PackageAdvisoryPreview)
 searchInAdvisories (offset, limit) queryString = do
   FloraEnv{pool} <- Reader.ask
   results <-
-    Trace.withSpan "Query.searchInAdvisories" $
-      withReadOnlyPool pool $
-        Query.searchInAdvisories (offset, limit) queryString
+    withReadOnlyPool pool $
+      Query.searchInAdvisories (offset, limit) queryString
   count <-
-    Trace.withSpan "Query.countAdvisorySearchResults" $
-      withReadOnlyPool pool $
-        Query.countAdvisorySearchResults queryString
+    withReadOnlyPool pool $
+      Query.countAdvisorySearchResults queryString
   pure (count, results)
 
 dependencyInfoToPackageInfo :: DependencyInfo -> PackageInfo

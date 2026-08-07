@@ -43,7 +43,6 @@ import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
-import Effectful.Tracing (Tracer)
 import RequireCallStack
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream qualified as Stream
@@ -69,7 +68,6 @@ importFromArchive
      , Reader FloraEnv :> es
      , RequireCallStack
      , Time :> es
-     , Tracer :> es
      )
   => Pool PG.Connection
   -> Text

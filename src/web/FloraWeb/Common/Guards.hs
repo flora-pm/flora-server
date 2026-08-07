@@ -6,8 +6,6 @@ import Data.Text (Text)
 import Effectful
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.Tracing (Tracer)
-import Effectful.Tracing qualified as Trace
 import Log qualified
 import Optics.Core
 
@@ -24,21 +22,19 @@ import FloraWeb.Pages.Templates.Screens.Sessions qualified as Sessions
 import FloraWeb.Session (Session)
 
 guardThatPackageIndexExists
-  :: (IOE :> es, Reader FloraEnv :> es, Tracer :> es)
+  :: (IOE :> es, Reader FloraEnv :> es)
   => Namespace
   -> (Namespace -> FloraM es PackageIndex)
   -- ^ Action to run if the package index does not exist
   -> FloraM es PackageIndex
-guardThatPackageIndexExists namespace action =
-  Trace.withSpan "guardThatPackageIndexExists " $ do
-    FloraEnv{pool} <- Reader.ask
-    result <-
-      Trace.withSpan "Query.getPackageIndexByName" $
-        withReadOnlyPool pool $
-          Query.getPackageIndexByName (extractNamespaceText namespace)
-    case result of
-      Just packageIndex -> pure packageIndex
-      Nothing -> action namespace
+guardThatPackageIndexExists namespace action = do
+  FloraEnv{pool} <- Reader.ask
+  result <-
+    withReadOnlyPool pool $
+      Query.getPackageIndexByName (extractNamespaceText namespace)
+  case result of
+    Just packageIndex -> pure packageIndex
+    Nothing -> action namespace
 
 guardThatUserHasProvidedTOTP
   :: (IOE :> es, Reader FeatureEnv :> es)

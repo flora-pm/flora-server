@@ -6,7 +6,6 @@ import Effectful
 import Effectful.Reader.Static (Reader)
 import Effectful.Time
 import Effectful.Time qualified as Time
-import Effectful.Tracing (Tracer)
 import Lucid (Html)
 import RequireCallStack
 import Servant (Headers (..), ServerT)
@@ -37,7 +36,6 @@ searchHandler
      , Reader FloraEnv :> es
      , RequireCallStack
      , Time :> es
-     , Tracer :> es
      )
   => SessionWithCookies (Maybe User) -> Maybe Text -> Maybe (Positive Word) -> FloraM es (Html ())
 searchHandler s Nothing pageParam = searchHandler s (Just "") pageParam
