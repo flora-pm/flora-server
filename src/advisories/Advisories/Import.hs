@@ -16,8 +16,6 @@ import Effectful.Log (Log)
 import Effectful.Log qualified as Log
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.Tracing (Tracer)
-import Effectful.Tracing qualified as Trace
 import Security.Advisories.Core.Advisory
 import Security.Advisories.Filesystem (listAdvisories)
 import Validation (Validation (..))
@@ -40,12 +38,11 @@ importAdvisories
      , IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => FilePath
   -> FloraM es ()
-importAdvisories root = Trace.withLinkedRoot [] $ Trace.withSpan "import-advisories" $ do
-  result <- Trace.withSpan "listAdvisories" $ listAdvisories root
+importAdvisories root = do
+  result <- listAdvisories root
   case result of
     Failure failures ->
       let errors = case NonEmpty.nonEmpty failures of
@@ -60,7 +57,6 @@ importAdvisory
      , IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => Advisory
   -> FloraM es ()
@@ -99,7 +95,6 @@ processAffectedPackages
      , IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => AdvisoryId
   -> Vector Affected
@@ -112,7 +107,6 @@ processAffectedPackage
      , IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
-     , Tracer :> es
      )
   => AdvisoryId
   -> Affected

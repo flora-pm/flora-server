@@ -48,7 +48,6 @@ import Flora.Logging (makeLogger)
 import Flora.Model.Job
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
-import Flora.Tracing qualified as Tracing
 import FloraJobs.Environment
 import FloraJobs.Metrics
 import FloraJobs.QueueMetrics qualified as QueueMetrics
@@ -65,9 +64,7 @@ main = do
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
   let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
   let withLogger = makeLogger "logs/flora-jobs.json" floraEnv.mltp.logger
-  traceRunner <- Tracing.newTraceRunner floraEnv.mltp.zipkinHost "flora-jobs"
   runEff . runConcurrent $ do
-    liftIO $ startEventlogSocket floraEnv.mltp.eventlogSocketDirectory
     liftIO installThreadDumpHandler
     when floraEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
@@ -97,7 +94,7 @@ main = do
         Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) (jobWorkerLimit floraEnv.dbConfig) 1 $
           \(job :| _) callbacks -> do
             liftIO $ labelCurrentThread (Text.unpack ("job-" <> job.queueName <> "-" <> jobTypeLabel job.payload))
-            processJob workerEnv jobsEnv logger floraEnv traceRunner job
+            processJob workerEnv jobsEnv logger floraEnv job
             Worker.ack callbacks job
       let instrumentedHooks =
             if floraEnv.mltp.prometheusEnabled
@@ -217,17 +214,15 @@ processJob
   -> FloraJobsEnv
   -> Log.Logger
   -> FloraEnv
-  -> Tracing.TraceRunner
   -> Arb.JobRead PackageJob
   -> ArbS.SimpleDb JobQueues IO ()
-processJob workerEnv jobsRunnerEnv logger floraEnv traceRunner job =
+processJob workerEnv jobsRunnerEnv logger floraEnv job =
   provideCallStack $
     liftIO $
       runJobRunner
         jobsRunnerEnv
         floraEnv
         logger
-        traceRunner
         (Log.localDomain "job-runner" $ Runner.runner workerEnv job)
 
 checkJobsEnvForThunks :: (IOE :> es, Log :> es) => FloraJobsEnv -> Eff es ()
