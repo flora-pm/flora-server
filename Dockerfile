@@ -127,7 +127,6 @@ COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 RUN echo 'export PATH="$PATH:/home/$USER/.cabal/bin"' >>~/.bashrc
 RUN echo "source /opt/ghcup/.ghcup/env" >>~/.bashrc
 RUN echo 'eval "$(direnv hook bash)"' >>~/.bashrc
-RUN echo 'direnv allow' >>~/.bashrc
 RUN cabal update
 
 # Mountpoint for the eventlog-socket volume shared with the live-eventlog

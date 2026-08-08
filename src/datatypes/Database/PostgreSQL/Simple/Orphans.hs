@@ -6,6 +6,7 @@ import Control.DeepSeq
 import Data.ByteString (ByteString)
 import Data.Text qualified as Text
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), returnError)
+import Database.PostgreSQL.Simple.Newtypes
 import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Simple.Types (Binary (..), PGArray (..))
 import Sel.HMAC.SHA256 qualified as HMAC
@@ -27,3 +28,4 @@ instance NFData HMAC.AuthenticationKey where
   rnf a = seq a ()
 
 deriving newtype instance NFData a => NFData (PGArray a)
+deriving newtype instance NFData a => NFData (Aeson a)

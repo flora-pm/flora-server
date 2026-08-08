@@ -22,6 +22,7 @@ import Advisories.AffectedVersionRange.Orphans ()
 import Advisories.CVSS.Orphans ()
 import Advisories.Model.Advisory.Types
 import Advisories.System.Orphans ()
+import Database.PostgreSQL.Simple.Orphans ()
 import Distribution.Orphans.ConfVar ()
 import Distribution.Orphans.Version ()
 import Flora.Model.Package.Types
@@ -35,11 +36,13 @@ newtype AffectedPackageId = AffectedPackageId {getAffectedPackageId :: UUID}
 data AffectedPackageDAO = AffectedPackageDAO
   { affectedPackageId :: AffectedPackageId
   , advisoryId :: AdvisoryId
-  , packageId :: PackageId
+  , packageId :: Maybe PackageId
   , cvss :: CVSS
   , architectures :: Maybe (Vector Architecture)
   , operatingSystems :: Maybe (Vector OS)
-  , declarations :: Vector AffectedDeclaration
+  , namespace :: Text
+  , affectedComponent :: Text
+  , declarations :: Aeson (Vector AffectedDeclaration)
   }
   deriving stock (Generic, Show)
   deriving anyclass (FromRow, NFData, ToRow)
