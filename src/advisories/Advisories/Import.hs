@@ -5,7 +5,6 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.Display
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -35,7 +34,6 @@ import OSV.Reference.Orphans
 importAdvisories
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
-     , Log :> es
      , Reader FloraEnv :> es
      )
   => FilePath
@@ -54,7 +52,6 @@ importAdvisories root = do
 importAdvisory
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
-     , Log :> es
      , Reader FloraEnv :> es
      )
   => Advisory
@@ -92,7 +89,6 @@ processAdvisory advisoryId advisory =
 processAffectedPackages
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
-     , Log :> es
      , Reader FloraEnv :> es
      )
   => AdvisoryId
@@ -104,7 +100,6 @@ processAffectedPackages advisoryId affectedPackages = do
 processAffectedPackage
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
-     , Log :> es
      , Reader FloraEnv :> es
      )
   => AdvisoryId
