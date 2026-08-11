@@ -40,5 +40,5 @@ collectQueueStats :: ArbS.SimpleEnv JobQueues -> IO (Arb.QueueStats, Int64)
 collectQueueStats workerEnv =
   ArbS.runSimpleDb workerEnv $
     (,)
-      <$> Arb.getQueueStats @(ArbS.SimpleDb JobQueues IO) @JobQueues @PackageJob
-      <*> Arb.countDLQJobs @(ArbS.SimpleDb JobQueues IO) @JobQueues @PackageJob
+      <$> Arb.getQueueStats @PackageJob @(ArbS.SimpleDb JobQueues IO)
+      <*> Arb.countDLQJobs @PackageJob @(ArbS.SimpleDb JobQueues IO)

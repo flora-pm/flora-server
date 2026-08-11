@@ -77,7 +77,7 @@ configToEnv :: (Fail :> es, FileSystem :> es, IOE :> es) => FloraConfig -> Eff e
 configToEnv floraConfig = do
   let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
-  let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) pool "public"
+  workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) pool "public"
   assets <- getAssets floraConfig.environment
   featureEnv <- featureConfigToEnv floraConfig.features
   metrics <- registerMetrics

@@ -2,6 +2,7 @@
 
 module Flora.Model.Job where
 
+import Arbiter.Core.QueueRegistry (Queue)
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Text
@@ -17,7 +18,7 @@ import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
 type JobQueues =
-  '[ '("package_jobs", PackageJob)
+  '[ Queue "package_jobs" PackageJob
    ]
 
 newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
