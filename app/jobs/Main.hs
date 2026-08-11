@@ -10,7 +10,6 @@ import Data.Proxy
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display
-import Data.Text.Encoding qualified as Text
 import Data.Text.IO qualified as T
 import Data.Time
 import Data.Vector (Vector)
@@ -42,7 +41,7 @@ import System.Info qualified as System
 import Flora.Database (withReadOnlyPool)
 import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment
-import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), jobWorkerLimit)
+import Flora.Environment.Config (jobWorkerLimit)
 import Flora.Environment.Env
 import Flora.Logging (makeLogger)
 import Flora.Model.Job
@@ -62,7 +61,7 @@ main = do
   jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
   floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
-  let workerEnv = ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
+  workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
   let withLogger = makeLogger "logs/flora-jobs.json" floraEnv.mltp.logger
   runEff . runConcurrent $ do
     liftIO installThreadDumpHandler
@@ -91,7 +90,7 @@ main = do
             feedRetentionCron <- feedRetentionCronJob
             pure (indexRefreshCrons <> feedRetentionCron)
       defaultConfig <- liftIO $
-        Worker.defaultBatchedWorkerConfig (connString floraEnv.config.connectionInfo) (jobWorkerLimit floraEnv.dbConfig) 1 $
+        Worker.defaultBatchedWorkerConfig (jobWorkerLimit floraEnv.dbConfig) 1 $
           \(job :| _) callbacks -> do
             liftIO $ labelCurrentThread (Text.unpack ("job-" <> job.queueName <> "-" <> jobTypeLabel job.payload))
             processJob workerEnv jobsEnv logger floraEnv job
@@ -120,19 +119,6 @@ main = do
               }
 
       liftIO $ ArbS.runSimpleDb workerEnv $ Worker.runWorkerPool config
-  where
-    connString connectionInfo =
-      Text.encodeUtf8 $
-        "host="
-          <> connectionInfo.connectHost
-          <> " port="
-          <> Text.pack (show connectionInfo.connectPort)
-          <> " user="
-          <> connectionInfo.connectUser
-          <> " password="
-          <> connectionInfo.connectPassword
-          <> " dbname="
-          <> connectionInfo.connectDatabase
 
 indexRefreshCronJobs
   :: (IOE :> es, Log :> es)

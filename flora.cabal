@@ -194,6 +194,7 @@ library
 
   build-depends:
     aeson,
+    arbiter-core,
     arbiter-simple,
     attoparsec,
     base ^>=4.20,
