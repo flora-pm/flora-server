@@ -13,7 +13,6 @@ services:
       - "8085:8085"
     expose:
       - "8084"
-      - "8084"
     volumes:
       - database-data:/flora-server/pgdata/
       - .:/flora-server:Z
