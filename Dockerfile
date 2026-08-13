@@ -20,14 +20,15 @@ RUN apt update \
         git \
         libffi-dev \
         libffi8 \
-        libgoogle-perftools-dev \
         libgmp-dev \
         libgmp10 \
+        libgoogle-perftools-dev \
         libncurses-dev \
         libncurses5 \
         libpq-dev \
         libsodium-dev \
         libtinfo5 \
+        liburing-dev \
         locales \
         pkg-config \
         postgresql-client \
