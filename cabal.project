@@ -117,10 +117,4 @@ source-repository-package
     arbiter-servant-ui
     arbiter-test-common
 
-source-repository-package
-  type: git
-  location: https://github.com/IntersectMBO/lsm-tree.git
-  tag: jdral/freebsd
-  subdir: blockio
-
 index-state: 2026-08-13T19:12:19Z
