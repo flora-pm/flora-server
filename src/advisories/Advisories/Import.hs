@@ -1,21 +1,19 @@
 module Advisories.Import where
 
-import Data.Aeson hiding (Result (..))
 import Data.Foldable (forM_, traverse_)
-import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.Text.Display
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple.Newtypes
 import Effectful
 import Effectful.Error.Static
-import Effectful.Log (Log)
-import Effectful.Log qualified as Log
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
+import Optics.Core
 import Security.Advisories.Core.Advisory
 import Security.Advisories.Filesystem (listAdvisories)
 import Validation (Validation (..))
@@ -36,7 +34,6 @@ import OSV.Reference.Orphans
 importAdvisories
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
-     , Log :> es
      , Reader FloraEnv :> es
      )
   => FilePath
@@ -55,7 +52,6 @@ importAdvisories root = do
 importAdvisory
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
-     , Log :> es
      , Reader FloraEnv :> es
      )
   => Advisory
@@ -93,7 +89,6 @@ processAdvisory advisoryId advisory =
 processAffectedPackages
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
-     , Log :> es
      , Reader FloraEnv :> es
      )
   => AdvisoryId
@@ -105,7 +100,6 @@ processAffectedPackages advisoryId affectedPackages = do
 processAffectedPackage
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
-     , Log :> es
      , Reader FloraEnv :> es
      )
   => AdvisoryId
@@ -114,34 +108,24 @@ processAffectedPackage
 processAffectedPackage advisoryId affected = do
   FloraEnv{pool} <- Reader.ask
   affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
-  let (namespace, packageName) =
-        case affected.affectedComponentIdentifier of
-          Repository _ (RepositoryName repositoryName) affectedPackageName ->
-            (Namespace repositoryName, PackageName (Text.pack . unPackageName $ affectedPackageName))
-          GHC _ -> (Namespace "hackage", PackageName "ghc")
-  package <-
-    guardThatPackageExists pool namespace packageName >>= \case
-      Just package -> pure package
-      Nothing -> do
-        Log.logAttention "Affected package does not not exist" $
-          object
-            [ "namespace" .= display namespace
-            , "package" .= display packageName
-            ]
-        throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
+  let (namespace, affectedComponent) = getComponentInfo affected.affectedComponentIdentifier
+  mPackage <- guardThatPackageExists pool (Namespace namespace) (PackageName affectedComponent)
   let declarations =
         affected.affectedDeclarations
           & fmap (uncurry AffectedDeclaration)
           & Vector.fromList
+          & Aeson
   let affectedPackageDAO =
         AffectedPackageDAO
           { affectedPackageId = affectedPackageId
           , advisoryId = advisoryId
-          , packageId = package.packageId
+          , packageId = mPackage ^? _Just % #packageId
           , cvss = affected.affectedCVSS
           , architectures = fmap Vector.fromList affected.affectedArchitectures
           , operatingSystems = fmap Vector.fromList affected.affectedOS
-          , declarations = declarations
+          , namespace
+          , affectedComponent
+          , declarations
           }
   withReadWritePool pool $ Update.insertAffectedPackage affectedPackageDAO
   processAffectedVersionRanges affectedPackageId affected.affectedVersions
@@ -168,3 +152,7 @@ processAffectedVersionRanges affectedPackageId affectedVersions = do
         withReadWritePool pool $ Update.insertAffectedVersionRange versionRangeDAO
     )
     affectedVersions
+
+getComponentInfo :: ComponentIdentifier -> (Text, Text)
+getComponentInfo (Repository _ repositoryName packageName) = (unRepositoryName repositoryName, Text.show packageName)
+getComponentInfo (GHC component) = ("ghc", ghcComponentToText component)

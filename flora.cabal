@@ -321,6 +321,7 @@ library flora-advisories
     hsec-core ^>=0.3.0.0,
     hsec-tools,
     log-effectful,
+    optics-core,
     pandoc-types,
     pg-entity,
     postgresql-simple,
