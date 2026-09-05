@@ -12,6 +12,7 @@ import Data.Attoparsec.ByteString.Char8 qualified as Attoparsec
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder qualified as B
 import Data.ByteString.Char8 qualified as B
+import Data.ByteString.Char8 qualified as BS8
 import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.OpenApi (Schema (..), ToParamSchema (..), ToSchema (..), genericDeclareNamedSchema)
@@ -68,17 +69,27 @@ deterministicPackageId :: Namespace -> PackageName -> PackageId
 deterministicPackageId (Namespace ns) (PackageName name) =
   PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ ns <> name
 
+-- | Generates a system package id deterministically by hashing the namespace "system" and the package name
+deterministicSystemPackageId :: SystemPackageName -> PackageId
+deterministicSystemPackageId (SystemPackageName name) =
+  PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ name
+
 newtype PackageName = PackageName Text
   deriving stock (Generic, Show)
+  deriving newtype (Display)
+  deriving
+    (Eq, FromField, FromJSON, NFData, Ord, ToField, ToHtml, ToHttpApiData, ToJSON)
+    via Text
+
+newtype SystemPackageName = SystemPackageName Text
+  deriving stock (Generic, Show)
+  deriving newtype (Display)
   deriving
     (Eq, FromField, FromJSON, NFData, Ord, ToField, ToHtml, ToHttpApiData, ToJSON)
     via Text
 
 instance Pretty PackageName where
   pretty (PackageName txt) = PP.text $ unpack txt
-
-instance Display PackageName where
-  displayBuilder (PackageName name) = displayBuilder name
 
 instance FromHttpApiData PackageName where
   parseUrlPiece piece =
@@ -220,6 +231,7 @@ instance FromField PackageStatus where
 instance ToField PackageStatus where
   toField = Escape . encodeUtf8 . display
 
+-- | Represents a Haskell package.
 data Package = Package
   { packageId :: PackageId
   , namespace :: Namespace
@@ -234,6 +246,42 @@ data Package = Package
   deriving
     (Entity)
     via (GenericEntity '[TableName "packages"] Package)
+
+data SystemPackageProvenance
+  = SystemFromPkgconfig
+  | SystemFromExtraLibrary
+  deriving stock (Eq, Generic, Ord, Show)
+  deriving anyclass (NFData)
+  deriving anyclass (FromJSON, ToJSON)
+
+instance ToField SystemPackageProvenance where
+  toField = \case
+    SystemFromPkgconfig -> Plain "systemFromPkgconfig"
+    SystemFromExtraLibrary -> Plain "systemFromExtraLibrary"
+
+instance FromField SystemPackageProvenance where
+  fromField f = \case
+    Just "systemFromPkgconfig" -> pure SystemFromPkgconfig
+    Just "systemFromExtraLibrary" -> pure SystemFromExtraLibrary
+    badSystemPackageProvenance ->
+      returnError ConversionFailed f $
+        "Conversion error: Expected valid system package provenance, but got: " <> BS8.unpack (fromMaybe "<nothing>" badSystemPackageProvenance)
+
+-- | Represents a system package, doesn't have a namespace and is registered literally.
+data SystemPackage = SystemPackage
+  { systemPackageProvenance :: SystemPackageProvenance
+  , systemPackageId :: PackageId
+  , -- TODO(leana8959): is it a good idea to share this type
+    -- I use the same type because Requirement uses it
+    systemPackageName :: SystemPackageName
+    -- TODO(leana8959): what do I do with the FromRow and ToRow
+  }
+  deriving stock (Eq, Generic, Ord, Show)
+  deriving anyclass (FromRow, NFData, ToRow)
+  deriving anyclass (FromJSON, ToJSON)
+  deriving
+    (Entity)
+    via (GenericEntity '[TableName "system_packages"] SystemPackage)
 
 data Dependent = Dependent
   { name :: Text
