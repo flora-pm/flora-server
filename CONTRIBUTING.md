@@ -82,6 +82,73 @@ The committed `.env` file sets `COMPOSE_PROFILES=local`, which is why plain `doc
 this default, so combine profiles explicitly when you need more than one
 (see [Live Eventlogs](#live-eventlogs)).
 
+#### Running Haskell Language Server (HLS)
+
+The `devel` container contains `haskell-language-server`, so you do not need to install it on the host.
+
+To use HLS from your editor:
+
+1. Start the containers with `make docker-up`.
+2. Configure your editor to start the language server with `scripts/hls-docker.sh`.
+3. Open a Haskell file from the repository. The first load compiles the project and can take several minutes.
+
+The files that follow are project-local. Create them in the root of your clone. They do not change
+the editor settings for your other projects.
+
+##### VS Code
+
+Create `.vscode/settings.json`:
+
+```jsonc
+{
+  "haskell.manageHLS": "PATH",
+  "haskell.serverExecutablePath": "${workspaceFolder}/scripts/hls-docker.sh"
+}
+```
+
+##### Neovim
+
+Turn the  `exrc` option on and create `.nvim.lua`:
+
+```lua
+local root = vim.fn.getcwd()
+vim.lsp.config("hls", { cmd = { root .. "/scripts/hls-docker.sh", "--lsp" } })
+```
+
+##### Helix
+
+Create `.helix/languages.toml`.
+
+```toml
+[language-server.haskell-language-server]
+command = "scripts/hls-docker.sh"
+args = ["--lsp"]
+```
+##### Emacs
+
+Create `.dir-locals.el`.
+
+With `lsp-mode` and `lsp-haskell`:
+
+```elisp
+((haskell-mode
+  . ((eval . (setq-local lsp-haskell-server-path
+                         (expand-file-name "scripts/hls-docker.sh"
+                                           (locate-dominating-file default-directory ".dir-locals.el")))))))
+```
+
+With `eglot`:
+
+```elisp
+((haskell-mode
+  . ((eval . (let ((script (expand-file-name "scripts/hls-docker.sh"
+                                             (locate-dominating-file default-directory ".dir-locals.el"))))
+               (setq-local eglot-server-programs
+                           (cons (list 'haskell-mode script "--lsp") eglot-server-programs)))))))
+```
+
+If the container restarts, restart the language server in your editor.
+
 ### Host setup
 
 The following Haskell command-line tools have to be installed:

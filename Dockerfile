@@ -6,6 +6,7 @@ ARG GHCID_VERSION=0.8.9
 ARG GHC_TAGS_VERSION=1.9
 ARG GHC_VERSION=9.10.3
 ARG HLINT_VERSION=3.10
+ARG HLS_VERSION=2.14.0.0
 ARG CABAL_GILD_VERSION=1.8.4.1
 
 # This stage installs libraries required to install GHC and other tools
@@ -56,6 +57,7 @@ ARG GHCID_VERSION
 ARG GHC_TAGS_VERSION
 ARG GHC_VERSION
 ARG HLINT_VERSION
+ARG HLS_VERSION
 ARG CABAL_GILD_VERSION
 
 ENV PATH="/opt/ghcup/.ghcup/bin:$PATH"
@@ -78,6 +80,7 @@ RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j cabal-gild-$CABAL_GILD_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghc-tags-$GHC_TAGS_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghcid-$GHCID_VERSION
+RUN ghcup install hls $HLS_VERSION --set
 
 # This stage is the development environment
 FROM base AS devel

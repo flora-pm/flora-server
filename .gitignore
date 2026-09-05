@@ -1,4 +1,3 @@
-&
 *.eventlog
 *.eventlog.html
 *.hp
@@ -7,20 +6,13 @@
 .direnv
 .pre-commit-config.yaml
 .hie
-.hspec-failures
-.vscode/
-/.stack-work/
-<
-Session.vim
 _data/
 _database/
 cabal.project.local
 dist-newstyle
 environment.prod.kdl
-ghcid.text
 logs/*
 pgdata/
-result*
 tags
 tags.lock
 tags.mtime
@@ -37,3 +29,10 @@ storage/
 cabal.project.release.freeze
 prlog
 *.threads
+
+
+# Editors
+.vscode/
+.nvim.lua
+.helix/
+.dir-locals.el
