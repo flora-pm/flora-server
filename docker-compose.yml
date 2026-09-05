@@ -13,9 +13,10 @@ services:
       - "8085:8085"
     expose:
       - "8084"
+    working_dir: ${PWD}
     volumes:
-      - database-data:/flora-server/pgdata/
-      - .:/flora-server:Z
+      - database-data:${PWD}/pgdata/
+      - .:${PWD}:Z
       - home-data:/home/$USER/
       # Shared with the live-eventlog forwarder;
       # This path is configured in the `eventlogSocketDirectory` configuration.
