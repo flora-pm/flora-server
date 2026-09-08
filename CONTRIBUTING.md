@@ -101,7 +101,6 @@ Create `.vscode/settings.json`:
 
 ```jsonc
 {
-  "haskell.manageHLS": "PATH",
   "haskell.serverExecutablePath": "${workspaceFolder}/scripts/hls-docker.sh"
 }
 ```
