@@ -57,7 +57,6 @@ ARG GHCID_VERSION
 ARG GHC_TAGS_VERSION
 ARG GHC_VERSION
 ARG HLINT_VERSION
-ARG HLS_VERSION
 ARG CABAL_GILD_VERSION
 
 ENV PATH="/opt/ghcup/.ghcup/bin:$PATH"
@@ -80,7 +79,6 @@ RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j cabal-gild-$CABAL_GILD_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghc-tags-$GHC_TAGS_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghcid-$GHCID_VERSION
-RUN ghcup install hls $HLS_VERSION --set
 
 # This stage is the development environment
 FROM base AS devel
@@ -90,6 +88,7 @@ ARG GID
 ARG UID
 ARG USER
 ENV USER=$USER
+ARG HLS_VERSION
 
 COPY --from=setup-haskell-tools /out /opt/bin
 COPY --from=setup-haskell-tools /opt/ghcup /opt/ghcup
@@ -98,6 +97,8 @@ ENV PATH="/opt/ghcup/.ghcup/bin:/opt/bin:$PATH"
 
 RUN ghcup install ghc $GHC_VERSION
 RUN ghcup set ghc $GHC_VERSION
+RUN ghcup install hls $HLS_VERSION --set
+
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
