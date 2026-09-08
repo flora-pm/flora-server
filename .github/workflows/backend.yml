@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Extract the tested GHC versions
         id: set-matrix
-        uses: kleidukos/get-tested@a55a250eac23bcc4bcd1cb22d77be61baea5a7e2 # v0.1.9.1
+        uses: kleidukos/get-tested@bbcf52a8d1b69bf8fdd671b490126d53f70fc9a7 # v0.1.10.0
         with:
           cabal-file: flora.cabal
           ubuntu-version: "24.04"
