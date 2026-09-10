@@ -232,25 +232,6 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion = d
           , indexPage = isNothing mversion
           }
 
-  Log.logInfo "displaying a package" $
-    object
-      [ "release"
-          .= object
-            [ "id" .= release.releaseId
-            , "version" .= display release.version
-            ]
-      , "dependencies"
-          .= object
-            [ "count" .= numberOfDependencies
-            ]
-      , "dependents"
-          .= object
-            [ "count" .= numberOfDependents
-            ]
-      , "package" .= (display packageNamespace <> "/" <> display packageName)
-      , "releases" .= numberOfReleases
-      ]
-
   let isLatestViableRelease = Just release.version == fmap (.version) (latestViableRelease releases)
   render templateEnv $
     Packages.showPackage
