@@ -24,6 +24,7 @@ import Distribution.SPDX.License qualified as SPDX
 import Distribution.Types.Condition (Condition)
 import Distribution.Types.ConfVar (ConfVar)
 import Distribution.Types.Version (Version)
+import Distribution.Types.VersionRange
 
 import Flora.Model.Component.Types
 import Flora.Model.Package.Types
@@ -34,11 +35,11 @@ newtype RequirementId = RequirementId {getRequirementId :: UUID}
     (Eq, FromField, FromJSON, NFData, Ord, Show, ToField, ToJSON)
     via UUID
 
-deterministicRequirementId :: ComponentId -> PackageId -> RequirementId
-deterministicRequirementId componentId packageId =
+deterministicRequirementId :: ComponentId -> PackageId -> VersionRange -> RequirementId
+deterministicRequirementId componentId packageId requirementExpression =
   RequirementId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
   where
-    concatenated = display componentId <> display packageId
+    concatenated = display componentId <> display packageId <> (display requirementExpression)
 
 data Requirement = Requirement
   { requirementId :: RequirementId
