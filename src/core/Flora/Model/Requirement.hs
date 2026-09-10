@@ -40,6 +40,12 @@ deterministicRequirementId componentId packageId =
   where
     concatenated = display componentId <> display packageId
 
+deterministicSystemRequirementId :: ComponentId -> PackageId -> RequirementId
+deterministicSystemRequirementId componentId packageId =
+  RequirementId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
+  where
+    concatenated = display componentId <> display packageId
+
 data Requirement = Requirement
   { requirementId :: RequirementId
   -- ^ Unique identifier to this requirement in the database
