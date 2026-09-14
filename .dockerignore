@@ -1,6 +1,7 @@
 &
 01-index
 .envrc
+.git
 .hie
 .hspec-failures
 /.stack-work/
@@ -18,7 +19,7 @@ tags.mtime
 /static/*
 assets/node_modules
 assets/yarn-error.log
-assets/fonts
+docs/node_modules
 result*
 cbits/*.cpp
 pgdata/
