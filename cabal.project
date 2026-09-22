@@ -14,11 +14,17 @@ jobs: $ncpus
 package *
   ghc-options: +RTS -I0 -RTS
 
-index-state: 2026-08-13T22:21:43Z
+index-state: 2026-09-22T20:09:17Z
 
 allow-newer: chronos:hashable
            , feed:*
+           , arbiter:resource-pool
+           , hsec-core:*
+           , hsec-tools:*
            , insert-ordered-containers:hashable
+           , openapi:*
+           , pandoc-types:QuickCheck
+           , pg-entity:resource-pool
            , prometheus-effectful:bytestring
            , prometheus-proc:*
            , qrcode-core:*
@@ -26,6 +32,7 @@ allow-newer: chronos:hashable
            , servant-lucid:text
            , tasty-test-reporter:*
            , wai-middleware-heartbeat:*
+           , xss-sanitize:text
 
 package feed
   ghc-options: -Wno-tabs
@@ -109,3 +116,4 @@ source-repository-package
     arbiter-migrations
     arbiter-servant
     arbiter-servant-ui
+    arbiter-test-common
