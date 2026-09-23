@@ -93,7 +93,7 @@ jobs:
         set -x
         source ./environment.ci.sh
         make db-setup
-        cabal run -- flora-cli create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
+        cabal run flora-cli -- create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         make test
       env:
         PGPASSWORD: "postgres"
