@@ -18,6 +18,7 @@ import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Trace
 import Monitor.Tracing qualified as Tracing
 import Security.Advisories.Core.Advisory
+import Security.Advisories.Core.OsvId (printOsvId)
 import Security.Advisories.Filesystem (listAdvisories)
 import Validation (Validation (..))
 
@@ -80,8 +81,8 @@ processAdvisory advisoryId advisory =
     , capecs = Vector.fromList advisory.advisoryCAPECs
     , cwes = Vector.fromList advisory.advisoryCWEs
     , keywords = Vector.fromList advisory.advisoryKeywords
-    , aliases = Vector.fromList advisory.advisoryAliases
-    , related = Vector.fromList advisory.advisoryRelated
+    , aliases = Vector.fromList (printOsvId <$> advisory.advisoryAliases)
+    , related = Vector.fromList (printOsvId <$> advisory.advisoryRelated)
     , advisoryReferences = References $ Vector.fromList advisory.advisoryReferences
     , pandoc = advisory.advisoryPandoc
     , html = advisory.advisoryHtml
