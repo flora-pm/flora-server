@@ -155,7 +155,7 @@ testSearchResultText = do
   releases <- Query.getNumberOfReleases text.packageId
   assertEqual_ 3 releases
   results <- Query.searchPackage (0, 30) "text"
-  assertEqual_ 2 (Vector.length results)
+  assertEqual_ 3 (Vector.length results)
   assertEqual_ (Cabal.mkVersion [2, 1, 2]) ((.version) $ Vector.head results)
 
 testPackagesDeprecation :: RequireCallStack => TestEff ()
@@ -181,7 +181,7 @@ testGetNonDeprecatedPackages = do
 testReleaseDeprecation :: RequireCallStack => TestEff ()
 testReleaseDeprecation = do
   result <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  assertEqual_ 225 (length result)
+  assertEqual_ 229 (length result)
 
   binary <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") (PackageName "binary")
   deprecatedBinaryVersion' <- assertJust_ =<< Query.getReleaseByVersion binary.packageId (mkVersion [0, 10, 0, 0])
