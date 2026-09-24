@@ -451,6 +451,7 @@ library flora-web
     flora-search,
     fsnotify,
     generics-sop,
+    ghc-stack-profiler,
     haddock-library,
     htmx-lucid,
     http-api-data,
