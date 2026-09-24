@@ -694,7 +694,6 @@ instantiateRequirement
     packageId <- generatePackageId
     requirement <- generateRequirement
     components <- generateComponents
-    -- TODO(leana8959): what does this template do exactly
     let req = Requirement{condition = Nothing, ..}
     withReadWritePool pool $ Update.insertRequirement req
     pure req
