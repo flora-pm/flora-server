@@ -4,7 +4,6 @@ const postcssPlugin = require("@deanc/esbuild-plugin-postcss");
 
 // PostCSS plugins
 const postcssImport = require("postcss-import");
-const postcssNesting = require("postcss-nesting");
 const autoprefixer = require("autoprefixer");
 const postcssCopy = require("postcss-copy")({
   dest: "../static",
@@ -39,7 +38,6 @@ const pluginsList = () => {
     postcssPlugin({
       plugins: [
         postcssImport,
-        postcssNesting,
         postcssOklchForOldWebkit,
         autoprefixer,
         postcssCopy,

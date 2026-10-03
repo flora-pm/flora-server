@@ -1972,15 +1972,6 @@ postcss-minify-selectors@^7.0.5:
     cssesc "^3.0.0"
     postcss-selector-parser "^7.1.0"
 
-postcss-nesting@^14.0.0:
-  version "14.0.0"
-  resolved "https://registry.yarnpkg.com/postcss-nesting/-/postcss-nesting-14.0.0.tgz#5400139a425da2ca8228bc406e67e0e8d344b137"
-  integrity sha512-YGFOfVrjxYfeGTS5XctP1WCI5hu8Lr9SmntjfRC+iX5hCihEO+QZl9Ra+pkjqkgoVdDKvb2JccpElcowhZtzpw==
-  dependencies:
-    "@csstools/selector-resolve-nested" "^4.0.0"
-    "@csstools/selector-specificity" "^6.0.0"
-    postcss-selector-parser "^7.1.1"
-
 postcss-normalize-charset@^7.0.1:
   version "7.0.1"
   resolved "https://registry.yarnpkg.com/postcss-normalize-charset/-/postcss-normalize-charset-7.0.1.tgz#bccc3f7c5f4440883608eea8b444c8f41ce55ff6"
