@@ -1527,11 +1527,6 @@ jsonfile@^6.0.1:
   optionalDependencies:
     graceful-fs "^4.1.6"
 
-just-kebab-case@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/just-kebab-case/-/just-kebab-case-4.2.0.tgz#82c32b27dcbeccbb93802c37dfdd28d1c436e52a"
-  integrity sha512-p2BdO7o4BI+pMun3J+dhaOfYan5JsZrw9wjshRjkWY9+p+u+kKSMhNWYnot2yHDR9CSahZ9iT3dcqJ+V72qHMw==
-
 keyv@^5.5.5, keyv@^5.6.0:
   version "5.6.0"
   resolved "https://registry.yarnpkg.com/keyv/-/keyv-5.6.0.tgz#03044074c6b4d072d0a62c7b9fa649537baf0105"
@@ -1909,13 +1904,6 @@ postcss-custom-media@^12.0.0:
     "@csstools/css-parser-algorithms" "^4.0.0"
     "@csstools/css-tokenizer" "^4.0.0"
     "@csstools/media-query-list-parser" "^5.0.0"
-
-postcss-design-token-utils@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/postcss-design-token-utils/-/postcss-design-token-utils-3.0.1.tgz#d88f761cf2c1136ebdb03ba9404ddfa026b0e9f1"
-  integrity sha512-IhFqqw2q4+oEnWuGCjByaNj1KlekA1G/2SOosZVJ0OPc0B8R/ElBavDUahQkhSgAeMRgMOEehryd0yy4GGhn4Q==
-  dependencies:
-    just-kebab-case "^4.2.0"
 
 postcss-discard-comments@^7.0.5:
   version "7.0.5"
