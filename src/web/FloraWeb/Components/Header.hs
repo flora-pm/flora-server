@@ -45,6 +45,7 @@ header = do
         link_ [rel_ "manifest", href_ "/static/icons/site.webmanifest"]
         link_ [rel_ "mask-icon", href_ "/static/icons/safari-pinned-tab.svg", color_ "#5bbad5"]
         meta_ [name_ "msapplication-TileColor", content_ "#da532c"]
+        meta_ [name_ "color-scheme", content_ "light dark"]
         meta_ [name_ "theme-color", content_ "#654480"]
         meta_ [name_ "theme-color", content_ "#c399e8", media_ "(prefers-color-scheme: dark)"]
 
@@ -59,7 +60,6 @@ header = do
 
         jsPolyfillsLink
         cssLink
-        meta_ [name_ "color-scheme", content_ "light dark"]
         link_
           [ rel_ "search"
           , type_ "application/opensearchdescription+xml"
@@ -68,7 +68,6 @@ header = do
           ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
-        themeHtml
         -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
         meta_ [name_ "twitter:dnt", content_ "on"]
 
@@ -120,8 +119,3 @@ ogTags = do
   meta_ [property_ "og:image:height", content_ "160"]
   meta_ [property_ "og:locale", content_ "en_GB"]
   meta_ [property_ "og:type", content_ "website"]
-
-themeHtml :: FloraHTML
-themeHtml = do
-  meta_ [name_ "theme-color", content_ "#000", media_ "(prefers-color-scheme: dark)"]
-  meta_ [name_ "theme-color", content_ "#FFF", media_ "(prefers-color-scheme: light)"]
