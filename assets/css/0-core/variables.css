@@ -67,6 +67,7 @@
 	/* Semantic tokens
 	-------------------------------------------------- */
 
+/* Sizes */
 :root {
 	--text-heading-1: var(--size-5xl);
 	--text-heading-2: var(--size-4xl);
@@ -99,8 +100,11 @@
 	--size-wrapper: 75rem;
 	--size-wrapper-medium: 50rem;
 	--size-wrapper-small: 35rem;
+}
 
-
+/* Colors */
+:root {
+	/* Global */
 	--color-text-raise: oklch(20% 5% var(--hue-brand));
 	--color-text-default: oklch(35% 5% var(--hue-brand));
 	--color-text-secondary: oklch(45% 5% var(--hue-brand));
@@ -114,6 +118,7 @@
 	--color-stroke-secondary: oklch(94.213% 1.355% var(--hue-brand));
 
 
+	/* States and brand colors */
 	--color-text-brand: oklch(45% 25% var(--hue-brand));
 	--color-text-valid: oklch(45% 25% var(--hue-valid));
 	--color-text-informational: oklch(45% 25% var(--hue-informational));
@@ -132,15 +137,21 @@
 	--color-surface-warning-interact: oklch(94% 16% var(--hue-warning));
 	--color-surface-danger-interact: oklch(94% 16% var(--hue-danger));
 
-
 	--color-underline-default: oklch(65% 25% var(--hue-brand));
 	--color-underline-secondary: oklch(75% 20% var(--hue-brand));
 	--color-underline-tertiary: oklch(85% 15% var(--hue-brand));
+}
 
 
+/* Base components styles */
+:root {
 	--shadow-default: 0 0.25rem 0.5rem var(--color-stroke-secondary);
+	--outline-color: oklch(65% 25% var(--hue-brand));
+	--outline-width: .1875rem;
+	--outline-offset: .125rem;
+}
 
-
+:root {
 	--input-inset-block: var(--space-2);
 	--input-inset-inline: var(--space-2);
 	--input-bg: var(--color-surface-brand);
@@ -150,16 +161,9 @@
 	--input-ico-size: 1.5rem;
 	--input-gap: var(--space-gutter-small);
 	--input-leading: var(--leading-short); /* at least 1.2 to be respected */
-
-
-	--outline-color: oklch(65% 25% var(--hue-brand));
-	--outline-width: .1875rem;
-	--outline-offset: .125rem;
-
 }
 
 /* Global responsive changes */
-
 @media (max-width: 43.75rem) {
 	:root {
 		--text-heading-1: var(--size-4xl);
