@@ -4,14 +4,9 @@ const postcssPlugin = require("@deanc/esbuild-plugin-postcss");
 
 // PostCSS plugins
 const postcssImport = require("postcss-import");
-const postcssNesting = require("postcss-nesting");
-const postcssCustomMedia = require('postcss-custom-media');
-const autoprefixer = require("autoprefixer");
 const postcssCopy = require("postcss-copy")({
   dest: "../static",
 });
-const postcssDesignTokenUtils = require("postcss-design-token-utils");
-const designTokensConfig = require("./style-tokens/tokens.js");
 const postcssOklchForOldWebkit = require("postcss-color-oklch-for-old-webkit");
 
 let minify = false;
@@ -41,14 +36,8 @@ const pluginsList = () => {
   let plugins = [
     postcssPlugin({
       plugins: [
-        postcssDesignTokenUtils({
-          tokens: designTokensConfig,
-        }),
         postcssImport,
-        postcssNesting,
-        postcssCustomMedia,
         postcssOklchForOldWebkit,
-        autoprefixer,
         postcssCopy,
       ],
     })
