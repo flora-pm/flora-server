@@ -137,6 +137,12 @@
 	--color-surface-warning-interact: oklch(94% 16% var(--hue-warning));
 	--color-surface-danger-interact: oklch(94% 16% var(--hue-danger));
 
+	--color-stroke-brand: oklch(85% 10% var(--hue-brand));
+	--color-stroke-valid: oklch(85% 10% var(--hue-valid));
+	--color-stroke-informational: oklch(85% 10% var(--hue-informational));
+	--color-stroke-warning: oklch(85% 10% var(--hue-warning));
+	--color-stroke-danger: oklch(85% 10% var(--hue-danger));
+
 	--color-underline-default: oklch(65% 25% var(--hue-brand));
 	--color-underline-secondary: oklch(75% 20% var(--hue-brand));
 	--color-underline-tertiary: oklch(85% 15% var(--hue-brand));
