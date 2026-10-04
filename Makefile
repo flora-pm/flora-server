@@ -5,10 +5,10 @@ init: ## Set up git hooks properly - needs calling once when cloning the repo
 	@git config core.hooksPath .githooks
 
 start-server: ## Start flora backend server
-	@cabal run -- exe:flora-server
+	@cabal run exe:flora-server
 
 start-jobs: ## Start jobs runner
-	@cabal run -- exe:flora-jobs-runner
+	@cabal run exe:flora-jobs-runner
 
 build: ## Build the server
 	@cabal build
@@ -47,13 +47,13 @@ db-stop:
 db-setup: db-create db-migrate ## Setup the dev database
 
 db-create: ## Create the database
-	@cabal run -- flora-cli -c $(CONFIG) create-db
+	@cabal run flora-cli -- -c $(CONFIG) create-db
 
 db-drop: ## Drop the database
-	@cabal run -- flora-cli -c $(CONFIG) drop-db
+	@cabal run flora-cli -- -c $(CONFIG) drop-db
 
 db-migrate: ## Apply database migrations
-	@cabal run -- flora-migrate -c $(CONFIG)
+	@cabal run flora-migrate -- -c $(CONFIG)
 
 db-reset: db-drop db-setup db-provision ## Reset the dev database
 
@@ -61,23 +61,23 @@ db-provision: ## Create categories and repositories
 	./scripts/db-provision.sh $(CONFIG)
 
 db-provision-advisories: ## Load HSEC advisories in the database
-	@cabal run -- flora-cli -c $(CONFIG) provision advisories
+	@cabal run flora-cli -- -c $(CONFIG) provision advisories
 
 db-provision-packages: ## Load development data in the dev database
-	@cabal run -- flora-cli -c $(CONFIG) provision test-packages --repository "hackage"
-	@cabal run -- flora-cli -c $(CONFIG) provision test-packages --repository "cardano"
-	@cabal run -- flora-cli -c $(CONFIG) provision test-packages --repository "mlabs"
+	@cabal run flora-cli -- -c $(CONFIG) provision test-packages --repository "hackage"
+	@cabal run flora-cli -- -c $(CONFIG) provision test-packages --repository "cardano"
+	@cabal run flora-cli -- -c $(CONFIG) provision test-packages --repository "mlabs"
 
 db-test-create: ## Create the test database
-	@cabal run -- flora-cli -c $(CONFIG_TEST) create-db
+	@cabal run flora-cli -- -c $(CONFIG_TEST) create-db
 
 db-test-setup: db-test-create db-test-migrate ## Setup the dev database
 
 db-test-drop: ## Drop the test database
-	@cabal run -- flora-cli -c $(CONFIG_TEST) drop-db
+	@cabal run flora-cli -- -c $(CONFIG_TEST) drop-db
 
 db-test-migrate: ## Apply test database migrations
-	@cabal run -- flora-migrate -c $(CONFIG_TEST)
+	@cabal run flora-migrate -- -c $(CONFIG_TEST)
 
 db-test-reset: db-test-drop db-test-setup db-test-provision ## Reset the test database
 
@@ -85,15 +85,15 @@ db-test-provision: ## Create categories and repositories
 	./scripts/db-provision.sh $(CONFIG_TEST)
 
 db-test-provision-advisories: ## Load HSEC advisories in the test database
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision advisories
+	@cabal run flora-cli -- -c $(CONFIG_TEST) provision advisories
 
 db-test-provision-packages: ## Load development data in the database
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision test-packages --repository "hackage"
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision test-packages --repository "cardano"
-	@cabal run -- flora-cli -c $(CONFIG_TEST) provision test-packages --repository "mlabs"
+	@cabal run flora-cli -- -c $(CONFIG_TEST) provision test-packages --repository "hackage"
+	@cabal run flora-cli -- -c $(CONFIG_TEST) provision test-packages --repository "cardano"
+	@cabal run flora-cli -- -c $(CONFIG_TEST) provision test-packages --repository "mlabs"
 
 import-from-hackage: ## Imports every cabal file from the ./index-01 directory
-	@cabal run -- flora-cli -c $(CONFIG) import-packages ./01-index
+	@cabal run flora-cli -- -c $(CONFIG) import-packages ./01-index
 
 repl: ## Start a cabal REPL
 	@cabal repl lib:flora
@@ -150,7 +150,7 @@ tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c src app
 
 design-system: ## Generate the HTML components used by the design system
-	@cabal run -- flora-cli -c $(CONFIG) gen-design-system
+	@cabal run flora-cli -- -c $(CONFIG) gen-design-system
 
 start-design-system: ## Start storybook.js
 	@cd design; yarn storybook
