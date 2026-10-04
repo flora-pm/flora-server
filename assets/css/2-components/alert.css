@@ -11,35 +11,35 @@
 .alert--brand {
 	--alert-color: var(--color-text-brand);
 	--alert-bg: var(--color-surface-brand);
-	--alert-border-color: var(--color-border-brand);
+	--alert-border-color: var(--color-stroke-brand);
 	text-decoration-color: currentcolor;
 }
 
 .alert--valid {
 	--alert-color: var(--color-text-valid);
 	--alert-bg: var(--color-surface-valid);
-	--alert-border-color: var(--color-border-valid);
+	--alert-border-color: var(--color-stroke-valid);
 	text-decoration-color: currentcolor;
 }
 
 .alert--info {
 	--alert-color: var(--color-text-informational);
 	--alert-bg: var(--color-surface-informational);
-	--alert-border-color: var(--color-border-informational);
+	--alert-border-color: var(--color-stroke-informational);
 	text-decoration-color: currentcolor;
 }
 
 .alert--warning {
 	--alert-color: var(--color-text-warning);
 	--alert-bg: var(--color-surface-warning);
-	--alert-border-color: var(--color-border-warning);
+	--alert-border-color: var(--color-stroke-warning);
 	text-decoration-color: currentcolor;
 }
 
 .alert--danger {
 	--alert-color: var(--color-text-danger);
 	--alert-bg: var(--color-surface-danger);
-	--alert-border-color: var(--color-border-danger);
+	--alert-border-color: var(--color-stroke-danger);
 	--color-underline-default: currentcolor;
 }
 

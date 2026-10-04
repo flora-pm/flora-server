@@ -26,31 +26,31 @@
 .badge--brand {
 	--badge-bg: var(--color-surface-brand);
 	--badge-color: var(--color-text-brand);
-	--badge-border-color: var(--color-border-brand);
+	--badge-border-color: var(--color-stroke-brand);
 }
 
 .badge--valid {
 	--badge-bg: var(--color-surface-valid);
 	--badge-color: var(--color-text-valid);
-	--badge-border-color: var(--color-border-valid);
+	--badge-border-color: var(--color-stroke-valid);
 }
 
 .badge--info {
 	--badge-bg: var(--color-surface-informational);
 	--badge-color: var(--color-text-informational);
-	--badge-border-color: var(--color-border-informational);
+	--badge-border-color: var(--color-stroke-informational);
 }
 
 .badge--warning {
 	--badge-bg: var(--color-surface-warning);
 	--badge-color: var(--color-text-warning);
-	--badge-border-color: var(--color-border-warning);
+	--badge-border-color: var(--color-stroke-warning);
 }
 
 .badge--danger {
 	--badge-bg: var(--color-surface-danger);
 	--badge-color: var(--color-text-danger);
-	--badge-border-color: var(--color-border-danger);
+	--badge-border-color: var(--color-stroke-danger);
 }
 
 /* Content */
