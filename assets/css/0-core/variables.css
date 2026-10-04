@@ -34,7 +34,7 @@
 	--space-14: 3.5rem;
 	--space-15: 3.75rem;
 
-	/* Colors */
+	/* Hues */
 	--hue-brand: 308;
 	--hue-valid: 170;
 	--hue-informational: 323.47;
@@ -118,6 +118,16 @@
 	--color-stroke-secondary: oklch(94.213% 1.355% var(--hue-brand));
 
 
+	/* Global decorations */
+	--color-underline-default: oklch(65% 25% var(--hue-brand));
+	--color-underline-secondary: oklch(75% 20% var(--hue-brand));
+	--color-underline-tertiary: oklch(85% 15% var(--hue-brand));
+
+	--color-shadow-default: var(--color-stroke-secondary);
+
+	--color-outline-default: oklch(65% 25% var(--hue-brand));
+
+
 	/* States and brand colors */
 	--color-text-brand: oklch(45% 25% var(--hue-brand));
 	--color-text-valid: oklch(45% 25% var(--hue-valid));
@@ -143,16 +153,65 @@
 	--color-stroke-warning: oklch(85% 10% var(--hue-warning));
 	--color-stroke-danger: oklch(85% 10% var(--hue-danger));
 
-	--color-underline-default: oklch(65% 25% var(--hue-brand));
-	--color-underline-secondary: oklch(75% 20% var(--hue-brand));
-	--color-underline-tertiary: oklch(85% 15% var(--hue-brand));
 }
 
+@media (prefers-color-scheme: dark) {
+	:root {
+		/* Global */
+		--color-text-raise: oklch(99.5% 0.85% var(--hue-brand));
+		--color-text-default: oklch(85% 6% var(--hue-brand));
+		--color-text-secondary: oklch(73% 6% var(--hue-brand));
+		--color-text-tertiary: oklch(62% 6% var(--hue-brand));
+		--color-text-quaternary: oklch(70% 6% var(--hue-brand));
+		--color-surface-default: oklch(22% 2% var(--hue-brand));
+		--color-surface-secondary: oklch(25% 1.5% var(--hue-brand));
+		--color-surface-tertiary: oklch(23% 1% var(--hue-brand));
+		--color-surface-hover: oklch(25% 0.3% var(--hue-brand));
+		--color-stroke-default: oklch(45% 3.4% var(--hue-brand));
+		--color-stroke-secondary: oklch(30% 1.5% var(--hue-brand));
+
+
+		/* Global decorations */
+		--color-underline-default: oklch(60% 30% var(--hue-brand));
+		--color-underline-secondary: oklch(70% 25% var(--hue-brand));
+		--color-underline-tertiary: oklch(80% 20% var(--hue-brand));
+
+		--color-shadow-default: oklch(15% 5% var(--hue-brand));
+
+		--color-outline-default: oklch(60% 40% var(--hue-brand));
+
+
+		/* States and brand colors */
+		--color-text-brand: oklch(75% 30% var(--hue-brand));
+		--color-text-valid: oklch(75% 30% var(--hue-valid));
+		--color-text-informational: oklch(75% 30% var(--hue-informational));
+		--color-text-warning: oklch(75% 30% var(--hue-warning));
+		--color-text-danger: oklch(75% 30% var(--hue-danger));
+
+		--color-surface-brand: oklch(25% 6% var(--hue-brand));
+		--color-surface-valid: oklch(23% 4% var(--hue-valid));
+		--color-surface-informational: oklch(23% 4% var(--hue-informational));
+		--color-surface-warning: oklch(23% 4% var(--hue-warning));
+		--color-surface-danger: oklch(23% 4% var(--hue-danger));
+
+		--color-surface-brand-interact: oklch(27% 9% var(--hue-brand));
+		--color-surface-valid-interact: oklch(25% 11% var(--hue-valid));
+		--color-surface-informational-interact: oklch(25% 11% var(--hue-informational));
+		--color-surface-warning-interact: oklch(25% 11% var(--hue-warning));
+		--color-surface-danger-interact: oklch(25% 11% var(--hue-danger));
+
+		--color-stroke-brand: oklch(35% 3.5% var(--hue-brand));
+		--color-stroke-valid: oklch(35% 3.5% var(--hue-valid));
+		--color-stroke-informational: oklch(35% 3.5% var(--hue-informational));
+		--color-stroke-warning: oklch(35% 3.5% var(--hue-warning));
+		--color-stroke-danger: oklch(35% 3.5% var(--hue-danger));
+	}
+}
 
 /* Base components styles */
 :root {
-	--shadow-default: 0 0.25rem 0.5rem var(--color-stroke-secondary);
-	--outline-color: oklch(65% 25% var(--hue-brand));
+	--shadow-default: 0 0.25rem 0.5rem var(--color-shadow-default);
+	--outline-color: var(--color-outline-default);
 	--outline-width: .1875rem;
 	--outline-offset: .125rem;
 }
