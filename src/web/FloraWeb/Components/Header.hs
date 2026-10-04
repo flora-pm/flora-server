@@ -45,7 +45,8 @@ header = do
         link_ [rel_ "manifest", href_ "/static/icons/site.webmanifest"]
         link_ [rel_ "mask-icon", href_ "/static/icons/safari-pinned-tab.svg", color_ "#5bbad5"]
         meta_ [name_ "msapplication-TileColor", content_ "#da532c"]
-        meta_ [name_ "theme-color", content_ "#ffffff"]
+        meta_ [name_ "theme-color", content_ "#654480"]
+        meta_ [name_ "theme-color", content_ "#c399e8", media_ "(prefers-color-scheme: dark)"]
 
         title_ (text title)
 
