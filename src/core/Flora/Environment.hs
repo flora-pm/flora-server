@@ -96,6 +96,7 @@ configToEnv floraConfig = do
       , metrics = metrics
       , theme = Nothing
       , seoIndexing = floraConfig.seoIndexing
+      , https = floraConfig.https
       }
 
 -- | Decodes the KDL configuration file, without opening a connection pool.

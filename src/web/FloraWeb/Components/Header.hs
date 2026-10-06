@@ -12,6 +12,7 @@ import Flora.Environment.Config
 import FloraWeb.Components.Navbar (navbar)
 import FloraWeb.Components.SkipLink (skipLink)
 import FloraWeb.Components.Utils
+import FloraWeb.Links (renderAbsoluteLink)
 import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
 
 header :: FloraHTML
@@ -106,12 +107,12 @@ cssLink = do
 
 ogTags :: FloraHTML
 ogTags = do
-  TemplateEnv{title, description} <- ask
+  TemplateEnv{title, description, environment, https, domain, httpPort} <- ask
   meta_ [property_ "og:title", content_ title]
   meta_ [property_ "og:site_name", content_ "Flora"]
   meta_ [property_ "og:description", content_ description]
   meta_ [property_ "og:url", content_ ""]
-  meta_ [property_ "og:image", content_ "/static/og-image.png?v=1"]
+  meta_ [property_ "og:image", content_ (renderAbsoluteLink environment https domain httpPort "/static/og-image.png?v=1")]
   meta_ [property_ "og:image:width", content_ "1200"]
   meta_ [property_ "og:image:height", content_ "675"]
   meta_ [property_ "og:locale", content_ "en_GB"]

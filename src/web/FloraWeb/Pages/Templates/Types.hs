@@ -62,6 +62,7 @@ data TemplateEnv = TemplateEnv
   , httpPort :: Word16
   , theme :: Maybe Text
   , seoIndexing :: Bool
+  , https :: Bool
   }
   deriving stock (Generic, Show)
 
@@ -123,6 +124,7 @@ defaultsToEnv floraEnv TemplateDefaults{..} =
       domain = floraEnv.domain
       httpPort = floraEnv.httpPort
       theme = floraEnv.theme
+      https = floraEnv.https
    in TemplateEnv{..}
 
 class FromSession a where
@@ -148,6 +150,7 @@ templateFromSessionImpl muser session defaults = do
   let domain = floraEnv.domain
       httpPort = floraEnv.httpPort
       theme = floraEnv.theme
+      https = floraEnv.https
   let TemplateDefaults{..} =
         defaults
           & (#mUser .~ muser)

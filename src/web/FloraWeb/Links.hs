@@ -3,6 +3,7 @@ module FloraWeb.Links where
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
+import Data.Word
 import Distribution.Version (Version)
 import Servant.API
 import Servant.Client
@@ -23,9 +24,21 @@ renderLink :: Link -> Text
 renderLink l =
   Text.replace "%40" "@" $ toUrlPiece l
 
-renderAbsoluteLink :: FloraEnv -> Link -> Text
-renderAbsoluteLink env link =
-  renderLink link
+renderAbsoluteLink
+  :: DeploymentEnv
+  -> Bool
+  -> Text
+  -> Word16
+  -> Text
+  -> Text
+renderAbsoluteLink environment https domain httpPort link =
+  let scheme = if https then "https" else "http"
+      port = case environment of
+        Production -> ""
+        _ -> ":" <> Text.show httpPort
+      base = scheme <> domain <> port
+   in base <> link
+
 namespaceLink :: Namespace -> Positive Word -> Link
 namespaceLink namespace pageNumber =
   links

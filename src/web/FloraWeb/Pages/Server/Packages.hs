@@ -19,8 +19,6 @@ import Effectful.Log (Log)
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time qualified as Time
-import Log (object, (.=))
-import Log qualified
 import Lucid
 import Network.HTTP.Types (notFound404)
 import RequireCallStack
