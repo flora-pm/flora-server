@@ -61,6 +61,7 @@ data TemplateEnv = TemplateEnv
   , domain :: Text
   , httpPort :: Word16
   , theme :: Maybe Text
+  , seoIndexing :: Bool
   }
   deriving stock (Generic, Show)
 
@@ -85,6 +86,7 @@ data TemplateDefaults = TemplateDefaults
   , activeElements :: ActiveElements
   , indexPage :: Bool
   , navbarSearchContent :: Maybe Text
+  , seoIndexing :: Bool
   }
   deriving stock (Generic, Show)
 
@@ -111,6 +113,7 @@ defaultTemplateEnv =
     , activeElements = defaultActiveElements
     , indexPage = True
     , navbarSearchContent = Nothing
+    , seoIndexing = True
     }
 
 -- | ⚠  DO NOT USE THIS FUNCTION IF YOU DON'T KNOW WHAT YOU'RE DOING
@@ -150,4 +153,5 @@ templateFromSessionImpl muser session defaults = do
           & (#mUser .~ muser)
           & (#environment .~ floraEnv.environment)
           & (#features .~ featuresEnv)
+          & (#seoIndexing .~ seoIndexing)
   pure TemplateEnv{..}

@@ -31,4 +31,6 @@ flora {
     tarballsEnabled #false
     blobStoreFilePath #null
   }
+
+  seo-indexing #true
 }
