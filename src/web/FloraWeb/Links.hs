@@ -10,6 +10,7 @@ import Servant.Links qualified as Links
 
 import Data.Positive
 import Distribution.Orphans ()
+import Flora.Environment.Env
 import Flora.Model.Package.Types (Namespace (..), PackageName (..))
 import FloraWeb.Pages.Routes qualified as Pages
 import FloraWeb.Pages.Routes.Packages
@@ -22,6 +23,9 @@ renderLink :: Link -> Text
 renderLink l =
   Text.replace "%40" "@" $ toUrlPiece l
 
+renderAbsoluteLink :: FloraEnv -> Link -> Text
+renderAbsoluteLink env link =
+  renderLink link
 namespaceLink :: Namespace -> Positive Word -> Link
 namespaceLink namespace pageNumber =
   links
