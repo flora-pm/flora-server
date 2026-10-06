@@ -187,6 +187,7 @@ data FloraConfig = FloraConfig
   , features :: FeatureConfig
   , environment :: DeploymentEnv
   , seoIndexing :: Bool
+  , https :: Bool
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
@@ -212,7 +213,8 @@ floraConfigDecoder = KDL.children do
   features <- fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing}) <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
   environment <- KDL.argAtWith "environment" deploymentEnvDecoder
   seoIndexing <- fromMaybe True <$> KDL.optional (KDL.argAtWith "seoIndexing" KDL.bool)
-  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment, seoIndexing}
+  https <- fromMaybe True <$> KDL.optional (KDL.argAtWith "https" KDL.bool)
+  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment, seoIndexing, https}
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
