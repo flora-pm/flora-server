@@ -16,7 +16,7 @@ import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
 
 header :: FloraHTML
 header = do
-  TemplateEnv{environment, title, indexPage, theme} <- ask
+  TemplateEnv{environment, title, theme, seoIndexing} <- ask
   doctype_
   let theme' = case theme of
         Nothing -> []
@@ -31,7 +31,7 @@ header = do
       head_ $ do
         meta_ [charset_ "UTF-8"]
         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1"]
-        unless indexPage $ meta_ [name_ "robots", content_ "noindex"]
+        unless seoIndexing $ meta_ [name_ "robots", content_ "noindex"]
         link_ [rel_ "apple-touch-icon", sizes_ "180x180", href_ "/static/icons/apple-touch-icon.png"]
         case environment of
           Development -> do

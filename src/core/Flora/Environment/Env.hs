@@ -38,6 +38,7 @@ data FloraEnv = FloraEnv
   , assets :: Assets
   , metrics :: AppMetrics
   , theme :: Maybe Text
+  , seoIndexing :: Bool
   }
   deriving stock (Generic)
   deriving anyclass (NoThunks)

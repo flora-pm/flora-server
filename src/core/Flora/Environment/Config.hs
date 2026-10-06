@@ -186,6 +186,7 @@ data FloraConfig = FloraConfig
   , mltp :: MLTP
   , features :: FeatureConfig
   , environment :: DeploymentEnv
+  , seoIndexing :: Bool
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
@@ -210,7 +211,8 @@ floraConfigDecoder = KDL.children do
   mltp <- KDL.nodeWith "mltp" mltpDecoder
   features <- fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing}) <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
   environment <- KDL.argAtWith "environment" deploymentEnvDecoder
-  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment}
+  seoIndexing <- fromMaybe True <$> KDL.optional (KDL.argAtWith "seoIndexing" KDL.bool)
+  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment, seoIndexing}
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
