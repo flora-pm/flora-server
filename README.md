@@ -69,15 +69,15 @@ This project is the fruit of the collaboration between:
 
 
 
-<p>
-  <img align="left" alt="Guérilla.Studio" src="./logos/guerilla.studio-logo.svg" width="113" height="60">
+<p align="left" >
+  <imgalt="Guérilla.Studio" src="./logos/guerilla.studio-logo.svg" width="113" height="60">
   <a href="https://guerilla.studio/">Guérilla.Studio</a> is a team of cross-disciplinary web experts making independent web software
 </p>
 
 ---
 
-<p>
-  <img align="left" alt="Floréal Technologies" src="./logos/floreal-tech-logo.png" width="113" height="113">
+<p align="left" >
+  <img alt="Floréal Technologies" src="./logos/floreal-tech-logo.png" width="113" height="113">
 
   <a href="https://floreal.tech/">Floréal Technologies</a> builds open software for hobbyists and professionals. We bring engineering excellence with a a French flair.
 </p>
