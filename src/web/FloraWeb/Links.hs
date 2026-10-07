@@ -32,7 +32,7 @@ renderAbsoluteLink
   -> Text
   -> Text
 renderAbsoluteLink environment https domain httpPort link =
-  let scheme = if https then "https" else "http"
+  let scheme = if https then "https:" else "http:"
       port = case environment of
         Production -> ""
         _ -> ":" <> Text.show httpPort
