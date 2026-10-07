@@ -156,5 +156,5 @@ templateFromSessionImpl muser session defaults = do
           & (#mUser .~ muser)
           & (#environment .~ floraEnv.environment)
           & (#features .~ featuresEnv)
-          & (#seoIndexing .~ seoIndexing)
+          & (#seoIndexing .~ floraEnv.seoIndexing)
   pure TemplateEnv{..}

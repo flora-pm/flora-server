@@ -1,14 +1,14 @@
-CONFIG ?= environment.kdl
+CONFIG ?= environment.docker.kdl
 CONFIG_TEST := environment.test.kdl
 
 init: ## Set up git hooks properly - needs calling once when cloning the repo
 	@git config core.hooksPath .githooks
 
 start-server: ## Start flora backend server
-	@cabal run exe:flora-server
+	@cabal run exe:flora-server  -- -c $(CONFIG)
 
 start-jobs: ## Start jobs runner
-	@cabal run exe:flora-jobs-runner
+	@cabal run exe:flora-jobs-runner -- -c $(CONFIG)
 
 build: ## Build the server
 	@cabal build
