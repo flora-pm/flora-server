@@ -3,9 +3,8 @@ module Main where
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad.Extra (forM_, unlessM)
 import Data.Bifunctor
-import Data.ByteString.Lazy.Char8 qualified as BS
+import Data.ByteString.Lazy.Char8 qualified as BSL
 import Data.List.NonEmpty (NonEmpty)
-import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (display)
@@ -19,40 +18,40 @@ import Effectful.Fail
 import Effectful.FileSystem
 import Effectful.FileSystem qualified as FileSystem
 import Effectful.Log (Log, runLog)
-import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
 import Effectful.Time (Time, runTime)
-import Effectful.Trace (Trace)
-import Effectful.Trace qualified as Trace
 import GHC.Generics (Generic)
 import Log
 import Log.Backend.StandardOutput qualified as Log
-import Monitor.Tracing.Zipkin (Zipkin (..))
 import Optics.Core
 import Options.Applicative
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
+import System.Environment (setEnv)
 import System.Exit (exitFailure)
 import System.FilePath ((</>))
 import System.IO
+import System.Process (callProcess)
 import Text.Read (readMaybe)
 
 import Advisories.Import (importAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
 import DesignSystem (generateComponents)
-import Flora.Environment (getFloraEnv)
+import Flora.Database
+import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
+import Flora.Domain.Import.Categories (importCategories)
+import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
+import Flora.Domain.Import.Types
+import Flora.Domain.Package (refreshMaterialisedViews)
+import Flora.Environment (configFileParser, getFloraEnv)
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
 import Flora.Environment.Env
-import Flora.Import.Categories (importCategories)
-import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Types
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
-import Flora.Model.Package (Namespace, PackageName)
+import Flora.Model.Package.Types (Namespace (..), PackageName)
 import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
@@ -61,10 +60,11 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Monad
-import Flora.Tracing qualified as Tracing
+import FloraWeb.Common.Tracing (startEventlogSocket)
 
 data Options = Options
   { cliCommand :: Command
+  , configFile :: FilePath
   }
   deriving stock (Eq, Show)
 
@@ -82,6 +82,8 @@ data Command
       -- ^ Dependency name
       (Positive Word)
       -- ^ Priority
+  | CreateDB
+  | DropDB
   deriving stock (Eq, Show)
 
 data ProvisionTarget
@@ -101,41 +103,32 @@ data UserCreationOptions = UserCreationOptions
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
+  labelCurrentThread "flora-cli-main"
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
-  env <- getFloraEnv & runFileSystem & runFailIO & runEff
-  runTrace <-
-    if env.environment == Production
-      then do
-        zipkin <- liftIO $ Tracing.newZipkin env.mltp.zipkinHost "flora-cli"
-        pure $ Trace.runTrace zipkin.zipkinTracer
-      else pure Trace.runNoTrace
+  env <- getFloraEnv cliArgs.configFile & runFileSystem & runFailIO & runEff
+  startEventlogSocket env.mltp.eventlogSocketDirectory
+  installThreadDumpHandler
   provideCallStack $
-    runOptions cliArgs
+    runCommand cliArgs.configFile cliArgs.cliCommand
       & Reader.runReader env
       & (`E.catches` exceptionHandlers)
-      & runLog "flora-cli" logger Log.LogTrace
+      & runLog "flora-cli" logger defaultLogLevel
       & runFileSystem
-      & ( case env.features.blobStoreImpl of
-            Just (BlobStoreFS fp) -> runBlobStoreFS fp
-            _ -> runBlobStorePure
-        )
+      & withBlobStore env.features
       & runTime
       & runFailIO
-      & runDB env.pool
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
-      & State.evalState (mempty @(Set (Namespace, PackageName, Version)))
       & runErrorWith @(NonEmpty AdvisoryImportError)
         ( \callstack err -> do
             liftIO $ putStrLn $ prettyCallStack callstack
-            pure $ error $ show err
+            E.throwIO $ userError $ show err
         )
       & runErrorWith @ImportError
         ( \callstack err -> do
             liftIO $ putStrLn $ prettyCallStack callstack
-            pure $ error $ show err
+            E.throwIO $ userError $ show err
         )
-      & runTrace
       & runPrometheusMetrics env.metrics
       & Concurrent.runConcurrent
       & runEff
@@ -143,11 +136,12 @@ main = Log.withStdOutLogger $ \logger -> do
     exceptionHandlers =
       [ E.Handler $ \(ex :: E.SomeException) -> do
           logAttention "Unhandled exception" $ object ["exception" .= show ex]
+          E.throwIO ex
       ]
 
 parseOptions :: Parser Options
 parseOptions =
-  Options <$> parseCommand
+  Options <$> parseCommand <*> configFileParser
 
 parseCommand :: Parser Command
 parseCommand =
@@ -163,6 +157,8 @@ parseCommand =
             `withInfo` "Import a single package tarball, useful for testing"
         )
       <> command "index-dependency" (parseIndexDependency `withInfo` "Declare the dependency of an index on another index, with priority")
+      <> command "create-db" (pure CreateDB `withInfo` "Create the application database")
+      <> command "drop-db" (pure DropDB `withInfo` "Drop the application database")
 
 parseProvision :: Parser Command
 parseProvision =
@@ -222,10 +218,9 @@ parseImportPackageTarball =
     <*> argument str (metavar "VERSION")
     <*> argument str (metavar "PATH")
 
-runOptions
+runCommand
   :: ( BlobStoreAPI :> es
      , Concurrent :> es
-     , DB :> es
      , Error (NonEmpty AdvisoryImportError) :> es
      , Error ImportError :> es
      , Fail :> es
@@ -234,106 +229,139 @@ runOptions
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
-     , Trace :> es
      )
-  => Options
+  => FilePath
+  -> Command
   -> FloraM es ()
-runOptions (Options (Provision Categories)) = importCategories
-runOptions (Options (Provision Advisories)) = do
+runCommand _ (Provision Categories) = importCategories
+runCommand _ (Provision Advisories) = do
   dataDir <- getXdgDirectory XdgData ""
   let advisoriesDirectory = dataDir </> "security-advisories"
   unlessM (doesDirectoryExist advisoriesDirectory) $ do
     Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
     liftIO exitFailure
   importAdvisories advisoriesDirectory
-runOptions (Options (Provision (TestPackages repository))) = do
+runCommand _ (Provision (TestPackages repository)) = do
   let indexArchiveBasePath = "./test/fixtures/Cabal"
   let indexArchivePath = indexArchiveBasePath <> "/" <> Text.unpack repository <> "/01-index.tar.gz"
   indexArchiveExists <- FileSystem.doesFileExist indexArchivePath
   if indexArchiveExists
-    then importIndex indexArchiveBasePath repository
+    then do
+      importIndex indexArchiveBasePath repository
+      Reader.ask >>= refreshMaterialisedViews . (.pool)
     else error $ "Could not find " <> indexArchivePath
-runOptions (Options (CreateUser opts)) = do
-  let username = opts ^. #username
-      email = opts ^. #email
-      canLogin = opts ^. #canLogin
-  mUser <- Query.getUserByEmail email
+runCommand _ (CreateUser opts) = do
+  FloraEnv{pool} <- Reader.ask
+  mUser <- withReadOnlyPool pool $ Query.getUserByEmail opts.email
   case mUser of
     Just _ -> pure ()
     Nothing -> do
       password <- liftIO $ Sel.hashText opts.password
-      if opts ^. #isAdmin
+      if opts.isAdmin
         then
-          addAdmin AdminCreationForm{username, email, password}
+          addAdmin AdminCreationForm{username = opts.username, email = opts.email, password}
             >>= \admin ->
-              if canLogin
+              if opts.canLogin
                 then pure ()
-                else lockAccount admin.userId
+                else withReadWritePool pool $ lockAccount admin.userId
         else do
-          templateUser <- mkUser UserCreationForm{username, email, password}
-          let user = if canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
-          insertUser user
-runOptions (Options GenDesignSystemComponents) = generateComponents
-runOptions (Options (ImportIndex path repository)) = importIndex path repository
-runOptions (Options (ProvisionRepository name url description)) = provisionRepository name url description
-runOptions (Options (ImportPackageTarball pname version path)) = importPackageTarball pname version path
-runOptions (Options (IndexDependency indexName dependencyName priority)) = do
-  index <- guardThatPackageIndexExists indexName (\_ -> error $ Text.unpack indexName <> " does not exist in database!")
-  dependency <- guardThatPackageIndexExists dependencyName (\_ -> error $ Text.unpack indexName <> " does not exist in database!")
-  Update.addDependency
-    index.packageIndexId
-    dependency.packageIndexId
-    priority
-
-provisionRepository :: (DB :> es, IOE :> es) => Text -> Text -> Text -> FloraM es ()
-provisionRepository name url description = Update.upsertPackageIndex name url description Nothing
+          templateUser <- mkUser UserCreationForm{username = opts.username, email = opts.email, password}
+          let user = if opts.canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
+          withReadWritePool pool $ insertUser user
+runCommand configFile GenDesignSystemComponents = generateComponents configFile
+runCommand _ (ImportIndex path repository) = do
+  importIndex path repository
+  Reader.ask >>= refreshMaterialisedViews . (.pool)
+runCommand _ (ProvisionRepository name url description) = do
+  FloraEnv{pool} <- Reader.ask
+  withReadWritePool pool $ Update.upsertPackageIndex name url description Nothing
+runCommand _ (ImportPackageTarball pname version path) = importPackageTarball (Namespace "hackage") pname version path
+runCommand _ CreateDB = do
+  FloraEnv{config = FloraConfig{connectionInfo}} <- Reader.ask
+  liftIO $ do
+    setEnv "PGPASSWORD" (Text.unpack connectionInfo.connectPassword)
+    callProcess
+      "createdb"
+      [ "-h"
+      , Text.unpack connectionInfo.connectHost
+      , "-p"
+      , show connectionInfo.connectPort
+      , "-U"
+      , Text.unpack connectionInfo.connectUser
+      , Text.unpack connectionInfo.connectDatabase
+      ]
+runCommand _ DropDB = do
+  FloraEnv{config = FloraConfig{connectionInfo}} <- Reader.ask
+  liftIO $ do
+    setEnv "PGPASSWORD" (Text.unpack connectionInfo.connectPassword)
+    callProcess
+      "dropdb"
+      [ "--if-exists"
+      , "-h"
+      , Text.unpack connectionInfo.connectHost
+      , "-p"
+      , show connectionInfo.connectPort
+      , "-U"
+      , Text.unpack connectionInfo.connectUser
+      , Text.unpack connectionInfo.connectDatabase
+      ]
+runCommand _ (IndexDependency indexName dependencyName priority) = do
+  FloraEnv{pool} <- Reader.ask
+  index <- guardThatPackageIndexExists pool indexName (error $ Text.unpack indexName <> " does not exist in database!")
+  dependency <- guardThatPackageIndexExists pool dependencyName (error $ Text.unpack indexName <> " does not exist in database!")
+  withReadWritePool pool $
+    Update.addDependency
+      index.packageIndexId
+      dependency.packageIndexId
+      priority
 
 importIndex
   :: ( Concurrent :> es
-     , DB :> es
      , Error ImportError :> es
      , IOE :> es
      , Log :> es
      , Metrics AppMetrics :> es
      , Reader FloraEnv :> es
-     , State (Set (Namespace, PackageName, Version)) :> es
      , Time :> es
      )
   => FilePath
   -> Text
   -> FloraM es ()
 importIndex indexArchivebasePath repository = do
-  mPackageIndex <- Query.getPackageIndexByName repository
+  FloraEnv{pool} <- Reader.ask
+  mPackageIndex <- withReadOnlyPool pool $ Query.getPackageIndexByName repository
   case mPackageIndex of
     Nothing -> error $ Text.unpack $ "Package index " <> repository <> " not found in the database!"
     Just packageIndex -> do
-      indexDependencies <- Query.getIndexDependencies packageIndex.packageIndexId
+      indexDependencies <- withReadOnlyPool pool $ Query.getIndexDependencies packageIndex.packageIndexId
       forM_
         indexDependencies
         (\name -> importIndex indexArchivebasePath name)
       Log.logInfo "index dependencies" $
         object ["index_dependencies" .= indexDependencies]
       importFromArchive
+        pool
         repository
         indexDependencies
         indexArchivebasePath
 
 importPackageTarball
   :: ( BlobStoreAPI :> es
-     , DB :> es
      , IOE :> es
      , Log :> es
+     , Reader FloraEnv :> es
      , RequireCallStack
      )
-  => PackageName
+  => Namespace
+  -> PackageName
   -> Version
   -> FilePath
   -> FloraM es ()
-importPackageTarball pname version path = do
-  contents <- liftIO $ GZip.decompress <$> BS.readFile path
-  res <- Update.insertTar pname version contents
+importPackageTarball namespace pname version path = do
+  FloraEnv{pool} <- Reader.ask
+  contents <- liftIO $ GZip.decompress <$> BSL.readFile path
+  res <- withReadWritePool pool $ Update.insertTar namespace pname version contents
   case res of
     Right hash -> Log.logInfo_ $ "Insert tarball with root hash: " <> display hash
     Left err -> Log.logAttention_ $ display err

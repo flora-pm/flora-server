@@ -3,12 +3,18 @@
 module FloraWeb.Pages.Server where
 
 import Arbiter.Servant qualified as ArbS
+import Effectful.Reader.Static qualified as Reader
+import Effectful.Time qualified as Time
 import Lucid
 import Optics.Core
 import RequireCallStack
 import Servant
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.Job
+import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User (User)
 import FloraWeb.Common.Auth
 import FloraWeb.Pages.Routes
@@ -28,7 +34,7 @@ server arbiterConfig =
   Routes'
     { home = homeHandler
     , about = aboutHandler
-    , admin = Admin.server arbiterConfig
+    , admin = \(AdminSession session) -> Admin.server arbiterConfig session
     , sessions = Sessions.server
     , packages = Packages.server
     , categories = Categories.server
@@ -37,11 +43,17 @@ server arbiterConfig =
     , notFound = serveNotFound
     }
 
-homeHandler :: Headers ls (Session (Maybe User)) -> FloraEff (Html ())
+homeHandler :: RequireCallStack => Headers ls (Session (Maybe User)) -> FloraEff (Html ())
 homeHandler (Headers session _) = do
+  FloraEnv{pool} <- Reader.ask
   templateDefaults <- templateFromSession session defaultTemplateEnv
   let templateEnv = templateDefaults & #displayNavbarSearch .~ False
-  render templateEnv Home.show
+  latestReleases <- withReadOnlyPool pool Query.getLatestReleases
+  latestPackages <- withReadOnlyPool pool Query.getLatestPackages
+  packageCount <- withReadOnlyPool pool Query.countPackages
+  now <- Time.currentTime
+  render templateEnv $
+    Home.show packageCount now latestReleases latestPackages
 
 aboutHandler :: SessionWithCookies (Maybe User) -> FloraEff (Html ())
 aboutHandler (Headers session _) = do

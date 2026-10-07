@@ -1,0 +1,11 @@
+.pagination {
+	display: grid;
+	gap: var(--space-gutter-tiny);
+	grid-template-columns: 1fr 1fr;
+	max-width: var(--size-wrapper-small);
+	margin-inline: auto;
+}
+
+.pagination-more {
+	grid-column: 1 / 3;
+}

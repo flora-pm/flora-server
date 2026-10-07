@@ -7,6 +7,7 @@ module Flora.Model.BlobStore.API
     -- | Handlers
   , runBlobStoreFS
   , runBlobStorePure
+  , withBlobStore
   )
 where
 
@@ -22,6 +23,7 @@ import Effectful.State.Static.Local (evalState, gets, modify)
 import System.Directory (createDirectoryIfMissing, doesFileExist)
 import System.FilePath ((</>))
 
+import Flora.Environment.Env (BlobStoreImpl (..), FeatureEnv (..))
 import Flora.Model.BlobStore.Types
 
 data BlobStoreAPI :: Effect where
@@ -72,6 +74,14 @@ runBlobStoreFS fp e = do
       Put hash content -> do
         (file, exists) <- doesHashExist hash
         if exists then pure () else liftIO $ BS.writeFile file content
+
+-- | Run the blob store selected by the feature environment: the filesystem
+-- implementation when one is configured, the in-memory one otherwise.
+withBlobStore :: IOE :> es => FeatureEnv -> Eff (BlobStoreAPI : es) a -> Eff es a
+withBlobStore features =
+  case features.blobStoreImpl of
+    Just (BlobStoreFS fp) -> runBlobStoreFS fp
+    _ -> runBlobStorePure
 
 -- | Nun a pure in memory implementation of the blob store
 --

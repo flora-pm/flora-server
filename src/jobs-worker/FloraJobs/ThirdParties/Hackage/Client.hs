@@ -11,15 +11,14 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Effectful (Eff, IOE, type (:>))
 import Effectful.Reader.Static
-import Network.HTTP.Req (GET (GET), NoReqBody (..))
-import Network.HTTP.Req qualified as Req
-import Servant.API ()
-import Servant.Client (BaseUrl (..), Client, ClientError (..), ClientM, Scheme (..), client, mkClientEnv, runClientM, (//), (/:))
+import Servant.API (getResponse)
+import Servant.Client
 
 import Data.Time.Orphans ()
 import Flora.Model.Package.Types
 import FloraJobs.Environment
-import FloraJobs.ThirdParties.Hackage.API as API
+import FloraJobs.Render (ImportedDocument (..))
+import FloraJobs.ThirdParties.Hackage.API
 
 request
   :: ( IOE :> es
@@ -39,73 +38,82 @@ hackageClient :: Client ClientM HackageAPI
 hackageClient = client (Proxy @HackageAPI)
 
 listHackageUsers :: ClientM [HackageUserObject]
-listHackageUsers = hackageClient // API.listUsers
+listHackageUsers = hackageClient // (.listUsers)
 
 getHackageUser :: Text -> ClientM HackageUserDetailsObject
-getHackageUser username = hackageClient // API.withUser /: username // API.getUser
+getHackageUser username = hackageClient // (.withUser) /: username // (.getUser)
 
 getPackageTarball :: VersionedPackage -> ClientM ByteString
 getPackageTarball versionedPackage =
   hackageClient
-    // API.withPackage
+    // (.withPackage)
     /: versionedPackage
-    // API.getTarball
+    // (.getTarball)
     /: VersionedTarball versionedPackage
 
-getPackageReadme :: VersionedPackage -> ClientM Text
+getPackageReadme :: VersionedPackage -> ClientM ImportedDocument
 getPackageReadme versionedPackage =
-  hackageClient
-    // API.withPackage
-    /: versionedPackage
-    // API.getReadme
+  fmap classifyTextResponse $
+    hackageClient
+      // (.withPackage)
+      /: versionedPackage
+      // (.getReadme)
 
 getPackageUploadTime :: VersionedPackage -> ClientM UTCTime
 getPackageUploadTime packageName =
   hackageClient
-    // API.withPackage
+    // (.withPackage)
     /: packageName
-    // API.getUploadTime
+    // (.getUploadTime)
 
-getPackageChangelog :: VersionedPackage -> ClientM Text
+getPackageChangelog :: VersionedPackage -> ClientM ImportedDocument
 getPackageChangelog versionedPackage =
-  hackageClient
-    // API.withPackage
-    /: versionedPackage
-    // API.getChangelog
+  fmap classifyTextResponse $
+    hackageClient
+      // (.withPackage)
+      /: versionedPackage
+      // (.getChangelog)
+
+classifyTextResponse :: HackageTextResponse -> ImportedDocument
+classifyTextResponse response
+  | isHtmlResponse response = RenderedHtml body
+  | otherwise = MarkdownSource body
+  where
+    body = getResponse response
 
 getDeprecatedPackages :: ClientM (Vector DeprecatedPackage')
 getDeprecatedPackages =
   hackageClient
-    // API.packages
-    // getDeprecated
+    // (.packages)
+    // (.getDeprecated)
 
 getDeprecatedReleasesList :: PackageName -> ClientM HackagePreferredVersions
 getDeprecatedReleasesList packageName =
   hackageClient
-    // API.withPackageNameOnly
+    // (.withPackageNameOnly)
     /: packageName
-    // getDeprecatedReleases
+    // (.getDeprecatedReleases)
 
-getPackageInfo :: VersionedPackage -> IO HackagePackageInfo
+getPackageInfo :: VersionedPackage -> ClientM HackagePackageInfo
 getPackageInfo versionedPackage = do
-  Req.runReq Req.defaultHttpConfig $ do
-    response <-
-      Req.req
-        GET
-        (Req.https "hackage.haskell.org" Req./: "package" Req./~ versionedPackage)
-        NoReqBody
-        Req.jsonResponse
-        mempty
-    pure $ Req.responseBody response
+  hackageClient
+    // (.withPackage)
+    /: versionedPackage
+    // (.getPackageInfo)
 
-getPackageWithRevision :: VersionedPackage -> Word -> IO HackagePackageInfo
-getPackageWithRevision versionedPackage revision = do
-  Req.runReq Req.defaultHttpConfig $ do
-    response <-
-      Req.req
-        GET
-        (Req.https "hackage.haskell.org" Req./: "package" Req./~ versionedPackage Req./: "revision" Req./~ revision)
-        NoReqBody
-        Req.jsonResponse
-        mempty
-    pure $ Req.responseBody response
+getPackageWithRevision :: VersionedPackage -> Word -> ClientM HackagePackageInfo
+getPackageWithRevision versionedPackage revision =
+  do
+    hackageClient
+    // (.withPackage)
+    /: versionedPackage
+    // (.getPackageWithRevision)
+    /: revision
+
+getPackageMaintainers
+  :: PackageName -> ClientM HackagePackageMaintainers
+getPackageMaintainers packageName =
+  hackageClient
+    // (.withPackageNameOnly)
+    /: packageName
+    // (.getMaintainers)

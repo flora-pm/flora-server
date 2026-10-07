@@ -1,0 +1,96 @@
+name: Database Index Checks
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "development"]
+
+concurrency:
+  group: database-index-checks-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  generateMatrix:
+    name: "Generate matrix from cabal"
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Extract the tested GHC versions
+        id: set-matrix
+        uses: kleidukos/get-tested@bbcf52a8d1b69bf8fdd671b490126d53f70fc9a7 # v0.1.10.0
+        with:
+          cabal-file: flora.cabal
+          ubuntu-version: "24.04"
+          version: 0.1.7.1
+
+  database-index-checks:
+    needs: generateMatrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{ fromJSON(needs.generateMatrix.outputs.matrix) }}
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Set up Haskell
+      id: setup-haskell
+      uses: haskell-actions/setup@0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d # v2.12.1
+      with:
+        ghc-version: "${{ matrix.ghc }}"
+        cabal-version: "latest"
+
+    - name: Configure environment
+      run: |
+        ./.github/workflows/setup.sh
+        echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+        echo "$HOME/.cabal/bin" >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
+        touch ~/.pgpass
+        chmod 0600 ~/.pgpass
+        cabal update
+
+    - name: Create freeze file
+      run: cabal freeze --enable-tests
+
+    - name: Cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.setup-haskell.outputs.cabal-store }}
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
+        restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
+
+    - name: Migrate
+      run: |
+        set -x
+        cabal run flora-cli -- -c environment.ci.kdl create-db
+        cabal run flora-migrate -- -c environment.ci.kdl
+      env:
+        PGPASSWORD: "postgres"
+
+    - name: Check missing FK indexes
+      run: .github/workflows/check-missing-fk-indexes.sh
+      env:
+        FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"
+
+    - name: Check duplicate indexes
+      run: .github/workflows/check-duplicate-indexes.sh
+      env:
+        FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"

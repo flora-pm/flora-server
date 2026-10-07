@@ -9,7 +9,7 @@ module Flora.Model.Release.Query
   , getReleaseByVersion
   , getHackagePackageReleasesWithoutReadme
   , getHackagePackageReleasesWithoutChangelog
-  , getHackagePackageReleasesWithoutUploadTimestamp
+  , getHackagePackageReleasesWithoutUploadInformation
   , getHackagePackageReleasesWithoutTarball
   , getAllReleases
   , getLatestReleaseTime
@@ -19,6 +19,8 @@ module Flora.Model.Release.Query
   , getHackagePackagesWithoutReleaseDeprecationInformation
   , getVersionFromManyReleaseIds
   , getReleasePackageIndex
+  , getLatestReleases
+  , getLatestPackageReleaseVersion
   )
 where
 
@@ -30,15 +32,14 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (query, queryOne, queryOne_, query_)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple.SqlQQ
 import Database.PostgreSQL.Simple.Types (In (..), Only (..), Query)
 import Distribution.Version (Version)
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
 import Distribution.Orphans.Version ()
+import Flora.Database
 import Flora.Model.BlobStore.API (BlobStoreAPI, get)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Component.Types
@@ -57,49 +58,50 @@ packageReleasesQuery =
   _selectWhere @Release [[field| package_id |]]
     <> " ORDER BY releases.version DESC "
 
-getReleases :: DB :> es => PackageId -> FloraM es (Vector Release)
+getReleases :: (IOE :> es, ReadDB :> es) => PackageId -> FloraM es (Vector Release)
 getReleases pid =
-  dbtToEff $ do
-    query (packageReleasesQuery <> " LIMIT 6") (Only pid)
+  Vector.fromList
+    <$> query (packageReleasesQuery <> " LIMIT 6") (Only pid)
 
-getLatestPackageRelease :: DB :> es => PackageId -> FloraM es (Maybe Release)
+getLatestPackageRelease :: (IOE :> es, ReadDB :> es) => PackageId -> FloraM es (Maybe Release)
 getLatestPackageRelease pid =
-  dbtToEff $ do
-    queryOne getLatestPackageReleaseQuery (Only pid)
+  queryOne getLatestPackageReleaseQuery (Only pid)
 
-getLatestReleaseTime :: DB :> es => Maybe Text -> FloraM es (Maybe UTCTime)
-getLatestReleaseTime repo =
-  dbtToEff $ fmap fromOnly <$> maybe (queryOne_ q') (queryOne q . Only) repo
+getLatestReleaseTime :: (IOE :> es, ReadDB :> es) => Maybe Text -> FloraM es (Maybe UTCTime)
+getLatestReleaseTime repo = do
+  result :: Maybe (Only (Maybe UTCTime)) <- maybe (queryOne_ q') (queryOne q . Only) repo
+  pure $ result >>= fromOnly
   where
     q = [sql| select max(r0.uploaded_at) from releases as r0 where r0.repository = ? |]
     q' = [sql| select max(uploaded_at) from releases |]
 
-getReleaseTarballRootHash :: DB :> es => ReleaseId -> FloraM es (Maybe Sha256Sum)
-getReleaseTarballRootHash releaseId = dbtToEff $ do
-  mRelease <- selectOneByField @Release [field| release_id |] (Only releaseId)
+getReleaseTarballRootHash :: (IOE :> es, ReadDB :> es) => ReleaseId -> FloraM es (Maybe Sha256Sum)
+getReleaseTarballRootHash releaseId = do
+  mRelease :: Maybe Release <- queryOne (_selectWhere @Release [[field| release_id |]]) (Only releaseId)
   case mRelease of
-    Just release -> pure $ tarballRootHash release
+    Just release -> pure release.tarballRootHash
     Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
 
-getReleaseTarballArchive :: (BlobStoreAPI :> es, DB :> es) => ReleaseId -> FloraM es (Maybe LazyByteString)
+getReleaseTarballArchive :: (BlobStoreAPI :> es, IOE :> es, ReadDB :> es) => ReleaseId -> FloraM es (Maybe LazyByteString)
 getReleaseTarballArchive releaseId = do
-  mRelease <- dbtToEff $ selectOneByField @Release [field| release_id |] (Only releaseId)
+  mRelease :: Maybe Release <- queryOne (_selectWhere @Release [[field| release_id |]]) (Only releaseId)
   case mRelease of
     Nothing -> error $ "Internal error: searched for releaseId that doesn't exist: " <> show releaseId
     Just release -> do
       fmap fromStrict . join <$> traverse get release.tarballArchiveHash
 
-getAllReleases :: DB :> es => PackageId -> FloraM es (Vector Release)
+getAllReleases :: (IOE :> es, ReadDB :> es) => PackageId -> FloraM es (Vector Release)
 getAllReleases pid =
-  dbtToEff $ do
-    query packageReleasesQuery (Only pid)
+  Vector.fromList
+    <$> query packageReleasesQuery (Only pid)
 
 getVersionFromManyReleaseIds
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => Vector ReleaseId
   -> FloraM es (Vector (ReleaseId, Version))
 getVersionFromManyReleaseIds releaseIds = do
-  dbtToEff $ query q (Only (In (Vector.toList releaseIds)))
+  Vector.fromList
+    <$> query q (Only (In (Vector.toList releaseIds)))
   where
     q =
       [sql|
@@ -109,11 +111,11 @@ getVersionFromManyReleaseIds releaseIds = do
       |]
 
 getHackagePackageReleasesWithoutReadme
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutReadme =
-  dbtToEff $
-    query querySpec ()
+  Vector.fromList
+    <$> query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -124,15 +126,15 @@ getHackagePackageReleasesWithoutReadme =
         on p.package_id = r.package_id
         where r.readme_status = 'not-imported'
           and p.namespace = 'hackage'
-           or p.namespace = 'haskell'
+          and p.deprecation_info is null
       |]
 
-getHackagePackageReleasesWithoutUploadTimestamp
-  :: DB :> es
+getHackagePackageReleasesWithoutUploadInformation
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (ReleaseId, Version, PackageName))
-getHackagePackageReleasesWithoutUploadTimestamp =
-  dbtToEff $
-    query querySpec ()
+getHackagePackageReleasesWithoutUploadInformation =
+  Vector.fromList
+    <$> query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -141,17 +143,17 @@ getHackagePackageReleasesWithoutUploadTimestamp =
         from releases as r
         join packages as p
         on p."package_id" = r."package_id"
-        where r."uploaded_at" is null
+        where (r."uploaded_at" is null or r."uploader_id" is null)
           and p."namespace" = 'hackage'
-           or p."namespace" = 'haskell'
+          and p.deprecation_info is null
       |]
 
 getHackagePackageReleasesWithoutChangelog
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutChangelog =
-  dbtToEff $
-    query querySpec ()
+  Vector.fromList
+    <$> query querySpec ()
   where
     querySpec :: Query
     querySpec =
@@ -162,14 +164,15 @@ getHackagePackageReleasesWithoutChangelog =
         on p.package_id = r.package_id
         where r.changelog_status = 'not-imported'
           and p.namespace = 'hackage'
-           or p.namespace = 'haskell'
+          and p.deprecation_info is null
       |]
 
 getHackagePackageReleasesWithoutTarball
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (ReleaseId, Version, PackageName))
 getHackagePackageReleasesWithoutTarball =
-  dbtToEff $! query querySpec ()
+  Vector.fromList
+    <$> query querySpec ()
   where
     querySpec =
       [sql|
@@ -178,13 +181,14 @@ getHackagePackageReleasesWithoutTarball =
         join packages as p
         on p.package_id = r.package_id
         where r.tarball_root_hash is null
+          and p.deprecation_info is null
       |]
 
 getHackagePackagesWithoutReleaseDeprecationInformation
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => FloraM es (Vector (PackageName, Vector ReleaseId))
 getHackagePackagesWithoutReleaseDeprecationInformation =
-  dbtToEff $ query_ q
+  Vector.fromList <$> query_ q
   where
     q =
       [sql|
@@ -193,38 +197,32 @@ getHackagePackagesWithoutReleaseDeprecationInformation =
         join packages as p1 on r0.package_id = p1.package_id
         where r0.deprecated is null
           and p1.namespace = 'hackage'
-           or p1.namespace = 'haskell'
+          and p1.deprecation_info is null
         group by p1.name;
         |]
 
 getReleaseById
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => ReleaseId
   -> FloraM es (Maybe Release)
 getReleaseById releaseId =
-  dbtToEff $ selectById @Release (Only releaseId)
+  queryOne (_selectWhere @Release [primaryKey @Release]) (Only releaseId)
 
 getReleaseByVersion
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => PackageId
   -> Version
   -> FloraM es (Maybe Release)
 getReleaseByVersion packageId version =
-  dbtToEff $
-    queryOne
-      ( _selectWhere
-          @Release
-          [[field| package_id |], [field| version |]]
-      )
-      (packageId, version)
+  queryOne
+    ( _selectWhere
+        @Release
+        [[field| package_id |], [field| version |]]
+    )
+    (packageId, version)
 
-getNumberOfReleases :: DB :> es => PackageId -> FloraM es Word
-getNumberOfReleases pid =
-  dbtToEff $ do
-    (result :: Maybe (Only Int)) <- queryOne numberOfReleasesQuery (Only pid)
-    case result of
-      Just (Only n) -> pure $ fromIntegral n
-      Nothing -> pure 0
+getNumberOfReleases :: (IOE :> es, ReadDB :> es) => PackageId -> FloraM es Word
+getNumberOfReleases pid = queryCount numberOfReleasesQuery (Only pid)
 
 numberOfReleasesQuery :: Query
 numberOfReleasesQuery =
@@ -234,12 +232,13 @@ numberOfReleasesQuery =
   WHERE rel."package_id" = ?
   |]
 
-getReleaseComponents :: DB :> es => ReleaseId -> FloraM es (Vector PackageComponent)
+getReleaseComponents :: (IOE :> es, ReadDB :> es) => ReleaseId -> FloraM es (Vector PackageComponent)
 getReleaseComponents releaseId =
-  dbtToEff $ query (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
+  Vector.fromList
+    <$> query (_selectWhere @PackageComponent [[field| release_id |]]) (Only releaseId)
 
-getReleasePackageIndex :: DB :> es => ReleaseId -> FloraM es (Maybe PackageIndexId)
-getReleasePackageIndex releaseId = dbtToEff $ do
+getReleasePackageIndex :: (IOE :> es, ReadDB :> es) => ReleaseId -> FloraM es (Maybe PackageIndexId)
+getReleasePackageIndex releaseId = do
   result :: Maybe (Only PackageIndexId) <- queryOne q (Only releaseId)
   pure $ fromOnly <$> result
   where
@@ -249,4 +248,35 @@ getReleasePackageIndex releaseId = dbtToEff $ do
         from releases as r0
         join package_indexes as p1 on r0.repository = p1.repository
         where r0.release_id = ?
+      |]
+
+getLatestReleases
+  :: (IOE :> es, ReadDB :> es)
+  => FloraM es (Vector (Namespace, PackageName, Text, Version, Maybe UTCTime))
+getLatestReleases =
+  Vector.fromList
+    <$> query sqlQuery ()
+  where
+    sqlQuery =
+      [sql|
+      SELECT l0.namespace, l0.name, l0.synopsis, l0.version, l0.uploaded_at
+      FROM latest_versions as l0
+      ORDER BY l0.uploaded_at DESC
+      LIMIT 6
+      |]
+
+getLatestPackageReleaseVersion
+  :: (IOE :> es, ReadDB :> es)
+  => PackageId
+  -> FloraM es (Maybe Version)
+getLatestPackageReleaseVersion packageId = do
+  result :: (Maybe (Only Version)) <- queryOne sqlQuery (Only packageId)
+  pure $ fromOnly <$> result
+  where
+    sqlQuery =
+      [sql|
+      SELECT l0.version
+      FROM latest_versions as l0
+      WHERE l0.package_id = ?
+      LIMIT 1
       |]

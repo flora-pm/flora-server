@@ -6,14 +6,23 @@ import Control.Monad.IO.Class
 import Data.Maybe
 import Data.Text (Text)
 import Data.Text.Display
+import Effectful
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
+import Effectful.Time
 import Log qualified
+import Lucid (Html)
 import Optics.Core
+import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
-import Servant
+import Servant (Headers (..), ServerT)
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.PersistentSession
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
+import Flora.Monad
 import FloraWeb.Common.Auth
 import FloraWeb.Common.Auth.TwoFactor qualified as TwoFactor
 import FloraWeb.Common.Guards (guardThatUserHasProvidedTOTP)
@@ -24,13 +33,23 @@ import FloraWeb.Pages.Templates.Screens.Sessions as Sessions
 import FloraWeb.Session
 import FloraWeb.Types (FloraEff)
 
-server :: SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
+server :: RequireCallStack => SessionWithCookies (Maybe User) -> ServerT Routes FloraEff
 server s =
   Routes'
     { new = newSessionHandler s
     , create = createSessionHandler s
     , delete = deleteSessionHandler
     }
+
+-- | Render the login page with a generic "Could not authenticate" flash error.
+renderAuthFailure
+  :: (IOE :> es, Reader FeatureEnv :> es)
+  => Session (Maybe User)
+  -> FloraM es (Html ())
+renderAuthFailure session = do
+  templateDefaults <- templateFromSession session defaultTemplateEnv
+  let templateEnv = templateDefaults & (#flashError ?~ mkError "Could not authenticate")
+  render templateEnv Sessions.newSession
 
 newSessionHandler :: SessionWithCookies (Maybe User) -> FloraEff NewSessionResult
 newSessionHandler (Headers session _) = do
@@ -41,8 +60,8 @@ newSessionHandler (Headers session _) = do
       templateEnv' <- templateFromSession session defaultTemplateEnv
       let templateEnv =
             templateEnv'
-              { title = "Sign in — Flora.pm"
-              , description = "Sign in page"
+              { title = "Login — Flora.pm"
+              , description = "Login page"
               }
       html <- render templateEnv Sessions.newSession
       pure $ AuthenticationRequired html
@@ -51,19 +70,17 @@ newSessionHandler (Headers session _) = do
       pure $ AlreadyAuthenticated "/"
 
 createSessionHandler
-  :: SessionWithCookies (Maybe User)
+  :: (IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, Time :> es)
+  => SessionWithCookies (Maybe User)
   -> LoginForm
-  -> FloraEff CreateSessionResult
+  -> FloraM es CreateSessionResult
 createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
-  mUser <- Query.getUserByEmail email
+  FloraEnv{pool} <- Reader.ask
+  mUser <- withReadOnlyPool pool $ Query.getUserByEmail email
   case mUser of
     Nothing -> do
       Log.logInfo_ "[+] Couldn't find user"
-      templateDefaults <- templateFromSession session defaultTemplateEnv
-      let templateEnv =
-            templateDefaults
-              & (#flashError ?~ mkError "Could not authenticate")
-      body <- render templateEnv Sessions.newSession
+      body <- renderAuthFailure session
       pure $ AuthenticationFailure body
     Just user ->
       if user.userFlags.canLogin
@@ -73,50 +90,41 @@ createSessionHandler (Headers session _) LoginForm{email, password, totp} = do
               if user.totpEnabled
                 then guardThatUserHasProvidedTOTP session totp $ \userCode -> checkTOTPIsValid session userCode user
                 else do
-                  sessionId <- persistSession session.sessionId user.userId
+                  sessionId <- withReadWritePool pool $ persistSession session.sessionId user.userId
                   let sessionCookie = craftSessionCookie sessionId True
                   pure $ AuthenticationSuccess ("/", sessionCookie)
             else do
               Log.logInfo_ "Invalid password"
-              templateDefaults <- templateFromSession session defaultTemplateEnv
-              let templateEnv =
-                    templateDefaults
-                      & (#flashError ?~ mkError "Could not authenticate")
-              body <- render templateEnv Sessions.newSession
+              body <- renderAuthFailure session
               pure $ AuthenticationFailure body
         else do
           Log.logInfo_ "User not allowed to log-in"
-          templateDefaults <- templateFromSession session defaultTemplateEnv
-          let templateEnv =
-                templateDefaults
-                  & (#flashError ?~ mkError "Could not authenticate")
-          body <- render templateEnv Sessions.newSession
+          body <- renderAuthFailure session
           pure $ AuthenticationFailure body
 
 checkTOTPIsValid
-  :: Session (Maybe User)
+  :: (IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, Time :> es)
+  => Session (Maybe User)
   -> Text
   -> User
-  -> FloraEff CreateSessionResult
+  -> FloraM es CreateSessionResult
 checkTOTPIsValid session userCode user = do
+  FloraEnv{pool} <- Reader.ask
   validated <- liftIO $ TwoFactor.validateTOTP (fromJust user.totpKey) userCode
   if validated
     then do
       Log.logInfo_ "[+] User connected!"
-      sessionId <- persistSession session.sessionId user.userId
+      sessionId <- withReadWritePool pool $ persistSession session.sessionId user.userId
       let sessionCookie = craftSessionCookie sessionId True
       pure $ AuthenticationSuccess ("/", sessionCookie)
     else do
       Log.logInfo_ "[+] Couldn't authenticate user's TOTP code"
-      templateDefaults <- templateFromSession session defaultTemplateEnv
-      let templateEnv =
-            templateDefaults
-              & (#flashError ?~ mkError "Could not authenticate")
-      body <- render templateEnv Sessions.newSession
+      body <- renderAuthFailure session
       pure $ AuthenticationFailure body
 
-deleteSessionHandler :: PersistentSessionId -> FloraEff DeleteSessionResponse
+deleteSessionHandler :: (IOE :> es, Reader FloraEnv :> es) => PersistentSessionId -> FloraM es DeleteSessionResponse
 deleteSessionHandler sessionId = do
+  FloraEnv{pool} <- Reader.ask
   Log.logInfo_ $ "[+] Logging-off session " <> display sessionId
-  deleteSession sessionId
+  withReadWritePool pool $ deleteSession sessionId
   pure $ redirectWithCookie "/" emptySessionCookie

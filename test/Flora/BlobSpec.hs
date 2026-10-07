@@ -12,15 +12,18 @@ import Data.Function (on)
 import Data.List (sortBy)
 import Data.Maybe (fromJust)
 import Distribution.Version (mkVersion)
+import Effectful.Reader.Static qualified as Reader
+import Log
 import RequireCallStack
 import System.FilePath ((</>))
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobIndex.Types
 import Flora.Model.BlobIndex.Update qualified as Update
-import Flora.Model.Package
 import Flora.Model.Package.Query qualified as Query
-import Flora.Model.Package.Types ()
+import Flora.Model.Package.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.TestUtils
@@ -39,18 +42,32 @@ toList :: RequireCallStack => Tar.Entries e -> Either e [Tar.Entry]
 toList = right reverse . left fst . Tar.foldlEntries (\acc x -> x : acc) []
 
 readTarball :: RequireCallStack => FilePath -> TestEff LazyByteString
-readTarball tarball = liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/test-namespace" </> tarball)
+readTarball tarball = do
+  Log.logInfo "Starting to read tarball" $
+    object ["tarball" .= tarball]
+  content <- liftIO $ GZip.decompress <$> BL.readFile ("test/fixtures/test-namespace" </> tarball)
+  Log.logInfo "Tarball read" $
+    object ["tarball" .= tarball]
+  pure content
 
 testImportTarball :: TestEff ()
 testImportTarball = provideCallStack $ do
-  content <- readTarball "b-0.1.0.0.tar.gz"
+  FloraEnv{pool} <- Reader.ask
+  let tarballFileName = "b-0.1.0.0.tar.gz"
+  content <- readTarball tarballFileName
   let pname = PackageName "b"
       version = mkVersion [0, 1, 0, 0]
-  res <- Update.insertTar pname version content
+  res <- withReadWritePool pool $ do
+    Log.logInfo "Starting to insert tarball" $
+      object ["tarball" .= tarballFileName]
+    result <- Update.insertTar (Namespace "local-hackage") pname version content
+    Log.logInfo "Tarball inserted" $
+      object ["tarball" .= tarballFileName]
+    pure result
   case res of
     Left err -> assertFailure (show err)
     Right hash -> do
-      content' <- Query.queryTar pname version hash
+      content' <- withReadOnlyPool pool $ Query.queryTar pname version hash
       case toList . Tar.read <$> [content, content'] of
         [Right tarEntries, Right tarEntries'] -> do
           -- check we've not lost or gained any entries
@@ -62,9 +79,10 @@ testImportTarball = provideCallStack $ do
           checkAll Tar.entryContent (sortByPath tarEntries) tarEntries'
 
           -- check that we also archived the initial tarball along with the release
-          package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "hackage") pname
-          release <- assertJust_ =<< Query.getReleaseByVersion package.packageId version
-          archivedContent <- assertJust_ =<< Query.getReleaseTarballArchive release.releaseId
+          archivedContent <- withReadOnlyPool pool $ do
+            package <- assertJust_ =<< Query.getPackageByNamespaceAndName (Namespace "local-hackage") pname
+            release <- assertJust_ =<< Query.getReleaseByVersion package.packageId version
+            assertJust_ =<< Query.getReleaseTarballArchive release.releaseId
           assertEqual_ content archivedContent
         [Left _, _] -> assertFailure "Input tar is corrupted"
         [_, Left _] -> assertFailure "Generated corrupted tarball"
@@ -80,10 +98,11 @@ testImportTarball = provideCallStack $ do
 
 testBadTarball :: RequireCallStack => TestEff ()
 testBadTarball = do
+  FloraEnv{pool} <- Reader.ask
   content <- readTarball "bad-tar-0.1.0.0.tar.gz"
   let pname = PackageName "bad-tar"
       version = mkVersion [0, 1, 0, 0]
-  res <- Update.insertTar pname version content
+  res <- withReadWritePool pool $ Update.insertTar (Namespace "local-hackage") pname version content
   case res of
     Right _ -> assertFailure "Imported bad tarball"
     Left (BlobStoreTarError _ _ (TarUnsupportedEntry entry)) ->
@@ -92,10 +111,11 @@ testBadTarball = do
 
 testMalformedTarball :: RequireCallStack => TestEff ()
 testMalformedTarball = do
+  FloraEnv{pool} <- Reader.ask
   content <- readTarball "malformed-tar-0.1.0.0.tar.gz"
   let pname = PackageName "malformed-tar"
       version = mkVersion [0, 1, 0, 0]
-  res <- Update.insertTar pname version content
+  res <- withReadWritePool pool $ Update.insertTar (Namespace "local-hackage") pname version content
   case res of
     Right _ -> assertFailure "Imported malformed tarball"
     Left (BlobStoreTarError _ _ (TarUnexpectedLayout path)) -> assertEqual_ path "b-0.1.0.0"

@@ -41,6 +41,8 @@ type instance
   AuthServerData (AuthProtect "cookie-auth") =
     SessionWithCookies User
 
+newtype AdminSession = AdminSession (SessionWithCookies User)
+
 type instance
   AuthServerData (AuthProtect "cookie-admin") =
-    SessionWithCookies User
+    AdminSession

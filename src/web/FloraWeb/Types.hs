@@ -21,11 +21,9 @@ import Effectful
 import Effectful.Concurrent (Concurrent)
 import Effectful.Error.Static (Error)
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Prometheus
 import Effectful.Reader.Static (Reader)
 import Effectful.Time (Time)
-import Effectful.Trace
 import GHC.Clock (getMonotonicTime)
 import GHC.Generics
 import Servant (FromHttpApiData (..), Handler, ServerError)
@@ -39,9 +37,7 @@ newtype WebEnvStore = WebEnvStore (MVar WebEnv)
 type FloraEff = Eff RouteEffects
 
 type RouteEffects =
-  '[ Trace
-   , DB
-   , Time
+  '[ Time
    , Reader FeatureEnv
    , BlobStoreAPI
    , Error ServerError

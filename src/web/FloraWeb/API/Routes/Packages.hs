@@ -6,7 +6,7 @@ import Distribution.Version
 import GHC.Generics
 import Servant
 
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import FloraWeb.API.Routes.Packages.Types
 
 type API = NamedRoutes API'

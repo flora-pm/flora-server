@@ -27,12 +27,12 @@ import Security.Advisories.Core.HsecId qualified as HsecId
 import Security.CVSS
 
 import Advisories.Model.Affected.Types
+import Flora.Domain.Search
 import Flora.Environment
 import Flora.Environment.Env
 import Flora.Model.Category
 import Flora.Model.Category qualified as Category
-import Flora.Model.Package
-import Flora.Search
+import Flora.Model.Package.Types
 import FloraWeb.Components.AdvisoryListItem qualified as Component
 import FloraWeb.Components.Alert qualified as Component
 import FloraWeb.Components.CategoryCard qualified as Component
@@ -46,9 +46,9 @@ newtype ComponentName = ComponentName Text
 newtype ComponentTitle = ComponentTitle Text
   deriving newtype (Eq, Ord, Show)
 
-generateComponents :: (Fail :> es, FileSystem :> es, IOE :> es) => Eff es ()
-generateComponents = do
-  floraEnv <- getFloraEnv
+generateComponents :: (Fail :> es, FileSystem :> es, IOE :> es) => FilePath -> Eff es ()
+generateComponents config = do
+  floraEnv <- getFloraEnv config
   forM_ components $ \(filename, title, name, template) -> do
     let html = TL.replace "\"" "\\\"" $ renderHtml floraEnv template
     writeComponent filename title name html

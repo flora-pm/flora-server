@@ -1,14 +1,13 @@
 ARG APPLY_REFACT_VERSION=0.15.0.0
 ARG BASE_IMAGE_VERSION=22.04
-ARG CABAL_VERSION=3.16.0.0
-ARG FOURMOLU_VERSION=0.18.0.0
+ARG CABAL_VERSION=3.16.1.0
+ARG FOURMOLU_VERSION=0.20.0.0
 ARG GHCID_VERSION=0.8.9
 ARG GHC_TAGS_VERSION=1.9
 ARG GHC_VERSION=9.10.3
 ARG HLINT_VERSION=3.10
-ARG HLS_VERSION=2.12.0.0
-ARG POSTGRESQL_MIGRATION_VERSION=0.2.1.8
-ARG CABAL_GILD_VERSION=1.6.0.2
+ARG HLS_VERSION=2.14.0.0
+ARG CABAL_GILD_VERSION=1.8.4.1
 
 # This stage installs libraries required to install GHC and other tools
 FROM ubuntu:$BASE_IMAGE_VERSION AS base
@@ -22,14 +21,15 @@ RUN apt update \
         git \
         libffi-dev \
         libffi8 \
-        libgoogle-perftools-dev \
         libgmp-dev \
         libgmp10 \
+        libgoogle-perftools-dev \
         libncurses-dev \
         libncurses5 \
         libpq-dev \
         libsodium-dev \
         libtinfo5 \
+        liburing-dev \
         locales \
         pkg-config \
         postgresql-client \
@@ -57,7 +57,6 @@ ARG GHCID_VERSION
 ARG GHC_TAGS_VERSION
 ARG GHC_VERSION
 ARG HLINT_VERSION
-ARG POSTGRESQL_MIGRATION_VERSION
 ARG CABAL_GILD_VERSION
 
 ENV PATH="/opt/ghcup/.ghcup/bin:$PATH"
@@ -75,7 +74,6 @@ RUN ghcup gc -t -p -s -c
 RUN ghcup install ghc $GHC_VERSION
 RUN ghcup set ghc $GHC_VERSION
 
-RUN cabal install --install-method=copy --installdir=out/ --semaphore -j postgresql-migration-$POSTGRESQL_MIGRATION_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j fourmolu-$FOURMOLU_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$HLINT_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j cabal-gild-$CABAL_GILD_VERSION
@@ -90,6 +88,7 @@ ARG GID
 ARG UID
 ARG USER
 ENV USER=$USER
+ARG HLS_VERSION
 
 COPY --from=setup-haskell-tools /out /opt/bin
 COPY --from=setup-haskell-tools /opt/ghcup /opt/ghcup
@@ -98,9 +97,11 @@ ENV PATH="/opt/ghcup/.ghcup/bin:/opt/bin:$PATH"
 
 RUN ghcup install ghc $GHC_VERSION
 RUN ghcup set ghc $GHC_VERSION
+RUN ghcup install hls $HLS_VERSION --set
+
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 RUN apt update
 RUN apt install -y direnv \
@@ -133,5 +134,9 @@ RUN echo "source /opt/ghcup/.ghcup/env" >>~/.bashrc
 RUN echo 'eval "$(direnv hook bash)"' >>~/.bashrc
 RUN echo 'direnv allow' >>~/.bashrc
 RUN cabal update
+
+# Mountpoint for the eventlog-socket volume shared with the live-eventlog
+# forwarder; pre-created so the volume inherits writable permissions.
+RUN mkdir -p -m 1777 /tmp/flora-eventlog
 
 WORKDIR /flora-server

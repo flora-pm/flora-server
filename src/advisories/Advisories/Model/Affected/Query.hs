@@ -1,51 +1,49 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Advisories.Model.Affected.Query where
 
 import Data.Text (Text)
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (query, queryOne)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..), Query)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 import Security.Advisories.Core.HsecId
 
 import Advisories.HsecId.Orphans ()
 import Advisories.Model.Advisory.Types
 import Advisories.Model.Affected.Types
+import Flora.Database
 import Flora.Model.Package.Types
 
 getAffectedPackageById
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => AffectedPackageId
   -> Eff es (Maybe AffectedPackageDAO)
-getAffectedPackageById affectedPackageId = dbtToEff $ selectById (Only affectedPackageId)
+getAffectedPackageById affectedPackageId = queryOne (_selectWhere @AffectedPackageDAO [primaryKey @AffectedPackageDAO]) (Only affectedPackageId)
 
 getAffectedPackagesByAdvisoryId
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => AdvisoryId
   -> Eff es (Vector AffectedPackageDAO)
 getAffectedPackagesByAdvisoryId advisoryId =
-  dbtToEff $ selectManyByField @AffectedPackageDAO [field| advisory_id |] (Only advisoryId)
+  Vector.fromList <$> query (_selectWhere @AffectedPackageDAO [[field| advisory_id |]]) (Only advisoryId)
 
 getAffectedPackagesByHsecId
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => HsecId
   -> Eff es (Vector AffectedPackageDAO)
 getAffectedPackagesByHsecId hsecId =
-  dbtToEff $
-    joinSelectOneByField @AffectedPackageDAO @AdvisoryDAO
-      [field| advisory_id |]
-      [field| hsec_id |]
-      hsecId
+  Vector.fromList
+    <$> query (_joinSelectOneByField @AffectedPackageDAO @AdvisoryDAO [field| advisory_id |] [field| hsec_id |]) (Only hsecId)
 
-getAdvisoryPreviewsByPackageId :: DB :> es => PackageId -> Eff es (Vector PackageAdvisoryPreview)
+getAdvisoryPreviewsByPackageId :: (IOE :> es, ReadDB :> es) => PackageId -> Eff es (Vector PackageAdvisoryPreview)
 getAdvisoryPreviewsByPackageId packageId =
-  dbtToEff $
-    query
+  Vector.fromList
+    <$> query
       [sql|
 SELECT s0.hsec_id
      , p3.namespace
@@ -67,10 +65,10 @@ GROUP BY s0.hsec_id, p3.namespace, p3.name, s0.summary, fixed, s0.published, a1.
   |]
       (Only packageId)
 
-searchInAdvisories :: DB :> es => (Word, Word) -> Text -> Eff es (Vector PackageAdvisoryPreview)
+searchInAdvisories :: (IOE :> es, ReadDB :> es) => (Word, Word) -> Text -> Eff es (Vector PackageAdvisoryPreview)
 searchInAdvisories (offset, limit) searchTerm =
-  dbtToEff $
-    query
+  Vector.fromList
+    <$> query
       searchAdvisoriesQuery
       (searchTerm, searchTerm, offset, limit)
 
@@ -111,16 +109,9 @@ SELECT r0.hsec_id
 FROM results as r0
   |]
 
-countAdvisorySearchResults :: DB :> es => Text -> Eff es Word
+countAdvisorySearchResults :: (IOE :> es, ReadDB :> es) => Text -> Eff es Word
 countAdvisorySearchResults searchTerm =
-  dbtToEff $ do
-    (result :: Maybe (Only Int)) <-
-      queryOne
-        countAdvisorySearchResultsQuery
-        (searchTerm, searchTerm)
-    case result of
-      Just (Only n) -> pure $ fromIntegral n
-      Nothing -> pure 0
+  queryCount countAdvisorySearchResultsQuery (searchTerm, searchTerm)
 
 countAdvisorySearchResultsQuery :: Query
 countAdvisorySearchResultsQuery =

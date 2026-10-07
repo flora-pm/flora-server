@@ -5,7 +5,6 @@ import Data.Text qualified as Text
 import Data.Vector qualified as Vector
 import Effectful
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
@@ -13,23 +12,26 @@ import Effectful.Time qualified as Time
 import Log qualified
 import Lucid
 import Optics.Core (view)
+import RequireCallStack
 import Servant (Headers (..), ServerT)
 import Text.Atom.Feed qualified as Atom
 
+import Flora.Database
+import Flora.Domain.Search (searchPackageByName)
 import Flora.Environment.Env
 import Flora.Model.Feed.Query qualified as Query
 import Flora.Model.Feed.Types
 import Flora.Model.Package.Types
 import Flora.Model.User
-import Flora.Search (searchPackageByName)
+import Flora.Monad
 import FloraWeb.Atom (makeFeed)
 import FloraWeb.Common.Auth
 import FloraWeb.Feed.Routes
 import FloraWeb.Feed.Templates qualified as Feed
 import FloraWeb.Pages.Templates
-import FloraWeb.Types (FloraEff)
+import FloraWeb.Types
 
-server :: ServerT Routes FloraEff
+server :: RequireCallStack => ServerT Routes FloraEff
 server =
   Routes'
     { feed = showPackageFeedHandler
@@ -42,21 +44,21 @@ homeFeedHandler
      , Reader FeatureEnv :> es
      )
   => SessionWithCookies (Maybe User)
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 homeFeedHandler (Headers session _) = do
   templateEnv <- templateFromSession session defaultTemplateEnv
   render templateEnv Feed.showFeedsBuilderPage
 
 showPackageFeedHandler
-  :: ( DB :> es
+  :: ( IOE :> es
      , Reader FloraEnv :> es
      , Time :> es
      )
   => [PackageFilter]
-  -> Eff es Atom.Feed
+  -> FloraM es Atom.Feed
 showPackageFeedHandler packageFilter = do
   env <- Reader.ask @FloraEnv
-  entries <- Query.getEntriesByPackage (fmap (view #selectedPackages) packageFilter) 0 100
+  entries <- withReadOnlyPool env.pool $ Query.getEntriesByPackage (fmap (view #selectedPackages) packageFilter) 0 100
   lastUpdatedAt <-
     case Vector.uncons entries of
       Nothing -> Time.currentTime
@@ -72,15 +74,15 @@ showPackageFeedHandler packageFilter = do
       entries
 
 searchPackageHandler
-  :: ( DB :> es
-     , IOE :> es
+  :: ( IOE :> es
      , Log :> es
      , Reader FeatureEnv :> es
+     , Reader FloraEnv :> es
      , Time :> es
      )
   => SessionWithCookies (Maybe User)
   -> PackageFeedSearchForm
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 searchPackageHandler (Headers session _) PackageFeedSearchForm{search = packageName} = do
   templateEnv <- templateFromSession session defaultTemplateEnv
   results <-

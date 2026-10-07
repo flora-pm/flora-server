@@ -6,20 +6,22 @@ module FloraWeb.Pages.Server.Settings
 import Control.Monad.IO.Class
 import Data.ByteString.Base32 qualified as Base32
 import Data.Text.Encoding qualified as Text
-import Effectful (Eff, IOE, (:>))
+import Effectful
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
 import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
-import Log qualified
 import Lucid
 import Optics.Core
+import RequireCallStack
 import Sel.HMAC.SHA256 qualified as HMAC
 import Servant (HasServer (..), Headers (..))
 
+import Flora.Database
 import Flora.Environment.Env
 import Flora.Model.User
 import Flora.Model.User.Update qualified as Update
+import Flora.Monad
 import Flora.QRCode qualified as QRCode
 import FloraWeb.Common.Auth.TwoFactor qualified as TwoFactor
 import FloraWeb.Common.Utils (redirect)
@@ -30,7 +32,7 @@ import FloraWeb.Pages.Templates.Types
 import FloraWeb.Session
 import FloraWeb.Types (FloraEff)
 
-server :: ServerT Routes FloraEff
+server :: RequireCallStack => ServerT Routes FloraEff
 server =
   Routes'
     { index = userSettingsHandler
@@ -40,7 +42,7 @@ server =
     , deleteTwoFactorSetup = deleteTwoFactorSetupHandler
     }
 
-userSettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> Eff es (Html ())
+userSettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> FloraM es (Html ())
 userSettingsHandler (Headers session _) = do
   let user = session.user
   templateEnv' <- templateFromSession session defaultTemplateEnv
@@ -51,7 +53,7 @@ userSettingsHandler (Headers session _) = do
   render templateEnv $
     Settings.dashboard session.sessionId user
 
-userSecuritySettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> Eff es (Html ())
+userSecuritySettingsHandler :: (IOE :> es, Reader FeatureEnv :> es) => SessionWithCookies User -> FloraM es (Html ())
 userSecuritySettingsHandler (Headers session _) = do
   templateEnv' <- templateFromSession session defaultTemplateEnv
   let templateEnv =
@@ -63,16 +65,15 @@ userSecuritySettingsHandler (Headers session _) = do
     Settings.securitySettings
 
 getTwoFactorSettingsHandler
-  :: ( DB :> es
-     , IOE :> es
+  :: ( IOE :> es
      , Reader FeatureEnv :> es
      , Time :> es
      )
   => SessionWithCookies User
-  -> Eff es (Html ())
+  -> FloraM es (Html ())
 getTwoFactorSettingsHandler (Headers session _) = do
   let user = session.user
-  FloraEnv{domain} <- getEnv session
+  FloraEnv{domain, pool} <- getEnv session
   templateEnv' <- templateFromSession session defaultTemplateEnv
   let templateEnv =
         templateEnv'
@@ -81,7 +82,7 @@ getTwoFactorSettingsHandler (Headers session _) = do
   case user.totpKey of
     Nothing -> do
       userKey <- liftIO HMAC.newAuthenticationKey
-      Update.setupTOTP user.userId userKey
+      withReadWritePool pool $ Update.setupTOTP user.userId userKey
       let uri = TwoFactor.uriFromKey domain user.email userKey
       let qrCode =
             QRCode.generateQRCode uri
@@ -104,16 +105,17 @@ getTwoFactorSettingsHandler (Headers session _) = do
               (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
 
 postTwoFactorSetupHandler
-  :: ( DB :> es
-     , IOE :> es
+  :: ( IOE :> es
      , Log :> es
      , Reader FeatureEnv :> es
+     , Reader FloraEnv :> es
      , Time :> es
      )
   => SessionWithCookies User
   -> TwoFactorConfirmationForm
-  -> Eff es TwoFactorSetupResult
+  -> FloraM es TwoFactorSetupResult
 postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = userCode} = do
+  FloraEnv{pool} <- Reader.ask
   let user = session.user
   templateEnv' <- templateFromSession session defaultTemplateEnv
   case user.totpKey of
@@ -122,8 +124,7 @@ postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = u
       validated <- liftIO $ TwoFactor.validateTOTP userKey userCode
       if validated
         then do
-          Update.confirmTOTP user.userId
-          Log.logInfo_ "Code validation succeeded"
+          withReadWritePool pool $ Update.confirmTOTP user.userId
           pure $ TwoFactorSetupSuccess "/settings/security/two-factor"
         else do
           let templateEnv =
@@ -143,8 +144,9 @@ postTwoFactorSetupHandler (Headers session _) TwoFactorConfirmationForm{code = u
                 (Base32.encodeBase32Unpadded $ HMAC.unsafeAuthenticationKeyToBinary userKey)
           pure $ TwoFactorSetupFailure body
 
-deleteTwoFactorSetupHandler :: (DB :> es, Time :> es) => SessionWithCookies User -> Eff es DeleteTwoFactorSetupResponse
+deleteTwoFactorSetupHandler :: (IOE :> es, Reader FloraEnv :> es, Time :> es) => SessionWithCookies User -> FloraM es DeleteTwoFactorSetupResponse
 deleteTwoFactorSetupHandler (Headers session _) = do
+  FloraEnv{pool} <- Reader.ask
   let user = session.user
-  Update.unSetTOTP user.userId
+  withReadWritePool pool $ Update.unSetTOTP user.userId
   pure $ redirect "/settings/security"

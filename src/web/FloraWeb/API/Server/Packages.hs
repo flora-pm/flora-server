@@ -1,7 +1,6 @@
 module FloraWeb.API.Server.Packages where
 
 import Control.Applicative (asum)
-import Data.Function
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text.Display
@@ -10,23 +9,24 @@ import Data.Vector qualified as Vector
 import Distribution.Version (Version)
 import Effectful (IOE, (:>))
 import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect (DB)
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
-import Effectful.Trace
 import RequireCallStack
 import Servant hiding ((:>))
 
+import Flora.Database
+import Flora.Domain.Package (resolveExactRelease, resolvePackage, resolveReleaseAtVersion)
+import Flora.Domain.Search (searchPackageByName)
+import Flora.Environment.Env
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Component.Types
-import Flora.Model.Package.Guard
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
-import Flora.Model.Release.Guard (guardThatReleaseExists)
-import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Monad
-import Flora.Search (searchPackageByName)
 import FloraWeb.API.Errors
 import FloraWeb.API.Routes.Packages qualified as Packages
 import FloraWeb.API.Routes.Packages.Types
@@ -54,15 +54,15 @@ getDependenciesHandler
   -> Bool
   -> FloraM RouteEffects (PackageDependenciesDTO 0)
 getDependenciesHandler namespace packageName version transitive = do
-  package <- guardThatPackageExists namespace packageName packageNotFound
-  release <-
-    guardThatReleaseExists package.packageId version $
-      versionNotFound
-        package.namespace
-        package.name
+  FloraEnv{pool} <- Reader.ask
+  (package, release) <-
+    Error.runErrorWith (const renderPackageResolutionError) $ do
+      package <- resolvePackage namespace packageName
+      release <- resolveExactRelease package version
+      pure (package, release)
 
-  mMainLibrary <- Query.getComponent release.releaseId (display packageName) Library
-  mMainExecutable <- Query.getComponent release.releaseId (display packageName) Executable
+  mMainLibrary <- withReadOnlyPool pool $ Query.getComponent release.releaseId (display packageName) Library
+  mMainExecutable <- withReadOnlyPool pool $ Query.getComponent release.releaseId (display packageName) Executable
 
   let componentToUse =
         asum
@@ -75,40 +75,34 @@ getDependenciesHandler namespace packageName version transitive = do
     Just component ->
       if transitive
         then do
-          Query.getTransitiveDependencies component.componentId
+          withReadOnlyPool pool $ Query.getTransitiveDependencies component.componentId
         else do
-          requirements <- Query.getRequirements package.name release.releaseId
+          requirements <- withReadOnlyPool pool $ Query.getRequirements package.name release.releaseId
           pure $ Vector.singleton $ PackageDependencies package.namespace package.name requirements
-
   pure $ PackageDependenciesDTO dependencies
 
 getPackageHandler
-  :: ( DB :> es
-     , Error ServerError :> es
-     , Trace :> es
+  :: ( Error ServerError :> es
+     , IOE :> es
+     , Reader FloraEnv :> es
      )
   => Namespace
   -> PackageName
   -> (FloraM es) (PackageDTO 0)
 getPackageHandler namespace packageName = do
-  package <- guardThatPackageExists namespace packageName packageNotFound
-  releases <- Query.getReleases package.packageId
-  let latestRelease =
-        releases
-          & Vector.filter (\r -> not (fromMaybe False r.deprecated))
-          & Vector.maximumBy (compare `on` (.version))
-      version = latestRelease.version
-  release <-
-    guardThatReleaseExists package.packageId version $
-      versionNotFound
-        package.namespace
-        package.name
-  components <- Query.getComponentsByReleaseId release.releaseId
+  FloraEnv{pool} <- Reader.ask
+  (package, release) <-
+    Error.runErrorWith (const renderPackageResolutionError) $ do
+      package <- resolvePackage namespace packageName
+      (release, _releases) <- resolveReleaseAtVersion package Nothing
+      pure (package, release)
+  components <- withReadOnlyPool pool $ Query.getComponentsByReleaseId release.releaseId
   pure $ toPackageDTO package release components
 
 getPackagesByPrefixHandler
-  :: ( DB :> es
+  :: ( IOE :> es
      , Log :> es
+     , Reader FloraEnv :> es
      , Time :> es
      )
   => Maybe Text
@@ -126,21 +120,21 @@ getPackagesByPrefixHandler maybePackageName maybeOffset maybeLimit =
         (Vector.map (\p -> p.name) packagesInfo)
 
 getVersionedPackageHandler
-  :: ( DB :> es
-     , Error ServerError :> es
+  :: ( Error ServerError :> es
      , IOE :> es
-     , Trace :> es
+     , IOE :> es
+     , Reader FloraEnv :> es
      )
   => Namespace
   -> PackageName
   -> Version
   -> (FloraM es) (PackageDTO 0)
 getVersionedPackageHandler namespace packageName version = do
-  package <- guardThatPackageExists namespace packageName packageNotFound
-  release <-
-    guardThatReleaseExists package.packageId version $
-      versionNotFound
-        package.namespace
-        package.name
-  components <- Query.getComponentsByReleaseId release.releaseId
+  FloraEnv{pool} <- Reader.ask
+  (package, release) <-
+    Error.runErrorWith (const renderPackageResolutionError) $ do
+      package <- resolvePackage namespace packageName
+      release <- resolveExactRelease package version
+      pure (package, release)
+  components <- withReadOnlyPool pool $ Query.getComponentsByReleaseId release.releaseId
   pure $ toPackageDTO package release components

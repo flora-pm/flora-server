@@ -1,0 +1,14 @@
+FROM haskell:9.10.3 AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/*
+RUN cabal update && \
+    cabal install --ignore-project eventlog-live-0.8.0.0 \
+      --constraint 'grpc-spec -snappy' \
+      --constraint 'blockio +serialblockio' \
+      --installdir=/out --install-method=copy
+FROM debian:bookworm-slim
+COPY --from=build /out/eventlog-live-otlp /usr/local/bin/eventlog-live-otlp
+
+RUN mkdir -p -m 1777 /run/flora
+ENTRYPOINT ["/usr/local/bin/eventlog-live-otlp"]

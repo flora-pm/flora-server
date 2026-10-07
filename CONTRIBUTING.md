@@ -1,33 +1,10 @@
-Thank you for your contribution to Flora! We need you to read and understand this document when you open your PR or your ticket:
+# Contributing to Flora
 
-## Project Setup
+Thank you for your contribution to Flora! We need you to read and understand this document when you open your PR or your ticket.
 
-We need you to read and acknowledge our [Code of Conduct][CoC] document.
+Before you proceed, we need you to read and acknowledge our [Code of Conduct][CoC] document.
 
-The compiler version used is described in the `cabal.project` file.
-`cabal-install` version 3.8 or higher is needed.
-
-The following Haskell command-line tools will have to be installed:
-
-* `postgresql-migration`: To perform schema migrations
-* `fourmolu`: To style the code base. Version is 0.17.0.0
-* `hlint` v3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
-* `cabal-gild` and `nixfmt`: To style the cabal and nix files
-* `ghcid`: To automatically reload the Haskell code base upon source changes
-* `ghc-tags`: To generate ctags or etags for the project
-
-Outside of the flora root directory run:
-```
-cabal install postgresql-migration hlint cabal-gild ghcid ghc-tags --semaphore -j
-```
-
-(Some of the above packages could have incompatible dependencies, so consider installing them separately with `cabal install`)
-
-* [`gperftools`](https://pkgs.org/download/gperftools): This gives us `tcmalloc`, an alternative malloc implementation that helps against memory fragmentation in long-running servers
-* `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
-* `yarn`: The tool that handles the JavaScript code bases
-* `esbuild`: The tool that handles asset bundling
-* `changelog-d` v1.0: https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0
+## How to contribute
 
 ### Questions
 
@@ -37,6 +14,11 @@ Open a thread in the [Questions][Questions board] discussion board. You'll get h
 
 Open a [Ticket][Ticket] and tell us what you can about your problem.
 
+### Feature requests
+
+Open a thread in the [Feature Request][Feature Request board] discussion board.
+Be certain to search if it has already been suggested!
+
 ### Pull Requests
 
 You need to
@@ -44,13 +26,6 @@ You need to
 * Read this document
 * Have a ticket that you can relate the PR to, so that we can have some context for your change
 * Provide screenshots of before/after if you change the UI.
-* Put `[FLORA-XXXX]` where XXXX is the ticket this PR is related to, or [NO-ISSUE] if no tickets are related, in the
-PR title and commit message:
-
-```
-[NO-ISSUE] Update dependencies for Storybook.js
-```
-
 * Insert a changelog entry in the `changelog.d` directory, based on this template:
 
 ```cabal
@@ -67,78 +42,162 @@ description: {
 }
 ```
 
-### Feature request
+You can include (in moderation) some shitposting in your contributions, be it funny memes in your PR descriptions,
+humour in git commits that do not prevent their understanding. They will be accepted at the core team's discretion.
 
-Open a thread in the [Feature Request][Feature Request board] discussion board.
-Be certain to search if it has already been suggested!
+Example:
 
-### Making a release
-
-Here is the procedure to follow when making a release:
-
-1. Create a PR to prepare the release of the next version targeting `development`. It must include:
-    * Bump the version in the flora.cabal file
-    * Generate the changelog with ./scripts/generate-changelog.sh
-    * Write down the date in the CHANGELOG
-    * Remove the changelog.d entries
-
-2. Once the PR is merged into `development`, merge `development` into `main`
-3. Create a [new release](https://github.com/flora-pm/flora-server/releases/new).
-
-### Profiling
-
-If you are about to run `flora-cli` or `flora-server` with profiling, please first read
-https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/.
-
-Here are the steps:
-
-1. `$ cabal build flora-server -f prof` (or `flora-cli`)
-2. `$ cabal run -- flora-server +RTS -l -hT -i0.5 -RTS`
-3. `$ eventlog2html flora-server.eventlog`
-
-Also consider [capturing live eventlogs](#live-eventlogs) during developement.
-
-## Installation and Configuration
-
-Step 1. Read The above "Project Setup" section.
-Step 2. Keep reading from here.
-
-### Flora server
-
-The configuration is handled through environment variables. They are all prefixed by `FLORA_` to avoid conflict, and the
-server will tell you which ones are missing.
-
-To start in the best of conditions, create a file called `environment.local.sh` with the following content:
-
-```bash
-source environment.sh
+```
+Sponsored-By: 2 bottles of Club Mate & a heat wave in Western Europe
 ```
 
-This will get all the variables from `environment.sh` and allow you to override them locally.
+## Development environment
 
-If you use `direnv`, you are advised to create a symbolic link from `environment.local.sh` to `.envrc`.
+The compiler version used is described in the `cabal.project` file.
+`cabal-install` version 3.16 or higher is needed.
 
-You can then build the server with `make build`. Do **not** simply run `cabal build`.
+Three environments are supported: Docker (recommended), your host machine, and Nix.
 
-A very useful command to run is
+### Docker (recommended)
 
-```bash
-$ make start-tmux
-```
-To start a tmux session with code reloading for frontend and backend:
-
-
-To explore the other possible `Make` rules, type:
+A docker-based workflow brings all dependencies with it, and communicates with another container
+for the PostgreSQL database.
 
 ```bash
-$ make help
+## Build the development container
+$ make docker-build
+## Start the containers for the database and the server
+$ make docker-up
+## Once the containers are running, you can enter the development environment and start hacking
+$ make docker-enter
+## You'll be in the docker container, ready to start Flora
+(docker)$ make start-tmux
+## You'll be in a tmux session, everything should be launched
+## Visit localhost:8084 from your web browser to see if it all works.
 ```
 
-### Database
+The committed `.env` file sets `COMPOSE_PROFILES=local`, which is why plain `docker compose up`
+(and `make docker-up`) starts the application services (`devel`, `flora-database`) along with
+`prometheus` and `jaeger`. Passing an explicit `--profile` flag on the command line overrides
+this default, so combine profiles explicitly when you need more than one
+(see [Live Eventlogs](#live-eventlogs)).
 
-The Flora server uses PostgreSQL 14. Please install it.
+#### Running Haskell Language Server (HLS)
 
-#### Side-Quest: First installation
+The `devel` container contains `haskell-language-server`, so you do not need to install it on the host.
+
+To use HLS from your editor:
+
+1. Start the containers with `make docker-up`.
+2. Configure your editor to start the language server with `scripts/hls-docker.sh`.
+3. Open a Haskell file from the repository. The first load compiles the project and can take several minutes.
+
+The files that follow are project-local. Create them in the root of your clone. They do not change
+the editor settings for your other projects.
+
+##### VS Code
+
+Create `.vscode/settings.json`:
+
+```jsonc
+{
+  "haskell.serverExecutablePath": "${workspaceFolder}/scripts/hls-docker.sh"
+}
+```
+
+##### Neovim
+
+Turn the  `exrc` option on and create `.nvim.lua`:
+
+```lua
+local root = vim.fn.getcwd()
+vim.lsp.config("hls", { cmd = { root .. "/scripts/hls-docker.sh", "--lsp" } })
+```
+
+##### Helix
+
+Create `.helix/languages.toml`.
+
+```toml
+[language-server.haskell-language-server]
+command = "scripts/hls-docker.sh"
+args = ["--lsp"]
+```
+##### Emacs
+
+Create `.dir-locals.el`.
+
+With `lsp-mode` and `lsp-haskell`:
+
+```elisp
+((haskell-mode
+  . ((eval . (setq-local lsp-haskell-server-path
+                         (expand-file-name "scripts/hls-docker.sh"
+                                           (locate-dominating-file default-directory ".dir-locals.el")))))))
+```
+
+With `eglot`:
+
+```elisp
+((haskell-mode
+  . ((eval . (let ((script (expand-file-name "scripts/hls-docker.sh"
+                                             (locate-dominating-file default-directory ".dir-locals.el"))))
+               (setq-local eglot-server-programs
+                           (cons (list 'haskell-mode script "--lsp") eglot-server-programs)))))))
+```
+
+If the container restarts, restart the language server in your editor.
+
+### Host setup
+
+The following Haskell command-line tools have to be installed:
+
+* `fourmolu` 0.20.0.0: To style the code base
+* `hlint` 3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
+* `cabal-gild`: To style cabal files
+* `ghcid`: To automatically reload the Haskell code base upon source changes
+* `ghc-tags`: To generate ctags or etags for the project
+* `eventlog2html`: To render eventlog profiles (see [Profiling](#profiling))
+* [`changelog-d`](https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0) 1.0: To generate the changelog. Not on Hackage; install it from the Codeberg release.
+
+```
+cabal install --ignore-project fourmolu-0.20.0.0 hlint-3.10 apply-refact cabal-gild ghcid ghc-tags eventlog2html --semaphore -j
+```
+
+(Some of the above packages could have incompatible dependencies, so consider installing them separately with `cabal install`)
+
+The following system dependencies are needed:
+
+* [`gperftools`](https://pkgs.org/download/gperftools): This gives us `tcmalloc`, an alternative malloc implementation that helps against memory fragmentation in long-running servers
+* `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
+* `yarn`: The tool that handles the JavaScript code bases
+* `esbuild`: The tool that handles asset bundling
+* PostgreSQL: see [PostgreSQL: first installation](#postgresql-first-installation) if this is your first time
+
+#### Notes on macOS
+
+`cabal.project.freeze` is not portable, so make sure to delete it before running `make build`, if not using the Docker-based setup.
+
+If using `brew`, install both libsodium and pkg-config:
+```
+$ brew install libsodium pkg-config
+```
+
+And add the stanza matching your architecture (pick one) to your `cabal.project.local`:
+```
+-- ARM
+package *
+  extra-include-dirs: /opt/homebrew/include
+  extra-lib-dirs: /opt/homebrew/lib
+```
+```
+-- Intel
+package *
+  extra-include-dirs: /usr/local/include
+  extra-lib-dirs: /usr/local/lib
+```
+
+#### PostgreSQL: first installation
 
 If this is your first time with PostgreSQL, here is what you should do:
 
@@ -148,17 +207,17 @@ If this is your first time with PostgreSQL, here is what you should do:
 
 ```diff
 local   all             all                                     peer
-# IPv4 local connections:
+## IPv4 local connections:
 - host    all             all             127.0.0.1/32            md5
 + host    all             all             127.0.0.1/32            scram-sha-256
-# IPv6 local connections:
+## IPv6 local connections:
 - host    all             all             ::1/128                 md5
 + host    all             all             ::1/128                 scram-sha-256
 ```
-3. Restart the database engine (using `systemctl` on Linux, or `brew services restart postgresql@14`
+3. Restart the database engine (using `systemctl` on Linux, or `brew services restart postgresql@17`
     if you have installed PostgreSQL with `brew`)
 
-3. Connect (via sudo) to the `root` user
+4. Connect (via sudo) to the `root` user
 
 ```bash
 user $ sudo -s
@@ -169,7 +228,7 @@ Then as root, connect to the postgres account, and open a `psql` shell.
 ```bash
 root # su -l postgres
 postgres $ psql
-psql (14.7 (Ubuntu 14.7-1.pgdg18.04+1))
+psql (17.9 (OS version here))
 Type "help" for help.
 ```
 
@@ -181,144 +240,11 @@ postgres=# alter role postgres with password 'postgres';
 
 And you are good to go.
 
-#### Setup project
-
-To create the database and apply the migrations, type:
-
-```bash
-$ make db-setup
-```
-
-you can also use `db-create` and `db-drop` to create and delete the database in the PostgreSQL instance.
-
-### Docker Workflow
-
-A docker-based workflow is provided. The idea is to develop from within a container that brings with it all dependencies,
-and communicates with another container for the PostgreSQL database.
-
-```bash
-# Start the containers for the database and the server
-$ make docker-up
-# Once the containers are running, you can enter the development environment and start hacking
-$ make docker-enter
-# You'll be in the docker container. Environment variables are automatically set
-# so you should be able to start Flora
-(docker)$ make start-tmux
-# You'll be in a tmux session, everything should be launched
-# Visit localhost:8084 from your web browser to see if it all works.
-```
-
-If you need to rebuild the container, run the following command:
-
-```bash
-$ make docker-build
-```
-
-### Provisioning the database
-
-After everything is set up, (locally or via Docker), you can start populating the database:
-
-```bash
-$ make db-setup
-$ make db-provision
-$ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
-    --email "admin@localhost" --password "password123"
-$ make db-provision-packages
-```
-
-### Importing a package index
-
-The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shit and giggles.
-
-You can do so with:
-
-```bash
-$ cabal run flora-cli -- import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
-  --repository hackage.haskell.org
-```
-
-Similarly if you have the [cardano packages index](https://input-output-hk.github.io/cardano-haskell-packages/) configured, run:
-
-```bash
-$ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz \
-  --repository "cardano"
-```
-
-### Live Eventlogs
-
-To enable capturing live events from Flora server running locally:
-
-1. Ensure `FLORA_EVENTLOG_SOCKET` is being present in your local environment config script.
-2. Run:
-
-```
-$ source environment.local.sh
-$ cabal run -- flora-server  +RTS -l -hT --eventlog-flush-interval=1 -RTS
-```
-
-3. After that, run separately:
-
-```
-$ source environment.local.sh
-$ docker compose -f docker-compose.live-eventlog.yml up
-```
-
-4. Open `http://localhost:3000` and login with `admin` username and password. Ensure JavaScript enabled in your browser.
-
-To disable live events, `unset FLORA_EVENTLOG_SOCKET`.
-
 ### Nix
 
 Nix is an alternative way to interact with the Flora codebase.
 
-`Flora` provides a `nix` setup to make provisioning a development environment and creating reproducible and simple
-builds. To show all available flake attributes, run
-
-```bash
-nix flake show -Lv --allow-import-from-derivation --fallback
-```
-
-#### Using `nix` as provider for a development environment
-
-Obtaining a `devShell` which contains all tools for develop `flora`, including correct compiler and haskell tooling
-is as simple as running
-
-```bash
-nix -Lv develop
-```
-
-We recommend using our proposed `nix` config settings, including the extra binary cache, but ultimately it's up to you
-whether you trust those settings by reacting with `y` on the prompt after running a `nix` command.
-
-> **Warning**
-> accepting binary caches from a flake requires elevated rights for `nix`, only allow it, if you know what you're doing
-
-#### Using `nix` with `direnv`
-
-Direnv can drastically reduce development cycles by reducing the amount of times `nix` evaluates the expressions for
-this repository, which is a drastic improvement, especially with `IFD` (which this repo uses due to `callCabal2nix`).
-
-Devshell startup times will be instant if you didn't change anything in the configuration and as long as usual if you
-need to re-evaluate the `nix`-expressions (i.e. on cabal config changes or `nix` changes).
-
-Find out how to install `direnv` on your machine by visiting [their github](https://github.com/direnv/direnv/).o
-After installing, add a `.envrc` file to the root of the project containing:
-
-```bash
-use flake -Lv --fallback
-```
-
-and run
-
-```bash
-direnv allow
-```
-
-To reload the `direnv` environment, run
-
-```bash
-direnv reload
-```
+`Flora` provides a [nix](https://github.com/flora-pm/flora.nix) setup to make provisioning a development environment.
 
 #### Formatting and Linting with nix and `pre-commit-hooks`
 
@@ -348,51 +274,202 @@ If you want to commit although they do not succeed, pass `--no-verify` to the `g
 > **Warning**
 > Be careful that this does not mean you get around linting and formatting, as they're checked in `CI`
 
-#### Using `nix` to build and run flora
+## Working on Flora
 
-To verify, that the haskell code builds, the tests pass and the formatting and linting are correct, as well as the nix code
-working, run
+### Configuration
 
+The configuration is handled through KDL files. The following environments are provided:
+
+* `environment.kdl`: local development
+* `environment.docker.kdl`: development inside the Docker container
+* `environment.ci.kdl`: continuous integration
+* `environment.test.kdl` & `environment.test.local.kdl`: test suite
+
+When interfacing via `make` this is handled for you (the Makefile uses `environment.kdl`).
+If you're interfacing with the `flora-cli` directly, pass an environment with `--config` or `-c`.
+
+Example:
 ```bash
-nix flake check -Lv --allow-import-from-derivation
+cabal run -- flora-cli -c environment.kdl provision categories
 ```
 
-To build `flora`, invoke
+Use `flora-cli --help` to see what commands are available.
+
+A very useful command to run is
 
 ```bash
-nix build -Lv
+## Starts a tmux session with code reloading for frontend and backend
+$ make start-tmux
 ```
 
-To run the `cli`, run
+To explore the other possible `Make` rules, type:
 
 ```bash
-nix run .#cli
+$ make help
 ```
 
-To run the server, run
+### Database
+
+The `make` targets below use `environment.kdl`, which reaches the database on
+`localhost:5432`. This works on the host, including against the compose database,
+whose port is published.
+Inside the `devel` container the database lives on the `flora-database` host instead,
+so override the config there:
 
 ```bash
-nix run .#server
+(docker)$ make db-setup CONFIG=environment.docker.kdl
 ```
 
-#### Contributing to our `nix` infrastructure
+To create the database and apply the migrations, type:
 
-Contributions to our `nix` infrastructures are always appreciated, however, there are a couple of guidelines
-- don't forget to run formatting and linting (see above for `pre-commit-hooks`)
-- prefer cached derivations, that means:
-  - prefer upstream haskell packages over custom versions-
-  - prefer frameworks that have reliable and trusted binary caches
-- prefer versions with less IFD:
-  - prefer realized `nix` derivations over `callHackage` over `callCabal2nix`
-  - don't use custom packages if not absolutely necessary
-- locking happens in the `nix` flake
-  - `nix` provides a native locking mechanism with flakes, we only use that mechanism
-  - if we need a source of a package, we add it as a flake input with `flake = false;`
-  - we don't use any fetcher, if not absolutely needed (e.g. if you need a tarball which is
-    not unpacked, it might sometimes be necessary)
+```bash
+$ make db-setup
+```
+
+You can also use `db-create` and `db-drop` to create and delete the database, and `db-reset`
+to drop, re-create and re-provision it.
+
+Then populate the development database:
+
+```bash
+$ make db-provision
+$ cabal run -- flora-cli -c environment.kdl create-user --admin --can-login --username "admin" \
+    --email "admin@localhost" --password "password123"
+$ make db-provision-packages
+```
+
+#### Importing a package index
+
+The previous paragraph shows how to import test packages, but you may want to import a whole package index, for shits and giggles.
+
+You can do so with:
+
+```bash
+$ cabal run flora-cli -- -c environment.kdl import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
+  --repository hackage.haskell.org
+```
+
+Similarly if you have the [cardano packages index](https://input-output-hk.github.io/cardano-haskell-packages/) configured, run:
+
+```bash
+$ cabal run flora-cli -- -c environment.kdl import-index ~/.cabal/packages/cardano/01-index.tar.gz \
+  --repository "cardano"
+```
+
+#### Connecting to the local database
+
+If you need to connect to the database directly:
+
+```bash
+## flora_dev is the host-provisioned dev database; use flora_dev_1 for a database
+## provisioned with environment.docker.kdl, or flora_test for the test database
+psql -h localhost -p 5432 -U postgres -d flora_dev
+```
+
+### Profiling
+
+#### Offline profiling with eventlog2html
+
+If you are about to run `flora-cli` or `flora-server` with profiling, please first read
+https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/.
+
+Here are the steps:
+
+1. `$ cabal --project-file=cabal.profiling.project build flora-server` (or `flora-cli`)
+2. `$ cabal --project-file=cabal.profiling.project run -- flora-server -c environment.kdl +RTS -l -hi -i0.5 -RTS`
+3. `$ eventlog2html flora-server.eventlog`
+
+Also consider [capturing live eventlogs](#live-eventlogs) during development.
+
+#### Live Eventlogs
+
+Flora can stream its GHC eventlog live via
+[eventlog-live](https://github.com/well-typed/eventlog-live) 0.8.0.0: heap and
+GC metrics (to Prometheus). The `live-eventlog` compose profile runs the
+`eventlog-live-otlp` forwarders, an OpenTelemetry collector, Prometheus, and
+Grafana.
+
+The forwarders are configured through
+[OpenTelemetry environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables).
+`deployment/eventlog-live/eventlog-live-otlp.yaml` selects which processors run.
+
+1. Ensure `eventlogSocketDirectory` is set in your config file (the committed
+   environment files set it to `/tmp/flora-eventlog`).
+   Each executable creates its own `<progName>.sock` inside it.
+2. Run the server with eventlog RTS flags. These commands use
+   `environment.docker.kdl` and are meant to be run **inside the `devel`
+   container** (see [On the host machine](#on-the-host-machine) for host runs):
+
+```
+$ cabal --project-file=cabal.profiling.project run flora-server -- -c environment.docker.kdl +RTS -l -hi -i5 --eventlog-flush-interval=1 -RTS
+```
+
+flora-jobs-runner can be profiled the same way, with the same RTS flags:
+
+```
+$ cabal --project-file=cabal.profiling.project run flora-jobs-runner -- -c environment.docker.kdl +RTS -l -hi -i5 --eventlog-flush-interval=1 -RTS
+```
+
+Note: `--eventlog-flush-interval=1` has a measurable runtime cost; use it
+for profiling sessions only.
+
+`-i5` sets the heap-census interval to 5s; the RTS default of 0.1s floods the
+collector. The forwarders pass `-hi`, and the RTS must be given the same
+breakdown flag.
+
+##### Docker-compose
+
+The `live-eventlog` profile starts the observability stack (forwarders, collector, Prometheus, Grafana).
+
+In order to start both the application services and the observability stack, type:
+
+```bash
+$ docker compose --profile local --profile live-eventlog up --build
+```
+
+Then open `http://localhost:3000` and use the "Flora Eventlog Heap" dashboard
+for heap/GC metrics. If host port 3000 is taken, set `FLORA_GRAFANA_PORT` to
+remap Grafana's host port.
+
+##### On the host machine
+
+For a host-run executable, use a configuration whose database points at
+`localhost` (e.g. `environment.kdl`), create the socket
+directory (`mkdir -p /tmp/flora-eventlog`) and set
+`FLORA_EVENTLOG_DIR=/tmp/flora-eventlog` when starting the stack; a set
+`FLORA_EVENTLOG_DIR` makes the forwarders bind-mount that host directory
+instead of the named volume:
+
+```bash
+$ FLORA_EVENTLOG_DIR=/tmp/flora-eventlog docker compose --profile live-eventlog up --build
+```
+
+### Live reload
+
+During development, the server notifies the frontend when it restarts, or when assets change on disk,
+so that the page can be refreshed and the changes automatically visible.
+
+## Project Architecture
+
+Architecture documents live in [`architecture/`](architecture/):
+
+* [Project architecture](architecture/overview.md)
+* [The package import pipeline](architecture/import-pipeline.md)
+
+## Making a release (maintainers)
+
+Here is the procedure to follow when making a release:
+
+1. Create a PR to prepare the release of the next version targeting `development`. It must include:
+    * Bump the version in the flora.cabal file
+    * Generate the changelog with ./scripts/generate-changelog.sh
+    * Write down the date in the CHANGELOG
+    * Remove the changelog.d entries
+
+2. Once the PR is merged into `development`, merge `development` into `main`
+3. Create a [new release](https://github.com/flora-pm/flora-server/releases/new).
 
 [CoC]: https://github.com/flora-pm/flora-server/blob/development/CODE_OF_CONDUCT.md
 [Feature Request board]: https://github.com/flora-pm/flora-server/discussions/new?category=feature-requests
 [Questions board]: https://github.com/flora-pm/flora-server/discussions/categories/questions
 [Ticket]: https://github.com/flora-pm/flora-server/issues/new
-[nix-flakes]: https://nixos.wiki/wiki/Flakes

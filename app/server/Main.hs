@@ -6,6 +6,7 @@ module Main where
 
 import Control.Monad (forM_, unless)
 import Data.Function ((&))
+import Data.List (List)
 import Data.List qualified as List
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -13,56 +14,82 @@ import Data.Text qualified as Text
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Effectful
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
-import Effectful.Log (Log, runLog)
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff, runDB)
+import Effectful.Log
+import Effectful.Reader.Static qualified as Reader
 import Log qualified
+import NoThunks.Class
+import Options.Applicative (execParser)
+import RequireCallStack
 import System.Exit
 import System.IO
 
-import Flora.Environment (getFloraEnv)
+import Flora.Database
+import Flora.Debug.ThreadDump (labelCurrentThread)
+import Flora.Environment
 import Flora.Environment.Env (FloraEnv (..), MLTP (..))
 import Flora.Logging qualified as Logging
 import Flora.Model.PackageIndex.Types
-import FloraJobs.Scheduler (checkIfIndexRefreshJobIsPlanned)
+import Flora.Monad
 import FloraWeb.Server
 
 main :: IO ()
 main = do
+  labelCurrentThread "flora-server-main"
+  configFile <- execParser parseConfig
   hSetBuffering stdout LineBuffering
-  preFlightChecks
-  runFlora
+  preFlightChecks configFile
+  runFlora configFile
 
-preFlightChecks :: IO ()
-preFlightChecks = do
-  env <- getFloraEnv & runFileSystem & runFailIO & runEff
+preFlightChecks :: FilePath -> IO ()
+preFlightChecks config = do
+  env <- getFloraEnv config & runFileSystem & runFailIO & runEff
   runEff $ do
-    let withLogger = Logging.makeLogger env.mltp.logger
+    let withLogger = Logging.makeLogger "logs/flora-server.json" env.mltp.logger
     withLogger $ \appLogger ->
-      runDB env.pool
+      Reader.runReader env
         . withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
         $ runLog
           "flora-server"
           appLogger
           Log.LogTrace
+        $ provideCallStack
         $ do
-          checkExpectedTables
-          checkRepositoriesAreConfigured
-          checkIfIndexRefreshJobIsPlanned env.workerEnv
+          checkFloraEnvForThunks env
+          withReadOnlyPool env.pool checkExpectedTables
+          withReadOnlyPool env.pool checkRepositoriesAreConfigured
+  runEff $ shutdownFlora env
 
-checkExpectedTables :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
+checkFloraEnvForThunks :: (IOE :> es, Log :> es) => FloraEnv -> Eff es ()
+checkFloraEnvForThunks env = do
+  mThunk <- liftIO $ noThunks [] env
+  forM_ mThunk $ \info ->
+    Log.logAttention
+      "Unexpected thunk detected in FloraEnv (possible space leak): "
+      $ object
+        [ "thunk_context" .= info.thunkContext
+        , "thunk_info" .= info.thunkInfo
+        ]
+
+checkExpectedTables :: (IOE :> es, Log :> es, ReadDB :> es) => FloraM es ()
 checkExpectedTables = do
   -- Update the list in alphabetical order when adding or removing a table!
   let expectedTables =
         Set.fromList
           [ "affected_packages"
           , "affected_version_ranges"
+          , "arbiter_concurrency"
+          , "arbiter_concurrency_policies"
+          , "arbiter_gates"
+          , "arbiter_queues"
+          , "arbiter_rate_limit_policies"
+          , "arbiter_rate_limits"
+          , "arbiter_workers"
           , "blob_relations"
           , "categories"
           , "cron_schedules"
@@ -79,6 +106,7 @@ checkExpectedTables = do
           , "package_jobs_dlq"
           , "package_jobs_groups"
           , "package_jobs_results"
+          , "package_maintainers"
           , "package_uploaders"
           , "packages"
           , "persistent_sessions"
@@ -89,10 +117,9 @@ checkExpectedTables = do
           , "users"
           ]
   actualTables <-
-    dbtToEff $
-      Set.fromAscList . Vector.toList . Vector.map fromOnly
-        <$> query_
-          [sql|
+    Set.fromAscList . List.map fromOnly
+      <$> query_
+        [sql|
       SELECT table_name
       FROM information_schema.tables
       WHERE table_name <> 'schema_migrations'
@@ -130,14 +157,13 @@ checkExpectedTables = do
     forM_ messages Log.logAttention_
     liftIO exitFailure
 
-checkRepositoriesAreConfigured :: (DB :> es, IOE :> es, Log :> es) => Eff es ()
+checkRepositoriesAreConfigured :: (IOE :> es, Log :> es, ReadDB :> es) => Eff es ()
 checkRepositoriesAreConfigured = do
   let expectedRepositories = Set.fromList ["hackage", "cardano", "horizon", "mlabs"]
-  (result :: (Vector (Only Text))) <-
-    dbtToEff $
-      query_
-        (_selectWithFields @PackageIndex [[field| repository |]])
-  let actualRepositories = Set.fromList $ Vector.toList $ Vector.map fromOnly result
+  (result :: (List (Only Text))) <-
+    query_
+      (_selectWithFields @PackageIndex [[field| repository |]])
+  let actualRepositories = Set.fromList $ List.map fromOnly result
   let missingExpectedIndexes = Set.difference expectedRepositories actualRepositories
   let unexpectedIndexes = Set.difference actualRepositories expectedRepositories
   let (messages :: Vector Text) =

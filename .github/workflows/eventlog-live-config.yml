@@ -1,0 +1,35 @@
+name: Eventlog-live config schema
+
+on:
+  pull_request:
+    paths:
+      - deployment/eventlog-live/eventlog-live-otlp.yaml
+      - Dockerfile.eventlog-live-otlp
+      - .github/workflows/eventlog-live-config.yml
+  push:
+    branches: ["main", "development"]
+    paths:
+      - deployment/eventlog-live/eventlog-live-otlp.yaml
+      - Dockerfile.eventlog-live-otlp
+      - .github/workflows/eventlog-live-config.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the forwarder image
+        run: |
+          docker build . --file Dockerfile.eventlog-live-otlp --tag flora-eventlog-live-otlp
+
+      - name: Extract the config JSON Schema
+        run: |
+          docker run --rm --entrypoint /usr/local/bin/eventlog-live-otlp \
+            flora-eventlog-live-otlp --print-config-json-schema > config.schema.json
+
+      - name: Validate the forwarder config
+        run: |
+          pip install --quiet check-jsonschema
+          check-jsonschema --schemafile config.schema.json \
+            deployment/eventlog-live/eventlog-live-otlp.yaml

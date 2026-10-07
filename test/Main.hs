@@ -1,36 +1,32 @@
 module Main where
 
 import Control.Monad.Extra
-import Data.List.NonEmpty
-import Data.Text qualified as Text
-import Database.PostgreSQL.Entity.DBT (execute)
 import Effectful
-import Effectful.Error.Static
 import Effectful.Fail
 import Effectful.FileSystem
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
-import Log qualified
+import Options.Applicative
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
-import System.Exit
+import System.Environment (withArgs)
 import System.IO
 import Test.Tasty
 
-import Advisories.Import qualified as Advisories
-import Advisories.Import.Error
-import Flora.AdvisorySpec qualified as AdvisorySpec
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
-import Flora.Environment
+import Flora.Database
+import Flora.Domain.Import.Categories (importCategories)
+import Flora.Environment (configFileParser, getFloraEnv)
+import Flora.Environment.Env
 import Flora.FeedSpec qualified as FeedSpec
-import Flora.Import.Categories (importCategories)
 import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
+import Flora.NoThunksSpec qualified as NoThunksSpec
 import Flora.PackageGroupSpec qualified as PackageGroupSpec
 import Flora.PackageSpec qualified as PackageSpec
+import Flora.SchedulerSpec qualified as SchedulerSpec
 import Flora.SearchSpec qualified as SearchSpec
 import Flora.TemplateSpec qualified as TemplateSpec
 import Flora.TestUtils
@@ -39,55 +35,49 @@ import Flora.UserSpec qualified as UserSpec
 main :: IO ()
 main = provideCallStack $ do
   hSetBuffering stdout LineBuffering
-  env <- runEff . runFailIO . runFileSystem $ getFloraEnv
+  (configFile, tastyArgs) <- execParser $ info parser forwardOptions
+  env <- runEff . runFailIO . runFileSystem $ getFloraEnv configFile
   fixtures <-
     runTestEff
       ( do
-          cleanUp
-          advisoriesDirectory <- getXdgDirectory XdgData "security-advisories"
-          unlessM (doesPathExist advisoriesDirectory) $ do
-            Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
-            liftIO exitFailure
-          testMigrations
+          withReadWritePool env.pool cleanUp
+          testMigrations env.pool
           importCategories
-          Update.createPackageIndex "hackage" "" "" Nothing
-          Update.createPackageIndex "cardano" "" "" Nothing
-          Update.createPackageIndex "mlabs" "" "" Nothing
+          withReadWritePool env.pool $ Update.createPackageIndex "local-hackage" "" "" Nothing
+          withReadWritePool env.pool $ Update.createPackageIndex "cardano" "" "" Nothing
+          withReadWritePool env.pool $ Update.createPackageIndex "mlabs" "" "" Nothing
           password <- liftIO $ Sel.hashText "foobar2000"
           templateUser <- mkUser $ UserCreationForm "hackage-user" "tech@flora.pm" password
-          Update.insertUser templateUser
-          importAllPackages
-          result <-
-            runErrorNoCallStack @(NonEmpty AdvisoryImportError) $
-              Advisories.importAdvisories advisoriesDirectory
-          case result of
-            Left errors -> do
-              liftIO $ print errors
-              liftIO exitFailure
-            Right _ -> getFixtures
+          withReadWritePool env.pool $ Update.insertUser templateUser
+          importAllPackages env.pool
+          getFixtures
       )
       env
   spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
-  defaultMain $
-    testGroup "Flora Tests" spec
+  withArgs tastyArgs $
+    defaultMain $
+      testGroup "Flora Tests" spec
+  where
+    parser = (,) <$> configFileParser <*> many (strArgument mempty)
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =
-  [ AdvisorySpec.spec
-  , BlobSpec.spec
+  [ BlobSpec.spec
   , CabalSpec.spec
   , CategorySpec.spec
   , FeedSpec.spec
   , ImportSpec.spec
+  , NoThunksSpec.spec
   , PackageGroupSpec.spec
   , PackageSpec.spec
+  , SchedulerSpec.spec
   , SearchSpec.spec
   , TemplateSpec.spec
   , UserSpec.spec fixtures
   ]
 
-cleanUp :: DB :> es => Eff es ()
-cleanUp = dbtToEff $ do
+cleanUp :: (IOE :> es, WriteDB :> es) => Eff es ()
+cleanUp = do
   void $ execute "DELETE FROM blob_relations" ()
   void $ execute "DELETE FROM package_categories" ()
   void $ execute "DELETE FROM categories" ()
@@ -102,11 +92,12 @@ cleanUp = dbtToEff $ do
   void $ execute "DELETE FROM package_group_packages" ()
   void $ execute "DELETE FROM package_groups" ()
   void $ execute "DELETE FROM package_feeds" ()
+  void $ execute "DELETE FROM package_maintainers" ()
   void $ execute "DELETE FROM packages" ()
   void $ execute "DELETE FROM index_dependencies" ()
-  void $ execute "DELETE FROM package_indexes" ()
   void $ execute "DELETE FROM user_organisation" ()
   void $ execute "DELETE FROM package_uploaders" ()
+  void $ execute "DELETE FROM package_indexes" ()
   void $ execute "DELETE FROM users" ()
   void $ execute "DELETE FROM package_jobs" ()
   void $ execute "DELETE FROM package_jobs_dlq" ()

@@ -1,26 +1,35 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Flora.Model.PackageUploader.Query where
+module Flora.Model.PackageUploader.Query
+  ( getPackageUploaderById
+  , getPackageUploaderByUsernameAndIndex
+  , getPackageUploaderIdByUsernameAndIndex
+  , getPackageUploaders
+  ) where
 
 import Data.Text
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT qualified as DBT
 import Database.PostgreSQL.Entity.Internal.QQ (field)
-import Database.PostgreSQL.Simple (Only (Only))
+import Database.PostgreSQL.Simple (Only (..), Query)
+import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect
 
+import Flora.Database
+import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageUploader.Types
+import Flora.Monad
 
 getPackageUploaderById
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => PackageUploaderId
   -> Eff es (Maybe PackageUploader)
 getPackageUploaderById packageUploaderId = do
-  mDao <- dbtToEff $ selectById @PackageUploaderDAO (Only packageUploaderId)
+  mDao :: Maybe PackageUploaderDAO <- queryOne (_selectWhere @PackageUploaderDAO [primaryKey @PackageUploaderDAO]) (Only packageUploaderId)
   case mDao of
     Nothing -> pure Nothing
     Just dao -> do
@@ -38,12 +47,12 @@ getPackageUploaderById packageUploaderId = do
                 }
 
 getPackageUploaderByUsernameAndIndex
-  :: DB :> es
+  :: (IOE :> es, ReadDB :> es)
   => Text
   -> PackageIndexId
   -> Eff es (Maybe PackageUploader)
 getPackageUploaderByUsernameAndIndex username packageIndexId = do
-  mDao :: Maybe PackageUploaderDAO <- dbtToEff $ DBT.queryOne q (username, packageIndexId)
+  mDao :: Maybe PackageUploaderDAO <- queryOne q (username, packageIndexId)
   case mDao of
     Nothing -> pure Nothing
     Just dao -> do
@@ -60,8 +69,39 @@ getPackageUploaderByUsernameAndIndex username packageIndexId = do
                 , userId = dao.userId
                 }
   where
-    q =
-      _selectWhere @PackageUploaderDAO
-        [ [field| username |]
-        , [field| package_index_id |]
-        ]
+    q = selectByUsernameAndIndex
+
+-- | Just the id, skipping the 'PackageIndex' lookup that assembling a whole
+-- 'PackageUploader' needs. The import path resolves an uploader per cabal file
+-- and only ever wants the key.
+getPackageUploaderIdByUsernameAndIndex
+  :: (IOE :> es, ReadDB :> es)
+  => Text
+  -> PackageIndexId
+  -> Eff es (Maybe PackageUploaderId)
+getPackageUploaderIdByUsernameAndIndex username packageIndexId = do
+  mDao :: Maybe PackageUploaderDAO <- queryOne selectByUsernameAndIndex (username, packageIndexId)
+  pure $ fmap (.packageUploaderId) mDao
+
+selectByUsernameAndIndex :: Query
+selectByUsernameAndIndex =
+  _selectWhere @PackageUploaderDAO
+    [ [field| username |]
+    , [field| package_index_id |]
+    ]
+
+getPackageUploaders
+  :: (IOE :> es, ReadDB :> es)
+  => PackageId
+  -> FloraM es (Vector PackageUploaderDAO)
+getPackageUploaders packageId =
+  Vector.fromList
+    <$> query sqlQuery (Only packageId)
+  where
+    sqlQuery =
+      [sql|
+        SELECT p0.*
+        FROM package_uploaders AS p0
+             INNER JOIN releases AS r1 ON p0.package_uploader_id = r1.uploader_id
+        WHERE r1.package_id = ?
+      |]

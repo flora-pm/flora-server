@@ -1,28 +1,27 @@
 module Flora.Model.Package.Guard where
 
+import Data.Pool (Pool)
+import Database.PostgreSQL.Simple (Connection)
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect
-import Effectful.Trace
-import Monitor.Tracing qualified as Tracing
 
-import Flora.Model.Package
+import Flora.Database
 import Flora.Model.Package.Query qualified as Query
+import Flora.Model.Package.Types
+import Flora.Monad
 
 guardThatPackageExists
-  :: (DB :> es, Trace :> es)
-  => Namespace
+  :: IOE :> es
+  => Pool Connection
+  -> Namespace
   -> PackageName
-  -> (Namespace -> PackageName -> Eff es Package)
-  -- ^ Action to run if the package does not exist
-  -> Eff es Package
-guardThatPackageExists namespace packageName action =
-  Tracing.childSpan "guardThatPackageExists " $ do
-    result <-
-      Tracing.childSpan "Query.getPackageByNamespaceAndName " $
-        Query.getPackageByNamespaceAndName namespace packageName
-    case result of
-      Nothing -> action namespace packageName
-      Just package ->
-        case package.status of
-          FullyImportedPackage -> pure package
-          UnknownPackage -> action namespace packageName
+  -> FloraM es (Maybe Package)
+guardThatPackageExists pool namespace packageName = do
+  result <-
+    withReadOnlyPool pool $
+      Query.getPackageByNamespaceAndName namespace packageName
+  pure $ case result of
+    Just package ->
+      case package.status of
+        FullyImportedPackage -> Just package
+        UnknownPackage -> Nothing
+    Nothing -> Nothing

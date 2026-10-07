@@ -2,8 +2,8 @@ module Flora.Model.Category
   ( Category (..)
   , CategoryId (..)
   , CategoryName (..)
+  , deterministicCategoryId
   , mkCategory
-  , mkCategoryId
   )
 where
 

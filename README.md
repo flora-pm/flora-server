@@ -1,16 +1,14 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./banners/logo-dark-background.png">
-    <img alt="Flora" src="./banners/logo-light-background.png" width=50%>
+    <source media="(prefers-color-scheme: dark)" srcset="./logos/logo-dark-background.png">
+    <img alt="Flora" src="./logos/logo-light-background.png" width=50%>
   </picture>
 </p>
 
 <h1 align="center"><small>A package index for the Haskell ecosystem</small> </h1>
 
 <p align="center">
-<a href="https://github.com/flora-pm/flora-server/actions">
-  <img src="https://img.shields.io/github/actions/workflow/status/flora-pm/flora-server/backend.yml?branch=development&style=flat-square&logo=github" alt="CI badge" />
-</a>
+
 <a href="https://haskell.org">
   <img src="https://img.shields.io/badge/Made%20in-Haskell-%235e5086?logo=haskell&style=flat-square" alt="made with Haskell"/>
 </a>
@@ -24,8 +22,8 @@
 
 </a>
 
-<a href="https://twitter.com/flora_haskell">
-  <img alt="Static Badge" src="https://img.shields.io/badge/Twitter-%40flora_haskell-blue?style=flat-square&logo=x">
+<a href="https://bsky.app/profile/did:plc:b5sa2ces7koso7jidtyuijzc">
+  <img alt="Static Badge" src="https://img.shields.io/badge/Bluesky-%40flora.pm-blue?style=flat-square&logo=bluesky">
 </a>
 
 </p>
@@ -57,20 +55,35 @@ Visit https://flora.pm/documentation for explanations on what Flora can do.
 
 We welcome new contributors! Join the [Matrix chatroom](https://app.element.io/#/room/#flora-pm:matrix.org) or open a [Discussion](https://github.com/flora-pm/flora-server/discussions/new/choose).
 
-To setup a local installation, see [CONTRIBUTING.md#project-setup](https://github.com/flora-pm/flora-server/blob/development/CONTRIBUTING.md#project-setup)
+To setup a local installation, see [CONTRIBUTING.md#development-environment](https://github.com/flora-pm/flora-server/blob/development/CONTRIBUTING.md#development-environment)
 
 ## 📖 Read More
 
 * [Code of Conduct](./CODE_OF_CONDUCT.md)
+* [Architecture](./architecture/)
 * [Development Wiki](https://github.com/flora-pm/flora-server/wiki)
 
-## 🫶 Special Collaborations
+## 🫶 Special Collaboration
 
-We would like to thank our dear friends at Guérilla.Studio ([www](https://guerilla.studio/), [GitHub](https://github.com/GuerillaStudio)) for help with accessibility and CSS integration.
+This project is the fruit of the collaboration between:
+
+<img alt="Guérilla.Studio" src="./logos/guerilla.studio-logo.svg" width="113" height="60">
+
+[Guérilla.Studio] is a team of cross-disciplinary web experts making independent web software
+
+<img alt="Floréal Technologies" src="./logos/floreal-tech-logo.png" width="113" height="113">
+
+[Floréal Technologies] builds open software for hobbyists and professionals. We bring engineering excellence with a a French flair.
 
 ## Civil Clause
 
 (*See [Civil Clause](https://en.wikipedia.org/wiki/Civil_clause) on Wikipedia*)
 
-The Flora project is committed to peace and justice, and therefore cannot accept donations or partnerships for the benefit of warfare or surveillance systems.
+The Flora project is committed to peace and justice, and therefore cannot accept
+donations or partnerships for the benefit of warfare or surveillance systems.
 This includes civilian police forces.
+
+
+[Guérilla.Studio]: https://guerilla.studio/
+[Floréal Technologies]: https://floreal.tech/
+

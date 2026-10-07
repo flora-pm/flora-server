@@ -19,7 +19,7 @@ import FloraWeb.Pages.Templates.Types (FloraHTML)
 
 customBuildType :: FloraHTML
 customBuildType =
-  span_ [dataText_ "This package uses the Custom cabal build type", class_ "package-build-type-custom"] "Custom"
+  p_ [class_ "alert alert--warning block text-small"] "This package uses the Custom cabal build type"
 
 fixAvailable :: FloraHTML
 fixAvailable =

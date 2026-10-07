@@ -3,14 +3,15 @@
 module FloraWeb.Routes where
 
 import Data.OpenApi (OpenApi)
-import Data.Text (Text)
-import Servant.API
+import Servant.API hiding (ServerSentEvents)
+import Servant.API.EventStream (ServerSentEvents)
 import Servant.API.Generic
 import Text.XML
 
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Feed.Routes qualified as Feed
+import FloraWeb.LiveReload (ReloadEvent)
 import FloraWeb.Pages.Routes qualified as Pages
 
 type ServerRoutes = NamedRoutes Routes
@@ -27,6 +28,6 @@ data Routes mode = Routes
           :> "openapi.json"
           :> Get '[JSON] OpenApi
   , docs :: mode :- "documentation" :> Raw
-  , livereload :: mode :- "livereload" :> Get '[PlainText] (Headers '[Header "HX-Refresh" Text] NoContent)
+  , livereload :: mode :- "livereload" :> ServerSentEvents (SourceIO ReloadEvent)
   }
   deriving stock (Generic)

@@ -1,12 +1,14 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-x-flora-test-only #-}
 
 module Flora.TestUtils
   ( -- ** Test group functions
     testRequest
   , testThis
   , testThese
+  , testTheseInOrder
 
     -- ** Assertion functions
   , assertBool
@@ -88,13 +90,12 @@ module Flora.TestUtils
   )
 where
 
-import Control.Exception (throw)
+import Control.Exception (throw, throwIO)
 import Control.Monad (void)
 import Control.Monad.Catch
 import Data.Function
 import Data.List.NonEmpty qualified as NE
 import Data.Pool hiding (PoolConfig)
-import Data.Set (Set)
 import Data.Text (Text)
 import Data.Time (UTCTime (UTCTime), fromGregorian, secondsToDiffTime)
 import Data.UUID (UUID)
@@ -102,8 +103,8 @@ import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Word
+import Database.PostgreSQL.Simple qualified as PG
 import Database.PostgreSQL.Simple.Migration
-import Database.PostgreSQL.Transact ()
 import Distribution.SPDX qualified as SPDX
 import Distribution.Types.BuildType (BuildType (..))
 import Distribution.Types.Condition (Condition (..))
@@ -118,20 +119,17 @@ import Effectful.Fail (Fail, runFailIO)
 import Effectful.FileSystem
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Prometheus
 import Effectful.Reader.Static
-import Effectful.State.Static.Shared (State)
-import Effectful.State.Static.Shared qualified as State
+import Effectful.Reader.Static qualified as Reader
 import Effectful.Time
-import Effectful.Trace (Trace)
-import Effectful.Trace qualified as Trace
 import GHC.Generics
 import GHC.IO (mkUserError)
 import GHC.Stack
 import Hedgehog (MonadGen (..))
 import Hedgehog.Gen qualified as H
 import Hedgehog.Range qualified as Range
+import Log.Backend.StandardOutput qualified as Log
 import Log.Data
 import Network.HTTP.Client (ManagerSettings, defaultManagerSettings, newManager)
 import RequireCallStack
@@ -144,11 +142,11 @@ import Test.Tasty (TestTree)
 import Test.Tasty qualified as Test
 import Test.Tasty.HUnit qualified as Test
 
-import Flora.Environment.Config
+import Flora.Database
+import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
+import Flora.Domain.Import.Types (ImportError)
+import Flora.Domain.Package (refreshMaterialisedViews)
 import Flora.Environment.Env
-import Flora.Import.Package.Bulk.Archive (importFromArchive)
-import Flora.Import.Types (ImportError)
-import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
 import Flora.Model.Component.Types
@@ -175,15 +173,12 @@ import Flora.Monad
 
 type TestEff a =
   Eff
-    '[ Trace
-     , FileSystem
+    '[ FileSystem
      , Fail
      , BlobStoreAPI
      , Reader FloraEnv
-     , DB
      , Log
      , Time
-     , State (Set (Namespace, PackageName, Version))
      , Metrics AppMetrics
      , Concurrent
      , Error ImportError
@@ -196,47 +191,48 @@ data Fixtures = Fixtures
   }
   deriving stock (Eq, Generic, Show)
 
-getFixtures :: (DB :> es, Fail :> es) => FloraM es Fixtures
+getFixtures :: (Fail :> es, IOE :> es, Reader FloraEnv :> es) => FloraM es Fixtures
 getFixtures = do
-  Just hackageUser <- Query.getUserByUsername "hackage-user"
+  FloraEnv{pool} <- Reader.ask
+  Just hackageUser <- withReadOnlyPool pool $ Query.getUserByUsername "hackage-user"
   pure Fixtures{hackageUser}
 
-importAllPackages :: (HasCallStack, RequireCallStack) => TestEff ()
-importAllPackages = do
+importAllPackages :: (HasCallStack, RequireCallStack) => Pool PG.Connection -> TestEff ()
+importAllPackages pool = do
   importFromArchive
-    "hackage"
+    pool
+    "local-hackage"
     Vector.empty
     "test/fixtures/Cabal"
   importFromArchive
+    pool
     "cardano"
-    (Vector.fromList ["hackage"])
+    (Vector.fromList ["local-hackage"])
     "test/fixtures/Cabal"
   importFromArchive
+    pool
     "mlabs"
-    (Vector.fromList ["cardano", "hackage"])
+    (Vector.fromList ["cardano", "local-hackage"])
     "test/fixtures/Cabal"
+  refreshMaterialisedViews pool
 
 runTestEff :: (HasCallStack, RequireCallStack) => TestEff a -> FloraEnv -> IO a
-runTestEff comp env = runEff $ do
-  let withLogger = Logging.makeLogger env.mltp.logger
-  withLogger $ \logger ->
+runTestEff comp env = runEff $
+  Log.withStdOutLogger $ \logger ->
     comp
-      & Trace.runNoTrace
       & runFileSystem
       & runFailIO
       & runBlobStorePure
       & runReader env
-      & runDB env.pool
-      & Log.runLog "flora-test" logger LogAttention
+      & Log.runLog "flora-test" logger LogInfo
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime
-      & State.evalState mempty
       & runPrometheusMetrics env.metrics
       & runConcurrent
       & Error.runErrorWith
         ( \callstack err -> do
             liftIO $ putStrLn $ prettyCallStack callstack
-            pure $ error $ show err
+            liftIO $ throwIO $ userError $ show err
         )
 
 testThis :: (HasCallStack, RequireCallStack) => String -> TestEff () -> TestEff TestTree
@@ -250,6 +246,10 @@ testThese groupName tests = fmap (Test.testGroup groupName) newTests
   where
     newTests :: TestEff [TestTree]
     newTests = sequenceA tests
+
+testTheseInOrder :: String -> [TestEff TestTree] -> TestEff TestTree
+testTheseInOrder groupName tests =
+  fmap (Test.dependentTestGroup groupName Test.AllFinish) (sequenceA tests)
 
 assertBool :: Bool -> TestEff ()
 assertBool boolean = liftIO $ Test.assertBool "" boolean
@@ -270,17 +270,17 @@ assertEqual message expected actual = liftIO $ Test.assertEqual message expected
 --  Usage:
 --
 --  >>> assertEqual expected actual
-assertEqual_ :: (Eq a, HasCallStack, Show a) => a -> a -> TestEff ()
+assertEqual_ :: (Eq a, HasCallStack, IOE :> es, Show a) => a -> a -> Eff es ()
 assertEqual_ expected actual = liftIO $ Test.assertEqual "" expected actual
 
 assertFailure :: (HasCallStack, MonadIO m) => String -> m ()
 assertFailure = liftIO . Test.assertFailure
 
-assertJust :: (HasCallStack, RequireCallStack) => String -> Maybe a -> TestEff a
+assertJust :: (HasCallStack, IOE :> es, RequireCallStack) => String -> Maybe a -> Eff es a
 assertJust _ (Just a) = pure a
 assertJust message Nothing = liftIO $ Test.assertFailure message
 
-assertJust_ :: (HasCallStack, RequireCallStack) => Maybe a -> TestEff a
+assertJust_ :: (HasCallStack, IOE :> es, RequireCallStack) => Maybe a -> Eff es a
 assertJust_ (Just a) = pure a
 assertJust_ Nothing = liftIO $ Test.assertFailure "Test return Nothing instead of Just"
 
@@ -318,23 +318,6 @@ assertClientLeft name request =
 assertClientLeft' :: (HasCallStack, RequireCallStack) => String -> TestEff (Either ClientError a) -> TestEff ()
 assertClientLeft' name request = void $ assertClientLeft name request
 
--- assertStatus :: forall (statusCode :: Type) (httpValue :: Type) (a :: Type)
---              -- . KnownNat statusCode
---              . String
---              -> TestEff (Either ClientError httpValue)
---              -> TestEff a
--- assertStatus name request = do
---   result <- assertClientRight $ testRequest name request
---   case matchUnion result of
---     Nothing ->
---       let statusCode = show $ natVal (Proxy :: Proxy statusCode)
---        in assertFailure $ "Test “" <> name <> "” did not return expected status " <> statusCode
---     Just (WithStatus a :: WithStatus @statusCode @httpValue) ->
---       let headers = getHeaders a
---        in assertEqual
---           (True, True)
---           (List.find (\(name, _) -> name == hLocation), List.find (\(name, _) -> name == hSetCookie))
-
 testRequest :: ClientM a -> TestEff (Either ClientError a)
 testRequest req = liftIO . runClientM req =<< getEnv managerSettings
 
@@ -347,9 +330,8 @@ getEnv mgrSettings = do
 managerSettings :: ManagerSettings
 managerSettings = defaultManagerSettings
 
-testMigrations :: (DB :> es, IOE :> es) => FloraM es ()
-testMigrations = do
-  pool <- getPool
+testMigrations :: IOE :> es => Pool PG.Connection -> FloraM es ()
+testMigrations pool = do
   liftIO $ withResource pool $ \conn ->
     void $ runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
 
@@ -429,7 +411,7 @@ randomUserTemplate =
     , updatedAt = liftIO $ H.sample genUTCTime
     }
 
-instantiateUser :: DB :> es => UserTemplate (Eff es) -> FloraM es User
+instantiateUser :: (IOE :> es, Reader FloraEnv :> es) => UserTemplate (Eff es) -> FloraM es User
 instantiateUser
   UserTemplate
     { userId = generateUserId
@@ -440,6 +422,7 @@ instantiateUser
     , userFlags = generateUserFlags
     , createdAt = generateCreatedAt
     } = do
+    FloraEnv{pool} <- Reader.ask
     userId <- generateUserId
     username <- generateUsername
     email <- generateEmail
@@ -451,7 +434,7 @@ instantiateUser
     let totpKey = Nothing
     let totpEnabled = False
     let user = User{..}
-    Update.insertUser user
+    withReadWritePool pool $ Update.insertUser user
     pure user
 
 data PackageTemplate m = PackageTemplate
@@ -477,7 +460,7 @@ randomPackageTemplate =
     , deprecationInfo = pure Nothing
     }
 
-instantiatePackage :: DB :> es => PackageTemplate (Eff es) -> FloraM es Package
+instantiatePackage :: (IOE :> es, Reader FloraEnv :> es) => PackageTemplate (Eff es) -> FloraM es Package
 instantiatePackage
   PackageTemplate
     { packageId = generatePackageId
@@ -487,6 +470,7 @@ instantiatePackage
     , status = generatePackageStatus
     , deprecationInfo = generatePackageDeprecationInfo
     } = do
+    FloraEnv{pool} <- Reader.ask
     packageId <- generatePackageId
     namespace <- generatePackageNamespace
     name <- generatePackageName
@@ -495,7 +479,7 @@ instantiatePackage
     status <- generatePackageStatus
     deprecationInfo <- generatePackageDeprecationInfo
     let package = Package{..}
-    Update.upsertPackage package
+    withReadWritePool pool $ Update.upsertPackage package
     pure package
 
 genPackageName :: MonadGen m => m PackageName
@@ -574,7 +558,7 @@ randomReleaseTemplate =
     , uploaderId = Nothing
     }
 
-instantiateRelease :: DB :> es => ReleaseTemplate (Eff es) -> FloraM es Release
+instantiateRelease :: (IOE :> es, Reader FloraEnv :> es) => ReleaseTemplate (Eff es) -> FloraM es Release
 instantiateRelease
   ReleaseTemplate
     { releaseId = generateReleaseId
@@ -605,6 +589,7 @@ instantiateRelease
     , buildType = generateBuildType
     , uploaderId = uploaderId
     } = do
+    FloraEnv{pool} <- Reader.ask
     releaseId <- generateReleaseId
     packageId <- generatePackageId
     version <- generateVersion
@@ -633,8 +618,8 @@ instantiateRelease
     revisedAt <- generateRevisedAt
     buildType <- generateBuildType
     let release = Release{..}
-    Update.insertRelease release
-    Update.refreshLatestVersions
+    withReadWritePool pool $ Update.insertRelease release
+    withReadWritePool pool Update.refreshLatestVersions
     pure release
 
 data PackageComponentTemplate m = PackageComponentTemplate
@@ -653,7 +638,7 @@ randomPackageComponentTemplate =
     }
 
 instantiatePackageComponent
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => PackageComponentTemplate (Eff es)
   -> FloraM es PackageComponent
 instantiatePackageComponent
@@ -662,11 +647,12 @@ instantiatePackageComponent
     , releaseId = generatereleaseId
     , canonicalForm = generatecanonicalForm
     } = do
+    FloraEnv{pool} <- Reader.ask
     componentId <- generateComponentId
     releaseId <- generatereleaseId
     canonicalForm <- generatecanonicalForm
     let packageComponent = PackageComponent{..}
-    Update.insertPackageComponent packageComponent
+    withReadWritePool pool $ Update.insertPackageComponent packageComponent
     pure packageComponent
 
 data RequirementTemplate m = RequirementTemplate
@@ -691,7 +677,7 @@ randomRequirementTemplate =
     }
 
 instantiateRequirement
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => RequirementTemplate (Eff es)
   -> FloraM es Requirement
 instantiateRequirement
@@ -702,6 +688,7 @@ instantiateRequirement
     , requirement = generateRequirement
     , components = generateComponents
     } = do
+    FloraEnv{pool} <- Reader.ask
     requirementId <- generateRequirementId
     packageComponentId <- generateComponentId
     packageId <- generatePackageId
@@ -709,7 +696,7 @@ instantiateRequirement
     components <- generateComponents
     -- TODO(leana8959): what does this template do exactly
     let req = Requirement{condition = Nothing, ..}
-    Update.insertRequirement req
+    withReadWritePool pool $ Update.insertRequirement req
     pure req
 
 data PackageGroupTemplate m = PackageGroupTemplate
@@ -726,7 +713,7 @@ randomPackageGroupTemplate =
     }
 
 instantiatePackageGroup
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => PackageGroupTemplate (Eff es)
   -> FloraM es PackageGroup
 instantiatePackageGroup
@@ -734,10 +721,12 @@ instantiatePackageGroup
     { packageGroupId = generatePackageGroupId
     , groupName = generateGroupName
     } = do
+    FloraEnv{pool} <- Reader.ask
     packageGroupId <- generatePackageGroupId
     groupName <- generateGroupName
     let pg = PackageGroup{..}
-    Update.insertPackageGroup pg
+    withReadWritePool pool $
+      Update.insertPackageGroup pg
     pure pg
 
 data PackageGroupPackageTemplate m = PackageGroupPackageTemplate
@@ -756,7 +745,7 @@ randomPackageGroupPackageTemplate =
     }
 
 instantiatePackageGroupPackage
-  :: DB :> es
+  :: (IOE :> es, Reader FloraEnv :> es)
   => PackageGroupPackageTemplate (Eff es)
   -> FloraM es PackageGroupPackage
 instantiatePackageGroupPackage
@@ -765,9 +754,10 @@ instantiatePackageGroupPackage
     , packageId = generatePackageId
     , packageGroupId = generatePackageGroupId
     } = do
+    FloraEnv{pool} <- Reader.ask
     packageGroupPackageId <- generatePackageGroupPackageId
     packageId <- generatePackageId
     packageGroupId <- generatePackageGroupId
     let pgp = PackageGroupPackage{..}
-    Update.addPackageToPackageGroup pgp
+    withReadWritePool pool $ Update.addPackageToPackageGroup pgp
     pure pgp

@@ -3,17 +3,14 @@
 
 module Flora.Model.Organisation where
 
+import Control.Monad
 import Data.Aeson
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.UUID
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT
-  ( query
-  , queryOne
-  , query_
-  )
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple (Only (Only))
 import Database.PostgreSQL.Simple.FromField (FromField (..))
@@ -21,9 +18,10 @@ import Database.PostgreSQL.Simple.FromRow (FromRow (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
 import Database.PostgreSQL.Simple.ToField (ToField (..))
 import Database.PostgreSQL.Simple.ToRow (ToRow (..))
-import Database.PostgreSQL.Transact (DBT)
+import Effectful
 import GHC.Generics
 
+import Flora.Database
 import Flora.Model.User
 
 newtype OrganisationId = OrganisationId {getOrganisationId :: UUID}
@@ -59,35 +57,35 @@ data UserOrganisation = UserOrganisation
     (Entity)
     via (GenericEntity '[TableName "user_organisation"] UserOrganisation)
 
-insertOrganisation :: Organisation -> DBT IO ()
-insertOrganisation org = insert @Organisation org
+insertOrganisation :: (IOE :> es, WriteDB :> es) => Organisation -> Eff es ()
+insertOrganisation org = void $ execute (_insert @Organisation) org
 
-getOrganisationById :: OrganisationId -> DBT IO (Maybe Organisation)
-getOrganisationById orgId = selectById @Organisation (Only orgId)
+getOrganisationById :: (IOE :> es, ReadDB :> es) => OrganisationId -> Eff es (Maybe Organisation)
+getOrganisationById orgId = queryOne (_selectWhere @Organisation [primaryKey @Organisation]) (Only orgId)
 
-getOrganisationByName :: Text -> DBT IO (Maybe Organisation)
-getOrganisationByName name = selectOneByField [field| organisation_name |] (Only name)
+getOrganisationByName :: (IOE :> es, ReadDB :> es) => Text -> Eff es (Maybe Organisation)
+getOrganisationByName name = queryOne (_selectWhere @Organisation [[field| organisation_name |]]) (Only name)
 
-deleteOrganisation :: OrganisationId -> DBT IO ()
-deleteOrganisation orgId = delete @Organisation (Only orgId)
+deleteOrganisation :: (IOE :> es, WriteDB :> es) => OrganisationId -> Eff es ()
+deleteOrganisation orgId = void $ execute (_delete @Organisation) (Only orgId)
 
-getAllUserOrganisations :: DBT IO (Vector UserOrganisation)
-getAllUserOrganisations = query_ (_select @UserOrganisation)
+getAllUserOrganisations :: (IOE :> es, ReadDB :> es) => Eff es (Vector UserOrganisation)
+getAllUserOrganisations = Vector.fromList <$> query_ (_select @UserOrganisation)
 
-getUserOrganisationById :: UserOrganisationId -> DBT IO (Maybe UserOrganisation)
-getUserOrganisationById uoId = selectById @UserOrganisation (Only uoId)
+getUserOrganisationById :: (IOE :> es, ReadDB :> es) => UserOrganisationId -> Eff es (Maybe UserOrganisation)
+getUserOrganisationById uoId = queryOne (_selectWhere @UserOrganisation [primaryKey @Organisation]) (Only uoId)
 
-getUserOrganisation :: UserId -> OrganisationId -> DBT IO (Maybe UserOrganisation)
+getUserOrganisation :: (IOE :> es, ReadDB :> es) => UserId -> OrganisationId -> Eff es (Maybe UserOrganisation)
 getUserOrganisation userId orgId = queryOne q (userId, orgId)
   where
     q = _selectWhere @UserOrganisation [[field| user_id |], [field| organisation_id |]]
 
-attachUser :: UserId -> OrganisationId -> UserOrganisationId -> DBT IO ()
+attachUser :: (IOE :> es, WriteDB :> es) => UserId -> OrganisationId -> UserOrganisationId -> Eff es ()
 attachUser userId organisationId uoId = do
-  insert @UserOrganisation (UserOrganisation uoId userId organisationId False)
+  void $ execute (_insert @UserOrganisation) (UserOrganisation uoId userId organisationId False)
 
-getUsers :: OrganisationId -> DBT IO (Vector User)
-getUsers orgId = query q (Only orgId)
+getUsers :: (IOE :> es, ReadDB :> es) => OrganisationId -> Eff es (Vector User)
+getUsers orgId = Vector.fromList <$> query q (Only orgId)
   where
     q =
       [sql|
@@ -98,8 +96,8 @@ getUsers orgId = query q (Only orgId)
         WHERE uo.organisation_id = ?
         |]
 
-getAdmins :: OrganisationId -> DBT IO (Vector User)
-getAdmins orgId = query q (Only orgId)
+getAdmins :: (IOE :> es, ReadDB :> es) => OrganisationId -> Eff es (Vector User)
+getAdmins orgId = Vector.fromList <$> query q (Only orgId)
   where
     q =
       [sql|

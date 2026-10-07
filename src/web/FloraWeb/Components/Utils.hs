@@ -7,59 +7,38 @@ import Lucid.Base (makeAttributes)
 
 import FloraWeb.Pages.Templates.Types (FloraHTML)
 
+ariaCurrent_ :: Text -> Attributes
+ariaCurrent_ = makeAttributes "aria-current"
+
 text :: Text -> FloraHTML
 text = toHtml
 
 property_ :: Text -> Attributes
 property_ = makeAttributes "property"
 
-data LinkOptions = LinkOptions
-  { href :: Text
-  , classes :: Text
-  , childNode :: FloraHTML
-  }
+autocorrect_ :: Text -> Attributes
+autocorrect_ = makeAttributes "autocorrect"
 
-link :: LinkOptions -> FloraHTML
-link LinkOptions{href, classes, childNode} =
-  a_
-    [class_ classes, role_ "link", href_ href]
-    childNode
-
-defaultLinkOptions :: LinkOptions
-defaultLinkOptions =
-  LinkOptions
-    { href = ""
-    , classes = ""
-    , childNode = mempty
-    }
+autocapitalize_ :: Text -> Attributes
+autocapitalize_ = makeAttributes "autocapitalize"
 
 -- Standard WAI-ARIA attributes for accessibility purpose
 ariaLabel_ :: Text -> Attributes
 ariaLabel_ = makeAttributes "aria-label"
 
+ariaLabelledby_ :: Text -> Attributes
+ariaLabelledby_ = makeAttributes "aria-labelledby"
+
+ariaHidden :: Text -> Attributes
+ariaHidden = makeAttributes "aria-hidden"
+
 -- Prefer these ones as they are integrated with AlpineJS
 ariaControls_ :: Text -> Attributes
-ariaControls_ = makeAttributes ":aria-controls"
-
-ariaExpanded_ :: Text -> Attributes
-ariaExpanded_ = makeAttributes ":aria-expanded"
-
--- AlpineJS bindings
-xId_ :: Text -> Attributes
-xId_ = makeAttributes "x-id"
-
-id'_ :: Text -> Attributes
-id'_ = makeAttributes ":id"
+ariaControls_ = makeAttributes "aria-controls"
 
 -- | @datalist@ element
 dataText_ :: Text -> Attributes
 dataText_ = makeAttributes "data-text"
-
-hxSseConnect_ :: Text -> Attributes
-hxSseConnect_ = makeAttributes "sse-connect"
-
-hxSseSwap_ :: Text -> Attributes
-hxSseSwap_ = makeAttributes "sse-swap"
 
 color_ :: Text -> Attributes
 color_ = makeAttributes "color"
@@ -100,6 +79,11 @@ xBind_
   -> Attributes
 xBind_ attr = makeAttributes ("x-bind:" <> attr)
 
+-- | x-ref
+-- Target DOM elements directly
+xRef_ :: Text -> Attributes
+xRef_ = makeAttributes "x-ref"
+
 -- | x-init
 -- Run code when an element is initialized by Alpine
 xInit_ :: Text -> Attributes
@@ -138,7 +122,7 @@ popovertarget_
   -> Attributes
 popovertarget_ = makeAttributes "popovertarget"
 
-popovertargetaction_
+interestfor_
   :: Text
   -> Attributes
-popovertargetaction_ = makeAttributes "popovertargetaction"
+interestfor_ = makeAttributes "interestfor"

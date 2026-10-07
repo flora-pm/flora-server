@@ -1,50 +1,54 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module FloraJobs.Environment
   ( FloraJobsEnv (..)
   , getFloraJobsEnv
   ) where
 
-import Data.ByteString (StrictByteString)
 import Data.Pool (Pool)
-import Data.Pool qualified as Pool
 import Data.Word
 import Database.PostgreSQL.Simple qualified as PG
 import Effectful
-import Env (parse)
+import Effectful.Fail (Fail)
 import GHC.Generics
 import Network.HTTP.Client qualified as HTTP
 import Network.HTTP.Client.TLS
+import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
 
+import Flora.Environment (mkPool, readFloraConfig)
 import Flora.Environment.Config
+import Flora.Environment.Env ()
 import FloraJobs.Metrics
+
+deriving via OnlyCheckWhnf HTTP.Manager instance NoThunks HTTP.Manager
 
 data FloraJobsEnv = FloraJobsEnv
   { pool :: Pool PG.Connection
-  , connectionInfo :: StrictByteString
   , httpManager :: HTTP.Manager
   , httpPort :: Word16
   , metrics :: JobsRunnerMetrics
+  , config :: FloraConfig
   }
   deriving stock (Generic)
+  deriving anyclass (NoThunks)
 
-getFloraJobsEnv :: IOE :> es => Eff es FloraJobsEnv
-getFloraJobsEnv = do
-  jobsConfig <- liftIO $ Env.parse id parseJobsConfig
+getFloraJobsEnv :: (Fail :> es, IOE :> es) => FilePath -> Eff es FloraJobsEnv
+getFloraJobsEnv config = do
+  jobsConfig <- readFloraConfig config
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   metrics <- registerMetrics
   let PoolConfig{connectionTimeout, connections} = jobsConfig.dbConfig
   pool <-
-    liftIO $
-      Pool.newPool $
-        Pool.defaultPoolConfig
-          (PG.connectPostgreSQL jobsConfig.connectionInfo)
-          PG.close
-          (realToFrac connectionTimeout)
-          connections
+    mkPool
+      jobsConfig.connectionInfo
+      connectionTimeout
+      connections
   pure
     FloraJobsEnv
       { pool
-      , connectionInfo = jobsConfig.connectionInfo
       , httpManager
-      , httpPort = jobsConfig.httpPort
+      , httpPort = jobsConfig.jobsHttpPort
       , metrics
+      , config = jobsConfig
       }

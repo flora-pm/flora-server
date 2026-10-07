@@ -41,4 +41,4 @@ instance (FromHttpApiData a, Num a, Ord a, Show a) => FromHttpApiData (Positive 
   parseUrlPiece t = parseUrlPiece @a t >>= toPositive
 
 instance ToHttpApiData a => ToHttpApiData (Positive a) where
-  toUrlPiece = toUrlPiece @a . unPositive
+  toUrlPiece p = toUrlPiece @a p.unPositive

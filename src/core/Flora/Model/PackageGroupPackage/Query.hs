@@ -8,23 +8,23 @@ module Flora.Model.PackageGroupPackage.Query
   ) where
 
 import Data.Vector (Vector)
-import Database.PostgreSQL.Entity (selectById)
-import Database.PostgreSQL.Entity.DBT
+import Data.Vector qualified as Vector
+import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
+import Flora.Database
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import Flora.Model.PackageGroupPackage.Types
 
-getPackageGroupPackage :: DB :> es => PackageGroupPackageId -> Eff es (Maybe PackageGroupPackage)
-getPackageGroupPackage packageGroupPackageId = dbtToEff $ selectById @PackageGroupPackage (Only packageGroupPackageId)
+getPackageGroupPackage :: (IOE :> es, ReadDB :> es) => PackageGroupPackageId -> Eff es (Maybe PackageGroupPackage)
+getPackageGroupPackage packageGroupPackageId = queryOne (_selectWhere @PackageGroupPackage [primaryKey @PackageGroupPackage]) (Only packageGroupPackageId)
 
-getPackageGroupsForPackage :: DB :> es => PackageId -> Eff es (Vector PackageGroupName)
+getPackageGroupsForPackage :: (IOE :> es, ReadDB :> es) => PackageId -> Eff es (Vector PackageGroupName)
 getPackageGroupsForPackage packageId = do
-  results :: Vector (Only PackageGroupName) <- dbtToEff $ query q (Only packageId)
+  results :: Vector (Only PackageGroupName) <- Vector.fromList <$> query q (Only packageId)
   pure $ fmap fromOnly results
   where
     q =
@@ -35,8 +35,8 @@ getPackageGroupsForPackage packageId = do
         WHERE p0.package_id = ?
       |]
 
-listPackageGroupPackages :: DB :> es => PackageGroupId -> Eff es (Vector PackageInfo)
-listPackageGroupPackages groupId = dbtToEff $ query q (Only groupId)
+listPackageGroupPackages :: (IOE :> es, ReadDB :> es) => PackageGroupId -> Eff es (Vector PackageInfo)
+listPackageGroupPackages groupId = Vector.fromList <$> query q (Only groupId)
   where
     q =
       [sql|
