@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./banners/logo-dark-background.png">
-    <img alt="Flora" src="./banners/logo-light-background.png" width=50%>
+    <source media="(prefers-color-scheme: dark)" srcset="./logos/logo-dark-background.png">
+    <img alt="Flora" src="./logos/logo-light-background.png" width=50%>
   </picture>
 </p>
 
@@ -63,13 +63,27 @@ To setup a local installation, see [CONTRIBUTING.md#development-environment](htt
 * [Architecture](./architecture/)
 * [Development Wiki](https://github.com/flora-pm/flora-server/wiki)
 
-## 🫶 Special Collaborations
+## 🫶 Special Collaboration
 
-We would like to thank our dear friends at Guérilla.Studio ([www](https://guerilla.studio/), [GitHub](https://github.com/GuerillaStudio)) for help with accessibility and CSS integration.
+This project is the fruit of the collaboration between:
+
+<img alt="Guérilla.Studio" src="./logos/guerilla.studio-logo.svg" width="113" height="60">
+
+[Guérilla.Studio] is a team of cross-disciplinary web experts making independent web software
+
+<img alt="Floréal Technologies" src="./logos/floreal-tech-logo.png" width="113" height="113">
+
+[Floréal Technologies] builds open software for hobbyists and professionals. We bring engineering excellence with a a French flair.
 
 ## Civil Clause
 
 (*See [Civil Clause](https://en.wikipedia.org/wiki/Civil_clause) on Wikipedia*)
 
-The Flora project is committed to peace and justice, and therefore cannot accept donations or partnerships for the benefit of warfare or surveillance systems.
+The Flora project is committed to peace and justice, and therefore cannot accept
+donations or partnerships for the benefit of warfare or surveillance systems.
 This includes civilian police forces.
+
+
+[Guérilla.Studio]: https://guerilla.studio/
+[Floréal Technologies]: https://floreal.tech/
+

@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 1.1.0 -- 2026-10-07
+
+- New frontend! Thanks to @TixieSalander, we have a new visual identity and clear design rules.
+  - Light theme introduced in [#1104](https://github.com/flora-pm/flora-server/pull/1104)
+  - Dark theme introduced in [#1264](https://github.com/flora-pm/flora-server/pull/1264)
+
+- Replace env.sh with kdl configuration files [#1112](https://github.com/flora-pm/flora-server/pull/1112)
+
+  Replaces almost all usage of ENV vars with structured configuration files, an exception being some of the Docker configurations.
+
+- Hide 2FA/TOTP input on login page by default [#1116](https://github.com/flora-pm/flora-server/issue/1116) [#1141](https://github.com/flora-pm/flora-server/pull/1141)
+
+  - Added spacing between checkbox and label
+  - Fixed 2fa toggle behaviour to hide the input by default
+
+- Create Package Maintainers table [#1091](https://github.com/flora-pm/flora-server/issue/1091) [#1093](https://github.com/flora-pm/flora-server/pull/1093)
+
+- Compute lottery factor for packages and display release uploader [#456](https://github.com/flora-pm/flora-server/issue/456) [#1069](https://github.com/flora-pm/flora-server/pull/1069)
+
 ## 1.0.31 -- 2026-05-06
 
 - Add package uploader metadata to releases [#1065](https://github.com/flora-pm/flora-server/issue/1065) [#1066](https://github.com/flora-pm/flora-server/pull/1066)

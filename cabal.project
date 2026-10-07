@@ -14,7 +14,7 @@ jobs: $ncpus
 package *
   ghc-options: +RTS -I0 -RTS -finfo-table-map -fdistinct-constructor-tables -fwrite-ide-info
 
-index-state: 2026-09-22T20:09:17Z
+index-state: 2026-10-07T16:45:52Z
 
 allow-newer: chronos:hashable
            , feed:*
