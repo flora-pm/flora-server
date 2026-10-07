@@ -1,0 +1,10 @@
+import: cabal.project
+
+profiling: True
+
+package *
+  ghc-options: -finfo-table-map -fdistinct-constructor-tables
+
+semaphore: True
+
+multi-repl: True

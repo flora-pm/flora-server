@@ -63,7 +63,7 @@ newtype PackageId = PackageId {getPackageId :: UUID}
     (Eq, FromField, FromHttpApiData, FromJSON, NFData, Ord, Show, ToField, ToHttpApiData, ToJSON)
     via UUID
 
--- | Generates a package id deterministically by hashing the namespace and the package name
+-- | Generates a package id deterministically by hashing the namespace and the package name.
 deterministicPackageId :: Namespace -> PackageName -> PackageId
 deterministicPackageId (Namespace ns) (PackageName name) =
   PackageId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ ns <> name
@@ -390,3 +390,6 @@ data PackageDependencies = PackageDependencies
 instance ToSchema PackageDependencies where
   declareNamedSchema proxy =
     genericDeclareNamedSchema openApiSchemaOptions proxy
+
+formatPackage :: Namespace -> PackageName -> Text
+formatPackage namespace packageName = display namespace <> "/" <> display packageName

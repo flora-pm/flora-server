@@ -1,0 +1,496 @@
+-- |
+-- Module: Flora.Domain.Import.Package
+--
+-- This module contains all the code to import Cabal packages into Flora. The import process
+-- for a single package is divided in three consecutive steps:
+--
+--   1. The contents of the Cabal file are parsed into a 'GenericPackageDescription' from the Cabal package
+--   2. Relevant data from the Cabal package is extracted and turned into an intermediate representation, 'ImportOutput'
+--   3. This 'ImportOutput' is inserted (or more precisely upserted) into the database
+--
+-- Step 2 is deterministic: the same Cabal file yields the same ids. Its only effects are reading the
+-- clock, logging, and resolving the uploader id. The procedure as a whole is idempotent.
+--
+-- Packages can be imported in any order, even before their dependencies are known. When importing a package,
+-- any dependency that isn't yet known will be imported as an "unknown package", as indicated by its status field.
+-- If and when that package is fully imported later, we complete its data and change its status to "fully imported" without
+-- altering its id.
+module Flora.Domain.Import.Package
+  ( versionList
+  , newUploaderCache
+  , persistImportOutput
+  , parseString
+  , extractPackageDataFromCabal
+  , chooseNamespace
+  , flattenCondTree
+  ) where
+
+import Control.Applicative ((<|>))
+import Control.DeepSeq (force)
+import Control.Exception ()
+import Data.ByteString qualified as BS
+import Data.List.NonEmpty qualified as NE
+import Data.Maybe as Maybe
+import Data.MemCache (MemCache)
+import Data.MemCache qualified as MemCache
+import Data.Pool (Pool)
+import Data.Set (Set)
+import Data.Set qualified as Set
+import Data.Text (Text, pack)
+import Data.Text qualified as Text
+import Data.Text.Display
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple qualified as PG
+import Distribution.Compat.Lens qualified as L
+import Distribution.Compat.NonEmptySet qualified as NESet
+import Distribution.Compiler (CompilerFlavor (..))
+import Distribution.Fields.ParseResult
+import Distribution.PackageDescription hiding (PackageId, PackageName)
+import Distribution.PackageDescription qualified as Cabal
+import Distribution.Types.BuildInfo.Lens qualified as L
+import Distribution.Types.PackageDescription ()
+import Distribution.Utils.ShortText (fromShortText)
+import Distribution.Version (Version, VersionRange, withinRange)
+import Distribution.Version qualified as Version
+import Effectful
+import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
+import Effectful.Log (Log)
+import Effectful.Reader.Static (Reader)
+import Effectful.Time (Time)
+import Effectful.Time qualified as Time
+import GHC.List (List)
+import Log
+import Optics.Core
+import RequireCallStack
+
+import Flora.Database
+import Flora.Domain.Category.Normalise
+import Flora.Domain.Import.Package.Types
+import Flora.Domain.Import.Types
+import Flora.Environment.Env (FloraEnv (..))
+import Flora.Model.Category.Types
+import Flora.Model.Category.Update qualified as Update
+import Flora.Model.Component.Types as Component
+import Flora.Model.Package.Orphans ()
+import Flora.Model.Package.Types
+import Flora.Model.Package.Update qualified as Update
+import Flora.Model.PackageIndex.Types
+import Flora.Model.PackageUploader.Types
+import Flora.Model.PackageUploader.Update qualified as Update
+import Flora.Model.Release (deterministicReleaseId)
+import Flora.Model.Release.Types
+import Flora.Model.Release.Update qualified as Update
+import Flora.Model.Requirement
+  ( Requirement (..)
+  , deterministicRequirementId
+  )
+import Flora.Monad
+
+flattenCondTree
+  :: CondTree ConfVar c component
+  -> [(Maybe (Condition ConfVar), component)]
+flattenCondTree = flattenCondTreeAcc Nothing
+
+flattenCondTreeAcc
+  :: Maybe (Condition ConfVar)
+  -- ^ Condition accumulator.
+  -> CondTree ConfVar c component
+  -> [(Maybe (Condition ConfVar), component)]
+flattenCondTreeAcc condAcc (Cabal.CondNode comp _ components) =
+  let components' = flattenCondBranchAcc condAcc =<< components
+   in (condAcc, comp) : components'
+
+flattenCondBranchAcc
+  :: Maybe (Condition ConfVar)
+  -- ^ Condition accumulator.
+  -> CondBranch ConfVar c component
+  -> [(Maybe (Condition ConfVar), component)]
+flattenCondBranchAcc condAcc (CondBranch cond ifTrue maybeIfFalse) =
+  let ifTrue' = flattenCondTreeAcc ((`cAnd` cond) <$> condAcc <|> Just cond) ifTrue
+      ifFalse' = flattenCondTreeAcc ((`cAnd` cNot cond) <$> condAcc <|> Just (cNot cond)) =<< maybeToList maybeIfFalse
+   in ifTrue' ++ ifFalse'
+
+versionList :: Set Version
+versionList =
+  Set.fromList
+    [ Version.mkVersion [9, 12, 2]
+    , Version.mkVersion [9, 12, 1]
+    , Version.mkVersion [9, 10, 3]
+    , Version.mkVersion [9, 10, 2]
+    , Version.mkVersion [9, 10, 1]
+    , Version.mkVersion [9, 8, 4]
+    , Version.mkVersion [9, 8, 3]
+    , Version.mkVersion [9, 8, 2]
+    , Version.mkVersion [9, 8, 1]
+    , Version.mkVersion [9, 6, 7]
+    , Version.mkVersion [9, 6, 6]
+    , Version.mkVersion [9, 6, 5]
+    , Version.mkVersion [9, 6, 4]
+    , Version.mkVersion [9, 6, 3]
+    , Version.mkVersion [9, 6, 2]
+    , Version.mkVersion [9, 6, 1]
+    , Version.mkVersion [9, 4, 8]
+    , Version.mkVersion [9, 4, 7]
+    , Version.mkVersion [9, 4, 6]
+    , Version.mkVersion [9, 4, 5]
+    , Version.mkVersion [9, 4, 4]
+    , Version.mkVersion [9, 4, 3]
+    , Version.mkVersion [9, 4, 2]
+    , Version.mkVersion [9, 4, 1]
+    , Version.mkVersion [9, 2, 8]
+    , Version.mkVersion [9, 2, 7]
+    , Version.mkVersion [9, 2, 6]
+    , Version.mkVersion [9, 2, 5]
+    , Version.mkVersion [9, 2, 4]
+    , Version.mkVersion [9, 2, 3]
+    , Version.mkVersion [9, 2, 2]
+    , Version.mkVersion [9, 2, 1]
+    , Version.mkVersion [9, 0, 2]
+    , Version.mkVersion [9, 0, 1]
+    , Version.mkVersion [8, 10, 7]
+    , Version.mkVersion [8, 10, 6]
+    , Version.mkVersion [8, 10, 5]
+    , Version.mkVersion [8, 10, 4]
+    , Version.mkVersion [8, 10, 3]
+    , Version.mkVersion [8, 10, 2]
+    , Version.mkVersion [8, 10, 1]
+    , Version.mkVersion [8, 8, 4]
+    , Version.mkVersion [8, 8, 3]
+    , Version.mkVersion [8, 8, 2]
+    , Version.mkVersion [8, 8, 1]
+    , Version.mkVersion [8, 6, 5]
+    , Version.mkVersion [8, 6, 4]
+    , Version.mkVersion [8, 6, 3]
+    , Version.mkVersion [8, 6, 2]
+    , Version.mkVersion [8, 6, 1]
+    , Version.mkVersion [8, 4, 4]
+    , Version.mkVersion [8, 4, 3]
+    , Version.mkVersion [8, 4, 2]
+    , Version.mkVersion [8, 4, 1]
+    , Version.mkVersion [8, 2, 2]
+    , Version.mkVersion [8, 0, 2]
+    , Version.mkVersion [7, 10, 3]
+    ]
+
+parseString
+  :: (Error ImportError :> es, Log :> es)
+  => (BS.ByteString -> ParseResult a)
+  -- ^ File contents to final value parser
+  -> String
+  -- ^ File name
+  -> BS.ByteString
+  -> FloraM es a
+parseString parser name bs = do
+  let (_warnings, result) = runParseResult (parser bs)
+  case result of
+    Right x -> pure x
+    Left err -> do
+      Log.logAttention_ (display $ show err)
+      Error.throwError $ CabalFileCouldNotBeParsed name
+
+newUploaderCache :: IOE :> es => Eff es (MemCache Text PackageUploaderId)
+newUploaderCache = MemCache.new (const 1) 100_000
+
+-- Workers run the write transaction concurrently and it takes row locks in a
+-- pre-defined order, otherwise two importers that reference each other's
+-- packages deadlock.
+persistImportOutput
+  :: forall es
+   . ( IOE :> es
+     , Log :> es
+     , Reader FloraEnv :> es
+     , RequireCallStack
+     , Time :> es
+     )
+  => Pool PG.Connection
+  -> Vector Category
+  -> ImportOutput
+  -> FloraM es ()
+persistImportOutput pool allCategories (ImportOutput package categories release components) =
+  Log.localData
+    [ "package_name" .= package.name
+    , "version" .= release.version
+    ]
+    $ withReadWritePool pool
+    $ do
+      Update.upsertPackageWithDependencies package (fmap (.package) dependencies)
+      Update.bulkAddToCategory package.packageId packageCategoryIds
+      Update.upsertRelease package release
+      Update.upsertPackageComponents componentsList
+      Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
+  where
+    componentsList = NE.toList $ fmap fst components
+    dependencies = foldMap snd components
+    packageCategoryIds =
+      Maybe.mapMaybe
+        (\name -> (.categoryId) <$> Vector.find (\c -> c.name == name) allCategories)
+        categories
+
+-- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
+-- that can later be inserted into the database. This function produces stable, deterministic ids,
+-- so it should be possible to extract and insert a single package many times in a row.
+extractPackageDataFromCabal
+  :: ( Error ImportError :> es
+     , IOE :> es
+     , Log :> es
+     , RequireCallStack
+     , Time :> es
+     )
+  => Pool PG.Connection
+  -> MemCache Text PackageUploaderId
+  -> PackageIndex
+  -> Vector (Text, Set PackageName)
+  -> UTCTime
+  -> Maybe Text
+  -> GenericPackageDescription
+  -> FloraM es ImportOutput
+extractPackageDataFromCabal pool uploaderIds packageIndex indexPackages uploadTime mUsername genericDesc = do
+  let packageDesc = genericDesc.packageDescription
+  let flags = Vector.fromList genericDesc.genPackageFlags
+  let packageName = force $ packageDesc ^. #package % #pkgName % to unPackageName % to pack % to PackageName
+  let packageBuildType = Cabal.buildType genericDesc.packageDescription
+  let packageVersion = force packageDesc.package.pkgVersion
+  case chooseNamespace packageName indexPackages of
+    Nothing -> do
+      Log.logAttention "Could not select namespace" $
+        object
+          [ "package_name" .= display packageName
+          , "index" .= packageIndex.repository
+          , "indexes_consulted" .= fmap (fmap Set.size) indexPackages
+          ]
+      Error.throwError $ CouldNotSelectNamespace packageIndex.repository packageName
+    Just namespace -> do
+      let packageId = deterministicPackageId namespace packageName
+      let releaseId = deterministicReleaseId packageId packageVersion
+      timestamp <- Time.currentTime
+      let sourceRepos = getRepoURL packageName packageDesc.sourceRepos
+      let rawCategoryField = packageDesc ^. #category % to fromShortText % to Text.pack
+      let categoryList = fmap (Text.stripStart . Text.stripEnd) (Text.splitOn "," rawCategoryField)
+      let categories = Maybe.mapMaybe normaliseCategory categoryList
+      mPackageUploaderId <-
+        traverse
+          (determinePackageUploaderId pool uploaderIds packageIndex.packageIndexId)
+          mUsername
+      let package =
+            Package
+              { packageId
+              , namespace
+              , name = packageName
+              , createdAt = timestamp
+              , updatedAt = timestamp
+              , status = FullyImportedPackage
+              , deprecationInfo = Nothing
+              }
+
+      let release =
+            Release
+              { releaseId
+              , packageId
+              , version = packageVersion
+              , archiveChecksum = Nothing
+              , uploadedAt = Just uploadTime
+              , createdAt = timestamp
+              , updatedAt = timestamp
+              , readme = Nothing
+              , readmeStatus = NotImported
+              , changelog = Nothing
+              , changelogStatus = NotImported
+              , repository = Just packageIndex.repository
+              , tarballRootHash = Nothing
+              , tarballArchiveHash = Nothing
+              , license = Cabal.license packageDesc
+              , sourceRepos
+              , homepage = Just $ display packageDesc.homepage
+              , documentation = ""
+              , bugTracker = Just $ display packageDesc.bugReports
+              , maintainer = display packageDesc.maintainer
+              , synopsis = display packageDesc.synopsis
+              , description = display packageDesc.description
+              , flags = ReleaseFlags flags
+              , testedWith = getVersions . extractTestedWith . Vector.fromList $ packageDesc.testedWith
+              , deprecated = Nothing
+              , revisedAt = Nothing
+              , buildType = packageBuildType
+              , uploaderId = mPackageUploaderId
+              }
+
+      let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List ImportDependency)
+          extractCondTreeComponent' = extractCondTreeComponent package indexPackages release
+
+          lib :: [(PackageComponent, [ImportDependency])]
+          lib = extractCondTreeComponent' Component.Library (display package.name) <$> maybeToList genericDesc.condLibrary
+
+          subLibs :: [(PackageComponent, [ImportDependency])]
+          subLibs =
+            (\(compName, subLibrary) -> extractCondTreeComponent' Component.Library (display compName) subLibrary)
+              <$> genericDesc.condSubLibraries
+
+          foreignLibs :: [(PackageComponent, [ImportDependency])]
+          foreignLibs =
+            (\(compName, fLib) -> extractCondTreeComponent' Component.ForeignLib (display compName) fLib)
+              <$> genericDesc.condForeignLibs
+
+          executables :: [(PackageComponent, [ImportDependency])]
+          executables =
+            (\(compName, exe) -> extractCondTreeComponent' Component.Executable (display compName) exe)
+              <$> genericDesc.condExecutables
+
+          testSuites :: [(PackageComponent, [ImportDependency])]
+          testSuites =
+            (\(compName, testSuite) -> extractCondTreeComponent' Component.TestSuite (display compName) testSuite)
+              <$> genericDesc.condTestSuites
+
+          benchmarks :: [(PackageComponent, [ImportDependency])]
+          benchmarks =
+            (\(compName, benchmark) -> extractCondTreeComponent' Component.Benchmark (display compName) benchmark)
+              <$> genericDesc.condBenchmarks
+
+      let components' =
+            lib
+              <> subLibs
+              <> foreignLibs
+              <> executables
+              <> testSuites
+              <> benchmarks
+      case NE.nonEmpty components' of
+        Nothing -> do
+          Log.logAttention "No importable components" $ object ["package" .= package]
+          Error.throwError $ NoImportableComponents namespace package.name release.version
+        Just components -> pure $ ImportOutput package categories release components
+
+determinePackageUploaderId
+  :: (IOE :> es, Log :> es, RequireCallStack)
+  => Pool PG.Connection
+  -> MemCache Text PackageUploaderId
+  -> PackageIndexId
+  -> Text
+  -> Eff es PackageUploaderId
+determinePackageUploaderId pool uploaderIds packageIndexId username =
+  MemCache.fetch_ uploaderIds username $
+    withReadWritePool pool $
+      Update.getOrInsertPackageUploader username packageIndexId
+
+extractCondTreeComponent
+  :: L.HasBuildInfo component
+  => Package
+  -> Vector (Text, Set PackageName)
+  -> Release
+  -> ComponentType
+  -> Text
+  -- ^ component name
+  -> CondTree ConfVar c component
+  -> (PackageComponent, List ImportDependency)
+extractCondTreeComponent
+  package
+  indexPackages
+  release
+  componentType
+  componentName
+  conditionalComp =
+    ( mkPackageComponent componentType componentName release
+    , mkImportDependencies
+        package
+        indexPackages
+        (mkComponentId componentType componentName release)
+        conditionalComp
+    )
+
+getLibName :: PackageName -> LibraryName -> Text
+getLibName pname LMainLibName = display pname
+getLibName _ (LSubLibName lname) = Text.pack $ unUnqualComponentName lname
+
+mkPackageComponent :: ComponentType -> Text -> Release -> PackageComponent
+mkPackageComponent componentType componentName release =
+  let releaseId = release.releaseId
+      canonicalForm = CanonicalComponent componentName componentType
+      componentId = deterministicComponentId releaseId canonicalForm
+   in PackageComponent componentId releaseId canonicalForm
+
+mkImportDependency
+  :: Package
+  -> Vector (Text, Set PackageName)
+  -> ComponentId
+  -> Maybe (Condition ConfVar)
+  -> Cabal.Dependency
+  -> Maybe ImportDependency
+mkImportDependency package indexPackages packageComponentId cond (Cabal.Dependency depName versionRange libs) = do
+  let name = depName & unPackageName & pack & PackageName
+  namespace <- chooseNamespace name indexPackages
+  let packageId = deterministicPackageId namespace name
+      createdAt = package.createdAt
+      updatedAt = package.updatedAt
+      status = UnknownPackage
+      deprecationInfo = Nothing
+      dependencyPackage = Package packageId namespace name createdAt updatedAt status deprecationInfo
+      requirement =
+        Requirement
+          { requirementId = deterministicRequirementId packageComponentId packageId
+          , packageComponentId
+          , packageId
+          , requirement = display versionRange
+          , components = Vector.fromList $ NESet.toList $ NESet.map (getLibName name) libs
+          , condition = cond
+          }
+   in Just (ImportDependency{package = dependencyPackage, requirement})
+
+mkComponentId
+  :: ComponentType
+  -> Text
+  -> Release
+  -> ComponentId
+mkComponentId componentType componentName release =
+  let canonicalForm = CanonicalComponent componentName componentType
+      releaseId = release.releaseId
+   in deterministicComponentId releaseId canonicalForm
+
+mkImportDependencies
+  :: L.HasBuildInfo component
+  => Package
+  -> Vector (Text, Set PackageName)
+  -> ComponentId
+  -> CondTree ConfVar c component
+  -> [ImportDependency]
+mkImportDependencies package indexPackages packageComponentId comp =
+  let conditionalDeps :: [(Maybe (Condition ConfVar), [Dependency])]
+      conditionalDeps = fmap (L.view L.targetBuildDepends) <$> flattenCondTree comp
+      mkImportDependency' = mkImportDependency package indexPackages packageComponentId
+   in (\(cond, deps) -> mkImportDependency' cond `mapMaybe` deps) =<< conditionalDeps
+
+getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
+getRepoURL _ [] = Vector.empty
+getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.repoLocation
+
+chooseNamespace
+  :: PackageName
+  -> Vector (Text, Set PackageName)
+  -> Maybe Namespace
+chooseNamespace name packages =
+  let result = Vector.mapMaybe (\(repo, indexPackages) -> isPackageInSet name (repo, indexPackages)) packages
+   in case Vector.uncons result of
+        Just (found, _) -> Just found
+        Nothing -> Nothing
+
+isPackageInSet :: PackageName -> (Text, Set PackageName) -> Maybe Namespace
+isPackageInSet packageName (indexName, indexPackages)
+  | packageName `Set.member` indexPackages = Just (Namespace indexName)
+  | otherwise = Nothing
+
+extractTestedWith :: Vector (CompilerFlavor, VersionRange) -> Vector VersionRange
+extractTestedWith testedWithVector =
+  testedWithVector
+    & Vector.filter (\(flavour, _) -> flavour == GHC)
+    & Vector.filter (\(_, versionRange) -> any (`withinRange` versionRange) versionList)
+    & Vector.map snd
+
+getVersions :: Vector VersionRange -> Vector Version
+getVersions supportedCompilers =
+  foldMap
+    (\version -> Vector.foldMap (checkVersion version) supportedCompilers)
+    versionList
+checkVersion :: Version -> VersionRange -> Vector Version
+checkVersion version versionRange =
+  if version `withinRange` versionRange
+    then Vector.singleton version
+    else Vector.empty

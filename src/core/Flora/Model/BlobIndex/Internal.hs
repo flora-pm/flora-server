@@ -29,7 +29,7 @@ import System.FilePath (dropTrailingPathSeparator, joinPath, splitPath, (</>))
 import Flora.Model.BlobIndex.Types (TarError (..))
 import Flora.Model.BlobStore.API (hashByteString)
 import Flora.Model.BlobStore.Types (Sha256Sum (..))
-import Flora.Model.Package (PackageName)
+import Flora.Model.Package.Types (PackageName)
 
 -- | Structure for representing a tarball directory tree
 data TarTree a
@@ -165,7 +165,7 @@ hashTree (TarRoot _ pname version tree) =
         . foldl' SHA.update SHA.init
         . concatMap
           ( \(fp, entry) ->
-              [ bytestring (ann entry)
+              [ (ann entry).bytestring
               , BSU.fromString fp
               ]
           )

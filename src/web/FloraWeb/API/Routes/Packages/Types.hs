@@ -24,7 +24,7 @@ import GHC.TypeLits
 import Optics.Core
 
 import Flora.Model.Component.Types
-import Flora.Model.Package
+import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 import JSON
 

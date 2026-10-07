@@ -1,9 +1,11 @@
 module Flora.UserSpec where
 
-import Optics.Core
+import Effectful.Reader.Static qualified as Reader
 import RequireCallStack
 import Test.Tasty
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.TestUtils
@@ -18,10 +20,12 @@ spec fixtures =
 
 fetchUserById :: RequireCallStack => Fixtures -> TestEff ()
 fetchUserById Fixtures{hackageUser} = do
-  result <- Query.getUserById (hackageUser ^. #userId)
+  FloraEnv{pool} <- Reader.ask
+  result <- withReadOnlyPool pool $ Query.getUserById hackageUser.userId
   assertEqual_ (Just hackageUser) result
 
 fetchUserByEmail :: RequireCallStack => Fixtures -> TestEff ()
 fetchUserByEmail Fixtures{hackageUser} = do
-  result <- Query.getUserByEmail (hackageUser ^. #email)
+  FloraEnv{pool} <- Reader.ask
+  result <- withReadOnlyPool pool $ Query.getUserByEmail hackageUser.email
   assertEqual_ (Just hackageUser) result

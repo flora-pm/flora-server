@@ -8,28 +8,30 @@ import Data.Text qualified as T
 import Database.PostgreSQL.Simple.Migration
 import Effectful
 import Effectful.Exception qualified as E
+import Effectful.Fail (runFailIO)
 import Effectful.Log (Log, runLog)
-import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static
 import Effectful.Reader.Static qualified as Reader
 import Log
 import Log.Backend.StandardOutput qualified as Log
+import Options.Applicative
 import System.Exit (exitFailure)
 import System.IO
 
 import Flora.Environment
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), toConnString)
 import Flora.Model.Job
 import FloraJobs.Environment
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
-  env <- runEff getFloraJobsEnv
-  runAllMigrations
-    & Reader.runReader env
+  config <- execParser parseConfig
+  jobsEnv <- runEff . runFailIO $ getFloraJobsEnv config
+  runAllMigrations jobsEnv.config.connectionInfo
+    & Reader.runReader jobsEnv
     & (`E.catches` exceptionHandlers)
     & runLog "flora-migrate" logger LogTrace
-    & runDB env.pool
     & runEff
   where
     exceptionHandlers =
@@ -37,15 +39,14 @@ main = Log.withStdOutLogger $ \logger -> do
           logAttention "Unhandled exception" $ object ["exception" .= show ex]
       ]
 
-runAllMigrations :: (DB :> es, IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
-runAllMigrations = do
+runAllMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => ConnectionInfo -> Eff es ()
+runAllMigrations connectionInfo = do
   floraMigrations
-  arbiterMigrations
+  arbiterMigrations connectionInfo
 
-arbiterMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
-arbiterMigrations = do
-  env <- Reader.ask @FloraJobsEnv
-  result <- liftIO $ Mig.runMigrationsForRegistry (Proxy @JobQueues) env.connectionInfo "public" Mig.defaultMigrationConfig
+arbiterMigrations :: (IOE :> es, Log :> es) => ConnectionInfo -> Eff es ()
+arbiterMigrations connectionInfo = do
+  result <- liftIO $ Mig.runMigrationsForRegistry (Proxy @JobQueues) (toConnString connectionInfo) "public" Mig.defaultMigrationConfig
   case result of
     Mig.MigrationSuccess ->
       Log.logInfo_ "Arbiter migrations complete"
@@ -53,7 +54,7 @@ arbiterMigrations = do
       Log.logAttention_ $ "Arbiter migrations failed: " <> T.pack err
       liftIO exitFailure
 
-floraMigrations :: (DB :> es, IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
+floraMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
 floraMigrations = do
   FloraJobsEnv{pool} <- Reader.ask
   result <- liftIO $ withResource pool $ \conn -> do

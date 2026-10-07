@@ -4,15 +4,24 @@ import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Arbiter.Worker qualified as Worker
 import Control.Monad
+import Data.Either (partitionEithers)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Proxy
+import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display
 import Data.Text.IO qualified as T
+import Data.Time
+import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Effectful
 import Effectful.Concurrent (forkIO, runConcurrent)
 import Effectful.Fail
 import Effectful.FileSystem
+import Effectful.Log
+import Effectful.Log qualified as Log
 import Effectful.Prometheus (runPrometheusMetrics)
-import Log qualified
+import Log
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
@@ -20,37 +29,151 @@ import Network.Wai.Handler.Warp
   , setPort
   )
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
+import NoThunks.Class
+import Options.Applicative (execParser)
 import Prometheus qualified as P
 import Prometheus.Metric.GHC qualified as P
+import Prometheus.Metric.Proc qualified as P
 import RequireCallStack
+import System.Exit (exitFailure)
+import System.Info qualified as System
 
+import Flora.Database (withReadOnlyPool)
+import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment
+import Flora.Environment.Config (jobWorkerLimit)
 import Flora.Environment.Env
-import Flora.Logging qualified as Logging
+import Flora.Logging (makeLogger)
 import Flora.Model.Job
+import Flora.Model.PackageIndex.Query qualified as Query
+import Flora.Model.PackageIndex.Types (PackageIndex (..))
 import FloraJobs.Environment
 import FloraJobs.Metrics
+import FloraJobs.QueueMetrics qualified as QueueMetrics
 import FloraJobs.Runner qualified as Runner
 import FloraJobs.Types
 import FloraWeb.Common.Tracing
 
 main :: IO ()
 main = do
-  jobsEnv <- runEff getFloraJobsEnv
-  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv
+  labelCurrentThread "flora-jobs-runner-main"
+  floraConfig <- execParser parseConfig
+  jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
+  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
-  workerEnv <- ArbS.createSimpleEnv (Proxy @JobQueues) jobsEnv.connectionInfo "public"
-  let withLogger = Logging.makeLogger floraEnv.mltp.logger
+  workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
+  let withLogger = makeLogger "logs/flora-jobs.json" floraEnv.mltp.logger
   runEff . runConcurrent $ do
+    liftIO installThreadDumpHandler
     when floraEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
       runPrometheusMetrics jobsEnv.metrics $ do
         void $ P.register P.ghcMetrics
+        when (System.os == "linux") $ void $ P.register P.procMetrics
         setGitHash
     withLogger $ \logger -> do
-      void . forkIO $ runServer logger floraEnv jobsEnv
-      config <- liftIO $ Worker.defaultWorkerConfig jobsEnv.connectionInfo 50 (processJob workerEnv jobsEnv logger floraEnv)
+      runLog "flora-server" logger Log.LogTrace $
+        checkJobsEnvForThunks jobsEnv
+      when floraEnv.mltp.prometheusEnabled $ do
+        void . forkIO $ do
+          liftIO $ labelCurrentThread "jobs-http-server"
+          runServer logger floraEnv jobsEnv
+        void . forkIO $ do
+          liftIO $ labelCurrentThread "jobs-queue-metrics"
+          runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
+            QueueMetrics.runQueueMetricsLoop workerEnv jobsEnv.metrics
+      crons <-
+        runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
+          provideCallStack $ do
+            indexes <- withReadOnlyPool jobsEnv.pool Query.listPackageIndexes
+            indexRefreshCrons <- indexRefreshCronJobs indexes
+            feedRetentionCron <- feedRetentionCronJob
+            pure (indexRefreshCrons <> feedRetentionCron)
+      defaultConfig <- liftIO $
+        Worker.defaultBatchedWorkerConfig (jobWorkerLimit floraEnv.dbConfig) 1 $
+          \(job :| _) callbacks -> do
+            liftIO $ labelCurrentThread (Text.unpack ("job-" <> job.queueName <> "-" <> jobTypeLabel job.payload))
+            processJob workerEnv jobsEnv logger floraEnv job
+            Worker.ack callbacks job
+      let instrumentedHooks =
+            if floraEnv.mltp.prometheusEnabled
+              then metricsObservabilityHooks jobsEnv.metrics
+              else Arb.defaultObservabilityHooks
+      let config =
+            defaultConfig
+              { Worker.cronJobs = crons
+              , Worker.observabilityHooks =
+                  instrumentedHooks
+                    { Arb.onJobFailure = \job message startTime endTime -> do
+                        let duration = diffUTCTime endTime startTime
+                        Arb.onJobFailure instrumentedHooks job message startTime endTime
+                        liftIO $
+                          runEff $
+                            Log.runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
+                              Log.logAttention message $
+                                object
+                                  [ "duration" .= duration
+                                  , "payload" .= job.payload
+                                  ]
+                    }
+              }
+
       liftIO $ ArbS.runSimpleDb workerEnv $ Worker.runWorkerPool config
+
+indexRefreshCronJobs
+  :: (IOE :> es, Log :> es)
+  => Vector PackageIndex
+  -> Eff es [Worker.CronJob PackageJob]
+indexRefreshCronJobs indexes = do
+  let (invalid, crons) = partitionEithers $ Vector.toList $ Vector.imap mkCronJob indexes
+  forM_ invalid $ \(repository, parseError) ->
+    Log.logAttention "Invalid cron expression for the index refresh" $
+      object
+        [ "index" .= repository
+        , "error" .= parseError
+        ]
+  unless (null invalid) $ liftIO exitFailure
+  forM_ crons $ \cron ->
+    Log.logInfo "Scheduling index refresh" $
+      object
+        [ "schedule" .= cron.name
+        , "cron_expression" .= cron.cronExpression
+        ]
+  pure crons
+  where
+    mkCronJob position index =
+      case Worker.cronJob
+        ("refresh-index-" <> index.repository)
+        (everyTwelveHoursAt position)
+        Worker.SkipOverlap
+        (\_tickKind _tickTime -> Arb.defaultJob (RefreshIndex index.repository)) of
+        Left parseError -> Left (index.repository, Text.pack parseError)
+        Right cron -> Right cron
+    everyTwelveHoursAt :: Int -> Text
+    everyTwelveHoursAt position =
+      let hour = (3 + position) `mod` 12
+       in "0 " <> display hour <> "," <> display (hour + 12) <> " * * *"
+
+feedRetentionCronJob
+  :: (IOE :> es, Log :> es)
+  => Eff es [Worker.CronJob PackageJob]
+feedRetentionCronJob =
+  case Worker.cronJob
+    "prune-feed-entries"
+    "30 2 * * *"
+    Worker.SkipOverlap
+    (\_tickKind _tickTime -> Arb.defaultJob PruneFeedEntries) of
+    Left parseError -> do
+      Log.logAttention "Invalid cron expression for the feed entry pruning" $
+        object ["error" .= Text.pack parseError]
+      liftIO exitFailure
+    Right cron -> do
+      Log.logInfo "Scheduling feed entry pruning" $
+        object
+          [ "schedule" .= cron.name
+          , "cron_expression" .= cron.cronExpression
+          ]
+      pure [cron]
 
 runServer
   :: IOE :> es
@@ -63,6 +186,7 @@ runServer logger floraEnv jobsEnv = do
         setPort (fromIntegral jobsEnv.httpPort) $
           setOnException
             ( handleExceptions
+                "flora-jobs"
                 logger
                 floraEnv.environment
                 floraEnv.mltp
@@ -76,13 +200,24 @@ processJob
   -> FloraJobsEnv
   -> Log.Logger
   -> FloraEnv
-  -> Arb.JobHandler (ArbS.SimpleDb JobQueues IO) PackageJob ()
-processJob workerEnv jobsRunnerEnv logger floraEnv _conn job =
+  -> Arb.JobRead PackageJob
+  -> ArbS.SimpleDb JobQueues IO ()
+processJob workerEnv jobsRunnerEnv logger floraEnv job =
   provideCallStack $
     liftIO $
       runJobRunner
-        floraEnv.pool
         jobsRunnerEnv
         floraEnv
         logger
         (Log.localDomain "job-runner" $ Runner.runner workerEnv job)
+
+checkJobsEnvForThunks :: (IOE :> es, Log :> es) => FloraJobsEnv -> Eff es ()
+checkJobsEnvForThunks env = do
+  mThunk <- liftIO $ noThunks [] env
+  forM_ mThunk $ \info ->
+    Log.logAttention
+      "Unexpected thunk detected in JobsEnv (possible space leak): "
+      $ object
+        [ "thunk_context" .= info.thunkContext
+        , "thunk_info" .= info.thunkInfo
+        ]

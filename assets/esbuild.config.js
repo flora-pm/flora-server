@@ -4,14 +4,10 @@ const postcssPlugin = require("@deanc/esbuild-plugin-postcss");
 
 // PostCSS plugins
 const postcssImport = require("postcss-import");
-const postcssNesting = require("postcss-nesting");
-const postcssCustomMedia = require('postcss-custom-media');
-const autoprefixer = require("autoprefixer");
 const postcssCopy = require("postcss-copy")({
-  dest: "../assets/fonts",
+  dest: "../static",
 });
-const postcssDesignTokenUtils = require("postcss-design-token-utils");
-const designTokensConfig = require("./style-tokens/tokens.js");
+const postcssOklchForOldWebkit = require("postcss-color-oklch-for-old-webkit");
 
 let minify = false;
 let sourcemap = true;
@@ -25,9 +21,10 @@ const mkProdPlugins = () => {
       processOutput(assets) {
         console.log(assets);
         const orderAssets = {
-          "app.js": assets.app.js,
+          "polyfills.js": assets.polyfills.js,
+          "alpine.js": assets.alpine.js,
+          "htmx.js": assets.htmx.js,
           "styles.css": assets[''].css[0],
-          "prism.js": assets.prism.js,
         }
         return JSON.stringify(orderAssets, null, "  ");
       }
@@ -39,13 +36,8 @@ const pluginsList = () => {
   let plugins = [
     postcssPlugin({
       plugins: [
-        postcssDesignTokenUtils({
-          tokens: designTokensConfig,
-        }),
         postcssImport,
-        postcssNesting,
-        postcssCustomMedia,
-        autoprefixer,
+        postcssOklchForOldWebkit,
         postcssCopy,
       ],
     })
@@ -64,9 +56,10 @@ if (process.env.NODE_ENV === "prod") {
 const config = {
   color: true,
   entryPoints: {
-    "app": "./js/app.js",
+    "polyfills": "./js/polyfills.js",
+    "alpine": "./js/alpine.js",
+    "htmx": "./js/htmx.js",
     "styles": "./css/styles.css",
-    "prism": "./js/prism.js",
   },
   outdir: "../static",
   bundle: true,
@@ -81,8 +74,9 @@ const config = {
   metafile: true,
   loader:
     { '.woff2': 'file',
-	  '.ttf': 'file'
-	},
+    '.ttf': 'file',
+    '.svg': 'file',
+  },
 }
 
 esbuild.build(config).catch(() => process.exit(1));

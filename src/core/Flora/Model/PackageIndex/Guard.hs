@@ -1,25 +1,26 @@
 module Flora.Model.PackageIndex.Guard where
 
+import Data.Pool (Pool)
 import Data.Text (Text)
+import Database.PostgreSQL.Simple (Connection)
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB)
-import Effectful.Trace
-import Monitor.Tracing qualified as Tracing
 
+import Flora.Database
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
+import Flora.Monad
 
 guardThatPackageIndexExists
-  :: (DB :> es, Trace :> es)
-  => Text
-  -> (Text -> Eff es PackageIndex)
-  -- ^ Action to run if the package does not exist
+  :: IOE :> es
+  => Pool Connection
+  -> Text
   -> Eff es PackageIndex
-guardThatPackageIndexExists indexName action =
-  Tracing.childSpan "guardThatPackageIndexExists " $ do
-    result <-
-      Tracing.childSpan "Query.getPackageIndexByName " $
-        Query.getPackageIndexByName indexName
-    case result of
-      Nothing -> action indexName
-      Just packageIndex -> pure packageIndex
+  -- ^ Action to run if the package does not exist
+  -> FloraM es PackageIndex
+guardThatPackageIndexExists pool indexName action = do
+  result <-
+    withReadOnlyPool pool $
+      Query.getPackageIndexByName indexName
+  case result of
+    Nothing -> action
+    Just packageIndex -> pure packageIndex

@@ -1,0 +1,18 @@
+.icon {
+	display: inline;
+	height: var(--icon-size, 1.2em);
+	width: var(--icon-size, 1.2em);
+	margin-block-start: -.2em;
+}
+
+.icon--space {
+	margin-inline-end: var(--icon-space, 0.5em);
+}
+
+.icon--medium {
+	--icon-size: 1em;
+}
+
+.icon--small {
+	--icon-size: .75em;
+}

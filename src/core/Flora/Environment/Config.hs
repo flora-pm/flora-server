@@ -1,37 +1,48 @@
+{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
   ( FloraConfig (..)
-  , FloraJobsConfig (..)
-  , TestConfig (..)
   , MLTP (..)
   , FeatureConfig (..)
   , ConnectionInfo (..)
   , PoolConfig (..)
+
+    -- * Dividing the pool
+  , poolStripes
+  , connectionsPerStripe
+  , transientReservePerStripe
+  , importSharePerStripe
+  , jobSharePerStripe
+  , importWorkerLimit
   , DeploymentEnv (..)
   , LoggingDestination (..)
   , Assets (..)
   , AssetBundle (..)
-  , parseConfig
-  , parseTestConfig
-  , parseDeploymentEnv
   , getAssets
   , getAssetHash
-  , parseJobsConfig
-  , parseJobRunnerPort
+  , floraEnvDecoder
+  , toConnString
+  , jobWorkerLimit
   )
 where
 
-import Control.Monad ((>=>))
+import Control.DeepSeq
+import Control.Monad (mfilter, when)
 import Data.Aeson qualified as Aeson
 import Data.Base64.Types qualified as Base64
-import Data.Bifunctor (Bifunctor (second))
-import Data.ByteString (ByteString, StrictByteString)
+import Data.ByteString (ByteString)
 import Data.ByteString.Base64 qualified as Base64
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
+import Data.Scientific (toBoundedInteger)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Display (Display (..))
+import Data.Text.Encoding qualified as Text
 import Data.Time (NominalDiffTime)
 import Data.Typeable (Typeable)
 import Data.Word (Word16)
@@ -39,26 +50,13 @@ import Effectful (Eff, IOE, MonadIO (liftIO), type (:>))
 import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem.IO.ByteString qualified as EBS
-import Env
-  ( AsUnread (unread)
-  , Error (..)
-  , Parser
-  , Reader
-  , auto
-  , def
-  , help
-  , nonempty
-  , optional
-  , str
-  , switch
-  , var
-  , (<=<)
-  )
 import GHC.Generics (Generic)
+import KDL qualified
 import Network.Socket (HostName, PortNumber)
+import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
 import Sel.Hashing.SHA256 qualified as Sel
-import System.FilePath (isValid)
-import Text.Read (readMaybe)
+
+deriving via OnlyCheckWhnf PortNumber instance NoThunks PortNumber
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
@@ -68,18 +66,42 @@ data ConnectionInfo = ConnectionInfo
   , connectDatabase :: Text
   , sslMode :: Text
   }
-  deriving (Eq, Generic, Read, Show, Typeable)
+  deriving stock (Eq, Generic, Read, Show, Typeable)
+  deriving anyclass (NFData, NoThunks)
+
+toConnString :: ConnectionInfo -> ByteString
+toConnString connectionInfo =
+  Text.encodeUtf8 $
+    "host="
+      <> connectionInfo.connectHost
+      <> " port="
+      <> Text.pack (show connectionInfo.connectPort)
+      <> " user="
+      <> connectionInfo.connectUser
+      <> " password="
+      <> connectionInfo.connectPassword
+      <> " dbname="
+      <> connectionInfo.connectDatabase
 
 data DeploymentEnv
   = Production
   | Development
   | Test
   deriving stock (Bounded, Enum, Eq, Generic, Show)
+  deriving anyclass (NFData, NoThunks)
 
 instance Display DeploymentEnv where
   displayBuilder Production = "production"
   displayBuilder Development = "development"
   displayBuilder Test = "test"
+
+deploymentEnvDecoder :: KDL.ValueDecoder DeploymentEnv
+deploymentEnvDecoder = KDL.withDecoder KDL.string \x -> do
+  case x of
+    "production" -> pure Production
+    "development" -> pure Development
+    "test" -> pure Test
+    _ -> KDL.failM "Name of the current environment (production, development, test)"
 
 data LoggingDestination
   = -- | Logs are printed on the standard output
@@ -88,20 +110,31 @@ data LoggingDestination
     Json
   | -- | Logs are sent to a file as JSON
     JSONFile
-  deriving (Generic, Show)
+  deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
+
+loggingDestinationDecoder :: KDL.ValueDecoder LoggingDestination
+loggingDestinationDecoder = KDL.withDecoder KDL.string $ \case
+  "stdout" -> pure StdOut
+  "json" -> pure Json
+  "json-file" -> pure JSONFile
+  e -> KDL.failM $ "Unsupported logging destination: " <> e
 
 data Assets = Assets
-  { jsBundle :: AssetBundle
+  { jsPolyfills :: AssetBundle
+  , jsAlpine :: AssetBundle
+  , jsHtmx :: AssetBundle
   , cssBundle :: AssetBundle
-  , prism :: AssetBundle
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NoThunks)
 
 data AssetBundle = AssetBundle
   { name :: Text
   , hash :: Text
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NoThunks)
 
 -- | MLTP stands for Metrics, Logs, Traces and Profiles
 data MLTP = MLTP
@@ -111,170 +144,161 @@ data MLTP = MLTP
   , zipkinEnabled :: Bool
   , zipkinHost :: Maybe HostName
   , zipkinPort :: Maybe PortNumber
-  , eventlogSocket :: Maybe FilePath
+  , eventlogSocketDirectory :: Maybe FilePath
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
+
+instance NFData PortNumber where
+  rnf a = seq a ()
+
+mltpDecoder :: KDL.NodeDecoder MLTP
+mltpDecoder = KDL.children do
+  sentryDSN <- mfilter (/= mempty) <$> KDL.optional (KDL.argAt "sentryDSN")
+  prometheusEnabled <- KDL.argAt "prometheusEnabled"
+  logger <- KDL.argAtWith "loggingDestination" loggingDestinationDecoder
+  zipkinEnabled <- KDL.argAt "zipkinEnabled"
+  zipkinHost <- KDL.optional $ KDL.argAt "zipkinHost"
+  zipkinPort <- fmap toEnum <$> KDL.optional (KDL.argAt "zipkinPort")
+  eventlogSocketDirectory <- KDL.optional $ KDL.argAt "eventlogSocketDirectory"
+  pure MLTP{sentryDSN, prometheusEnabled, logger, zipkinEnabled, zipkinHost, zipkinPort, eventlogSocketDirectory}
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
   , blobStoreFS :: Maybe FilePath
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
+
+featureConfigDecoder :: KDL.NodeDecoder FeatureConfig
+featureConfigDecoder = KDL.children do
+  tarballsEnabled <- KDL.argAt "tarballsEnabled"
+  blobStoreFS <- KDL.argAt "blobStoreFilePath"
+  pure FeatureConfig{tarballsEnabled, blobStoreFS}
 
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
   { dbConfig :: PoolConfig
-  , connectionInfo :: ByteString
+  , connectionInfo :: ConnectionInfo
   , domain :: Text
   , httpPort :: Word16
+  , jobsHttpPort :: Word16
   , mltp :: MLTP
   , features :: FeatureConfig
   , environment :: DeploymentEnv
+  , seoIndexing :: Bool
+  , https :: Bool
   }
   deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
+
+connectionInfoDecoder :: KDL.NodeDecoder ConnectionInfo
+connectionInfoDecoder = KDL.children do
+  connectHost <- KDL.argAt "host"
+  connectPort <- KDL.argAt "port"
+  connectUser <- KDL.argAt "user"
+  connectPassword <- KDL.argAt "password"
+  connectDatabase <- KDL.argAt "dbname"
+  sslMode <- fromMaybe "prefer" <$> KDL.optional (KDL.argAt "sslmode")
+  pure ConnectionInfo{connectHost, connectPort, connectUser, connectPassword, connectDatabase, sslMode}
+
+floraConfigDecoder :: KDL.NodeDecoder FloraConfig
+floraConfigDecoder = KDL.children do
+  dbConfig <- KDL.nodeWith "pool" poolConfigDecoder
+  connectionInfo <- KDL.nodeWith "db" connectionInfoDecoder
+  domain <- KDL.argAt "domain"
+  httpPort <- KDL.argAt "httpPort"
+  jobsHttpPort <- KDL.argAt "jobsHttpPort"
+  mltp <- KDL.nodeWith "mltp" mltpDecoder
+  features <- fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing}) <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
+  environment <- KDL.argAtWith "environment" deploymentEnvDecoder
+  seoIndexing <- fromMaybe True <$> KDL.optional (KDL.argAtWith "seoIndexing" KDL.bool)
+  https <- fromMaybe True <$> KDL.optional (KDL.argAtWith "https" KDL.bool)
+  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment, seoIndexing, https}
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
   , connections :: Int
   }
-  deriving stock (Show)
+  deriving stock (Generic, Show)
+  deriving anyclass (NFData, NoThunks)
+
+-- | How many stripes 'Flora.Environment.mkPool' cuts every pool into.
+poolStripes :: Int
+poolStripes = 2
+
+connectionsPerStripe :: PoolConfig -> Int
+connectionsPerStripe poolConfig = max 1 (poolConfig.connections `div` poolStripes)
+
+transientReservePerStripe :: Int
+transientReservePerStripe = 3
+
+importSharePerStripe :: PoolConfig -> Int
+importSharePerStripe poolConfig = max 1 (connectionsPerStripe poolConfig `div` 2)
+
+jobSharePerStripe :: PoolConfig -> Int
+jobSharePerStripe poolConfig =
+  max
+    1
+    ( connectionsPerStripe poolConfig
+        - importSharePerStripe poolConfig
+        - transientReservePerStripe
+    )
+
+importWorkerLimit :: PoolConfig -> Int
+importWorkerLimit = (poolStripes *) . importSharePerStripe
+
+jobWorkerLimit :: PoolConfig -> Int
+jobWorkerLimit = (poolStripes *) . jobSharePerStripe
 
 data TestConfig = TestConfig
   { httpPort :: Word16
   , dbConfig :: PoolConfig
-  , connectionInfo :: ByteString
+  , connectionInfo :: ConnectionInfo
   , mltp :: MLTP
   }
   deriving stock (Generic)
 
 data FloraJobsConfig = FloraJobsConfig
   { dbConfig :: PoolConfig
-  , connectionInfo :: StrictByteString
+  , connectionInfo :: ConnectionInfo
   , httpPort :: Word16
+  , mltp :: MLTP
   }
   deriving stock (Generic)
 
-parseConnectionInfo :: Parser Error ByteString
-parseConnectionInfo =
-  var str "FLORA_DB_CONNSTRING" (help "libpq-compatible connection string")
+nominalDiffTimeDecoder :: KDL.ValueDecoder NominalDiffTime
+nominalDiffTimeDecoder = KDL.withDecoder KDL.number \x -> do
+  when (x < 0) (KDL.failM "Timeout can't be negative")
+  case toBoundedInteger x of
+    Nothing -> KDL.failM "Timeout value out of range"
+    Just n -> pure (fromIntegral @Int n)
 
-parsePoolConfig :: Parser Error PoolConfig
-parsePoolConfig =
-  PoolConfig
-    <$> var timeout "FLORA_DB_TIMEOUT" (help "Timeout for each connection")
-    <*> var
-      (int >=> nonNegative)
-      "FLORA_DB_POOL_CONNECTIONS"
-      (help "Number of connections across all sub-pools")
+poolConfigDecoder :: KDL.NodeDecoder PoolConfig
+poolConfigDecoder = KDL.children do
+  connectionTimeout <- KDL.argAtWith "timeout" nominalDiffTimeDecoder
+  connections <- KDL.argAt "connections"
+  pure PoolConfig{connectionTimeout, connections}
 
-parseMLTP :: Parser Error MLTP
-parseMLTP =
-  MLTP
-    <$> var (pure . Just <=< nonempty) "FLORA_SENTRY_DSN" (help "Sentry DSN" <> def Nothing)
-    <*> switch "FLORA_PROMETHEUS_ENABLED" (help "Is Prometheus metrics export enabled (default false)")
-    <*> var loggingDestination "FLORA_LOGGING_DESTINATION" (help "Where do the logs go")
-    <*> switch "FLORA_ZIPKIN_ENABLED" (help "Is Zipkin trace collection enabled? (default false)")
-    <*> var (pure . Just <=< nonempty) "FLORA_ZIPKIN_AGENT_HOST" (help "The hostname of the Zipkin collection agent" <> def Nothing)
-    <*> var (pure . Just <=< auto) "FLORA_ZIPKIN_AGENT_PORT" (help "The port of the Zipkin collection agent" <> def Nothing)
-    <*> var (pure . Just <=< filepath) "FLORA_EVENTLOG_SOCKET" (help "The path of the GC eventlog socket" <> def Nothing)
-
-parseFeatures :: Parser Error FeatureConfig
-parseFeatures =
-  FeatureConfig
-    <$> switch "FLORA_TARBALLS_ENABLED" (help "Whether to store package tarballs, by default off for now")
-    <*> optional
-      ( var filepath "FLORA_TARBALLS_FS_PATH" $
-          help "Store tarball blobs in the supplied filesystem directory"
-      )
-
-parsePort :: Parser Error Word16
-parsePort = var port "FLORA_HTTP_PORT" (help "HTTP Port for Flora")
-
-parseJobRunnerPort :: Parser Error Word16
-parseJobRunnerPort = var port "FLORA_JOB_HTTP_PORT" (help "HTTP Port for the Flora job runner")
-
-parseDomain :: Parser Error Text
-parseDomain = var str "FLORA_DOMAIN" (help "URL domain for Flora")
-
-parseDeploymentEnv :: Parser Error DeploymentEnv
-parseDeploymentEnv =
-  var deploymentEnv "FLORA_ENVIRONMENT" (help "Name of the current environment (production, development, test)")
-
-parseConfig :: Parser Error FloraConfig
-parseConfig =
-  FloraConfig
-    <$> parsePoolConfig
-    <*> parseConnectionInfo
-    <*> parseDomain
-    <*> parsePort
-    <*> parseMLTP
-    <*> parseFeatures
-    <*> parseDeploymentEnv
-
-parseTestConfig :: Parser Error TestConfig
-parseTestConfig =
-  TestConfig
-    <$> parsePort
-    <*> parsePoolConfig
-    <*> parseConnectionInfo
-    <*> parseMLTP
-
-parseJobsConfig :: Parser Error FloraJobsConfig
-parseJobsConfig =
-  FloraJobsConfig
-    <$> parsePoolConfig
-    <*> parseConnectionInfo
-    <*> parseJobRunnerPort
-
--- Env parser helpers
-
-int :: Reader Error Int
-int i = case readMaybe i of
-  Nothing -> Left . unread . show $ i
-  Just i' -> Right i'
-
-port :: Reader Error Word16
-port p = case int p of
-  Left err -> Left err
-  Right intPort ->
-    if intPort >= 1 && intPort <= 65535
-      then Right $ fromIntegral intPort
-      else Left . unread . show $ p
-
-nonNegative :: Int -> Either Error Int
-nonNegative nni = if nni >= 0 then Right nni else Left . unread . show $ nni
-
-timeout :: Reader Error NominalDiffTime
-timeout t = second fromIntegral (int >=> nonNegative $ t)
-
-deploymentEnv :: Reader Error DeploymentEnv
-deploymentEnv "production" = Right Production
-deploymentEnv "development" = Right Development
-deploymentEnv "test" = Right Test
-deploymentEnv e = Left $ unread e
-
-loggingDestination :: Reader Error LoggingDestination
-loggingDestination "stdout" = Right StdOut
-loggingDestination "json" = Right Json
-loggingDestination "json-file" = Right JSONFile
-loggingDestination e = Left $ unread e
-
-filepath :: Reader Error FilePath
-filepath fp = if isValid fp then Right fp else Left $ unread fp
+floraEnvDecoder :: KDL.DocumentDecoder FloraConfig
+floraEnvDecoder = KDL.document do
+  KDL.nodeWith "flora" floraConfigDecoder
 
 getAssets :: (Fail :> es, FileSystem :> es, IOE :> es) => DeploymentEnv -> Eff es Assets
 getAssets environment =
   case environment of
     Production -> do
       Assets
-        <$> getAsset "app.js"
+        <$> getAsset "polyfills.js"
+        <*> getAsset "alpine.js"
+        <*> getAsset "htmx.js"
         <*> getAsset "styles.css"
-        <*> getAsset "prism.js"
     _ -> do
       Assets
-        <$> getStaticAsset "app.js"
+        <$> getStaticAsset "polyfills.js"
+        <*> getStaticAsset "alpine.js"
+        <*> getStaticAsset "htmx.js"
         <*> getStaticAsset "styles.css"
-        <*> getStaticAsset "prism.js"
 
 getStaticAsset :: Text -> Eff es AssetBundle
 getStaticAsset key =

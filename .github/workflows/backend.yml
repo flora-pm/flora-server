@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Extract the tested GHC versions
         id: set-matrix
-        uses: kleidukos/get-tested@v0.1.9.1
+        uses: kleidukos/get-tested@bbcf52a8d1b69bf8fdd671b490126d53f70fc9a7 # v0.1.10.0
         with:
           cabal-file: flora.cabal
           ubuntu-version: "24.04"
@@ -47,12 +47,13 @@ jobs:
         ports:
           - 5432:5432
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - uses: haskell/ghcup-setup@v1
+    - name: Set up Haskell
+      uses: haskell-actions/setup@0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d # v2.12.1
       with:
-        ghc: ${{ matrix.ghc }}
-        cabal: "latest"
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: "latest"
 
     - name: Configure environment
       run: |
@@ -62,22 +63,15 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
         echo "STORE_PATH=$(cabal -v0 path --store-dir)" >> $GITHUB_ENV
-        source ./environment.ci.sh
-        touch ~/.pgpass
-        chmod 0600 ~/.pgpass
-        echo "${FLORA_DB_HOST}:${FLORA_DB_PORT}:${FLORA_DB_DATABASE}:${FLORA_DB_USER}:${FLORA_DB_PASSWORD}" > .pgpass
-        cat ~/.pgpass
         cabal update
         mkdir -p ~/.local/share
         git clone https://github.com/haskell/security-advisories.git ~/.local/share/security-advisories
 
-    - name: "Create freeze file"
-      run: |
-        cabal freeze --enable-tests
-
+    - name: Create freeze file
+      run: cabal freeze --enable-tests
 
     - name: Cache
-      uses: actions/cache@v5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ env.STORE_PATH }}
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
@@ -91,9 +85,6 @@ jobs:
     - name: Test
       run: |
         set -x
-        source ./environment.ci.sh
-        make db-setup
-        cabal run flora-cli -- create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
+        make db-test-setup
+        cabal run flora-cli -- -c environment.ci.kdl create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         make test
-      env:
-        PGPASSWORD: "postgres"

@@ -1,0 +1,26 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "0.0.0.0:4318"
+        # Heap profile batches can exceed the 20MiB default.
+        max_request_body_size: 41943040
+
+processors:
+  # ghc_eventlog_HeapAllocated is a delta sum whose start
+  # timestamp never advances, so the prometheus exporter
+  # replaces rather than accumulates. Convert to cumulative.
+  deltatocumulative:
+
+exporters:
+  debug:
+    verbosity: normal
+  prometheus:
+    endpoint: "0.0.0.0:9090"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [deltatocumulative]
+      exporters: [debug, prometheus]

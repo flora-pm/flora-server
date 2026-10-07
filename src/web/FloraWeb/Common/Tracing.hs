@@ -1,19 +1,27 @@
 module FloraWeb.Common.Tracing where
 
-import Control.Exception (AsyncException (..), Exception (..), SomeException, throw)
-import Control.Monad (when)
+import Colourista.IO (blueMessage, redMessage)
+import Control.Exception (AsyncException (..), Exception (..), IOException, SomeException, throw, try)
+import Control.Monad (forM_, when)
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 (unpack)
+import Data.List (isInfixOf)
 import Data.Maybe (isJust)
+import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Effectful
 import Effectful.Exception qualified as E
 import Effectful.Log
+import GHC.Eventlog.Socket qualified as Socket
 import GHC.IO.Exception (IOErrorType (..))
 import Log qualified
 import Network.Wai
 import Network.Wai.Handler.Warp
-import System.IO.Error (ioeGetErrorType)
+import System.Directory (createDirectoryIfMissing)
+import System.Environment (getProgName)
+import System.FilePath ((</>))
+import System.IO.Error (ioeGetErrorType, ioeGetLocation)
 import System.Log.Raven
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (..), SentryRecord (..))
@@ -22,14 +30,15 @@ import System.TimeManager (TimeoutThread (..))
 import Flora.Environment.Config
 
 handleExceptions
-  :: Logger
+  :: Text
+  -> Logger
   -> DeploymentEnv
   -> MLTP
   -> Maybe Request
   -> E.SomeException
   -> IO ()
-handleExceptions logger environment mltp mRequest e@(E.SomeException exception) = do
-  Log.runLogT "flora-production" logger LogAttention $ do
+handleExceptions componentName logger environment mltp mRequest e@(E.SomeException exception) = do
+  Log.runLogT (componentName <> "-" <> display environment) logger LogAttention $ do
     let context = E.displayExceptionContext $ E.someExceptionContext e
     when (shouldDisplayException e) $ do
       Log.logAttention "Unhandled exception" $
@@ -67,6 +76,10 @@ shouldDisplayException exception
   | Just (ioeGetErrorType -> et) <- fromException exception
   , et == ResourceVanished || et == InvalidArgument =
       False
+  | Just ioe <- fromException exception
+  , ioeGetErrorType ioe == NoSuchThing
+  , "kevent" `isInfixOf` ioeGetLocation ioe =
+      False
   | otherwise = True
 
 formatMessage :: Maybe Request -> SomeException -> String
@@ -80,3 +93,19 @@ recordUpdate (Just request) _exception rec =
     { srCulprit = Just $ unpack $ rawPathInfo request
     , srServerName = unpack <$> requestHeaderHost request
     }
+
+startEventlogSocket :: Maybe FilePath -> IO ()
+startEventlogSocket mDirectory =
+  forM_ mDirectory $ \directory -> do
+    result <- try @IOException $ do
+      createDirectoryIfMissing True directory
+      progName <- getProgName
+      Socket.start (directory </> progName <> ".sock")
+    case result of
+      Left err ->
+        redMessage $
+          "⚠️ Could not start the eventlog socket in "
+            <> Text.pack directory
+            <> ": "
+            <> Text.pack (displayException err)
+      Right () -> blueMessage "🔥 Sending live events to socket"

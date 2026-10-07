@@ -5,15 +5,12 @@ module FloraWeb.Pages.Server.Admin where
 import Arbiter.Servant qualified as ArbS
 import Arbiter.Servant.Server qualified as ArbS
 import Arbiter.Servant.UI qualified as ArbUI
-import Control.Concurrent (forkIO)
-import Control.Concurrent.Async qualified as Async
-import Control.Monad (void, when)
+import Control.Monad (void)
 import Control.Monad.IO.Class
 import Data.Maybe (isJust)
 import Database.PostgreSQL.Entity.DBT
 import Effectful (Eff)
 import Effectful.Reader.Static (ask)
-import Log qualified
 import Lucid
 import Optics.Core
 import RequireCallStack
@@ -22,7 +19,6 @@ import Servant (HasServer (..), Headers (..))
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
 import Flora.Model.Job
-import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User
 import Flora.Monad
 import FloraJobs.Scheduler
@@ -67,52 +63,10 @@ fetchMetadataHandler :: RequireCallStack => SessionWithCookies User -> FloraM Ro
 fetchMetadataHandler (Headers session _) = do
   FloraEnv{workerEnv} <- liftIO $ fetchFloraEnv session.webEnvStore
 
+  liftIO $ void $ schedulePackageUploadersJob workerEnv
   liftIO $ void $ schedulePackageDeprecationListJob workerEnv
 
-  releasesWithoutReadme <- Query.getHackagePackageReleasesWithoutReadme
-  liftIO $
-    void $
-      forkIO $
-        Async.forConcurrently_
-          releasesWithoutReadme
-          (\(releaseId, version, packagename) -> scheduleReadmeJob workerEnv releaseId packagename version)
-
-  releasesWithoutUploadTime <- Query.getHackagePackageReleasesWithoutUploadTimestamp
-  liftIO $
-    void $
-      forkIO $
-        Async.forConcurrently_
-          releasesWithoutUploadTime
-          (\(releaseId, version, packagename) -> scheduleUploadTimeJob workerEnv releaseId packagename version)
-
-  releasesWithoutChangelog <- Query.getHackagePackageReleasesWithoutChangelog
-  liftIO $
-    void $
-      forkIO $
-        Async.forConcurrently_
-          releasesWithoutChangelog
-          (\(releaseId, version, packagename) -> scheduleChangelogJob workerEnv releaseId packagename version)
-
   features <- ask @FeatureEnv
-  Log.logAttention "features" features
-  when (isJust features.blobStoreImpl) $ do
-    releasesWithoutTarball <- Query.getHackagePackageReleasesWithoutTarball
-    liftIO $!
-      void $!
-        forkIO $!
-          Async.forConcurrently_
-            releasesWithoutTarball
-            ( \(releaseId, version, packagename) ->
-                scheduleTarballJob workerEnv releaseId packagename version
-            )
-
-  packagesWithoutDeprecationInformation <- Query.getHackagePackagesWithoutReleaseDeprecationInformation
-  liftIO $
-    void $
-      forkIO $ do
-        Async.forConcurrently_
-          packagesWithoutDeprecationInformation
-          (\a -> scheduleReleaseDeprecationListJob workerEnv a)
-        void $ scheduleRefreshLatestVersions workerEnv
+  liftIO $ void $ scheduleMissingMetadataJobs workerEnv (isJust features.blobStoreImpl)
 
   pure $ redirect "/admin"

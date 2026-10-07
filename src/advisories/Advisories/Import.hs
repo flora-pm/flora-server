@@ -14,11 +14,9 @@ import Effectful
 import Effectful.Error.Static
 import Effectful.Log (Log)
 import Effectful.Log qualified as Log
-import Effectful.PostgreSQL.Transact.Effect (DB)
-import Effectful.Trace
-import Monitor.Tracing qualified as Tracing
+import Effectful.Reader.Static (Reader)
+import Effectful.Reader.Static qualified as Reader
 import Security.Advisories.Core.Advisory
-import Security.Advisories.Core.OsvId (printOsvId)
 import Security.Advisories.Filesystem (listAdvisories)
 import Validation (Validation (..))
 
@@ -27,22 +25,24 @@ import Advisories.Model.Advisory.Types
 import Advisories.Model.Advisory.Update qualified as Update
 import Advisories.Model.Affected.Types
 import Advisories.Model.Affected.Update qualified as Update
+import Flora.Database
+import Flora.Environment.Env (FloraEnv (..))
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types
+import Flora.Monad
 import OSV.Reference.Orphans
 
 -- | List deduplicated parsed Advisories
 importAdvisories
-  :: ( DB :> es
-     , Error (NonEmpty AdvisoryImportError) :> es
+  :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
      , Log :> es
-     , Trace :> es
+     , Reader FloraEnv :> es
      )
   => FilePath
-  -> Eff es ()
-importAdvisories root = Tracing.rootSpan alwaysSampled "import-advisories" $ do
-  result <- Tracing.childSpan "listAdvisories" $ listAdvisories root
+  -> FloraM es ()
+importAdvisories root = do
+  result <- listAdvisories root
   case result of
     Failure failures ->
       let errors = case NonEmpty.nonEmpty failures of
@@ -53,19 +53,19 @@ importAdvisories root = Tracing.rootSpan alwaysSampled "import-advisories" $ do
       forM_ advisoryList $ \advisory -> importAdvisory advisory
 
 importAdvisory
-  :: ( DB :> es
-     , Error (NonEmpty AdvisoryImportError) :> es
+  :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
      , Log :> es
-     , Trace :> es
+     , Reader FloraEnv :> es
      )
   => Advisory
-  -> Eff es ()
+  -> FloraM es ()
 importAdvisory advisory = do
+  FloraEnv{pool} <- Reader.ask
   advisoryId <- AdvisoryId <$> liftIO UUID.nextRandom
   let advisoryAffectedPackages = Vector.fromList advisory.advisoryAffected
   let advisoryDAO = processAdvisory advisoryId advisory
-  Update.insertAdvisory advisoryDAO
+  withReadWritePool pool $ Update.insertAdvisory advisoryDAO
   processAffectedPackages advisoryId advisoryAffectedPackages
 
 processAdvisory
@@ -81,8 +81,8 @@ processAdvisory advisoryId advisory =
     , capecs = Vector.fromList advisory.advisoryCAPECs
     , cwes = Vector.fromList advisory.advisoryCWEs
     , keywords = Vector.fromList advisory.advisoryKeywords
-    , aliases = Vector.fromList (printOsvId <$> advisory.advisoryAliases)
-    , related = Vector.fromList (printOsvId <$> advisory.advisoryRelated)
+    , aliases = Vector.fromList advisory.advisoryAliases
+    , related = Vector.fromList advisory.advisoryRelated
     , advisoryReferences = References $ Vector.fromList advisory.advisoryReferences
     , pandoc = advisory.advisoryPandoc
     , html = advisory.advisoryHtml
@@ -91,42 +91,44 @@ processAdvisory advisoryId advisory =
     }
 
 processAffectedPackages
-  :: ( DB :> es
-     , Error (NonEmpty AdvisoryImportError) :> es
+  :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
      , Log :> es
-     , Trace :> es
+     , Reader FloraEnv :> es
      )
   => AdvisoryId
   -> Vector Affected
-  -> Eff es ()
+  -> FloraM es ()
 processAffectedPackages advisoryId affectedPackages = do
   forM_ affectedPackages (processAffectedPackage advisoryId)
 
 processAffectedPackage
-  :: ( DB :> es
-     , Error (NonEmpty AdvisoryImportError) :> es
+  :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
      , Log :> es
-     , Trace :> es
+     , Reader FloraEnv :> es
      )
   => AdvisoryId
   -> Affected
-  -> Eff es ()
+  -> FloraM es ()
 processAffectedPackage advisoryId affected = do
+  FloraEnv{pool} <- Reader.ask
   affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
-  let packageName =
+  let (namespace, packageName) =
         case affected.affectedComponentIdentifier of
-          Repository _ ((RepositoryName "hackage")) affectedPackageName -> PackageName (Text.pack . unPackageName $ affectedPackageName)
-          GHC _ -> PackageName "ghc"
-  let namespace = Namespace "hackage"
-  package <- guardThatPackageExists namespace packageName $ \_ _ -> do
-    Log.logAttention "Affected package does not not exist" $
-      object
-        [ "namespace" .= display namespace
-        , "package" .= display packageName
-        ]
-    throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
+          Repository _ (RepositoryName repositoryName) affectedPackageName ->
+            (Namespace repositoryName, PackageName (Text.pack . unPackageName $ affectedPackageName))
+          GHC _ -> (Namespace "hackage", PackageName "ghc")
+  package <-
+    guardThatPackageExists pool namespace packageName >>= \case
+      Just package -> pure package
+      Nothing -> do
+        Log.logAttention "Affected package does not not exist" $
+          object
+            [ "namespace" .= display namespace
+            , "package" .= display packageName
+            ]
+        throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
   let declarations =
         affected.affectedDeclarations
           & fmap (uncurry AffectedDeclaration)
@@ -141,17 +143,18 @@ processAffectedPackage advisoryId affected = do
           , operatingSystems = fmap Vector.fromList affected.affectedOS
           , declarations = declarations
           }
-  Update.insertAffectedPackage affectedPackageDAO
+  withReadWritePool pool $ Update.insertAffectedPackage affectedPackageDAO
   processAffectedVersionRanges affectedPackageId affected.affectedVersions
 
 processAffectedVersionRanges
-  :: ( DB :> es
-     , IOE :> es
+  :: ( IOE :> es
+     , Reader FloraEnv :> es
      )
   => AffectedPackageId
   -> [AffectedVersionRange]
-  -> Eff es ()
+  -> FloraM es ()
 processAffectedVersionRanges affectedPackageId affectedVersions = do
+  FloraEnv{pool} <- Reader.ask
   traverse_
     ( \affectedVersion -> do
         affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
@@ -162,6 +165,6 @@ processAffectedVersionRanges affectedPackageId affectedVersions = do
                 , introducedVersion = affectedVersion.affectedVersionRangeIntroduced
                 , fixedVersion = affectedVersion.affectedVersionRangeFixed
                 }
-        Update.insertAffectedVersionRange versionRangeDAO
+        withReadWritePool pool $ Update.insertAffectedVersionRange versionRangeDAO
     )
     affectedVersions

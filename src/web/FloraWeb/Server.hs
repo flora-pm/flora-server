@@ -2,31 +2,29 @@ module FloraWeb.Server where
 
 import Arbiter.Servant qualified as ArbS
 import Colourista.IO (blueMessage)
+import Control.Concurrent.STM (TChan, newBroadcastTChanIO)
 import Control.Exception (bracket)
 import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
-import Control.Monad (forM_, void, when)
+import Control.Monad (void, when)
 import Control.Monad.Except qualified as Except
 import Data.Aeson
-import Data.IORef (IORef, newIORef)
 import Data.Maybe (isJust)
 import Data.OpenApi (OpenApi)
 import Data.Pool qualified as Pool
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Effectful
 import Effectful.Concurrent
 import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
-import Effectful.PostgreSQL.Transact.Effect (runDB)
+import Effectful.Log
+import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
 import Effectful.Time (runTime)
-import Effectful.Trace qualified as Trace
-import GHC.Eventlog.Socket qualified as Socket
-import Log (Logger)
-import Log qualified
-import Monitor.Tracing.Zipkin (Zipkin (..))
+import Log
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
   ( defaultSettings
@@ -63,30 +61,26 @@ import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
+import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment (getFloraEnv)
-import Flora.Environment.Config (DeploymentEnv (..), FloraConfig (..))
+import Flora.Environment.Config (FloraConfig (..), toConnString)
 import Flora.Environment.Env
-  ( BlobStoreImpl (..)
-  , FeatureEnv (..)
-  , FloraEnv (..)
-  , MLTP (..)
-  )
 import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
-import Flora.Monad
 import Flora.Monitoring (setGitHash)
-import Flora.Tracing qualified as Tracing
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
 import FloraWeb.Common.Auth
-  ( OptionalAuthContext
+  ( AdminAuthContext
+  , OptionalAuthContext
   , StrictAuthContext
   , adminAuthHandler
   , optionalAuthHandler
   , strictAuthHandler
   )
 import FloraWeb.Common.OpenSearch
+import FloraWeb.Common.ThreadLabel (labelRequestThread)
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
 import FloraWeb.Feed.Server qualified as Feed
@@ -101,35 +95,32 @@ import Prometheus.Servant.HasEndpoint ()
 type FloraAuthContext =
   '[ OptionalAuthContext
    , StrictAuthContext
-   , StrictAuthContext
+   , AdminAuthContext
    , ErrorFormatters
    ]
 
-runFlora :: IO ()
-runFlora = do
+runFlora :: FilePath -> IO ()
+runFlora config = do
   setBacktraceMechanismState HasCallStackBacktrace True
   secureMain $
     bracket
-      (getFloraEnv & runFileSystem & runFailIO & runEff)
+      (getFloraEnv config & runFileSystem & runFailIO & runEff)
       (runEff . shutdownFlora)
       ( \env ->
           runEff . withUnliftStrategy (ConcUnlift Ephemeral Unlimited) . runTime . runConcurrent $ do
             let baseURL = "http://localhost:" <> display env.httpPort
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
-            liftIO $ do
-              forM_ env.mltp.eventlogSocket Socket.start
-              when (isJust env.mltp.eventlogSocket) (blueMessage "🔥 Sending live events to socket")
+            liftIO $ startEventlogSocket env.mltp.eventlogSocketDirectory
+            liftIO installThreadDumpHandler
             when env.mltp.prometheusEnabled $ do
               liftIO $ blueMessage $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
               runPrometheusMetrics env.metrics $ do
                 void $ P.register P.ghcMetrics
                 when (System.os == "linux") $ void $ P.register P.procMetrics
                 setGitHash
-
-            liftIO $ when env.mltp.zipkinEnabled (blueMessage "🖊️ Connecting to Zipkin endpoint")
             liftIO $ when (env.environment == Development) (blueMessage "🔁 Live reloading enabled")
-            let withLogger = Logging.makeLogger env.mltp.logger
+            let withLogger = Logging.makeLogger "logs/flora-server.json" env.mltp.logger
             withLogger
               ( \appLogger ->
                   provideCallStack $ runServer appLogger env
@@ -146,42 +137,71 @@ logException
   -> Logger
   -> Safe.SomeException
   -> IO ()
-logException env logger exception =
+logException floraEnv logger exception =
   runEff
     . runTime
-    . Logging.runLog env logger
+    . Log.runLog
+      ("flora-server-" <> display floraEnv)
+      logger
+      defaultLogLevel
     $ Log.logAttention "Jobs runner crashed " (show exception)
 
-runServer :: (Concurrent :> es, IOE :> es) => Logger -> FloraEnv -> FloraM es ()
+runServer
+  :: ( Concurrent :> es
+     , IOE :> es
+     , RequireCallStack
+     )
+  => Logger
+  -> FloraEnv
+  -> Eff es ()
 runServer appLogger floraEnv = do
-  zipkin <- liftIO $ Tracing.newZipkin floraEnv.mltp.zipkinHost "flora-server"
-  -- void $ forkIO $ unsafeEff_ $ Safe.withException (startJobRunner oddJobsCfg) (logException floraEnv.environment appLogger)
-  loggingMiddleware <- Logging.runLog floraEnv.environment appLogger WaiLog.mkLogMiddleware
+  loggingMiddleware <-
+    Log.runLog
+      ("flora-server-" <> display floraEnv.environment)
+      appLogger
+      defaultLogLevel
+      WaiLog.mkLogMiddleware
   let prometheusMiddleware =
         if floraEnv.mltp.prometheusEnabled
           then WaiMetrics.prometheus WaiMetrics.def
           else id
   let webEnv = WebEnv floraEnv
   webEnvStore <- liftIO $ newWebEnvStore webEnv
-  ioref <- liftIO $ newIORef True
-  arbiterConfig <- liftIO $ ArbS.initArbiterServer (Proxy @JobQueues) floraEnv.config.connectionInfo "public"
-  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv zipkin ioref
+  reloadChannel <- liftIO newBroadcastTChanIO
+  when (floraEnv.environment == Development) $
+    void $
+      forkIO $
+        liftIO $ do
+          labelCurrentThread "live-reload-watcher"
+          Safe.catchAny
+            (LiveReload.watchAssets "./static" reloadChannel)
+            (\e -> blueMessage $ "⚠️ Live-reload watcher stopped: " <> Text.pack (show e))
+  let connectionInfo = floraEnv.config.connectionInfo
+  arbiterConfig <-
+    liftIO $
+      ArbS.initArbiterServer
+        (Proxy @JobQueues)
+        (toConnString connectionInfo)
+        "public"
+  let server = mkServer arbiterConfig appLogger webEnvStore floraEnv reloadChannel
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
           setOnException
             ( handleExceptions
+                "flora-server"
                 appLogger
                 floraEnv.environment
                 floraEnv.mltp
             )
             defaultSettings
-  liftIO
-    $ runSettings warpSettings
-    $ heartbeatMiddleware
-      . loggingMiddleware
-      . const
-    $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
-    $ prometheusMiddleware server
+  withEffToIO (ConcUnlift Persistent Unlimited) $ \_runInIO ->
+    runSettings warpSettings
+      $ labelRequestThread
+        . heartbeatMiddleware
+        . loggingMiddleware
+        . const
+      $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
+      $ prometheusMiddleware server
 
 mkServer
   :: RequireCallStack
@@ -189,23 +209,22 @@ mkServer
   -> Logger
   -> WebEnvStore
   -> FloraEnv
-  -> Zipkin
-  -> IORef Bool
+  -> TChan ()
   -> Application
-mkServer arbiterConfig logger webEnvStore floraEnv zipkin ioref =
+mkServer arbiterConfig logger webEnvStore floraEnv reloadChannel =
   serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
-    (naturalTransform floraEnv logger webEnvStore zipkin)
-    (floraServer arbiterConfig floraEnv.environment ioref)
+    (naturalTransform floraEnv logger webEnvStore)
+    (floraServer arbiterConfig floraEnv.environment reloadChannel)
 
 floraServer
   :: RequireCallStack
   => ArbS.ArbiterServerConfig JobQueues
   -> DeploymentEnv
-  -> IORef Bool
+  -> TChan ()
   -> Routes (AsServerT FloraEff)
-floraServer arbiterConfig environment ioref =
+floraServer arbiterConfig environment reloadChannel =
   Routes
     { assets = serveDirectoryWebApp "./static"
     , feed = Feed.server
@@ -214,7 +233,7 @@ floraServer arbiterConfig environment ioref =
     , api = API.apiServer
     , openApi = pure openApiHandler
     , docs = serveDirectoryWith docsBundler
-    , livereload = LiveReload.livereloadHandler environment ioref
+    , livereload = LiveReload.liveReloadHandler environment reloadChannel
     }
 
 naturalTransform
@@ -222,26 +241,16 @@ naturalTransform
   => FloraEnv
   -> Logger
   -> WebEnvStore
-  -> Zipkin
   -> FloraEff a
   -> Handler a
-naturalTransform floraEnv logger _webEnvStore zipkin app = do
-  let runTrace =
-        if floraEnv.environment == Production
-          then Trace.runTrace zipkin.zipkinTracer
-          else Trace.runNoTrace
+naturalTransform floraEnv logger _webEnvStore app = do
   result <-
     liftIO $
       Right
         <$> app
-          & runTrace
-          & runDB floraEnv.pool
           & runTime
           & runReader floraEnv.features
-          & ( case floraEnv.features.blobStoreImpl of
-                Just (BlobStoreFS fp) -> runBlobStoreFS fp
-                _ -> runBlobStorePure
-            )
+          & withBlobStore floraEnv.features
           & runErrorWith
             ( \callstack err -> do
                 Log.logInfo "Server error" $
@@ -253,7 +262,7 @@ naturalTransform floraEnv logger _webEnvStore zipkin app = do
                     ]
                 pure . Left $ err
             )
-          & Logging.runLog floraEnv.environment logger
+          & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
           & runReader floraEnv

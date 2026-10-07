@@ -13,7 +13,6 @@ module Flora.Model.Release.Update
   , updateTarballArchiveHash
   , updateReleaseUploader
   , setReleasesDeprecationMarker
-  , setArchiveChecksum
   , linkPackageUploaderToImportedRelease
   ) where
 
@@ -29,44 +28,51 @@ import Data.Time (UTCTime)
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Entity
-import Database.PostgreSQL.Entity.DBT (execute, executeMany)
 import Database.PostgreSQL.Entity.Types (field)
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Database.PostgreSQL.Simple.ToRow
 import Distribution.Types.Version (Version)
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
 import Effectful.Log (Log)
-import Effectful.PostgreSQL.Transact.Effect
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time (Time)
 import Log qualified
 
+import Flora.Database
+import Flora.Domain.Import.Types
 import Flora.Environment.Env (DeploymentEnv (..), FloraEnv (..))
-import Flora.Import.Types
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Feed.Types qualified as Types
 import Flora.Model.Feed.Update qualified as Update
 import Flora.Model.Package.Types (Package (..))
-import Flora.Model.PackageUploader.Query qualified as Query
 import Flora.Model.PackageUploader.Types
 import Flora.Model.PackageUploader.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
 import Flora.Monad
 
-insertRelease :: DB :> es => Release -> FloraM es ()
-insertRelease = dbtToEff . insert @Release
+insertRelease :: (IOE :> es, WriteDB :> es) => Release -> FloraM es ()
+insertRelease r = void $ execute (_insert @Release <> " ON CONFLICT DO NOTHING") r
 
-upsertRelease :: (DB :> es, IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es) => Package -> Release -> FloraM es ()
+upsertRelease
+  :: ( IOE :> es
+     , Log :> es
+     , ReadDB :> es
+     , Reader FloraEnv :> es
+     , Time :> es
+     , WriteDB :> es
+     )
+  => Package -> Release -> FloraM es ()
 upsertRelease package newRelease = do
   mReleaseFromDB <- Query.getReleaseById newRelease.releaseId
   case mReleaseFromDB of
     Just releaseFromDB ->
-      when (releaseFromDB.testedWith == newRelease.testedWith) $ do
+      when (releaseFromDB.testedWith /= newRelease.testedWith) $ do
         Log.logInfo "Duplicate releases found" $
           object
             [ "new_release" .= newRelease
@@ -86,89 +92,96 @@ upsertRelease package newRelease = do
       entry <- Types.newReleaseEntry instanceInfo package newRelease.version
       Update.insertFeedEntry entry
 
-refreshLatestVersions :: DB :> es => FloraM es ()
-refreshLatestVersions = dbtToEff $ void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
+refreshLatestVersions :: (IOE :> es, WriteDB :> es) => FloraM es ()
+refreshLatestVersions = void $ execute [sql| REFRESH MATERIALIZED VIEW CONCURRENTLY "latest_versions" |] ()
 
-updateReadme :: DB :> es => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
+updateReadme :: (IOE :> es, WriteDB :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
 updateReadme releaseId readmeBody status =
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [ [field| readme |]
-        , [field| readme_status |]
-        ]
-        ([field| release_id |], releaseId)
-        (readmeBody, status)
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [ [field| readme |]
+          , [field| readme_status |]
+          ]
+          [field| release_id |]
+      )
+      (toRow (readmeBody, status) ++ toRow (Only releaseId))
 
-updateUploadTime :: DB :> es => ReleaseId -> UTCTime -> FloraM es ()
+updateUploadTime :: (IOE :> es, WriteDB :> es) => ReleaseId -> UTCTime -> FloraM es ()
 updateUploadTime releaseId timestamp =
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [[field| uploaded_at |]]
-        ([field| release_id |], releaseId)
-        (Only (Just timestamp))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| uploaded_at |]]
+          [field| release_id |]
+      )
+      (toRow (Only (Just timestamp)) ++ toRow (Only releaseId))
 
-updateRevisionTime :: DB :> es => ReleaseId -> UTCTime -> FloraM es ()
+updateRevisionTime :: (IOE :> es, WriteDB :> es) => ReleaseId -> UTCTime -> FloraM es ()
 updateRevisionTime releaseId timestamp =
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [[field| revised_at |]]
-        ([field| release_id |], releaseId)
-        (Only (Just timestamp))
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| revised_at |]]
+          [field| release_id |]
+      )
+      (toRow (Only (Just timestamp)) ++ toRow (Only releaseId))
 
-updateChangelog :: DB :> es => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
+updateChangelog :: (IOE :> es, WriteDB :> es) => ReleaseId -> Maybe TextHtml -> ImportStatus -> FloraM es ()
 updateChangelog releaseId changelogBody status =
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [ [field| changelog |]
-        , [field| changelog_status |]
-        ]
-        ([field| release_id |], releaseId)
-        (changelogBody, status)
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [ [field| changelog |]
+          , [field| changelog_status |]
+          ]
+          [field| release_id |]
+      )
+      (toRow (changelogBody, status) ++ toRow (Only releaseId))
 
-updateTarballRootHash :: DB :> es => ReleaseId -> Sha256Sum -> FloraM es ()
+updateTarballRootHash :: (IOE :> es, WriteDB :> es) => ReleaseId -> Sha256Sum -> FloraM es ()
 updateTarballRootHash releaseId hash =
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [[field| tarball_root_hash |]]
-        ([field| release_id |], releaseId)
-        (Only $ Just $ display hash)
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| tarball_root_hash |]]
+          [field| release_id |]
+      )
+      (toRow (Only $ Just $ display hash) ++ toRow (Only releaseId))
 
 updateTestedWith
-  :: DB :> es
+  :: (IOE :> es, WriteDB :> es)
   => ReleaseId
   -> Vector Version
   -> UTCTime
   -> FloraM es ()
 updateTestedWith releaseId testedCompilers timestamp =
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [[field| tested_with |], [field| updated_at |]]
-        ([field| release_id |], releaseId)
-        (Just testedCompilers, timestamp)
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| tested_with |], [field| updated_at |]]
+          [field| release_id |]
+      )
+      (toRow (Just testedCompilers, timestamp) ++ toRow (Only releaseId))
 
 updateTarballArchiveHash
-  :: (BlobStoreAPI :> es, DB :> es)
+  :: (BlobStoreAPI :> es, IOE :> es, WriteDB :> es)
   => ReleaseId
   -> LazyByteString
   -> FloraM es ()
 updateTarballArchiveHash releaseId (toStrict -> content) = do
   let hash = Sha256Sum . SHA.hash $ content
   put hash content
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [[field| tarball_archive_hash |]]
-        ([field| release_id |], releaseId)
-        (Only . Just $ display hash)
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| tarball_archive_hash |]]
+          [field| release_id |]
+      )
+      (toRow (Only . Just $ display hash) ++ toRow (Only releaseId))
 
 linkPackageUploaderToImportedRelease
-  :: (DB :> es, Error ImportError :> es, IOE :> es)
+  :: (Error ImportError :> es, IOE :> es, ReadDB :> es, WriteDB :> es)
   => ReleaseId
   -> Text
   -> FloraM es ()
@@ -177,37 +190,32 @@ linkPackageUploaderToImportedRelease releaseId username = do
   case mPackageIndexId of
     Nothing -> Error.throwError $ CouldNotFindPackageIndexForRelease releaseId
     Just packageIndexId -> do
-      mPackageUploader <-
-        Query.getPackageUploaderByUsernameAndIndex
-          username
-          packageIndexId
-      case mPackageUploader of
-        Just packageUploader ->
-          updateReleaseUploader releaseId packageUploader.packageUploaderId
-        Nothing -> do
-          packageUploaderDAO <- mkPackageUploaderDAO username packageIndexId Nothing
-          Update.insertPackageUploader packageUploaderDAO
-          updateReleaseUploader releaseId packageUploaderDAO.packageUploaderId
+      -- Metadata jobs run concurrently and a maintainer owns many packages, so
+      -- this has to tolerate another job inserting the same uploader first.
+      -- 'getOrInsertPackageUploader' is where that is handled.
+      packageUploaderId <- Update.getOrInsertPackageUploader username packageIndexId
+      updateReleaseUploader releaseId packageUploaderId
 
 updateReleaseUploader
-  :: DB :> es
+  :: (IOE :> es, WriteDB :> es)
   => ReleaseId
   -> PackageUploaderId
   -> FloraM es ()
 updateReleaseUploader releaseId packageUploaderId =
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [[field| uploader_id |]]
-        ([field| release_id |], releaseId)
-        (Only packageUploaderId)
+  void $
+    execute
+      ( _updateFieldsBy @Release
+          [[field| uploader_id |]]
+          [field| release_id |]
+      )
+      (toRow (Only packageUploaderId) ++ toRow (Only releaseId))
 
 setReleasesDeprecationMarker
-  :: DB :> es
+  :: (IOE :> es, WriteDB :> es)
   => Vector (Bool, ReleaseId)
   -> FloraM es ()
 setReleasesDeprecationMarker releaseVersions =
-  dbtToEff $ void $ executeMany q (releaseVersions & Vector.toList)
+  void $ executeMany q (releaseVersions & Vector.toList)
   where
     q =
       [sql|
@@ -216,12 +224,3 @@ setReleasesDeprecationMarker releaseVersions =
     FROM (VALUES (?,?)) as upd(x,y)
     WHERE r0.release_id = (upd.y :: uuid)
     |]
-
-setArchiveChecksum :: DB :> es => ReleaseId -> Text -> FloraM es ()
-setArchiveChecksum releaseId sha256Hash =
-  dbtToEff $
-    void $
-      updateFieldsBy @Release
-        [[field| archive_checksum |]]
-        ([field| release_id |], releaseId)
-        (Only sha256Hash)

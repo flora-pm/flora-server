@@ -7,8 +7,17 @@ import Effectful.Error.Static (Error, throwError)
 import Servant (ServerError (..))
 import Servant.Server (err404)
 
+import Flora.Domain.Package (PackageResolutionError (..))
 import Flora.Model.Package.Types
 import Flora.Monad
+
+-- | Render a domain-level resolution failure as the API's JSON 404 body.
+renderPackageResolutionError
+  :: Error ServerError :> es => PackageResolutionError -> FloraM es a
+renderPackageResolutionError = \case
+  PackageNotFound namespace packageName -> packageNotFound namespace packageName
+  NoViableRelease namespace packageName -> packageNotFound namespace packageName
+  ReleaseNotFound namespace packageName version -> versionNotFound namespace packageName version
 
 packageNotFound :: Error ServerError :> es => Namespace -> PackageName -> FloraM es a
 packageNotFound namespace packageName =

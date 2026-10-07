@@ -1,0 +1,18 @@
+name: Check Actions for SHA pin
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "development"]
+
+jobs:
+  haskell-security:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Ensure SHA pinned actions
+        uses: hyland/github-actions-ensure-sha-pinned-actions@f2fa4eccb6028b908af043831bdb57fc369a9eab # 2f3ddf54eb417c4b01d59a068cff4f914e91e272

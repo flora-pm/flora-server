@@ -3,10 +3,13 @@
 module Flora.Model.Category.Types where
 
 import Control.DeepSeq
+import Crypto.Hash.MD5 qualified as MD5
 import Data.Aeson (FromJSON, ToJSON)
+import Data.ByteString.Lazy (fromStrict)
+import Data.Maybe (fromJust)
 import Data.Text (Text)
+import Data.Text.Encoding (encodeUtf8)
 import Data.UUID
-import Data.UUID.V4 qualified as UUID
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Entity.Types
 import Database.PostgreSQL.Simple
@@ -52,8 +55,10 @@ data PackageCategory = PackageCategory
     (Entity)
     via (GenericEntity '[TableName "package_categories"] PackageCategory)
 
-mkCategoryId :: IO CategoryId
-mkCategoryId = CategoryId <$> UUID.nextRandom
+-- | Generates a category id deterministically by hashing the slug.
+deterministicCategoryId :: Text -> CategoryId
+deterministicCategoryId slug =
+  CategoryId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ slug
 
 mkCategory
   :: CategoryId

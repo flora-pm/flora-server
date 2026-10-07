@@ -1,11 +1,9 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module FloraJobs.ThirdParties.Hackage.API where
 
 import Data.Aeson
-import Data.Aeson.TH
-import Data.Bifunctor qualified as Bifunctor
+import Data.ByteString (StrictByteString)
 import Data.ByteString.Lazy as ByteString
+import Data.Either
 import Data.List.NonEmpty
 import Data.Text (Text)
 import Data.Text.Display
@@ -14,10 +12,10 @@ import Data.Time (UTCTime)
 import Data.Typeable
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Deriving.Aeson
 import Distribution.Types.Version (Version)
-import Network.HTTP.Media ((//), (/:))
+import Network.HTTP.Media (matches, parseAccept, (//), (/:))
 import Servant.API
-import Servant.API.Generic
 
 import Distribution.Orphans ()
 import Flora.Model.Job
@@ -26,14 +24,29 @@ import Servant.API.ContentTypes.GZip
 
 type HackageAPI = NamedRoutes HackageAPI'
 
+type HackageTextResponse = Headers '[Header "Content-Type" Text] Text
+
 data PlainerText
   deriving (Typeable)
 
 instance Accept PlainerText where
-  contentTypes _ = "text" // "plain" /: ("charset", "utf-8") :| ["text" // "plain"]
+  contentTypes _ =
+    "text" // "plain" /: ("charset", "utf-8")
+      :| ["text" // "plain", "text" // "html"]
 
 instance MimeUnrender PlainerText Text where
-  mimeUnrender _ = Bifunctor.first show . Text.decodeUtf8' . ByteString.toStrict
+  mimeUnrender _ = Right . decodeLenient . ByteString.toStrict
+
+decodeLenient :: StrictByteString -> Text
+decodeLenient bytes =
+  fromRight (Text.decodeLatin1 bytes) (Text.decodeUtf8' bytes)
+
+isHtmlResponse :: HackageTextResponse -> Bool
+isHtmlResponse response =
+  case lookupResponseHeader response :: ResponseHeader "Content-Type" Text of
+    Header served ->
+      maybe False (`matches` ("text" // "html")) (parseAccept (Text.encodeUtf8 served))
+    _ -> False
 
 data VersionedPackage = VersionedPackage
   { package :: PackageName
@@ -65,13 +78,14 @@ data HackagePackagesAPI mode = HackagePackagesAPI
   deriving stock (Generic)
 
 data HackagePackageAPI mode = HackagePackageAPI
-  { getReadme :: mode :- "readme.txt" :> Get '[PlainerText] Text
+  { getReadme :: mode :- "readme.txt" :> Get '[PlainerText] HackageTextResponse
   , getUploadTime :: mode :- "upload-time" :> Get '[PlainText] UTCTime
-  , getChangelog :: mode :- "changelog.txt" :> Get '[PlainerText] Text
+  , getChangelog :: mode :- "changelog.txt" :> Get '[PlainerText] HackageTextResponse
   , getDeprecatedReleases :: mode :- "preferred.json" :> Get '[JSON] HackagePreferredVersions
   , getPackageInfo :: mode :- Get '[JSON] HackagePackageInfo
-  , getPackageWithRevision :: mode :- "revision" :> Capture "revision_number" Text :> Get '[JSON] HackagePackageInfo
+  , getPackageWithRevision :: mode :- "revision" :> Capture "revision_number" Word :> Get '[JSON] HackagePackageInfo
   , getTarball :: mode :- Capture "tarball" VersionedTarball :> Get '[GZipped] ByteString
+  , getMaintainers :: mode :- "maintainers" :> Get '[JSON] HackagePackageMaintainers
   }
   deriving stock (Generic)
 
@@ -104,7 +118,7 @@ data HackagePreferredVersions = HackagePreferredVersions
 instance FromJSON HackagePreferredVersions where
   parseJSON = withObject "Hackage preferred versions" $ \o -> do
     deprecatedVersions <- o .:? "deprecated-version" .!= Vector.empty
-    normalVersions <- o .: "normal-version"
+    normalVersions <- o .:? "normal-version" .!= Vector.empty
     pure $ HackagePreferredVersions deprecatedVersions normalVersions
 
 data HackagePackageInfo = HackagePackageInfo
@@ -112,6 +126,23 @@ data HackagePackageInfo = HackagePackageInfo
   , uploadedAt :: UTCTime
   , uploader :: Text
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (FromJSON, ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] HackagePackageInfo)
 
-$(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''HackagePackageInfo)
+data HackagePackageMaintainers = HackagePackageMaintainers
+  { members :: Vector HackagePackageMaintainer
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (FromJSON, ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] HackagePackageMaintainers)
+
+data HackagePackageMaintainer = HackagePackageMaintainer
+  { username :: Text
+  }
+  deriving stock (Eq, Generic, Show)
+  deriving
+    (FromJSON, ToJSON)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] HackagePackageMaintainer)

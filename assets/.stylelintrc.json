@@ -1,5 +1,7 @@
 {
-  "extends": ["stylelint-config-standard"],
+  "extends": [
+    "stylelint-config-standard"
+  ],
   "rules": {
     "hue-degree-notation": "number",
     "media-feature-range-notation": "prefix",
@@ -8,10 +10,35 @@
     "at-rule-no-unknown": [
       true,
       {
-        "ignoreAtRules": [
-          "/^design-token-utils/",
-          "/^custom-media/"
+        "ignoreAtRules": []
+      }
+    ],
+    "property-no-unknown": [
+      true,
+      {
+        "ignoreProperties": [
+          "interest-delay"
         ]
+      }
+    ],
+    "custom-property-empty-line-before": null,
+    "no-duplicate-selectors": [
+      true,
+      {
+        "ignoreSelectors": [
+          ":root",
+          "body"
+        ]
+      }
+    ],
+    "declaration-empty-line-before": "never",
+    "declaration-block-single-line-max-declarations": 3,
+    "number-max-precision": [
+      4,
+      {
+        "insideFunctions": {
+          "/^(oklch|oklab|lch|lab)$/": 6
+        }
       }
     ]
   }

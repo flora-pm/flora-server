@@ -1,0 +1,20 @@
+
+@font-face {
+	font-family: "Inter V";
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: local('Inter V'), local('InterV'), local('Inter var'), local('Inter Variable'), local('InterVariable'), url("../../fonts/InterVariable.woff2") format("woff2");
+}
+
+@font-face{
+	font-family: "Inter V fallback - Arial";
+	src: local("Arial");
+	font-display: swap;
+	font-weight: 100 900;
+	font-style: normal;
+	size-adjust: 107.1194%;
+	ascent-override: 90.4365%;
+	descent-override: 22.518%;
+	line-gap-override: 0%;
+}

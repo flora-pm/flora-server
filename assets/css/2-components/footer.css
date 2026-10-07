@@ -1,0 +1,41 @@
+.footer {
+	margin-top: var(--space-region);
+	border-top: 1px solid var(--color-stroke-default);
+}
+
+.footer-main {
+	position: relative;
+	padding-block: var(--space-region);
+}
+
+.footer-main::before {
+	position: absolute;
+	inset: 0;
+	content: '';
+	z-index: -1;
+	display: block;
+	background-color: var(--color-surface-brand);
+	mask-image: url('../../flower-half.svg');
+	mask-size: min(var(--size-wrapper, 67rem), 90vmax) auto;
+	mask-repeat: no-repeat;
+	mask-position: center 100%;
+	opacity: .75;
+	transform: scaleY(-1);
+}
+
+.footer-main > * + * {
+	margin-top: var(--space-gutter-large);
+}
+
+.footer-slogan {
+	font-size: var(--text-heading-2);
+	line-height: var(--leading-short);
+}
+
+.footer-by {
+	padding-block: var(--space-gutter);
+	text-align: center;
+	font-size: var(--text-tiny);
+	color: var(--color-text-secondary);
+	border-top: 1px solid var(--color-stroke-default);
+}

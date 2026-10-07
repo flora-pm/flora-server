@@ -2,6 +2,7 @@
 
 module Flora.Model.Job where
 
+import Arbiter.Core.QueueRegistry (Queue)
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Text
@@ -13,12 +14,11 @@ import Distribution.Types.Version (Version)
 import Distribution.Version (mkVersion, versionNumbers)
 import Web.HttpApiData
 
-import Flora.Import.Package.Types
 import Flora.Model.Package.Types
 import Flora.Model.Release.Types
 
 type JobQueues =
-  '[ '("package_jobs", PackageJob)
+  '[ Queue "package_jobs" PackageJob
    ]
 
 newtype IntAesonVersion = MkIntAesonVersion {unIntAesonVersion :: Version}
@@ -43,14 +43,15 @@ data ReadmeJobPayload = ReadmeJobPayload
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ReadmeJobPayload)
 
 data TarballJobPayload = TarballJobPayload
-  { package :: PackageName
+  { namespace :: Namespace
+  , packageName :: PackageName
   , releaseId :: ReleaseId
-  , version :: IntAesonVersion
+  , packageVersion :: IntAesonVersion
   }
   deriving stock (Generic)
   deriving anyclass (FromJSON, ToJSON)
 
-data UploadTimeJobPayload = UploadTimeJobPayload
+data UploadInformationJobPayload = UploadInformationJobPayload
   { packageName :: PackageName
   , releaseId :: ReleaseId
   , packageVersion :: IntAesonVersion
@@ -58,7 +59,7 @@ data UploadTimeJobPayload = UploadTimeJobPayload
   deriving stock (Generic)
   deriving
     (FromJSON, ToJSON)
-    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] UploadTimeJobPayload)
+    via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] UploadInformationJobPayload)
 
 data ChangelogJobPayload = ChangelogJobPayload
   { packageName :: PackageName
@@ -76,16 +77,59 @@ data ImportHackageIndexPayload = ImportHackageIndexPayload
     (FromJSON, ToJSON)
     via (CustomJSON '[FieldLabelModifier '[CamelToSnake]] ImportHackageIndexPayload)
 
+data MetadataPass
+  = ReadmePass
+  | UploadInformationPass
+  | ChangelogPass
+  | TarballPass
+  | ReleaseDeprecationPass
+  | RefreshLatestVersionsPass
+  | RefreshDependentsPass
+  | MaintainersPass
+  deriving stock (Bounded, Enum, Eq, Generic, Ord, Show)
+  deriving anyclass (FromJSON, ToJSON)
+
 data PackageJob
   = FetchReadme ReadmeJobPayload
   | FetchTarball TarballJobPayload
-  | FetchUploadTime UploadTimeJobPayload
+  | FetchUploadInformation UploadInformationJobPayload
   | FetchChangelog ChangelogJobPayload
-  | ImportPackage ImportOutput
   | FetchPackageDeprecationList
   | FetchReleaseDeprecationList PackageName (Vector ReleaseId)
   | RefreshLatestVersions
+  | RefreshDependents
   | RefreshIndex Text
+  | FetchPackageMaintainers PackageName
+  | FetchPackageUploaders
+  | PruneFeedEntries
+  | ScheduleMetadata MetadataPass
   deriving stock (Generic)
 
 $(deriveJSON defaultOptions{fieldLabelModifier = camelTo2 '_'} ''PackageJob)
+
+jobTypeLabel :: PackageJob -> Text
+jobTypeLabel = \case
+  FetchReadme{} -> "fetch_readme"
+  FetchTarball{} -> "fetch_tarball"
+  FetchUploadInformation{} -> "fetch_upload_information"
+  FetchChangelog{} -> "fetch_changelog"
+  FetchPackageDeprecationList -> "fetch_package_deprecation_list"
+  FetchReleaseDeprecationList{} -> "fetch_release_deprecation_list"
+  RefreshLatestVersions -> "refresh_latest_versions"
+  RefreshDependents -> "refresh_dependents"
+  RefreshIndex{} -> "refresh_index"
+  FetchPackageMaintainers{} -> "fetch_package_maintainers"
+  FetchPackageUploaders -> "fetch_package_uploaders"
+  PruneFeedEntries -> "prune_feed_entries"
+  ScheduleMetadata pass -> "schedule_metadata_" <> metadataPassLabel pass
+
+metadataPassLabel :: MetadataPass -> Text
+metadataPassLabel = \case
+  ReadmePass -> "readme"
+  UploadInformationPass -> "upload_information"
+  ChangelogPass -> "changelog"
+  TarballPass -> "tarball"
+  ReleaseDeprecationPass -> "release_deprecation"
+  RefreshLatestVersionsPass -> "refresh_latest_versions"
+  RefreshDependentsPass -> "refresh_dependents"
+  MaintainersPass -> "maintainers"

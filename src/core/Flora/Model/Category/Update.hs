@@ -3,44 +3,45 @@
 module Flora.Model.Category.Update where
 
 import Control.Monad (void)
-import Control.Monad.IO.Class
-import Data.Text (Text)
-import Data.Text.IO qualified as T
-import Database.PostgreSQL.Entity.DBT (execute)
+import Data.Set qualified as Set
+import Database.PostgreSQL.Entity (_insert)
+import Database.PostgreSQL.Simple (Query)
 import Database.PostgreSQL.Simple.SqlQQ
 import Effectful
-import Effectful.PostgreSQL.Transact.Effect (DB, dbtToEff)
 
-import Flora.Model.Category.Query qualified as Query
+import Flora.Database
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types
 
-insertCategory :: DB :> es => Category -> Eff es ()
+insertCategory :: WriteDB :> es => Category -> Eff es ()
 insertCategory category = do
-  dbtToEff $ void $ execute q category
-  where
-    q =
-      [sql|
-          insert into categories (category_id, name, slug, synopsis)
-            values (?, ?, ?, ?)
-          on conflict do nothing
-        |]
+  void $ execute insertCategoryQuery category
 
--- | Adds a package to a category. Adding a package to an already-assigned category has no effect
-addToCategory :: DB :> es => PackageId -> CategoryId -> Eff es ()
-addToCategory packageId categoryId = dbtToEff $ (void . execute q) (packageId, categoryId)
-  where
-    q =
-      [sql|
-        insert into package_categories (package_id, category_id) values (?, ?)
-        on conflict do nothing
-      |]
+bulkInsertCategories :: WriteDB :> es => [Category] -> Eff es ()
+bulkInsertCategories categories =
+  void $ executeMany insertCategoryQuery categories
 
-addToCategoryByName :: (DB :> es, IOE :> es) => PackageId -> Text -> Eff es ()
-addToCategoryByName packageId categoryName = do
-  mCategory <- Query.getCategoryByName categoryName
-  case mCategory of
-    Nothing -> do
-      liftIO $ T.putStrLn ("Could not find category " <> categoryName)
-    Just Category{categoryId} -> do
-      addToCategory packageId categoryId
+insertCategoryQuery :: Query
+insertCategoryQuery =
+  [sql|
+  INSERT INTO categories (category_id
+                        , name
+                        , slug
+                        , synopsis)
+  VALUES (?, ?, ?, ?)
+  ON CONFLICT DO NOTHING
+    |]
+
+-- | Adds a package to many categories in one statement. Adding a package to an
+-- already-assigned category has no effect.
+bulkAddToCategory :: WriteDB :> es => PackageId -> [CategoryId] -> Eff es ()
+bulkAddToCategory packageId categoryIds =
+  void $
+    executeMany
+      (_insert @PackageCategory <> " ON CONFLICT DO NOTHING")
+      (PackageCategory packageId <$> categoryInsertOrder categoryIds)
+
+-- | The rows of 'bulkAddToCategory' are deduplicated and ordered by 'CategoryId',
+-- so that concurrent importers of one package take the row locks in one order.
+categoryInsertOrder :: [CategoryId] -> [CategoryId]
+categoryInsertOrder = Set.toAscList . Set.fromList

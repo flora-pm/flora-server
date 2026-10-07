@@ -2,9 +2,12 @@ module Flora.PackageGroupSpec where
 
 import Control.Monad (void)
 import Data.Vector qualified as Vector
+import Effectful.Reader.Static qualified as Reader
 import Optics.Core
 import RequireCallStack
 
+import Flora.Database
+import Flora.Environment.Env
 import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Query qualified as Query
 import Flora.Model.PackageGroup.Types
@@ -26,11 +29,12 @@ spec =
 
 testInsertPackageGroup :: RequireCallStack => TestEff ()
 testInsertPackageGroup = do
+  FloraEnv{pool} <- Reader.ask
   void (instantiatePackage randomPackageTemplate)
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
 
-  result <- Query.getPackageGroupByPackageGroupName packageGroup.groupName
+  result <- withReadOnlyPool pool $ Query.getPackageGroupByPackageGroupName packageGroup.groupName
 
   case result of
     Nothing ->
@@ -41,9 +45,10 @@ testInsertPackageGroup = do
 
 testAddPackageToPackageGroup :: RequireCallStack => TestEff ()
 testAddPackageToPackageGroup = do
+  FloraEnv{pool} <- Reader.ask
   package <- instantiatePackage $ randomPackageTemplate & #status .~ pure FullyImportedPackage
   void $ instantiateRelease $ randomReleaseTemplate & #packageId .~ pure package.packageId
-  refreshLatestVersions
+  withReadWritePool pool refreshLatestVersions
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -55,12 +60,14 @@ testAddPackageToPackageGroup = do
         .~ pure package.packageId
 
   results <-
-    Query.listPackageGroupPackages packageGroup.packageGroupId
+    withReadOnlyPool pool $
+      Query.listPackageGroupPackages packageGroup.packageGroupId
 
   assertEqual ("Could not find any package in group " <> show packageGroup.packageGroupId) 1 (Vector.length results)
 
 testRemovePackageFromPackageGroup :: RequireCallStack => TestEff ()
 testRemovePackageFromPackageGroup = do
+  FloraEnv{pool} <- Reader.ask
   package <- instantiatePackage randomPackageTemplate
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
@@ -72,17 +79,18 @@ testRemovePackageFromPackageGroup = do
         & #packageId
         .~ pure package.packageId
 
-  Update.removePackageFromPackageGroup package.packageId packageGroup.packageGroupId
+  withReadWritePool pool $ Update.removePackageFromPackageGroup package.packageId packageGroup.packageGroupId
 
-  results <- Query.listPackageGroupPackages packageGroup.packageGroupId
+  results <- withReadWritePool pool $ Query.listPackageGroupPackages packageGroup.packageGroupId
 
   assertBool (Vector.notElem package.name (fmap (.name) results))
 
 testGetPackagesByPackageGroupId :: RequireCallStack => TestEff ()
 testGetPackagesByPackageGroupId = do
+  FloraEnv{pool} <- Reader.ask
   package <- instantiatePackage $ randomPackageTemplate & #status .~ pure FullyImportedPackage
   void $ instantiateRelease $ randomReleaseTemplate & #packageId .~ pure package.packageId
-  refreshLatestVersions
+  withReadWritePool pool refreshLatestVersions
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
   void $
@@ -94,17 +102,19 @@ testGetPackagesByPackageGroupId = do
         .~ pure package.packageId
 
   results <-
-    Query.listPackageGroupPackages packageGroup.packageGroupId
+    withReadOnlyPool pool $
+      Query.listPackageGroupPackages packageGroup.packageGroupId
 
   assertEqual_ (Vector.length results) 1
 
 testGetPackageGroupByPackageGroupName :: RequireCallStack => TestEff ()
 testGetPackageGroupByPackageGroupName = do
+  FloraEnv{pool} <- Reader.ask
   void (instantiatePackage randomPackageTemplate)
   packageGroup <-
     instantiatePackageGroup randomPackageGroupTemplate
 
-  result <- Query.getPackageGroupByPackageGroupName packageGroup.groupName
+  result <- withReadOnlyPool pool $ Query.getPackageGroupByPackageGroupName packageGroup.groupName
 
   case result of
     Nothing ->

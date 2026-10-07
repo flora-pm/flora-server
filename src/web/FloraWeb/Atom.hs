@@ -10,7 +10,6 @@ import Data.Text.Display
 import Data.Text.Lazy.Encoding qualified as TLE
 import Data.Time
 import Data.Time.Format.ISO8601 qualified as Time
-import Data.UUID qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Word (Word16)
@@ -65,11 +64,11 @@ makeFeed instanceInfo updated entries =
    in feed{feedEntries, feedLinks}
 
 makeAtomEntry :: FeedEntry -> Entry
-makeAtomEntry FeedEntry{entryId = feedEntryId, title, updatedAt, link, content} =
-  let entryId = UUID.toText feedEntryId
+makeAtomEntry FeedEntry{entryId, title, updatedAt, link, content} =
+  let entryIdUrn = "urn:uuid:" <> display entryId
       entryTitle = Atom.TextString title
       entryUpdated = Text.pack $ Time.formatShow Time.iso8601Format updatedAt
       entryContent = Just $ Atom.TextContent content
-      entry = Atom.nullEntry entryId entryTitle entryUpdated
+      entry = Atom.nullEntry entryIdUrn entryTitle entryUpdated
       entryLinks = maybeToList (Atom.nullLink <$> link)
    in entry{entryContent, entryLinks}

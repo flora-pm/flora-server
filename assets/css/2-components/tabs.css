@@ -1,0 +1,85 @@
+.tabs {
+	position: relative;
+	display: flex;
+	overflow-x: auto;
+	gap: var(--space-gutter);
+	anchor-name: tabs-list;
+}
+
+.tabs-mobile { display: none; }
+
+@media (max-width: 48rem) {
+	.tabs { display: none; }
+	.tabs-mobile { display: block; }
+}
+
+
+.tab {
+	--outline-offset: calc(-1 * var(--outline-width));
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+	gap: var(--space-gutter-tiny);
+	padding: var(--space-4) var(--space-1);
+	border-bottom: 2px solid transparent;
+	border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+a.tab:is(:hover,:active) {
+	text-decoration: underline;
+}
+
+@media (forced-colors: active) {
+	.tab {
+		border-color: Canvas;
+	}
+
+	a.tab {
+		text-decoration: underline;
+	}
+
+	a.tab:is(:hover,:active) {
+	color: LinkText;
+}
+}
+
+.tab:where([aria-current="page"]) {
+	border-color: currentcolor;
+	color: var(--color-text-raise);
+}
+
+@media (forced-colors: active) {
+	.tab:where([aria-current="page"]) {
+		color: SelectedItemText;
+		background: SelectedItem;
+		border-color: SelectedItem;
+	}
+}
+
+.tab .icon {
+	margin-inline-end: var(--space-gutter-tiny);
+	margin-block-start: initial;
+	color: var(--color-text-quaternary);
+}
+
+.tab:where([aria-current="page"]) .icon {
+	color: var(--color-text-raise);
+}
+
+/*
+Mobile version elements
+*/
+
+.tabs-mobileBtn {
+	width: 100%;
+	justify-content: space-between;
+	text-align: left;
+	margin-bottom: var(--space-gutter);
+	column-gap: var(--space-gutter-small);
+}
+
+.tabs-mobileBtn .prefix {
+	font-size: .8em;
+	margin-bottom: .2em;
+	color: var(--color-text-tertiary)
+}

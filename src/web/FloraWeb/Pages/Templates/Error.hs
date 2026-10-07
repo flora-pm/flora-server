@@ -54,9 +54,13 @@ web404 session = do
 
 showError :: Status -> FloraHTML
 showError status = do
-  section_ [class_ "error container"] $ do
-    p_ [class_ "error-zone"] $ do
-      span_ [class_ "error-code"] $ toHtml $ show $ statusCode status
-      span_ [class_ "error-message"] $ toHtml $ statusMessage status
-    button_ [class_ "mt-10 flex space-x-3 sm:border-l sm:border-transparent sm:pl-6"] $ do
-      a_ [href_ "/", class_ "button error-page-button"] "Go back home"
+  header_ [class_ "pageHead"] $ do
+    div_ [class_ "wrapper"] $ do
+      h1_ [class_ "pageHead-title"] $ toHtml (statusMessage status)
+      p_ [class_ "pageHead-subtitle"] $ do
+        "Error "
+        toHtml $ show $ statusCode status
+  section_ [class_ "wrapper inset-region flow flow--large"] $ do
+    div_ [class_ "prose"] $ do
+      p_ "Ooooops"
+    a_ [href_ "/", class_ "btn"] "Go back home"

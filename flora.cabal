@@ -1,11 +1,11 @@
 cabal-version: 3.0
 name: flora
-version: 1.0.31
+version: 1.1.0
 homepage: https://github.com/flora-pm/flora-server/#readme
 bug-reports: https://github.com/flora-pm/flora-server/issues
 author: Théophile Choutri
 maintainer: Théophile Choutri
-license: BSD-3-Clause
+license: AGPL-3.0-only
 build-type: Simple
 extra-source-files: LICENSE
 extra-doc-files:
@@ -28,6 +28,7 @@ common common-extensions
     DuplicateRecordFields
     GADTs
     LambdaCase
+    NoFieldSelectors
     NoStarIsType
     NumericUnderscores
     OverloadedLabels
@@ -36,6 +37,7 @@ common common-extensions
     PackageImports
     PolyKinds
     StrictData
+    TypeData
     TypeFamilies
     UndecidableInstances
     ViewPatterns
@@ -63,12 +65,14 @@ common common-ghc-options
     -finline-generics-aggressively
     -fexpose-all-unfoldings
     -fplugin=Effectful.Plugin
+    -finfo-table-map
+    -fdistinct-constructor-tables
 
 common common-rts-options
   ghc-options:
     -rtsopts
     -threaded
-    "-with-rtsopts=-N -Iw1 --disable-delayed-os-memory-return -T"
+    "-with-rtsopts=-N -T"
 
   -- Use TCMalloc instead of glibc's malloc.
   if !(os(osx) && arch(aarch64))
@@ -108,16 +112,21 @@ library
     Distribution.Orphans.ConfVar
     Distribution.Orphans.PackageFlag
     Distribution.Orphans.Version
+    Flora.Database
     Flora.DB.Exception
+    Flora.Debug.ThreadDump
+    Flora.Domain.Category.Normalise
+    Flora.Domain.Import.Categories
+    Flora.Domain.Import.Package
+    Flora.Domain.Import.Package.Bulk.Archive
+    Flora.Domain.Import.Package.Bulk.Stream
+    Flora.Domain.Import.Package.Types
+    Flora.Domain.Import.Types
+    Flora.Domain.Package
+    Flora.Domain.Release
     Flora.Environment
     Flora.Environment.Config
     Flora.Environment.Env
-    Flora.Import.Categories
-    Flora.Import.Package
-    Flora.Import.Package.Bulk.Archive
-    Flora.Import.Package.Bulk.Stream
-    Flora.Import.Package.Types
-    Flora.Import.Types
     Flora.Logging
     Flora.Model.Admin.Report
     Flora.Model.BlobIndex.Internal
@@ -138,7 +147,6 @@ library
     Flora.Model.Feed.Update
     Flora.Model.Job
     Flora.Model.Organisation
-    Flora.Model.Package
     Flora.Model.Package.Guard
     Flora.Model.Package.Orphans
     Flora.Model.Package.Query
@@ -155,6 +163,10 @@ library
     Flora.Model.PackageIndex.Query
     Flora.Model.PackageIndex.Types
     Flora.Model.PackageIndex.Update
+    Flora.Model.PackageMaintainer.Query
+    Flora.Model.PackageMaintainer.Types
+    Flora.Model.PackageMaintainer.Update
+    Flora.Model.PackageUploader.Guard
     Flora.Model.PackageUploader.Query
     Flora.Model.PackageUploader.Types
     Flora.Model.PackageUploader.Update
@@ -170,7 +182,6 @@ library
     Flora.Model.User.Update
     Flora.Monad
     Flora.Monitoring
-    Flora.Normalise
     Flora.QRCode
     Flora.Tracing
     JSON
@@ -182,15 +193,15 @@ library
     Servant.API.ContentTypes.GZip
 
   build-depends:
-    Cabal-syntax,
-    JuicyPixels,
     aeson,
+    arbiter-core,
     arbiter-simple,
     attoparsec,
     base ^>=4.20,
     base16-bytestring,
     base64,
     bytestring,
+    Cabal-syntax,
     containers,
     cryptohash-md5,
     cryptohash-sha256,
@@ -202,29 +213,34 @@ library
     effectful,
     effectful-core,
     effectful-plugin,
+    effectful-tracing,
     envparse,
     filepath,
     gitrev,
     heptapod ^>=1.1.0.0,
-    hsec-core,
+    hs-opentelemetry-exporter-otlp,
+    hs-opentelemetry-sdk,
+    hsec-core ^>=0.3.0.0,
     http-api-data,
-    http-client,
-    http-client-tls,
     http-media,
     iso8601-time,
+    JuicyPixels,
+    kdl-hs,
     log-base,
     log-effectful,
     lucid2,
+    memory-cache,
     monad-time-effectful,
     network,
+    nothunks,
     openapi3,
     optics-core,
+    optparse-applicative,
     osv,
+    pandoc,
     pandoc-types,
     pcre2,
     pg-entity,
-    pg-transact,
-    pg-transact-effectful,
     postgresql-simple,
     pretty,
     prometheus-client,
@@ -233,8 +249,10 @@ library
     qrcode-juicypixels,
     require-callstack,
     resource-pool,
+    scientific,
     sel,
     servant,
+    servant-event-stream,
     servant-prometheus,
     servant-server,
     slugify,
@@ -245,13 +263,13 @@ library
     text-builder-linear,
     text-display,
     time,
-    tracing,
-    tracing-effectful,
+    unix,
     unliftio,
     utf8-string,
     uuid,
     vector,
     wai,
+    xss-sanitize,
     zlib,
 
 library flora-search
@@ -259,22 +277,20 @@ library flora-search
   import: common-ghc-options
   hs-source-dirs: ./src/search
   -- cabal-gild: discover src/search
-  exposed-modules: Flora.Search
+  exposed-modules: Flora.Domain.Search
   build-depends:
     aeson,
     base,
     effectful-core,
     effectful-plugin,
+    effectful-tracing,
     flora,
     flora-advisories,
     log-base,
     log-effectful,
     monad-time-effectful,
-    pg-transact-effectful,
     text,
     text-display,
-    tracing,
-    tracing-effectful,
     vector,
 
 library flora-advisories
@@ -293,27 +309,24 @@ library flora-advisories
     Advisories.Model.Affected.Update
 
   build-depends:
-    Cabal-syntax,
     aeson,
     base,
+    Cabal-syntax,
     cvss,
     deepseq,
-    effectful,
     effectful-core,
     effectful-plugin,
+    effectful-tracing,
     flora,
-    hsec-core,
+    hsec-core ^>=0.3.0.0,
     hsec-tools,
     log-effectful,
     pandoc-types,
     pg-entity,
-    pg-transact-effectful,
     postgresql-simple,
     text,
     text-display,
     time,
-    tracing,
-    tracing-effectful,
     uuid,
     validation-selective,
     vector,
@@ -338,23 +351,25 @@ library flora-web
     FloraWeb.Common.Guards
     FloraWeb.Common.OpenSearch
     FloraWeb.Common.Pagination
+    FloraWeb.Common.ThreadLabel
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
     FloraWeb.Components.AdvisoryListItem
     FloraWeb.Components.Alert
     FloraWeb.Components.Button
     FloraWeb.Components.CategoryCard
+    FloraWeb.Components.Footer
     FloraWeb.Components.Header
     FloraWeb.Components.Icons
     FloraWeb.Components.MainSearchBar
     FloraWeb.Components.Navbar
+    FloraWeb.Components.PackageCard
     FloraWeb.Components.PackageGroup
     FloraWeb.Components.PackageListHeader
     FloraWeb.Components.PackageListItem
     FloraWeb.Components.PaginationNav
     FloraWeb.Components.Pill
     FloraWeb.Components.SkipLink
-    FloraWeb.Components.SlimSearchBar
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
     FloraWeb.Embedded
@@ -403,15 +418,13 @@ library flora-web
     FloraWeb.Types
 
   build-depends:
-    Cabal-syntax,
-    PyF,
     aeson,
     arbiter-servant,
     arbiter-servant-ui,
-    async,
     base ^>=4.20,
     base32,
     bytestring,
+    Cabal-syntax,
     chronos,
     cmark-gfm,
     colourista,
@@ -422,23 +435,25 @@ library flora-web
     data-default,
     deepseq,
     deriving-aeson,
+    directory,
     dlist,
     effectful,
     effectful-core,
     effectful-plugin,
+    effectful-tracing,
     eventlog-socket,
     extra,
     feed,
+    filepath,
     flora,
     flora-advisories,
     flora-jobs,
     flora-search,
+    fsnotify,
     generics-sop,
     haddock-library,
     htmx-lucid,
     http-api-data,
-    http-client,
-    http-client-tls,
     http-media,
     http-types,
     log-base,
@@ -452,13 +467,13 @@ library flora-web
     openapi3,
     optics-core,
     pg-entity,
-    pg-transact-effectful,
     postgresql-simple,
     pretty,
     prometheus-client,
     prometheus-effectful,
     prometheus-metrics-ghc,
     prometheus-proc,
+    PyF,
     raven-haskell,
     require-callstack,
     resource-pool,
@@ -467,16 +482,16 @@ library flora-web
     servant,
     servant-client,
     servant-client-core,
+    servant-event-stream,
     servant-openapi3,
     servant-prometheus,
     servant-server,
+    stm,
     text,
     text-display,
     time,
     time-manager,
     torsor,
-    tracing,
-    tracing-effectful,
     uuid,
     vector,
     vector-algorithms,
@@ -502,6 +517,7 @@ library flora-jobs
   exposed-modules:
     FloraJobs.Environment
     FloraJobs.Metrics
+    FloraJobs.QueueMetrics
     FloraJobs.Render
     FloraJobs.Runner
     FloraJobs.Scheduler
@@ -510,25 +526,24 @@ library flora-jobs
     FloraJobs.Types
 
   build-depends:
-    Cabal-syntax,
     aeson,
     arbiter-core,
     arbiter-simple,
-    async,
     base,
     bytestring,
+    Cabal-syntax,
     commonmark,
     commonmark-extensions,
-    containers,
+    commonmark-pandoc,
+    data-default,
     deriving-aeson,
     effectful,
     effectful-core,
     effectful-plugin,
-    envparse,
+    effectful-tracing,
     filepath,
     flora,
     gitrev,
-    http-api-data,
     http-client,
     http-client-tls,
     http-media,
@@ -536,12 +551,12 @@ library flora-jobs
     log-base,
     log-effectful,
     monad-time-effectful,
-    pg-entity,
-    pg-transact-effectful,
+    nothunks,
+    pandoc,
+    pandoc-types,
     postgresql-simple,
     prometheus-client,
     prometheus-effectful,
-    req,
     require-callstack,
     resource-pool,
     servant,
@@ -552,6 +567,7 @@ library flora-jobs
     time,
     typed-process-effectful,
     vector,
+    xss-sanitize,
 
 executable flora-server
   import: common-extensions
@@ -566,13 +582,14 @@ executable flora-server
     effectful-core,
     effectful-plugin,
     flora,
-    flora-jobs,
     flora-web,
     log-base,
     log-effectful,
+    nothunks,
+    optparse-applicative,
     pg-entity,
-    pg-transact-effectful,
     postgresql-simple,
+    require-callstack,
     text,
     vector,
 
@@ -585,19 +602,14 @@ executable flora-migrate
   build-depends:
     arbiter-migrations,
     base,
-    effectful,
     effectful-core,
     effectful-plugin,
     flora,
     flora-jobs,
-    flora-web,
     log-base,
     log-effectful,
     optparse-applicative,
-    pg-entity,
-    pg-transact-effectful,
     postgresql-migration,
-    postgresql-simple,
     resource-pool,
     text,
 
@@ -609,32 +621,28 @@ executable flora-jobs-runner
   hs-source-dirs: app/jobs
   build-depends:
     arbiter-core,
-    arbiter-servant,
-    arbiter-servant-ui,
     arbiter-simple,
     arbiter-worker,
     base,
-    containers,
     effectful,
     effectful-core,
     effectful-plugin,
     flora,
     flora-jobs,
     flora-web,
-    http-types,
     log-base,
     log-effectful,
-    pg-entity,
-    pg-transact-effectful,
-    postgresql-simple,
+    nothunks,
+    optparse-applicative,
     prometheus-client,
     prometheus-effectful,
     prometheus-metrics-ghc,
+    prometheus-proc,
     require-callstack,
     text,
     text-display,
+    time,
     vector,
-    wai,
     wai-middleware-prometheus,
     warp,
 
@@ -646,37 +654,35 @@ executable flora-cli
   other-modules: DesignSystem
   hs-source-dirs: app/cli
   build-depends:
-    Cabal-syntax,
-    PyF,
     base,
     bytestring,
-    containers,
+    Cabal-syntax,
     cvss,
     effectful,
     effectful-core,
     effectful-plugin,
+    effectful-tracing,
     extra,
     filepath,
     flora,
     flora-advisories,
     flora-search,
     flora-web,
-    hsec-core,
+    hsec-core ^>=0.3.0.0,
     log-base,
     log-effectful,
     lucid2,
     monad-time-effectful,
     optics-core,
     optparse-applicative,
-    pg-transact-effectful,
+    process,
     prometheus-effectful,
+    PyF,
     require-callstack,
     sel,
     text,
     text-display,
     time,
-    tracing,
-    tracing-effectful,
     transformers,
     uuid,
     vector,
@@ -686,23 +692,26 @@ test-suite flora-test
   import: common-extensions
   import: common-ghc-options
   import: common-rts-options
+  ghc-options: -Werror=unused-imports
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
   build-depends:
-    Cabal-syntax,
     aeson,
     base,
     bytestring,
+    Cabal-syntax,
     containers,
     effectful,
     effectful-core,
     effectful-plugin,
+    effectful-tracing,
     exceptions,
     extra,
     filepath,
     flora,
     flora-advisories,
+    flora-jobs,
     flora-search,
     flora-web,
     hedgehog,
@@ -710,23 +719,23 @@ test-suite flora-test
     log-base,
     log-effectful,
     monad-time-effectful,
+    nothunks,
     optics-core,
-    pg-entity,
-    pg-transact,
-    pg-transact-effectful,
+    optparse-applicative,
     postgresql-migration,
+    postgresql-simple,
     prometheus-effectful,
     require-callstack,
     resource-pool,
     sel,
     servant,
     servant-client,
+    streamly-core,
     tar,
     tasty,
     tasty-hunit,
     text,
     time,
-    tracing-effectful,
     uuid,
     vector,
     vector-algorithms,
@@ -740,8 +749,10 @@ test-suite flora-test
     Flora.CategorySpec
     Flora.FeedSpec
     Flora.ImportSpec
+    Flora.NoThunksSpec
     Flora.PackageGroupSpec
     Flora.PackageSpec
+    Flora.SchedulerSpec
     Flora.SearchSpec
     Flora.TemplateSpec
     Flora.TestUtils
