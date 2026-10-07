@@ -67,6 +67,7 @@ header = do
           ]
         meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
         ogTags
+        meta_ [name_ "fediverse:creator", content_ "@flora_pm@functional.cafe"]
       -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
 
       body_ [] $ do
