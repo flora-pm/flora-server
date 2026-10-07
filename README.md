@@ -67,22 +67,13 @@ To setup a local installation, see [CONTRIBUTING.md#development-environment](htt
 
 This project is the fruit of the collaboration between:
 
+<img alt="Guérilla.Studio" src="./logos/guerilla.studio-logo.svg" width="113" height="60">
 
+[Guérilla.Studio] is a team of cross-disciplinary web experts making independent web software
 
-<p align="left" >
-  <imgalt="Guérilla.Studio" src="./logos/guerilla.studio-logo.svg" width="113" height="60">
-  <a href="https://guerilla.studio/">Guérilla.Studio</a> is a team of cross-disciplinary web experts making independent web software
-</p>
+<img alt="Floréal Technologies" src="./logos/floreal-tech-logo.png" width="113" height="113">
 
----
-
-<p align="left" >
-  <img alt="Floréal Technologies" src="./logos/floreal-tech-logo.png" width="113" height="113">
-
-  <a href="https://floreal.tech/">Floréal Technologies</a> builds open software for hobbyists and professionals. We bring engineering excellence with a a French flair.
-</p>
-
----
+[Floréal Technologies] builds open software for hobbyists and professionals. We bring engineering excellence with a a French flair.
 
 ## Civil Clause
 
@@ -91,3 +82,8 @@ This project is the fruit of the collaboration between:
 The Flora project is committed to peace and justice, and therefore cannot accept
 donations or partnerships for the benefit of warfare or surveillance systems.
 This includes civilian police forces.
+
+
+[Guérilla.Studio]: https://guerilla.studio/
+[Floréal Technologies]: https://floreal.tech/
+
