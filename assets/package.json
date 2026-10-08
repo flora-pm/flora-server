@@ -31,8 +31,13 @@
     "htmx.org": "^2.0.2"
   },
   "scripts": {
-    "watch": "parcel watch",
-    "build": "parcel build --no-cache"
+    "watch": "yarn clean:build && parcel watch",
+    "build": "yarn clean:build && parcel build --no-cache",
+    "clean:artifacts": "if [ -d '../static/' ]; then rm -R ../static/*; fi",
+    "clean:cache": "if [ -d './.parcel-cache/' ]; then rm -R ./.parcel-cache/*; fi",
+    "clean:modules": "if [ -d './node_modules/' ]; then rm -R ./node_modules/*; fi",
+    "clean:build": "yarn clean:artifacts && yarn clean:cache",
+    "clean:all": "yarm clean:modules && yarn clean:build"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
