@@ -141,7 +141,7 @@ main = Log.withStdOutLogger $ \logger -> do
 
 parseOptions :: Parser Options
 parseOptions =
-  Options <$> parseCommand <*> configFileParser
+  Options <$> parseCommand <*> configFileParser "flora.kdl"
 
 parseCommand :: Parser Command
 parseCommand =

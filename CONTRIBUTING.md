@@ -278,19 +278,31 @@ If you want to commit although they do not succeed, pass `--no-verify` to the `g
 
 ### Configuration
 
-The configuration is handled through KDL files. The following environments are provided:
+The configuration is handled through KDL files. They are generated from templates
+in `config/templates/` and are not tracked by git. Generate them once for your setup:
 
-* `environment.kdl`: local development
-* `environment.docker.kdl`: development inside the Docker container
-* `environment.ci.kdl`: continuous integration
-* `environment.test.kdl` & `environment.test.local.kdl`: test suite
+```bash
+$ ./scripts/generate-configuration.sh --local   # executables run on the host machine
+$ ./scripts/generate-configuration.sh --docker  # executables run inside the `devel` container
+$ ./scripts/generate-configuration.sh --ci      # continuous integration
+```
 
-When interfacing via `make` this is handled for you (the Makefile uses `environment.kdl`).
-If you're interfacing with the `flora-cli` directly, pass an environment with `--config` or `-c`.
+This writes the following files at the repository root:
+
+* `flora.kdl`: used by `flora-server`, `flora-cli` and `flora-migrate`
+* `flora_test.kdl`: used by the test suite
+* `jobs_runner.kdl`: used by `flora-jobs-runner`
+* `jobs_runner_test.kdl`: reserved for the jobs runner tests
+
+Pass `--force` to overwrite files that already exist. An executable that cannot
+find its file tells you to run the script.
+
+Each executable reads its file by default. Pass `--config` or `-c` to use another one.
 
 Example:
 ```bash
-cabal run -- flora-cli -c environment.kdl provision categories
+cabal run -- flora-cli provision categories
+cabal run -- flora-cli -c flora_test.kdl provision categories
 ```
 
 Use `flora-cli --help` to see what commands are available.
@@ -310,15 +322,10 @@ $ make help
 
 ### Database
 
-The `make` targets below use `environment.kdl`, which reaches the database on
-`localhost:5432`. This works on the host, including against the compose database,
-whose port is published.
-Inside the `devel` container the database lives on the `flora-database` host instead,
-so override the config there:
-
-```bash
-(docker)$ make db-setup CONFIG=environment.docker.kdl
-```
+The `make` targets below use `flora.kdl`. With `--local` it reaches the database on
+`localhost:5432`, which works on the host, including against the compose database,
+whose port is published. With `--docker` it reaches the `flora-database` host of
+the `devel` container.
 
 To create the database and apply the migrations, type:
 
@@ -333,7 +340,7 @@ Then populate the development database:
 
 ```bash
 $ make db-provision
-$ cabal run -- flora-cli -c environment.kdl create-user --admin --can-login --username "admin" \
+$ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
     --email "admin@localhost" --password "password123"
 $ make db-provision-packages
 ```
@@ -345,14 +352,14 @@ The previous paragraph shows how to import test packages, but you may want to im
 You can do so with:
 
 ```bash
-$ cabal run flora-cli -- -c environment.kdl import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
+$ cabal run flora-cli -- import-index ~/.cabal/packages/hackage.haskell.org/01-index.tar.gz \
   --repository hackage.haskell.org
 ```
 
 Similarly if you have the [cardano packages index](https://input-output-hk.github.io/cardano-haskell-packages/) configured, run:
 
 ```bash
-$ cabal run flora-cli -- -c environment.kdl import-index ~/.cabal/packages/cardano/01-index.tar.gz \
+$ cabal run flora-cli -- import-index ~/.cabal/packages/cardano/01-index.tar.gz \
   --repository "cardano"
 ```
 
@@ -362,7 +369,7 @@ If you need to connect to the database directly:
 
 ```bash
 ## flora_dev is the host-provisioned dev database; use flora_dev_1 for a database
-## provisioned with environment.docker.kdl, or flora_test for the test database
+## provisioned with the `--docker` configuration, or flora_test for the test database
 psql -h localhost -p 5432 -U postgres -d flora_dev
 ```
 
@@ -376,7 +383,7 @@ https://well-typed.com/blog/2021/01/first-look-at-hi-profiling-mode/.
 Here are the steps:
 
 1. `$ cabal --project-file=cabal.profiling.project build flora-server` (or `flora-cli`)
-2. `$ cabal --project-file=cabal.profiling.project run -- flora-server -c environment.kdl +RTS -l -hi -i0.5 -RTS`
+2. `$ cabal --project-file=cabal.profiling.project run -- flora-server +RTS -l -hi -i0.5 -RTS`
 3. `$ eventlog2html flora-server.eventlog`
 
 Also consider [capturing live eventlogs](#live-eventlogs) during development.
@@ -393,21 +400,21 @@ The forwarders are configured through
 [OpenTelemetry environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables).
 `deployment/eventlog-live/eventlog-live-otlp.yaml` selects which processors run.
 
-1. Ensure `eventlogSocketDirectory` is set in your config file (the committed
-   environment files set it to `/tmp/flora-eventlog`).
+1. Ensure `eventlogSocketDirectory` is set in your config file (the templates
+   set it to `/tmp/flora-eventlog`).
    Each executable creates its own `<progName>.sock` inside it.
-2. Run the server with eventlog RTS flags. These commands use
-   `environment.docker.kdl` and are meant to be run **inside the `devel`
+2. Run the server with eventlog RTS flags. These commands use the `--docker`
+   configuration and are meant to be run **inside the `devel`
    container** (see [On the host machine](#on-the-host-machine) for host runs):
 
 ```
-$ cabal --project-file=cabal.profiling.project run flora-server -- -c environment.docker.kdl +RTS -l -hi -i5 --eventlog-flush-interval=1 -RTS
+$ cabal --project-file=cabal.profiling.project run flora-server -- +RTS -l -hi -i5 --eventlog-flush-interval=1 -RTS
 ```
 
 flora-jobs-runner can be profiled the same way, with the same RTS flags:
 
 ```
-$ cabal --project-file=cabal.profiling.project run flora-jobs-runner -- -c environment.docker.kdl +RTS -l -hi -i5 --eventlog-flush-interval=1 -RTS
+$ cabal --project-file=cabal.profiling.project run flora-jobs-runner -- +RTS -l -hi -i5 --eventlog-flush-interval=1 -RTS
 ```
 
 Note: `--eventlog-flush-interval=1` has a measurable runtime cost; use it
@@ -433,8 +440,8 @@ remap Grafana's host port.
 
 ##### On the host machine
 
-For a host-run executable, use a configuration whose database points at
-`localhost` (e.g. `environment.kdl`), create the socket
+For a host-run executable, use the `--local` configuration, whose database points at
+`localhost`, create the socket
 directory (`mkdir -p /tmp/flora-eventlog`) and set
 `FLORA_EVENTLOG_DIR=/tmp/flora-eventlog` when starting the stack; a set
 `FLORA_EVENTLOG_DIR` makes the forwarders bind-mount that host directory

@@ -57,7 +57,7 @@ import FloraWeb.Common.Tracing
 main :: IO ()
 main = do
   labelCurrentThread "flora-jobs-runner-main"
-  floraConfig <- execParser parseConfig
+  floraConfig <- execParser (parseConfig "jobs_runner.kdl")
   jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
   floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort

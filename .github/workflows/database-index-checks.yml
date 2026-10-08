@@ -66,6 +66,7 @@ jobs:
         touch ~/.pgpass
         chmod 0600 ~/.pgpass
         cabal update
+        ./scripts/generate-configuration.sh --ci
 
     - name: Create freeze file
       run: cabal freeze --enable-tests
@@ -80,8 +81,8 @@ jobs:
     - name: Migrate
       run: |
         set -x
-        cabal run flora-cli -- -c environment.ci.kdl create-db
-        cabal run flora-migrate -- -c environment.ci.kdl
+        cabal run flora-cli -- create-db
+        cabal run flora-migrate
       env:
         PGPASSWORD: "postgres"
 

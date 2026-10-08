@@ -24,7 +24,7 @@ services:
     links:
       - flora-database
     environment:
-      - CONFIG=environment.docker.kdl
+      - CONFIG=flora.kdl
     command: sleep infinity
     profiles:
       - local
