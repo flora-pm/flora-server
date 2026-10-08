@@ -14,7 +14,7 @@ jobs: $ncpus
 package *
   ghc-options: +RTS -I0 -RTS -finfo-table-map -fdistinct-constructor-tables -fwrite-ide-info
 
-index-state: 2026-10-07T16:45:52Z
+index-state: 2026-10-08T13:54:20Z
 
 allow-newer: chronos:hashable
            , feed:*
@@ -34,6 +34,14 @@ allow-newer: chronos:hashable
            , hsec-tools:*
            , hsec-core:*
            , openapi:*
+           , http-client-tls:crypton
+           , tls:crypton
+           , pandoc:crypton
+
+constraints:
+  , any.Cabal ==3.16.1.0
+  , any.Cabal-syntax ==3.16.1.0
+  , any.crypton ==2.1.8
 
 package feed
   ghc-options: -Wno-tabs
