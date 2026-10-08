@@ -44,7 +44,6 @@ import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types
 import Flora.Model.PackageMaintainer.Types
 import Flora.Model.PackageMaintainer.Update qualified as Update
-import Flora.Model.PackageUploader.Guard
 import Flora.Model.PackageUploader.Types
 import Flora.Model.PackageUploader.Update qualified as Update
 import Flora.Model.Release.Query qualified as Query
@@ -395,17 +394,12 @@ fetchPackageMaintainers packageName = do
         package <-
           guardThatPackageExists pool namespace packageName
             >>= maybe (Error.throwError (CouldNotFindPackage namespace packageName)) pure
-        packageUploaders <-
-          forM (Vector.toList maintainers) $ \(HackagePackageMaintainer username) ->
-            guardThatPackageUploaderExists
-              pool
-              username
-              packageIndex.packageIndexId
-              (Error.throwError (CouldNotFindPackageUploader username namespace))
-        packageMaintainerDAOs <- forM packageUploaders $ \packageUploader ->
-          mkPackageMaintainer
-            packageUploader.packageUploaderId
-            package.packageId
+        packageUploaderIds <-
+          withReadWritePool pool $
+            forM (Vector.toList maintainers) $ \(HackagePackageMaintainer username) ->
+              Update.getOrInsertPackageUploader username packageIndex.packageIndexId
+        packageMaintainerDAOs <- forM packageUploaderIds $ \packageUploaderId ->
+          mkPackageMaintainer packageUploaderId package.packageId
         withReadWritePool pool $ Update.insertPackageMaintainers packageMaintainerDAOs
   where
     handleClientError :: ClientError -> JobsRunner a
