@@ -26,9 +26,11 @@
     "stylelint-config-standard": "^36.0.1"
   },
   "dependencies": {
+    "@oddbird/css-anchor-positioning": "^0.10.2",
     "@oddbird/popover-polyfill": "^0.6.1",
     "alpinejs": "^3.14.9",
-    "htmx.org": "^2.0.2"
+    "htmx.org": "^2.0.2",
+    "interestfor": "^1.0.10"
   },
   "scripts": {
     "watch": "yarn clean:build && parcel watch",
