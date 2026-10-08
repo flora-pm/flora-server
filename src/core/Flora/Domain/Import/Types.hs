@@ -26,7 +26,6 @@ data ImportError
   | CouldNotSelectNamespace Text PackageName
   | CouldNotFindPackageIndexForRelease ReleaseId
   | CouldNotFindPackageIndex Text
-  | CouldNotFindPackageUploader Text Namespace
   | CouldNotFindPackage Namespace PackageName
   | MarkdownRenderingError PandocError
   | NoImportableComponents Namespace PackageName Version
@@ -46,7 +45,6 @@ importErrorReason = \case
   CouldNotSelectNamespace{} -> "namespace-not-found"
   CouldNotFindPackageIndexForRelease{} -> "package-index-not-found"
   CouldNotFindPackageIndex{} -> "package-index-not-found"
-  CouldNotFindPackageUploader{} -> "package-uploader-not-found"
   CouldNotFindPackage{} -> "package-not-found"
   MarkdownRenderingError{} -> "markdown-rendering-error"
   NoImportableComponents{} -> "no-importable-components"
