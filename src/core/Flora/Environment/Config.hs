@@ -289,16 +289,16 @@ getAssets environment =
   case environment of
     Production -> do
       Assets
-        <$> getAsset "polyfills.js"
-        <*> getAsset "alpine.js"
-        <*> getAsset "htmx.js"
-        <*> getAsset "styles.css"
+        <$> getAsset "js/polyfills.js"
+        <*> getAsset "js/alpine.js"
+        <*> getAsset "js/htmx.js"
+        <*> getAsset "css/styles.css"
     _ -> do
       Assets
-        <$> getStaticAsset "polyfills.js"
-        <*> getStaticAsset "alpine.js"
-        <*> getStaticAsset "htmx.js"
-        <*> getStaticAsset "styles.css"
+        <$> getStaticAsset "js/polyfills.js"
+        <*> getStaticAsset "js/alpine.js"
+        <*> getStaticAsset "js/htmx.js"
+        <*> getStaticAsset "css/styles.css"
 
 getStaticAsset :: Text -> Eff es AssetBundle
 getStaticAsset key =
@@ -311,13 +311,13 @@ getStaticAsset key =
 --  "app-U6EOZTZG.js"
 getAsset :: (Fail :> es, FileSystem :> es, IOE :> es) => Text -> Eff es AssetBundle
 getAsset key = do
-  let path = "./static/manifest.json"
+  let path = "./static/parcel-manifest.json"
   Just (json :: Map Text Text) <- liftIO $ Aeson.decodeFileStrict path
   case Map.lookup key json of
     Nothing -> error $ "Could not find an entry for " <> Text.unpack key
     Just fullPath -> do
       let name = last $ Text.splitOn "/" fullPath
-      hash <- getAssetHash ("./static/" <> name)
+      hash <- getAssetHash ("." <> name)
       pure $ AssetBundle{name, hash}
 
 -- Get the SHA-256 hash of an asset bundle.

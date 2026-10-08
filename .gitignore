@@ -20,6 +20,7 @@ tags.mtime
 /static/*
 assets/node_modules
 assets/yarn-error.log
+assets/.parcel-cache
 design/node_modules
 design/storybook-static
 
