@@ -17,7 +17,7 @@
 	z-index: -1;
 	display: block;
 	background-color: var(--color-surface-brand);
-	mask-image: url('../../flower-half.svg');
+	mask-image: url('../../files/flower-half.svg');
 	mask-size: min(var(--size-wrapper, 67rem), 90vmax) auto;
 	mask-repeat: no-repeat;
 	mask-position: center 100%;
