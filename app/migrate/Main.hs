@@ -26,7 +26,7 @@ import FloraJobs.Environment
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
-  config <- execParser parseConfig
+  config <- execParser (parseConfig "flora.kdl")
   jobsEnv <- runEff . runFailIO $ getFloraJobsEnv config
   runAllMigrations jobsEnv.config.connectionInfo
     & Reader.runReader jobsEnv
