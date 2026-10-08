@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./logos/logo-dark-background.png">
-    <img alt="Flora" src="./logos/logo-light-background.png" width=50%>
-  </picture>
+  <img alt="Flora" src="./logos/logo-picto-typo.svg" width="50%">
 </p>
 
 <h1 align="center"><small>A package index for the Haskell ecosystem</small> </h1>
