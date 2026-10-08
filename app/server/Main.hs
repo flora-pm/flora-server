@@ -41,7 +41,7 @@ import FloraWeb.Server
 main :: IO ()
 main = do
   labelCurrentThread "flora-server-main"
-  configFile <- execParser parseConfig
+  configFile <- execParser (parseConfig "flora.kdl")
   hSetBuffering stdout LineBuffering
   preFlightChecks configFile
   runFlora configFile

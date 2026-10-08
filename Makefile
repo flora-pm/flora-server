@@ -1,5 +1,5 @@
-CONFIG ?= environment.docker.kdl
-CONFIG_TEST := environment.test.kdl
+CONFIG ?= flora.kdl
+CONFIG_TEST := flora_test.kdl
 
 init: ## Set up git hooks properly - needs calling once when cloning the repo
 	@git config core.hooksPath .githooks

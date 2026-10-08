@@ -66,6 +66,7 @@ jobs:
         cabal update
         mkdir -p ~/.local/share
         git clone https://github.com/haskell/security-advisories.git ~/.local/share/security-advisories
+        ./scripts/generate-configuration.sh --ci
 
     - name: Create freeze file
       run: cabal freeze --enable-tests
@@ -86,5 +87,5 @@ jobs:
       run: |
         set -x
         make db-test-setup
-        cabal run flora-cli -- -c environment.ci.kdl create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
+        cabal run flora-cli -- create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         make test

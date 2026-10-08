@@ -58,7 +58,7 @@ main = provideCallStack $ do
     defaultMain $
       testGroup "Flora Tests" spec
   where
-    parser = (,) <$> configFileParser <*> many (strArgument mempty)
+    parser = (,) <$> configFileParser "flora_test.kdl" <*> many (strArgument mempty)
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =

@@ -10,6 +10,7 @@ where
 import Arbiter.Simple qualified as ArbS
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
+import Control.Monad (unless)
 import Data.Pool
 import Data.Pool qualified as Pool
 import Data.Proxy
@@ -21,23 +22,28 @@ import Effectful.Fail (Fail)
 import Effectful.FileSystem (FileSystem)
 import KDL qualified
 import Options.Applicative
+import System.Directory (doesFileExist)
+import System.Exit (exitFailure)
+import System.IO (hPutStrLn, stderr)
 
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Monitoring
 
-configFileParser :: Parser FilePath
-configFileParser =
+configFileParser :: FilePath -> Parser FilePath
+configFileParser defaultFile =
   strOption
     ( long "config"
         <> short 'c'
+        <> value defaultFile
+        <> showDefault
         <> help "KDL configuration file"
     )
 
-parseConfig :: ParserInfo FilePath
-parseConfig =
-  info (helper <*> configFileParser) $
+parseConfig :: FilePath -> ParserInfo FilePath
+parseConfig defaultFile =
+  info (helper <*> configFileParser defaultFile) $
     progDesc "flora-server expects a KDL configuration file"
 
 mkPool
@@ -101,7 +107,12 @@ configToEnv floraConfig = do
 
 -- | Decodes the KDL configuration file, without opening a connection pool.
 readFloraConfig :: (Fail :> es, IOE :> es) => FilePath -> Eff es FloraConfig
-readFloraConfig fp =
+readFloraConfig fp = do
+  exists <- liftIO $ doesFileExist fp
+  unless exists $ liftIO $ do
+    hPutStrLn stderr $ "Configuration file not found: " <> fp
+    hPutStrLn stderr "Generate it with: ./scripts/generate-configuration.sh (--local | --docker | --ci)"
+    exitFailure
   liftIO (KDL.decodeFileWith floraEnvDecoder fp) >>= \case
     Right config -> liftIO (evaluate (force config))
     Left e -> fail $ show e
