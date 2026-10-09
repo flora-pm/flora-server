@@ -41,7 +41,7 @@
     "clean:modules": "if [ -d './node_modules/*' ]; then rm -R ./node_modules/*; fi",
     "clean:build": "npm run clean:artifacts && npm run clean:cache",
     "clean:all": "npm run clean:modules && npm run clean:build",
-    "lint": "npm run stylelint css --ignore-path .stylelintignore",
-    "lint:fix": "npm run stylelint css --fix --ignore-path .stylelintignore"
+    "lint": "stylelint css --ignore-path .stylelintignore",
+    "lint:fix": "stylelint css --fix --ignore-path .stylelintignore"
   }
 }
