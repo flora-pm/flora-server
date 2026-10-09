@@ -98,5 +98,10 @@
 
 /* Avoid overflow on wide tables */
 .prose table :is(th,td) {
-	word-break: break-word;
+	overflow-wrap: anywhere
+}
+
+@supports not (overflow-wrap: anywhere) {
+	/* stylelint-disable-next-line declaration-property-value-keyword-no-deprecated */
+	.prose table :is(th,td) { word-break: break-word; }
 }
