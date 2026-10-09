@@ -94,11 +94,11 @@ COPY --from=setup-haskell-tools /out /opt/bin
 COPY --from=setup-haskell-tools /opt/ghcup /opt/ghcup
 
 ENV PATH="/opt/ghcup/.ghcup/bin:/opt/bin:$PATH"
+ENV GHCUP_INSTALL_BASE_PREFIX="/opt/ghcup"
 
 RUN ghcup install ghc $GHC_VERSION
 RUN ghcup set ghc $GHC_VERSION
 RUN ghcup install hls $HLS_VERSION --set
-
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
@@ -120,7 +120,8 @@ RUN groupadd -g "$GID" -o "$USER" \
 
 RUN mkdir /home/$USER/.cabal
 RUN chmod ugo+x /home/$USER/.cabal
-RUN chown -R $UID:$GID /home/$USER
+RUN chown -R $UID:$GID /home/"$USER"
+RUN chown -R $UID:$GID /opt/ghcup
 
 USER $USER
 
@@ -130,8 +131,7 @@ COPY --chown=${USER} scripts/shell-welcome.txt /etc/motd
 COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 
 RUN echo 'export PATH="$PATH:/home/$USER/.cabal/bin"' >>~/.zshrc
-RUN echo "source /opt/ghcup/.ghcup/env" >>~/.zshrc
-RUN echo 'eval "$(direnv hook bash)"' >>~/.zshrc
+RUN echo 'eval "$(direnv hook zsh)"' >>~/.zshrc
 RUN echo 'direnv allow' >>~/.zshrc
 RUN cabal update
 
