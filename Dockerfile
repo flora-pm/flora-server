@@ -129,10 +129,10 @@ RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/inst
 COPY --chown=${USER} scripts/shell-welcome.txt /etc/motd
 COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 
-RUN echo 'export PATH="$PATH:/home/$USER/.cabal/bin"' >>~/.bashrc
-RUN echo "source /opt/ghcup/.ghcup/env" >>~/.bashrc
-RUN echo 'eval "$(direnv hook bash)"' >>~/.bashrc
-RUN echo 'direnv allow' >>~/.bashrc
+RUN echo 'export PATH="$PATH:/home/$USER/.cabal/bin"' >>~/.zshrc
+RUN echo "source /opt/ghcup/.ghcup/env" >>~/.zshrc
+RUN echo 'eval "$(direnv hook bash)"' >>~/.zshrc
+RUN echo 'direnv allow' >>~/.zshrc
 RUN cabal update
 
 # Mountpoint for the eventlog-socket volume shared with the live-eventlog
