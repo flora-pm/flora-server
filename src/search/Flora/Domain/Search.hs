@@ -116,14 +116,13 @@ searchDependents
   -> FloraM es (Word, Vector PackageInfo)
 searchDependents pagination namespace packageName mSearchString = do
   FloraEnv{pool} <- Reader.ask
-  results <-
+  (totalDependents, results) <-
     withReadOnlyPool pool $
       Query.getAllPackageDependentsWithLatestVersion
         namespace
         packageName
         pagination
         mSearchString
-  totalDependents <- withReadOnlyPool pool $ Query.getNumberOfPackageDependents namespace packageName mSearchString
   pure (totalDependents, fmap dependencyInfoToPackageInfo results)
 
 searchExecutable

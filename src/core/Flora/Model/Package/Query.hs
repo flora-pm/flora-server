@@ -105,34 +105,18 @@ getNumberOfPackageDependents
   :: (IOE :> es, ReadDB :> es)
   => Namespace
   -> PackageName
-  -> Maybe Text
   -> Eff es Word
-getNumberOfPackageDependents namespace packageName mbSearchString =
-  case mbSearchString of
-    Nothing -> queryCount numberOfPackageDependentsQuery (namespace, packageName)
-    Just searchString -> queryCount searchNumberOfPackageDependentsQuery (namespace, packageName, searchString)
+getNumberOfPackageDependents namespace packageName =
+  queryCount numberOfPackageDependentsQuery (namespace, packageName)
 
 numberOfPackageDependentsQuery :: Query
 numberOfPackageDependentsQuery =
   [sql|
-  SELECT DISTINCT count(p."package_id")
-  FROM "packages" AS p
-        INNER JOIN "dependents" AS dep
-                ON p."package_id" = dep."dependent_id"
-  WHERE dep."namespace" = ?
-    AND dep."name" = ?
-  |]
-
-searchNumberOfPackageDependentsQuery :: Query
-searchNumberOfPackageDependentsQuery =
-  [sql|
-  SELECT DISTINCT count(p."package_id")
-  FROM "packages" AS p
-        INNER JOIN "dependents" AS dep
-                ON p."package_id" = dep."dependent_id"
-  WHERE dep."namespace" = ?
-    AND dep."name" = ?
-    AND ? <% p."name"
+  SELECT count(*)
+  FROM dependents AS dep
+       INNER JOIN latest_versions AS lv ON lv.package_id = dep.dependent_id
+  WHERE dep.namespace = ?
+    AND dep.name = ?
   |]
 
 -- | Fetch the dependents of a package.
@@ -159,85 +143,35 @@ getAllPackageDependentsWithLatestVersion
   -> PackageName
   -> (Word, Word)
   -> Maybe Text
-  -> Eff es (Vector DependencyInfo)
-getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) mSearchString = case mSearchString of
-  Nothing ->
-    Vector.fromList <$> query q (namespace, packageName, offset, limit)
-    where
-      q = packageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
-  Just searchString ->
-    Vector.fromList <$> query q (namespace, packageName, searchString, offset, limit)
-    where
-      q = searchPackageDependentsWithLatestVersionQuery <> " OFFSET ? LIMIT ?"
+  -> Eff es (Word, Vector DependencyInfo)
+getAllPackageDependentsWithLatestVersion namespace packageName (offset, limit) mSearchString =
+  withTotalCount
+    <$> query
+      packageDependentsWithLatestVersionQuery
+      (namespace, packageName, mSearchString, mSearchString, offset, limit)
 
 packageDependentsWithLatestVersionQuery :: Query
 packageDependentsWithLatestVersionQuery =
   [sql|
-WITH dependents AS (
-  SELECT row_number() OVER (
-    PARTITION BY p.name
-      ORDER BY r.version DESC) AS rank
-       , p.package_id
-       , p.namespace
-       , p.name
-       , r.version
-       , r.synopsis
-       , r.license
-       , r.uploaded_at
-       , r.revised_at
-  FROM packages AS p
-       INNER JOIN dependents AS dep ON p.package_id = dep.dependent_id
-       INNER JOIN releases AS r ON r.package_id = p.package_id
-  WHERE dep.namespace = ?
-    AND dep.name = ?
-)
-
-SELECT d.package_id
-     , d.namespace
-     , d.name
+SELECT lv.package_id
+     , lv.namespace
+     , lv.name
      , ''
      , (ARRAY[]::text[])
-     , d.version
-     , d.synopsis
-     , d.license
-     , d.uploaded_at
-     , d.revised_at
-FROM dependents AS d
-WHERE rank = 1
-    |]
-
-searchPackageDependentsWithLatestVersionQuery :: Query
-searchPackageDependentsWithLatestVersionQuery =
-  [sql|
-WITH dependents AS (
-  SELECT row_number() OVER (
-    PARTITION BY p.name
-      ORDER BY r.version DESC) AS rank
-       , p.package_id
-       , p.namespace
-       , p.name
-       , r.version
-       , r.synopsis
-       , r.license
-       , r.uploaded_at
-       , r.revised_at
-  FROM packages AS p
-       INNER JOIN dependents AS dep ON p.package_id = dep.dependent_id
-       INNER JOIN releases AS r ON r.package_id = p.package_id
-  WHERE dep.namespace = ? AND dep.name = ? AND ? <% p."name"
-)
-
-SELECT d.namespace
-     , d.name
-     , ''
-     , (ARRAY[]::text[])
-     , d.version
-     , d.synopsis
-     , d.license
-     , d.uploaded_at
-     , d.revised_at
-FROM dependents AS d
-WHERE rank = 1
+     , lv.version
+     , lv.synopsis
+     , lv.license
+     , lv.uploaded_at
+     , lv.revised_at
+     , count(*) OVER () AS total
+FROM dependents AS dep
+     INNER JOIN latest_versions AS lv ON lv.package_id = dep.dependent_id
+WHERE dep.namespace = ?
+  AND dep.name = ?
+  AND (?::text IS NULL OR ? <% lv.name)
+ORDER BY lv.name ASC, lv.namespace ASC
+OFFSET ?
+LIMIT ?
     |]
 
 getComponentById :: (IOE :> es, ReadDB :> es) => ComponentId -> Eff es (Maybe PackageComponent)
