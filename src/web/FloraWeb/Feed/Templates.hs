@@ -3,7 +3,8 @@
 module FloraWeb.Feed.Templates
   ( showFeedsBuilderPage
   , showSearchedPackages
-  ) where
+  )
+where
 
 import Control.Monad.Reader
 import Control.Monad.Reader.Class qualified as Reader
@@ -19,7 +20,10 @@ import Flora.Environment.Config
 import Flora.Model.Package.Types
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.Utils
-import FloraWeb.Pages.Templates
+import FloraWeb.Pages.Templates.Types
+  ( FloraHTML
+  , TemplateEnv (TemplateEnv, assets, domain, environment, httpPort)
+  )
 
 jsHtmxLink :: FloraHTML
 jsHtmxLink = do
@@ -56,7 +60,7 @@ showFeedsBuilderPage = do
           urlBase: "{baseURL}/feed/atom.xml?packages[]=",
           get url() {{ return this.activeFilters.length === 0 ? "" : this.urlBase + this.activeFilters.join('&packages[]=') }}
         }} |]
-  div_ [class_ "container container--small", xData_ alpineData] $ do
+  section_ [class_ "wrapper wrapper--medium inset-large flow flow--large", id_ "content", xData_ alpineData] $ do
     div_ [class_ "feed-package-selector"] $ do
       packageSelector
     div_ [class_ "searched-packages"] mempty
@@ -82,9 +86,11 @@ showFeedsBuilderPage = do
 
 banner :: FloraHTML
 banner = do
-  div_ [class_ "relative"] $
-    h1_ [class_ "main-title"] $
-      span_ [class_ "main-title"] "Search packages to follow"
+  header_ [class_ "pageHead"] $ do
+    div_ [class_ "wrapper"] $ do
+      div_ [class_ "flow"] $ do
+        h1_ [class_ "pageHead-title"] "Packages feed"
+        p_ [class_ "pageHead-subtitle"] "Generate an Atom feed to follow updates"
 
 packageSelector :: FloraHTML
 packageSelector =
