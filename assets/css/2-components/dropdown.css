@@ -5,16 +5,16 @@
 	--dropdown-radius: var(--radius-xs);
 	--dropdown-width: 30ch;
 	--dropdown-gap: var(--space-gutter-small);
-	position: absolute;
+	position: fixed;
 	box-sizing: border-box;
-	inset: auto;
 	margin-block: var(--space-1);
 	padding: 0;
 	max-width: calc(100vw - (var(--wrapper-padding) * 2));
 	width: max-content;
 	position-anchor: auto;
 	position-area: bottom span-left;
-	position-try-fallbacks: bottom, bottom;
+	position-try-order: most-height;
+	position-try-fallbacks: flip-block;
 	border: 1px solid var(--color-stroke-default);
 	border-radius: var(--dropdown-radius);
 	background: var(--color-surface-default);
@@ -87,4 +87,21 @@ Content
 :where(a.dropdown-item, button.dropdown-item):is(:hover, :active, :focus-visible, .dropdown-item--current, [aria-current="page"]) {
 	background-color: var(--color-surface-brand-interact);
 	--outline-offset: calc(-1 * var(--outline-width));
+}
+
+
+/* Anchoring positions
+-------------------------------------------------- */
+
+/* Mandatory for anchor polyfill since its doesnt support implicit anchoring or constructed style: */
+
+/* https://github.com/oddbird/css-anchor-positioning/issues/273#issuecomment-4119899341 */
+
+
+[popovertarget="subsections-mobile-menu"] {
+	anchor-name: --subsections-mobile-menu;
+}
+
+#subsections-mobile-menu {
+	position-anchor: --subsections-mobile-menu;
 }

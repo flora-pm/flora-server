@@ -3,14 +3,14 @@
 	--tooltip-border-width: var(--space-1);
 	--tooltip-radius: var(--radius-xs);
 	--tooltip-width: 30ch;
-	position: absolute;
-	inset: auto;
+	position: fixed;
+	inset: 0;
 	margin: var(--space-1);
 	max-width: min(90vw, var(--tooltip-width, 50ch));
 	width: max-content;
 	position-anchor: auto;
-	position-area: top center;
-	position-try-fallbacks: top, bottom, right, left;
+	position-area: top;
+	position-try: flip-block,flip-start,flip-start flip-inline;
 	padding: var(--tooltip-inset);
 	border: 1px solid var(--color-stroke-default);
 	border-radius: var(--tooltip-radius);
@@ -32,4 +32,21 @@
 	border-style: solid;
 	border-width: 1px 0 0;
 	border-color: var(--color-stroke-default);
+}
+
+
+/* Anchoring positions
+-------------------------------------------------- */
+
+/* Mandatory for anchor polyfill since its doesnt support implicit anchoring or constructed style: */
+
+/* https://github.com/oddbird/css-anchor-positioning/issues/273#issuecomment-4119899341 */
+
+
+[interestfor="lottery-factor-learn"] {
+	anchor-name: --lottery-factor-learn;
+}
+
+#lottery-factor-learn {
+	position-anchor: --lottery-factor-learn;
 }

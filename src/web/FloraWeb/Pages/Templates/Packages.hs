@@ -543,13 +543,13 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             Icons.shieldAlert
             "Security"
         div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
-          button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
+          button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsections-mobile-menu"] $ do
             Icons.bookOpenText
             div_ [class_ "flex-grow"] $ do
               div_ [class_ "prefix"] "Current section"
               div_ [] $ toHtml $ currentSectionLabel sectionId
             Icons.chevronUpDown
-          nav_ [class_ "dropdown dropdown--full", id_ "subsectionsMobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
+          nav_ [class_ "dropdown dropdown--full", id_ "subsections-mobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
             a_ ([class_ "dropdown-item", href_ (Links.versionResource namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "about"])) $ do
               Icons.bookOpenText
               "About"
