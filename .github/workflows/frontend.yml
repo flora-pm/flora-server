@@ -14,20 +14,18 @@ jobs:
     - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: "24"
-        cache: "yarn"
-        cache-dependency-path: assets/yarn.lock
+        cache: "npm"
+        cache-dependency-path: assets/package-lock.json
 
     - name: Configure environment
       run: |
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
 
-    - name: Stylelint
-      run: |
-        cd assets
-        yarn
-        yarn stylelint css
-
     - name: Build
       run: |
         make assets-deps
         make build-assets
+
+    - name: Stylelint
+      run: |
+        make style-css
