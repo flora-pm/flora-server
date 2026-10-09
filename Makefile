@@ -18,15 +18,15 @@ clean: ## Remove the cabal build artifacts
 	@cabal clean
 
 assets-deps: ## Install the dependencies of the frontend
-	@cd assets/ && yarn install --immutable --immutable-cache --check-cache
-	@cd docs/ && yarn install --immutable --immutable-cache --check-cache
+	@cd assets/ && npm clean-install
+	@cd docs/ && npm clean-install
 
 build-assets: assets-deps ## Build the web assets
-	@cd assets/ && yarn build
-	@cd docs/ && yarn build
+	@cd assets/ && npm run build
+	@cd docs/ && npm run build
 
 watch-assets: ## Continuously rebuild the web assets
-	@cd assets/ && yarn watch
+	@cd assets/ && npm run watch
 
 clean-assets: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
@@ -124,7 +124,7 @@ style-hs: ## Run the haskell code formatters (fourmolu, cabal-gild)
 	@find app test src -name '*.hs' | xargs -P $(PROCS) -I {} fourmolu -q -i {}
 
 style-css: ## Run the CSS code formatter (stylelint)
-	@cd assets ; yarn lint:fix
+	@cd assets ; npm run lint:fix
 
 style: style-hs style-css ## Run all the code formatters
 
@@ -153,7 +153,7 @@ design-system: ## Generate the HTML components used by the design system
 	@cabal run flora-cli -- -c $(CONFIG) gen-design-system
 
 start-design-system: ## Start storybook.js
-	@cd design; yarn storybook
+	@cd design; npm run storybook
 
 migration: ## Generate timestamped database migration boilerplate files
 	@if test -z "$$name"; then \
