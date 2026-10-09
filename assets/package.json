@@ -35,9 +35,9 @@
   "scripts": {
     "watch": "yarn clean:build && parcel watch",
     "build": "yarn clean:build && parcel build --no-cache",
-    "clean:artifacts": "if [ -d '../static/' ]; then rm -R ../static/*; fi",
-    "clean:cache": "if [ -d './.parcel-cache/' ]; then rm -R ./.parcel-cache/*; fi",
-    "clean:modules": "if [ -d './node_modules/' ]; then rm -R ./node_modules/*; fi",
+    "clean:artifacts": "if [ -d '../static/*' ]; then rm -R ../static/*; fi",
+    "clean:cache": "if [ -d './.parcel-cache/*' ]; then rm -R ./.parcel-cache/*; fi",
+    "clean:modules": "if [ -d './node_modules/*' ]; then rm -R ./node_modules/*; fi",
     "clean:build": "yarn clean:artifacts && yarn clean:cache",
     "clean:all": "yarm clean:modules && yarn clean:build"
   },
