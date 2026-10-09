@@ -17,7 +17,7 @@ import FloraWeb.Pages.Templates.Types (FloraHTML, TemplateEnv (..))
 
 header :: FloraHTML
 header = do
-  TemplateEnv{environment, title, theme, seoIndexing} <- ask
+  TemplateEnv{environment, title, description, theme, seoIndexing} <- ask
   doctype_
   let theme' = case theme of
         Nothing -> []
@@ -65,7 +65,7 @@ header = do
           , title_ "Flora"
           , href_ "/opensearch.xml"
           ]
-        meta_ [name_ "description", content_ "A package repository for the Haskell ecosystem"]
+        meta_ [name_ "description", content_ description]
         ogTags
         meta_ [name_ "fediverse:creator", content_ "@flora_pm@functional.cafe"]
       -- link_ [rel_ "canonical", href_ $ getCanonicalURL assigns]
