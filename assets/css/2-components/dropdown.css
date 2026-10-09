@@ -88,3 +88,20 @@ Content
 	background-color: var(--color-surface-brand-interact);
 	--outline-offset: calc(-1 * var(--outline-width));
 }
+
+
+/* Anchoring positions
+-------------------------------------------------- */
+
+/* Mandatory for anchor polyfill since its doesnt support implicit anchoring or constructed style: */
+
+/* https://github.com/oddbird/css-anchor-positioning/issues/273#issuecomment-4119899341 */
+
+
+[popovertarget="subsections-mobile-menu"] {
+	anchor-name: --subsections-mobile-menu;
+}
+
+#subsections-mobile-menu {
+	position-anchor: --subsections-mobile-menu;
+}

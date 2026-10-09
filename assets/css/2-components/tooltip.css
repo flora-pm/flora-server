@@ -33,3 +33,20 @@
 	border-width: 1px 0 0;
 	border-color: var(--color-stroke-default);
 }
+
+
+/* Anchoring positions
+-------------------------------------------------- */
+
+/* Mandatory for anchor polyfill since its doesnt support implicit anchoring or constructed style: */
+
+/* https://github.com/oddbird/css-anchor-positioning/issues/273#issuecomment-4119899341 */
+
+
+[interestfor="lottery-factor-learn"] {
+	anchor-name: --lottery-factor-learn;
+}
+
+#lottery-factor-learn {
+	position-anchor: --lottery-factor-learn;
+}
