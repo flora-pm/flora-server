@@ -350,6 +350,7 @@ library flora-web
     FloraWeb.Common.Guards
     FloraWeb.Common.OpenSearch
     FloraWeb.Common.Pagination
+    FloraWeb.Common.Terminal
     FloraWeb.Common.ThreadLabel
     FloraWeb.Common.Tracing
     FloraWeb.Common.Utils
@@ -427,7 +428,6 @@ library flora-web
     bytestring,
     chronos,
     cmark-gfm,
-    colourista,
     containers,
     cookie,
     cvss,
@@ -740,7 +740,7 @@ test-suite flora-test
     vector-algorithms,
     zlib,
 
-  -- cabal-gild: discover test --exclude "test/Main.hs"
+  -- cabal-gild: discover test --exclude "test/Main.hs" --exclude "test/terminal/Main.hs"
   other-modules:
     Flora.AdvisorySpec
     Flora.BlobSpec
@@ -756,3 +756,18 @@ test-suite flora-test
     Flora.TemplateSpec
     Flora.TestUtils
     Flora.UserSpec
+
+test-suite terminal-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs:
+    test/terminal
+    src/web
+  other-modules: FloraWeb.Common.Terminal
+  default-language: GHC2021
+  default-extensions: OverloadedStrings
+  ghc-options: -Wall
+  build-depends:
+    base,
+    directory,
+    text,

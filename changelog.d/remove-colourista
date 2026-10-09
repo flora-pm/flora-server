@@ -1,0 +1,10 @@
+synopsis: Remove the colourista dependency
+prs: #1304
+issues: #1232
+
+description: {
+
+- I replaced the colourista message helpers with local blue/red terminal output while preserving the vivid colours, reset sequences, Unicode text and trailing newlines.
+- I added an isolated terminal-output test suite that does not need PostgreSQL.
+
+}

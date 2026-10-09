@@ -1,6 +1,5 @@
 module FloraWeb.Common.Tracing where
 
-import Colourista.IO (blueMessage, redMessage)
 import Control.Exception (AsyncException (..), Exception (..), IOException, SomeException, throw, try)
 import Control.Monad (forM_, when)
 import Data.Aeson qualified as Aeson
@@ -28,6 +27,7 @@ import System.Log.Raven.Types (SentryLevel (..), SentryRecord (..))
 import System.TimeManager (TimeoutThread (..))
 
 import Flora.Environment.Config
+import FloraWeb.Common.Terminal (blueMessage, redMessage)
 
 handleExceptions
   :: Text

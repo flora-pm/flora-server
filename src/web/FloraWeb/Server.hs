@@ -1,7 +1,6 @@
 module FloraWeb.Server where
 
 import Arbiter.Servant qualified as ArbS
-import Colourista.IO (blueMessage)
 import Control.Concurrent.STM (TChan, newBroadcastTChanIO)
 import Control.Exception (bracket)
 import Control.Exception.Backtrace
@@ -80,6 +79,7 @@ import FloraWeb.Common.Auth
   , strictAuthHandler
   )
 import FloraWeb.Common.OpenSearch
+import FloraWeb.Common.Terminal (blueMessage)
 import FloraWeb.Common.ThreadLabel (labelRequestThread)
 import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
