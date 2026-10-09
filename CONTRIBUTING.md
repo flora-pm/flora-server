@@ -170,7 +170,7 @@ The following system dependencies are needed:
 
 * [`gperftools`](https://pkgs.org/download/gperftools): This gives us `tcmalloc`, an alternative malloc implementation that helps against memory fragmentation in long-running servers
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
-* `yarn`: The tool that handles the JavaScript code bases
+* `npm`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling
 * PostgreSQL: see [PostgreSQL: first installation](#postgresql-first-installation) if this is your first time
 
