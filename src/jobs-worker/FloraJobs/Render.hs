@@ -71,7 +71,7 @@ renderHtml bodyText = liftPandoc (readHtml def bodyText) >>= writeSanitised
 
 writeSanitised :: Error ImportError :> es => Pandoc -> Eff es Text
 writeSanitised document =
-  sanitizeBalance <$> liftPandoc (HTML.writeHtml5String def (walk shiftHeadingLevel document))
+  sanitizeBalance <$> liftPandoc (HTML.writeHtml5String def (walk (shiftHeadingLevel . prettifyTable) document))
 
 liftPandoc :: Error ImportError :> es => PandocPure a -> Eff es a
 liftPandoc = either (Error.throwError . MarkdownRenderingError) pure . runPure
@@ -79,3 +79,7 @@ liftPandoc = either (Error.throwError . MarkdownRenderingError) pure . runPure
 shiftHeadingLevel :: Block -> Block
 shiftHeadingLevel (Header n attrs content) = Header (n + 2) attrs content
 shiftHeadingLevel x = x
+
+prettifyTable :: Block -> Block
+prettifyTable table'@(Table _attr _caption _colSpec _thead _tbody _tfooter) = Div (mempty, mempty, [("class", "table-wrap")]) [table']
+prettifyTable x = x
