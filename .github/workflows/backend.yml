@@ -64,8 +64,6 @@ jobs:
         echo "$HOME/node_modules/.bin" >> $GITHUB_PATH
         echo "STORE_PATH=$(cabal -v0 path --store-dir)" >> $GITHUB_ENV
         cabal update
-        mkdir -p ~/.local/share
-        git clone https://github.com/haskell/security-advisories.git ~/.local/share/security-advisories
         ./scripts/generate-configuration.sh --ci
 
     - name: Create freeze file
