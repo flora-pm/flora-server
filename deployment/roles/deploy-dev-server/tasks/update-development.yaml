@@ -1,19 +1,44 @@
 ---
 
-- name: "Update development branch"
+- name: "Fetch development branch"
   ansible.builtin.command:
-    cmd: git checkout development
+    cmd: git fetch origin development
     chdir: flora-server
 
-- name: "Update development branch"
+- name: "Check out deployed commit"
   ansible.builtin.command:
-    cmd: git pull
+    cmd: "git checkout --detach {{ deploy_sha }}"
     chdir: flora-server
 
-- name: "Build frontend assets"
+- name: "Clear staging directory for frontend assets"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/flora-server/static.new"
+    state: absent
+
+- name: "Create staging directory for frontend assets"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/flora-server/static.new"
+    state: directory
+
+- name: "Upload frontend assets"
+  ansible.builtin.copy:
+    src: "{{ assets_archive }}"
+    dest: "{{ ansible_env.HOME }}/flora-server/static.tar.gz"
+
+- name: "Unpack frontend assets"
   ansible.builtin.command:
-    cmd: gmake build-assets
+    cmd: tar -xzf static.tar.gz -C static.new
     chdir: flora-server
+
+- name: "Remove frontend assets archive"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/flora-server/static.tar.gz"
+    state: absent
+
+- name: "Remove documentation build"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/flora-server/docs/build"
+    state: absent
 
 - name: "Clean build artifacts"
   ansible.builtin.command:
@@ -53,6 +78,11 @@
 
 - debug: msg="{{ build.stdout }}"
 - debug: msg="{{ build.stderr }}"
+
+- name: "Swap in new frontend assets"
+  ansible.builtin.shell:
+    cmd: rm -rf static.old && { [ ! -e static ] || mv static static.old; } && mv static.new static
+    chdir: flora-server
 
 - name: Kill the process
   ansible.builtin.shell:
