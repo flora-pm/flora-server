@@ -22,7 +22,7 @@ data PackageCardProps = PackageCardProps
   , namespace :: Namespace
   , name :: PackageName
   , synopsis :: Text
-  , version :: Version
+  , version :: Maybe Version
   , mLastUploadedAt :: Maybe UTCTime
   , mLicense :: Maybe SPDX.License
   , exactMatch :: Bool
@@ -46,11 +46,11 @@ packageCard now PackageCardProps{link, namespace, name, synopsis, version, mLast
           " "
           span_ [class_ "badge badge--brand"] "Exact match"
       ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
-        when (validVersion version) $ do
+        whenJust (mfilter validVersion version) $ \version' ->
           li_ $ do
             span_ [class_ "color-tertiary"] Icons.tag
             span_ [class_ "sr-only"] "Version: "
-            toHtml version
+            toHtml (display version')
         whenJust mLastUploadedAt $ \timestamp ->
           li_ $ do
             span_ [class_ "color-tertiary"] Icons.cloudUpload

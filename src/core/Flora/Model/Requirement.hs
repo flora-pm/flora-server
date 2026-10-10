@@ -68,7 +68,7 @@ data DependencyInfo = DependencyInfo
   { packageId :: PackageId
   , namespace :: Namespace
   , name :: PackageName
-  , requirement :: Version
+  , requirement :: Text
   , components :: Vector Text
   , latestVersion :: Version
   , latestSynopsis :: Text
@@ -86,7 +86,7 @@ data ComponentDependency' = ComponentDependency'
   , componentName :: Text
   , namespace :: Namespace
   , name :: PackageName
-  , requirement :: Version
+  , requirement :: Text -- Should be VersionRange?
   , components :: Vector Text
   , latestVersion :: Version
   , latestSynopsis :: Text
