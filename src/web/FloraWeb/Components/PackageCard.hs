@@ -9,6 +9,7 @@ import Data.Text.Display (display)
 import Data.Time (NominalDiffTime, UTCTime)
 import Data.Time qualified as Time
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Types.Version (Version, validVersion)
 import Lucid
 
 import Flora.Model.Package.Types (Namespace, PackageName)
@@ -21,14 +22,14 @@ data PackageCardProps = PackageCardProps
   , namespace :: Namespace
   , name :: PackageName
   , synopsis :: Text
-  , mVersion :: Maybe Text
+  , version :: Version
   , mLastUploadedAt :: Maybe UTCTime
   , mLicense :: Maybe SPDX.License
   , exactMatch :: Bool
   }
 
 packageCard :: UTCTime -> PackageCardProps -> FloraHTML
-packageCard now PackageCardProps{link, namespace, name, synopsis, mVersion, mLastUploadedAt, mLicense, exactMatch} =
+packageCard now PackageCardProps{link, namespace, name, synopsis, version, mLastUploadedAt, mLicense, exactMatch} =
   a_
     [ class_ ("entityCard" <> (if exactMatch then " entityCard--highlighted" else ""))
     , href_ link
@@ -45,7 +46,7 @@ packageCard now PackageCardProps{link, namespace, name, synopsis, mVersion, mLas
           " "
           span_ [class_ "badge badge--brand"] "Exact match"
       ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
-        whenJust mVersion $ \version ->
+        when (validVersion version) $ do
           li_ $ do
             span_ [class_ "color-tertiary"] Icons.tag
             span_ [class_ "sr-only"] "Version: "

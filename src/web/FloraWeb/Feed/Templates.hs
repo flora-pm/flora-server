@@ -43,11 +43,11 @@ jsAlpineLink = do
 
 showFeedsBuilderPage :: FloraHTML
 showFeedsBuilderPage = do
-  env <- Reader.ask
+  templateEnv <- Reader.ask
   let baseURL =
-        case env.environment of
-          Production -> "https://" <> env.domain
-          _ -> "http://" <> env.domain <> ":" <> display env.httpPort
+        case templateEnv.environment of
+          Production -> "https://" <> templateEnv.domain
+          _ -> "http://" <> templateEnv.domain <> ":" <> display templateEnv.httpPort
 
   banner
   let alpineData =

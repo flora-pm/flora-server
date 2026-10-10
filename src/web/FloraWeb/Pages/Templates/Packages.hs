@@ -108,7 +108,7 @@ showDependents now numberOfReleases latestRelease numberOfDependencies numberOfD
                   , namespace = dep.namespace
                   , name = dep.name
                   , synopsis = dep.latestSynopsis
-                  , mVersion = Just (display dep.latestVersion)
+                  , version = dep.latestVersion
                   , mLastUploadedAt = mLastUploadedAt
                   , mLicense = Just dep.latestLicense
                   , exactMatch = False
@@ -232,7 +232,7 @@ packageListing now mExactMatchItems packages =
               , namespace = em.namespace
               , name = em.name
               , synopsis = em.synopsis
-              , mVersion = Just (display em.version)
+              , version = em.version
               , mLastUploadedAt = mLastUploadedAt
               , mLicense = Just em.license
               , exactMatch = True
@@ -248,7 +248,7 @@ packageListing now mExactMatchItems packages =
             , namespace = p.namespace
             , name = p.name
             , synopsis = p.synopsis
-            , mVersion = Just (display p.version)
+            , version = p.version
             , mLastUploadedAt = mLastUploadedAt
             , mLicense = Just p.license
             , exactMatch = False
@@ -489,7 +489,7 @@ presentationHeader
   -> Bool
   -> Bool
   -> FloraHTML
-presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} groups sectionId latestViableRelease showVersion =
+presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} _groups sectionId latestViableRelease showVersion =
   header_ [class_ "pageHead"] $ do
     div_ [class_ "wrapper flow flow--large"] $ do
       div_ [class_ "aside gap--large"] $ do

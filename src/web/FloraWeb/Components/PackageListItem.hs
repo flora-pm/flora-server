@@ -126,14 +126,8 @@ componentListItems now DependencyInfo{namespace, name = packageName, latestSynop
         , namespace = namespace
         , name = packageName
         , synopsis = latestSynopsis
-        , mVersion = Just (displayVersionRange requirement)
+        , version = requirement
         , mLastUploadedAt = Nothing
         , mLicense = Just latestLicense
         , exactMatch = False
         }
-
-displayVersionRange :: Text -> Text
-displayVersionRange versionRange =
-  if versionRange == ">=0"
-    then ""
-    else versionRange
