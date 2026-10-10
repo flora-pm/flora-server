@@ -33,6 +33,8 @@ allow-newer: chronos:hashable
            , xss-sanitize:text
            , hsec-tools:*
            , hsec-core:*
+           , hsec-sync:hsec-core
+           , hsec-sync:tar
            , openapi:*
            , http-client-tls:crypton
            , tls:crypton

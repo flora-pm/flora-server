@@ -19,6 +19,7 @@ import Effectful.Reader.Static qualified as Reader
 import Security.Advisories.Core.Advisory
 import Security.Advisories.Core.OsvId (printOsvId)
 import Security.Advisories.Filesystem (listAdvisories)
+import Security.Advisories.Sync (Snapshot (..), SyncStatus, defaultSnapshot, sync)
 import Validation (Validation (..))
 
 import Advisories.Import.Error
@@ -52,6 +53,19 @@ importAdvisories root = do
        in throwError errors
     Success advisoryList -> do
       forM_ advisoryList $ \advisory -> importAdvisory advisory
+
+-- | Refresh the local advisories snapshot from the upstream database
+syncAdvisories
+  :: ( Error (NonEmpty AdvisoryImportError) :> es
+     , IOE :> es
+     )
+  => FilePath
+  -> FloraM es SyncStatus
+syncAdvisories root = do
+  result <- liftIO $ sync defaultSnapshot{snapshotRoot = root}
+  case result of
+    Left err -> throwError (NonEmpty.singleton (AdvisorySyncError (Text.pack err)))
+    Right status -> pure status
 
 importAdvisory
   :: ( Error (NonEmpty AdvisoryImportError) :> es
