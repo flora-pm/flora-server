@@ -29,7 +29,7 @@
 @import "2-components/footer.css" layer(components);
 
 /* Specific to some screens/pages */
-@import "3-screens/package.css" layer(components);
+/* @import "3-screens/[page].css" layer(components); */
 
 /* Helpers/Utility classes */
 @import "4-utilities/global.css" layer(utilities);
