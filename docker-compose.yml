@@ -52,6 +52,17 @@ services:
     profiles:
       - local
 
+  nginx:
+    image: docker.io/library/nginx:1.28.0
+    volumes:
+      - "./config/templates/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro,Z"
+    ports:
+      - "127.0.0.1:${FLORA_NGINX_PORT:-8080}:80"
+    profiles:
+      - local
+    depends_on:
+      - devel
+
   prometheus:
     image: "prom/prometheus:v3.13.1"
     volumes:
