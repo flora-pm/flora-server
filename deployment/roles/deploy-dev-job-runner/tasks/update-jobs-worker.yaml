@@ -10,6 +10,31 @@
     cmd: git pull
     chdir: dev/flora-jobs-runner
 
+- name: "Clear staging directory for frontend assets"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/static.new"
+    state: absent
+
+- name: "Create staging directory for frontend assets"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/static.new"
+    state: directory
+
+- name: "Upload frontend assets"
+  ansible.builtin.copy:
+    src: "{{ assets_archive }}"
+    dest: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/static.tar.gz"
+
+- name: "Unpack frontend assets"
+  ansible.builtin.command:
+    cmd: tar -xzf static.tar.gz -C static.new
+    chdir: dev/flora-jobs-runner
+
+- name: "Remove frontend assets archive"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/static.tar.gz"
+    state: absent
+
 - name: "Clean build artifacts"
   ansible.builtin.command:
     cmd: gmake clean
@@ -48,6 +73,11 @@
 
 - debug: msg="{{ build.stdout }}"
 - debug: msg="{{ build.stderr }}"
+
+- name: "Swap in new frontend assets"
+  ansible.builtin.shell:
+    cmd: rm -rf static.old && { [ ! -e static ] || mv static static.old; } && mv static.new static
+    chdir: dev/flora-jobs-runner
 
 - name: Kill the process
   ansible.builtin.shell:
