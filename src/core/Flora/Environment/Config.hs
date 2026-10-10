@@ -145,6 +145,7 @@ data MLTP = MLTP
   , zipkinHost :: Maybe HostName
   , zipkinPort :: Maybe PortNumber
   , eventlogSocketDirectory :: Maybe FilePath
+  , stackProfiling :: Bool
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
@@ -161,7 +162,8 @@ mltpDecoder = KDL.children do
   zipkinHost <- KDL.optional $ KDL.argAt "zipkinHost"
   zipkinPort <- fmap toEnum <$> KDL.optional (KDL.argAt "zipkinPort")
   eventlogSocketDirectory <- KDL.optional $ KDL.argAt "eventlogSocketDirectory"
-  pure MLTP{sentryDSN, prometheusEnabled, logger, zipkinEnabled, zipkinHost, zipkinPort, eventlogSocketDirectory}
+  stackProfiling <- KDL.option False $ KDL.argAt "zipkinEnabled"
+  pure MLTP{sentryDSN, prometheusEnabled, logger, zipkinEnabled, zipkinHost, zipkinPort, eventlogSocketDirectory, stackProfiling}
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
