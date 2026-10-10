@@ -40,7 +40,7 @@
     cmd: gmake db-migrate
     chdir: flora-dev
   args:
-    executable: /bin/bash
+    executable: /usr/local/bin/bash
   async: 3600
   poll: 30
   environment:
