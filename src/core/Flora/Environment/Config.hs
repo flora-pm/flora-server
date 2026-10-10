@@ -315,10 +315,11 @@ getAsset key = do
   Just (json :: Map Text Text) <- liftIO $ Aeson.decodeFileStrict path
   case Map.lookup key json of
     Nothing -> error $ "Could not find an entry for " <> Text.unpack key
-    Just fullPath -> do
-      let name = last $ Text.splitOn "/" fullPath
-      hash <- getAssetHash ("." <> name)
-      pure $ AssetBundle{name, hash}
+    Just fullPath -> case Text.stripPrefix "/static/" fullPath of
+      Nothing -> error $ "Asset path is not under /static/: " <> Text.unpack fullPath
+      Just name -> do
+        hash <- getAssetHash ("./static/" <> name)
+        pure $ AssetBundle{name, hash}
 
 -- Get the SHA-256 hash of an asset bundle.
 getAssetHash :: (FileSystem :> es, IOE :> es) => Text -> Eff es Text
