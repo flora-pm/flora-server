@@ -56,6 +56,10 @@ A content+aside container
 	flex-direction: row-reverse;
 }
 
+.aside--fixed {
+	--aside-width: 18.75rem;
+}
+
 .aside:where(:not(.aside--reverse)) > :first-child,
 .aside--reverse > :last-child,
 .aside.aside--start > :last-child {
