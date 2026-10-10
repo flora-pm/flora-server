@@ -56,7 +56,7 @@ A content+aside container
 	flex-direction: row-reverse;
 }
 
-.aside:where(:not(.aside--reverse) ) > :first-child,
+.aside:where(:not(.aside--reverse)) > :first-child,
 .aside--reverse > :last-child,
 .aside.aside--start > :last-child {
 	flex-basis: 0;
