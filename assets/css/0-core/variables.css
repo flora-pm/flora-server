@@ -240,5 +240,6 @@
 		--text-small: var(--size-sm);
 		--text-tiny:var(--size-xs);
 		--space-region: var(--space-8);
+		--alert-icon-size: var(--size-xl);
 	}
 }
