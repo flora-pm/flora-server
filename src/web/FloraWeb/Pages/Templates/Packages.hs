@@ -534,7 +534,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             "Changelog"
           a_ ([class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "dependencies"])) $ do
             Icons.folderTree
-            toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency"
+            toHtml $ display numberOfDependencies <> if numberOfDependencies == 1 then " Dependency" else " Dependencies"
           a_ ([class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> ([ariaCurrent_ "page" | sectionId == "dependents"])) $ do
             Icons.packageSearch
             toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent"
@@ -560,7 +560,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
               "Changelog"
             a_ ([class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "dependencies"])) $ do
               Icons.folderTree
-              toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency"
+              toHtml $ display numberOfDependencies <> if numberOfDependencies == 1 then " Dependency" else " Dependencies"
             a_ ([class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> ([ariaCurrent_ "page" | sectionId == "dependents"])) $ do
               Icons.packageSearch
               toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent"
