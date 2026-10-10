@@ -93,8 +93,8 @@ packageBody
   mLotteryFactor
   mUploader = do
     h2_ [class_ "sr-only"] "About"
-    div_ [class_ "package-about aside aside--reverse aside--start"] $ do
-      div_ [class_ "package-details"] $ do
+    div_ [class_ "package-about aside aside--reverse aside--start gap gap--large"] $ do
+      div_ [class_ "flow flow--large"] $ do
         -- TODO: [non-urgent] Split into its own function
         section_ [class_ "flow flow--small"] $ do
           h3_ [class_ "title-section"] "Metadata"

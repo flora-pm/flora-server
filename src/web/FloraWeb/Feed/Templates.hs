@@ -61,7 +61,7 @@ showFeedsBuilderPage = do
           get url() {{ return this.activeFilters.length === 0 ? "" : this.urlBase + this.activeFilters.join('&packages[]=') }}
         }} |]
   div_ [class_ "wrapper inset-large", id_ "content", xData_ alpineData] $ do
-    div_ [class_ "package-about aside aside--start"] $ do
+    div_ [class_ "aside aside--start gap gap--large"] $ do
       packageSelector
       div_ [class_ "flow flow--small"] $ do
         h3_ [class_ "title-section"] "Results"
