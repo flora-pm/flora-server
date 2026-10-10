@@ -93,7 +93,7 @@ requirementListItem now allComponentDeps =
     case components of
       []
         | componentType == Library ->
-            section_ [class_ "flow"] $ do
+            article_ [class_ "flow"] $ do
               categoryTitle componentType
               p_ [class_ "color-secondary"] "This package does not have any library dependencies."
         | otherwise -> pure ()
