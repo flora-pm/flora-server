@@ -3,7 +3,8 @@ name: Database Index Checks
 on:
   pull_request:
   push:
-    branches: ["main", "development"]
+    branches: ["main"]
+  workflow_call:
 
 concurrency:
   group: database-index-checks-${{ github.ref_name }}

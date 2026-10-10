@@ -4,14 +4,26 @@ on:
   push:
     branches: ["development"]
 
-concurrency:
-  group: dev-deployment-${{ github.ref_name }}
-  cancel-in-progress: true
-
 jobs:
+  backend:
+    uses: ./.github/workflows/backend.yml
+
+  frontend:
+    uses: ./.github/workflows/frontend.yml
+
+  linting:
+    uses: ./.github/workflows/linting.yml
+
+  database-index-checks:
+    uses: ./.github/workflows/database-index-checks.yml
+
   flora-server:
+    needs: [backend, frontend, linting, database-index-checks]
     runs-on: ubuntu-latest
     environment: development
+    concurrency:
+      group: dev-deployment-flora-server
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,8 +61,12 @@ jobs:
             --diff
 
   jobs-runner:
+    needs: [backend, frontend, linting, database-index-checks]
     runs-on: ubuntu-latest
     environment: development
+    concurrency:
+      group: dev-deployment-jobs-runner
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
