@@ -309,11 +309,13 @@ textarea::placeholder {
 }
 
 /*
-Set the default cursor for buttons.
+1. Set the default cursor for buttons.
+2. Disable non-standard gestures such as double-tap to zoom
 */
 button,
 [role="button"] {
-	cursor: pointer;
+	cursor: pointer;  /* 1 */
+	touch-action: manipulation; /* 2 */
 }
 
 /*
