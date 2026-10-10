@@ -309,11 +309,13 @@ textarea::placeholder {
 }
 
 /*
-Set the default cursor for buttons.
+1. Set the default cursor for buttons.
+2. Disable non-standard gestures such as double-tap to zoom
 */
 button,
 [role="button"] {
-	cursor: pointer;
+	cursor: pointer;  /* 1 */
+	touch-action: manipulation; /* 2 */
 }
 
 /*
@@ -399,10 +401,3 @@ Remove all animations and transitions for people that prefer not to see them
 		animation-iteration-count: 1;
 	}
 }
-
-/*
-Remove ⓘ pseudo-element from interest invoker buttons
- cf. https://github.com/w3c/csswg-drafts/issues/13980#issuecomment-4694540737
-*/
-/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
-::interest-button { display: none; }

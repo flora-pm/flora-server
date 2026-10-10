@@ -205,7 +205,7 @@ showPackageVersion (Headers session _) packageNamespace packageName mversion = d
       numberOfReleases <- Query.getNumberOfReleases package.packageId
       categories <- Query.getPackageCategories package.packageId
       numberOfDependents <-
-        Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+        Query.getNumberOfPackageDependents packageNamespace packageName
       numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
       groups <- Query.getPackageGroupsForPackage package.packageId
       activeMaintainers <-
@@ -302,20 +302,18 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
           , description = "Dependents of " <> display packageNamespace <> "/" <> display packageName
           , navbarSearchContent = Just $ "depends:" <> display packageNamespace <> "/" <> display packageName <> " "
           }
-  results <-
-    withReadOnlyPool pool $
-      Query.getAllPackageDependentsWithLatestVersion
-        packageNamespace
-        packageName
-        (fromPage pageNumber)
-        mSearch
-
-  (numberOfDependents, numberOfDependencies, numberOfReleases) <-
+  (numberOfDependents, results, numberOfDependencies, numberOfReleases) <-
     withReadOnlyPool pool $ do
-      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName mSearch
+      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName
+      (_, results) <-
+        Query.getAllPackageDependentsWithLatestVersion
+          packageNamespace
+          packageName
+          (fromPage pageNumber)
+          mSearch
       numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
       numberOfReleases <- Query.getNumberOfReleases package.packageId
-      pure (numberOfDependents, numberOfDependencies, numberOfReleases)
+      pure (numberOfDependents, results, numberOfDependencies, numberOfReleases)
   now <- Time.currentTime
   isLatestViableRelease <- isLatestRelease package.packageId release.version
 
@@ -373,7 +371,7 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
       pure (package, release)
   (numberOfDependents, numberOfDependencies, numberOfReleases) <-
     withReadOnlyPool pool $ do
-      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName
       numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
       numberOfReleases <- Query.getNumberOfReleases package.packageId
       pure (numberOfDependents, numberOfDependencies, numberOfReleases)
@@ -441,7 +439,7 @@ showVersionChangelogHandler (Headers session _) packageNamespace packageName ver
       pure (package, release)
   (numberOfDependents, numberOfDependencies, numberOfReleases) <-
     withReadOnlyPool pool $ do
-      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+      numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName
       numberOfDependencies <- Query.getNumberOfPackageRequirements release.releaseId
       numberOfReleases <- Query.getNumberOfReleases package.packageId
       pure (numberOfDependents, numberOfDependencies, numberOfReleases)
@@ -490,7 +488,7 @@ listVersionsHandler (Headers session _) packageNamespace packageName = do
       (numberOfDependents, numberOfDependencies, releases) <-
         withReadOnlyPool pool $ do
           numberOfDependents <-
-            Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+            Query.getNumberOfPackageDependents packageNamespace packageName
           numberOfDependencies <- Query.getNumberOfPackageRequirements latestRelease.releaseId
           releases <- Query.getAllReleases package.packageId
           pure (numberOfDependents, numberOfDependencies, releases)
@@ -565,7 +563,7 @@ showPackageSecurityHandler (Headers session _) packageNamespace packageName = do
               }
       (numberOfDependents, numberOfDependencies, numberOfReleases) <-
         withReadOnlyPool pool $ do
-          numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName Nothing
+          numberOfDependents <- Query.getNumberOfPackageDependents packageNamespace packageName
           numberOfDependencies <- Query.getNumberOfPackageRequirements latestRelease.releaseId
           numberOfReleases <- Query.getNumberOfReleases package.packageId
           pure (numberOfDependents, numberOfDependencies, numberOfReleases)
