@@ -1,4 +1,7 @@
 .alert {
+	display: flex;
+	gap: var(--alert-gap, var(--space-gutter-small));
+
 	padding: var(--space-2) var(--space-3);
 	color: var(--alert-color, currentColor);
 	line-height: var(--alert-leading, var(--leading-short));
@@ -53,11 +56,6 @@
 	font-size: var(--text-small);
 }
 
-/* content */
-.alert > * + * {
-	margin-top: var(--space-gutter-small);
-}
-
 .alert-title {
 	display: block;
 	font-weight: 600;
@@ -72,3 +70,7 @@
 	padding-left: revert;
 }
 
+.alert-icon {
+	width: var(--alert-icon-size, var(--size-3xl));
+	height: var(--alert-icon-size, var(--size-3xl));
+}
