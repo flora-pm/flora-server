@@ -96,7 +96,7 @@ banner = do
 
 packageSelector :: FloraHTML
 packageSelector =
-  aside_ [class_ "flex flex-col flex-no-grow"] $ do
+  aside_ [class_ "flex flex-col"] $ do
     div_ [class_ "flex flex-col flow flow--small"] $ do
       h3_ [id_ "feed-package-selector-title", class_ "title-section"] "Search packages"
       input_
