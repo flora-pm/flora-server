@@ -8,5 +8,14 @@
     ".parcel-hasher.js",
      "..."
   ],
-  "reporters": ["parcel-reporter-bundle-manifest"]
+  "reporters": [
+    "parcel-reporter-bundle-manifest",
+  ],
+  "compressors": {
+    "**": [
+      "...",
+      "@parcel/compressor-gzip",
+      "@parcel/compressor-brotli"
+    ]
+  }
 }

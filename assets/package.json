@@ -12,6 +12,8 @@
     }
   },
   "devDependencies": {
+    "@parcel/compressor-brotli": "^2.16.4",
+    "@parcel/compressor-gzip": "^2.16.4",
     "@parcel/config-default": "^2.16.4",
     "@parcel/core": "^2.16.4",
     "@parcel/packager-raw-url": "^2.16.4",
