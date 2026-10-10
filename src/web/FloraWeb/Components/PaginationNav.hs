@@ -64,6 +64,14 @@ mkURL (SearchExecutable searchString) pageNumber =
   "/" <> toUrlPiece (Links.packageWithExecutable pageNumber searchString)
 mkURL (SearchInAdvisories searchString) pageNumber =
   "/" <> toUrlPiece (Links.searchInAdvisories pageNumber searchString)
+mkURL (ListAdvisoriesInNamespace namespace) pageNumber =
+  Links.namespaceAdvisoriesLink namespace pageNumber
+    & Links.renderLink
+    & \l -> "/" <> l
+mkURL (ListPackageAdvisories namespace packageName) pageNumber =
+  Links.packageAdvisoriesLink namespace packageName pageNumber
+    & Links.renderLink
+    & \l -> "/" <> l
 
 paginate
   :: Word

@@ -9,6 +9,7 @@ import Data.Text.Encoding qualified as Text
 import Database.PostgreSQL.Simple.FromField (FromField (..), ResultError (..), returnError)
 import Database.PostgreSQL.Simple.ToField (Action (..), ToField (..))
 import Security.Advisories.Core.HsecId
+import Servant (FromHttpApiData (..), ToHttpApiData (..))
 
 deriving via ShowInstance HsecId instance Display HsecId
 
@@ -23,6 +24,13 @@ instance FromField HsecId where
       Text.unpack $
         "Conversion error: Expected parseable HsecId but instead got "
           <> Text.decodeUtf8 bs
+
+instance ToHttpApiData HsecId where
+  toUrlPiece = display
+
+instance FromHttpApiData HsecId where
+  parseUrlPiece t =
+    maybe (Left "Not a valid HSEC identifier") Right (parseHsecId (Text.unpack t))
 
 instance NFData HsecId where
   rnf a = seq a ()

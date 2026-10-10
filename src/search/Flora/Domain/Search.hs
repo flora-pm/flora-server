@@ -50,6 +50,8 @@ data SearchAction
   | SearchInNamespace Namespace PackageName
   | SearchExecutable Text
   | SearchInAdvisories Text
+  | ListAdvisoriesInNamespace Namespace
+  | ListPackageAdvisories Namespace PackageName
   deriving (Eq, Ord, Show)
 
 instance Display SearchAction where
@@ -68,6 +70,13 @@ instance Display SearchAction where
     "Executable " <> displayBuilder executableName
   displayBuilder (SearchInAdvisories searchTerm) =
     "Search in Advisories: " <> displayBuilder searchTerm
+  displayBuilder (ListAdvisoriesInNamespace namespace) =
+    "Security advisories in " <> displayBuilder namespace
+  displayBuilder (ListPackageAdvisories namespace packageName) =
+    "Security advisories for "
+      <> displayBuilder namespace
+      <> "/"
+      <> displayBuilder packageName
 
 searchPackageByName
   :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
