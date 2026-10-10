@@ -3,24 +3,24 @@
 - name: "Update development branch"
   ansible.builtin.command:
     cmd: git checkout development
-    chdir: flora-dev
+    chdir: dev/flora-jobs-runner
 
 - name: "Update development branch"
   ansible.builtin.command:
     cmd: git pull
-    chdir: flora-dev
+    chdir: dev/flora-jobs-runner
 
 - name: "Clean build artifacts"
   ansible.builtin.command:
     cmd: gmake clean
-    chdir: flora-dev
+    chdir: dev/flora-jobs-runner
   environment:
     PATH: "/home/ouranos/.cabal/bin:/home/ouranos/.ghcup/bin:{{ ansible_env.PATH }}"
 
 - name: "Update cabal index"
   ansible.builtin.command:
     cmd: cabal update
-    chdir: flora-dev
+    chdir: dev/flora-jobs-runner
   environment:
     PATH: "/home/ouranos/.cabal/bin:/home/ouranos/.ghcup/bin:{{ ansible_env.PATH }}"
 
@@ -28,7 +28,7 @@
   register: build
   ansible.builtin.command:
     cmd: cabal build --no-semaphore exe:flora-jobs-runner
-    chdir: flora-dev
+    chdir: dev/flora-jobs-runner
   async: 3600
   poll: 30
   environment:
@@ -38,7 +38,7 @@
   register: build
   ansible.builtin.shell:
     cmd: gmake db-migrate
-    chdir: flora-dev
+    chdir: dev/flora-jobs-runner
   args:
     executable: /usr/local/bin/bash
   async: 3600
@@ -52,4 +52,4 @@
 - name: Kill the process
   ansible.builtin.shell:
     cmd: kill $(cat ~/.local/run/flora-jobs-runner.pid)
-    chdir: flora-dev
+    chdir: dev/flora-jobs-runner
