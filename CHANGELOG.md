@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Unreleased
+
+### Significant changes
+
+- Expose web resources for security advisories [#555](https://github.com/flora-pm/flora-server/issue/555) [#1331](https://github.com/flora-pm/flora-server/pull/1331)
+
+  - Add `/security/advisories/namespace/<@namespace>` to list all advisories pertaining to a namespace, with pagination.
+  - Add `/security/advisories/package/<@namespace>/<package>` to list all advisories pertaining to a package, with pagination.
+  - Add `/security/advisories/<advisory-id>` to view a specific advisory by its HSEC identifier.
+
 ## 1.1.0 -- 2026-10-07
 
 - New frontend! Thanks to @TixieSalander, we have a new visual identity and clear design rules.

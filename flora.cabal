@@ -319,6 +319,7 @@ library flora-advisories
     flora,
     hsec-core ^>=0.5.0.0,
     hsec-tools,
+    hsec-sync ^>=0.2,
     log-effectful,
     pandoc-types,
     pg-entity,
@@ -383,6 +384,7 @@ library flora-web
     FloraWeb.Pages.Routes.Categories
     FloraWeb.Pages.Routes.Packages
     FloraWeb.Pages.Routes.Search
+    FloraWeb.Pages.Routes.Security
     FloraWeb.Pages.Routes.Sessions
     FloraWeb.Pages.Routes.Settings
     FloraWeb.Pages.Server
@@ -391,6 +393,7 @@ library flora-web
     FloraWeb.Pages.Server.Categories
     FloraWeb.Pages.Server.Packages
     FloraWeb.Pages.Server.Search
+    FloraWeb.Pages.Server.Security
     FloraWeb.Pages.Server.Sessions
     FloraWeb.Pages.Server.Settings
     FloraWeb.Pages.Templates
@@ -407,6 +410,7 @@ library flora-web
     FloraWeb.Pages.Templates.Screens.Home
     FloraWeb.Pages.Templates.Screens.Packages
     FloraWeb.Pages.Templates.Screens.Search
+    FloraWeb.Pages.Templates.Screens.Security
     FloraWeb.Pages.Templates.Screens.Sessions
     FloraWeb.Pages.Templates.Screens.Settings
     FloraWeb.Pages.Templates.Types
@@ -451,6 +455,7 @@ library flora-web
     fsnotify,
     generics-sop,
     haddock-library,
+    hsec-core ^>=0.5.0.0,
     htmx-lucid,
     http-api-data,
     http-media,

@@ -76,6 +76,15 @@ data AffectedVersionRangeDAO = AffectedVersionRangeDAO
     (Entity)
     via (GenericEntity '[TableName "affected_version_ranges"] AffectedVersionRangeDAO)
 
+data AffectedPackageInfo = AffectedPackageInfo
+  { namespace :: Namespace
+  , packageName :: PackageName
+  , cvss :: CVSS
+  , fixed :: Bool
+  }
+  deriving stock (Generic, Show)
+  deriving anyclass (FromRow, NFData)
+
 data PackageAdvisoryPreview = PackageAdvisoryPreview
   { hsecId :: HsecId
   , namespace :: Namespace
