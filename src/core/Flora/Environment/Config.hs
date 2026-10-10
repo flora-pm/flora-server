@@ -40,7 +40,6 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Scientific (toBoundedInteger)
 import Data.Text (Text)
-import Data.Text.IO qualified as T
 import Data.Text qualified as Text
 import Data.Text.Display (Display (..))
 import Data.Text.Encoding qualified as Text
@@ -317,10 +316,9 @@ getAsset key = do
   case Map.lookup key json of
     Nothing -> error $ "Could not find an entry for " <> Text.unpack key
     Just fullPath -> do
-      liftIO $ T.putStrLn "============================================================"
-      liftIO $ T.putStrLn fullPath
-      hash <- getAssetHash ("./" <> fullPath)
-      pure $ AssetBundle{name = fullPath, hash}
+      let name = fromMaybe fullPath (Text.stripPrefix "/static/" fullPath)
+      hash <- getAssetHash ("." <> fullPath)
+      pure $ AssetBundle{name, hash}
 
 -- Get the SHA-256 hash of an asset bundle.
 getAssetHash :: (FileSystem :> es, IOE :> es) => Text -> Eff es Text
