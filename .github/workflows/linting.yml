@@ -3,7 +3,8 @@ name: Linting
 on:
   pull_request:
   push:
-    branches: ["main", "development"]
+    branches: ["main"]
+  workflow_call:
 
 jobs:
   fourmolu:
