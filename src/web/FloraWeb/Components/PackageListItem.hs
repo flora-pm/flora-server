@@ -5,8 +5,7 @@ module FloraWeb.Components.PackageListItem
   )
 where
 
-import Data.Foldable (traverse_)
-import Data.Function ((&))
+import Data.Foldable (forM_, traverse_)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -15,18 +14,14 @@ import Data.Time (UTCTime, defaultTimeLocale)
 import Data.Time qualified as Time
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
-import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.SPDX.License qualified as SPDX
 import Distribution.Text (simpleParse)
 import Distribution.Types.Version (Version)
 import Lucid
 
-import Flora.Model.Component.Types (CanonicalComponent (..))
+import Flora.Model.Component.Types (CanonicalComponent (..), ComponentType (..))
 import Flora.Model.Package.Types (ElemRating (..), Namespace, PackageInfoWithExecutables (..), PackageName (..))
-import Flora.Model.Requirement
-  ( ComponentDependencies
-  , DependencyInfo (..)
-  )
+import Flora.Model.Requirement (ComponentDependencies, DependencyInfo (..))
 import FloraWeb.Components.Icons qualified as Icon
 import FloraWeb.Components.PackageCard (PackageCardProps (..), packageCard)
 import FloraWeb.Components.Utils
@@ -93,28 +88,44 @@ packageWithExecutableListItem PackageInfoWithExecutables{namespace, name, synops
 
 requirementListItem :: UTCTime -> ComponentDependencies -> FloraHTML
 requirementListItem now allComponentDeps =
-  allComponentDeps
-    & Map.toList
-    & Vector.fromList
-    & Vector.modify (MVector.sortBy (\r1 r2 -> compare (fst r1).componentType (fst r2).componentType))
-    & \sortedComponents -> case Vector.uncons sortedComponents of
-      Nothing -> pure ()
-      Just (firstComponent, rest) -> do
-        uncurry (componentTitle True) firstComponent
-        Vector.forM_ rest (uncurry (componentTitle False))
+  forM_ [minBound .. maxBound] $ \componentType -> do
+    let components = filter (\(component, _) -> component.componentType == componentType) (Map.toList allComponentDeps)
+    case components of
+      []
+        | componentType == Library ->
+            section_ [class_ "flow"] $ do
+              categoryTitle componentType
+              p_ [class_ "color-secondary"] "This package does not have any library dependencies."
+        | otherwise -> pure ()
+      (firstComponent : rest) ->
+        section_ [class_ "flow"] $ do
+          categoryTitle componentType
+          uncurry (componentTitle (componentType == Library)) firstComponent
+          traverse_ (uncurry (componentTitle False)) rest
   where
+    categoryTitle :: ComponentType -> FloraHTML
+    categoryTitle = h3_ [class_ "title-3"] . toHtml . componentCategoryName
+
     componentTitle :: Bool -> CanonicalComponent -> Vector DependencyInfo -> FloraHTML
     componentTitle isOpen component componentDeps = do
       let open = if isOpen then [open_ ""] else mempty
       details_ ([class_ "details--nobody"] <> open) $ do
         summary_ [class_ "package-component"] $
-          h3_ [class_ "inline-block text-large color-raise"] $ do
-            toHtml $ display component
+          h4_ [class_ "inline-block text-large color-raise"] $ do
+            toHtml component.componentName
             span_ [class_ "text-small color-secondary"] $
               toHtml $
                 " (" <> display (Vector.length componentDeps) <> " dependencies)"
         ul_ [class_ "flow", role_ "list"] $
           traverse_ (componentListItems now) componentDeps
+
+componentCategoryName :: ComponentType -> Text
+componentCategoryName = \case
+  Library -> "Libraries"
+  Executable -> "Executables"
+  TestSuite -> "Test suites"
+  Benchmark -> "Benchmarks"
+  ForeignLib -> "Foreign libraries"
 
 componentListItems :: UTCTime -> DependencyInfo -> FloraHTML
 componentListItems now DependencyInfo{namespace, name = packageName, latestSynopsis, requirement, latestLicense} = do

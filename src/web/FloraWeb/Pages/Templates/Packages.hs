@@ -140,8 +140,7 @@ showDependencies now numberOfReleases latestRelease numberOfDependencies numberO
     isLatestViableRelease
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependencies"
-    ul_ [class_ "flow", role_ "list"] $ do
-      requirementListItem now componentsInfo
+    requirementListItem now componentsInfo
 
 listVersions
   :: Release
