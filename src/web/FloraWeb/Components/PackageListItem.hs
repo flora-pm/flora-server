@@ -98,7 +98,7 @@ requirementListItem now allComponentDeps =
               p_ [class_ "color-secondary"] "This package does not have any library dependencies."
         | otherwise -> pure ()
       (firstComponent : rest) ->
-        section_ [class_ "flow"] $ do
+        article_ [class_ "flow"] $ do
           categoryTitle componentType
           uncurry (componentTitle (componentType == Library)) firstComponent
           traverse_ (uncurry (componentTitle False)) rest
