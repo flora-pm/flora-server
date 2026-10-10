@@ -64,7 +64,10 @@ syncAdvisories
 syncAdvisories root = do
   result <- liftIO $ sync defaultSnapshot{snapshotRoot = root}
   case result of
-    Left err -> throwError (NonEmpty.singleton (AdvisorySyncError (Text.pack err)))
+    Left err -> do
+      let msg = Text.pack err
+      Log.logAttention_ $ "Advisories synchronization failed: " <> msg
+      throwError (NonEmpty.singleton (AdvisorySyncError msg))
     Right status -> pure status
 
 importAdvisory
