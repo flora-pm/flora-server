@@ -300,7 +300,7 @@ getNumberOfPackageRequirements releaseId = queryCount numberOfPackageRequirement
 numberOfPackageRequirementsQuery :: Query
 numberOfPackageRequirementsQuery =
   [sql|
-SELECT DISTINCT count(*)
+SELECT count(DISTINCT req.package_id)
 FROM requirements AS req
      INNER JOIN packages AS dependency ON dependency.package_id = req.package_id
                                       AND dependency.status = 'fully-imported'
