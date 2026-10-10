@@ -9,6 +9,7 @@ import Data.Foldable (traverse_)
 import Data.Function ((&))
 import Data.Map qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Data.Time (UTCTime, defaultTimeLocale)
 import Data.Time qualified as Time
@@ -16,6 +17,7 @@ import Data.Vector (Vector)
 import Data.Vector qualified as Vector
 import Data.Vector.Algorithms.Intro qualified as MVector
 import Distribution.SPDX.License qualified as SPDX
+import Distribution.Text (simpleParse)
 import Distribution.Types.Version (Version)
 import Lucid
 
@@ -126,14 +128,8 @@ componentListItems now DependencyInfo{namespace, name = packageName, latestSynop
         , namespace = namespace
         , name = packageName
         , synopsis = latestSynopsis
-        , mVersion = Just (displayVersionRange requirement)
+        , version = simpleParse (Text.unpack requirement)
         , mLastUploadedAt = Nothing
         , mLicense = Just latestLicense
         , exactMatch = False
         }
-
-displayVersionRange :: Text -> Text
-displayVersionRange versionRange =
-  if versionRange == ">=0"
-    then ""
-    else versionRange
