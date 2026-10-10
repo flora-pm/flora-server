@@ -12,18 +12,18 @@
 
 - name: "Clear staging directory for frontend assets"
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/flora-server/static.new"
+    path: "{{ ansible_env.HOME }}/flora-dev/static.new"
     state: absent
 
 - name: "Create staging directory for frontend assets"
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/flora-server/static.new"
+    path: "{{ ansible_env.HOME }}/flora-dev/static.new"
     state: directory
 
 - name: "Upload frontend assets"
   ansible.builtin.copy:
     src: "{{ assets_archive }}"
-    dest: "{{ ansible_env.HOME }}/flora-server/static.tar.gz"
+    dest: "{{ ansible_env.HOME }}/flora-dev/static.tar.gz"
 
 - name: "Unpack frontend assets"
   ansible.builtin.command:
@@ -32,12 +32,12 @@
 
 - name: "Remove frontend assets archive"
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/flora-server/static.tar.gz"
+    path: "{{ ansible_env.HOME }}/flora-dev/static.tar.gz"
     state: absent
 
 - name: "Remove documentation build"
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/flora-server/docs/build"
+    path: "{{ ansible_env.HOME }}/flora-dev/docs/build"
     state: absent
 
 - name: "Clean build artifacts"
