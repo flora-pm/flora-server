@@ -61,17 +61,17 @@ showFeedsBuilderPage = do
           get url() {{ return this.activeFilters.length === 0 ? "" : this.urlBase + this.activeFilters.join('&packages[]=') }}
         }} |]
   div_ [class_ "wrapper inset-large", id_ "content", xData_ alpineData] $ do
-    div_ [class_ "aside aside--start gap gap--large"] $ do
+    div_ [class_ "aside aside--start aside--fixed gap gap--large"] $ do
       packageSelector
-      div_ [class_ "flow flow--small"] $ do
-        h3_ [class_ "title-section"] "Results"
-        div_ [class_ "searched-packages"] mempty
-        section_ [class_ "selected-packages"] $ do
+      section_ [class_ "selected-packages flow flow--large"] $ do
+        div_ [class_ "flow flow--small"] $ do
+          h3_ [class_ "title-section"] "Feed link"
           div_
             [ class_ "generated-feed-url"
             , xHtml_ "'<a href=\"' + url + '\">' + url + '</a>'"
             ]
             mempty
+        div_ [class_ "flow flow--small"] $ do
           template_ [xFor_ "(package, index) in activeFilters", key_ "package"]
             $ button_
               [ name_ "package"
@@ -96,8 +96,8 @@ banner = do
 
 packageSelector :: FloraHTML
 packageSelector =
-  aside_ [class_ "flex flex-col"] $ do
-    div_ [class_ "flex flex-col flow flow--small"] $ do
+  aside_ [class_ "flow flow--large"] $ do
+    div_ [class_ "flow flow--small"] $ do
       h3_ [id_ "feed-package-selector-title", class_ "title-section"] "Search packages"
       input_
         [ class_ "feed-package-search"
@@ -111,13 +111,16 @@ packageSelector =
         , autocomplete_ "off"
         , ariaLabelledby_ "feed-package-selector-title"
         ]
+    div_ [class_ "flow flow--small"] $ do
+        h3_ [class_ "title-section"] "Results"
+        div_ [class_ "searched-packages"] mempty
 
 showSearchedPackages :: Vector (Namespace, PackageName) -> FloraHTML
 showSearchedPackages packages = do
   Vector.forM_ packages $ \(namespace@(Namespace nsText), packageName) -> do
     let qualifiedName = display namespace <> "/" <> display packageName
     let idName = nsText <> "-" <> display packageName
-    div_ [] $ do
+    div_ [class_ "flex items-baseline"] $ do
       input_
         [ id_ ("selected-" <> idName)
         , name_ ("selected-" <> idName)
