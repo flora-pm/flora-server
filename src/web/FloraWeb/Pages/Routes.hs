@@ -9,6 +9,7 @@ import FloraWeb.Pages.Routes.Admin qualified as Admin
 import FloraWeb.Pages.Routes.Categories qualified as Categories
 import FloraWeb.Pages.Routes.Packages qualified as Packages
 import FloraWeb.Pages.Routes.Search qualified as Search
+import FloraWeb.Pages.Routes.Security qualified as Security
 import FloraWeb.Pages.Routes.Sessions qualified as Sessions
 import FloraWeb.Pages.Routes.Settings qualified as Settings
 
@@ -22,6 +23,7 @@ data Routes' mode = Routes'
   , packages :: mode :- "packages" :> Packages.Routes
   , categories :: mode :- AuthProtect "optional-cookie-auth" :> "categories" :> Categories.Routes
   , search :: mode :- AuthProtect "optional-cookie-auth" :> "search" :> Search.Routes
+  , security :: mode :- AuthProtect "optional-cookie-auth" :> "security" :> "advisories" :> Security.Routes
   , settings :: mode :- "settings" :> Settings.Routes
   , notFound :: mode :- AuthProtect "optional-cookie-auth" :> Get '[HTML] (Html ())
   }

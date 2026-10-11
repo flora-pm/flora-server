@@ -16,9 +16,27 @@ import Flora.Model.Package.Types (Namespace (..), PackageName (..))
 import FloraWeb.Pages.Routes qualified as Pages
 import FloraWeb.Pages.Routes.Packages
 import FloraWeb.Pages.Routes.Search
+import FloraWeb.Pages.Routes.Security
 
 links :: Pages.Routes' (Links.AsLink Link)
 links = Links.allFieldLinks
+
+namespaceAdvisoriesLink :: Namespace -> Positive Word -> Link
+namespaceAdvisoriesLink namespace pageNumber =
+  links
+    // (.security)
+    // (.listNamespaceAdvisories)
+    /: namespace
+    /: Just pageNumber
+
+packageAdvisoriesLink :: Namespace -> PackageName -> Positive Word -> Link
+packageAdvisoriesLink namespace packageName pageNumber =
+  links
+    // (.security)
+    // (.listPackageAdvisories)
+    /: namespace
+    /: packageName
+    /: Just pageNumber
 
 renderLink :: Link -> Text
 renderLink l =

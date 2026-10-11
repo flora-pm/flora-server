@@ -22,6 +22,7 @@ import FloraWeb.Pages.Server.Admin qualified as Admin
 import FloraWeb.Pages.Server.Categories qualified as Categories
 import FloraWeb.Pages.Server.Packages qualified as Packages
 import FloraWeb.Pages.Server.Search qualified as Search
+import FloraWeb.Pages.Server.Security qualified as Security
 import FloraWeb.Pages.Server.Sessions qualified as Sessions
 import FloraWeb.Pages.Server.Settings qualified as Settings
 import FloraWeb.Pages.Templates
@@ -39,6 +40,7 @@ server arbiterConfig =
     , packages = Packages.server
     , categories = Categories.server
     , search = Search.server
+    , security = Security.server
     , settings = Settings.server
     , notFound = serveNotFound
     }
