@@ -1,10 +1,8 @@
 /* stylelint-disable selector-class-pattern */
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
-/* @view-transition {
-	navigation: auto;
-} */
-
+/* pink theme */
+html[data-piiink="activated"] { --hue-brand: 355 }
 
 body {
 	font-family: var(--font-base);
