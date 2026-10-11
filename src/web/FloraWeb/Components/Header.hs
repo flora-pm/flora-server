@@ -25,6 +25,7 @@ header = do
   html_
     ( [ lang_ "en"
       , class_ "no-js"
+      , data_ "piiink" "activated"
       ]
         <> theme'
     )
