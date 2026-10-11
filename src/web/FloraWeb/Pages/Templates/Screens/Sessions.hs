@@ -1,9 +1,9 @@
 module FloraWeb.Pages.Templates.Screens.Sessions where
 
 import Control.Monad.Extra (whenJust)
-import Lucid
 import Control.Monad.Reader qualified as Reader
 import Data.Text.Display (display)
+import Lucid
 
 import FloraWeb.Components.Alert qualified as Alert
 import FloraWeb.Pages.Templates.Types
