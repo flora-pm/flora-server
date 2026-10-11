@@ -1,0 +1,183 @@
+name: Build FreeBSD executables
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: build-freebsd-${{ github.event_name }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CABAL_VERSION: "3.16.1.0"
+  CABAL_CACHE_VERSION: "1.2.0.0"
+  FREEBSD_RELEASE: "15.1"
+
+jobs:
+  generateMatrix:
+    name: "Generate matrix from cabal"
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Extract the newest tested GHC version
+        id: set-matrix
+        uses: kleidukos/get-tested@bbcf52a8d1b69bf8fdd671b490126d53f70fc9a7 # v0.1.10.0
+        with:
+          cabal-file: flora.cabal
+          ubuntu-version: "latest"
+          newest: true
+          version: 0.1.10.0
+
+  build:
+    needs: generateMatrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      GHC_VERSION: ${{ fromJSON(needs.generateMatrix.outputs.matrix).include[0].ghc }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Haskell on the host
+        uses: haskell-actions/setup@0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d # v2.12.1
+        with:
+          ghc-version: ${{ env.GHC_VERSION }}
+          cabal-version: ${{ env.CABAL_VERSION }}
+
+      - name: Cache cabal-cache binary
+        id: cabal-cache-bin
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cabal/bin/cabal-cache
+          key: cabal-cache-${{ env.CABAL_CACHE_VERSION }}-ghc-${{ env.GHC_VERSION }}
+
+      - name: Install cabal-cache
+        if: steps.cabal-cache-bin.outputs.cache-hit != 'true'
+        run: |
+          cabal update
+          cabal install "cabal-cache-${CABAL_CACHE_VERSION}" \
+            --ignore-project \
+            --install-method=copy \
+            --installdir="$HOME/.cabal/bin" \
+            --overwrite-policy=always
+
+      - name: Restore package archive
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/cabal-cache-archive
+          key: freebsd-${{ env.FREEBSD_RELEASE }}-ghc-${{ env.GHC_VERSION }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            freebsd-${{ env.FREEBSD_RELEASE }}-ghc-${{ env.GHC_VERSION }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}-
+            freebsd-${{ env.FREEBSD_RELEASE }}-ghc-${{ env.GHC_VERSION }}-
+
+      - name: Start FreeBSD VM and compute the build plan
+        uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1.5.9
+        with:
+          release: ${{ env.FREEBSD_RELEASE }}
+          mem: 8192
+          sync: rsync
+          envs: "GHC_VERSION CABAL_VERSION"
+          cache-after-prepare: true
+          cache-after-prepare-key-suffix: ghc-${{ env.GHC_VERSION }}-cabal-${{ env.CABAL_VERSION }}
+          prepare: |
+            set -eu
+            pkg install -y bash curl git gmake gmp libffi libiconv libsodium pkgconf postgresql17-client rsync
+            curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
+            "$HOME/.ghcup/bin/ghcup" install ghc "$GHC_VERSION" --set
+            "$HOME/.ghcup/bin/ghcup" install cabal "$CABAL_VERSION" --set
+          run: |
+            set -eu
+            export PATH="$HOME/.ghcup/bin:$HOME/.cabal/bin:$PATH"
+            ghc --version
+            cabal --version
+            cat > cabal.project.local <<EOF
+            optimization: 1
+            tests: False
+            EOF
+            git config --global --add safe.directory '*'
+            cabal update
+            cabal --store-dir="$PWD/.cabal-store" build --dry-run exe:flora-server exe:flora-migrate exe:flora-jobs-runner exe:flora-cli
+            UNIT_ID=$(ghc --info | awk -F'"' '/Project Unit Id/ { print $4 }')
+            mkdir -p ".cabal-store/$UNIT_ID/package.db"
+            echo "$UNIT_ID" > .cabal-store/UNIT_ID
+
+      - name: Restore packages from the archive
+        run: |
+          UNIT_ID=$(cat .cabal-store/UNIT_ID)
+          ln -sfn "$UNIT_ID" ".cabal-store/ghc-${GHC_VERSION}"
+          ls -la .cabal-store
+          ARCHIVE_DIR="$RUNNER_TEMP/cabal-cache-archive"
+          mkdir -p "$ARCHIVE_DIR"
+          "$HOME/.cabal/bin/cabal-cache" sync-from-archive \
+            --threads 4 \
+            --archive-uri "$ARCHIVE_DIR" \
+            --store-path "$PWD/.cabal-store" \
+            --build-path dist-newstyle \
+            || echo "::warning::cabal-cache restore failed; building from scratch"
+
+      - name: Build the executables
+        shell: freebsd {0}
+        run: |
+          set -eu
+          export PATH="$HOME/.ghcup/bin:$HOME/.cabal/bin:$PATH"
+          git config --global --add safe.directory '*'
+          UNIT_ID=$(cat .cabal-store/UNIT_ID)
+          ghc-pkg recache --package-db ".cabal-store/$UNIT_ID/package.db"
+          cabal --store-dir="$PWD/.cabal-store" build exe:flora-server exe:flora-migrate exe:flora-jobs-runner exe:flora-cli
+          rm -rf dist-bin
+          mkdir dist-bin
+          for exe in flora-server flora-migrate flora-jobs-runner flora-cli; do
+            cp "$(cabal --store-dir="$PWD/.cabal-store" list-bin "exe:$exe")" dist-bin/
+          done
+          strip dist-bin/flora-server dist-bin/flora-migrate dist-bin/flora-jobs-runner dist-bin/flora-cli
+          {
+            echo "commit: $(git rev-parse HEAD)"
+            echo "freebsd: $(freebsd-version)"
+            echo "ghc: $(ghc --numeric-version)"
+            echo "cabal: $(cabal --numeric-version)"
+            pkg info gmp libffi libiconv libsodium postgresql17-client
+          } > dist-bin/BUILD-INFO
+          cat dist-bin/BUILD-INFO
+
+      - name: Package the executables
+        run: |
+          file dist-bin/*
+          tar -czf flora-freebsd-amd64.tar.gz -C dist-bin .
+
+      - name: Upload the executables
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: flora-freebsd-amd64
+          path: flora-freebsd-amd64.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Save packages to the archive
+        id: archive
+        if: always()
+        run: |
+          ARCHIVE_DIR="$RUNNER_TEMP/cabal-cache-archive"
+          mkdir -p "$ARCHIVE_DIR"
+          BEFORE=$(find "$ARCHIVE_DIR" -type f | wc -l)
+          "$HOME/.cabal/bin/cabal-cache" sync-to-archive \
+            --threads 4 \
+            --archive-uri "$ARCHIVE_DIR" \
+            --store-path "$PWD/.cabal-store" \
+            --build-path dist-newstyle \
+            || echo "::warning::cabal-cache save failed"
+          AFTER=$(find "$ARCHIVE_DIR" -type f | wc -l)
+          echo "files before: $BEFORE, after: $AFTER"
+          du -sh "$ARCHIVE_DIR" || true
+          if [ "$AFTER" -gt "$BEFORE" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Save package archive
+        if: always() && steps.archive.outputs.changed == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/cabal-cache-archive
+          key: freebsd-${{ env.FREEBSD_RELEASE }}-ghc-${{ env.GHC_VERSION }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}-${{ github.run_id }}-${{ github.run_attempt }}
