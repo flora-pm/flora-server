@@ -1,7 +1,9 @@
 module FloraWeb.Pages.Templates.Screens.Sessions where
 
+import Control.Monad.Extra (whenJust)
 import Lucid
 
+import FloraWeb.Components.Alert qualified as Alert
 import FloraWeb.Pages.Templates.Types
 
 newSession :: FloraHTML
@@ -54,4 +56,7 @@ newSession = do
             , class_ "w100"
             ]
         div_ [class_ "flow flow--small"] $ do
+          TemplateEnv{flashError} <- ask
+          whenJust flashError $ \msg -> do
+            Alert.exception (display msg)
           button_ [class_ "btn btn--big w100", type_ "submit"] "Log In"
