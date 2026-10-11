@@ -238,7 +238,7 @@ constraints: any.Cabal ==3.16.1.0,
              any.hsc2hs ==0.68.10,
              hsc2hs -in-ghc-tree,
              any.hsec-core ==0.5.0.0,
-             any.hsec-sync ==0.2.0.2,
+             any.hsec-sync ==0.2.0.3,
              any.hsec-tools ==0.5.0.0,
              any.hspec ==2.11.18,
              any.hspec-core ==2.11.18,
@@ -585,4 +585,4 @@ constraints: any.Cabal ==3.16.1.0,
              zip-archive -executable,
              any.zlib ==0.7.1.1,
              zlib -bundled-c-zlib +non-blocking-ffi -pkg-config
-index-state: hackage.haskell.org 2026-10-08T13:54:20Z
+index-state: hackage.haskell.org 2026-10-11T15:16:32Z

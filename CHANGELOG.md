@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Unreleased
+
+- Bump `hsec-sync`/`cvss` to restore vulnerabilities fetching [#1344](https://github.com/flora-pm/flora-server/issue/1344) [#1345](https://github.com/flora-pm/flora-server/pull/1345)
+
 ## 1.1.0 -- 2026-10-07
 
 - New frontend! Thanks to @TixieSalander, we have a new visual identity and clear design rules.
