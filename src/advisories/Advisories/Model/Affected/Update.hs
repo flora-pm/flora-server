@@ -3,7 +3,6 @@
 module Advisories.Model.Affected.Update where
 
 import Control.Monad (void)
-
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
@@ -38,7 +37,7 @@ upsertAffectedPackage affectedPackageDAO =
 -- | Insert a version range; a no-op when the same range already exists
 -- for that affected package.
 insertAffectedVersionRange
-  :: (WriteDB :> es)
+  :: WriteDB :> es
   => AffectedVersionRangeDAO
   -> Eff es ()
 insertAffectedVersionRange =
