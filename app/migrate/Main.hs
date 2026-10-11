@@ -37,7 +37,6 @@ main = Log.withStdOutLogger $ \logger -> do
     exceptionHandlers =
       [ E.Handler $ \(ex :: E.SomeException) -> do
           logAttention "Unhandled exception" $ object ["exception" .= show ex]
-          liftIO exitFailure
       ]
 
 runAllMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => ConnectionInfo -> Eff es ()
