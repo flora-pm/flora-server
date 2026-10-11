@@ -17,11 +17,8 @@ jobs:
   database-index-checks:
     uses: ./.github/workflows/database-index-checks.yml
 
-  build-freebsd:
-    uses: ./.github/workflows/build-freebsd.yml
-
   flora-server:
-    needs: [backend, frontend, linting, database-index-checks, build-freebsd]
+    needs: [backend, frontend, linting, database-index-checks]
     runs-on: ubuntu-latest
     environment: development
     concurrency:
@@ -46,12 +43,6 @@ jobs:
       - name: Archive frontend assets
         run: tar -czf static.tar.gz -C static .
 
-      - name: Download FreeBSD executables
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: flora-freebsd-amd64
-          path: ${{ github.workspace }}/binaries
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
@@ -65,13 +56,12 @@ jobs:
             --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }} \
             -e "ansible_port=${{ secrets.ANSIBLE_SSH_PORT }}" \
             -e "assets_archive=${{ github.workspace }}/static.tar.gz" \
-            -e "binaries_archive=${{ github.workspace }}/binaries/flora-freebsd-amd64.tar.gz" \
             -e "deploy_sha=${{ github.sha }}" \
             playbooks/deploy-dev-server.yaml \
             --diff
 
   jobs-runner:
-    needs: [backend, frontend, linting, database-index-checks, build-freebsd, flora-server]
+    needs: [backend, frontend, linting, database-index-checks]
     runs-on: ubuntu-latest
     environment: development
     concurrency:
@@ -96,12 +86,6 @@ jobs:
       - name: Archive frontend assets
         run: tar -czf static.tar.gz -C static .
 
-      - name: Download FreeBSD executables
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: flora-freebsd-amd64
-          path: ${{ github.workspace }}/binaries
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
@@ -115,7 +99,5 @@ jobs:
             --extra-vars ansible_user=${{ secrets.ANSIBLE_JOBS_USER }} \
             -e "ansible_port=${{ secrets.ANSIBLE_JOBS_SSH_PORT }}" \
             -e "assets_archive=${{ github.workspace }}/static.tar.gz" \
-            -e "binaries_archive=${{ github.workspace }}/binaries/flora-freebsd-amd64.tar.gz" \
-            -e "deploy_sha=${{ github.sha }}" \
             playbooks/deploy-dev-job-runner.yaml \
             --diff

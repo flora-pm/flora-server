@@ -35,56 +35,49 @@
     path: "{{ ansible_env.HOME }}/dev/flora-server/static.tar.gz"
     state: absent
 
-- name: "Clear staging directory for executables"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-server/bin.new"
-    state: absent
-
-- name: "Create staging directory for executables"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-server/bin.new"
-    state: directory
-
-- name: "Upload executables"
-  ansible.builtin.copy:
-    src: "{{ binaries_archive }}"
-    dest: "{{ ansible_env.HOME }}/dev/flora-server/flora-freebsd-amd64.tar.gz"
-
-- name: "Unpack executables"
-  ansible.builtin.command:
-    cmd: tar -xzf flora-freebsd-amd64.tar.gz -C bin.new
-    chdir: dev/flora-server
-
-- name: "Remove executables archive"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-server/flora-freebsd-amd64.tar.gz"
-    state: absent
-
 - name: "Remove documentation build"
   ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/dev/flora-server/docs/build"
     state: absent
 
-- name: "Remove the local cabal build directory"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-server/dist-newstyle"
-    state: absent
+- name: "Clean build artifacts"
+  ansible.builtin.command:
+    cmd: gmake clean
+    chdir: dev/flora-server
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- name: "Update cabal index"
+  ansible.builtin.command:
+    cmd: cabal update
+    chdir: dev/flora-server
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- name: "Build backend"
+  register: build
+  ansible.builtin.command:
+    cmd: cabal build --no-semaphore
+    chdir: dev/flora-server
+  async: 3600
+  poll: 30
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
 
 - name: "Schema migrations"
-  register: migrate
-  ansible.builtin.command:
-    cmd: ./bin.new/flora-migrate -c flora.kdl
-    chdir: dev/flora-server
-  async: 600
-  poll: 15
-
-- debug: msg="{{ migrate.stdout }}"
-- debug: msg="{{ migrate.stderr }}"
-
-- name: "Swap in new executables"
+  register: build
   ansible.builtin.shell:
-    cmd: rm -rf bin.old && { [ ! -e bin ] || mv bin bin.old; } && mv bin.new bin
+    cmd: gmake db-migrate
     chdir: dev/flora-server
+  args:
+    executable: /usr/local/bin/bash
+  async: 120
+  poll: 30
+  environment:
+    PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- debug: msg="{{ build.stdout }}"
+- debug: msg="{{ build.stderr }}"
 
 - name: "Swap in new frontend assets"
   ansible.builtin.shell:

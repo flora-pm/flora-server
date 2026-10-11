@@ -1,13 +1,13 @@
 ---
 
-- name: "Fetch development branch"
+- name: "Update development branch"
   ansible.builtin.command:
-    cmd: git fetch origin development
+    cmd: git checkout development
     chdir: dev/flora-jobs-runner
 
-- name: "Check out deployed commit"
+- name: "Update development branch"
   ansible.builtin.command:
-    cmd: "git checkout --detach {{ deploy_sha }}"
+    cmd: git pull
     chdir: dev/flora-jobs-runner
 
 - name: "Clear staging directory for frontend assets"
@@ -35,51 +35,44 @@
     path: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/static.tar.gz"
     state: absent
 
-- name: "Clear staging directory for executables"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/bin.new"
-    state: absent
-
-- name: "Create staging directory for executables"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/bin.new"
-    state: directory
-
-- name: "Upload executables"
-  ansible.builtin.copy:
-    src: "{{ binaries_archive }}"
-    dest: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/flora-freebsd-amd64.tar.gz"
-
-- name: "Unpack executables"
+- name: "Clean build artifacts"
   ansible.builtin.command:
-    cmd: tar -xzf flora-freebsd-amd64.tar.gz -C bin.new
+    cmd: gmake clean
     chdir: dev/flora-jobs-runner
+  environment:
+    PATH: "/home/ouranos/.cabal/bin:/home/ouranos/.ghcup/bin:{{ ansible_env.PATH }}"
 
-- name: "Remove executables archive"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/flora-freebsd-amd64.tar.gz"
-    state: absent
+- name: "Update cabal index"
+  ansible.builtin.command:
+    cmd: cabal update
+    chdir: dev/flora-jobs-runner
+  environment:
+    PATH: "/home/ouranos/.cabal/bin:/home/ouranos/.ghcup/bin:{{ ansible_env.PATH }}"
 
-- name: "Remove the local cabal build directory"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-jobs-runner/dist-newstyle"
-    state: absent
+- name: "Build backend"
+  register: build
+  ansible.builtin.command:
+    cmd: cabal build --no-semaphore exe:flora-jobs-runner
+    chdir: dev/flora-jobs-runner
+  async: 3600
+  poll: 30
+  environment:
+    PATH: "/home/ouranos/.cabal/bin:/home/ouranos/.ghcup/bin:{{ ansible_env.PATH }}"
 
 - name: "Schema migrations"
-  register: migrate
-  ansible.builtin.command:
-    cmd: ./bin.new/flora-migrate -c flora.kdl
-    chdir: dev/flora-jobs-runner
-  async: 600
-  poll: 15
-
-- debug: msg="{{ migrate.stdout }}"
-- debug: msg="{{ migrate.stderr }}"
-
-- name: "Swap in new executables"
+  register: build
   ansible.builtin.shell:
-    cmd: rm -rf bin.old && { [ ! -e bin ] || mv bin bin.old; } && mv bin.new bin
+    cmd: gmake db-migrate
     chdir: dev/flora-jobs-runner
+  args:
+    executable: /usr/local/bin/bash
+  async: 3600
+  poll: 30
+  environment:
+    PATH: "/home/ouranos/.cabal/bin:/home/ouranos/.ghcup/bin:{{ ansible_env.PATH }}"
+
+- debug: msg="{{ build.stdout }}"
+- debug: msg="{{ build.stderr }}"
 
 - name: "Swap in new frontend assets"
   ansible.builtin.shell:
