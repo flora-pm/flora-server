@@ -15,6 +15,7 @@ module Security.Advisories.Sync.Snapshot
     ensureSnapshot,
     getDirectorySnapshotInfo,
     overwriteSnapshot,
+    ensureEmptyRoot,
     SnapshotRepositoryStatus (..),
     snapshotRepositoryStatus,
     latestUpdate,
@@ -26,7 +27,7 @@ import qualified Codec.Archive.Tar.Entry as Tar
 import qualified Codec.Compression.GZip as GZip
 import Control.Exception (Exception (displayException), IOException, try)
 import Control.Lens
-import Control.Monad.Extra (unlessM, whenM)
+import Control.Monad.Extra (unlessM)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE, withExceptT)
 import qualified Data.ByteString.Lazy as BL
@@ -69,7 +70,10 @@ newtype SnapshotUrl = SnapshotUrl {getSnapshotUrl :: String}
 data SnapshotRepositoryStatus
   = SnapshotDirectoryMissing
   | SnapshotDirectoryInitialized
+  -- | Includes stray content from a pre-snapshot git clone (e.g. a stale
+  -- @.git@), which must be healed by a full overwrite.
   | SnapshotDirectoryIncoherent
+  deriving stock (Eq, Show)
 
 snapshotRepositoryStatus :: FilePath -> IO SnapshotRepositoryStatus
 snapshotRepositoryStatus root = do
@@ -78,8 +82,12 @@ snapshotRepositoryStatus root = do
     then do
       dirAdvisoriesExists <- D.doesDirectoryExist $ root </> "advisories"
       etagMetadataExists <- D.doesFileExist $ root </> "snapshot-etag"
+      staleGitExists <-
+        (||)
+          <$> D.doesFileExist (root </> ".git")
+          <*> D.doesDirectoryExist (root </> ".git")
       return $
-        if dirAdvisoriesExists && etagMetadataExists
+        if dirAdvisoriesExists && etagMetadataExists && not staleGitExists
           then SnapshotDirectoryInitialized
           else SnapshotDirectoryIncoherent
     else return SnapshotDirectoryMissing
@@ -162,17 +170,21 @@ overwriteSnapshot root url =
         whenLeft etagWritten $
           throwE . ExtractSnapshotArchive
 
+-- | Delete the entire tree at @root@ (if it exists) and recreate it as an
+-- empty directory. Destructive: only for use on snapshot-owned roots
+-- (as done by 'overwriteSnapshot').
 ensureEmptyRoot :: FilePath -> IO ()
 ensureEmptyRoot root = do
-  D.createDirectoryIfMissing False root
-
-  whenM (D.doesDirectoryExist $ root </> "advisories") $
-    D.removeDirectoryRecursive $
-      root </> "advisories"
-
-  whenM (D.doesFileExist $ root </> "snapshot-etag") $
-    D.removeFile $
-      root </> "snapshot-etag"
+  rootExists <- D.doesDirectoryExist root
+  if rootExists
+    then do
+      -- If root itself is a symlink, remove only the link, never the target.
+      isSymlink <- D.pathIsSymbolicLink root
+      if isSymlink
+        then D.removeDirectoryLink root
+        else D.removeDirectoryRecursive root
+    else pure ()
+  D.createDirectoryIfMissing True root
 
 newtype SnapshotDirectoryInfo = SnapshotDirectoryInfo
   { etag :: ETag

@@ -24,9 +24,10 @@ tested-with:
   GHC ==9.6.7 || ==9.8.4 || ==9.10.3 || ==9.12.4 || ==9.14.1
 
 library
-  exposed-modules:  Security.Advisories.Sync
-  other-modules:
+  exposed-modules:
+    Security.Advisories.Sync
     Security.Advisories.Sync.Snapshot
+  other-modules:
     Security.Advisories.Sync.Url
 
   build-depends:

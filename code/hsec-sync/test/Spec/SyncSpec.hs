@@ -5,6 +5,7 @@ module Spec.SyncSpec (spec) where
 import Control.Monad (unless)
 import Data.Bifunctor (first)
 import Security.Advisories.Sync
+import Security.Advisories.Sync.Snapshot
 import qualified System.Directory as D
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
@@ -13,7 +14,49 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 spec :: TestTree
-spec = testGroup "Sync" []
+spec =
+  testGroup
+    "Sync"
+    [ testGroup
+        "snapshotRepositoryStatus"
+        [ testCase "Stale .git directory makes an initialized directory incoherent" $
+            withSystemTempDirectory "hsec-sync" $ \p -> do
+              D.createDirectoryIfMissing True (p </> "advisories")
+              writeFile (p </> "snapshot-etag") "W/\"etag\""
+              D.createDirectory (p </> ".git")
+              snapshotRepositoryStatus p >>= (@?= SnapshotDirectoryIncoherent),
+          testCase "Stale .git file (worktree-style) makes an initialized directory incoherent" $
+            withSystemTempDirectory "hsec-sync" $ \p -> do
+              D.createDirectoryIfMissing True (p </> "advisories")
+              writeFile (p </> "snapshot-etag") "W/\"etag\""
+              writeFile (p </> ".git") "gitdir: /somewhere/else"
+              snapshotRepositoryStatus p >>= (@?= SnapshotDirectoryIncoherent),
+          testCase "Initialized directory without .git stays initialized" $
+            withSystemTempDirectory "hsec-sync" $ \p -> do
+              D.createDirectoryIfMissing True (p </> "advisories")
+              writeFile (p </> "snapshot-etag") "W/\"etag\""
+              snapshotRepositoryStatus p >>= (@?= SnapshotDirectoryInitialized)
+        ],
+      testGroup
+        "ensureEmptyRoot"
+        [ testCase "Wipes stale git clone content from the snapshot root" $
+            withSystemTempDirectory "hsec-sync" $ \p -> do
+              D.createDirectoryIfMissing True (p </> ".git" </> "objects")
+              D.createDirectoryIfMissing True (p </> "advisories")
+              writeFile (p </> "snapshot-etag") "W/\"etag\""
+              writeFile (p </> "README.md") "stale clone readme"
+              ensureEmptyRoot p
+              D.doesDirectoryExist p >>= (@?= True)
+              mapM_
+                ( \e ->
+                    (||)
+                      <$> D.doesFileExist (p </> e)
+                      <*> D.doesDirectoryExist (p </> e)
+                      >>= (@?= False)
+                )
+                [".git", "advisories", "snapshot-etag", "README.md"]
+        ]
+    ]
 
 _spec :: TestTree
 _spec =
