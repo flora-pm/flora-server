@@ -10,6 +10,7 @@ import Data.Text.Display
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple (Only (..))
 import Effectful
 import Effectful.Error.Static
 import Effectful.Log (Log)
@@ -79,11 +80,13 @@ importAdvisory
   -> FloraM es ()
 importAdvisory advisory = do
   DomainEnv{pool} <- Reader.ask
-  advisoryId <- AdvisoryId <$> liftIO UUID.nextRandom
   let advisoryAffectedPackages = Vector.fromList advisory.advisoryAffected
-  let advisoryDAO = processAdvisory advisoryId advisory
-  withReadWritePool pool $ Update.insertAdvisory advisoryDAO
-  processAffectedPackages advisoryId advisoryAffectedPackages
+  advisoryIdForInsert <- AdvisoryId <$> liftIO UUID.nextRandom
+  let advisoryDAO = processAdvisory advisoryIdForInsert advisory
+  result <- withReadWritePool pool $ Update.upsertAdvisory advisoryDAO
+  case result of
+    Just (Only advisoryId) -> processAffectedPackages advisoryId advisoryAffectedPackages
+    Nothing -> error "upsertAdvisory returned no id"
 
 processAdvisory
   :: AdvisoryId
@@ -157,8 +160,10 @@ processAffectedPackage advisoryId affected = do
               , operatingSystems = fmap Vector.fromList affected.affectedOS
               , declarations = declarations
               }
-      withReadWritePool pool $ Update.insertAffectedPackage affectedPackageDAO
-      processAffectedVersionRanges affectedPackageId affected.affectedVersions
+      result <- withReadWritePool pool $ Update.upsertAffectedPackage affectedPackageDAO
+      case result of
+        Just (Only affectedPackageId') -> processAffectedVersionRanges affectedPackageId' affected.affectedVersions
+        Nothing -> error "upsertAffectedPackage returned no id"
 
 processAffectedVersionRanges
   :: ( IOE :> es
