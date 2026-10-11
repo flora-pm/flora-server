@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased
+
+- Make the advisories import repeatable: advisory upserts now refresh existing
+  rows keyed on `hsec_id` instead of duplicating them, with a unique-constraint
+  migration for advisory keys [#1343](https://github.com/flora-pm/flora-server/pull/1343)
+
 ## 1.1.0 -- 2026-10-07
 
 - New frontend! Thanks to @TixieSalander, we have a new visual identity and clear design rules.

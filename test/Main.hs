@@ -11,6 +11,7 @@ import System.Environment (withArgs)
 import System.IO
 import Test.Tasty
 
+import Flora.AdvisorySpec qualified as AdvisorySpec
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
@@ -62,7 +63,8 @@ main = provideCallStack $ do
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =
-  [ BlobSpec.spec
+  [ AdvisorySpec.spec
+  , BlobSpec.spec
   , CabalSpec.spec
   , CategorySpec.spec
   , FeedSpec.spec
