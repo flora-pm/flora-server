@@ -9,31 +9,35 @@ fi
 
 CONFIG_PATH="$1"
 
+# Defaults to `cabal run` for make/dev. Docker sets FLORA_CLI=flora-cli.
+# TODO: replace all this with flora-cli command
+FLORA_CLI="${FLORA_CLI:-cabal run -- flora-cli}"
+
 echo "Starting db provisioning with $CONFIG_PATH..."
 
-cabal run -- flora-cli -c "$CONFIG_PATH" create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
-cabal run -- flora-cli -c "$CONFIG_PATH" provision categories
-cabal run -- flora-cli -c "$CONFIG_PATH" provision-repository --name "hackage" \
+$FLORA_CLI -c "$CONFIG_PATH" create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
+$FLORA_CLI -c "$CONFIG_PATH" provision categories
+$FLORA_CLI -c "$CONFIG_PATH" provision-repository --name "hackage" \
     --url https://hackage.haskell.org \
     --description "Central package repository"
-cabal run -- flora-cli -c "$CONFIG_PATH" provision-repository --name "cardano" \
+$FLORA_CLI -c "$CONFIG_PATH" provision-repository --name "cardano" \
     --url https://chap.intersectmbo.org \
     --description "Packages of the Cardano project"
-cabal run -- flora-cli -c "$CONFIG_PATH" provision-repository --name "horizon" \
+$FLORA_CLI -c "$CONFIG_PATH" provision-repository --name "horizon" \
     --url https://packages.horizon-haskell.net \
     --description "Packages of the Horizon project"
-cabal run -- flora-cli -c "$CONFIG_PATH" provision-repository --name "mlabs" \
+$FLORA_CLI -c "$CONFIG_PATH" provision-repository --name "mlabs" \
     --url https://plutonomicon.github.io/plutarch-plutus \
     --description "Packages of the MLabs Cardano ecosystem"
-cabal run -- flora-cli -c "$CONFIG_PATH" index-dependency --name "cardano"\
+$FLORA_CLI -c "$CONFIG_PATH" index-dependency --name "cardano"\
     --depends-on "hackage" \
     --priority 1
-cabal run -- flora-cli -c "$CONFIG_PATH" index-dependency --name "horizon"\
+$FLORA_CLI -c "$CONFIG_PATH" index-dependency --name "horizon"\
     --depends-on "hackage" \
     --priority 1
-cabal run -- flora-cli -c "$CONFIG_PATH" index-dependency --name "mlabs" \
+$FLORA_CLI -c "$CONFIG_PATH" index-dependency --name "mlabs" \
     --depends-on "cardano" \
     --priority 1
-cabal run -- flora-cli -c "$CONFIG_PATH" index-dependency --name "mlabs" \
+$FLORA_CLI -c "$CONFIG_PATH" index-dependency --name "mlabs" \
     --depends-on "hackage" \
     --priority 2
