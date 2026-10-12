@@ -85,6 +85,15 @@ upsertPackage package = upsertPackageWithDependencies package []
 dedupOn :: Ord k => (a -> k) -> [a] -> [a]
 dedupOn keyFun = Map.elems . Map.fromList . List.map (\x -> (keyFun x, x))
 
+upsertSystemPackage :: (IOE :> es, RequireCallStack, WriteDB :> es) => SystemPackage -> Eff es ()
+upsertSystemPackage sysPackage =
+  E.catch
+    (upsertWith sysPackage)
+    (\sqlError@(SqlError{}) -> E.throwIO $ sqlErrorToDBException sqlError)
+  where
+    upsertWith entity =
+      void $ execute (_insert @SystemPackage <> " ON CONFLICT DO NOTHING") entity
+
 deprecatePackages :: (IOE :> es, RequireCallStack, WriteDB :> es) => Vector DeprecatedPackage -> Eff es ()
 deprecatePackages dp = void $ executeMany q (dp & Vector.map Only & Vector.toList)
   where
