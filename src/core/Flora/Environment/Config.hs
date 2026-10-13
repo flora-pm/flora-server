@@ -14,7 +14,6 @@ module Flora.Environment.Config
   , poolStripes
   , connectionsPerStripe
   , transientReservePerStripe
-  , importSharePerStripe
   , jobSharePerStripe
   , importWorkerLimit
   , DeploymentEnv (..)
@@ -24,6 +23,7 @@ module Flora.Environment.Config
   , getAssets
   , getAssetHash
   , floraEnvDecoder
+  , poolConfigDecoder
   , toConnString
   , jobWorkerLimit
   )
@@ -219,6 +219,7 @@ floraConfigDecoder = KDL.children do
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
   , connections :: Int
+  , importWorkers :: Int
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
@@ -233,20 +234,20 @@ connectionsPerStripe poolConfig = max 1 (poolConfig.connections `div` poolStripe
 transientReservePerStripe :: Int
 transientReservePerStripe = 3
 
-importSharePerStripe :: PoolConfig -> Int
-importSharePerStripe poolConfig = max 1 (connectionsPerStripe poolConfig `div` 2)
-
 jobSharePerStripe :: PoolConfig -> Int
 jobSharePerStripe poolConfig =
   max
     1
     ( connectionsPerStripe poolConfig
-        - importSharePerStripe poolConfig
+        - poolConfig.importWorkers
         - transientReservePerStripe
     )
 
 importWorkerLimit :: PoolConfig -> Int
-importWorkerLimit = (poolStripes *) . importSharePerStripe
+importWorkerLimit = (.importWorkers)
+
+defaultImportWorkers :: Int
+defaultImportWorkers = 4
 
 jobWorkerLimit :: PoolConfig -> Int
 jobWorkerLimit = (poolStripes *) . jobSharePerStripe
@@ -278,7 +279,14 @@ poolConfigDecoder :: KDL.NodeDecoder PoolConfig
 poolConfigDecoder = KDL.children do
   connectionTimeout <- KDL.argAtWith "timeout" nominalDiffTimeDecoder
   connections <- KDL.argAt "connections"
-  pure PoolConfig{connectionTimeout, connections}
+  importWorkers <-
+    KDL.withDecoder
+      (fromMaybe defaultImportWorkers <$> KDL.optional (KDL.argAt "importWorkers"))
+      \n -> do
+        when (n < 1) (KDL.failM "importWorkers must be at least 1")
+        when (n > connections) (KDL.failM "importWorkers cannot exceed connections")
+        pure n
+  pure PoolConfig{connectionTimeout, connections, importWorkers}
 
 floraEnvDecoder :: KDL.DocumentDecoder FloraConfig
 floraEnvDecoder = KDL.document do
