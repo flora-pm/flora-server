@@ -15,6 +15,7 @@ flora {
   pool {
     timeout 10
     connections 15
+    importWorkers 6
   }
 
 
