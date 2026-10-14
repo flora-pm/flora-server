@@ -74,17 +74,6 @@ services:
     profiles:
       - local
       - live-eventlog
-  jaeger:
-    image: jaegertracing/jaeger:2.18.0
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
-      LOG_LEVEL: debug
-    ports:
-      - "16686:16686"   # Jaeger UI
-      - "4318:4318"     # OTLP HTTP
-    profiles:
-      - local
-
   # Live eventlog profiling stack (profile: live-eventlog).
   # See the "Live Eventlogs" section of CONTRIBUTING.md for usage.
   eventlog-live-otlp-server:

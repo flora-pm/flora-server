@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove OpenTelemetry tracing. Observability is logs and Prometheus metrics only. The `zipkinEnabled`, `zipkinHost` and `zipkinPort` settings are gone from the `mltp` block [#1353](https://github.com/flora-pm/flora-server/pull/1353)
+
 - Bump `hsec-sync`/`cvss` to restore vulnerabilities fetching [#1344](https://github.com/flora-pm/flora-server/issue/1344) [#1345](https://github.com/flora-pm/flora-server/pull/1345)
 
 ## 1.1.0 -- 2026-10-07

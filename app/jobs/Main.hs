@@ -1,6 +1,7 @@
 module Main where
 
 import Arbiter.Core qualified as Arb
+import Arbiter.Core.Job.Types qualified as Job
 import Arbiter.Simple qualified as ArbS
 import Arbiter.Worker qualified as Worker
 import Control.Monad
@@ -90,9 +91,9 @@ main = do
             feedRetentionCron <- feedRetentionCronJob
             pure (indexRefreshCrons <> feedRetentionCron)
       defaultConfig <- liftIO $
-        Worker.defaultBatchedWorkerConfig (jobWorkerLimit floraEnv.dbConfig) 1 $
+        Worker.batchedWorkerConfig (jobWorkerLimit floraEnv.dbConfig) 1 $
           \(job :| _) callbacks -> do
-            liftIO $ labelCurrentThread (Text.unpack ("job-" <> job.queueName <> "-" <> jobTypeLabel job.payload))
+            liftIO $ labelCurrentThread (Text.unpack ("job-" <> Job.queueName job <> "-" <> jobTypeLabel (Arb.payload job)))
             processJob workerEnv jobsEnv logger floraEnv job
             Worker.ack callbacks job
       let instrumentedHooks =
@@ -113,7 +114,7 @@ main = do
                               Log.logAttention message $
                                 object
                                   [ "duration" .= duration
-                                  , "payload" .= job.payload
+                                  , "payload" .= Arb.payload job
                                   ]
                     }
               }
