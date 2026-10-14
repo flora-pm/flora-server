@@ -3,7 +3,6 @@ name: Dependency submission
 on:
   push:
     branches: [development, main]
-  pull_request:
   workflow_dispatch:
 
 concurrency:

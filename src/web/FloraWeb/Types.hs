@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module FloraWeb.Types
-  ( FloraEff
+  ( AdminArbiterConfig
+  , FloraEff
   , RouteEffects
   , WebEnvStore
   , GetCookies (..)
@@ -13,6 +14,8 @@ module FloraWeb.Types
   )
 where
 
+import Arbiter.Servant qualified as ArbS
+import Arbiter.Simple (SimpleDb)
 import Control.Concurrent.MVar
 import Control.Monad.IO.Class
 import Control.Monad.Time (MonadTime (..))
@@ -31,8 +34,11 @@ import Web.Cookie
 
 import Flora.Environment.Env
 import Flora.Model.BlobStore.API
+import Flora.Model.Job (JobQueues)
 
 newtype WebEnvStore = WebEnvStore (MVar WebEnv)
+
+type AdminArbiterConfig = ArbS.ArbiterServerConfig (SimpleDb JobQueues IO) JobQueues
 
 type FloraEff = Eff RouteEffects
 

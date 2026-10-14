@@ -1,6 +1,4 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
@@ -52,11 +50,8 @@ import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem.IO.ByteString qualified as EBS
 import GHC.Generics (Generic)
 import KDL qualified
-import Network.Socket (HostName, PortNumber)
-import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
+import NoThunks.Class (NoThunks)
 import Sel.Hashing.SHA256 qualified as Sel
-
-deriving via OnlyCheckWhnf PortNumber instance NoThunks PortNumber
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
@@ -141,27 +136,18 @@ data MLTP = MLTP
   { sentryDSN :: Maybe String
   , prometheusEnabled :: Bool
   , logger :: LoggingDestination
-  , zipkinEnabled :: Bool
-  , zipkinHost :: Maybe HostName
-  , zipkinPort :: Maybe PortNumber
   , eventlogSocketDirectory :: Maybe FilePath
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
-
-instance NFData PortNumber where
-  rnf a = seq a ()
 
 mltpDecoder :: KDL.NodeDecoder MLTP
 mltpDecoder = KDL.children do
   sentryDSN <- mfilter (/= mempty) <$> KDL.optional (KDL.argAt "sentryDSN")
   prometheusEnabled <- KDL.argAt "prometheusEnabled"
   logger <- KDL.argAtWith "loggingDestination" loggingDestinationDecoder
-  zipkinEnabled <- KDL.argAt "zipkinEnabled"
-  zipkinHost <- KDL.optional $ KDL.argAt "zipkinHost"
-  zipkinPort <- fmap toEnum <$> KDL.optional (KDL.argAt "zipkinPort")
   eventlogSocketDirectory <- KDL.optional $ KDL.argAt "eventlogSocketDirectory"
-  pure MLTP{sentryDSN, prometheusEnabled, logger, zipkinEnabled, zipkinHost, zipkinPort, eventlogSocketDirectory}
+  pure MLTP{sentryDSN, prometheusEnabled, logger, eventlogSocketDirectory}
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool

@@ -2,7 +2,6 @@
 
 module FloraWeb.Pages.Server where
 
-import Arbiter.Servant qualified as ArbS
 import Effectful.Reader.Static qualified as Reader
 import Effectful.Time qualified as Time
 import Lucid
@@ -12,7 +11,6 @@ import Servant
 
 import Flora.Database
 import Flora.Environment.Env
-import Flora.Model.Job
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.User (User)
@@ -27,9 +25,9 @@ import FloraWeb.Pages.Server.Settings qualified as Settings
 import FloraWeb.Pages.Templates
 import FloraWeb.Pages.Templates.Error (web404)
 import FloraWeb.Pages.Templates.Screens.Home qualified as Home
-import FloraWeb.Types (FloraEff)
+import FloraWeb.Types (AdminArbiterConfig, FloraEff)
 
-server :: RequireCallStack => ArbS.ArbiterServerConfig JobQueues -> ServerT Routes FloraEff
+server :: RequireCallStack => AdminArbiterConfig -> ServerT Routes FloraEff
 server arbiterConfig =
   Routes'
     { home = homeHandler

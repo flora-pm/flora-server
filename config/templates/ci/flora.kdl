@@ -21,9 +21,6 @@ flora {
     sentryDSN ""
     prometheusEnabled #false
     loggingDestination stdout
-    zipkinEnabled #false
-    zipkinHost localhost
-    zipkinPort 8800
     eventlogSocketDirectory "/tmp/flora-eventlog"
   }
 

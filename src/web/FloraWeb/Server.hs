@@ -1,6 +1,7 @@
 module FloraWeb.Server where
 
 import Arbiter.Servant qualified as ArbS
+import Arbiter.Simple qualified as ArbSimple
 import Colourista.IO (blueMessage)
 import Control.Concurrent.STM (TChan, newBroadcastTChanIO)
 import Control.Exception (bracket)
@@ -61,6 +62,7 @@ import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
 import System.Info qualified as System
 
+import Arbiter.Servant.Orphans ()
 import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Environment (getFloraEnv)
 import Flora.Environment.Config (FloraConfig (..), toConnString)
@@ -177,12 +179,8 @@ runServer appLogger floraEnv = do
             (LiveReload.watchAssets "./static" reloadChannel)
             (\e -> blueMessage $ "⚠️ Live-reload watcher stopped: " <> Text.pack (show e))
   let connectionInfo = floraEnv.config.connectionInfo
-  arbiterConfig <-
-    liftIO $
-      ArbS.initArbiterServer
-        (Proxy @JobQueues)
-        (toConnString connectionInfo)
-        "public"
+  arbiterEnv <- ArbSimple.createSimpleEnv (Proxy @JobQueues) (toConnString connectionInfo) "public"
+  arbiterConfig <- liftIO $ ArbS.createArbiterServer (ArbSimple.runSimpleDb arbiterEnv)
   let server = mkServer arbiterConfig appLogger webEnvStore floraEnv reloadChannel
   let warpSettings =
         setPort (fromIntegral floraEnv.httpPort) $
@@ -205,7 +203,7 @@ runServer appLogger floraEnv = do
 
 mkServer
   :: RequireCallStack
-  => ArbS.ArbiterServerConfig JobQueues
+  => AdminArbiterConfig
   -> Logger
   -> WebEnvStore
   -> FloraEnv
@@ -220,7 +218,7 @@ mkServer arbiterConfig logger webEnvStore floraEnv reloadChannel =
 
 floraServer
   :: RequireCallStack
-  => ArbS.ArbiterServerConfig JobQueues
+  => AdminArbiterConfig
   -> DeploymentEnv
   -> TChan ()
   -> Routes (AsServerT FloraEff)

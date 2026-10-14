@@ -183,7 +183,6 @@ library
     Flora.Monad
     Flora.Monitoring
     Flora.QRCode
-    Flora.Tracing
     JSON
     Log.Backend.File
     Lucid.Orphans
@@ -213,13 +212,10 @@ library
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     envparse,
     filepath,
     gitrev,
     heptapod ^>=1.1.0.0,
-    hs-opentelemetry-exporter-otlp,
-    hs-opentelemetry-sdk,
     hsec-core ^>=0.5.0.0,
     http-api-data,
     http-media,
@@ -282,7 +278,6 @@ library flora-search
     base,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     flora,
     flora-advisories,
     log-base,
@@ -315,7 +310,6 @@ library flora-advisories
     deepseq,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     flora,
     hsec-core ^>=0.5.0.0,
     hsec-tools,
@@ -337,6 +331,7 @@ library flora-web
   hs-source-dirs: ./src/web
   -- cabal-gild: discover src/web
   exposed-modules:
+    Arbiter.Servant.Orphans
     FloraWeb.API.Errors
     FloraWeb.API.Routes
     FloraWeb.API.Routes.Packages
@@ -421,6 +416,7 @@ library flora-web
     aeson,
     arbiter-servant,
     arbiter-servant-ui,
+    arbiter-simple,
     base ^>=4.20,
     base32,
     bytestring,
@@ -440,7 +436,6 @@ library flora-web
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     eventlog-socket,
     extra,
     feed,
@@ -540,7 +535,6 @@ library flora-jobs
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     filepath,
     flora,
     gitrev,
@@ -661,7 +655,6 @@ executable flora-cli
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     extra,
     filepath,
     flora,
@@ -705,7 +698,6 @@ test-suite flora-test
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     exceptions,
     extra,
     filepath,

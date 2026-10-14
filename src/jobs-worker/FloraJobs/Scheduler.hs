@@ -87,7 +87,7 @@ jobDedupKey =
     ScheduleMetadata pass -> "metadata-pass-" <> passName pass
 
 toJobWrite :: PackageJob -> Arb.JobWrite PackageJob
-toJobWrite job = (Arb.defaultJob job){Arb.dedupKey = Just (jobDedupKey job)}
+toJobWrite job = Arb.setDedupKey (Just (jobDedupKey job)) (Arb.defaultJob job)
 
 scheduleJobs
   :: MonadUnliftIO m

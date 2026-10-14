@@ -78,7 +78,7 @@ $ make docker-enter
 
 The committed `.env` file sets `COMPOSE_PROFILES=local`, which is why plain `docker compose up`
 (and `make docker-up`) starts the application services (`devel`, `flora-database`) along with
-`prometheus` and `jaeger`. Passing an explicit `--profile` flag on the command line overrides
+`prometheus`. Passing an explicit `--profile` flag on the command line overrides
 this default, so combine profiles explicitly when you need more than one
 (see [Live Eventlogs](#live-eventlogs)).
 
