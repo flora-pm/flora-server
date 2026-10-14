@@ -109,6 +109,7 @@ runFlora config = do
       ( \env ->
           runEff . withUnliftStrategy (ConcUnlift Ephemeral Unlimited) . runTime . runConcurrent $ do
             let baseURL = "http://localhost:" <> display env.httpPort
+            liftIO $ when env.mltp.stackProfiling $ blueMessage "🔎 Stack profiler enabled, writing to flora-server.eventlog"
             liftIO $ blueMessage $ "🌺 Starting Flora server on " <> baseURL
             liftIO $ when (isJust env.mltp.sentryDSN) (blueMessage "📋 Connecting to Sentry endpoint")
             liftIO $ startEventlogSocket env.mltp.eventlogSocketDirectory
