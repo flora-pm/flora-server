@@ -14,7 +14,7 @@ jobs: $ncpus
 package *
   ghc-options: +RTS -I0 -RTS -finfo-table-map -fdistinct-constructor-tables -fwrite-ide-info
 
-index-state: 2026-10-11T15:16:32Z
+index-state: 2026-10-14T14:33:44Z
 
 allow-newer: chronos:hashable
            , feed:*
@@ -55,7 +55,7 @@ package zlib
   flags: -pkg-config
 
 package effectful-tracing
-  flags: +otel +servant +postgresql-simple
+  flags: +servant +postgresql-simple
 
 package async
   flags: +debug-auto-label
@@ -130,4 +130,4 @@ source-repository-package
     arbiter-migrations
     arbiter-servant
     arbiter-servant-ui
-    arbiter-test-common
+    arbiter-libpq
