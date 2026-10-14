@@ -11,14 +11,8 @@
 .prose :is(h2,h3,h4,h5,h6) {
 	--prose-flow-space: calc(1.5 * var(--space-gutter-large));
 	line-height: var(--leading-thin);
-
-	/* font-weight: var(--fontweight-heading); */
 	color: var(--color-text-raise);
 }
-
-/* .prose :is(h2+*,h3+*,h4+*,h5+*,h6+*) {
-	--prose-flow-space: var(--space-gutter-large);
-} */
 
 .prose h1 { font-size: var(--text-heading-1); }
 .prose h2 { font-size: var(--text-heading-2); }
@@ -40,6 +34,9 @@
 .prose li::marker {
 	color: var(--color-text-quaternary);
 }
+
+/* Very long lines of text are bad for readability */
+.prose :is(p, li) { max-width: 67ch; }
 
 .prose pre {
 	padding: var(--space-gutter);
