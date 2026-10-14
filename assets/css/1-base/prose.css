@@ -35,6 +35,9 @@
 	color: var(--color-text-quaternary);
 }
 
+/* Very long lines of text are bad for readability */
+.prose :is(p, li) { max-width: 67ch; }
+
 .prose pre {
 	padding: var(--space-gutter);
 	border-radius: var(--radius-xs);
