@@ -88,7 +88,6 @@
 	--kerning-loose: 0.1ch;
 	--font-base: var(--fontstack-sans);
 	--font-monospace: var(--fontstack-monospace);
-	--fontweight-heading: 500;
 
 	--space-gutter: var(--space-4);
 	--space-gutter-tiny: var(--space-1);
