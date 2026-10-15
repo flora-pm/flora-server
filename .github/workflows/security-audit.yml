@@ -20,7 +20,9 @@ jobs:
           ghc-version: '9.10.3'
 
       - name: Run Haskell Security Action
-        uses: blackheaven/haskell-security-action@5034a4cf042726217d6ba4c97d0239886f1c74e0 # master
+        uses: blackheaven/haskell-security-action@df18e40481ae37a2a023308720b701063a98157b # v1.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # until MangoIV/cabal-audit#82 merges and republishes the MangoIV nightly
+          binary_url: https://github.com/blackheaven/cabal-audit/releases/download/nightly/cabal-audit
 
