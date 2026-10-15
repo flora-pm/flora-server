@@ -19,6 +19,9 @@ jobs:
         with:
           ghc-version: '9.10.3'
 
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y libtcmalloc-minimal4-dev
+
       - name: Run Haskell Security Action
         uses: blackheaven/haskell-security-action@df18e40481ae37a2a023308720b701063a98157b # v1.1.0
         with:
