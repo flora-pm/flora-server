@@ -106,6 +106,7 @@ checkExpectedTables = do
           , "package_jobs_dlq"
           , "package_jobs_groups"
           , "package_jobs_results"
+          , "package_jobs_archive"
           , "package_maintainers"
           , "package_uploaders"
           , "packages"
