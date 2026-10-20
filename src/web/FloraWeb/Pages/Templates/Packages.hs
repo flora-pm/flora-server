@@ -108,7 +108,7 @@ showDependents now numberOfReleases latestRelease numberOfDependencies numberOfD
                   , namespace = dep.namespace
                   , name = dep.name
                   , synopsis = dep.latestSynopsis
-                  , mVersion = Just (display dep.latestVersion)
+                  , version = Just dep.latestVersion
                   , mLastUploadedAt = mLastUploadedAt
                   , mLicense = Just dep.latestLicense
                   , exactMatch = False
@@ -140,8 +140,7 @@ showDependencies now numberOfReleases latestRelease numberOfDependencies numberO
     isLatestViableRelease
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependencies"
-    ul_ [class_ "flow", role_ "list"] $ do
-      requirementListItem now componentsInfo
+    requirementListItem now componentsInfo
 
 listVersions
   :: Release
@@ -232,7 +231,7 @@ packageListing now mExactMatchItems packages =
               , namespace = em.namespace
               , name = em.name
               , synopsis = em.synopsis
-              , mVersion = Just (display em.version)
+              , version = Just em.version
               , mLastUploadedAt = mLastUploadedAt
               , mLicense = Just em.license
               , exactMatch = True
@@ -248,7 +247,7 @@ packageListing now mExactMatchItems packages =
             , namespace = p.namespace
             , name = p.name
             , synopsis = p.synopsis
-            , mVersion = Just (display p.version)
+            , version = Just p.version
             , mLastUploadedAt = mLastUploadedAt
             , mLicense = Just p.license
             , exactMatch = False
@@ -489,7 +488,7 @@ presentationHeader
   -> Bool
   -> Bool
   -> FloraHTML
-presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} groups sectionId latestViableRelease showVersion =
+presentationHeader numberOfReleases release numberOfDependencies numberOfDependents package@Package{namespace, name, deprecationInfo} _groups sectionId latestViableRelease showVersion =
   header_ [class_ "pageHead"] $ do
     div_ [class_ "wrapper flow flow--large"] $ do
       div_ [class_ "aside gap--large"] $ do
@@ -535,7 +534,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             "Changelog"
           a_ ([class_ "tab", href_ (Links.dependenciesPage namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "dependencies"])) $ do
             Icons.folderTree
-            toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency"
+            toHtml $ display numberOfDependencies <> if numberOfDependencies == 1 then " Dependency" else " Dependencies"
           a_ ([class_ "tab", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> ([ariaCurrent_ "page" | sectionId == "dependents"])) $ do
             Icons.packageSearch
             toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent"
@@ -543,13 +542,13 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
             Icons.shieldAlert
             "Security"
         div_ [class_ "tabs-mobile", id_ "subsectionsMobile"] $ do
-          button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsectionsMobile-menu"] $ do
+          button_ [class_ "tabs-mobileBtn btn btn--secondary", ariaLabel_ ("Switch section (Current: " <> "About" <> ")"), popovertarget_ "subsections-mobile-menu"] $ do
             Icons.bookOpenText
             div_ [class_ "flex-grow"] $ do
               div_ [class_ "prefix"] "Current section"
               div_ [] $ toHtml $ currentSectionLabel sectionId
             Icons.chevronUpDown
-          nav_ [class_ "dropdown dropdown--full", id_ "subsectionsMobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
+          nav_ [class_ "dropdown dropdown--full", id_ "subsections-mobile-menu", ariaLabel_ "Package sections", popover_ ""] $ do
             a_ ([class_ "dropdown-item", href_ (Links.versionResource namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "about"])) $ do
               Icons.bookOpenText
               "About"
@@ -561,7 +560,7 @@ presentationHeader numberOfReleases release numberOfDependencies numberOfDepende
               "Changelog"
             a_ ([class_ "dropdown-item", href_ (Links.dependenciesPage namespace name release.version)] <> ([ariaCurrent_ "page" | sectionId == "dependencies"])) $ do
               Icons.folderTree
-              toHtml $ display numberOfDependencies <> if numberOfDependencies > 1 then " Dependencies" else " Dependency"
+              toHtml $ display numberOfDependencies <> if numberOfDependencies == 1 then " Dependency" else " Dependencies"
             a_ ([class_ "dropdown-item", href_ (Links.dependentsPage namespace name (PositiveUnsafe 1))] <> ([ariaCurrent_ "page" | sectionId == "dependents"])) $ do
               Icons.packageSearch
               toHtml $ display numberOfDependents <> if numberOfDependents > 1 then " Dependents" else " Dependent"

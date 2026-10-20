@@ -1,6 +1,6 @@
 cabal-version: 3.0
 name: flora
-version: 1.1.0
+version: 1.1.1
 homepage: https://github.com/flora-pm/flora-server/#readme
 bug-reports: https://github.com/flora-pm/flora-server/issues
 author: Théophile Choutri
@@ -183,7 +183,6 @@ library
     Flora.Monad
     Flora.Monitoring
     Flora.QRCode
-    Flora.Tracing
     JSON
     Log.Backend.File
     Lucid.Orphans
@@ -213,17 +212,13 @@ library
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     envparse,
     filepath,
     gitrev,
     heptapod ^>=1.1.0.0,
-    hs-opentelemetry-exporter-otlp,
-    hs-opentelemetry-sdk,
-    hsec-core ^>=0.3.0.0,
+    hsec-core ^>=0.5.0.0,
     http-api-data,
     http-media,
-    iso8601-time,
     JuicyPixels,
     kdl-hs,
     log-base,
@@ -283,7 +278,6 @@ library flora-search
     base,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     flora,
     flora-advisories,
     log-base,
@@ -312,14 +306,14 @@ library flora-advisories
     aeson,
     base,
     Cabal-syntax,
-    cvss,
+    cvss ^>=0.2.0.1,
     deepseq,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     flora,
-    hsec-core ^>=0.3.0.0,
+    hsec-core ^>=0.5.0.0,
     hsec-tools,
+    hsec-sync ^>=0.2.0.3,
     log-effectful,
     pandoc-types,
     pg-entity,
@@ -337,6 +331,7 @@ library flora-web
   hs-source-dirs: ./src/web
   -- cabal-gild: discover src/web
   exposed-modules:
+    Arbiter.Servant.Orphans
     FloraWeb.API.Errors
     FloraWeb.API.Routes
     FloraWeb.API.Routes.Packages
@@ -421,6 +416,7 @@ library flora-web
     aeson,
     arbiter-servant,
     arbiter-servant-ui,
+    arbiter-simple,
     base ^>=4.20,
     base32,
     bytestring,
@@ -440,7 +436,6 @@ library flora-web
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     eventlog-socket,
     extra,
     feed,
@@ -540,7 +535,6 @@ library flora-jobs
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     filepath,
     flora,
     gitrev,
@@ -661,14 +655,13 @@ executable flora-cli
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     extra,
     filepath,
     flora,
     flora-advisories,
     flora-search,
     flora-web,
-    hsec-core ^>=0.3.0.0,
+    hsec-core ^>=0.5.0.0,
     log-base,
     log-effectful,
     lucid2,
@@ -705,7 +698,6 @@ test-suite flora-test
     effectful,
     effectful-core,
     effectful-plugin,
-    effectful-tracing,
     exceptions,
     extra,
     filepath,

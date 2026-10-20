@@ -18,7 +18,6 @@ import Servant (HasServer (..), Headers (..))
 
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.Admin.Report
-import Flora.Model.Job
 import Flora.Model.User
 import Flora.Monad
 import FloraJobs.Scheduler
@@ -34,11 +33,11 @@ import FloraWeb.Pages.Templates
   , templateFromSession
   )
 import FloraWeb.Pages.Templates.Admin qualified as Templates
-import FloraWeb.Types (RouteEffects, fetchFloraEnv)
+import FloraWeb.Types (AdminArbiterConfig, RouteEffects, fetchFloraEnv)
 
 server
   :: RequireCallStack
-  => ArbS.ArbiterServerConfig JobQueues
+  => AdminArbiterConfig
   -> SessionWithCookies User
   -> ServerT Routes (Eff RouteEffects)
 server arbiterUiConfig session =

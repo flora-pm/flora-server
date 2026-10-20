@@ -14,7 +14,7 @@ jobs: $ncpus
 package *
   ghc-options: +RTS -I0 -RTS -finfo-table-map -fdistinct-constructor-tables -fwrite-ide-info
 
-index-state: 2026-10-07T16:45:52Z
+index-state: 2026-10-14T14:33:44Z
 
 allow-newer: chronos:hashable
            , feed:*
@@ -33,7 +33,17 @@ allow-newer: chronos:hashable
            , xss-sanitize:text
            , hsec-tools:*
            , hsec-core:*
+           , hsec-sync:hsec-core
+           , hsec-sync:tar
            , openapi:*
+           , http-client-tls:crypton
+           , tls:crypton
+           , pandoc:crypton
+
+constraints:
+  , any.Cabal ==3.16.1.0
+  , any.Cabal-syntax ==3.16.1.0
+  , any.crypton ==2.1.8
 
 package feed
   ghc-options: -Wno-tabs
@@ -43,9 +53,6 @@ package warp
 
 package zlib
   flags: -pkg-config
-
-package effectful-tracing
-  flags: +otel +servant +postgresql-simple
 
 package async
   flags: +debug-auto-label
@@ -60,16 +67,6 @@ source-repository-package
   location: https://gitlab.com/dpwiz/raven-haskell.git/
   tag: 37434cb1b2515a9aa74a0544da9716bfbabea7ca
   subdir: ./raven-haskell
-
-source-repository-package
-  type: git
-  location: https://github.com/haskell-servant/servant
-  tag: 6a594bc5b5c89f083d11b6319a3c7e6b7cc4c992
-  subdir:
-    ./servant
-    ./servant-server
-    ./servant-client
-    ./servant-client-core
 
 source-repository-package
     type: git
@@ -112,7 +109,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/velveteer/arbiter.git
-  tag: 72b55b70401c957ae0d570625800d00c20852dd3
+  tag: b098c044a71d2bc555bdf305eeecec3306c20c7a
   subdir:
     arbiter-core
     arbiter-worker
@@ -120,4 +117,4 @@ source-repository-package
     arbiter-migrations
     arbiter-servant
     arbiter-servant-ui
-    arbiter-test-common
+    arbiter-libpq

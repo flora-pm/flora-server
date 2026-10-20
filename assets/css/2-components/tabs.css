@@ -3,7 +3,6 @@
 	display: flex;
 	overflow-x: auto;
 	gap: var(--space-gutter);
-	anchor-name: tabs-list;
 }
 
 .tabs-mobile { display: none; }

@@ -47,7 +47,12 @@ homeFeedHandler
   -> FloraM es (Html ())
 homeFeedHandler (Headers session _) = do
   templateEnv <- templateFromSession session defaultTemplateEnv
-  render templateEnv Feed.showFeedsBuilderPage
+  render
+    templateEnv
+      { title = "Packages feed"
+      , description = "Generate an Atom feed to follow updates"
+      }
+    Feed.showFeedsBuilderPage
 
 showPackageFeedHandler
   :: ( IOE :> es

@@ -14,15 +14,13 @@ flora {
   pool {
     timeout 10
     connections 50
+    importWorkers 4
   }
 
   mltp {
     sentryDSN ""
     prometheusEnabled #true
     loggingDestination stdout
-    zipkinEnabled #true
-    zipkinHost jaeger
-    zipkinPort 4318
     eventlogSocketDirectory "/tmp/flora-eventlog"
   }
 

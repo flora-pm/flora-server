@@ -58,11 +58,7 @@ but the stream keeps going. After the stream is done, an import of **at least
 `TooManyImportFailures`. Below that floor nothing is thrown however bad the
 rate, because one failure out of three is not a signal.
 
-Worker count is half of each stripe, times the number of stripes
-(`importWorkerLimit`). A worker needs to hold at most one connection at a time
-(see [the `ReadDB`/`WriteDB` split](./overview.md#read-only-and-read-write-operations)),
-so halving leaves enough connections in that pool for the rest of the work drawing on it.
-
+Worker count is `importWorkers` from the `pool` configuration key.
 
 ## Invariants
 

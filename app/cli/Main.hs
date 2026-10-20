@@ -1,7 +1,7 @@
 module Main where
 
 import Codec.Compression.GZip qualified as GZip
-import Control.Monad.Extra (forM_, unlessM)
+import Control.Monad.Extra (forM_)
 import Data.Bifunctor
 import Data.ByteString.Lazy.Char8 qualified as BSL
 import Data.List.NonEmpty (NonEmpty)
@@ -30,13 +30,12 @@ import Options.Applicative
 import RequireCallStack
 import Sel.Hashing.Password qualified as Sel
 import System.Environment (setEnv)
-import System.Exit (exitFailure)
 import System.FilePath ((</>))
 import System.IO
 import System.Process (callProcess)
 import Text.Read (readMaybe)
 
-import Advisories.Import (importAdvisories)
+import Advisories.Import (importAdvisories, syncAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
 import DesignSystem (generateComponents)
@@ -238,9 +237,9 @@ runCommand _ (Provision Categories) = importCategories
 runCommand _ (Provision Advisories) = do
   dataDir <- getXdgDirectory XdgData ""
   let advisoriesDirectory = dataDir </> "security-advisories"
-  unlessM (doesDirectoryExist advisoriesDirectory) $ do
-    Log.logAttention_ $ Text.pack $ "Could not find " <> advisoriesDirectory <> ". Clone https://github.com/haskell/security-advisories.git at this location."
-    liftIO exitFailure
+  createDirectoryIfMissing True dataDir
+  syncStatus <- syncAdvisories advisoriesDirectory
+  Log.logInfo_ $ "Advisories snapshot: " <> Text.pack (show syncStatus)
   importAdvisories advisoriesDirectory
 runCommand _ (Provision (TestPackages repository)) = do
   let indexArchiveBasePath = "./test/fixtures/Cabal"

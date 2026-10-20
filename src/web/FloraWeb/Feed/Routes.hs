@@ -45,9 +45,11 @@ instance ToHttpApiData PackageFilter where
 
 instance FromHttpApiData PackageFilter where
   parseUrlPiece urlPiece = do
-    let (namespace', packageName') = Text.breakOn "/" urlPiece
+    (namespace', packageName') <- case Text.breakOn "/" urlPiece of
+      (ns, rest) | Just pn <- Text.stripPrefix "/" rest -> Right (ns, pn)
+      _ -> Left ("Expected <namespace>/<package>, got " <> urlPiece)
     namespace <- maybe (Left ("Could not parse namespace " <> namespace')) Right $ parseNamespace namespace'
-    packageName <- maybe (Left ("Could not parse package name " <> Text.tail packageName')) Right $ parsePackageName (Text.tail packageName')
+    packageName <- maybe (Left ("Could not parse package name " <> packageName')) Right $ parsePackageName packageName'
     pure $ PackageFilter (namespace, packageName)
 
 newtype PackageFeedSearchForm = PackageFeedSearchForm

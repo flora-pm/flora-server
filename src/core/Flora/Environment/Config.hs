@@ -1,6 +1,4 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Externally facing config parsed from the environment.
 module Flora.Environment.Config
@@ -14,7 +12,6 @@ module Flora.Environment.Config
   , poolStripes
   , connectionsPerStripe
   , transientReservePerStripe
-  , importSharePerStripe
   , jobSharePerStripe
   , importWorkerLimit
   , DeploymentEnv (..)
@@ -24,6 +21,7 @@ module Flora.Environment.Config
   , getAssets
   , getAssetHash
   , floraEnvDecoder
+  , poolConfigDecoder
   , toConnString
   , jobWorkerLimit
   )
@@ -52,11 +50,8 @@ import Effectful.FileSystem (FileSystem)
 import Effectful.FileSystem.IO.ByteString qualified as EBS
 import GHC.Generics (Generic)
 import KDL qualified
-import Network.Socket (HostName, PortNumber)
-import NoThunks.Class (NoThunks, OnlyCheckWhnf (..))
+import NoThunks.Class (NoThunks)
 import Sel.Hashing.SHA256 qualified as Sel
-
-deriving via OnlyCheckWhnf PortNumber instance NoThunks PortNumber
 
 data ConnectionInfo = ConnectionInfo
   { connectHost :: Text
@@ -141,27 +136,18 @@ data MLTP = MLTP
   { sentryDSN :: Maybe String
   , prometheusEnabled :: Bool
   , logger :: LoggingDestination
-  , zipkinEnabled :: Bool
-  , zipkinHost :: Maybe HostName
-  , zipkinPort :: Maybe PortNumber
   , eventlogSocketDirectory :: Maybe FilePath
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
-
-instance NFData PortNumber where
-  rnf a = seq a ()
 
 mltpDecoder :: KDL.NodeDecoder MLTP
 mltpDecoder = KDL.children do
   sentryDSN <- mfilter (/= mempty) <$> KDL.optional (KDL.argAt "sentryDSN")
   prometheusEnabled <- KDL.argAt "prometheusEnabled"
   logger <- KDL.argAtWith "loggingDestination" loggingDestinationDecoder
-  zipkinEnabled <- KDL.argAt "zipkinEnabled"
-  zipkinHost <- KDL.optional $ KDL.argAt "zipkinHost"
-  zipkinPort <- fmap toEnum <$> KDL.optional (KDL.argAt "zipkinPort")
   eventlogSocketDirectory <- KDL.optional $ KDL.argAt "eventlogSocketDirectory"
-  pure MLTP{sentryDSN, prometheusEnabled, logger, zipkinEnabled, zipkinHost, zipkinPort, eventlogSocketDirectory}
+  pure MLTP{sentryDSN, prometheusEnabled, logger, eventlogSocketDirectory}
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
@@ -219,6 +205,7 @@ floraConfigDecoder = KDL.children do
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
   , connections :: Int
+  , importWorkers :: Int
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
@@ -233,20 +220,20 @@ connectionsPerStripe poolConfig = max 1 (poolConfig.connections `div` poolStripe
 transientReservePerStripe :: Int
 transientReservePerStripe = 3
 
-importSharePerStripe :: PoolConfig -> Int
-importSharePerStripe poolConfig = max 1 (connectionsPerStripe poolConfig `div` 2)
-
 jobSharePerStripe :: PoolConfig -> Int
 jobSharePerStripe poolConfig =
   max
     1
     ( connectionsPerStripe poolConfig
-        - importSharePerStripe poolConfig
+        - poolConfig.importWorkers
         - transientReservePerStripe
     )
 
 importWorkerLimit :: PoolConfig -> Int
-importWorkerLimit = (poolStripes *) . importSharePerStripe
+importWorkerLimit = (.importWorkers)
+
+defaultImportWorkers :: Int
+defaultImportWorkers = 4
 
 jobWorkerLimit :: PoolConfig -> Int
 jobWorkerLimit = (poolStripes *) . jobSharePerStripe
@@ -278,7 +265,14 @@ poolConfigDecoder :: KDL.NodeDecoder PoolConfig
 poolConfigDecoder = KDL.children do
   connectionTimeout <- KDL.argAtWith "timeout" nominalDiffTimeDecoder
   connections <- KDL.argAt "connections"
-  pure PoolConfig{connectionTimeout, connections}
+  importWorkers <-
+    KDL.withDecoder
+      (fromMaybe defaultImportWorkers <$> KDL.optional (KDL.argAt "importWorkers"))
+      \n -> do
+        when (n < 1) (KDL.failM "importWorkers must be at least 1")
+        when (n > connections) (KDL.failM "importWorkers cannot exceed connections")
+        pure n
+  pure PoolConfig{connectionTimeout, connections, importWorkers}
 
 floraEnvDecoder :: KDL.DocumentDecoder FloraConfig
 floraEnvDecoder = KDL.document do
@@ -289,16 +283,16 @@ getAssets environment =
   case environment of
     Production -> do
       Assets
-        <$> getAsset "polyfills.js"
-        <*> getAsset "alpine.js"
-        <*> getAsset "htmx.js"
-        <*> getAsset "styles.css"
+        <$> getAsset "js/polyfills.js"
+        <*> getAsset "js/alpine.js"
+        <*> getAsset "js/htmx.js"
+        <*> getAsset "css/styles.css"
     _ -> do
       Assets
-        <$> getStaticAsset "polyfills.js"
-        <*> getStaticAsset "alpine.js"
-        <*> getStaticAsset "htmx.js"
-        <*> getStaticAsset "styles.css"
+        <$> getStaticAsset "js/polyfills.js"
+        <*> getStaticAsset "js/alpine.js"
+        <*> getStaticAsset "js/htmx.js"
+        <*> getStaticAsset "css/styles.css"
 
 getStaticAsset :: Text -> Eff es AssetBundle
 getStaticAsset key =
@@ -311,14 +305,15 @@ getStaticAsset key =
 --  "app-U6EOZTZG.js"
 getAsset :: (Fail :> es, FileSystem :> es, IOE :> es) => Text -> Eff es AssetBundle
 getAsset key = do
-  let path = "./static/manifest.json"
+  let path = "./static/parcel-manifest.json"
   Just (json :: Map Text Text) <- liftIO $ Aeson.decodeFileStrict path
   case Map.lookup key json of
     Nothing -> error $ "Could not find an entry for " <> Text.unpack key
-    Just fullPath -> do
-      let name = last $ Text.splitOn "/" fullPath
-      hash <- getAssetHash ("./static/" <> name)
-      pure $ AssetBundle{name, hash}
+    Just fullPath -> case Text.stripPrefix "/static/" fullPath of
+      Nothing -> error $ "Asset path is not under /static/: " <> Text.unpack fullPath
+      Just name -> do
+        hash <- getAssetHash ("./static/" <> name)
+        pure $ AssetBundle{name, hash}
 
 -- Get the SHA-256 hash of an asset bundle.
 getAssetHash :: (FileSystem :> es, IOE :> es) => Text -> Eff es Text

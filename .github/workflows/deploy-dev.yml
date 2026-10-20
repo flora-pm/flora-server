@@ -4,17 +4,44 @@ on:
   push:
     branches: ["development"]
 
-concurrency:
-  group: dev-deployment-${{ github.ref_name }}
-  cancel-in-progress: true
-
 jobs:
+  backend:
+    uses: ./.github/workflows/backend.yml
+
+  frontend:
+    uses: ./.github/workflows/frontend.yml
+
+  linting:
+    uses: ./.github/workflows/linting.yml
+
+  database-index-checks:
+    uses: ./.github/workflows/database-index-checks.yml
+
   flora-server:
+    needs: [backend, frontend, linting, database-index-checks]
     runs-on: ubuntu-latest
     environment: development
+    concurrency:
+      group: dev-deployment-flora-server
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: assets/package-lock.json
+
+      - name: Build frontend assets
+        working-directory: assets/
+        run: |
+          npm clean-install
+          npm run build
+
+      - name: Archive frontend assets
+        run: tar -czf static.tar.gz -C static .
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
@@ -28,15 +55,36 @@ jobs:
             -i inventory.yaml \
             --extra-vars ansible_user=${{ secrets.ANSIBLE_USER }} \
             -e "ansible_port=${{ secrets.ANSIBLE_SSH_PORT }}" \
+            -e "assets_archive=${{ github.workspace }}/static.tar.gz" \
+            -e "deploy_sha=${{ github.sha }}" \
             playbooks/deploy-dev-server.yaml \
             --diff
 
   jobs-runner:
+    needs: [backend, frontend, linting, database-index-checks]
     runs-on: ubuntu-latest
     environment: development
+    concurrency:
+      group: dev-deployment-jobs-runner
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: assets/package-lock.json
+
+      - name: Build frontend assets
+        working-directory: assets/
+        run: |
+          npm clean-install
+          npm run build
+
+      - name: Archive frontend assets
+        run: tar -czf static.tar.gz -C static .
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
@@ -50,5 +98,6 @@ jobs:
             -i inventory.yaml \
             --extra-vars ansible_user=${{ secrets.ANSIBLE_JOBS_USER }} \
             -e "ansible_port=${{ secrets.ANSIBLE_JOBS_SSH_PORT }}" \
+            -e "assets_archive=${{ github.workspace }}/static.tar.gz" \
             playbooks/deploy-dev-job-runner.yaml \
             --diff

@@ -86,7 +86,7 @@ data ComponentDependency' = ComponentDependency'
   , componentName :: Text
   , namespace :: Namespace
   , name :: PackageName
-  , requirement :: Text
+  , requirement :: Text -- Should be VersionRange?
   , components :: Vector Text
   , latestVersion :: Version
   , latestSynopsis :: Text

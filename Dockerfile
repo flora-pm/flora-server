@@ -94,15 +94,13 @@ COPY --from=setup-haskell-tools /out /opt/bin
 COPY --from=setup-haskell-tools /opt/ghcup /opt/ghcup
 
 ENV PATH="/opt/ghcup/.ghcup/bin:/opt/bin:$PATH"
+ENV GHCUP_INSTALL_BASE_PREFIX="/opt/ghcup"
 
 RUN ghcup install ghc $GHC_VERSION
 RUN ghcup set ghc $GHC_VERSION
 RUN ghcup install hls $HLS_VERSION --set
 
-
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
 RUN apt update
 RUN apt install -y direnv \
   libpq-dev \
@@ -120,7 +118,8 @@ RUN groupadd -g "$GID" -o "$USER" \
 
 RUN mkdir /home/$USER/.cabal
 RUN chmod ugo+x /home/$USER/.cabal
-RUN chown -R $UID:$GID /home/$USER
+RUN chown -R $UID:$GID /home/"$USER"
+RUN chown -R $UID:$GID /opt/ghcup
 
 USER $USER
 
@@ -129,10 +128,9 @@ RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/inst
 COPY --chown=${USER} scripts/shell-welcome.txt /etc/motd
 COPY --chown=${USER} scripts/.zshrc /home/$USER/.zshrc
 
-RUN echo 'export PATH="$PATH:/home/$USER/.cabal/bin"' >>~/.bashrc
-RUN echo "source /opt/ghcup/.ghcup/env" >>~/.bashrc
-RUN echo 'eval "$(direnv hook bash)"' >>~/.bashrc
-RUN echo 'direnv allow' >>~/.bashrc
+RUN echo 'export PATH="$PATH:/home/$USER/.cabal/bin"' >>~/.zshrc
+RUN echo 'eval "$(direnv hook zsh)"' >>~/.zshrc
+RUN echo 'direnv allow' >>~/.zshrc
 RUN cabal update
 
 # Mountpoint for the eventlog-socket volume shared with the live-eventlog

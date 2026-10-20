@@ -28,7 +28,7 @@ footer =
           h2_ [class_ "title-section", id_ "nav-contact"] "Get In Touch"
           ul_ [class_ "flow flow--small", role_ "list"] $ do
             li_ $
-              a_ [href_ "mailto:moderation@flora.pm"] "Email"
+              a_ [href_ "mailto:admin@flora.pm"] "Email"
             li_ $
               a_ [href_ "https://functional.cafe/@flora_pm"] "Mastodon"
             li_ $

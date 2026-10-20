@@ -1,31 +1,56 @@
 ---
 
-- name: "Update development branch"
+- name: "Fetch development branch"
   ansible.builtin.command:
-    cmd: git checkout development
-    chdir: flora-server
+    cmd: git fetch origin development
+    chdir: dev/flora-server
 
-- name: "Update development branch"
+- name: "Check out deployed commit"
   ansible.builtin.command:
-    cmd: git pull
-    chdir: flora-server
+    cmd: "git checkout --detach {{ deploy_sha }}"
+    chdir: dev/flora-server
 
-- name: "Build frontend assets"
+- name: "Clear staging directory for frontend assets"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/dev/flora-server/static.new"
+    state: absent
+
+- name: "Create staging directory for frontend assets"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/dev/flora-server/static.new"
+    state: directory
+
+- name: "Upload frontend assets"
+  ansible.builtin.copy:
+    src: "{{ assets_archive }}"
+    dest: "{{ ansible_env.HOME }}/dev/flora-server/static.tar.gz"
+
+- name: "Unpack frontend assets"
   ansible.builtin.command:
-    cmd: gmake build-assets
-    chdir: flora-server
+    cmd: tar -xzf static.tar.gz -C static.new
+    chdir: dev/flora-server
+
+- name: "Remove frontend assets archive"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/dev/flora-server/static.tar.gz"
+    state: absent
+
+- name: "Remove documentation build"
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/dev/flora-server/docs/build"
+    state: absent
 
 - name: "Clean build artifacts"
   ansible.builtin.command:
     cmd: gmake clean
-    chdir: flora-server
+    chdir: dev/flora-server
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
 
 - name: "Update cabal index"
   ansible.builtin.command:
     cmd: cabal update
-    chdir: flora-server
+    chdir: dev/flora-server
   environment:
     PATH: "/home/dev-web-1/.cabal/bin:/home/dev-web-1/.ghcup/bin:{{ ansible_env.PATH }}"
 
@@ -33,7 +58,7 @@
   register: build
   ansible.builtin.command:
     cmd: cabal build --no-semaphore
-    chdir: flora-server
+    chdir: dev/flora-server
   async: 3600
   poll: 30
   environment:
@@ -43,9 +68,9 @@
   register: build
   ansible.builtin.shell:
     cmd: gmake db-migrate
-    chdir: flora-server
+    chdir: dev/flora-server
   args:
-    executable: /bin/bash
+    executable: /usr/local/bin/bash
   async: 120
   poll: 30
   environment:
@@ -54,7 +79,12 @@
 - debug: msg="{{ build.stdout }}"
 - debug: msg="{{ build.stderr }}"
 
+- name: "Swap in new frontend assets"
+  ansible.builtin.shell:
+    cmd: rm -rf static.old && { [ ! -e static ] || mv static static.old; } && mv static.new static
+    chdir: dev/flora-server
+
 - name: Kill the process
   ansible.builtin.shell:
     cmd: kill $(cat ~/.local/run/flora-server.pid)
-    chdir: flora-server
+    chdir: dev/flora-server

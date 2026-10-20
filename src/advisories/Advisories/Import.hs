@@ -17,7 +17,9 @@ import Effectful.Log qualified as Log
 import Effectful.Reader.Static (Reader)
 import Effectful.Reader.Static qualified as Reader
 import Security.Advisories.Core.Advisory
+import Security.Advisories.Core.OsvId (printOsvId)
 import Security.Advisories.Filesystem (listAdvisories)
+import Security.Advisories.Sync (Snapshot (..), SyncStatus, defaultSnapshot, sync)
 import Validation (Validation (..))
 
 import Advisories.Import.Error
@@ -52,6 +54,22 @@ importAdvisories root = do
     Success advisoryList -> do
       forM_ advisoryList $ \advisory -> importAdvisory advisory
 
+-- | Refresh the local advisories snapshot from the upstream database
+syncAdvisories
+  :: ( Error (NonEmpty AdvisoryImportError) :> es
+     , IOE :> es
+     )
+  => FilePath
+  -> FloraM es SyncStatus
+syncAdvisories root = do
+  result <- liftIO $ sync defaultSnapshot{snapshotRoot = root}
+  case result of
+    Left err -> do
+      let msg = Text.pack err
+      Log.logAttention_ $ "Advisories synchronization failed: " <> msg
+      throwError (NonEmpty.singleton (AdvisorySyncError msg))
+    Right status -> pure status
+
 importAdvisory
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
@@ -81,8 +99,8 @@ processAdvisory advisoryId advisory =
     , capecs = Vector.fromList advisory.advisoryCAPECs
     , cwes = Vector.fromList advisory.advisoryCWEs
     , keywords = Vector.fromList advisory.advisoryKeywords
-    , aliases = Vector.fromList advisory.advisoryAliases
-    , related = Vector.fromList advisory.advisoryRelated
+    , aliases = Vector.fromList (printOsvId <$> advisory.advisoryAliases)
+    , related = Vector.fromList (printOsvId <$> advisory.advisoryRelated)
     , advisoryReferences = References $ Vector.fromList advisory.advisoryReferences
     , pandoc = advisory.advisoryPandoc
     , html = advisory.advisoryHtml

@@ -2,7 +2,7 @@ module FloraJobs.Runner
   ( runner
   ) where
 
-import Arbiter.Core
+import Arbiter.Core (JobRead)
 import Arbiter.Core qualified as Arb
 import Arbiter.Simple qualified as ArbS
 import Control.Exception
@@ -60,7 +60,7 @@ import FloraJobs.Types
 runner :: RequireCallStack => ArbS.SimpleEnv JobQueues -> JobRead PackageJob -> JobsRunner ()
 runner env job = do
   FloraJobsEnv{pool} <- Reader.ask
-  case job.payload of
+  case Arb.payload job of
     FetchReadme x -> makeReadme x
     FetchTarball x -> fetchTarball x
     FetchUploadInformation x -> fetchUploadInformation x

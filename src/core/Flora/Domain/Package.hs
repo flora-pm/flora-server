@@ -8,6 +8,7 @@ module Flora.Domain.Package
 
 import Data.Pool (Pool)
 import Data.Vector (Vector)
+import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple qualified as PG
 import Distribution.Types.Version (Version)
 import Effectful
@@ -86,10 +87,11 @@ resolveReleaseAtVersion
 resolveReleaseAtVersion package mversion = do
   FloraEnv{pool} <- Reader.ask
   releases <- withReadOnlyPool pool $ Query.getReleases package.packageId
-  version <- case mversion of
-    Just version -> pure version
+  release <- case mversion of
+    Just version -> case Vector.find (\r -> r.version == version) releases of
+      Just release -> pure release
+      Nothing -> resolveExactRelease package version
     Nothing -> case latestViableRelease releases of
-      Just latest -> pure latest.version
+      Just latest -> pure latest
       Nothing -> Error.throwError (NoViableRelease package.namespace package.name)
-  release <- resolveExactRelease package version
   pure (release, releases)

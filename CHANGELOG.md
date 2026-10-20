@@ -1,5 +1,71 @@
 # CHANGELOG
 
+## Unreleased
+
+## 1.1.1 -- 2026-10-20
+
+- Remove OpenTelemetry tracing. Observability is logs and Prometheus metrics only. The `zipkinEnabled`, `zipkinHost` and `zipkinPort` settings are gone from the `mltp` block [#1353](https://github.com/flora-pm/flora-server/pull/1353)
+
+- Bump `hsec-sync`/`cvss` to restore vulnerabilities fetching [#1344](https://github.com/flora-pm/flora-server/issue/1344) [#1345](https://github.com/flora-pm/flora-server/pull/1345)
+
+- Update contact email address in footer [#1351](https://github.com/flora-pm/flora-server/pull/1351)
+
+- Set a max length for text content [#1350](https://github.com/flora-pm/flora-server/pull/1350)
+
+- Limit to 4 the default amount of connections for simultaneous import workers [#1347](https://github.com/flora-pm/flora-server/pull/1347)
+
+- Better alerts [#1341](https://github.com/flora-pm/flora-server/issue/1341) [#1342](https://github.com/flora-pm/flora-server/pull/1342)
+
+- CI/CD pipeline [#1338](https://github.com/flora-pm/flora-server/pull/1338)
+
+- Send compiled frontend assets to the dev server [#1337](https://github.com/flora-pm/flora-server/pull/1337)
+
+- Categories for dependencies list [#1336](https://github.com/flora-pm/flora-server/pull/1336)
+
+- Add alert styling [#1334](https://github.com/flora-pm/flora-server/issue/1334) [#1335](https://github.com/flora-pm/flora-server/pull/1335)
+
+- Add nginx to docker-compose setup [#1333](https://github.com/flora-pm/flora-server/pull/1333)
+
+- Fetch security advisories with `hsec-sync` [#1330](https://github.com/flora-pm/flora-server/pull/1330)
+
+- Upgrade `hsec-core` and `hsec-tools` to 0.5.0.0 [#1329](https://github.com/flora-pm/flora-server/pull/1329)
+
+- Disable zoom on double tap for buttons [#1305](https://github.com/flora-pm/flora-server/issue/1305) [#1328](https://github.com/flora-pm/flora-server/pull/1328)
+
+- Remove interest-button from reset.css [#1313](https://github.com/flora-pm/flora-server/issue/1313) [#1327](https://github.com/flora-pm/flora-server/pull/1327)
+
+- Do not use `Text.tail` as it can throw errors [#1326](https://github.com/flora-pm/flora-server/pull/1326)
+
+- Avoid empty versions in package list [#1298](https://github.com/flora-pm/flora-server/issue/1298) [#1325](https://github.com/flora-pm/flora-server/pull/1325)
+
+- Do not load the latest release multiple times [#1317](https://github.com/flora-pm/flora-server/pull/1317)
+
+- Call stylelint directly [#1316](https://github.com/flora-pm/flora-server/pull/1316)
+
+- Remove `row_number()` and make the package with latest version query faster [#1315](https://github.com/flora-pm/flora-server/pull/1315)
+
+- Add title and meta description for the `/feed` page [#1300](https://github.com/flora-pm/flora-server/issue/1300) [#1301](https://github.com/flora-pm/flora-server/pull/1301)
+
+- Replace yarn with npm [#1299](https://github.com/flora-pm/flora-server/pull/1299)
+
+- Drop the `iso8601-time` library in favour of `Data.Time.Format.ISO8601` [#1231](https://github.com/flora-pm/flora-server/issue/1231) [#1297](https://github.com/flora-pm/flora-server/pull/1297)
+
+- Fix anchor positioning polyfills [#1296](https://github.com/flora-pm/flora-server/pull/1296)
+
+- Use ZSH instead of bash in docker [#1293](https://github.com/flora-pm/flora-server/pull/1293)
+
+- Update logos in the README [#1292](https://github.com/flora-pm/flora-server/pull/1292)
+
+- Add interest invokers and anchor positioning polyfills for older browsers [#1291](https://github.com/flora-pm/flora-server/pull/1291)
+
+- Replace esbuild with parcel [#1276](https://github.com/flora-pm/flora-server/issue/1276) [#1290](https://github.com/flora-pm/flora-server/pull/1290)
+
+- Update `crypton` dependency [#1287](https://github.com/flora-pm/flora-server/pull/1287)
+
+- Upsert uploaders instead of raising an exception [#1286](https://github.com/flora-pm/flora-server/pull/1286)
+
+- Configuration templates (ADR 0002 "Local configuration templates") [#1284](https://github.com/flora-pm/flora-server/pull/1284)
+
 ## 1.1.0 -- 2026-10-07
 
 - New frontend! Thanks to @TixieSalander, we have a new visual identity and clear design rules.

@@ -31,11 +31,9 @@ mkErrorPage env template = runIdentity $ runReaderT (renderBST (rendered templat
 
 rendered :: FloraHTML -> FloraHTML
 rendered target = do
-  TemplateEnv{flashInfo, flashError} <- ask
-  header
+  TemplateEnv{flashInfo} <- ask
   whenJust flashInfo $ \msg -> do
     Alert.info (display msg)
-  whenJust flashError $ \msg -> do
-    Alert.exception (display msg)
+  header
   main_ [id_ "main"] target
   footer

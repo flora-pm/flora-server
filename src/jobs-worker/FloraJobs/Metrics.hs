@@ -179,7 +179,7 @@ metricsObservabilityHooks metrics =
         recordJobFailure metrics job (diffUTCTime endTime startTime)
     , Arb.onJobRetry = \job _backoffDelay ->
         recordJobRetry metrics job
-    , Arb.onJobFailedAndMovedToDLQ = \_message job ->
+    , Arb.onJobFailedAndMovedToDLQ = \job _message ->
         recordJobDeadLettered metrics job
     }
 
@@ -191,32 +191,32 @@ queueWait insertedAt notVisibleUntil claimTime =
 
 recordJobClaimed :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> UTCTime -> m ()
 recordJobClaimed metrics job claimTime = liftIO $ do
-  let jobType = jobTypeLabel job.payload
+  let jobType = jobTypeLabel (Arb.payload job)
   P.withLabel metrics.jobsClaimed jobType P.incCounter
   P.withLabel
     metrics.jobQueueLatency
     jobType
-    (`P.observe` realToFrac (queueWait job.insertedAt job.notVisibleUntil claimTime))
+    (`P.observe` realToFrac (queueWait (Arb.insertedAt job) (Arb.notVisibleUntil job) claimTime))
 
 recordJobSuccess :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> NominalDiffTime -> m ()
 recordJobSuccess metrics job duration = liftIO $ do
-  let jobType = jobTypeLabel job.payload
+  let jobType = jobTypeLabel (Arb.payload job)
   P.withLabel metrics.jobDuration jobType (`P.observe` realToFrac duration)
   P.withLabel metrics.jobsTotal (jobType, "success") P.incCounter
 
 recordJobFailure :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> NominalDiffTime -> m ()
 recordJobFailure metrics job duration = liftIO $ do
-  let jobType = jobTypeLabel job.payload
+  let jobType = jobTypeLabel (Arb.payload job)
   P.withLabel metrics.jobDuration jobType (`P.observe` realToFrac duration)
   P.withLabel metrics.jobsTotal (jobType, "failure") P.incCounter
 
 recordJobRetry :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> m ()
 recordJobRetry metrics job =
-  liftIO $ P.withLabel metrics.jobRetries (jobTypeLabel job.payload) P.incCounter
+  liftIO $ P.withLabel metrics.jobRetries (jobTypeLabel (Arb.payload job)) P.incCounter
 
 recordJobDeadLettered :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> m ()
 recordJobDeadLettered metrics job =
-  liftIO $ P.withLabel metrics.jobsDeadLettered (jobTypeLabel job.payload) P.incCounter
+  liftIO $ P.withLabel metrics.jobsDeadLettered (jobTypeLabel (Arb.payload job)) P.incCounter
 
 publishQueueStats :: MonadIO m => JobsRunnerMetrics -> Arb.QueueStats -> Int64 -> m ()
 publishQueueStats metrics stats deadLettered = liftIO $ do
