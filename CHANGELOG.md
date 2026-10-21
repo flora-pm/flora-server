@@ -2,13 +2,7 @@
 
 ## Unreleased
 
-### Significant changes
-
-- Expose web resources for security advisories [#555](https://github.com/flora-pm/flora-server/issue/555) [#1331](https://github.com/flora-pm/flora-server/pull/1331)
-
-  - Add `/security/advisories/namespace/<@namespace>` to list all advisories pertaining to a namespace, with pagination.
-  - Add `/security/advisories/package/<@namespace>/<package>` to list all advisories pertaining to a package, with pagination.
-  - Add `/security/advisories/<advisory-id>` to view a specific advisory by its HSEC identifier.
+- Bump `hsec-sync`/`cvss` to restore vulnerabilities fetching [#1344](https://github.com/flora-pm/flora-server/issue/1344) [#1345](https://github.com/flora-pm/flora-server/pull/1345)
 
 ## 1.1.0 -- 2026-10-07
 
