@@ -155,6 +155,7 @@ The following Haskell command-line tools have to be installed:
 * `fourmolu` 0.20.0.0: To style the code base
 * `hlint` 3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-gild`: To style cabal files
+* `ghcid`: To automatically reload the Haskell code base upon source changes
 * `eventlog2html`: To render eventlog profiles (see [Profiling](#profiling))
 * [`changelog-d`](https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0) 1.0: To generate the changelog. Not on Hackage; install it from the Codeberg release.
 
