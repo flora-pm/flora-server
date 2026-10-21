@@ -149,12 +149,6 @@ start-tmux: ## Start a Tmux session with hot code reloading
 tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c src app
 
-design-system: ## Generate the HTML components used by the design system
-	@cabal run flora-cli -- -c $(CONFIG) gen-design-system
-
-start-design-system: ## Start storybook.js
-	@cd design; npm run storybook
-
 migration: ## Generate timestamped database migration boilerplate files
 	@if test -z "$$name"; then \
 	  echo "Usage: make migration name=some-name"; \
