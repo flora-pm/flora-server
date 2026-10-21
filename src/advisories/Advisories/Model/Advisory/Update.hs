@@ -10,11 +10,6 @@ import Effectful
 import Advisories.Model.Advisory.Types
 import Flora.Database
 
--- | Insert an advisory, refreshing its content if it already exists
--- (keyed on @hsec_id@), and return its id.
---
--- The SET list must enumerate every non-key column; extend it when the
--- entity gains fields.
 upsertAdvisory
   :: (ReadDB :> es, WriteDB :> es)
   => AdvisoryDAO
