@@ -11,11 +11,6 @@ import Effectful
 import Advisories.Model.Affected.Types
 import Flora.Database
 
--- | Insert an affected package, refreshing its content if it already exists
--- (keyed on @(advisory_id, package_id)@), and return its id.
---
--- The SET list must enumerate every non-key column; extend it when the
--- entity gains fields.
 upsertAffectedPackage
   :: (ReadDB :> es, WriteDB :> es)
   => AffectedPackageDAO
