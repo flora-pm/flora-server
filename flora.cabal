@@ -74,10 +74,6 @@ common common-rts-options
     -threaded
     "-with-rtsopts=-N -T"
 
-  -- Use TCMalloc instead of glibc's malloc.
-  if !(os(osx) && arch(aarch64))
-    pkgconfig-depends: libtcmalloc
-
 library
   import: common-extensions
   import: common-ghc-options
