@@ -38,7 +38,6 @@ import Text.Read (readMaybe)
 import Advisories.Import (importAdvisories, syncAdvisories)
 import Advisories.Import.Error (AdvisoryImportError)
 import Data.Positive
-import DesignSystem (generateComponents)
 import Flora.Database
 import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
 import Flora.Domain.Import.Categories (importCategories)
@@ -147,7 +146,6 @@ parseCommand =
   subparser $
     command "provision" (parseProvision `withInfo` "Load the test fixtures into the database")
       <> command "create-user" (parseCreateUser `withInfo` "Create a user in the system")
-      <> command "gen-design-system" (parseGenDesignSystem `withInfo` "Generate Design System components from the code")
       <> command "import-index" (parseImportIndex `withInfo` "Import cabal packages from the index tarball")
       <> command "provision-repository" (parseProvisionRepository `withInfo` "Create a package repository")
       <> command
@@ -268,7 +266,6 @@ runCommand _ (CreateUser opts) = do
           templateUser <- mkUser UserCreationForm{username = opts.username, email = opts.email, password}
           let user = if opts.canLogin then templateUser else templateUser & #userFlags % #canLogin .~ False
           withReadWritePool pool $ insertUser user
-runCommand configFile GenDesignSystemComponents = generateComponents configFile
 runCommand _ (ImportIndex path repository) = do
   importIndex path repository
   Reader.ask >>= refreshMaterialisedViews . (.pool)

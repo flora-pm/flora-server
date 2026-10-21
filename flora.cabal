@@ -645,7 +645,6 @@ executable flora-cli
   import: common-ghc-options
   import: common-rts-options
   main-is: Main.hs
-  other-modules: DesignSystem
   hs-source-dirs: app/cli
   build-depends:
     base,
