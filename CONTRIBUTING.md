@@ -339,7 +339,7 @@ Then populate the development database:
 ```bash
 $ make db-provision
 $ cabal run -- flora-cli create-user --admin --can-login --username "admin" \
-    --email "admin@localhost" --password "password123"
+    --email "admin@localhost.test" --password "password123"
 $ make db-provision-packages
 ```
 
