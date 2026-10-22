@@ -74,6 +74,7 @@ RUN ghcup set ghc $GHC_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j fourmolu-$FOURMOLU_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$HLINT_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j cabal-gild-$CABAL_GILD_VERSION
+RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghcid-$GHCID_VERSION
 
 # This stage is the development environment
 FROM base AS devel
