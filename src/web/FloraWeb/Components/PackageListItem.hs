@@ -58,7 +58,7 @@ packageListItem (namespace, packageName, synopsis, version, license, mUploadedAt
             span_ [] $ do
               toHtml $ Time.formatTime defaultTimeLocale "%a, %_d %b %Y" ts
               case mRevisedAt of
-                Nothing -> span_ [] ""
+                Nothing -> ""
                 Just revisionDate ->
                   span_
                     [ dataText_
