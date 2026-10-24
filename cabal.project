@@ -62,7 +62,10 @@ source-repository-package
   location: https://github.com/haskell/security-advisories
   tag: abd2389d2e2544b7036570996d8d9d8b6cc83803
   subdir:
+    code/cvss
+    code/hsec-core
     code/hsec-tools
+    code/osv
 
 source-repository-package
   type: git
