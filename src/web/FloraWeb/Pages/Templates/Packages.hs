@@ -197,7 +197,7 @@ versionListItem now namespace packageName release = do
       ul_ [class_ "cluster color-secondary text-small", role_ "list"] $ do
         uploadedAt
         case release.revisedAt of
-          Nothing -> span_ [] ""
+          Nothing -> ""
           Just revisionDate -> do
             let timeLabelFull = display (Time.formatTime Time.defaultTimeLocale "%a, %_d %b %Y, %R %EZ" revisionDate)
             li_ [title_ ("Revised: " <> timeLabelFull)] $ do

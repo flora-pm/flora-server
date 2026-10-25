@@ -1,5 +1,5 @@
 -- Sending SIGUSR1 to Flora creates a snapshot of every live
--- thread (ThreadStatus & label).
+-- thread (ThreadStatus, label & stack).
 -- The dump directory is read from FLORA_THREAD_DUMP_DIR and defaults to /tmp.
 module Flora.Debug.ThreadDump
   ( installThreadDumpHandler
@@ -9,7 +9,7 @@ module Flora.Debug.ThreadDump
 
 import Control.Concurrent.MVar (newMVar, putMVar, tryTakeMVar)
 import Control.Exception (SomeException, bracket, try)
-import Control.Monad (forM)
+import Control.Monad (forM, forM_, unless)
 import Data.List (isInfixOf, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
@@ -26,12 +26,14 @@ import GHC.Conc.Sync
   , threadLabel
   , threadStatus
   )
+import GHC.Stack.CloneStack (StackEntry (..), cloneMyStack, cloneThreadStack, decode)
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getProgName, lookupEnv)
 import System.FilePath (takeDirectory, (</>))
 import System.IO (IOMode (AppendMode), hFlush, hPutStrLn, hSetEncoding, stderr, utf8, withFile)
 import System.Posix.Process (getProcessID)
 import System.Posix.Signals (Handler (Catch), installHandler, sigUSR1)
+import System.Timeout (timeout)
 
 installThreadDumpHandler :: IO ()
 installThreadDumpHandler = do
@@ -98,7 +100,14 @@ dumpThreads path = do
         hPutStrLn handle "\nthreads:"
         mapM_ (hPutStrLn handle . renderEntry) (sortOn (.threadId) entries)
         hPutStrLn handle ""
-        mapM_ (hPutStrLn handle) (legend entries)
+        hPutStrLn handle "\nstacks:"
+        self <- myThreadId
+        forM_ (sortOn (.threadId) entries) $ \entry ->
+          unless (entry.status `elem` [ThreadFinished, ThreadDied]) $ do
+            frames <- captureStack self entry.threadId
+            hPutStrLn handle $ "  " <> show entry.threadId <> "  " <> fromMaybe "<unlabelled>" entry.label
+            mapM_ (hPutStrLn handle) (renderStack frames)
+            hFlush handle
 
 -- A big BlockedOnMVar or BlockedOnSTM bucket means it's a deadlock
 summarise :: [Entry] -> [String]
@@ -108,33 +117,31 @@ summarise entries =
     . Map.toList
     $ Map.fromListWith (+) [(entry.status, 1 :: Int) | entry <- entries]
 
-legend :: [Entry] -> [String]
-legend entries =
-  concat
-    [ ["[+] BlockedOnMVar/BlockedOnSTM threads own no OS thread and cannot appear in procstat." | blocked BlockedOnMVar || blocked BlockedOnSTM]
-    , [ "[+] "
-          <> show foreignCalls
-          <> " threads besides the IO/timer managers are inside a safe FFI call (libpq, etc…); an async exception cannot interrupt them, so `timeout` will not free them."
-      | foreignCalls > 0
-      ]
-    , ["[+] BlockedOnBlackHole means a thread is waiting on a thunk another thread is evaluating; a cycle here is a deadlock." | blocked BlockedOnBlackHole]
-    , ["[+] BlockedOnOther covers threadWaitRead/threadWaitWrite/threadDelay; cross-reference the fd table from `procstat -f`." | blocked BlockedOnOther]
-    ]
-  where
-    blocked reason = any (\entry -> entry.status == ThreadBlocked reason) entries
-    foreignCalls =
-      length
-        [ ()
-        | Entry{status = ThreadBlocked BlockedOnForeignCall, label} <- entries
-        , not (any (\l -> "IOManager" `isInfixOf` l || "TimerManager" `isInfixOf` l) label)
-        ]
-
 renderEntry :: Entry -> String
 renderEntry entry =
   "  "
     <> pad 16 (show entry.threadId)
     <> pad 36 (show entry.status)
     <> fromMaybe "<unlabelled>" entry.label
+
+captureStack :: ThreadId -> ThreadId -> IO (Maybe [StackEntry])
+captureStack self tid =
+  timeout 1_000_000 $ do
+    snapshot <- if tid == self then cloneMyStack else cloneThreadStack tid
+    frames <- decode snapshot
+    length frames `seq` pure frames
+
+renderStack :: Maybe [StackEntry] -> [String]
+renderStack = \case
+  Nothing -> ["      <stack capture timed out>"]
+  Just [] -> ["      <no frames with info-table provenance>"]
+  Just frames ->
+    fmap renderFrame (take maxFrames (reverse frames))
+      <> ["      ... " <> show (length frames - maxFrames) <> " more frames" | length frames > maxFrames]
+  where
+    maxFrames = 60
+    renderFrame frame =
+      "      " <> frame.moduleName <> "." <> frame.functionName <> " (" <> frame.srcLoc <> ")"
 
 pad :: Int -> String -> String
 pad width s = s <> replicate (width - length s) ' '

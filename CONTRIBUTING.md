@@ -156,7 +156,6 @@ The following Haskell command-line tools have to be installed:
 * `hlint` 3.10 & `apply-refact`: To enforce certain patterns in the code base ("lint")
 * `cabal-gild`: To style cabal files
 * `ghcid`: To automatically reload the Haskell code base upon source changes
-* `ghc-tags`: To generate ctags or etags for the project
 * `eventlog2html`: To render eventlog profiles (see [Profiling](#profiling))
 * [`changelog-d`](https://codeberg.org/fgaz/changelog-d/releases/tag/v1.0) 1.0: To generate the changelog. Not on Hackage; install it from the Codeberg release.
 
@@ -168,7 +167,6 @@ cabal install --ignore-project fourmolu-0.20.0.0 hlint-3.10 apply-refact cabal-g
 
 The following system dependencies are needed:
 
-* [`gperftools`](https://pkgs.org/download/gperftools): This gives us `tcmalloc`, an alternative malloc implementation that helps against memory fragmentation in long-running servers
 * `libsodium-1.0.18`: The system library that powers most of the cryptography happening in flora
 * `npm`: The tool that handles the JavaScript code bases
 * `esbuild`: The tool that handles asset bundling

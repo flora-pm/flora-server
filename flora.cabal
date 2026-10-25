@@ -1,6 +1,6 @@
 cabal-version: 3.0
 name: flora
-version: 1.1.1
+version: 1.1.2
 homepage: https://github.com/flora-pm/flora-server/#readme
 bug-reports: https://github.com/flora-pm/flora-server/issues
 author: Théophile Choutri
@@ -73,10 +73,6 @@ common common-rts-options
     -rtsopts
     -threaded
     "-with-rtsopts=-N -T"
-
-  -- Use TCMalloc instead of glibc's malloc.
-  if !(os(osx) && arch(aarch64))
-    pkgconfig-depends: libtcmalloc
 
 library
   import: common-extensions
@@ -306,14 +302,14 @@ library flora-advisories
     aeson,
     base,
     Cabal-syntax,
-    cvss ^>=0.2.0.1,
+    cvss ^>=0.3.0.0,
     deepseq,
     effectful-core,
     effectful-plugin,
     flora,
     hsec-core ^>=0.5.0.0,
-    hsec-tools,
     hsec-sync ^>=0.2.0.3,
+    hsec-tools,
     log-effectful,
     pandoc-types,
     pg-entity,
@@ -645,7 +641,6 @@ executable flora-cli
   import: common-ghc-options
   import: common-rts-options
   main-is: Main.hs
-  other-modules: DesignSystem
   hs-source-dirs: app/cli
   build-depends:
     base,

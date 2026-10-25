@@ -2,12 +2,11 @@ ARG APPLY_REFACT_VERSION=0.15.0.0
 ARG BASE_IMAGE_VERSION=22.04
 ARG CABAL_VERSION=3.16.1.0
 ARG FOURMOLU_VERSION=0.20.0.0
-ARG GHCID_VERSION=0.8.9
-ARG GHC_TAGS_VERSION=1.9
 ARG GHC_VERSION=9.10.3
+ARG GHCID_VERSION=1.0.0
 ARG HLINT_VERSION=3.10
-ARG HLS_VERSION=2.14.0.0
-ARG CABAL_GILD_VERSION=1.8.4.1
+ARG HLS_VERSION=2.15.0.0
+ARG CABAL_GILD_VERSION=1.8.4.2
 
 # This stage installs libraries required to install GHC and other tools
 FROM ubuntu:$BASE_IMAGE_VERSION AS base
@@ -23,7 +22,6 @@ RUN apt update \
         libffi8 \
         libgmp-dev \
         libgmp10 \
-        libgoogle-perftools-dev \
         libncurses-dev \
         libncurses5 \
         libpq-dev \
@@ -53,9 +51,8 @@ RUN ghcup install cabal $CABAL_VERSION
 FROM base AS setup-haskell-tools
 ARG APPLY_REFACT_VERSION
 ARG FOURMOLU_VERSION
-ARG GHCID_VERSION
-ARG GHC_TAGS_VERSION
 ARG GHC_VERSION
+ARG GHCID_VERSION
 ARG HLINT_VERSION
 ARG CABAL_GILD_VERSION
 
@@ -77,7 +74,6 @@ RUN ghcup set ghc $GHC_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j fourmolu-$FOURMOLU_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j hlint-$HLINT_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j cabal-gild-$CABAL_GILD_VERSION
-RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghc-tags-$GHC_TAGS_VERSION
 RUN cabal install --install-method=copy --installdir=out/ --semaphore -j ghcid-$GHCID_VERSION
 
 # This stage is the development environment
