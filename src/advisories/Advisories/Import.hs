@@ -71,8 +71,7 @@ syncAdvisories root = do
     Right status -> pure status
 
 importAdvisory
-  :: ( Error (NonEmpty AdvisoryImportError) :> es
-     , IOE :> es
+  :: ( IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
      )
@@ -109,8 +108,7 @@ processAdvisory advisoryId advisory =
     }
 
 processAffectedPackages
-  :: ( Error (NonEmpty AdvisoryImportError) :> es
-     , IOE :> es
+  :: ( IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
      )
@@ -121,8 +119,7 @@ processAffectedPackages advisoryId affectedPackages = do
   forM_ affectedPackages (processAffectedPackage advisoryId)
 
 processAffectedPackage
-  :: ( Error (NonEmpty AdvisoryImportError) :> es
-     , IOE :> es
+  :: ( IOE :> es
      , Log :> es
      , Reader FloraEnv :> es
      )
@@ -131,38 +128,37 @@ processAffectedPackage
   -> FloraM es ()
 processAffectedPackage advisoryId affected = do
   FloraEnv{pool} <- Reader.ask
-  affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
   let (namespace, packageName) =
         case affected.affectedComponentIdentifier of
           Repository _ (RepositoryName repositoryName) affectedPackageName ->
             (Namespace repositoryName, PackageName (Text.pack . unPackageName $ affectedPackageName))
           GHC _ -> (Namespace "hackage", PackageName "ghc")
-  package <-
-    guardThatPackageExists pool namespace packageName >>= \case
-      Just package -> pure package
-      Nothing -> do
-        Log.logAttention "Affected package does not not exist" $
-          object
-            [ "namespace" .= display namespace
-            , "package" .= display packageName
-            ]
-        throwError (NonEmpty.singleton $ AffectedPackageNotFound namespace packageName)
-  let declarations =
-        affected.affectedDeclarations
-          & fmap (uncurry AffectedDeclaration)
-          & Vector.fromList
-  let affectedPackageDAO =
-        AffectedPackageDAO
-          { affectedPackageId = affectedPackageId
-          , advisoryId = advisoryId
-          , packageId = package.packageId
-          , cvss = affected.affectedCVSS
-          , architectures = fmap Vector.fromList affected.affectedArchitectures
-          , operatingSystems = fmap Vector.fromList affected.affectedOS
-          , declarations = declarations
-          }
-  withReadWritePool pool $ Update.insertAffectedPackage affectedPackageDAO
-  processAffectedVersionRanges affectedPackageId affected.affectedVersions
+  package <- guardThatPackageExists pool namespace packageName
+  case package of
+    Nothing ->
+      Log.logAttention "Affected package does not exist, skipping affected-package link" $
+        object
+          [ "namespace" .= display namespace
+          , "package" .= display packageName
+          ]
+    Just package -> do
+      affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
+      let declarations =
+            affected.affectedDeclarations
+              & fmap (uncurry AffectedDeclaration)
+              & Vector.fromList
+      let affectedPackageDAO =
+            AffectedPackageDAO
+              { affectedPackageId = affectedPackageId
+              , advisoryId = advisoryId
+              , packageId = package.packageId
+              , cvss = affected.affectedCVSS
+              , architectures = fmap Vector.fromList affected.affectedArchitectures
+              , operatingSystems = fmap Vector.fromList affected.affectedOS
+              , declarations = declarations
+              }
+      withReadWritePool pool $ Update.insertAffectedPackage affectedPackageDAO
+      processAffectedVersionRanges affectedPackageId affected.affectedVersions
 
 processAffectedVersionRanges
   :: ( IOE :> es
