@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## Unreleased
+## 1.1.2 -- 2026-10-25
+
+- Lighten the development environment [#1360](https://github.com/flora-pm/flora-server/pull/1360)
+- Remove design system [#1359](https://github.com/flora-pm/flora-server/pull/1359)
+- Fix security action [#1354](https://github.com/flora-pm/flora-server/pull/1354)
 
 ## 1.1.1 -- 2026-10-20
 
