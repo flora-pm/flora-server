@@ -9,6 +9,8 @@ tests: True
 
 test-show-details: direct
 
+build-info: True
+
 jobs: $ncpus
 
 package *
