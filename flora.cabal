@@ -302,7 +302,7 @@ library flora-advisories
     aeson,
     base,
     Cabal-syntax,
-    cvss ^>=0.2.0.1,
+    cvss ^>=0.3.0.0,
     deepseq,
     effectful-core,
     effectful-plugin,

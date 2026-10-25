@@ -8,8 +8,7 @@ import Security.Advisories.Parse
 import Flora.Model.Package.Types
 
 data AdvisoryImportError
-  = AffectedPackageNotFound Namespace PackageName
-  | AdvisoryParsingError (FilePath, ParseAdvisoryError)
+  = AdvisoryParsingError (FilePath, ParseAdvisoryError)
   | AffectedVersionNotFound Namespace PackageName Version
   | AdvisorySyncError Text
   deriving stock (Eq, Generic, Show)
