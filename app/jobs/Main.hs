@@ -22,12 +22,15 @@ import Effectful.Log
 import Effectful.Log qualified as Log
 import Effectful.Prometheus (runPrometheusMetrics)
 import Log
+import Network.HTTP.Types (status404)
+import Network.Wai (responseLBS)
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
   , setOnException
   , setPort
   )
+import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
 import NoThunks.Class
 import Options.Applicative (execParser)
@@ -67,10 +70,11 @@ main = do
     withLogger $ \logger -> do
       runLog "flora-server" logger Log.LogTrace $
         checkJobsEnvForThunks jobsEnv
+      liftIO $ T.putStrLn $ "💓 Exposing heartbeat at " <> baseURL <> "/heartbeat"
+      void . forkIO $ do
+        liftIO $ labelCurrentThread "jobs-http-server"
+        runServer logger jobsEnv
       when jobsEnv.mltp.prometheusEnabled $ do
-        void . forkIO $ do
-          liftIO $ labelCurrentThread "jobs-http-server"
-          runServer logger jobsEnv
         void . forkIO $ do
           liftIO $ labelCurrentThread "jobs-queue-metrics"
           runLog ("flora-jobs-" <> display jobsEnv.environment) logger defaultLogLevel $
@@ -185,7 +189,11 @@ runServer logger jobsEnv = do
             )
             defaultSettings
 
-  liftIO $ runSettings warpSettings WaiMetrics.metricsApp
+  let app =
+        if jobsEnv.mltp.prometheusEnabled
+          then WaiMetrics.metricsApp
+          else \_request respond -> respond $ responseLBS status404 [] "Not Found"
+  liftIO $ runSettings warpSettings $ heartbeatMiddleware app
 
 processJob
   :: ArbS.SimpleEnv JobQueues

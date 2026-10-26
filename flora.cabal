@@ -626,6 +626,7 @@ executable flora-jobs-runner
     effectful-plugin,
     flora,
     flora-jobs,
+    http-types,
     log-base,
     log-effectful,
     nothunks,
@@ -636,6 +637,8 @@ executable flora-jobs-runner
     text-display,
     time,
     vector,
+    wai,
+    wai-middleware-heartbeat,
     wai-middleware-prometheus,
     warp,
 
