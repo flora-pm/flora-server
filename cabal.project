@@ -120,6 +120,11 @@ source-repository-package
 
 source-repository-package
   type: git
+  location: https://github.com/scrive/pool
+  tag: 10352d066534727895e41fddd14ba97395f6213e
+
+source-repository-package
+  type: git
   location: https://github.com/velveteer/arbiter.git
   tag: b098c044a71d2bc555bdf305eeecec3306c20c7a
   subdir:
