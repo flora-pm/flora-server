@@ -1,7 +1,7 @@
-flora {
+jobs-runner {
   domain localhost
-  httpPort 8085
-  jobsHttpPort 8086
+  httpPort 8086
+  webHttpPort 8085
   environment test
   db {
     host "localhost"
@@ -23,7 +23,6 @@ flora {
     sentryDSN ""
     prometheusEnabled #false
     loggingDestination stdout
-    eventlogSocketDirectory "/tmp/flora-eventlog"
   }
 
   features {

@@ -12,6 +12,7 @@ import RequireCallStack
 import Servant (HasServer (..), Headers (..), ServerError)
 
 import Flora.Database
+import Flora.Environment.Domain (DomainEnv)
 import Flora.Environment.Env
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
@@ -97,7 +98,7 @@ deleteGroupHandler (Headers sessionWithUser _) packageGroupId = do
       pure $ GroupDeletionSuccess body
 
 addPackageToGroupHandler
-  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack)
+  :: (Error ServerError :> es, IOE :> es, Reader DomainEnv :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack)
   => SessionWithCookies User
   -> PackageGroupId
   -> AddPackageToGroupForm
@@ -121,7 +122,7 @@ addPackageToGroupHandler (Headers sessionWithUser _) packageGroupId (AddPackageT
       pure $ PackageAddedToGroupSuccess ("/admin/groups/" <> display packageGroupId)
 
 showGroupHandler
-  :: (Error ServerError :> es, IOE :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack)
+  :: (Error ServerError :> es, IOE :> es, Reader DomainEnv :> es, Reader FeatureEnv :> es, Reader FloraEnv :> es, RequireCallStack)
   => SessionWithCookies User
   -> PackageGroupId
   -> FloraM es (Html ())

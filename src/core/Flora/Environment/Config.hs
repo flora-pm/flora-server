@@ -9,10 +9,9 @@ module Flora.Environment.Config
   , PoolConfig (..)
 
     -- * Dividing the pool
-  , poolStripes
-  , connectionsPerStripe
-  , transientReservePerStripe
-  , jobSharePerStripe
+  , acquisitionTimeout
+  , arbiterConnections
+  , handlerConnections
   , importWorkerLimit
   , DeploymentEnv (..)
   , LoggingDestination (..)
@@ -22,6 +21,11 @@ module Flora.Environment.Config
   , getAssetHash
   , floraEnvDecoder
   , poolConfigDecoder
+  , connectionInfoDecoder
+  , deploymentEnvDecoder
+  , loggingDestinationDecoder
+  , optionalFeaturesDecoder
+  , sentryDSNDecoder
   , toConnString
   , jobWorkerLimit
   )
@@ -143,11 +147,14 @@ data MLTP = MLTP
 
 mltpDecoder :: KDL.NodeDecoder MLTP
 mltpDecoder = KDL.children do
-  sentryDSN <- mfilter (/= mempty) <$> KDL.optional (KDL.argAt "sentryDSN")
+  sentryDSN <- sentryDSNDecoder
   prometheusEnabled <- KDL.argAt "prometheusEnabled"
   logger <- KDL.argAtWith "loggingDestination" loggingDestinationDecoder
   eventlogSocketDirectory <- KDL.optional $ KDL.argAt "eventlogSocketDirectory"
   pure MLTP{sentryDSN, prometheusEnabled, logger, eventlogSocketDirectory}
+
+sentryDSNDecoder :: KDL.NodeListDecoder (Maybe String)
+sentryDSNDecoder = mfilter (/= mempty) <$> KDL.optional (KDL.argAt "sentryDSN")
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
@@ -162,13 +169,17 @@ featureConfigDecoder = KDL.children do
   blobStoreFS <- KDL.argAt "blobStoreFilePath"
   pure FeatureConfig{tarballsEnabled, blobStoreFS}
 
+optionalFeaturesDecoder :: KDL.NodeListDecoder FeatureConfig
+optionalFeaturesDecoder =
+  fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing})
+    <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
+
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
   { dbConfig :: PoolConfig
   , connectionInfo :: ConnectionInfo
   , domain :: Text
   , httpPort :: Word16
-  , jobsHttpPort :: Word16
   , mltp :: MLTP
   , features :: FeatureConfig
   , environment :: DeploymentEnv
@@ -194,13 +205,12 @@ floraConfigDecoder = KDL.children do
   connectionInfo <- KDL.nodeWith "db" connectionInfoDecoder
   domain <- KDL.argAt "domain"
   httpPort <- KDL.argAt "httpPort"
-  jobsHttpPort <- KDL.argAt "jobsHttpPort"
   mltp <- KDL.nodeWith "mltp" mltpDecoder
-  features <- fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing}) <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
+  features <- optionalFeaturesDecoder
   environment <- KDL.argAtWith "environment" deploymentEnvDecoder
   seoIndexing <- fromMaybe True <$> KDL.optional (KDL.argAtWith "seoIndexing" KDL.bool)
   https <- fromMaybe True <$> KDL.optional (KDL.argAtWith "https" KDL.bool)
-  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment, seoIndexing, https}
+  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, mltp, features, environment, seoIndexing, https}
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
@@ -210,46 +220,38 @@ data PoolConfig = PoolConfig
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
 
--- | How many stripes 'Flora.Environment.mkPool' cuts every pool into.
-poolStripes :: Int
-poolStripes = 2
+-- | Seconds a thread waits for a pooled connection before
+-- 'Data.Pool.AcquisitionTimeout' is thrown.
+acquisitionTimeout :: Double
+acquisitionTimeout = 30
 
-connectionsPerStripe :: PoolConfig -> Int
-connectionsPerStripe poolConfig = max 1 (poolConfig.connections `div` poolStripes)
+-- | Size of the jobs runner's Arbiter pool, taken out of 'connections'.
+-- It serves LISTEN, claims, heartbeats, acks, the reaper, crons and job
+-- scheduling: short statements only, so they never wait behind a job handler.
+arbiterConnections :: Int
+arbiterConnections = 6
 
-transientReservePerStripe :: Int
-transientReservePerStripe = 3
+-- | Size of the jobs runner's pool for job handlers and import workers.
+handlerConnections :: PoolConfig -> Int
+handlerConnections poolConfig = poolConfig.connections - arbiterConnections
 
-jobSharePerStripe :: PoolConfig -> Int
-jobSharePerStripe poolConfig =
-  max
-    1
-    ( connectionsPerStripe poolConfig
-        - poolConfig.importWorkers
-        - transientReservePerStripe
-    )
-
+-- | Process-wide number of import workers that hold a connection at once,
+-- whatever the number of imports running.
 importWorkerLimit :: PoolConfig -> Int
 importWorkerLimit = (.importWorkers)
 
 defaultImportWorkers :: Int
 defaultImportWorkers = 4
 
+-- | A job handler holds at most one connection at a time, so with this limit
+-- handlers and import workers never wait for a connection.
 jobWorkerLimit :: PoolConfig -> Int
-jobWorkerLimit = (poolStripes *) . jobSharePerStripe
+jobWorkerLimit poolConfig = handlerConnections poolConfig - importWorkerLimit poolConfig
 
 data TestConfig = TestConfig
   { httpPort :: Word16
   , dbConfig :: PoolConfig
   , connectionInfo :: ConnectionInfo
-  , mltp :: MLTP
-  }
-  deriving stock (Generic)
-
-data FloraJobsConfig = FloraJobsConfig
-  { dbConfig :: PoolConfig
-  , connectionInfo :: ConnectionInfo
-  , httpPort :: Word16
   , mltp :: MLTP
   }
   deriving stock (Generic)
@@ -262,7 +264,15 @@ nominalDiffTimeDecoder = KDL.withDecoder KDL.number \x -> do
     Just n -> pure (fromIntegral @Int n)
 
 poolConfigDecoder :: KDL.NodeDecoder PoolConfig
-poolConfigDecoder = KDL.children do
+poolConfigDecoder = KDL.withDecoder poolConfigFieldsDecoder \poolConfig -> do
+  when (jobWorkerLimit poolConfig < 1) $
+    KDL.failM $
+      "connections must be at least importWorkers + "
+        <> Text.show (arbiterConnections + 1)
+  pure poolConfig
+
+poolConfigFieldsDecoder :: KDL.NodeDecoder PoolConfig
+poolConfigFieldsDecoder = KDL.children do
   connectionTimeout <- KDL.argAtWith "timeout" nominalDiffTimeDecoder
   connections <- KDL.argAt "connections"
   importWorkers <-
@@ -270,7 +280,6 @@ poolConfigDecoder = KDL.children do
       (fromMaybe defaultImportWorkers <$> KDL.optional (KDL.argAt "importWorkers"))
       \n -> do
         when (n < 1) (KDL.failM "importWorkers must be at least 1")
-        when (n > connections) (KDL.failM "importWorkers cannot exceed connections")
         pure n
   pure PoolConfig{connectionTimeout, connections, importWorkers}
 

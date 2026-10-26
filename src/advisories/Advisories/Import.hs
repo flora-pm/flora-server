@@ -28,7 +28,7 @@ import Advisories.Model.Advisory.Update qualified as Update
 import Advisories.Model.Affected.Types
 import Advisories.Model.Affected.Update qualified as Update
 import Flora.Database
-import Flora.Environment.Env (FloraEnv (..))
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types
 import Flora.Monad
@@ -39,7 +39,7 @@ importAdvisories
   :: ( Error (NonEmpty AdvisoryImportError) :> es
      , IOE :> es
      , Log :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      )
   => FilePath
   -> FloraM es ()
@@ -73,12 +73,12 @@ syncAdvisories root = do
 importAdvisory
   :: ( IOE :> es
      , Log :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      )
   => Advisory
   -> FloraM es ()
 importAdvisory advisory = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   advisoryId <- AdvisoryId <$> liftIO UUID.nextRandom
   let advisoryAffectedPackages = Vector.fromList advisory.advisoryAffected
   let advisoryDAO = processAdvisory advisoryId advisory
@@ -110,7 +110,7 @@ processAdvisory advisoryId advisory =
 processAffectedPackages
   :: ( IOE :> es
      , Log :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      )
   => AdvisoryId
   -> Vector Affected
@@ -121,13 +121,13 @@ processAffectedPackages advisoryId affectedPackages = do
 processAffectedPackage
   :: ( IOE :> es
      , Log :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      )
   => AdvisoryId
   -> Affected
   -> FloraM es ()
 processAffectedPackage advisoryId affected = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   let (namespace, packageName) =
         case affected.affectedComponentIdentifier of
           Repository _ (RepositoryName repositoryName) affectedPackageName ->
@@ -162,13 +162,13 @@ processAffectedPackage advisoryId affected = do
 
 processAffectedVersionRanges
   :: ( IOE :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      )
   => AffectedPackageId
   -> [AffectedVersionRange]
   -> FloraM es ()
 processAffectedVersionRanges affectedPackageId affectedVersions = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   traverse_
     ( \affectedVersion -> do
         affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom

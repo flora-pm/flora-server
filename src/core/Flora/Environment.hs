@@ -1,6 +1,8 @@
 module Flora.Environment
   ( getFloraEnv
   , readFloraConfig
+  , readConfigWith
+  , featureConfigToEnv
   , mkPool
   , parseConfig
   , configFileParser
@@ -8,7 +10,7 @@ module Flora.Environment
 where
 
 import Arbiter.Simple qualified as ArbS
-import Control.DeepSeq (force)
+import Control.DeepSeq (NFData, force)
 import Control.Exception (evaluate)
 import Control.Monad (unless)
 import Data.Pool
@@ -27,6 +29,7 @@ import System.Exit (exitFailure)
 import System.IO (hPutStrLn, stderr)
 
 import Flora.Environment.Config
+import Flora.Environment.Domain
 import Flora.Environment.Env
 import Flora.Model.Job
 import Flora.Monitoring
@@ -54,8 +57,10 @@ mkPool
   -> Eff es (Pool PG.Connection)
 mkPool connectionInfo timeout' connections =
   liftIO $
+    -- One stripe: a thread waits only on its own stripe, so with several
+    -- stripes a budget computed for the whole pool does not hold.
     Pool.newPool $
-      setNumStripes (Just poolStripes) $
+      setAcquisitionTimeout (Just acquisitionTimeout) $
         defaultPoolConfig
           ( PG.connect
               PG.ConnectInfo
@@ -84,6 +89,7 @@ configToEnv floraConfig = do
   let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) pool "public"
+  domainEnv <- mkDomainEnv pool floraConfig.dbConfig floraConfig.environment floraConfig.domain floraConfig.httpPort
   assets <- getAssets floraConfig.environment
   featureEnv <- featureConfigToEnv floraConfig.features
   metrics <- registerMetrics
@@ -91,6 +97,7 @@ configToEnv floraConfig = do
     FloraEnv
       { pool = pool
       , dbConfig = floraConfig.dbConfig
+      , domainEnv
       , workerEnv
       , httpPort = floraConfig.httpPort
       , domain = floraConfig.domain
@@ -107,13 +114,16 @@ configToEnv floraConfig = do
 
 -- | Decodes the KDL configuration file, without opening a connection pool.
 readFloraConfig :: (Fail :> es, IOE :> es) => FilePath -> Eff es FloraConfig
-readFloraConfig fp = do
+readFloraConfig = readConfigWith floraEnvDecoder
+
+readConfigWith :: (Fail :> es, IOE :> es, NFData a) => KDL.DocumentDecoder a -> FilePath -> Eff es a
+readConfigWith decoder fp = do
   exists <- liftIO $ doesFileExist fp
   unless exists $ liftIO $ do
     hPutStrLn stderr $ "Configuration file not found: " <> fp
     hPutStrLn stderr "Generate it with: ./scripts/generate-configuration.sh (--local | --docker | --ci)"
     exitFailure
-  liftIO (KDL.decodeFileWith floraEnvDecoder fp) >>= \case
+  liftIO (KDL.decodeFileWith decoder fp) >>= \case
     Right config -> liftIO (evaluate (force config))
     Left e -> fail $ show e
 

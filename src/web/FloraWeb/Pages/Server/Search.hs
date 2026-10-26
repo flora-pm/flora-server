@@ -13,6 +13,7 @@ import Servant (Headers (..), ServerT)
 import Data.Positive
 import Flora.Domain.Search (SearchAction (..))
 import Flora.Domain.Search qualified as Search
+import Flora.Environment.Domain (DomainEnv)
 import Flora.Environment.Env
 import Flora.Model.Package.Types
 import Flora.Model.User (User)
@@ -32,6 +33,7 @@ server s =
 
 searchHandler
   :: ( IOE :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , RequireCallStack

@@ -22,12 +22,14 @@ import NoThunks.Class (NoThunks, OnlyCheckWhnfNamed (..))
 import Prometheus qualified as P
 
 import Flora.Environment.Config
+import Flora.Environment.Domain
 import Flora.Model.Job
 
 -- | The datatype that is used in the application
 data FloraEnv = FloraEnv
   { pool :: Pool PG.Connection
   , dbConfig :: PoolConfig
+  , domainEnv :: DomainEnv
   , workerEnv :: ArbS.SimpleEnv JobQueues
   , httpPort :: Word16
   , domain :: Text
@@ -44,21 +46,14 @@ data FloraEnv = FloraEnv
   deriving stock (Generic)
   deriving anyclass (NoThunks)
 
-data AppMetrics = AppMetrics
-  { packageImportCounter :: P.Vector P.Label1 P.Counter
-  , packageImportFailureCounter :: P.Vector P.Label2 P.Counter
-  , buildInformation :: P.Vector P.Label2 P.Gauge
+newtype AppMetrics = AppMetrics
+  { buildInformation :: P.Vector P.Label2 P.Gauge
   }
 
 deriving via
   OnlyCheckWhnfNamed "Flora.Environment.Env.AppMetrics" AppMetrics
   instance
     NoThunks AppMetrics
-
-deriving via
-  OnlyCheckWhnfNamed "Data.Pool.Pool" (Pool PG.Connection)
-  instance
-    NoThunks (Pool PG.Connection)
 
 deriving via
   OnlyCheckWhnfNamed "Arbiter.Simple.SimpleEnv" (ArbS.SimpleEnv JobQueues)

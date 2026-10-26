@@ -18,86 +18,82 @@ import Data.Vector qualified as Vector
 import Effectful
 import Effectful.Concurrent (forkIO, runConcurrent)
 import Effectful.Fail
-import Effectful.FileSystem
 import Effectful.Log
 import Effectful.Log qualified as Log
 import Effectful.Prometheus (runPrometheusMetrics)
 import Log
+import Network.HTTP.Types (status404)
+import Network.Wai (responseLBS)
 import Network.Wai.Handler.Warp
   ( defaultSettings
   , runSettings
   , setOnException
   , setPort
   )
+import Network.Wai.Middleware.Heartbeat (heartbeatMiddleware)
 import Network.Wai.Middleware.Prometheus qualified as WaiMetrics
 import NoThunks.Class
 import Options.Applicative (execParser)
-import Prometheus qualified as P
-import Prometheus.Metric.GHC qualified as P
-import Prometheus.Metric.Proc qualified as P
 import RequireCallStack
 import System.Exit (exitFailure)
-import System.Info qualified as System
 
 import Flora.Database (withReadOnlyPool)
 import Flora.Debug.ThreadDump (installThreadDumpHandler, labelCurrentThread)
-import Flora.Environment
+import Flora.Environment (parseConfig)
 import Flora.Environment.Config (jobWorkerLimit)
-import Flora.Environment.Env
 import Flora.Logging (makeLogger)
 import Flora.Model.Job
 import Flora.Model.PackageIndex.Query qualified as Query
 import Flora.Model.PackageIndex.Types (PackageIndex (..))
+import Flora.Tracing
+import FloraJobs.Config (JobsMLTP (..))
 import FloraJobs.Environment
 import FloraJobs.Metrics
 import FloraJobs.QueueMetrics qualified as QueueMetrics
 import FloraJobs.Runner qualified as Runner
 import FloraJobs.Types
-import FloraWeb.Common.Tracing
 
 main :: IO ()
 main = do
   labelCurrentThread "flora-jobs-runner-main"
   floraConfig <- execParser (parseConfig "jobs_runner.kdl")
   jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
-  floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
-  workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
-  let withLogger = makeLogger "logs/flora-jobs.json" floraEnv.mltp.logger
+  workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.arbiterPool "public"
+  let withLogger = makeLogger "logs/flora-jobs.json" jobsEnv.mltp.logger
   runEff . runConcurrent $ do
     liftIO installThreadDumpHandler
-    when floraEnv.mltp.prometheusEnabled $ do
+    when jobsEnv.mltp.prometheusEnabled $ do
       liftIO $ T.putStrLn $ "🔥 Exposing Prometheus metrics at " <> baseURL <> "/metrics"
-      runPrometheusMetrics jobsEnv.metrics $ do
-        void $ P.register P.ghcMetrics
-        when (System.os == "linux") $ void $ P.register P.procMetrics
-        setGitHash
+      registerRuntimeMetrics
+      runPrometheusMetrics jobsEnv.metrics setGitHash
     withLogger $ \logger -> do
       runLog "flora-server" logger Log.LogTrace $
         checkJobsEnvForThunks jobsEnv
-      when floraEnv.mltp.prometheusEnabled $ do
-        void . forkIO $ do
-          liftIO $ labelCurrentThread "jobs-http-server"
-          runServer logger floraEnv jobsEnv
+      liftIO $ T.putStrLn $ "💓 Exposing heartbeat at " <> baseURL <> "/heartbeat"
+      void . forkIO $ do
+        liftIO $ labelCurrentThread "jobs-http-server"
+        runServer logger jobsEnv
+      when jobsEnv.mltp.prometheusEnabled $ do
         void . forkIO $ do
           liftIO $ labelCurrentThread "jobs-queue-metrics"
-          runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
+          runLog ("flora-jobs-" <> display jobsEnv.environment) logger defaultLogLevel $
             QueueMetrics.runQueueMetricsLoop workerEnv jobsEnv.metrics
       crons <-
-        runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
+        runLog ("flora-jobs-" <> display jobsEnv.environment) logger defaultLogLevel $
           provideCallStack $ do
             indexes <- withReadOnlyPool jobsEnv.pool Query.listPackageIndexes
             indexRefreshCrons <- indexRefreshCronJobs indexes
             feedRetentionCron <- feedRetentionCronJob
             pure (indexRefreshCrons <> feedRetentionCron)
       defaultConfig <- liftIO $
-        Worker.batchedWorkerConfig (jobWorkerLimit floraEnv.dbConfig) 1 $
+        Worker.batchedWorkerConfig (jobWorkerLimit jobsEnv.dbConfig) 1 $
           \(job :| _) callbacks -> do
             liftIO $ labelCurrentThread (Text.unpack ("job-" <> Job.queueName job <> "-" <> jobTypeLabel (Arb.payload job)))
-            processJob workerEnv jobsEnv logger floraEnv job
+            processJob workerEnv jobsEnv logger job
             Worker.ack callbacks job
       let instrumentedHooks =
-            if floraEnv.mltp.prometheusEnabled
+            if jobsEnv.mltp.prometheusEnabled
               then metricsObservabilityHooks jobsEnv.metrics
               else Arb.defaultObservabilityHooks
       let config =
@@ -110,7 +106,7 @@ main = do
                         Arb.onJobFailure instrumentedHooks job message startTime endTime
                         liftIO $
                           runEff $
-                            Log.runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel $
+                            Log.runLog ("flora-jobs-" <> display jobsEnv.environment) logger defaultLogLevel $
                               Log.logAttention message $
                                 object
                                   [ "duration" .= duration
@@ -179,36 +175,37 @@ feedRetentionCronJob =
 runServer
   :: IOE :> es
   => Log.Logger
-  -> FloraEnv
   -> FloraJobsEnv
   -> Eff es ()
-runServer logger floraEnv jobsEnv = do
+runServer logger jobsEnv = do
   let warpSettings =
         setPort (fromIntegral jobsEnv.httpPort) $
           setOnException
             ( handleExceptions
                 "flora-jobs"
                 logger
-                floraEnv.environment
-                floraEnv.mltp
+                jobsEnv.environment
+                jobsEnv.mltp.sentryDSN
             )
             defaultSettings
 
-  liftIO $ runSettings warpSettings WaiMetrics.metricsApp
+  let app =
+        if jobsEnv.mltp.prometheusEnabled
+          then WaiMetrics.metricsApp
+          else \_request respond -> respond $ responseLBS status404 [] "Not Found"
+  liftIO $ runSettings warpSettings $ heartbeatMiddleware app
 
 processJob
   :: ArbS.SimpleEnv JobQueues
   -> FloraJobsEnv
   -> Log.Logger
-  -> FloraEnv
   -> Arb.JobRead PackageJob
   -> ArbS.SimpleDb JobQueues IO ()
-processJob workerEnv jobsRunnerEnv logger floraEnv job =
+processJob workerEnv jobsRunnerEnv logger job =
   provideCallStack $
     liftIO $
       runJobRunner
         jobsRunnerEnv
-        floraEnv
         logger
         (Log.localDomain "job-runner" $ Runner.runner workerEnv job)
 

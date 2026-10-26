@@ -1,5 +1,6 @@
 CONFIG ?= flora.kdl
 CONFIG_TEST := flora_test.kdl
+JOBS_CONFIG ?= jobs_runner.kdl
 
 init: ## Set up git hooks properly - needs calling once when cloning the repo
 	@git config core.hooksPath .githooks
@@ -8,7 +9,7 @@ start-server: ## Start flora backend server
 	@cabal run exe:flora-server  -- -c $(CONFIG)
 
 start-jobs: ## Start jobs runner
-	@cabal run exe:flora-jobs-runner -- -c $(CONFIG)
+	@cabal run exe:flora-jobs-runner -- -c $(JOBS_CONFIG)
 
 build: ## Build the server
 	@cabal build

@@ -44,7 +44,7 @@ import Log qualified
 
 import Flora.Database
 import Flora.Domain.Import.Types
-import Flora.Environment.Env (DeploymentEnv (..), FloraEnv (..))
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Model.BlobStore.API (BlobStoreAPI, put)
 import Flora.Model.BlobStore.Types
 import Flora.Model.Feed.Types qualified as Types
@@ -63,7 +63,7 @@ upsertRelease
   :: ( IOE :> es
      , Log :> es
      , ReadDB :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      , Time :> es
      , WriteDB :> es
      )
@@ -84,11 +84,7 @@ upsertRelease package newRelease = do
           newRelease.updatedAt
     Nothing -> do
       insertRelease newRelease
-      env <- Reader.ask
-      let instanceInfo =
-            case env.environment of
-              Production -> Right env.domain
-              _ -> Left (env.domain, env.httpPort)
+      DomainEnv{instanceInfo} <- Reader.ask
       entry <- Types.newReleaseEntry instanceInfo package newRelease.version
       Update.insertFeedEntry entry
 

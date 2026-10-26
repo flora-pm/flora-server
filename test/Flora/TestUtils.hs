@@ -146,6 +146,7 @@ import Flora.Database
 import Flora.Domain.Import.Package.Bulk.Archive (importFromArchive)
 import Flora.Domain.Import.Types (ImportError)
 import Flora.Domain.Package (refreshMaterialisedViews)
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Environment.Env
 import Flora.Model.BlobStore.API
 import Flora.Model.BlobStore.Types (Sha256Sum)
@@ -170,6 +171,7 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update qualified as Update
 import Flora.Monad
+import Flora.Monitoring (ImportMetrics)
 
 type TestEff a =
   Eff
@@ -177,9 +179,11 @@ type TestEff a =
      , Fail
      , BlobStoreAPI
      , Reader FloraEnv
+     , Reader DomainEnv
      , Log
      , Time
-     , Metrics AppMetrics
+     , Metrics ImportMetrics
+     , Reader ImportMetrics
      , Concurrent
      , Error ImportError
      , IOE
@@ -216,18 +220,20 @@ importAllPackages pool = do
     "test/fixtures/Cabal"
   refreshMaterialisedViews pool
 
-runTestEff :: (HasCallStack, RequireCallStack) => TestEff a -> FloraEnv -> IO a
-runTestEff comp env = runEff $
+runTestEff :: (HasCallStack, RequireCallStack) => TestEff a -> FloraEnv -> ImportMetrics -> IO a
+runTestEff comp env importMetrics = runEff $
   Log.withStdOutLogger $ \logger ->
     comp
       & runFileSystem
       & runFailIO
       & runBlobStorePure
       & runReader env
+      & runReader env.domainEnv
       & Log.runLog "flora-test" logger LogInfo
       & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
       & runTime
-      & runPrometheusMetrics env.metrics
+      & runPrometheusMetrics importMetrics
+      & runReader importMetrics
       & runConcurrent
       & Error.runErrorWith
         ( \callstack err -> do
@@ -238,7 +244,8 @@ runTestEff comp env = runEff $
 testThis :: (HasCallStack, RequireCallStack) => String -> TestEff () -> TestEff TestTree
 testThis name assertion = do
   env <- ask @FloraEnv
-  let test = runTestEff assertion env
+  importMetrics <- ask @ImportMetrics
+  let test = runTestEff assertion env importMetrics
   pure $ Test.testCase name test
 
 testThese :: String -> [TestEff TestTree] -> TestEff TestTree

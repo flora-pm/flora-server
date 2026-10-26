@@ -14,6 +14,7 @@ import Test.Tasty
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
+import Flora.ConfigSpec qualified as ConfigSpec
 import Flora.Database
 import Flora.Domain.Import.Categories (importCategories)
 import Flora.Environment (configFileParser, getFloraEnv)
@@ -23,6 +24,7 @@ import Flora.ImportSpec qualified as ImportSpec
 import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
+import Flora.Monitoring (registerImportMetrics)
 import Flora.NoThunksSpec qualified as NoThunksSpec
 import Flora.PackageGroupSpec qualified as PackageGroupSpec
 import Flora.PackageSpec qualified as PackageSpec
@@ -37,6 +39,7 @@ main = provideCallStack $ do
   hSetBuffering stdout LineBuffering
   (configFile, tastyArgs) <- execParser $ info parser forwardOptions
   env <- runEff . runFailIO . runFileSystem $ getFloraEnv configFile
+  importMetrics <- runEff registerImportMetrics
   fixtures <-
     runTestEff
       ( do
@@ -53,7 +56,8 @@ main = provideCallStack $ do
           getFixtures
       )
       env
-  spec <- traverse (\comp -> runTestEff comp env) (specs fixtures)
+      importMetrics
+  spec <- traverse (\comp -> runTestEff comp env importMetrics) (specs fixtures)
   withArgs tastyArgs $
     defaultMain $
       testGroup "Flora Tests" spec
@@ -65,6 +69,7 @@ specs fixtures =
   [ BlobSpec.spec
   , CabalSpec.spec
   , CategorySpec.spec
+  , ConfigSpec.spec
   , FeedSpec.spec
   , ImportSpec.spec
   , NoThunksSpec.spec

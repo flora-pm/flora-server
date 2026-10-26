@@ -58,7 +58,9 @@ but the stream keeps going. After the stream is done, an import of **at least
 `TooManyImportFailures`. Below that floor nothing is thrown however bad the
 rate, because one failure out of three is not a signal.
 
-Worker count is `importWorkers` from the `pool` configuration key.
+In the jobs runner, `connections` is split in two pools of one stripe each:
+an Arbiter pool of `arbiterConnections` (6) for claims, heartbeats, acks and
+job scheduling, and a handler pool for job handlers and import workers.
 
 ## Invariants
 

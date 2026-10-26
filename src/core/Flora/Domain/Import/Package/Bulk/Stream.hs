@@ -2,6 +2,7 @@ module Flora.Domain.Import.Package.Bulk.Stream
   ( importFromStream
   ) where
 
+import Control.Concurrent.QSem (signalQSem, waitQSem)
 import Control.Monad
 import Data.MemCache
 import Data.Pool (Pool)
@@ -24,13 +25,12 @@ import RequireCallStack
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude qualified as Streamly
-import UnliftIO (finally)
+import UnliftIO (bracket_, finally)
 
 import Flora.Database
 import Flora.Domain.Import.Package
 import Flora.Domain.Import.Types
-import Flora.Environment.Config
-import Flora.Environment.Env
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Model.Category.Query qualified as Query
 import Flora.Model.Category.Types
 import Flora.Model.Package.Types qualified as Flora
@@ -39,7 +39,7 @@ import Flora.Model.PackageIndex.Update qualified as Update
 import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Monad
-import Flora.Monitoring (increaseImportFailureCounter, increasePackageImportCounterBy)
+import Flora.Monitoring (ImportMetrics, increaseImportFailureCounter, increasePackageImportCounterBy)
 
 importFromStream
   :: forall es
@@ -47,8 +47,8 @@ importFromStream
      , Error ImportError :> es
      , IOE :> es
      , Log :> es
-     , Metrics AppMetrics :> es
-     , Reader FloraEnv :> es
+     , Metrics ImportMetrics :> es
+     , Reader DomainEnv :> es
      , RequireCallStack
      , Time :> es
      )
@@ -58,9 +58,8 @@ importFromStream
   -> Stream (Eff es) ImportSubject
   -> FloraM es ()
 importFromStream pool packageIndex indexPackages stream = do
-  env <- Reader.ask
-  let workerLimit = importWorkerLimit env.dbConfig
-      cfg = Streamly.maxThreads workerLimit . Streamly.maxBuffer workerLimit . Streamly.inspect True
+  DomainEnv{importWorkerLimit = workerLimit} <- Reader.ask
+  let cfg = Streamly.maxThreads workerLimit . Streamly.maxBuffer workerLimit . Streamly.inspect True
   uploaderIds <- newUploaderCache
   categories <- withReadOnlyPool pool Query.getAllCategories
   Tally total failures <-
@@ -108,8 +107,8 @@ processFile
   :: ( Concurrent :> es
      , IOE :> es
      , Log :> es
-     , Metrics AppMetrics :> es
-     , Reader FloraEnv :> es
+     , Metrics ImportMetrics :> es
+     , Reader DomainEnv :> es
      , RequireCallStack
      , Time :> es
      )
@@ -120,8 +119,9 @@ processFile
   -> Vector (Text, Set Flora.PackageName)
   -> ImportSubject
   -> FloraM es Bool
-processFile pool categories uploaderIds packageIndex indexPackages importSubject =
-  case importSubject of
+processFile pool categories uploaderIds packageIndex indexPackages importSubject = do
+  DomainEnv{importSlots} <- Reader.ask
+  bracket_ (liftIO $ waitQSem importSlots) (liftIO $ signalQSem importSlots) $ case importSubject of
     (CabalFile path, timestamp, mUsername, content) -> Log.localData ["filepath" .= path] $ do
       result <- Error.runErrorNoCallStack @ImportError $ do
         Log.logInfo_ "Importing cabal file"

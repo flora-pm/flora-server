@@ -69,7 +69,7 @@ import Flora.Database
 import Flora.Domain.Category.Normalise
 import Flora.Domain.Import.Package.Types
 import Flora.Domain.Import.Types
-import Flora.Environment.Env (FloraEnv (..))
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Model.Category.Types
 import Flora.Model.Category.Update qualified as Update
 import Flora.Model.Component.Types as Component
@@ -200,7 +200,7 @@ persistImportOutput
   :: forall es
    . ( IOE :> es
      , Log :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      , RequireCallStack
      , Time :> es
      )

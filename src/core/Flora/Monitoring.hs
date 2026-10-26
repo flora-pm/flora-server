@@ -1,9 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Flora.Monitoring
-  ( increaseCounter
+  ( ImportMetrics (..)
+  , increaseCounter
   , increasePackageImportCounter
   , registerMetrics
+  , registerImportMetrics
   , increaseCounterBy
   , increasePackageImportCounterBy
   , increaseImportFailureCounter
@@ -17,39 +19,54 @@ import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import Effectful
 import Effectful.Prometheus
+import NoThunks.Class (NoThunks, OnlyCheckWhnfNamed (..))
 import Prometheus
 import Prometheus qualified as P
 
 import Flora.Environment.Env
 import Paths_flora (version)
 
+data ImportMetrics = ImportMetrics
+  { packageImportCounter :: P.Vector P.Label1 P.Counter
+  , packageImportFailureCounter :: P.Vector P.Label2 P.Counter
+  }
+
+deriving via
+  OnlyCheckWhnfNamed "Flora.Monitoring.ImportMetrics" ImportMetrics
+  instance
+    NoThunks ImportMetrics
+
+registerImportMetrics :: IOE :> es => Eff es ImportMetrics
+registerImportMetrics = do
+  packageImportCounter <-
+    P.register $
+      P.vector "package_index" $
+        P.counter
+          P.Info
+            { metricName = "flora_imported_packages_total"
+            , metricHelp = "Packages imported and their index"
+            }
+  packageImportFailureCounter <-
+    P.register $
+      P.vector ("package_index", "reason") $
+        P.counter
+          P.Info
+            { metricName = "flora_import_failures_total"
+            , metricHelp = "Packages that failed to import, and why"
+            }
+  pure ImportMetrics{packageImportCounter, packageImportFailureCounter}
+
 registerMetrics :: IOE :> es => Eff es AppMetrics
 registerMetrics = do
-  let packageImportCount =
-        P.vector "package_index" $
-          P.counter
-            P.Info
-              { metricName = "flora_imported_packages_total"
-              , metricHelp = "Packages imported and their index"
-              }
-  let packageImportFailureCount =
-        P.vector ("package_index", "reason") $
-          P.counter
-            P.Info
-              { metricName = "flora_import_failures_total"
-              , metricHelp = "Packages that failed to import, and why"
-              }
-  let gitHashMetric =
-        P.vector ("git_revision", "version") $
-          P.gauge
-            P.Info
-              { metricName = "build_information"
-              , metricHelp = "Build information"
-              }
-  packageImportCounter <- P.register packageImportCount
-  packageImportFailureCounter <- P.register packageImportFailureCount
-  gitHashText <- P.register gitHashMetric
-  pure $ AppMetrics packageImportCounter packageImportFailureCounter gitHashText
+  buildInformation <-
+    P.register $
+      P.vector ("git_revision", "version") $
+        P.gauge
+          P.Info
+            { metricName = "build_information"
+            , metricHelp = "Build information"
+            }
+  pure AppMetrics{buildInformation}
 
 setGitHash
   :: Metrics AppMetrics :> es
@@ -58,7 +75,7 @@ setGitHash =
   setLabelledGauge (.buildInformation) ($(gitHash), T.pack (showVersion version)) 1.0
 
 increaseCounterBy
-  :: Metrics AppMetrics :> es
+  :: Metrics ImportMetrics :> es
   => Int
   -> Text
   -> Eff es ()
@@ -66,14 +83,14 @@ increaseCounterBy amount label = do
   replicateM_ amount $ increasePackageImportCounter label
 
 increasePackageImportCounter
-  :: Metrics AppMetrics :> es
+  :: Metrics ImportMetrics :> es
   => Text
   -> Eff es ()
 increasePackageImportCounter repository = do
   increaseLabelledCounter (.packageImportCounter) repository
 
 increasePackageImportCounterBy
-  :: Metrics AppMetrics :> es
+  :: Metrics ImportMetrics :> es
   => Int
   -> Text
   -> Eff es ()
@@ -81,7 +98,7 @@ increasePackageImportCounterBy value repository = do
   increaseCounterBy value repository
 
 increaseImportFailureCounter
-  :: Metrics AppMetrics :> es
+  :: Metrics ImportMetrics :> es
   => Text
   -> Text
   -> Eff es ()

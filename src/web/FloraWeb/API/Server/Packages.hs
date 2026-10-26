@@ -20,6 +20,7 @@ import Servant hiding ((:>))
 import Flora.Database
 import Flora.Domain.Package (resolveExactRelease, resolvePackage, resolveReleaseAtVersion)
 import Flora.Domain.Search (searchPackageByName)
+import Flora.Environment.Domain (DomainEnv)
 import Flora.Environment.Env
 import Flora.Model.Component.Query qualified as Query
 import Flora.Model.Component.Types
@@ -84,6 +85,7 @@ getDependenciesHandler namespace packageName version transitive = do
 getPackageHandler
   :: ( Error ServerError :> es
      , IOE :> es
+     , Reader DomainEnv :> es
      , Reader FloraEnv :> es
      )
   => Namespace
@@ -102,6 +104,7 @@ getPackageHandler namespace packageName = do
 getPackagesByPrefixHandler
   :: ( IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FloraEnv :> es
      , Time :> es
      )
@@ -123,6 +126,7 @@ getVersionedPackageHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , IOE :> es
+     , Reader DomainEnv :> es
      , Reader FloraEnv :> es
      )
   => Namespace

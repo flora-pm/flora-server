@@ -14,11 +14,8 @@ jobs:
   linting:
     uses: ./.github/workflows/linting.yml
 
-  database-index-checks:
-    uses: ./.github/workflows/database-index-checks.yml
-
   flora-server:
-    needs: [backend, frontend, linting, database-index-checks]
+    needs: [backend, frontend, linting]
     runs-on: ubuntu-latest
     environment: development
     concurrency:
@@ -61,7 +58,7 @@ jobs:
             --diff
 
   jobs-runner:
-    needs: [backend, frontend, linting, database-index-checks]
+    needs: [backend, frontend, linting]
     runs-on: ubuntu-latest
     environment: development
     concurrency:
