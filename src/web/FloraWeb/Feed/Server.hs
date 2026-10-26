@@ -18,6 +18,7 @@ import Text.Atom.Feed qualified as Atom
 
 import Flora.Database
 import Flora.Domain.Search (searchPackageByName)
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Environment.Env
 import Flora.Model.Feed.Query qualified as Query
 import Flora.Model.Feed.Types
@@ -68,19 +69,16 @@ showPackageFeedHandler packageFilter = do
     case Vector.uncons entries of
       Nothing -> Time.currentTime
       Just (x, _) -> pure x.updatedAt
-  let instanceInfo =
-        case env.environment of
-          Production -> Right env.domain
-          _ -> Left (env.domain, env.httpPort)
   pure $
     makeFeed
-      instanceInfo
+      env.domainEnv.instanceInfo
       lastUpdatedAt
       entries
 
 searchPackageHandler
   :: ( IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time :> es

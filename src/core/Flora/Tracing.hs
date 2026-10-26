@@ -1,4 +1,4 @@
-module FloraWeb.Common.Tracing where
+module Flora.Tracing where
 
 import Colourista.IO (blueMessage, redMessage)
 import Control.Exception (AsyncException (..), Exception (..), IOException, SomeException, throw, try)
@@ -33,11 +33,11 @@ handleExceptions
   :: Text
   -> Logger
   -> DeploymentEnv
-  -> MLTP
+  -> Maybe String
   -> Maybe Request
   -> E.SomeException
   -> IO ()
-handleExceptions componentName logger environment mltp mRequest e@(E.SomeException exception) = do
+handleExceptions componentName logger environment mSentryDSN mRequest e@(E.SomeException exception) = do
   Log.runLogT (componentName <> "-" <> display environment) logger LogAttention $ do
     let context = E.displayExceptionContext $ E.someExceptionContext e
     when (shouldDisplayException e) $ do
@@ -46,7 +46,7 @@ handleExceptions componentName logger environment mltp mRequest e@(E.SomeExcepti
           [ "exception" .= display (show exception)
           , "backtraces" .= context
           ]
-      case mltp.sentryDSN of
+      case mSentryDSN of
         Nothing -> throw exception
         Just sentryDSN ->
           if isJust mRequest

@@ -71,6 +71,7 @@ import Flora.Logging qualified as Logging
 import Flora.Model.BlobStore.API
 import Flora.Model.Job
 import Flora.Monitoring (setGitHash)
+import Flora.Tracing
 import FloraWeb.API.Routes qualified as API
 import FloraWeb.API.Server qualified as API
 import FloraWeb.Common.Auth
@@ -83,7 +84,6 @@ import FloraWeb.Common.Auth
   )
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.ThreadLabel (labelRequestThread)
-import FloraWeb.Common.Tracing
 import FloraWeb.Embedded
 import FloraWeb.Feed.Server qualified as Feed
 import FloraWeb.LiveReload qualified as LiveReload
@@ -189,7 +189,7 @@ runServer appLogger floraEnv = do
                 "flora-server"
                 appLogger
                 floraEnv.environment
-                floraEnv.mltp
+                floraEnv.mltp.sentryDSN
             )
             defaultSettings
   withEffToIO (ConcUnlift Persistent Unlimited) $ \_runInIO ->
@@ -263,6 +263,7 @@ naturalTransform floraEnv logger _webEnvStore app = do
           & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
           & runConcurrent
           & runPrometheusMetrics floraEnv.metrics
+          & runReader floraEnv.domainEnv
           & runReader floraEnv
           & runEff
   either Except.throwError pure result

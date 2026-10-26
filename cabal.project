@@ -28,7 +28,6 @@ allow-newer: chronos:hashable
            , qrcode-juicypixels:*
            , servant-lucid:text
            , tasty-test-reporter:*
-           , wai-middleware-heartbeat:*
            , pandoc-types:QuickCheck
            , pg-entity:resource-pool
            , arbiter:resource-pool
@@ -96,7 +95,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/flora-pm/wai-middleware-heartbeat
-  tag: 5b56e1dd294b6dbc9d25e2e03fb7d4d8b4baf3b2
+  tag: dc816fc335584abf3b5ef4a57be3c9c2e34ab38d
 
 source-repository-package
   type: git

@@ -32,6 +32,7 @@ import GHC.Generics
 import Servant (FromHttpApiData (..), Handler, ServerError)
 import Web.Cookie
 
+import Flora.Environment.Domain (DomainEnv)
 import Flora.Environment.Env
 import Flora.Model.BlobStore.API
 import Flora.Model.Job (JobQueues)
@@ -50,6 +51,7 @@ type RouteEffects =
    , Log
    , Concurrent
    , Metrics AppMetrics
+   , Reader DomainEnv
    , Reader FloraEnv
    , IOE
    ]

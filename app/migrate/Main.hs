@@ -5,6 +5,7 @@ import Data.Function
 import Data.Pool
 import Data.Proxy (Proxy (..))
 import Data.Text qualified as T
+import Database.PostgreSQL.Simple (Connection)
 import Database.PostgreSQL.Simple.Migration
 import Effectful
 import Effectful.Exception qualified as E
@@ -19,17 +20,17 @@ import System.Exit (exitFailure)
 import System.IO
 
 import Flora.Environment
-import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), toConnString)
+import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..), PoolConfig (..), toConnString)
 import Flora.Model.Job
-import FloraJobs.Environment
 
 main :: IO ()
 main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
   config <- execParser (parseConfig "flora.kdl")
-  jobsEnv <- runEff . runFailIO $ getFloraJobsEnv config
-  runAllMigrations jobsEnv.config.connectionInfo
-    & Reader.runReader jobsEnv
+  floraConfig <- runEff . runFailIO $ readFloraConfig config
+  pool <- runEff $ mkPool floraConfig.connectionInfo floraConfig.dbConfig.connectionTimeout 1
+  runAllMigrations floraConfig.connectionInfo
+    & Reader.runReader pool
     & (`E.catches` exceptionHandlers)
     & runLog "flora-migrate" logger LogTrace
     & runEff
@@ -39,7 +40,7 @@ main = Log.withStdOutLogger $ \logger -> do
           logAttention "Unhandled exception" $ object ["exception" .= show ex]
       ]
 
-runAllMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => ConnectionInfo -> Eff es ()
+runAllMigrations :: (IOE :> es, Log :> es, Reader (Pool Connection) :> es) => ConnectionInfo -> Eff es ()
 runAllMigrations connectionInfo = do
   floraMigrations
   arbiterMigrations connectionInfo
@@ -54,9 +55,9 @@ arbiterMigrations connectionInfo = do
       Log.logAttention_ $ "Arbiter migrations failed: " <> T.pack err
       liftIO exitFailure
 
-floraMigrations :: (IOE :> es, Log :> es, Reader FloraJobsEnv :> es) => Eff es ()
+floraMigrations :: (IOE :> es, Log :> es, Reader (Pool Connection) :> es) => Eff es ()
 floraMigrations = do
-  FloraJobsEnv{pool} <- Reader.ask
+  pool <- Reader.ask
   result <- liftIO $ withResource pool $ \conn -> do
     runMigrations conn defaultOptions [MigrationInitialization, MigrationDirectory "./migrations"]
   case result of

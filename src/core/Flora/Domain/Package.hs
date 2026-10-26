@@ -22,7 +22,7 @@ import RequireCallStack
 
 import Flora.Database (withReadOnlyPool, withReadWritePool)
 import Flora.Domain.Release (latestViableRelease)
-import Flora.Environment.Env (FloraEnv (..))
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Model.Package.Guard (guardThatPackageExists)
 import Flora.Model.Package.Types (Namespace, Package (..), PackageName)
 import Flora.Model.Package.Update qualified as Update
@@ -50,26 +50,26 @@ data PackageResolutionError
 resolvePackage
   :: ( Error PackageResolutionError :> es
      , IOE :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      )
   => Namespace
   -> PackageName
   -> FloraM es Package
 resolvePackage namespace packageName = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   guardThatPackageExists pool namespace packageName
     >>= maybe (Error.throwError (PackageNotFound namespace packageName)) pure
 
 resolveExactRelease
   :: ( Error PackageResolutionError :> es
      , IOE :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      )
   => Package
   -> Version
   -> FloraM es Release
 resolveExactRelease package version = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   guardThatReleaseExists pool package.packageId version
     >>= maybe (Error.throwError (ReleaseNotFound package.namespace package.name version)) pure
 
@@ -79,13 +79,13 @@ resolveExactRelease package version = do
 resolveReleaseAtVersion
   :: ( Error PackageResolutionError :> es
      , IOE :> es
-     , Reader FloraEnv :> es
+     , Reader DomainEnv :> es
      )
   => Package
   -> Maybe Version
   -> FloraM es (Release, Vector Release)
 resolveReleaseAtVersion package mversion = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   releases <- withReadOnlyPool pool $ Query.getReleases package.packageId
   release <- case mversion of
     Just version -> case Vector.find (\r -> r.version == version) releases of

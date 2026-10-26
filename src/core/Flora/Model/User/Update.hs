@@ -23,13 +23,13 @@ import Effectful.Time qualified as Time
 import Sel.HMAC.SHA256 qualified as HMAC
 
 import Flora.Database
-import Flora.Environment.Env
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Model.User
 import Flora.Monad
 
-addAdmin :: (IOE :> es, Reader FloraEnv :> es, Time :> es) => AdminCreationForm -> FloraM es User
+addAdmin :: (IOE :> es, Reader DomainEnv :> es, Time :> es) => AdminCreationForm -> FloraM es User
 addAdmin form = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   adminUser <- mkAdmin form
   withReadWritePool pool $ do
     insertUser adminUser
