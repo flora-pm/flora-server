@@ -2,6 +2,7 @@ module Flora.Domain.Import.Package.Bulk.Stream
   ( importFromStream
   ) where
 
+import Control.Concurrent.QSem (signalQSem, waitQSem)
 import Control.Monad
 import Data.MemCache
 import Data.Pool (Pool)
@@ -24,7 +25,7 @@ import RequireCallStack
 import Streamly.Data.Fold qualified as SFold
 import Streamly.Data.Stream (Stream)
 import Streamly.Data.Stream.Prelude qualified as Streamly
-import UnliftIO (finally)
+import UnliftIO (bracket_, finally)
 
 import Flora.Database
 import Flora.Domain.Import.Package
@@ -120,8 +121,9 @@ processFile
   -> Vector (Text, Set Flora.PackageName)
   -> ImportSubject
   -> FloraM es Bool
-processFile pool categories uploaderIds packageIndex indexPackages importSubject =
-  case importSubject of
+processFile pool categories uploaderIds packageIndex indexPackages importSubject = do
+  FloraEnv{importSlots} <- Reader.ask
+  bracket_ (liftIO $ waitQSem importSlots) (liftIO $ signalQSem importSlots) $ case importSubject of
     (CabalFile path, timestamp, mUsername, content) -> Log.localData ["filepath" .= path] $ do
       result <- Error.runErrorNoCallStack @ImportError $ do
         Log.logInfo_ "Importing cabal file"

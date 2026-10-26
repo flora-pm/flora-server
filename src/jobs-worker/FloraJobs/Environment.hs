@@ -25,6 +25,9 @@ deriving via OnlyCheckWhnf HTTP.Manager instance NoThunks HTTP.Manager
 
 data FloraJobsEnv = FloraJobsEnv
   { pool :: Pool PG.Connection
+  -- ^ Job handlers and import workers.
+  , arbiterPool :: Pool PG.Connection
+  -- ^ Arbiter's own statements, see 'arbiterConnections'.
   , httpManager :: HTTP.Manager
   , httpPort :: Word16
   , metrics :: JobsRunnerMetrics
@@ -38,15 +41,13 @@ getFloraJobsEnv config = do
   jobsConfig <- readFloraConfig config
   httpManager <- liftIO $ HTTP.newManager tlsManagerSettings
   metrics <- registerMetrics
-  let PoolConfig{connectionTimeout, connections} = jobsConfig.dbConfig
-  pool <-
-    mkPool
-      jobsConfig.connectionInfo
-      connectionTimeout
-      connections
+  let PoolConfig{connectionTimeout} = jobsConfig.dbConfig
+  pool <- mkPool jobsConfig.connectionInfo connectionTimeout (handlerConnections jobsConfig.dbConfig)
+  arbiterPool <- mkPool jobsConfig.connectionInfo connectionTimeout arbiterConnections
   pure
     FloraJobsEnv
       { pool
+      , arbiterPool
       , httpManager
       , httpPort = jobsConfig.jobsHttpPort
       , metrics

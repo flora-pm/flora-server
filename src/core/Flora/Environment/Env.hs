@@ -12,6 +12,7 @@ module Flora.Environment.Env
 where
 
 import Arbiter.Simple qualified as ArbS
+import Control.Concurrent.QSem (QSem)
 import Data.Aeson
 import Data.Pool (Pool)
 import Data.Text (Text)
@@ -28,6 +29,8 @@ import Flora.Model.Job
 data FloraEnv = FloraEnv
   { pool :: Pool PG.Connection
   , dbConfig :: PoolConfig
+  , importSlots :: QSem
+  -- ^ Shared by all imports, see 'importWorkerLimit'.
   , workerEnv :: ArbS.SimpleEnv JobQueues
   , httpPort :: Word16
   , domain :: Text
@@ -59,6 +62,11 @@ deriving via
   OnlyCheckWhnfNamed "Data.Pool.Pool" (Pool PG.Connection)
   instance
     NoThunks (Pool PG.Connection)
+
+deriving via
+  OnlyCheckWhnfNamed "Control.Concurrent.QSem.QSem" QSem
+  instance
+    NoThunks QSem
 
 deriving via
   OnlyCheckWhnfNamed "Arbiter.Simple.SimpleEnv" (ArbS.SimpleEnv JobQueues)

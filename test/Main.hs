@@ -14,6 +14,7 @@ import Test.Tasty
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
+import Flora.ConfigSpec qualified as ConfigSpec
 import Flora.Database
 import Flora.Domain.Import.Categories (importCategories)
 import Flora.Environment (configFileParser, getFloraEnv)
@@ -65,6 +66,7 @@ specs fixtures =
   [ BlobSpec.spec
   , CabalSpec.spec
   , CategorySpec.spec
+  , ConfigSpec.spec
   , FeedSpec.spec
   , ImportSpec.spec
   , NoThunksSpec.spec

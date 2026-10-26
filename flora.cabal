@@ -703,6 +703,7 @@ test-suite flora-test
     flora-web,
     hedgehog,
     http-client,
+    kdl-hs,
     log-base,
     log-effectful,
     monad-time-effectful,
@@ -734,6 +735,7 @@ test-suite flora-test
     Flora.BlobSpec
     Flora.CabalSpec
     Flora.CategorySpec
+    Flora.ConfigSpec
     Flora.FeedSpec
     Flora.ImportSpec
     Flora.NoThunksSpec

@@ -8,6 +8,7 @@ module Flora.Environment
 where
 
 import Arbiter.Simple qualified as ArbS
+import Control.Concurrent.QSem (newQSem)
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 import Control.Monad (unless)
@@ -54,21 +55,22 @@ mkPool
   -> Eff es (Pool PG.Connection)
 mkPool connectionInfo timeout' connections =
   liftIO $
+    -- One stripe: a thread waits only on its own stripe, so with several
+    -- stripes a budget computed for the whole pool does not hold.
     Pool.newPool $
-      setNumStripes (Just poolStripes) $
-        defaultPoolConfig
-          ( PG.connect
-              PG.ConnectInfo
-                { PG.connectHost = Text.unpack connectionInfo.connectHost
-                , PG.connectPort = connectionInfo.connectPort
-                , PG.connectUser = Text.unpack connectionInfo.connectUser
-                , PG.connectPassword = Text.unpack connectionInfo.connectPassword
-                , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
-                }
-          )
-          PG.close
-          (realToFrac timeout')
-          connections
+      defaultPoolConfig
+        ( PG.connect
+            PG.ConnectInfo
+              { PG.connectHost = Text.unpack connectionInfo.connectHost
+              , PG.connectPort = connectionInfo.connectPort
+              , PG.connectUser = Text.unpack connectionInfo.connectUser
+              , PG.connectPassword = Text.unpack connectionInfo.connectPassword
+              , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
+              }
+        )
+        PG.close
+        (realToFrac timeout')
+        connections
 
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv
@@ -84,6 +86,7 @@ configToEnv floraConfig = do
   let PoolConfig{connectionTimeout, connections} = floraConfig.dbConfig
   pool <- mkPool floraConfig.connectionInfo connectionTimeout connections
   workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) pool "public"
+  importSlots <- liftIO $ newQSem (importWorkerLimit floraConfig.dbConfig)
   assets <- getAssets floraConfig.environment
   featureEnv <- featureConfigToEnv floraConfig.features
   metrics <- registerMetrics
@@ -91,6 +94,7 @@ configToEnv floraConfig = do
     FloraEnv
       { pool = pool
       , dbConfig = floraConfig.dbConfig
+      , importSlots
       , workerEnv
       , httpPort = floraConfig.httpPort
       , domain = floraConfig.domain

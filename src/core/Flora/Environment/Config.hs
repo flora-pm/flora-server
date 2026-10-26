@@ -9,10 +9,8 @@ module Flora.Environment.Config
   , PoolConfig (..)
 
     -- * Dividing the pool
-  , poolStripes
-  , connectionsPerStripe
-  , transientReservePerStripe
-  , jobSharePerStripe
+  , arbiterConnections
+  , handlerConnections
   , importWorkerLimit
   , DeploymentEnv (..)
   , LoggingDestination (..)
@@ -210,33 +208,28 @@ data PoolConfig = PoolConfig
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
 
--- | How many stripes 'Flora.Environment.mkPool' cuts every pool into.
-poolStripes :: Int
-poolStripes = 2
+-- | Size of the jobs runner's Arbiter pool, taken out of 'connections'.
+-- It serves LISTEN, claims, heartbeats, acks, the reaper, crons and job
+-- scheduling: short statements only, so they never wait behind a job handler.
+arbiterConnections :: Int
+arbiterConnections = 6
 
-connectionsPerStripe :: PoolConfig -> Int
-connectionsPerStripe poolConfig = max 1 (poolConfig.connections `div` poolStripes)
+-- | Size of the jobs runner's pool for job handlers and import workers.
+handlerConnections :: PoolConfig -> Int
+handlerConnections poolConfig = poolConfig.connections - arbiterConnections
 
-transientReservePerStripe :: Int
-transientReservePerStripe = 3
-
-jobSharePerStripe :: PoolConfig -> Int
-jobSharePerStripe poolConfig =
-  max
-    1
-    ( connectionsPerStripe poolConfig
-        - poolConfig.importWorkers
-        - transientReservePerStripe
-    )
-
+-- | Process-wide number of import workers that hold a connection at once,
+-- whatever the number of imports running.
 importWorkerLimit :: PoolConfig -> Int
 importWorkerLimit = (.importWorkers)
 
 defaultImportWorkers :: Int
 defaultImportWorkers = 4
 
+-- | A job handler holds at most one connection at a time, so with this limit
+-- handlers and import workers never wait for a connection.
 jobWorkerLimit :: PoolConfig -> Int
-jobWorkerLimit = (poolStripes *) . jobSharePerStripe
+jobWorkerLimit poolConfig = handlerConnections poolConfig - importWorkerLimit poolConfig
 
 data TestConfig = TestConfig
   { httpPort :: Word16
@@ -262,7 +255,15 @@ nominalDiffTimeDecoder = KDL.withDecoder KDL.number \x -> do
     Just n -> pure (fromIntegral @Int n)
 
 poolConfigDecoder :: KDL.NodeDecoder PoolConfig
-poolConfigDecoder = KDL.children do
+poolConfigDecoder = KDL.withDecoder poolConfigFieldsDecoder \poolConfig -> do
+  when (jobWorkerLimit poolConfig < 1) $
+    KDL.failM $
+      "connections must be at least importWorkers + "
+        <> Text.show (arbiterConnections + 1)
+  pure poolConfig
+
+poolConfigFieldsDecoder :: KDL.NodeDecoder PoolConfig
+poolConfigFieldsDecoder = KDL.children do
   connectionTimeout <- KDL.argAtWith "timeout" nominalDiffTimeDecoder
   connections <- KDL.argAt "connections"
   importWorkers <-
@@ -270,7 +271,6 @@ poolConfigDecoder = KDL.children do
       (fromMaybe defaultImportWorkers <$> KDL.optional (KDL.argAt "importWorkers"))
       \n -> do
         when (n < 1) (KDL.failM "importWorkers must be at least 1")
-        when (n > connections) (KDL.failM "importWorkers cannot exceed connections")
         pure n
   pure PoolConfig{connectionTimeout, connections, importWorkers}
 

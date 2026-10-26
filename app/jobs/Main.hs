@@ -62,7 +62,7 @@ main = do
   jobsEnv <- runEff . runFailIO $ getFloraJobsEnv floraConfig
   floraEnv <- runEff . runFailIO . runFileSystem $ getFloraEnv floraConfig
   let baseURL = "http://localhost:" <> display jobsEnv.httpPort
-  workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.pool "public"
+  workerEnv <- ArbS.createSimpleEnvWithPool (Proxy @JobQueues) jobsEnv.arbiterPool "public"
   let withLogger = makeLogger "logs/flora-jobs.json" floraEnv.mltp.logger
   runEff . runConcurrent $ do
     liftIO installThreadDumpHandler
