@@ -88,3 +88,13 @@ jobs:
         make db-test-setup
         cabal run flora-cli -- create-user --username "hackage-user" --email "tech@flora.pm" --password "foobar2000"
         make test
+
+    - name: Check missing FK indexes
+      run: .github/workflows/check-missing-fk-indexes.sh
+      env:
+        FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"
+
+    - name: Check duplicate indexes
+      run: .github/workflows/check-duplicate-indexes.sh
+      env:
+        FLORA_DB_CONNSTRING: "postgresql://postgres:postgres@localhost/flora_test"
