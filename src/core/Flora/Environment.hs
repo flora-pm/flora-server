@@ -58,19 +58,20 @@ mkPool connectionInfo timeout' connections =
     -- One stripe: a thread waits only on its own stripe, so with several
     -- stripes a budget computed for the whole pool does not hold.
     Pool.newPool $
-      defaultPoolConfig
-        ( PG.connect
-            PG.ConnectInfo
-              { PG.connectHost = Text.unpack connectionInfo.connectHost
-              , PG.connectPort = connectionInfo.connectPort
-              , PG.connectUser = Text.unpack connectionInfo.connectUser
-              , PG.connectPassword = Text.unpack connectionInfo.connectPassword
-              , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
-              }
-        )
-        PG.close
-        (realToFrac timeout')
-        connections
+      setAcquisitionTimeout (Just acquisitionTimeout) $
+        defaultPoolConfig
+          ( PG.connect
+              PG.ConnectInfo
+                { PG.connectHost = Text.unpack connectionInfo.connectHost
+                , PG.connectPort = connectionInfo.connectPort
+                , PG.connectUser = Text.unpack connectionInfo.connectUser
+                , PG.connectPassword = Text.unpack connectionInfo.connectPassword
+                , PG.connectDatabase = Text.unpack connectionInfo.connectDatabase
+                }
+          )
+          PG.close
+          (realToFrac timeout')
+          connections
 
 -- In future we'll want to error for conflicting o ptions
 featureConfigToEnv :: FeatureConfig -> Eff es FeatureEnv

@@ -9,6 +9,7 @@ module Flora.Environment.Config
   , PoolConfig (..)
 
     -- * Dividing the pool
+  , acquisitionTimeout
   , arbiterConnections
   , handlerConnections
   , importWorkerLimit
@@ -207,6 +208,11 @@ data PoolConfig = PoolConfig
   }
   deriving stock (Generic, Show)
   deriving anyclass (NFData, NoThunks)
+
+-- | Seconds a thread waits for a pooled connection before
+-- 'Data.Pool.AcquisitionTimeout' is thrown.
+acquisitionTimeout :: Double
+acquisitionTimeout = 30
 
 -- | Size of the jobs runner's Arbiter pool, taken out of 'connections'.
 -- It serves LISTEN, claims, heartbeats, acks, the reaper, crons and job
