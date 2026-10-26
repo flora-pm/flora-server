@@ -2,6 +2,7 @@
 
 module Advisories.Model.Advisory.Update where
 
+import Data.Maybe (fromJust)
 import Database.PostgreSQL.Entity
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple.SqlQQ (sql)
@@ -10,14 +11,17 @@ import Effectful
 import Advisories.Model.Advisory.Types
 import Flora.Database
 
+-- | Always returns a row: the @RETURNING@ clause of the
+-- @INSERT … ON CONFLICT DO UPDATE@ query yields exactly one id.
 upsertAdvisory
   :: (ReadDB :> es, WriteDB :> es)
   => AdvisoryDAO
-  -> Eff es (Maybe (Only AdvisoryId))
+  -> Eff es (Only AdvisoryId)
 upsertAdvisory advisoryDAO =
-  queryOne
-    ( _insert @AdvisoryDAO
-        <> [sql|
+  fromJust
+    <$> queryOne
+      ( _insert @AdvisoryDAO
+          <> [sql|
              ON CONFLICT (hsec_id) DO UPDATE
              SET modified = EXCLUDED.modified
                , published = EXCLUDED.published
@@ -33,5 +37,5 @@ upsertAdvisory advisoryDAO =
                , details = EXCLUDED.details
              RETURNING advisory_id
            |]
-    )
-    advisoryDAO
+      )
+      advisoryDAO

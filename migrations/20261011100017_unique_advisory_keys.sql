@@ -2,6 +2,9 @@ DELETE FROM affected_version_ranges;
 DELETE FROM affected_packages;
 DELETE FROM security_advisories;
 
+ALTER TABLE affected_packages
+  ALTER COLUMN advisory_id SET NOT NULL;
+
 CREATE UNIQUE INDEX security_advisories_hsec_id_key
   ON security_advisories (hsec_id);
 

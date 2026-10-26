@@ -6,7 +6,7 @@ import Data.Time (UTCTime (..), fromGregorian)
 import Data.UUID.V4 qualified as UUID
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (Only (..))
-import Distribution.Types.Version (mkVersion)
+import Distribution.Types.Version (Version, mkVersion)
 import Effectful.Reader.Static qualified as Reader
 import RequireCallStack
 import Security.Advisories.Core.Advisory (CWE (..), Keyword (..))
@@ -33,7 +33,8 @@ spec =
     "Advisory tests"
     [ testThis "Upserting an advisory is idempotent" testUpsertAdvisoryIsIdempotent
     , testThis "Upserting an affected package is idempotent" testUpsertAffectedPackageIsIdempotent
-    , testThis "Inserting an affected version range deduplicates" testInsertAffectedVersionRangeDeduplicates
+    , testThis "Setting affected version ranges deduplicates" testSetAffectedVersionRangesDeduplicates
+    , testThis "Re-importing an advisory replaces changed version ranges" testSetAffectedVersionRangesReplaces
     ]
 
 getBiscuitHaskell :: RequireCallStack => TestEff Package
@@ -54,35 +55,34 @@ hsecFor serial = fromMaybe (error "invalid hsec id") (mkHsecId 2026 serial)
 
 -- | Upsert the test advisory and return the canonical advisory id.
 --
--- @hsec@ gives each test a distinct natural key: tests run in parallel and
--- must not contend on the same @(hsec_id)@ / @(advisory_id, package_id)@ rows
+-- hsec gives each test a distinct natural key: tests run in parallel and
+-- must not contend on the same (hsec_id) / (advisory_id, package_id) rows
 -- (build ids with 'hsecFor').
 seedAdvisory :: RequireCallStack => HsecId -> Text -> UTCTime -> TestEff AdvisoryId
 seedAdvisory hsec details modified = do
   FloraEnv{pool} <- Reader.ask
   advisoryId <- AdvisoryId <$> liftIO UUID.nextRandom
   Only advisoryId' <-
-    assertJust_
-      =<< withReadWritePool
-        pool
-        ( Update.upsertAdvisory
-            AdvisoryDAO
-              { advisoryId
-              , hsecId = hsec
-              , modified
-              , published = UTCTime (fromGregorian 2026 1 1) 0
-              , capecs = Vector.empty
-              , cwes = Vector.singleton (CWE 400)
-              , keywords = Vector.singleton (Keyword "json")
-              , aliases = Vector.empty
-              , related = Vector.empty
-              , advisoryReferences = References Vector.empty
-              , pandoc = Pandoc nullMeta []
-              , html = "<p>x</p>"
-              , summary = "test advisory"
-              , details
-              }
-        )
+    withReadWritePool
+      pool
+      ( Update.upsertAdvisory
+          AdvisoryDAO
+            { advisoryId
+            , hsecId = hsec
+            , modified
+            , published = UTCTime (fromGregorian 2026 1 1) 0
+            , capecs = Vector.empty
+            , cwes = Vector.singleton (CWE 400)
+            , keywords = Vector.singleton (Keyword "json")
+            , aliases = Vector.empty
+            , related = Vector.empty
+            , advisoryReferences = References Vector.empty
+            , pandoc = Pandoc nullMeta []
+            , html = "<p>x</p>"
+            , summary = "test advisory"
+            , details
+            }
+      )
   pure advisoryId'
 
 testUpsertAdvisoryIsIdempotent :: RequireCallStack => TestEff ()
@@ -104,20 +104,19 @@ seedAffectedPackage advisoryId packageId cvss = do
   FloraEnv{pool} <- Reader.ask
   affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
   Only affectedPackageId' <-
-    assertJust_
-      =<< withReadWritePool
-        pool
-        ( Update.upsertAffectedPackage
-            AffectedPackageDAO
-              { affectedPackageId
-              , advisoryId
-              , packageId
-              , cvss
-              , architectures = Nothing
-              , operatingSystems = Nothing
-              , declarations = Vector.empty
-              }
-        )
+    withReadWritePool
+      pool
+      ( Update.upsertAffectedPackage
+          AffectedPackageDAO
+            { affectedPackageId
+            , advisoryId
+            , packageId
+            , cvss
+            , architectures = Nothing
+            , operatingSystems = Nothing
+            , declarations = Vector.empty
+            }
+      )
   pure affectedPackageId'
 
 testUpsertAffectedPackageIsIdempotent :: RequireCallStack => TestEff ()
@@ -137,28 +136,26 @@ testUpsertAffectedPackageIsIdempotent = do
   assertEqual_ 1 (Vector.length affectedPackages)
   assertEqual_ cvss2 (Vector.head affectedPackages).cvss
 
-testInsertAffectedVersionRangeDeduplicates :: RequireCallStack => TestEff ()
-testInsertAffectedVersionRangeDeduplicates = do
+testSetAffectedVersionRangesDeduplicates :: RequireCallStack => TestEff ()
+testSetAffectedVersionRangesDeduplicates = do
   package <- getBiscuitHaskell
   advisoryId <- seedAdvisory (hsecFor 9997) "v2" (UTCTime (fromGregorian 2026 2 1) 0)
   cvss <- assertRight (parseCVSS "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H")
   affectedPackageId <- seedAffectedPackage advisoryId package.packageId cvss
 
   FloraEnv{pool} <- Reader.ask
-  let insertRange = do
+  let mkRange = do
         affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
-        withReadWritePool
-          pool
-          ( Update.insertAffectedVersionRange
-              AffectedVersionRangeDAO
-                { affectedVersionId
-                , affectedPackageId
-                , introducedVersion = mkVersion [1, 0, 0]
-                , fixedVersion = Nothing
-                }
-          )
-  insertRange
-  insertRange
+        pure
+          AffectedVersionRangeDAO
+            { affectedVersionId
+            , affectedPackageId
+            , introducedVersion = mkVersion [1, 0, 0]
+            , fixedVersion = Nothing
+            }
+  range1 <- mkRange
+  range1' <- mkRange -- same natural key, fresh id: the ON CONFLICT DO NOTHING arm
+  withReadWritePool pool (Update.setAffectedVersionRanges affectedPackageId [range1, range1'])
 
   count <-
     withReadOnlyPool
@@ -168,3 +165,31 @@ testInsertAffectedVersionRangeDeduplicates = do
           (Only affectedPackageId)
       )
   assertEqual_ 1 count
+
+testSetAffectedVersionRangesReplaces :: RequireCallStack => TestEff ()
+testSetAffectedVersionRangesReplaces = do
+  package <- getBiscuitHaskell
+  advisoryId <- seedAdvisory (hsecFor 9996) "v1" (UTCTime (fromGregorian 2026 3 1) 0)
+  cvss <- assertRight (parseCVSS "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H")
+  affectedPackageId <- seedAffectedPackage advisoryId package.packageId cvss
+  FloraEnv{pool} <- Reader.ask
+  let mkRange fixed = do
+        affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
+        pure
+          AffectedVersionRangeDAO
+            { affectedVersionId
+            , affectedPackageId
+            , introducedVersion = mkVersion [1, 0, 0]
+            , fixedVersion = fixed
+            }
+  stale <- mkRange (Just (mkVersion [2, 0, 0]))
+  updated <- mkRange (Just (mkVersion [2, 1, 0]))
+  withReadWritePool pool (Update.setAffectedVersionRanges affectedPackageId [stale])
+  -- upstream revised the advisory: the fixed version moved
+  withReadWritePool pool (Update.setAffectedVersionRanges affectedPackageId [updated])
+  ranges <-
+    withReadOnlyPool pool $
+      query
+        "SELECT introduced_version, fixed_version FROM affected_version_ranges WHERE affected_package_id = ?"
+        (Only affectedPackageId)
+  assertEqual_ [(mkVersion [1, 0, 0], Just (mkVersion [2, 1, 0]))] (ranges :: [(Version, Maybe Version)])
