@@ -1,4 +1,4 @@
-flora {
+jobs-runner {
   domain localhost
   httpPort 8085
   webHttpPort 8084

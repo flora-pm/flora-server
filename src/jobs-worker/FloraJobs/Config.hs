@@ -38,7 +38,7 @@ data FloraJobsConfig = FloraJobsConfig
 
 jobsConfigDecoder :: KDL.DocumentDecoder FloraJobsConfig
 jobsConfigDecoder = KDL.document do
-  KDL.nodeWith "flora" floraJobsConfigDecoder
+  KDL.nodeWith "jobs-runner" floraJobsConfigDecoder
 
 floraJobsConfigDecoder :: KDL.NodeDecoder FloraJobsConfig
 floraJobsConfigDecoder = KDL.children do
