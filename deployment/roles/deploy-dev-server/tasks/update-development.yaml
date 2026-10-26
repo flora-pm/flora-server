@@ -57,7 +57,7 @@
 - name: "Build backend"
   register: build
   ansible.builtin.command:
-    cmd: cabal build --no-semaphore
+    cmd: cabal build flora-server --no-semaphore
     chdir: dev/flora-server
   async: 3600
   poll: 30
