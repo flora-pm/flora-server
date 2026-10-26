@@ -1,12 +1,13 @@
 module Advisories.Import where
 
 import Data.Aeson hiding (Result (..))
-import Data.Foldable (forM_, traverse_)
+import Data.Foldable (forM_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Text qualified as Text
 import Data.Text.Display
+import Data.Traversable (forM)
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -83,10 +84,8 @@ importAdvisory advisory = do
   let advisoryAffectedPackages = Vector.fromList advisory.advisoryAffected
   advisoryIdForInsert <- AdvisoryId <$> liftIO UUID.nextRandom
   let advisoryDAO = processAdvisory advisoryIdForInsert advisory
-  result <- withReadWritePool pool $ Update.upsertAdvisory advisoryDAO
-  case result of
-    Just (Only advisoryId) -> processAffectedPackages advisoryId advisoryAffectedPackages
-    Nothing -> error "upsertAdvisory returned no id"
+  Only advisoryId <- withReadWritePool pool $ Update.upsertAdvisory advisoryDAO
+  processAffectedPackages advisoryId advisoryAffectedPackages
 
 processAdvisory
   :: AdvisoryId
@@ -145,14 +144,14 @@ processAffectedPackage advisoryId affected = do
           , "package" .= display packageName
           ]
     Just package -> do
-      affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
+      affectedPackageIdForInsert <- AffectedPackageId <$> liftIO UUID.nextRandom
       let declarations =
             affected.affectedDeclarations
               & fmap (uncurry AffectedDeclaration)
               & Vector.fromList
       let affectedPackageDAO =
             AffectedPackageDAO
-              { affectedPackageId = affectedPackageId
+              { affectedPackageId = affectedPackageIdForInsert
               , advisoryId = advisoryId
               , packageId = package.packageId
               , cvss = affected.affectedCVSS
@@ -160,10 +159,8 @@ processAffectedPackage advisoryId affected = do
               , operatingSystems = fmap Vector.fromList affected.affectedOS
               , declarations = declarations
               }
-      result <- withReadWritePool pool $ Update.upsertAffectedPackage affectedPackageDAO
-      case result of
-        Just (Only affectedPackageId') -> processAffectedVersionRanges affectedPackageId' affected.affectedVersions
-        Nothing -> error "upsertAffectedPackage returned no id"
+      Only affectedPackageId <- withReadWritePool pool $ Update.upsertAffectedPackage affectedPackageDAO
+      processAffectedVersionRanges affectedPackageId affected.affectedVersions
 
 processAffectedVersionRanges
   :: ( IOE :> es
@@ -174,16 +171,13 @@ processAffectedVersionRanges
   -> FloraM es ()
 processAffectedVersionRanges affectedPackageId affectedVersions = do
   DomainEnv{pool} <- Reader.ask
-  traverse_
-    ( \affectedVersion -> do
-        affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
-        let versionRangeDAO =
-              AffectedVersionRangeDAO
-                { affectedVersionId = affectedVersionId
-                , affectedPackageId = affectedPackageId
-                , introducedVersion = affectedVersion.affectedVersionRangeIntroduced
-                , fixedVersion = affectedVersion.affectedVersionRangeFixed
-                }
-        withReadWritePool pool $ Update.insertAffectedVersionRange versionRangeDAO
-    )
-    affectedVersions
+  versionRangeDAOs <- forM affectedVersions $ \affectedVersion -> do
+    affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
+    pure
+      AffectedVersionRangeDAO
+        { affectedVersionId = affectedVersionId
+        , affectedPackageId = affectedPackageId
+        , introducedVersion = affectedVersion.affectedVersionRangeIntroduced
+        , fixedVersion = affectedVersion.affectedVersionRangeFixed
+        }
+  withReadWritePool pool $ Update.setAffectedVersionRanges affectedPackageId versionRangeDAOs
