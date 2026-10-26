@@ -1,7 +1,6 @@
 flora {
   domain localhost
   httpPort 8085
-  jobsHttpPort 8086
   environment test
   db {
     host "localhost"

@@ -8,14 +8,14 @@ import Log
 
 import Flora.Database
 import Flora.Domain.Category.Normalise
-import Flora.Environment.Env
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Model.Category.Types (Category, deterministicCategoryId, mkCategory)
 import Flora.Model.Category.Update (bulkInsertCategories)
 import Flora.Monad
 
-importCategories :: (IOE :> es, Reader FloraEnv :> es) => FloraM es ()
+importCategories :: (IOE :> es, Reader DomainEnv :> es) => FloraM es ()
 importCategories = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   Log.logInfo_ "Sourcing categories"
   withReadWritePool pool $
     bulkInsertCategories (fmap fromCanonical floraCategories)

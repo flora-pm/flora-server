@@ -24,7 +24,7 @@ refreshInterval = 60_000_000
 runQueueMetricsLoop
   :: (Concurrent :> es, IOE :> es, Log :> es)
   => ArbS.SimpleEnv JobQueues
-  -> JobsRunnerMetrics
+  -> JobsMetrics
   -> Eff es ()
 runQueueMetricsLoop workerEnv metrics = forever $ do
   handleSync logFailure $ do

@@ -21,6 +21,11 @@ module Flora.Environment.Config
   , getAssetHash
   , floraEnvDecoder
   , poolConfigDecoder
+  , connectionInfoDecoder
+  , deploymentEnvDecoder
+  , loggingDestinationDecoder
+  , optionalFeaturesDecoder
+  , sentryDSNDecoder
   , toConnString
   , jobWorkerLimit
   )
@@ -142,11 +147,14 @@ data MLTP = MLTP
 
 mltpDecoder :: KDL.NodeDecoder MLTP
 mltpDecoder = KDL.children do
-  sentryDSN <- mfilter (/= mempty) <$> KDL.optional (KDL.argAt "sentryDSN")
+  sentryDSN <- sentryDSNDecoder
   prometheusEnabled <- KDL.argAt "prometheusEnabled"
   logger <- KDL.argAtWith "loggingDestination" loggingDestinationDecoder
   eventlogSocketDirectory <- KDL.optional $ KDL.argAt "eventlogSocketDirectory"
   pure MLTP{sentryDSN, prometheusEnabled, logger, eventlogSocketDirectory}
+
+sentryDSNDecoder :: KDL.NodeListDecoder (Maybe String)
+sentryDSNDecoder = mfilter (/= mempty) <$> KDL.optional (KDL.argAt "sentryDSN")
 
 data FeatureConfig = FeatureConfig
   { tarballsEnabled :: Bool
@@ -161,13 +169,17 @@ featureConfigDecoder = KDL.children do
   blobStoreFS <- KDL.argAt "blobStoreFilePath"
   pure FeatureConfig{tarballsEnabled, blobStoreFS}
 
+optionalFeaturesDecoder :: KDL.NodeListDecoder FeatureConfig
+optionalFeaturesDecoder =
+  fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing})
+    <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
+
 -- | The datatype that is used to model the external configuration
 data FloraConfig = FloraConfig
   { dbConfig :: PoolConfig
   , connectionInfo :: ConnectionInfo
   , domain :: Text
   , httpPort :: Word16
-  , jobsHttpPort :: Word16
   , mltp :: MLTP
   , features :: FeatureConfig
   , environment :: DeploymentEnv
@@ -193,13 +205,12 @@ floraConfigDecoder = KDL.children do
   connectionInfo <- KDL.nodeWith "db" connectionInfoDecoder
   domain <- KDL.argAt "domain"
   httpPort <- KDL.argAt "httpPort"
-  jobsHttpPort <- KDL.argAt "jobsHttpPort"
   mltp <- KDL.nodeWith "mltp" mltpDecoder
-  features <- fromMaybe (FeatureConfig{tarballsEnabled = False, blobStoreFS = Nothing}) <$> KDL.optional (KDL.nodeWith "features" featureConfigDecoder)
+  features <- optionalFeaturesDecoder
   environment <- KDL.argAtWith "environment" deploymentEnvDecoder
   seoIndexing <- fromMaybe True <$> KDL.optional (KDL.argAtWith "seoIndexing" KDL.bool)
   https <- fromMaybe True <$> KDL.optional (KDL.argAtWith "https" KDL.bool)
-  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, jobsHttpPort, mltp, features, environment, seoIndexing, https}
+  pure FloraConfig{dbConfig, connectionInfo, domain, httpPort, mltp, features, environment, seoIndexing, https}
 
 data PoolConfig = PoolConfig
   { connectionTimeout :: NominalDiffTime
@@ -241,14 +252,6 @@ data TestConfig = TestConfig
   { httpPort :: Word16
   , dbConfig :: PoolConfig
   , connectionInfo :: ConnectionInfo
-  , mltp :: MLTP
-  }
-  deriving stock (Generic)
-
-data FloraJobsConfig = FloraJobsConfig
-  { dbConfig :: PoolConfig
-  , connectionInfo :: ConnectionInfo
-  , httpPort :: Word16
   , mltp :: MLTP
   }
   deriving stock (Generic)

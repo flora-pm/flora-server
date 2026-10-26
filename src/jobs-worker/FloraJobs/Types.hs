@@ -19,21 +19,23 @@ import GHC.Stack (prettyCallStack)
 import RequireCallStack
 
 import Flora.Domain.Import.Types (ImportError)
-import Flora.Environment.Env
+import Flora.Environment.Domain (DomainEnv)
 import Flora.Model.BlobStore.API
+import Flora.Monitoring (ImportMetrics)
 import FloraJobs.Environment
+import FloraJobs.Metrics (JobsMetrics (..))
 
 type JobsRunner =
   Eff
     '[ Reader FloraJobsEnv
+     , Reader DomainEnv
      , BlobStoreAPI
      , Log
      , Time
      , TypedProcess
      , FileSystem
-     , Reader FloraEnv
      , Concurrent
-     , Metrics AppMetrics
+     , Metrics ImportMetrics
      , Error ImportError
      , IOE
      ]
@@ -41,22 +43,21 @@ type JobsRunner =
 runJobRunner
   :: RequireCallStack
   => FloraJobsEnv
-  -> FloraEnv
   -> Logger
   -> JobsRunner a
   -> IO a
-runJobRunner runnerEnv floraEnv logger jobRunner = do
+runJobRunner runnerEnv logger jobRunner = do
   jobRunner
     & withUnliftStrategy (ConcUnlift Ephemeral Unlimited)
     & Reader.runReader runnerEnv
-    & withBlobStore floraEnv.features
-    & LogEff.runLog ("flora-jobs-" <> display floraEnv.environment) logger defaultLogLevel
+    & Reader.runReader runnerEnv.domainEnv
+    & withBlobStore runnerEnv.features
+    & LogEff.runLog ("flora-jobs-" <> display runnerEnv.environment) logger defaultLogLevel
     & runTime
     & runTypedProcess
     & runFileSystem
-    & Reader.runReader floraEnv
     & runConcurrent
-    & runPrometheusMetrics floraEnv.metrics
+    & runPrometheusMetrics runnerEnv.metrics.importMetrics
     & Error.runErrorWith
       ( \callstack err -> do
           liftIO $ putStrLn $ prettyCallStack callstack

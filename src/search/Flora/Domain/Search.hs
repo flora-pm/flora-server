@@ -22,7 +22,7 @@ import Log qualified
 import Advisories.Model.Affected.Query qualified as Query
 import Advisories.Model.Affected.Types (PackageAdvisoryPreview)
 import Flora.Database
-import Flora.Environment.Env
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Logging
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
@@ -70,22 +70,22 @@ instance Display SearchAction where
     "Search in Advisories: " <> displayBuilder searchTerm
 
 searchPackageByName
-  :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Reader DomainEnv :> es, Time :> es)
   => (Word, Word)
   -> Text
   -> FloraM es (Word, Vector PackageInfo)
 searchPackageByName (offset, limit) queryString = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   withReadOnlyPool pool $ Query.searchPackage (offset, limit) queryString
 
 searchPackageByNamespaceAndName
-  :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Reader DomainEnv :> es, Time :> es)
   => (Word, Word)
   -> Namespace
   -> Text
   -> FloraM es (Word, Vector PackageInfo)
 searchPackageByNamespaceAndName (offset, limit) namespace queryString = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   ((count, results), duration) <-
     timeAction $
       withReadOnlyPool pool $
@@ -108,14 +108,14 @@ searchPackageByNamespaceAndName (offset, limit) namespace queryString = do
   pure (count, results)
 
 searchDependents
-  :: (IOE :> es, Reader FloraEnv :> es)
+  :: (IOE :> es, Reader DomainEnv :> es)
   => (Word, Word)
   -> Namespace
   -> PackageName
   -> Maybe Text
   -> FloraM es (Word, Vector PackageInfo)
 searchDependents pagination namespace packageName mSearchString = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   (totalDependents, results) <-
     withReadOnlyPool pool $
       Query.getAllPackageDependentsWithLatestVersion
@@ -126,12 +126,12 @@ searchDependents pagination namespace packageName mSearchString = do
   pure (totalDependents, fmap dependencyInfoToPackageInfo results)
 
 searchExecutable
-  :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Reader DomainEnv :> es, Time :> es)
   => (Word, Word)
   -> Text
   -> FloraM es (Word, Vector PackageInfoWithExecutables)
 searchExecutable (offset, limit) queryString = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   (results, duration) <-
     timeAction $ withReadOnlyPool pool $ Query.searchExecutable (offset, limit) queryString
   count <- withReadOnlyPool pool $ Query.getNumberOfExecutablesByName queryString
@@ -153,12 +153,12 @@ searchExecutable (offset, limit) queryString = do
   pure (count, results)
 
 searchInAdvisories
-  :: (IOE :> es, Reader FloraEnv :> es)
+  :: (IOE :> es, Reader DomainEnv :> es)
   => (Word, Word)
   -> Text
   -> FloraM es (Word, Vector PackageAdvisoryPreview)
 searchInAdvisories (offset, limit) queryString = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   results <-
     withReadOnlyPool pool $
       Query.searchInAdvisories (offset, limit) queryString
@@ -181,21 +181,21 @@ dependencyInfoToPackageInfo dep =
     dep.revisedAt
 
 listAllPackagesInNamespace
-  :: (IOE :> es, Log :> es, Reader FloraEnv :> es, Time :> es)
+  :: (IOE :> es, Log :> es, Reader DomainEnv :> es, Time :> es)
   => (Word, Word)
   -> Namespace
   -> FloraM es (Word, Vector PackageInfo)
 listAllPackagesInNamespace pagination namespace = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   withReadOnlyPool pool $ Query.listAllPackagesInNamespace pagination namespace
 
 listAllPackages
   :: forall (es :: [Effect])
-   . (IOE :> es, Reader FloraEnv :> es)
+   . (IOE :> es, Reader DomainEnv :> es)
   => (Word, Word)
   -> FloraM es (Word, Vector PackageInfo)
 listAllPackages (offset, limit) = do
-  FloraEnv{pool} <- Reader.ask
+  DomainEnv{pool} <- Reader.ask
   withReadOnlyPool pool $ Query.listAllPackages (offset, limit)
 
 -- | Search modifiers:

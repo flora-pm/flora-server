@@ -46,6 +46,7 @@ import Flora.Domain.Import.Types
 import Flora.Domain.Package (refreshMaterialisedViews)
 import Flora.Environment (configFileParser, getFloraEnv)
 import Flora.Environment.Config (ConnectionInfo (..), FloraConfig (..))
+import Flora.Environment.Domain (DomainEnv)
 import Flora.Environment.Env
 import Flora.Model.BlobIndex.Update qualified as Update
 import Flora.Model.BlobStore.API
@@ -58,7 +59,8 @@ import Flora.Model.User
 import Flora.Model.User.Query qualified as Query
 import Flora.Model.User.Update
 import Flora.Monad
-import FloraWeb.Common.Tracing (startEventlogSocket)
+import Flora.Monitoring (ImportMetrics, registerImportMetrics)
+import Flora.Tracing (startEventlogSocket)
 
 data Options = Options
   { cliCommand :: Command
@@ -105,11 +107,13 @@ main = Log.withStdOutLogger $ \logger -> do
   hSetBuffering stdout LineBuffering
   cliArgs <- execParser (parseOptions `withInfo` "CLI tool for flora-server")
   env <- getFloraEnv cliArgs.configFile & runFileSystem & runFailIO & runEff
+  importMetrics <- runEff registerImportMetrics
   startEventlogSocket env.mltp.eventlogSocketDirectory
   installThreadDumpHandler
   provideCallStack $
     runCommand cliArgs.configFile cliArgs.cliCommand
       & Reader.runReader env
+      & Reader.runReader env.domainEnv
       & (`E.catches` exceptionHandlers)
       & runLog "flora-cli" logger defaultLogLevel
       & runFileSystem
@@ -127,7 +131,7 @@ main = Log.withStdOutLogger $ \logger -> do
             liftIO $ putStrLn $ prettyCallStack callstack
             E.throwIO $ userError $ show err
         )
-      & runPrometheusMetrics env.metrics
+      & runPrometheusMetrics importMetrics
       & Concurrent.runConcurrent
       & runEff
   where
@@ -224,7 +228,8 @@ runCommand
      , FileSystem :> es
      , IOE :> es
      , Log :> es
-     , Metrics AppMetrics :> es
+     , Metrics ImportMetrics :> es
+     , Reader DomainEnv :> es
      , Reader FloraEnv :> es
      , Time :> es
      )
@@ -317,7 +322,8 @@ importIndex
      , Error ImportError :> es
      , IOE :> es
      , Log :> es
-     , Metrics AppMetrics :> es
+     , Metrics ImportMetrics :> es
+     , Reader DomainEnv :> es
      , Reader FloraEnv :> es
      , Time :> es
      )

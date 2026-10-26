@@ -33,6 +33,7 @@ import Flora.Database
 import Flora.Domain.Package (resolveExactRelease, resolvePackage, resolveReleaseAtVersion)
 import Flora.Domain.Release (latestViableRelease)
 import Flora.Domain.Search qualified as Search
+import Flora.Environment.Domain (DomainEnv)
 import Flora.Environment.Env (FeatureEnv (..), FloraEnv (..))
 import Flora.Model.BlobIndex.Query qualified as Query
 import Flora.Model.BlobStore.API (BlobStoreAPI)
@@ -91,6 +92,7 @@ isLatestRelease packageId version = do
 
 listPackagesHandler
   :: ( IOE :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
@@ -114,6 +116,7 @@ showNamespaceHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
@@ -145,6 +148,7 @@ showPackageHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      )
@@ -159,6 +163,7 @@ showVersionHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      )
@@ -174,6 +179,7 @@ showPackageVersion
   :: ( Error ServerError :> es
      , IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      )
@@ -250,6 +256,7 @@ showDependentsHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
@@ -273,6 +280,7 @@ showVersionDependentsHandler
   :: ( Error ServerError :> es
      , IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
@@ -332,6 +340,7 @@ showVersionDependentsHandler (Headers session _) packageNamespace packageName ve
 showDependenciesHandler
   :: ( Error ServerError :> es
      , IOE :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
@@ -352,6 +361,7 @@ showDependenciesHandler s@(Headers session _) packageNamespace packageName = do
 showVersionDependenciesHandler
   :: ( Error ServerError :> es
      , IOE :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      , Time.Time :> es
@@ -400,6 +410,7 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
 showChangelogHandler
   :: ( Error ServerError :> es
      , IOE :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      )
@@ -421,6 +432,7 @@ showChangelogHandler s@(Headers session _) packageNamespace packageName = do
 showVersionChangelogHandler
   :: ( Error ServerError :> es
      , IOE :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      )
@@ -511,6 +523,7 @@ getTarballHandler
      , Error ServerError :> es
      , IOE :> es
      , Log :> es
+     , Reader DomainEnv :> es
      , Reader FeatureEnv :> es
      , Reader FloraEnv :> es
      )

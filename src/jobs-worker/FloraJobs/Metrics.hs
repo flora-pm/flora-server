@@ -3,8 +3,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module FloraJobs.Metrics
-  ( JobsRunnerMetrics (..)
+  ( JobsMetrics (..)
   , registerMetrics
+  , registerRuntimeMetrics
   , setGitHash
   , metricsObservabilityHooks
   , recordJobFailure
@@ -12,6 +13,7 @@ module FloraJobs.Metrics
   ) where
 
 import Arbiter.Core qualified as Arb
+import Control.Monad (void, when)
 import Data.Foldable (for_)
 import Data.Int (Int64)
 import Data.Maybe (fromMaybe)
@@ -25,12 +27,17 @@ import Effectful.Prometheus
 import NoThunks.Class (NoThunks, OnlyCheckWhnfNamed (..))
 import Prometheus
 import Prometheus qualified as P
+import Prometheus.Metric.GHC qualified as P
+import Prometheus.Metric.Proc qualified as P
+import System.Info qualified as System
 
 import Flora.Model.Job (PackageJob, jobTypeLabel)
+import Flora.Monitoring (ImportMetrics, registerImportMetrics)
 import Paths_flora (version)
 
-data JobsRunnerMetrics = JobsRunnerMetrics
+data JobsMetrics = JobsMetrics
   { buildInformation :: P.Vector P.Label2 P.Gauge
+  , importMetrics :: ImportMetrics
   , jobsClaimed :: P.Vector P.Label1 P.Counter
   , jobsTotal :: P.Vector P.Label2 P.Counter
   , jobDuration :: P.Vector P.Label1 P.Histogram
@@ -46,9 +53,9 @@ data JobsRunnerMetrics = JobsRunnerMetrics
 -- Opaque, long-lived Prometheus metric state held for the jobs process lifetime:
 -- assert WHNF only, do not descend into the library's intentionally-lazy metric map.
 deriving via
-  OnlyCheckWhnfNamed "FloraJobs.Metrics.JobsRunnerMetrics" JobsRunnerMetrics
+  OnlyCheckWhnfNamed "FloraJobs.Metrics.JobsMetrics" JobsMetrics
   instance
-    NoThunks JobsRunnerMetrics
+    NoThunks JobsMetrics
 
 jobDurationBuckets :: [Double]
 jobDurationBuckets = P.exponentialBuckets 0.05 2 19
@@ -56,8 +63,9 @@ jobDurationBuckets = P.exponentialBuckets 0.05 2 19
 queueLatencyBuckets :: [Double]
 queueLatencyBuckets = P.exponentialBuckets 0.1 2 16
 
-registerMetrics :: IOE :> es => Eff es JobsRunnerMetrics
+registerMetrics :: IOE :> es => Eff es JobsMetrics
 registerMetrics = do
+  importMetrics <- registerImportMetrics
   buildInformation <-
     P.register $
       P.vector ("git_revision", "version") $
@@ -157,17 +165,22 @@ registerMetrics = do
               \snapshot, so without this a dead poller is indistinguishable from a \
               \calm queue"
           }
-  pure JobsRunnerMetrics{..}
+  pure JobsMetrics{..}
+
+registerRuntimeMetrics :: IOE :> es => Eff es ()
+registerRuntimeMetrics = do
+  void $ P.register P.ghcMetrics
+  when (System.os == "linux") $ void $ P.register P.procMetrics
 
 setGitHash
-  :: Metrics JobsRunnerMetrics :> es
+  :: Metrics JobsMetrics :> es
   => Eff es ()
 setGitHash =
   setLabelledGauge (.buildInformation) ($(gitHash), T.pack (showVersion version)) 1.0
 
 metricsObservabilityHooks
   :: MonadIO m
-  => JobsRunnerMetrics
+  => JobsMetrics
   -> Arb.ObservabilityHooks m PackageJob
 metricsObservabilityHooks metrics =
   Arb.defaultObservabilityHooks
@@ -189,7 +202,7 @@ queueWait insertedAt notVisibleUntil claimTime =
   where
     becameClaimableAt = maybe insertedAt (max insertedAt) notVisibleUntil
 
-recordJobClaimed :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> UTCTime -> m ()
+recordJobClaimed :: MonadIO m => JobsMetrics -> Arb.JobRead PackageJob -> UTCTime -> m ()
 recordJobClaimed metrics job claimTime = liftIO $ do
   let jobType = jobTypeLabel (Arb.payload job)
   P.withLabel metrics.jobsClaimed jobType P.incCounter
@@ -198,27 +211,27 @@ recordJobClaimed metrics job claimTime = liftIO $ do
     jobType
     (`P.observe` realToFrac (queueWait (Arb.insertedAt job) (Arb.notVisibleUntil job) claimTime))
 
-recordJobSuccess :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> NominalDiffTime -> m ()
+recordJobSuccess :: MonadIO m => JobsMetrics -> Arb.JobRead PackageJob -> NominalDiffTime -> m ()
 recordJobSuccess metrics job duration = liftIO $ do
   let jobType = jobTypeLabel (Arb.payload job)
   P.withLabel metrics.jobDuration jobType (`P.observe` realToFrac duration)
   P.withLabel metrics.jobsTotal (jobType, "success") P.incCounter
 
-recordJobFailure :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> NominalDiffTime -> m ()
+recordJobFailure :: MonadIO m => JobsMetrics -> Arb.JobRead PackageJob -> NominalDiffTime -> m ()
 recordJobFailure metrics job duration = liftIO $ do
   let jobType = jobTypeLabel (Arb.payload job)
   P.withLabel metrics.jobDuration jobType (`P.observe` realToFrac duration)
   P.withLabel metrics.jobsTotal (jobType, "failure") P.incCounter
 
-recordJobRetry :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> m ()
+recordJobRetry :: MonadIO m => JobsMetrics -> Arb.JobRead PackageJob -> m ()
 recordJobRetry metrics job =
   liftIO $ P.withLabel metrics.jobRetries (jobTypeLabel (Arb.payload job)) P.incCounter
 
-recordJobDeadLettered :: MonadIO m => JobsRunnerMetrics -> Arb.JobRead PackageJob -> m ()
+recordJobDeadLettered :: MonadIO m => JobsMetrics -> Arb.JobRead PackageJob -> m ()
 recordJobDeadLettered metrics job =
   liftIO $ P.withLabel metrics.jobsDeadLettered (jobTypeLabel (Arb.payload job)) P.incCounter
 
-publishQueueStats :: MonadIO m => JobsRunnerMetrics -> Arb.QueueStats -> Int64 -> m ()
+publishQueueStats :: MonadIO m => JobsMetrics -> Arb.QueueStats -> Int64 -> m ()
 publishQueueStats metrics stats deadLettered = liftIO $ do
   for_ perState $ \(state, value) ->
     P.withLabel metrics.queueDepth state (`P.setGauge` fromIntegral value)

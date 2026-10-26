@@ -1,7 +1,7 @@
 flora {
   domain localhost
-  httpPort 8084
-  jobsHttpPort 8085
+  httpPort 8085
+  webHttpPort 8084
   environment development
   db {
     host "flora-database"
@@ -21,7 +21,6 @@ flora {
     sentryDSN ""
     prometheusEnabled #true
     loggingDestination stdout
-    eventlogSocketDirectory "/tmp/flora-eventlog"
   }
 
   features {

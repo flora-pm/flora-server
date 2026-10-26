@@ -50,11 +50,12 @@ import System.FilePath
 
 import Flora.Domain.Import.Package.Bulk.Stream
 import Flora.Domain.Import.Types (ImportError (..), ImportFileType (..), ImportSubject)
-import Flora.Environment.Env
+import Flora.Environment.Domain (DomainEnv (..))
 import Flora.Model.Package.Types qualified as Flora
 import Flora.Model.PackageIndex.Guard
 import Flora.Model.PackageIndex.Types
 import Flora.Monad
+import Flora.Monitoring (ImportMetrics)
 
 -- | The index archive is traversed twice:
 -- 1. To collect the package names and count the cabal revisions we are going to import;
@@ -64,8 +65,8 @@ importFromArchive
      , Error ImportError :> es
      , IOE :> es
      , Log :> es
-     , Metrics AppMetrics :> es
-     , Reader FloraEnv :> es
+     , Metrics ImportMetrics :> es
+     , Reader DomainEnv :> es
      , RequireCallStack
      , Time :> es
      )
