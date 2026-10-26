@@ -77,11 +77,6 @@ jobs:
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
-    - name: Build
-      run: |
-        cabal install postgresql-migration
-        make build
-
     - name: Test
       run: |
         set -x
