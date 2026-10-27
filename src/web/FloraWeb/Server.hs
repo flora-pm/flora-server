@@ -104,6 +104,7 @@ type FloraAuthContext =
 runFlora :: FilePath -> IO ()
 runFlora config = do
   setBacktraceMechanismState HasCallStackBacktrace True
+  setBacktraceMechanismState IPEBacktrace True
   secureMain $
     bracket
       (getFloraEnv config & runFileSystem & runFailIO & runEff)

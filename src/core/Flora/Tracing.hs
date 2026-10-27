@@ -5,7 +5,6 @@ import Control.Exception (AsyncException (..), Exception (..), IOException, Some
 import Control.Monad (forM_, when)
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Char8 (unpack)
-import Data.List (isInfixOf)
 import Data.Maybe (isJust)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -21,7 +20,7 @@ import Network.Wai.Handler.Warp
 import System.Directory (createDirectoryIfMissing)
 import System.Environment (getProgName)
 import System.FilePath ((</>))
-import System.IO.Error (ioeGetErrorType, ioeGetLocation)
+import System.IO.Error (ioeGetErrorType)
 import System.Log.Raven
 import System.Log.Raven.Transport.HttpConduit (sendRecord)
 import System.Log.Raven.Types (SentryLevel (..), SentryRecord (..))
@@ -75,10 +74,6 @@ shouldDisplayException exception
   | Just (_ :: InvalidRequest) <- fromException exception = False
   | Just (ioeGetErrorType -> et) <- fromException exception
   , et == ResourceVanished || et == InvalidArgument =
-      False
-  | Just ioe <- fromException exception
-  , ioeGetErrorType ioe == NoSuchThing
-  , "kevent" `isInfixOf` ioeGetLocation ioe =
       False
   | otherwise = True
 
