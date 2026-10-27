@@ -1,15 +1,17 @@
 module Advisories.Import where
 
 import Data.Aeson hiding (Result (..))
-import Data.Foldable (forM_, traverse_)
+import Data.Foldable (forM_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Text qualified as Text
 import Data.Text.Display
+import Data.Traversable (forM)
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple (Only (..))
 import Effectful
 import Effectful.Error.Static
 import Effectful.Log (Log)
@@ -79,10 +81,10 @@ importAdvisory
   -> FloraM es ()
 importAdvisory advisory = do
   DomainEnv{pool} <- Reader.ask
-  advisoryId <- AdvisoryId <$> liftIO UUID.nextRandom
   let advisoryAffectedPackages = Vector.fromList advisory.advisoryAffected
-  let advisoryDAO = processAdvisory advisoryId advisory
-  withReadWritePool pool $ Update.insertAdvisory advisoryDAO
+  advisoryIdForInsert <- AdvisoryId <$> liftIO UUID.nextRandom
+  let advisoryDAO = processAdvisory advisoryIdForInsert advisory
+  Only advisoryId <- withReadWritePool pool $ Update.upsertAdvisory advisoryDAO
   processAffectedPackages advisoryId advisoryAffectedPackages
 
 processAdvisory
@@ -142,14 +144,14 @@ processAffectedPackage advisoryId affected = do
           , "package" .= display packageName
           ]
     Just package -> do
-      affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
+      affectedPackageIdForInsert <- AffectedPackageId <$> liftIO UUID.nextRandom
       let declarations =
             affected.affectedDeclarations
               & fmap (uncurry AffectedDeclaration)
               & Vector.fromList
       let affectedPackageDAO =
             AffectedPackageDAO
-              { affectedPackageId = affectedPackageId
+              { affectedPackageId = affectedPackageIdForInsert
               , advisoryId = advisoryId
               , packageId = package.packageId
               , cvss = affected.affectedCVSS
@@ -157,7 +159,7 @@ processAffectedPackage advisoryId affected = do
               , operatingSystems = fmap Vector.fromList affected.affectedOS
               , declarations = declarations
               }
-      withReadWritePool pool $ Update.insertAffectedPackage affectedPackageDAO
+      Only affectedPackageId <- withReadWritePool pool $ Update.upsertAffectedPackage affectedPackageDAO
       processAffectedVersionRanges affectedPackageId affected.affectedVersions
 
 processAffectedVersionRanges
@@ -169,16 +171,13 @@ processAffectedVersionRanges
   -> FloraM es ()
 processAffectedVersionRanges affectedPackageId affectedVersions = do
   DomainEnv{pool} <- Reader.ask
-  traverse_
-    ( \affectedVersion -> do
-        affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
-        let versionRangeDAO =
-              AffectedVersionRangeDAO
-                { affectedVersionId = affectedVersionId
-                , affectedPackageId = affectedPackageId
-                , introducedVersion = affectedVersion.affectedVersionRangeIntroduced
-                , fixedVersion = affectedVersion.affectedVersionRangeFixed
-                }
-        withReadWritePool pool $ Update.insertAffectedVersionRange versionRangeDAO
-    )
-    affectedVersions
+  versionRangeDAOs <- forM affectedVersions $ \affectedVersion -> do
+    affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
+    pure
+      AffectedVersionRangeDAO
+        { affectedVersionId = affectedVersionId
+        , affectedPackageId = affectedPackageId
+        , introducedVersion = affectedVersion.affectedVersionRangeIntroduced
+        , fixedVersion = affectedVersion.affectedVersionRangeFixed
+        }
+  withReadWritePool pool $ Update.setAffectedVersionRanges affectedPackageId versionRangeDAOs
