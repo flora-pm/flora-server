@@ -26,6 +26,7 @@ import Flora.Model.User (UserCreationForm (..), mkUser)
 import Flora.Model.User.Update qualified as Update
 import Flora.Monitoring (registerImportMetrics)
 import Flora.NoThunksSpec qualified as NoThunksSpec
+import Flora.OpenApiSpec qualified as OpenApiSpec
 import Flora.PackageGroupSpec qualified as PackageGroupSpec
 import Flora.PackageSpec qualified as PackageSpec
 import Flora.SchedulerSpec qualified as SchedulerSpec
@@ -73,6 +74,7 @@ specs fixtures =
   , FeedSpec.spec
   , ImportSpec.spec
   , NoThunksSpec.spec
+  , OpenApiSpec.spec
   , PackageGroupSpec.spec
   , PackageSpec.spec
   , SchedulerSpec.spec

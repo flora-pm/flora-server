@@ -16,7 +16,7 @@ footer =
           h2_ [class_ "title-section", id_ "nav-secondary"] "More links"
           ul_ [class_ "flow flow--small", role_ "list"] $ do
             li_ $
-              a_ [href_ "/documentation/"] "Documentation"
+              a_ [href_ "https://docs.flora.pm"] "Documentation"
             li_ $
               a_ [href_ "/packages/"] "All Packages"
             --  TODO: [non-urgent] Add Package Feeds link back when page's design is ready
