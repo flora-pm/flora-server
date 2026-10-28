@@ -11,7 +11,6 @@ import Control.Monad (void, when)
 import Control.Monad.Except qualified as Except
 import Data.Aeson
 import Data.Maybe (isJust)
-import Data.OpenApi (OpenApi)
 import Data.Pool qualified as Pool
 import Data.Text qualified as Text
 import Data.Text.Display (display)
@@ -51,11 +50,11 @@ import Servant
   , NotFoundErrorFormatter
   , Proxy (Proxy)
   , ServerError (..)
+  , addHeader
   , defaultErrorFormatters
   , err404
   , notFoundErrorFormatter
   , serveDirectoryWebApp
-  , serveDirectoryWith
   , serveWithContextT
   )
 import Servant.OpenApi
@@ -84,7 +83,6 @@ import FloraWeb.Common.Auth
   )
 import FloraWeb.Common.OpenSearch
 import FloraWeb.Common.ThreadLabel (labelRequestThread)
-import FloraWeb.Embedded
 import FloraWeb.Feed.Server qualified as Feed
 import FloraWeb.LiveReload qualified as LiveReload
 import FloraWeb.Pages.Server qualified as Pages
@@ -231,7 +229,6 @@ floraServer arbiterConfig environment reloadChannel =
     , pages = const (Pages.server arbiterConfig)
     , api = API.apiServer
     , openApi = pure openApiHandler
-    , docs = serveDirectoryWith docsBundler
     , livereload = LiveReload.liveReloadHandler environment reloadChannel
     }
 
@@ -295,15 +292,16 @@ notFoundPage floraEnv _req =
         Left err -> err
         Right _ -> err404
 
-openApiHandler :: OpenApi
+openApiHandler :: OpenApiResponse
 openApiHandler =
-  toOpenApi (Proxy @API.Routes)
-    & #info
-    % #title
-    .~ "Flora API"
-    & #info
-    % #version
-    .~ "v0"
-    & #info
-    % #description
-    ?~ "Flora API Documentation"
+  addHeader "*" $
+    toOpenApi (Proxy @API.Routes)
+      & #info
+      % #title
+      .~ "Flora API"
+      & #info
+      % #version
+      .~ "v0"
+      & #info
+      % #description
+      ?~ "Flora API Documentation"
