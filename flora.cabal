@@ -198,8 +198,8 @@ library
     base16-bytestring,
     base64,
     bytestring,
-    colourista,
     Cabal-syntax,
+    colourista,
     containers,
     cryptohash-md5,
     cryptohash-sha256,
@@ -211,8 +211,8 @@ library
     effectful,
     effectful-core,
     effectful-plugin,
-    eventlog-socket,
     envparse,
+    eventlog-socket,
     filepath,
     gitrev,
     heptapod ^>=1.1.0.0,
@@ -369,7 +369,6 @@ library flora-web
     FloraWeb.Components.SkipLink
     FloraWeb.Components.Utils
     FloraWeb.Components.VersionListHeader
-    FloraWeb.Embedded
     FloraWeb.Feed.Routes
     FloraWeb.Feed.Server
     FloraWeb.Feed.Templates
@@ -489,7 +488,6 @@ library flora-web
     vector,
     vector-algorithms,
     wai,
-    wai-app-static,
     wai-log,
     wai-middleware-heartbeat,
     wai-middleware-prometheus,
@@ -709,6 +707,7 @@ test-suite flora-test
     flora-web,
     hedgehog,
     http-client,
+    http-types,
     kdl-hs,
     log-base,
     log-effectful,
@@ -724,6 +723,7 @@ test-suite flora-test
     sel,
     servant,
     servant-client,
+    servant-server,
     streamly-core,
     tar,
     tasty,
@@ -733,6 +733,7 @@ test-suite flora-test
     uuid,
     vector,
     vector-algorithms,
+    wai-extra,
     zlib,
 
   -- cabal-gild: discover test --exclude "test/Main.hs"
@@ -745,6 +746,7 @@ test-suite flora-test
     Flora.FeedSpec
     Flora.ImportSpec
     Flora.NoThunksSpec
+    Flora.OpenApiSpec
     Flora.PackageGroupSpec
     Flora.PackageSpec
     Flora.SchedulerSpec

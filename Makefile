@@ -20,18 +20,15 @@ clean: ## Remove the cabal build artifacts
 
 assets-deps: ## Install the dependencies of the frontend
 	@cd assets/ && npm clean-install
-	@cd docs/ && npm clean-install
 
 build-assets: assets-deps ## Build the web assets
 	@cd assets/ && npm run build
-	@cd docs/ && npm run build
 
 watch-assets: ## Continuously rebuild the web assets
 	@cd assets/ && npm run watch
 
 clean-assets: ## Remove JS artifacts
 	@cd assets/ && rm -R node_modules
-	@cd docs/ && rm -R node_modules
 
 db-start:
 	@rm -rf .postgres

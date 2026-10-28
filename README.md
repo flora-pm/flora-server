@@ -46,7 +46,7 @@
 
 ## 📖 Guides
 
-Visit https://flora.pm/documentation for explanations on what Flora can do.
+Visit https://docs.flora.pm for explanations on what Flora can do.
 
 ## 🤝 Contributing
 

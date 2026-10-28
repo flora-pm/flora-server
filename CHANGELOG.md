@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.1.3 -- 2026-10-28
+
+- Remove Docusaurus in favour of https://docs.flora.pm [1378](https://github.com/flora-pm/flora-server/pull/1378)
+
 ## 1.1.2 -- 2026-10-25
 
 - Lighten the development environment [#1360](https://github.com/flora-pm/flora-server/pull/1360)

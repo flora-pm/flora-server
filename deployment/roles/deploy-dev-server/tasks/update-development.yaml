@@ -35,11 +35,6 @@
     path: "{{ ansible_env.HOME }}/dev/flora-server/static.tar.gz"
     state: absent
 
-- name: "Remove documentation build"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/dev/flora-server/docs/build"
-    state: absent
-
 - name: "Clean build artifacts"
   ansible.builtin.command:
     cmd: gmake clean
