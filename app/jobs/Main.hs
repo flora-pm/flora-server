@@ -99,6 +99,11 @@ main = do
       let config =
             defaultConfig
               { Worker.cronJobs = crons
+              , Worker.logConfig =
+                  (Worker.logConfig defaultConfig)
+                    { Worker.logDestination =
+                        Worker.LogCallback (arbiterLogCallback ("flora-jobs-" <> display jobsEnv.environment) logger)
+                    }
               , Worker.observabilityHooks =
                   instrumentedHooks
                     { Arb.onJobFailure = \job message startTime endTime -> do
@@ -208,6 +213,19 @@ processJob workerEnv jobsRunnerEnv logger job =
         jobsRunnerEnv
         logger
         (Log.localDomain "job-runner" $ Runner.runner workerEnv job)
+
+arbiterLogCallback :: Text -> Log.Logger -> Worker.LogLevel -> Text -> [Worker.Pair] -> IO ()
+arbiterLogCallback component logger level message context =
+  runEff $
+    Log.runLog component logger defaultLogLevel $
+      Log.logMessage (toLogBaseLevel level) message (object context)
+  where
+    toLogBaseLevel :: Worker.LogLevel -> LogLevel
+    toLogBaseLevel = \case
+      Worker.Debug -> LogTrace
+      Worker.Info -> LogInfo
+      Worker.Warning -> LogAttention
+      Worker.Error -> LogAttention
 
 checkJobsEnvForThunks :: (IOE :> es, Log :> es) => FloraJobsEnv -> Eff es ()
 checkJobsEnvForThunks env = do

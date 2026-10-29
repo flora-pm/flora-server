@@ -16,7 +16,7 @@ jobs: $ncpus
 package *
   ghc-options: +RTS -I0 -RTS -finfo-table-map -fdistinct-constructor-tables -fwrite-ide-info
 
-index-state: 2026-10-29T08:59:13Z
+index-state: 2026-10-29T11:25:04Z
 
 allow-newer: hsec-tools:pandoc
 
