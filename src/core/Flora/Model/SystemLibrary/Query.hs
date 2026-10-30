@@ -36,8 +36,10 @@ ORDER BY sl.kind, sl.name, sr.condition NULLS FIRST
       |]
       (Only releaseId)
   pure $
-    ((Vector.fromList . reverse) <$> Map.fromListWith
-        (<>)
-        [ (CanonicalComponent componentName componentType, [info])
-        | (componentName, componentType) :. info <- results
-        ])
+    ( (Vector.fromList . reverse)
+        <$> Map.fromListWith
+          (<>)
+          [ (CanonicalComponent componentName componentType, [info])
+          | (componentName, componentType) :. info <- results
+          ]
+    )
