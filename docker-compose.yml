@@ -16,7 +16,7 @@ services:
     working_dir: ${PWD}
     volumes:
       - database-data:${PWD}/pgdata/
-      - .:${PWD}:Z
+      - .:${PWD}:z
       - home-data:/home/$USER/
       # Shared with the live-eventlog forwarder;
       # This path is configured in the `eventlogSocketDirectory` configuration.
@@ -55,7 +55,7 @@ services:
   nginx:
     image: docker.io/library/nginx:1.28.0
     volumes:
-      - "./config/templates/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro,Z"
+      - "./config/templates/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro,z"
     ports:
       - "127.0.0.1:${FLORA_NGINX_PORT:-8080}:80"
     profiles:
@@ -64,9 +64,9 @@ services:
       - devel
 
   prometheus:
-    image: "prom/prometheus:v3.13.1"
+    image: "docker.io/prom/prometheus:v3.13.1"
     volumes:
-      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml:z"
     ports:
       - 9090:9090
     expose:
@@ -87,7 +87,7 @@ services:
         condition: "service_started"
     volumes:
       - "${FLORA_EVENTLOG_DIR:-eventlog-socket}:/run/flora"
-      - "./deployment/eventlog-live/eventlog-live-otlp.yaml:/etc/eventlog-live-otlp/config.yaml"
+      - "./deployment/eventlog-live/eventlog-live-otlp.yaml:/etc/eventlog-live-otlp/config.yaml:z"
     environment:
       OTEL_SERVICE_NAME: "flora-server"
       OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
@@ -115,7 +115,7 @@ services:
         condition: "service_started"
     volumes:
       - "${FLORA_EVENTLOG_DIR:-eventlog-socket}:/run/flora"
-      - "./deployment/eventlog-live/eventlog-live-otlp.yaml:/etc/eventlog-live-otlp/config.yaml"
+      - "./deployment/eventlog-live/eventlog-live-otlp.yaml:/etc/eventlog-live-otlp/config.yaml:z"
     environment:
       OTEL_SERVICE_NAME: "flora-jobs-runner"
       OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
@@ -133,25 +133,25 @@ services:
       - live-eventlog
 
   eventlog-otelcol:
-    image: "otel/opentelemetry-collector-contrib:0.140.1"
+    image: "docker.io/otel/opentelemetry-collector-contrib:0.140.1"
     restart: "unless-stopped"
     command:
       - "--config=/etc/otelcol/config.yaml"
     volumes:
-      - "./deployment/eventlog-live/compose/otelcol.yaml:/etc/otelcol/config.yaml"
+      - "./deployment/eventlog-live/compose/otelcol.yaml:/etc/otelcol/config.yaml:z"
     profiles:
       - live-eventlog
 
   eventlog-grafana:
-    image: "grafana/grafana:13.1.1"
+    image: "docker.io/grafana/grafana:13.1.1"
     restart: "unless-stopped"
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
     volumes:
-      - "./deployment/eventlog-live/compose/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml"
-      - "./deployment/eventlog-live/compose/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml"
-      - "./deployment/dashboards:/var/lib/grafana/dashboards"
+      - "./deployment/eventlog-live/compose/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:z"
+      - "./deployment/eventlog-live/compose/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:z"
+      - "./deployment/dashboards:/var/lib/grafana/dashboards:z"
     ports:
       - "127.0.0.1:${FLORA_GRAFANA_PORT:-3000}:3000"
     profiles:

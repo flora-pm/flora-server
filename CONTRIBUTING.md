@@ -82,6 +82,18 @@ The committed `.env` file sets `COMPOSE_PROFILES=local`, which is why plain `doc
 this default, so combine profiles explicitly when you need more than one
 (see [Live Eventlogs](#live-eventlogs)).
 
+#### Podman
+
+You can use rootless Podman (for example with Podman Desktop) instead of Docker.
+Podman needs one more setting: the `devel` container must keep your host user ID,
+or it cannot write to the repository. The file `docker-compose.podman.yml` adds this setting.
+
+Load both compose files with the `COMPOSE_FILE` variable:
+
+```bash
+$ export COMPOSE_FILE=docker-compose.yml:docker-compose.podman.yml
+$ podman compose up -d
+```
 #### Running Haskell Language Server (HLS)
 
 The `devel` container contains `haskell-language-server`, so you do not need to install it on the host.
