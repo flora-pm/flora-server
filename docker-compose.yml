@@ -21,8 +21,6 @@ services:
       # Shared with the live-eventlog forwarder;
       # This path is configured in the `eventlogSocketDirectory` configuration.
       - eventlog-socket:/tmp/flora-eventlog
-    links:
-      - flora-database
     environment:
       - CONFIG=flora.kdl
     command: sleep infinity
