@@ -40,12 +40,6 @@ deterministicRequirementId componentId packageId =
   where
     concatenated = display componentId <> display packageId
 
-deterministicSystemRequirementId :: ComponentId -> PackageId -> RequirementId
-deterministicSystemRequirementId componentId packageId =
-  RequirementId . fromJust . fromByteString . fromStrict . MD5.hash . encodeUtf8 $ concatenated
-  where
-    concatenated = display componentId <> display packageId
-
 data Requirement = Requirement
   { requirementId :: RequirementId
   -- ^ Unique identifier to this requirement in the database
@@ -58,7 +52,7 @@ data Requirement = Requirement
   , components :: Vector Text
   -- ^ Components that are depended on
   , condition :: Maybe (Condition ConfVar)
-  -- ^ The union of all the conditional flags guarding the requirement (dependency) behind.
+  -- ^ The conjunction of all the conditions guarding the requirement
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, FromRow, NFData, ToJSON, ToRow)

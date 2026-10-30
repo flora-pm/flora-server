@@ -48,10 +48,12 @@ import Distribution.Compiler (CompilerFlavor (..))
 import Distribution.Fields.ParseResult
 import Distribution.PackageDescription hiding (PackageId, PackageName)
 import Distribution.PackageDescription qualified as Cabal
+import Distribution.Pretty (prettyShow)
 import Distribution.Types.BuildInfo.Lens qualified as L
 import Distribution.Types.PackageDescription ()
+import Distribution.Utils.Path (getSymbolicPath)
 import Distribution.Utils.ShortText (fromShortText)
-import Distribution.Version (Version, VersionRange, anyVersion, withinRange)
+import Distribution.Version (Version, VersionRange, withinRange)
 import Distribution.Version qualified as Version
 import Effectful
 import Effectful.Error.Static (Error)
@@ -82,11 +84,8 @@ import Flora.Model.PackageUploader.Update qualified as Update
 import Flora.Model.Release (deterministicReleaseId)
 import Flora.Model.Release.Types
 import Flora.Model.Release.Update qualified as Update
-import Flora.Model.Requirement
-  ( Requirement (..)
-  , deterministicRequirementId
-  , deterministicSystemRequirementId
-  )
+import Flora.Model.Requirement (Requirement (..), deterministicRequirementId)
+import Flora.Model.SystemLibrary.Types
 import Flora.Monad
 
 flattenCondTree
@@ -214,20 +213,28 @@ persistImportOutput pool allCategories (ImportOutput package categories release 
     [ "package_name" .= package.name
     , "version" .= release.version
     ]
-    $ withReadWritePool pool
     $ do
-      Update.upsertPackageWithDependencies package (fmap (.package) dependencies)
-      Update.bulkAddToCategory package.packageId packageCategoryIds
-      Update.upsertRelease package release
-      Update.upsertPackageComponents componentsList
-      Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
+      systemRequirements <-
+        traverse
+          (\d -> mkSystemRequirement d.packageComponentId d.library.systemLibraryId d.requirement d.condition)
+          systemDependencies
+      withReadWritePool pool $ do
+        Update.upsertPackageWithDependencies package (fmap (.package) dependencies)
+        Update.bulkAddToCategory package.packageId packageCategoryIds
+        Update.upsertRelease package release
+        Update.upsertPackageComponents componentsList
+        Update.bulkUpsertRequirements (fmap (.requirement) dependencies)
+        Update.bulkUpsertSystemLibraries (fmap (.library) systemDependencies)
+        Update.bulkUpsertSystemRequirements systemRequirements
   where
-    componentsList = NE.toList $ fmap fst components
-    dependencies = foldMap snd components
+    componentsList = NE.toList $ fmap (.component) components
+    dependencies = foldMap (.haskellDependencies) components
+    systemDependencies = foldMap (.systemDependencies) components
     packageCategoryIds =
       Maybe.mapMaybe
         (\name -> (.categoryId) <$> Vector.find (\c -> c.name == name) allCategories)
         categories
+
 -- | Transforms a 'GenericPackageDescription' from Cabal into an 'ImportOutput'
 -- that can later be inserted into the database. This function produces stable, deterministic ids,
 -- so it should be possible to extract and insert a single package many times in a row.
@@ -316,24 +323,33 @@ extractPackageDataFromCabal pool uploaderIds packageIndex indexPackages uploadTi
               , uploaderId = mPackageUploaderId
               }
 
-      let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> (PackageComponent, List HaskellDependency, List SystemDependency)
+      let extractCondTreeComponent' :: L.HasBuildInfo component => ComponentType -> Text -> CondTree ConfVar c component -> ComponentWithDependencies
           extractCondTreeComponent' = extractCondTreeComponent package indexPackages release
 
-          lib, subLibs, foreignLibs, executables, testSuites, benchmarks :: [(PackageComponent, [HaskellDependency], [SystemDependency])]
-
+          lib :: [ComponentWithDependencies]
           lib = extractCondTreeComponent' Component.Library (display package.name) <$> maybeToList genericDesc.condLibrary
+
+          subLibs :: [ComponentWithDependencies]
           subLibs =
             (\(compName, subLibrary) -> extractCondTreeComponent' Component.Library (display compName) subLibrary)
               <$> genericDesc.condSubLibraries
+
+          foreignLibs :: [ComponentWithDependencies]
           foreignLibs =
             (\(compName, fLib) -> extractCondTreeComponent' Component.ForeignLib (display compName) fLib)
               <$> genericDesc.condForeignLibs
+
+          executables :: [ComponentWithDependencies]
           executables =
             (\(compName, exe) -> extractCondTreeComponent' Component.Executable (display compName) exe)
               <$> genericDesc.condExecutables
+
+          testSuites :: [ComponentWithDependencies]
           testSuites =
             (\(compName, testSuite) -> extractCondTreeComponent' Component.TestSuite (display compName) testSuite)
               <$> genericDesc.condTestSuites
+
+          benchmarks :: [ComponentWithDependencies]
           benchmarks =
             (\(compName, benchmark) -> extractCondTreeComponent' Component.Benchmark (display compName) benchmark)
               <$> genericDesc.condBenchmarks
@@ -372,7 +388,7 @@ extractCondTreeComponent
   -> Text
   -- ^ component name
   -> CondTree ConfVar c component
-  -> (PackageComponent, List HaskellDependency, List SystemDependency)
+  -> ComponentWithDependencies
 extractCondTreeComponent
   package
   indexPackages
@@ -380,17 +396,17 @@ extractCondTreeComponent
   componentType
   componentName
   conditionalComp =
-    ( mkPackageComponent componentType componentName release
-    , hsDeps
-    , sysDeps
-    )
-    where
-      (hsDeps, sysDeps) =
-        mkAllDependencies
-          package
-          indexPackages
-          (mkComponentId componentType componentName release)
-          conditionalComp
+    let (haskellDependencies, systemDependencies) =
+          mkAllDependencies
+            package
+            indexPackages
+            (mkComponentId componentType componentName release)
+            conditionalComp
+     in ComponentWithDependencies
+          { component = mkPackageComponent componentType componentName release
+          , haskellDependencies
+          , systemDependencies
+          }
 
 getLibName :: PackageName -> LibraryName -> Text
 getLibName pname LMainLibName = display pname
@@ -436,40 +452,28 @@ mkPkgconfigDependency
   -> Cabal.PkgconfigDependency
   -> SystemDependency
 mkPkgconfigDependency packageComponentId cond (Cabal.PkgconfigDependency pcDepName pcVersionRange) =
-  uncurry SystemDependency $
-    mkSystemDependency packageComponentId cond (SystemFromPkgconfig, name, display pcVersionRange)
+  mkSystemDependency packageComponentId cond PkgConfig name versionRange
   where
-    name = pcDepName & unPkgconfigName & pack & SystemPackageName
-
-mkExtraLibraryDependency
-  :: ComponentId
-  -> Maybe (Condition ConfVar)
-  -> Text
-  -- ^ Library name in "extra-library" field.
-  -> SystemDependency
-mkExtraLibraryDependency packageComponentId cond name =
-  uncurry SystemDependency $
-    mkSystemDependency packageComponentId cond (SystemFromExtraLibrary, SystemPackageName name, display anyVersion)
+    name = pcDepName & unPkgconfigName & pack & SystemLibraryName
+    versionRange = case pcVersionRange of
+      PcAnyVersion -> Nothing
+      range -> Just (pack $ prettyShow range)
 
 mkSystemDependency
   :: ComponentId
   -> Maybe (Condition ConfVar)
-  -> (SystemPackageProvenance, SystemPackageName, Text)
-  -- ^ Text is the textual representation of the version range
-  -> (SystemPackage, Requirement)
-mkSystemDependency packageComponentId cond (provenance, name, versionRangeTxt) =
-  let sysPackageId = deterministicSystemPackageId name
-      dependencyPackage = SystemPackage provenance sysPackageId name
-      requirement =
-        Requirement
-          { requirementId = deterministicSystemRequirementId packageComponentId sysPackageId
-          , packageComponentId
-          , packageId = sysPackageId
-          , requirement = versionRangeTxt
-          , components = Vector.empty
-          , condition = cond
-          }
-   in (dependencyPackage, requirement)
+  -> SystemLibraryKind
+  -> SystemLibraryName
+  -> Maybe Text
+  -- ^ Version range
+  -> SystemDependency
+mkSystemDependency packageComponentId condition kind name requirement =
+  SystemDependency
+    { library = SystemLibrary{systemLibraryId = deterministicSystemLibraryId kind name, kind, name}
+    , packageComponentId
+    , requirement
+    , condition
+    }
 
 mkComponentId
   :: ComponentType
@@ -482,31 +486,30 @@ mkComponentId componentType componentName release =
    in deterministicComponentId releaseId canonicalForm
 
 mkAllDependencies
-  :: forall component c
-   . L.HasBuildInfo component
+  :: L.HasBuildInfo component
   => Package
   -> Vector (Text, Set PackageName)
   -> ComponentId
   -> CondTree ConfVar c component
   -> ([HaskellDependency], [SystemDependency])
 mkAllDependencies package indexPackages packageComponentId comp =
-  let conditionalDeps :: [(Maybe (Condition ConfVar), component)]
-      conditionalDeps = flattenCondTree comp
-      hsDeps = (\(cond, L.view L.targetBuildDepends -> ds) -> mkHaskellDependency' cond `mapMaybe` ds) =<< conditionalDeps
-      pcDeps = (\(cond, L.view L.pkgconfigDepends -> ds) -> mkPkgconfigDependency' cond `map` ds) =<< conditionalDeps
-      extraLibDeps = (\(cond, fmap pack . L.view L.extraLibs -> ls) -> mkExtraLibraryDependency' cond `map` ls) =<< conditionalDeps
-   in (hsDeps, pcDeps <> extraLibDeps)
+  foldMap dependenciesOf (flattenCondTree comp)
   where
+    dependenciesOf (cond, buildInfo) =
+      let haskellDependencies = mapMaybe (mkHaskellDependency' cond) (L.view L.targetBuildDepends buildInfo)
+          systemDependencies =
+            map (mkPkgconfigDependency packageComponentId cond) (L.view L.pkgconfigDepends buildInfo)
+              <> map (mkNamedDependency cond ExtraLibrary) (L.view L.extraLibs buildInfo)
+              <> map (mkNamedDependency cond Framework . getSymbolicPath) (L.view L.frameworks buildInfo)
+       in (haskellDependencies, systemDependencies)
     mkHaskellDependency' = mkHaskellDependency package indexPackages packageComponentId
-    mkPkgconfigDependency' = mkPkgconfigDependency packageComponentId
-    mkExtraLibraryDependency' = mkExtraLibraryDependency packageComponentId
+    mkNamedDependency cond kind name =
+      mkSystemDependency packageComponentId cond kind (SystemLibraryName $ pack name) Nothing
 
 getRepoURL :: PackageName -> List Cabal.SourceRepo -> Vector Text
 getRepoURL _ [] = Vector.empty
 getRepoURL _ (repo : _) = Vector.singleton $ display $ fromMaybe mempty repo.repoLocation
 
--- | Get the namespace of a given package from package set.
---   If it cannot be found, Nothing is returned.
 chooseNamespace
   :: PackageName
   -> Vector (Text, Set PackageName)
