@@ -53,6 +53,7 @@ import Flora.Model.Package.Types
 import Flora.Model.PackageGroup.Types
 import Flora.Model.Release.Types
 import Flora.Model.Requirement
+import Flora.Model.SystemLibrary.Types (ComponentSystemDependencies)
 import FloraWeb.Components.AdvisoryListItem
 import FloraWeb.Components.Icons qualified as Icons
 import FloraWeb.Components.PackageCard
@@ -125,9 +126,10 @@ showDependencies
   -> Word
   -> Package
   -> ComponentDependencies
+  -> ComponentSystemDependencies
   -> Bool
   -> FloraHTML
-showDependencies now numberOfReleases latestRelease numberOfDependencies numberOfDependents package componentsInfo isLatestViableRelease = do
+showDependencies now numberOfReleases latestRelease numberOfDependencies numberOfDependents package componentsInfo systemDependencies isLatestViableRelease = do
   presentationHeader
     numberOfReleases
     latestRelease
@@ -140,7 +142,7 @@ showDependencies now numberOfReleases latestRelease numberOfDependencies numberO
     isLatestViableRelease
   section_ [class_ "wrapper inset-large flow", id_ "content"] $ do
     h2_ [class_ "title-2"] "Dependencies"
-    requirementListItem now componentsInfo
+    requirementListItem now componentsInfo systemDependencies
 
 listVersions
   :: Release
