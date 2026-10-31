@@ -91,6 +91,8 @@ cleanUp = do
   void $ execute "DELETE FROM persistent_sessions" ()
   void $ execute "DELETE FROM downloads" ()
   void $ execute "DELETE FROM requirements" ()
+  void $ execute "DELETE FROM system_requirements" ()
+  void $ execute "DELETE FROM system_libraries" ()
   void $ execute "DELETE FROM package_components" ()
   void $ execute "DELETE FROM affected_version_ranges" ()
   void $ execute "DELETE FROM affected_packages" ()

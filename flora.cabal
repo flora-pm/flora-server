@@ -174,6 +174,8 @@ library
     Flora.Model.Release.Types
     Flora.Model.Release.Update
     Flora.Model.Requirement
+    Flora.Model.SystemLibrary.Query
+    Flora.Model.SystemLibrary.Types
     Flora.Model.User
     Flora.Model.User.Query
     Flora.Model.User.Update
