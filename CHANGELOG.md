@@ -14,7 +14,7 @@
 
 - Remove OpenTelemetry tracing. Observability is logs and Prometheus metrics only. The `zipkinEnabled`, `zipkinHost` and `zipkinPort` settings are gone from the `mltp` block [#1353](https://github.com/flora-pm/flora-server/pull/1353)
 
-- Bump `hsec-sync`/`cvss` to restore vulnerabilities fetching [#1344](https://github.com/flora-pm/flora-server/issue/1344) [#1345](https://github.com/flora-pm/flora-server/pull/1345)
+- Bump `hsec-sync`/`cvss` to restore vulnerabilities fetching [#1344](https://github.com/flora-pm/flora-server/issues/1344) [#1345](https://github.com/flora-pm/flora-server/pull/1345)
 
 - Update contact email address in footer [#1351](https://github.com/flora-pm/flora-server/pull/1351)
 
@@ -22,7 +22,7 @@
 
 - Limit to 4 the default amount of connections for simultaneous import workers [#1347](https://github.com/flora-pm/flora-server/pull/1347)
 
-- Better alerts [#1341](https://github.com/flora-pm/flora-server/issue/1341) [#1342](https://github.com/flora-pm/flora-server/pull/1342)
+- Better alerts [#1341](https://github.com/flora-pm/flora-server/issues/1341) [#1342](https://github.com/flora-pm/flora-server/pull/1342)
 
 - CI/CD pipeline [#1338](https://github.com/flora-pm/flora-server/pull/1338)
 
@@ -30,7 +30,7 @@
 
 - Categories for dependencies list [#1336](https://github.com/flora-pm/flora-server/pull/1336)
 
-- Add alert styling [#1334](https://github.com/flora-pm/flora-server/issue/1334) [#1335](https://github.com/flora-pm/flora-server/pull/1335)
+- Add alert styling [#1334](https://github.com/flora-pm/flora-server/issues/1334) [#1335](https://github.com/flora-pm/flora-server/pull/1335)
 
 - Add nginx to docker-compose setup [#1333](https://github.com/flora-pm/flora-server/pull/1333)
 
@@ -38,13 +38,13 @@
 
 - Upgrade `hsec-core` and `hsec-tools` to 0.5.0.0 [#1329](https://github.com/flora-pm/flora-server/pull/1329)
 
-- Disable zoom on double tap for buttons [#1305](https://github.com/flora-pm/flora-server/issue/1305) [#1328](https://github.com/flora-pm/flora-server/pull/1328)
+- Disable zoom on double tap for buttons [#1305](https://github.com/flora-pm/flora-server/issues/1305) [#1328](https://github.com/flora-pm/flora-server/pull/1328)
 
-- Remove interest-button from reset.css [#1313](https://github.com/flora-pm/flora-server/issue/1313) [#1327](https://github.com/flora-pm/flora-server/pull/1327)
+- Remove interest-button from reset.css [#1313](https://github.com/flora-pm/flora-server/issues/1313) [#1327](https://github.com/flora-pm/flora-server/pull/1327)
 
 - Do not use `Text.tail` as it can throw errors [#1326](https://github.com/flora-pm/flora-server/pull/1326)
 
-- Avoid empty versions in package list [#1298](https://github.com/flora-pm/flora-server/issue/1298) [#1325](https://github.com/flora-pm/flora-server/pull/1325)
+- Avoid empty versions in package list [#1298](https://github.com/flora-pm/flora-server/issues/1298) [#1325](https://github.com/flora-pm/flora-server/pull/1325)
 
 - Do not load the latest release multiple times [#1317](https://github.com/flora-pm/flora-server/pull/1317)
 
@@ -52,11 +52,11 @@
 
 - Remove `row_number()` and make the package with latest version query faster [#1315](https://github.com/flora-pm/flora-server/pull/1315)
 
-- Add title and meta description for the `/feed` page [#1300](https://github.com/flora-pm/flora-server/issue/1300) [#1301](https://github.com/flora-pm/flora-server/pull/1301)
+- Add title and meta description for the `/feed` page [#1300](https://github.com/flora-pm/flora-server/issues/1300) [#1301](https://github.com/flora-pm/flora-server/pull/1301)
 
 - Replace yarn with npm [#1299](https://github.com/flora-pm/flora-server/pull/1299)
 
-- Drop the `iso8601-time` library in favour of `Data.Time.Format.ISO8601` [#1231](https://github.com/flora-pm/flora-server/issue/1231) [#1297](https://github.com/flora-pm/flora-server/pull/1297)
+- Drop the `iso8601-time` library in favour of `Data.Time.Format.ISO8601` [#1231](https://github.com/flora-pm/flora-server/issues/1231) [#1297](https://github.com/flora-pm/flora-server/pull/1297)
 
 - Fix anchor positioning polyfills [#1296](https://github.com/flora-pm/flora-server/pull/1296)
 
@@ -66,7 +66,7 @@
 
 - Add interest invokers and anchor positioning polyfills for older browsers [#1291](https://github.com/flora-pm/flora-server/pull/1291)
 
-- Replace esbuild with parcel [#1276](https://github.com/flora-pm/flora-server/issue/1276) [#1290](https://github.com/flora-pm/flora-server/pull/1290)
+- Replace esbuild with parcel [#1276](https://github.com/flora-pm/flora-server/issues/1276) [#1290](https://github.com/flora-pm/flora-server/pull/1290)
 
 - Update `crypton` dependency [#1287](https://github.com/flora-pm/flora-server/pull/1287)
 
@@ -84,18 +84,18 @@
 
   Replaces almost all usage of ENV vars with structured configuration files, an exception being some of the Docker configurations.
 
-- Hide 2FA/TOTP input on login page by default [#1116](https://github.com/flora-pm/flora-server/issue/1116) [#1141](https://github.com/flora-pm/flora-server/pull/1141)
+- Hide 2FA/TOTP input on login page by default [#1116](https://github.com/flora-pm/flora-server/issues/1116) [#1141](https://github.com/flora-pm/flora-server/pull/1141)
 
   - Added spacing between checkbox and label
   - Fixed 2fa toggle behaviour to hide the input by default
 
-- Create Package Maintainers table [#1091](https://github.com/flora-pm/flora-server/issue/1091) [#1093](https://github.com/flora-pm/flora-server/pull/1093)
+- Create Package Maintainers table [#1091](https://github.com/flora-pm/flora-server/issues/1091) [#1093](https://github.com/flora-pm/flora-server/pull/1093)
 
-- Compute lottery factor for packages and display release uploader [#456](https://github.com/flora-pm/flora-server/issue/456) [#1069](https://github.com/flora-pm/flora-server/pull/1069)
+- Compute lottery factor for packages and display release uploader [#456](https://github.com/flora-pm/flora-server/issues/456) [#1069](https://github.com/flora-pm/flora-server/pull/1069)
 
 ## 1.0.31 -- 2026-05-06
 
-- Add package uploader metadata to releases [#1065](https://github.com/flora-pm/flora-server/issue/1065) [#1066](https://github.com/flora-pm/flora-server/pull/1066)
+- Add package uploader metadata to releases [#1065](https://github.com/flora-pm/flora-server/issues/1065) [#1066](https://github.com/flora-pm/flora-server/pull/1066)
 
 ## 1.0.30 -- 2026-04-08
 
@@ -132,16 +132,16 @@
   - Rewrite the tmux script so it only make one single invocation to tmux.
     Session name / Window name / Pane name are all specified in each tmux command, so you can nest it (given that you use zsh).
 
-- Implement API route for package prefix search [#835](https://github.com/flora-pm/flora-server/issue/835) [#873](https://github.com/flora-pm/flora-server/pull/873)
+- Implement API route for package prefix search [#835](https://github.com/flora-pm/flora-server/issues/835) [#873](https://github.com/flora-pm/flora-server/pull/873)
 
   - A new route under /api/experimental/packages/search/:packageNamePrefix is added.
     It returns a vector of names of packages matching the prefix.
 
-- Package feeds [#329](https://github.com/flora-pm/flora-server/issue/329) [#881](https://github.com/flora-pm/flora-server/pull/881)
+- Package feeds [#329](https://github.com/flora-pm/flora-server/issues/329) [#881](https://github.com/flora-pm/flora-server/pull/881)
 
   This PR introduces Atom feeds for packages. The packages are dynamically selected from the `package_feeds` table according to a query parameter array. New releases are inserted in the `package_feeds` table.
 
-- Advertise package feeds in search [#889](https://github.com/flora-pm/flora-server/issue/889) [#890](https://github.com/flora-pm/flora-server/pull/890)
+- Advertise package feeds in search [#889](https://github.com/flora-pm/flora-server/issues/889) [#890](https://github.com/flora-pm/flora-server/pull/890)
 
 - Rework API route for package prefix search [#874](https://github.com/flora-pm/flora-server/pull/874)
 
@@ -153,7 +153,7 @@
 
 - Disable proc metrics on FreeBSD [#910](https://github.com/flora-pm/flora-server/pull/910)
 
-- Add title for pages and use chevron when sensible in headings [#602](https://github.com/flora-pm/flora-server/issue/602) [#943](https://github.com/flora-pm/flora-server/pull/943)
+- Add title for pages and use chevron when sensible in headings [#602](https://github.com/flora-pm/flora-server/issues/602) [#943](https://github.com/flora-pm/flora-server/pull/943)
 
   - Add title for about, categories, specific categories, sign in, 404, searching
   - Change title for packages (add "— Flora.pm")
@@ -163,7 +163,7 @@
 
 ### Significant changes
 
-- Package feeds [#329](https://github.com/flora-pm/flora-server/issue/329) [#881](https://github.com/flora-pm/flora-server/pull/881)
+- Package feeds [#329](https://github.com/flora-pm/flora-server/issues/329) [#881](https://github.com/flora-pm/flora-server/pull/881)
 
   This PR introduces Atom feeds for packages. The packages are dynamically selected from the `package_feeds` table according to a query parameter array. New releases are inserted in the `package_feeds` table.
 
@@ -179,7 +179,7 @@
   - Rewrite the tmux script so it only make one single invocation to tmux.
     Session name / Window name / Pane name are all specified in each tmux command, so you can nest it (given that you use zsh).
 
-- Implement API route for package prefix search [#835](https://github.com/flora-pm/flora-server/issue/835) [#873](https://github.com/flora-pm/flora-server/pull/873)
+- Implement API route for package prefix search [#835](https://github.com/flora-pm/flora-server/issues/835) [#873](https://github.com/flora-pm/flora-server/pull/873)
 
   - A new route under /api/experimental/packages/search/:packageNamePrefix is added.
     It returns a vector of names of packages matching the prefix.
@@ -188,7 +188,7 @@
 
   - The route /api/experimental/packages/search is changed to take two parameters, `name` and `page`
 
-- Advertise package feeds in search [#889](https://github.com/flora-pm/flora-server/issue/889) [#890](https://github.com/flora-pm/flora-server/pull/890)
+- Advertise package feeds in search [#889](https://github.com/flora-pm/flora-server/issues/889) [#890](https://github.com/flora-pm/flora-server/pull/890)
 
 - Disable proc metrics on FreeBSD [#901](https://github.com/flora-pm/flora-server/pull/901)
 
@@ -200,7 +200,7 @@
 
 ### Other changes
 
-- Replace the usage of datalog with Haskell for category normalisation [#794](https://github.com/flora-pm/flora-server/issue/794) [#822](https://github.com/flora-pm/flora-server/pull/822)
+- Replace the usage of datalog with Haskell for category normalisation [#794](https://github.com/flora-pm/flora-server/issues/794) [#822](https://github.com/flora-pm/flora-server/pull/822)
 - Upgrade to Fourmolu 0.17.0.0 [#823](https://github.com/flora-pm/flora-server/pull/823)
 - Add database consistency checks [#837](https://github.com/flora-pm/flora-server/pull/837)
 
@@ -233,7 +233,7 @@
 
 ### Other changes
 
-- Membership data model for packages [#556](https://github.com/flora-pm/flora-server/issue/556) [#785](https://github.com/flora-pm/flora-server/pull/785)
+- Membership data model for packages [#556](https://github.com/flora-pm/flora-server/issues/556) [#785](https://github.com/flora-pm/flora-server/pull/785)
 
   Migration for `create_package_groups` & `create_package_group_packages`
 
