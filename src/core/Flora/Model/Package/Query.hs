@@ -331,19 +331,22 @@ getPackagesFromCategoryWithLatestVersion categoryId = Vector.fromList <$> query 
   where
     q =
       [sql|
-      select distinct lv."package_id"
-                    , lv."namespace"
-                    , lv."name"
-                    , lv."synopsis"
-                    , lv."version"
-                    , lv."license"
-                    , 1
-                    , lv."uploaded_at"
-                    , lv."revised_at"
-      from latest_versions as lv
-        inner join package_categories as p1 on p1.package_id = lv.package_id
-        inner join categories as c2 on c2.category_id = p1.category_id
-      where c2.category_id = ?
+  SELECT DISTINCT lv.package_id
+                , lv.namespace
+                , lv.name
+                , lv.synopsis
+                , lv.version
+                , lv.license
+                , 1
+                , lv.uploaded_at
+                , lv.revised_at
+  FROM latest_versions AS lv
+       INNER JOIN package_categories AS p1 ON p1.package_id = lv.package_id
+       INNER JOIN categories AS c2 ON c2.category_id = p1.category_id
+  WHERE c2.category_id = ?
+  ORDER BY lv.uploaded_at DESC
+         , lv.namespace
+         , lv.name
       |]
 
 searchPackage
