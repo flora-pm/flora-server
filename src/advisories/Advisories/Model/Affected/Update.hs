@@ -13,14 +13,13 @@ import Advisories.Model.Advisory.Types (AdvisoryId)
 import Advisories.Model.Affected.Types
 import Flora.Database
 
--- | Replace the affected packages of an advisory (and, transitively, their
--- version ranges) with the given entries, so re-importing an advisory never
--- leaves stale rows behind and one advisory can carry several entries for the
--- same package. All deletes and inserts must run in a single transaction
--- (e.g. one 'withReadWritePool' call), otherwise a failure in between loses
--- data until the next import heals it. Two concurrent invocations for the
--- same advisory could interleave their delete/insert phases, so the import
--- must not run concurrently for one advisory.
+-- | Invariants:
+--
+-- * All deletes and inserts must run in a single transaction: a failure in
+--   between loses data until the next import heals it.
+--
+-- * Two invocations for the same advisory must not run concurrently: their
+--   delete/insert phases could interleave.
 setAdvisoryAffectedPackages
   :: WriteDB :> es
   => AdvisoryId
@@ -39,11 +38,8 @@ setAdvisoryAffectedPackages advisoryId entries = do
   forM_ entries $ \(dao, ranges) ->
     setAffectedVersionRanges dao.affectedPackageId ranges
 
--- | Replace the version ranges of an affected package with the given ones,
--- so re-importing an advisory never leaves stale ranges behind. The delete
--- and the insert must run in a single transaction (e.g. one
--- 'withReadWritePool' call), otherwise a failure in between loses the ranges
--- until the next import heals them.
+-- | Invariant: the delete and the insert must run in a single transaction: a
+-- failure in between loses the ranges until the next import heals them.
 setAffectedVersionRanges
   :: WriteDB :> es
   => AffectedPackageId
