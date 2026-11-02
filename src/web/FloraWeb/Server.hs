@@ -189,23 +189,25 @@ runServer appLogger floraEnv = do
                 floraEnv.mltp.sentryDSN
             )
             defaultSettings
-  liftIO
-    . runEff
-    . runReader floraEnv
-    . runReader floraEnv.domainEnv
-    . runPrometheusMetrics floraEnv.metrics
-    . runConcurrent
-    . Log.runLog ("flora-server-" <> display floraEnv.environment) appLogger defaultLogLevel
-    $ withEffToIO (ConcUnlift Persistent Unlimited)
-    $ \runInIO ->
-      runSettings warpSettings
-        $ labelRequestThread
-          . heartbeatMiddleware
-          . loggingMiddleware
-          . const
-        $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
-        $ prometheusMiddleware
-        $ EffWai.unliftApplication runInIO server
+  withEffToIO
+    (ConcUnlift Persistent Unlimited)
+    ( \runInIO ->
+        EffWai.unliftApplication runInIO server
+          & prometheusMiddleware
+          & P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
+          & const
+          & loggingMiddleware
+          & heartbeatMiddleware
+          & labelRequestThread
+          & runSettings warpSettings
+    )
+    & Log.runLog ("flora-server-" <> display floraEnv.environment) appLogger defaultLogLevel
+    & runConcurrent
+    & runPrometheusMetrics floraEnv.metrics
+    & runReader floraEnv.domainEnv
+    & runReader floraEnv
+    & runEff
+    & liftIO
 
 mkServer
   :: RequireCallStack
