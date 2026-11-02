@@ -8,7 +8,6 @@ import Control.Exception (bracket)
 import Control.Exception.Backtrace
 import Control.Exception.Safe qualified as Safe
 import Control.Monad (void, when)
-import Control.Monad.Except qualified as Except
 import Data.Aeson
 import Data.Maybe (isJust)
 import Data.Pool qualified as Pool
@@ -16,14 +15,16 @@ import Data.Text qualified as Text
 import Data.Text.Display (display)
 import Effectful
 import Effectful.Concurrent
-import Effectful.Error.Static (prettyCallStack, runErrorNoCallStack, runErrorWith)
+import Effectful.Error.Static (catchError, prettyCallStack, runErrorNoCallStack, throwError)
 import Effectful.Fail (runFailIO)
 import Effectful.FileSystem
 import Effectful.Log
 import Effectful.Log qualified as Log
 import Effectful.Prometheus
 import Effectful.Reader.Static (runReader)
+import Effectful.Servant.Server qualified as EffServant
 import Effectful.Time (runTime)
+import Effectful.Wai qualified as EffWai
 import Log
 import Network.HTTP.Types (notFound404)
 import Network.Wai.Handler.Warp
@@ -43,10 +44,8 @@ import Prometheus.Servant qualified as P
 import RequireCallStack
 import Sel
 import Servant
-  ( Application
-  , Context (..)
+  ( Context (..)
   , ErrorFormatters
-  , Handler
   , NotFoundErrorFormatter
   , Proxy (Proxy)
   , ServerError (..)
@@ -55,7 +54,6 @@ import Servant
   , err404
   , notFoundErrorFormatter
   , serveDirectoryWebApp
-  , serveWithContextT
   )
 import Servant.OpenApi
 import Servant.Server.Generic (AsServerT)
@@ -191,14 +189,23 @@ runServer appLogger floraEnv = do
                 floraEnv.mltp.sentryDSN
             )
             defaultSettings
-  withEffToIO (ConcUnlift Persistent Unlimited) $ \_runInIO ->
-    runSettings warpSettings
-      $ labelRequestThread
-        . heartbeatMiddleware
-        . loggingMiddleware
-        . const
-      $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
-      $ prometheusMiddleware server
+  liftIO
+    . runEff
+    . runReader floraEnv
+    . runReader floraEnv.domainEnv
+    . runPrometheusMetrics floraEnv.metrics
+    . runConcurrent
+    . Log.runLog ("flora-server-" <> display floraEnv.environment) appLogger defaultLogLevel
+    $ withEffToIO (ConcUnlift Persistent Unlimited)
+    $ \runInIO ->
+      runSettings warpSettings
+        $ labelRequestThread
+          . heartbeatMiddleware
+          . loggingMiddleware
+          . const
+        $ P.prometheusMiddleware P.defaultMetrics (Proxy @ServerRoutes)
+        $ prometheusMiddleware
+        $ EffWai.unliftApplication runInIO server
 
 mkServer
   :: RequireCallStack
@@ -207,12 +214,12 @@ mkServer
   -> WebEnvStore
   -> FloraEnv
   -> TChan ()
-  -> Application
+  -> EffWai.Application ServerEffects
 mkServer arbiterConfig logger webEnvStore floraEnv reloadChannel =
-  serveWithContextT
+  EffServant.serveWithContextT
     (Proxy @ServerRoutes)
     (genAuthServerContext logger floraEnv)
-    (naturalTransform floraEnv logger webEnvStore)
+    (naturalTransform floraEnv webEnvStore)
     (floraServer arbiterConfig floraEnv.environment reloadChannel)
 
 floraServer
@@ -235,36 +242,25 @@ floraServer arbiterConfig environment reloadChannel =
 naturalTransform
   :: RequireCallStack
   => FloraEnv
-  -> Logger
   -> WebEnvStore
   -> FloraEff a
-  -> Handler a
-naturalTransform floraEnv logger _webEnvStore app = do
-  result <-
-    liftIO $
-      Right
-        <$> app
-          & runTime
-          & runReader floraEnv.features
-          & withBlobStore floraEnv.features
-          & runErrorWith
-            ( \callstack err -> do
-                Log.logInfo "Server error" $
-                  object
-                    [ "error_headers" .= map show (errHeaders err)
-                    , "error_http_code" .= errHTTPCode err
-                    , "error_reason_phrase" .= errReasonPhrase err
-                    , "exception" .= prettyCallStack callstack
-                    ]
-                pure . Left $ err
-            )
-          & Log.runLog ("flora-server-" <> display floraEnv.environment) logger defaultLogLevel
-          & runConcurrent
-          & runPrometheusMetrics floraEnv.metrics
-          & runReader floraEnv.domainEnv
-          & runReader floraEnv
-          & runEff
-  either Except.throwError pure result
+  -> EffServant.Handler ServerEffects a
+naturalTransform floraEnv _webEnvStore app =
+  app
+    & runTime
+    & runReader floraEnv.features
+    & withBlobStore floraEnv.features
+    & ( `catchError`
+          \callstack err -> do
+            Log.logInfo "Server error" $
+              object
+                [ "error_headers" .= map show (errHeaders err)
+                , "error_http_code" .= errHTTPCode err
+                , "error_reason_phrase" .= errReasonPhrase err
+                , "exception" .= prettyCallStack callstack
+                ]
+            throwError err
+      )
 
 genAuthServerContext
   :: RequireCallStack
