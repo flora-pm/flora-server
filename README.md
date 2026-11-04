@@ -77,7 +77,7 @@ This project is the fruit of the collaboration between:
 (*See [Civil Clause](https://en.wikipedia.org/wiki/Civil_clause) on Wikipedia*)
 
 The Flora project is committed to peace and justice, and therefore cannot accept
-donations or partnerships for the benefit of warfare or surveillance systems.
+contributions, donations or partnerships for the benefit of warfare or surveillance systems.
 This includes civilian police forces.
 
 
