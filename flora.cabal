@@ -736,6 +736,7 @@ test-suite flora-test
     tasty,
     tasty-hunit,
     text,
+    text-display,
     time,
     uuid,
     vector,
