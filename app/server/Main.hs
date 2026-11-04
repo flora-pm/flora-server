@@ -114,6 +114,8 @@ checkExpectedTables = do
           , "releases"
           , "requirements"
           , "security_advisories"
+          , "system_libraries"
+          , "system_requirements"
           , "user_organisation"
           , "users"
           ]

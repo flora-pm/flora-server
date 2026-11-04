@@ -1,4 +1,4 @@
-FROM haskell:9.10.3 AS build
+FROM docker.io/library/haskell:9.10.3 AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends protobuf-compiler && \
     rm -rf /var/lib/apt/lists/*
@@ -7,7 +7,7 @@ RUN cabal update && \
       --constraint 'grpc-spec -snappy' \
       --constraint 'blockio +serialblockio' \
       --installdir=/out --install-method=copy
-FROM debian:bookworm-slim
+FROM docker.io/library/debian:bookworm-slim
 COPY --from=build /out/eventlog-live-otlp /usr/local/bin/eventlog-live-otlp
 
 RUN mkdir -p -m 1777 /run/flora

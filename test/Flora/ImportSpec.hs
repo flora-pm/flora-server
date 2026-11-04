@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Flora.ImportSpec where
 
 import Codec.Archive.Tar qualified as Tar
@@ -19,6 +21,11 @@ import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Vector qualified as Vector
 import Database.PostgreSQL.Simple (Only (..))
 import Database.PostgreSQL.Simple qualified as PG
+import Database.PostgreSQL.Simple.SqlQQ (sql)
+import Distribution.System (OS (OSX, Windows))
+import Distribution.Types.Condition (Condition (..))
+import Distribution.Types.ConfVar (ConfVar (..))
+import Distribution.Types.Flag (mkFlagName)
 import Effectful.Error.Static qualified as Error
 import Effectful.Reader.Static qualified as Reader
 import Log.Backend.StandardOutput (withStdOutLogger)
@@ -33,6 +40,7 @@ import Flora.Domain.Import.Types (ImportError (..), ImportFileType (..))
 import Flora.Environment.Config
 import Flora.Environment.Env
 import Flora.Model.Component.Query qualified as Query
+import Flora.Model.Component.Types (CanonicalComponent (..), ComponentType (..))
 import Flora.Model.Package.Query qualified as Query
 import Flora.Model.Package.Types
 import Flora.Model.PackageIndex.Query qualified as Query
@@ -42,6 +50,8 @@ import Flora.Model.PackageUploader.Query qualified as Query
 import Flora.Model.PackageUploader.Types
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Model.SystemLibrary.Query qualified as Query
+import Flora.Model.SystemLibrary.Types
 import Flora.TestUtils
 
 spec :: RequireCallStack => TestEff TestTree
@@ -62,6 +72,9 @@ spec =
     , testThis "Mutually-dependent packages import concurrently without deadlocking" testConcurrentImportOfMutuallyDependentPackages
     , testThis "Re-importing the same cabal file changes nothing" testReimportChangesNothing
     , testThis "A dependency skeleton is promoted when its own cabal file arrives" testSkeletonIsPromoted
+    , testThis "System dependencies are extracted from the cabal file" testSystemDependenciesAreExtracted
+    , testThis "A revision that only changes a condition updates it" testRevisionUpdatesCondition
+    , testThis "A revision that changes a pkg-config range updates it" testRevisionUpdatesPkgconfigRange
     ]
 
 testIndex :: FilePath
@@ -222,6 +235,8 @@ cliqueCabalFile n =
       , "library"
       , "  exposed-modules: Clique"
       , "  build-depends: " <> intercalate ", " [cliqueName other | other <- [1 .. cliqueSize], other /= n]
+      , "  pkgconfig-depends: " <> (if even n then "zlib, openssl" else "openssl, zlib")
+      , "  extra-libraries: " <> (if even n then "z ssl" else "ssl z")
       , "  default-language: Haskell2010"
       , ""
       , "test-suite spec"
@@ -261,6 +276,9 @@ testConcurrentImportOfMutuallyDependentPackages = do
 
   traverse_ (\p -> assertEqual_ FullyImportedPackage p.status) imported
 
+  systemDependencies <- traverse (withReadOnlyPool pool . Query.getSystemDependencies . (.releaseId)) releases
+  traverse_ (assertEqual "importers that list the shared system libraries in different orders record all four" 4 . sum . fmap length) systemDependencies
+
 promoteRepo :: Text
 promoteRepo = "promote-index"
 
@@ -298,6 +316,7 @@ reimportRepo = "reimport-index"
 reimportCabalFile :: StrictByteString
 reimportCabalFile =
   libraryCabalFile "reimport-pkg" ["Concurrency", "Mathematics"] ["base"]
+    <> "  pkgconfig-depends: zlib >= 1.2\n"
 
 testReimportChangesNothing :: RequireCallStack => TestEff ()
 testReimportChangesNothing = do
@@ -310,25 +329,35 @@ testReimportChangesNothing = do
   importFromStream pool packageIndex indexPackages (Stream.fromList subjects)
   imported <- requirePackage reimportRepo "reimport-pkg"
   assertEqual "the first import promotes the package" FullyImportedPackage imported.status
-  firstPass@(categories, _, _) <- reimportCounts imported
-  assertEqual "both categories of the cabal file are recorded" 2 categories
+  firstPass <- reimportCounts imported
+  assertEqual "both categories of the cabal file are recorded" 2 firstPass.categories
+  assertEqual "the system dependency is recorded" 1 firstPass.systemDependencies
 
   importFromStream pool packageIndex indexPackages (Stream.fromList subjects)
   reimported <- requirePackage reimportRepo "reimport-pkg"
   assertEqual "the status is not downgraded" FullyImportedPackage reimported.status
   assertEqual_ firstPass =<< reimportCounts reimported
 
-reimportCounts :: RequireCallStack => Package -> TestEff (Int, Int, Int)
+data ImportCounts = ImportCounts
+  { categories :: Int
+  , releases :: Int
+  , components :: Int
+  , systemDependencies :: Int
+  }
+  deriving stock (Eq, Show)
+
+reimportCounts :: RequireCallStack => Package -> TestEff ImportCounts
 reimportCounts package = do
   FloraEnv{pool} <- Reader.ask
   release <- requireLatestRelease package
   withReadOnlyPool pool $
-    (,,)
+    ImportCounts
       <$> queryCount
         "select count(*) from package_categories where package_id = ?"
         (Only package.packageId)
       <*> (length <$> Query.getReleases package.packageId)
       <*> (length <$> Query.getComponentsByReleaseId release.releaseId)
+      <*> (sum . fmap length <$> Query.getSystemDependencies release.releaseId)
 
 incrementalRepo :: Text
 incrementalRepo = "incremental-index"
@@ -433,3 +462,125 @@ testCardanoDependencyResolution = do
         ]
     )
     dependencies
+
+systemDepsRepo :: Text
+systemDepsRepo = "system-deps-index"
+
+systemDepsCabalFile :: StrictByteString
+systemDepsCabalFile =
+  libraryCabalFile "system-deps-pkg" [] ["base"]
+    <> "  pkgconfig-depends: zlib >= 1.2, libpq\n"
+    <> "  extra-libraries: z\n"
+    <> "  extra-libraries-static: zstd\n"
+    <> "  if os(darwin)\n"
+    <> "    frameworks: Cocoa\n"
+    <> "  if os(windows)\n"
+    <> "    extra-libraries: z\n"
+
+testSystemDependenciesAreExtracted :: RequireCallStack => TestEff ()
+testSystemDependenciesAreExtracted = do
+  FloraEnv{pool} <- Reader.ask
+  packageIndex <- setUpPackageIndex pool systemDepsRepo
+  let indexPackages = Vector.singleton (systemDepsRepo, Set.singleton (PackageName "system-deps-pkg"))
+  importFromStream pool packageIndex indexPackages $
+    Stream.fromList [(CabalFile "system-deps-pkg.cabal", posixSecondsToUTCTime 0, Nothing, systemDepsCabalFile)]
+  package <- requirePackage systemDepsRepo "system-deps-pkg"
+  release <- requireLatestRelease package
+  systemDependencies <- withReadOnlyPool pool $ Query.getSystemDependencies release.releaseId
+  assertEqual_
+    ( Map.singleton
+        (CanonicalComponent "system-deps-pkg" Library)
+        $ Vector.fromList
+          [ SystemDependencyInfo PkgConfig (SystemLibraryName "libpq") Nothing Nothing
+          , SystemDependencyInfo PkgConfig (SystemLibraryName "zlib") (Just ">=1.2") Nothing
+          , SystemDependencyInfo ExtraLibrary (SystemLibraryName "z") Nothing Nothing
+          , SystemDependencyInfo ExtraLibrary (SystemLibraryName "z") Nothing (Just (Var (OS Windows)))
+          , SystemDependencyInfo Framework (SystemLibraryName "Cocoa") Nothing (Just (Var (OS OSX)))
+          ]
+    )
+    systemDependencies
+
+revisionRepo :: Text
+revisionRepo = "revision-condition-index"
+
+revisionCabalFile :: String -> StrictByteString
+revisionCabalFile flag =
+  BS8.pack $
+    unlines
+      [ "cabal-version: 3.0"
+      , "name: revision-condition-pkg"
+      , "version: 1.0.0"
+      , "build-type: Simple"
+      , ""
+      , "flag foo"
+      , "  default: False"
+      , ""
+      , "flag bar"
+      , "  default: False"
+      , ""
+      , "library"
+      , "  exposed-modules: Lib"
+      , "  default-language: Haskell2010"
+      , "  if flag(" <> flag <> ")"
+      , "    build-depends: revision-condition-dep"
+      ]
+
+testRevisionUpdatesCondition :: RequireCallStack => TestEff ()
+testRevisionUpdatesCondition = do
+  FloraEnv{pool} <- Reader.ask
+  packageIndex <- setUpPackageIndex pool revisionRepo
+  let indexPackages =
+        Vector.singleton
+          (revisionRepo, Set.fromList [PackageName "revision-condition-pkg", PackageName "revision-condition-dep"])
+      importRevision flag =
+        importFromStream pool packageIndex indexPackages $
+          Stream.fromList [(CabalFile "revision-condition-pkg.cabal", posixSecondsToUTCTime 0, Nothing, revisionCabalFile flag)]
+      conditions releaseId =
+        withReadOnlyPool pool $
+          fmap (\(Only c) -> c)
+            <$> query
+              [sql|
+              SELECT r.condition
+              FROM requirements AS r
+                   INNER JOIN package_components AS pc ON pc.package_component_id = r.package_component_id
+              WHERE pc.release_id = ?
+              |]
+              (Only releaseId)
+
+  importRevision "foo"
+  package <- requirePackage revisionRepo "revision-condition-pkg"
+  release <- requireLatestRelease package
+  assertEqual_ [Just (Var (PackageFlag (mkFlagName "foo")))] =<< (conditions release.releaseId :: TestEff [Maybe (Condition ConfVar)])
+
+  importRevision "bar"
+  assertEqual_ [Just (Var (PackageFlag (mkFlagName "bar")))] =<< conditions release.releaseId
+
+pkgconfigRevisionRepo :: Text
+pkgconfigRevisionRepo = "revision-pkgconfig-index"
+
+pkgconfigRevisionCabalFile :: StrictByteString -> StrictByteString
+pkgconfigRevisionCabalFile range =
+  libraryCabalFile "revision-pkgconfig-pkg" [] ["base"]
+    <> "  pkgconfig-depends: zlib "
+    <> range
+    <> "\n"
+
+testRevisionUpdatesPkgconfigRange :: RequireCallStack => TestEff ()
+testRevisionUpdatesPkgconfigRange = do
+  FloraEnv{pool} <- Reader.ask
+  packageIndex <- setUpPackageIndex pool pkgconfigRevisionRepo
+  let indexPackages = Vector.singleton (pkgconfigRevisionRepo, Set.singleton (PackageName "revision-pkgconfig-pkg"))
+      importRevision range =
+        importFromStream pool packageIndex indexPackages $
+          Stream.fromList [(CabalFile "revision-pkgconfig-pkg.cabal", posixSecondsToUTCTime 0, Nothing, pkgconfigRevisionCabalFile range)]
+      ranges releaseId =
+        withReadOnlyPool pool $
+          fmap (.requirement) . concatMap Vector.toList . Map.elems <$> Query.getSystemDependencies releaseId
+
+  importRevision ">= 1.2"
+  package <- requirePackage pkgconfigRevisionRepo "revision-pkgconfig-pkg"
+  release <- requireLatestRelease package
+  assertEqual_ [Just ">=1.2"] =<< ranges release.releaseId
+
+  importRevision ">= 1.3"
+  assertEqual_ [Just ">=1.3"] =<< ranges release.releaseId

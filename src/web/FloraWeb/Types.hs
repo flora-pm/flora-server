@@ -4,6 +4,7 @@ module FloraWeb.Types
   ( AdminArbiterConfig
   , FloraEff
   , RouteEffects
+  , ServerEffects
   , WebEnvStore
   , GetCookies (..)
   , WebEnv (..)
@@ -44,11 +45,14 @@ type AdminArbiterConfig = ArbS.ArbiterServerConfig (SimpleDb JobQueues IO) JobQu
 type FloraEff = Eff RouteEffects
 
 type RouteEffects =
-  '[ Time
-   , Reader FeatureEnv
-   , BlobStoreAPI
-   , Error ServerError
-   , Log
+  Time
+    ': Reader FeatureEnv
+    ': BlobStoreAPI
+    ': Error ServerError
+    ': ServerEffects
+
+type ServerEffects =
+  '[ Log
    , Concurrent
    , Metrics AppMetrics
    , Reader DomainEnv

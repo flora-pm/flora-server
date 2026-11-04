@@ -1,15 +1,18 @@
 module Advisories.Import where
 
 import Data.Aeson hiding (Result (..))
-import Data.Foldable (forM_, traverse_)
+import Data.Foldable (forM_)
 import Data.Function ((&))
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Maybe (catMaybes)
 import Data.Text qualified as Text
 import Data.Text.Display
+import Data.Traversable (forM)
 import Data.UUID.V4 qualified as UUID
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
+import Database.PostgreSQL.Simple (Only (..))
 import Effectful
 import Effectful.Error.Static
 import Effectful.Log (Log)
@@ -79,11 +82,12 @@ importAdvisory
   -> FloraM es ()
 importAdvisory advisory = do
   DomainEnv{pool} <- Reader.ask
-  advisoryId <- AdvisoryId <$> liftIO UUID.nextRandom
   let advisoryAffectedPackages = Vector.fromList advisory.advisoryAffected
-  let advisoryDAO = processAdvisory advisoryId advisory
-  withReadWritePool pool $ Update.insertAdvisory advisoryDAO
-  processAffectedPackages advisoryId advisoryAffectedPackages
+  advisoryIdForInsert <- AdvisoryId <$> liftIO UUID.nextRandom
+  let advisoryDAO = processAdvisory advisoryIdForInsert advisory
+  Only advisoryId <- withReadWritePool pool $ Update.upsertAdvisory advisoryDAO
+  entries <- collectAffectedPackages advisoryId advisoryAffectedPackages
+  withReadWritePool pool $ Update.setAdvisoryAffectedPackages advisoryId entries
 
 processAdvisory
   :: AdvisoryId
@@ -107,78 +111,59 @@ processAdvisory advisoryId advisory =
     , details = advisory.advisoryDetails
     }
 
-processAffectedPackages
+-- | Resolve every upstream @[[affected]]@ entry into an affected-package DAO
+-- with its version-range DAOs. Entries whose package does not exist in the
+-- database are skipped with a log line.
+collectAffectedPackages
   :: ( IOE :> es
      , Log :> es
      , Reader DomainEnv :> es
      )
   => AdvisoryId
   -> Vector Affected
-  -> FloraM es ()
-processAffectedPackages advisoryId affectedPackages = do
-  forM_ affectedPackages (processAffectedPackage advisoryId)
-
-processAffectedPackage
-  :: ( IOE :> es
-     , Log :> es
-     , Reader DomainEnv :> es
-     )
-  => AdvisoryId
-  -> Affected
-  -> FloraM es ()
-processAffectedPackage advisoryId affected = do
+  -> FloraM es [(AffectedPackageDAO, [AffectedVersionRangeDAO])]
+collectAffectedPackages advisoryId affectedPackages = do
   DomainEnv{pool} <- Reader.ask
-  let (namespace, packageName) =
-        case affected.affectedComponentIdentifier of
-          Repository _ (RepositoryName repositoryName) affectedPackageName ->
-            (Namespace repositoryName, PackageName (Text.pack . unPackageName $ affectedPackageName))
-          GHC _ -> (Namespace "hackage", PackageName "ghc")
-  package <- guardThatPackageExists pool namespace packageName
-  case package of
-    Nothing ->
-      Log.logAttention "Affected package does not exist, skipping affected-package link" $
-        object
-          [ "namespace" .= display namespace
-          , "package" .= display packageName
-          ]
-    Just package -> do
-      affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
-      let declarations =
-            affected.affectedDeclarations
-              & fmap (uncurry AffectedDeclaration)
-              & Vector.fromList
-      let affectedPackageDAO =
-            AffectedPackageDAO
-              { affectedPackageId = affectedPackageId
-              , advisoryId = advisoryId
-              , packageId = package.packageId
-              , cvss = affected.affectedCVSS
-              , architectures = fmap Vector.fromList affected.affectedArchitectures
-              , operatingSystems = fmap Vector.fromList affected.affectedOS
-              , declarations = declarations
-              }
-      withReadWritePool pool $ Update.insertAffectedPackage affectedPackageDAO
-      processAffectedVersionRanges affectedPackageId affected.affectedVersions
-
-processAffectedVersionRanges
-  :: ( IOE :> es
-     , Reader DomainEnv :> es
-     )
-  => AffectedPackageId
-  -> [AffectedVersionRange]
-  -> FloraM es ()
-processAffectedVersionRanges affectedPackageId affectedVersions = do
-  DomainEnv{pool} <- Reader.ask
-  traverse_
-    ( \affectedVersion -> do
-        affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
-        let versionRangeDAO =
+  entries <-
+    forM (Vector.toList affectedPackages) $ \affected -> do
+      let (namespace, packageName) =
+            case affected.affectedComponentIdentifier of
+              Repository _ (RepositoryName repositoryName) affectedPackageName ->
+                (Namespace repositoryName, PackageName (Text.pack . unPackageName $ affectedPackageName))
+              GHC _ -> (Namespace "hackage", PackageName "ghc")
+      package <- guardThatPackageExists pool namespace packageName
+      case package of
+        Nothing -> do
+          Log.logAttention "Affected package does not exist, skipping affected-package link" $
+            object
+              [ "namespace" .= display namespace
+              , "package" .= display packageName
+              ]
+          pure Nothing
+        Just package -> do
+          affectedPackageId <- AffectedPackageId <$> liftIO UUID.nextRandom
+          let declarations =
+                affected.affectedDeclarations
+                  & fmap (uncurry AffectedDeclaration)
+                  & Vector.fromList
+          let affectedPackageDAO =
+                AffectedPackageDAO
+                  { affectedPackageId = affectedPackageId
+                  , advisoryId = advisoryId
+                  , packageId = package.packageId
+                  , cvss = affected.affectedCVSS
+                  , architectures = fmap Vector.fromList affected.affectedArchitectures
+                  , operatingSystems = fmap Vector.fromList affected.affectedOS
+                  , declarations = declarations
+                  }
+          versionRangeDAOs <- forM affected.affectedVersions $ \affectedVersion -> do
+            affectedVersionId <- AffectedVersionId <$> liftIO UUID.nextRandom
+            pure
               AffectedVersionRangeDAO
                 { affectedVersionId = affectedVersionId
                 , affectedPackageId = affectedPackageId
                 , introducedVersion = affectedVersion.affectedVersionRangeIntroduced
                 , fixedVersion = affectedVersion.affectedVersionRangeFixed
                 }
-        withReadWritePool pool $ Update.insertAffectedVersionRange versionRangeDAO
-    )
-    affectedVersions
+          pure (Just (affectedPackageDAO, versionRangeDAOs))
+  pure (catMaybes entries)

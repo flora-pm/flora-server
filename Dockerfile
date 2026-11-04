@@ -9,7 +9,7 @@ ARG HLS_VERSION=2.15.0.0
 ARG CABAL_GILD_VERSION=1.8.4.2
 
 # This stage installs libraries required to install GHC and other tools
-FROM ubuntu:$BASE_IMAGE_VERSION AS base
+FROM docker.io/library/ubuntu:$BASE_IMAGE_VERSION AS base
 USER "root"
 ENV LANG="en_GB.UTF-8"
 

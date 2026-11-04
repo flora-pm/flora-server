@@ -6,6 +6,8 @@ module Flora.Model.Package.Update
   , packageInsertOrder
   , upsertPackage
   , bulkUpsertRequirements
+  , bulkUpsertSystemLibraries
+  , bulkUpsertSystemRequirements
   , insertRequirement
   , upsertPackageComponents
   , insertPackageComponent
@@ -14,6 +16,7 @@ module Flora.Model.Package.Update
   ) where
 
 import Control.Monad (void)
+import Data.Aeson qualified as Aeson
 import Data.Function ((&))
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
@@ -33,6 +36,7 @@ import Flora.Model.Component.Types (PackageComponent)
 import Flora.Model.Package.Orphans ()
 import Flora.Model.Package.Types
 import Flora.Model.Requirement (Requirement (..))
+import Flora.Model.SystemLibrary.Types (SystemLibrary (..), SystemRequirement (..))
 
 -- | Insert the package being imported together with the 'UnknownPackage'
 -- skeletons of the packages it depends on, promoting it to
@@ -112,6 +116,19 @@ insertRequirement req = void $ execute (_insert @Requirement) req
 
 bulkUpsertRequirements :: (IOE :> es, RequireCallStack, WriteDB :> es) => [Requirement] -> Eff es ()
 bulkUpsertRequirements requirements =
-  upsertMany @Requirement deduped [[field| components |], [field| requirement |]]
+  upsertMany @Requirement deduped [[field| components |], [field| requirement |], [field| condition |]]
   where
     deduped = dedupOn (.requirementId) requirements
+
+bulkUpsertSystemLibraries :: (IOE :> es, RequireCallStack, WriteDB :> es) => [SystemLibrary] -> Eff es ()
+bulkUpsertSystemLibraries libraries =
+  void $ executeMany (_insert @SystemLibrary <> " ON CONFLICT DO NOTHING") deduped
+  where
+    deduped = dedupOn (.systemLibraryId) libraries
+
+bulkUpsertSystemRequirements :: (IOE :> es, RequireCallStack, WriteDB :> es) => [SystemRequirement] -> Eff es ()
+bulkUpsertSystemRequirements requirements =
+  void $ executeMany (_insert @SystemRequirement <> _onConflictDoUpdate conflictTarget [[field| requirement |]]) deduped
+  where
+    conflictTarget = [[field| package_component_id |], [field| system_library_id |], [field| condition |]]
+    deduped = dedupOn (\r -> (r.packageComponentId, r.systemLibraryId, Aeson.encode r.condition)) requirements

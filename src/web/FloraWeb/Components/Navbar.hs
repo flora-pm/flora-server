@@ -113,7 +113,7 @@ navbarSearch = do
           button_
             [ class_ "btn"
             , type_ "submit"
-            , label_ "Search"
+            , ariaLabel_ "Search"
             ]
             Icons.lookingGlass
     else pure mempty

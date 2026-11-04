@@ -52,7 +52,7 @@ data Requirement = Requirement
   , components :: Vector Text
   -- ^ Components that are depended on
   , condition :: Maybe (Condition ConfVar)
-  -- ^ The union of all the conditional flags guarding the requirement (dependency) behind.
+  -- ^ The conjunction of all the conditions guarding the requirement
   }
   deriving stock (Eq, Generic, Show)
   deriving anyclass (FromJSON, FromRow, NFData, ToJSON, ToRow)

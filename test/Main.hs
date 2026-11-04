@@ -11,6 +11,7 @@ import System.Environment (withArgs)
 import System.IO
 import Test.Tasty
 
+import Flora.AdvisorySpec qualified as AdvisorySpec
 import Flora.BlobSpec qualified as BlobSpec
 import Flora.CabalSpec qualified as CabalSpec
 import Flora.CategorySpec qualified as CategorySpec
@@ -67,7 +68,8 @@ main = provideCallStack $ do
 
 specs :: RequireCallStack => Fixtures -> [TestEff TestTree]
 specs fixtures =
-  [ BlobSpec.spec
+  [ AdvisorySpec.spec
+  , BlobSpec.spec
   , CabalSpec.spec
   , CategorySpec.spec
   , ConfigSpec.spec
@@ -91,6 +93,8 @@ cleanUp = do
   void $ execute "DELETE FROM persistent_sessions" ()
   void $ execute "DELETE FROM downloads" ()
   void $ execute "DELETE FROM requirements" ()
+  void $ execute "DELETE FROM system_requirements" ()
+  void $ execute "DELETE FROM system_libraries" ()
   void $ execute "DELETE FROM package_components" ()
   void $ execute "DELETE FROM affected_version_ranges" ()
   void $ execute "DELETE FROM affected_packages" ()
