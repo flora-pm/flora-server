@@ -15,4 +15,4 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Ensure SHA pinned actions
-        uses: hyland/github-actions-ensure-sha-pinned-actions@f35ee319c5b8a9d3a82965ca8c95a708164fee39 # 2f3ddf54eb417c4b01d59a068cff4f914e91e272
+        uses: hyland/github-actions-ensure-sha-pinned-actions@fc0964f692de45d87d50fc3334dd2903552b1224 # 2f3ddf54eb417c4b01d59a068cff4f914e91e272
