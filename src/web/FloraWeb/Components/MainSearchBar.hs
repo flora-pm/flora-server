@@ -21,5 +21,6 @@ mainSearchBar =
         , autocorrect_ "off"
         , autocapitalize_ "off"
         , spellcheck_ "off"
+        , autofocus_
         ]
       button_ [class_ "btn btn--big", type_ "submit", ariaLabel_ "Search"] Icons.lookingGlass
