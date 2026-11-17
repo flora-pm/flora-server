@@ -9,3 +9,20 @@
 	flex-direction: column;
 	gap: var(--package-layout-gap);
 }
+
+.systemDependencies {
+	display: grid;
+	grid-template-columns: max-content max-content 1fr;
+	gap: var(--space-gutter-small) var(--space-gutter);
+}
+
+.systemDependencies > li {
+	display: grid;
+	grid-column: 1 / -1;
+	grid-template-columns: subgrid;
+	align-items: center;
+}
+
+.systemDependencies-kind {
+	justify-self: start;
+}

@@ -47,6 +47,7 @@ import Flora.Model.PackageMaintainer.Query qualified as Query
 import Flora.Model.PackageUploader.Query qualified as Query
 import Flora.Model.Release.Query qualified as Query
 import Flora.Model.Release.Types
+import Flora.Model.SystemLibrary.Query qualified as Query
 import Flora.Model.User (User)
 import Flora.Monad
 import FloraWeb.Common.Auth
@@ -390,9 +391,11 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
           { title = display packageNamespace <> " › " <> display packageName <> " › dependencies — Flora.pm"
           , description = "Dependencies of " <> display packageNamespace <> display packageName
           }
-  releaseDependencies <-
+  (releaseDependencies, systemDependencies) <-
     withReadOnlyPool pool $
-      Query.getAllRequirements release.releaseId
+      (,)
+        <$> Query.getAllRequirements release.releaseId
+        <*> Query.getSystemDependencies release.releaseId
 
   now <- Time.currentTime
   isLatestViableRelease <- isLatestRelease package.packageId release.version
@@ -405,6 +408,7 @@ showVersionDependenciesHandler (Headers session _) packageNamespace packageName 
       numberOfDependents
       package
       releaseDependencies
+      systemDependencies
       isLatestViableRelease
 
 showChangelogHandler
