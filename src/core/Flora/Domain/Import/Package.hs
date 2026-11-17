@@ -437,7 +437,7 @@ mkHaskellDependency package indexPackages packageComponentId cond (Cabal.Depende
       dependencyPackage = Package packageId namespace name createdAt updatedAt status deprecationInfo
       requirement =
         Requirement
-          { requirementId = deterministicRequirementId packageComponentId packageId
+          { requirementId = deterministicRequirementId packageComponentId packageId versionRange
           , packageComponentId
           , packageId
           , requirement = display versionRange
