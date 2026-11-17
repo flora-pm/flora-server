@@ -62,8 +62,6 @@ common common-ghc-options
     -Wunused-packages
     -flate-specialise
     -funbox-strict-fields
-    -finline-generics-aggressively
-    -fexpose-all-unfoldings
     -fplugin=Effectful.Plugin
     -finfo-table-map
     -fdistinct-constructor-tables
